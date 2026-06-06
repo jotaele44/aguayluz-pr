@@ -216,3 +216,38 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# === aguayluz-pr runtime data policy (skill spec §"Runtime Data Policy") ===
+# Do not commit runtime data, raw screenshots, raw witness files, credentials,
+# tokens, caches, database files, Parquet extracts, raw CSV dumps, tile imagery,
+# private addresses, review databases, or generated production outputs unless
+# explicitly versioned as non-sensitive fixtures.
+
+data/*
+!data/.gitkeep
+outputs/*
+!outputs/.gitkeep
+reports/*
+!reports/.gitkeep
+cache/
+tile_cache/
+
+# Fixtures ARE versioned (sanitized API recordings) — keep tests/fixtures/ tracked.
+# Block everything else that could carry secrets or large binaries.
+*.sqlite
+*.db
+*.parquet
+*.pem
+*.key
+.DS_Store
+
+# Top-level data dumps (allow tests/fixtures/**/*.json and schemas/*.json)
+/*.csv
+/*.geojson
+/*.jsonl
+/*.png
+/*.jpg
+/*.jpeg
+/*.tif
+/*.tiff
+

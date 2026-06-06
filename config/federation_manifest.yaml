@@ -1,0 +1,31 @@
+# Federation linkage for aguayluz-pr.
+# Mirrors the "Owns" / "Does Not Own" tables in AGUAYLUZ_PR_SKILL.md.
+
+module_id: aguayluz-pr
+
+owns:
+  - water_and_wastewater_assets
+  - prasa_aaa_public_asset_references
+  - power_generation_grid_substations_feeders_poles_transmission_distribution
+  - prepa_luma_genera_public_records
+  - outages_restoration_service_interruptions
+  - utility_recovery_projects_and_status
+  - utility_service_geospatial_summaries
+  - sanitized_utility_exports_to_base44
+
+does_not_own:
+  funding_vendor_chain_joins: moneysweep-pr
+  subsurface_corridor_inference: spiderweb-pr
+  airspace_observation: skywatcher-pr
+  uap_uso_reports: ovnis-pr
+  central_dashboard: thehub-pr
+
+linked_modules:
+  - moneysweep-pr
+  - spiderweb-pr
+  - skywatcher-pr
+  - ovnis-pr
+  - thehub-pr
+
+export_target: thehub-pr
+export_envelope: schemas/base44_export.schema.json

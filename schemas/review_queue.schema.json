@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/review_queue.schema.json",
+  "title": "ReviewQueue",
+  "description": "Records routed to human review (low confidence, missing data, private/contradictory, out-of-bounds coords).",
+  "type": "object",
+  "required": ["module_id", "generated_at", "items"],
+  "additionalProperties": false,
+  "properties": {
+    "module_id": { "const": "aguayluz-pr" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["record_ref", "reason", "severity"],
+        "additionalProperties": false,
+        "properties": {
+          "record_ref": { "type": "string", "minLength": 1, "description": "asset_id or event_id." },
+          "reason":     { "type": "string", "minLength": 1 },
+          "severity":   { "enum": ["info", "warn", "block"] },
+          "evidence_tier": { "enum": ["T1", "T2", "T3", "T4"] },
+          "confidence": { "type": "integer", "minimum": 0, "maximum": 100 },
+          "notes":      { "type": ["string", "null"] }
+        }
+      }
+    }
+  }
+}

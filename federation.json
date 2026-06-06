@@ -1,0 +1,50 @@
+{
+  "schema_version": "repo_federation_manifest_v1",
+  "program_id": "aguayluz-pr",
+  "repository_full_name": "jotaele44/aguayluz-pr",
+  "repository_legacy_name": "aguayluz-pr",
+  "federation_role": "water_grid_monitoring_node",
+  "hub_parent": "thehub-pr",
+  "jurisdiction": "Puerto Rico",
+  "active_vector": "AGUAYLUZ_WATER_POWER_INFRASTRUCTURE_INTELLIGENCE",
+  "production_status": "NON_PRODUCTION_SCAFFOLD",
+  "pause_lock_required": true,
+  "source_truth": {
+    "primary_source": "U.S. EPA Office of Water — WATERS Services REST API",
+    "geofabric": "NHDPlus V2.1 (Puerto Rico = VPU 21; Vogel/VPUAttribute extensions unavailable -> attribute_coverage stamped partial)",
+    "export_envelope": "schemas/base44_export.schema.json",
+    "runtime_required_keys": ["EPA_WATERS_API_KEY"],
+    "owns": [
+      "water_and_wastewater_assets",
+      "prasa_aaa_public_asset_references",
+      "power_generation_grid_substations_feeders_poles_transmission_distribution",
+      "prepa_luma_genera_public_records",
+      "outages_restoration_service_interruptions",
+      "utility_recovery_projects_and_status",
+      "utility_service_geospatial_summaries"
+    ]
+  },
+  "hub_callable_commands": {
+    "setup": "python -m pip install -e .[dev]",
+    "validation_gates": "python scripts/validate_repo.py",
+    "lint": "ruff check .",
+    "test_suite": "python -m pytest -q"
+  },
+  "canonical_outputs": {
+    "base44_export": "outputs/base44_export.json",
+    "integration_report": "outputs/integration_report.json",
+    "source_manifest": "outputs/source_manifest.json",
+    "review_queue": "outputs/review_queue.json"
+  },
+  "federation_readiness_gate": {
+    "ready_for_hub_discovery": true,
+    "ready_for_hub_live_execution": false,
+    "blocking_conditions": [
+      "scaffold stage (M1): WATERS client (M2), navigation/mapping (M3), and Base44 exporter + smoke test (M4) not yet executed",
+      "no entity outputs yet — validation gates G01-G06 SKIP",
+      "EPA_WATERS_API_KEY must be supplied locally for live execution",
+      "export envelope is a Base44 summary rollup; reconciliation to the Hub JSONL stream contract (sources/entities/relationships) is a federation follow-up",
+      "pyproject [project.scripts] references aguayluz.cli:app which does not yet exist"
+    ]
+  }
+}
