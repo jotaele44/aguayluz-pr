@@ -1,13 +1,10 @@
-"""EPA WATERS endpoint parameter map.
-
-Do not assume one universal parameter style. The live OAS uses legacy p-prefix,
-newer non-prefixed GET params, and p_ body fields depending on endpoint.
-"""
-
-BASE_URL = "https://api.epa.gov/waters"
-FORMAT_PARAM = {"f": "json"}
-
-ENDPOINT_PARAM_MAP = {
-    "v1/drainageareadelineation": ["pgeometry", "pcomid", "pfeaturetype", "poutputflag"],
-    "v3/drainageareadelineation": ["pgeometry", "pfeaturetype", "poutputflag"],
-    "v1/
+"""Correct WATERS parameter contract."""
+BASE_URL="https://api.epa.gov/waters"
+FORMAT_PARAM={"f":"json"}
+PARAM_STYLE={
+ "v1":"legacy p-prefix query params",
+ "v4_get":"non-prefixed query params",
+ "v4_post":"p_ body fields",
+}
+UPSTREAMDOWNSTREAM_V4_GET=["start_point","indexing_engine","search_type","start_nhdplusid"]
+DRAINAGE_V1=["pgeometry","pcomid","pfeaturetype","poutput
