@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/utility_asset.schema.json",
+  "title": "UtilityAsset",
+  "description": "Public utility asset (water, wastewater, power, telecom, fuel) located within or adjacent to Puerto Rico.",
+  "type": "object",
+  "required": [
+    "asset_id",
+    "asset_name",
+    "asset_type",
+    "asset_subtype",
+    "municipality",
+    "geometry_type",
+    "status",
+    "source_ref",
+    "evidence_tier",
+    "confidence",
+    "review_status"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "asset_id":      { "type": "string", "minLength": 1 },
+    "asset_name":    { "type": "string", "minLength": 1, "description": "Public/sanitized name." },
+    "asset_type":    { "enum": ["water", "wastewater", "power", "telecom", "fuel", "unknown"] },
+    "asset_subtype": { "type": "string", "minLength": 1, "examples": ["pump_station", "substation", "treatment_plant", "feeder", "reservoir", "transmission_line"] },
+    "operator":      { "type": ["string", "null"] },
+    "municipality":  { "type": "string", "minLength": 1 },
+    "lat":           { "type": ["number", "null"], "minimum": 17.7, "maximum": 18.7, "description": "PR mainland + Vieques + Culebra + Mona bounds." },
+    "lon":           { "type": ["number", "null"], "minimum": -67.95, "maximum": -65.2 },
+    "geometry_type": { "enum": ["point", "line", "polygon", "unknown"] },
+    "status":        { "enum": ["active", "inactive", "damaged", "planned", "unknown"] },
+    "source_ref":    { "type": "string", "minLength": 1 },
+    "source_hash":   { "type": ["string", "null"] },
+    "evidence_tier": { "enum": ["T1", "T2", "T3", "T4"] },
+    "confidence":    { "type": "integer", "minimum": 0, "maximum": 100 },
+    "review_status": { "enum": ["accepted", "needs_review", "rejected", "blocked"] },
+    "attribute_coverage": {
+      "enum": ["full", "partial"],
+      "description": "Set to 'partial' when EPA NHDPlus V2.1 VPU 21 extensions (Vogel/VPUAttribute/NLCD) are unavailable for this record."
+    },
+    "vpuid": { "type": ["string", "null"], "description": "NHDPlus V2.1 VPU id resolved by follow-up call; '21' for Puerto Rico." },
+    "comid": { "type": ["integer", "null"], "description": "NHDPlus V2.1 COMID this asset snaps to, when applicable." },
+    "reachcode": { "type": ["string", "null"] },
+    "measure": { "type": ["number", "null"], "minimum": 0, "maximum": 100 }
+  }
+}

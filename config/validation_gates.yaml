@@ -1,0 +1,37 @@
+# Validation gate toggles. All eight are blocking per the skill spec.
+# Per-environment overrides may set `blocking: false` for transitional gates,
+# but the defaults must stay PASS-required for federation deployment readiness.
+
+gates:
+  G01_SCHEMA:
+    enabled: true
+    blocking: true
+    description: All exported entities validate against their JSON Schema.
+  G02_SOURCE_MANIFEST:
+    enabled: true
+    blocking: true
+    description: Every output has source reference, hash or stable citation, tier, date/access date.
+  G03_CONFIDENCE:
+    enabled: true
+    blocking: true
+    description: Every entity has confidence and rationale.
+  G04_REVIEW_QUEUE:
+    enabled: true
+    blocking: true
+    description: Low-confidence, missing, private, or contradictory records route to review queue.
+  G05_COVERAGE_LEDGER:
+    enabled: true
+    blocking: true
+    description: Expected/located/ingested/deduped/gaps counted.
+  G06_BASE44_EXPORT:
+    enabled: true
+    blocking: true
+    description: Sanitized export produced without raw evidence.
+  G07_NO_SECRETS:
+    enabled: true
+    blocking: true
+    description: No tokens, keys, credentials, or private raw evidence in tracked files or exports.
+  G08_TESTS:
+    enabled: true
+    blocking: true
+    description: Unit + smoke tests pass.

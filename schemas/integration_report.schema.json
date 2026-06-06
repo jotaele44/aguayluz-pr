@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/integration_report.schema.json",
+  "title": "IntegrationReport",
+  "description": "Coverage ledger and gate report for a single run. Drives the Base44 envelope's coverage_pct and status.",
+  "type": "object",
+  "required": [
+    "module_id",
+    "run_id",
+    "vector",
+    "coverage",
+    "gates",
+    "generated_at"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "module_id": { "const": "aguayluz-pr" },
+    "run_id":    { "type": "string", "pattern": "^[0-9]{8}T[0-9]{6}Z_[A-Za-z0-9_-]+$" },
+    "vector":    { "type": "string", "minLength": 1 },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "coverage": {
+      "type": "object",
+      "required": ["expected", "located", "ingested", "deduped", "unresolved", "gaps", "coverage_pct"],
+      "additionalProperties": false,
+      "properties": {
+        "expected":     { "type": "integer", "minimum": 0 },
+        "located":      { "type": "integer", "minimum": 0 },
+        "ingested":     { "type": "integer", "minimum": 0 },
+        "deduped":      { "type": "integer", "minimum": 0 },
+        "unresolved":   { "type": "integer", "minimum": 0 },
+        "gaps":         { "type": "array", "items": { "type": "string" } },
+        "coverage_pct": { "type": "number", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "gates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "status"],
+        "additionalProperties": false,
+        "properties": {
+          "id":      { "type": "string", "pattern": "^G0[1-8]_[A-Z_]+$" },
+          "status":  { "enum": ["PASS", "WARN", "FAIL", "SKIP"] },
+          "details": { "type": ["string", "null"] }
+        }
+      }
+    }
+  }
+}

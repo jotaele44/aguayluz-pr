@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/service_event.schema.json",
+  "title": "ServiceEvent",
+  "description": "Public service event (outage, restoration, boil-water notice, project update) affecting Puerto Rico utility service.",
+  "type": "object",
+  "required": [
+    "event_id",
+    "event_type",
+    "affected_area",
+    "source_ref",
+    "confidence",
+    "review_status",
+    "evidence_tier"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "event_id":   { "type": "string", "pattern": "^AYL_EVT_[0-9]{8}_[A-Za-z0-9_-]+$" },
+    "event_type": { "enum": ["outage", "restoration", "boil_water", "service_interruption", "project_update", "unknown"] },
+    "affected_area": { "type": "string", "minLength": 1, "description": "Municipality or region label." },
+    "start_time": { "type": ["string", "null"], "format": "date-time" },
+    "end_time":   { "type": ["string", "null"], "format": "date-time" },
+    "reported_customers_or_users": { "type": ["integer", "null"], "minimum": 0 },
+    "source_ref":    { "type": "string", "minLength": 1 },
+    "source_hash":   { "type": ["string", "null"] },
+    "evidence_tier": { "enum": ["T1", "T2", "T3", "T4"] },
+    "confidence":    { "type": "integer", "minimum": 0, "maximum": 100 },
+    "review_status": { "enum": ["accepted", "needs_review", "rejected", "blocked"] },
+    "linked_asset_ids": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": []
+    }
+  }
+}

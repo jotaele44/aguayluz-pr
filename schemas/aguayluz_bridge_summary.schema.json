@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/aguayluz_bridge_summary.schema.json",
+  "title": "AguayluzBridgeSummary",
+  "description": "Sanitized, federation-bound summary aggregating assets, events, and infrastructure dependencies.",
+  "type": "object",
+  "required": [
+    "module_id",
+    "summary_id",
+    "assets_total",
+    "events_total",
+    "municipalities_covered",
+    "service_risk_summary",
+    "infrastructure_dependencies",
+    "linked_modules",
+    "confidence",
+    "review_status"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "module_id": { "const": "aguayluz-pr" },
+    "summary_id": { "type": "string", "pattern": "^AYL_SUM_[0-9]{8}_[A-Za-z0-9_-]+$" },
+    "assets_total": { "type": "integer", "minimum": 0 },
+    "events_total": { "type": "integer", "minimum": 0 },
+    "municipalities_covered": { "type": "array", "items": { "type": "string" } },
+    "service_risk_summary": { "type": "string" },
+    "infrastructure_dependencies": { "type": "array", "items": { "type": "string" } },
+    "linked_modules": { "type": "array", "items": { "type": "string" } },
+    "confidence": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "review_status": { "enum": ["accepted", "needs_review", "rejected", "blocked"] }
+  }
+}
