@@ -1,9 +1,13 @@
 name: live-corpus
 
-# Manual-only — never runs automatically. Hits live EPA WATERS + FRS + FEMA APIs.
+# Hits live EPA WATERS + FRS + FEMA APIs. Two trigger modes:
+#   - workflow_dispatch: operator-initiated. Inputs are operator-supplied.
+#   - schedule (daily): the M23 automated drift detector. Uses default inputs
+#     and forces baseline_check=true so unexpected changes fail loudly.
 # Repo secret `EPA_WATERS_API_KEY` must be set for --use-waters runs.
-# All workflow_dispatch inputs are passed via env vars (never inline-interpolated
-# into run: commands) to avoid shell-injection risk from operator-supplied values.
+# Optional repo secret `SLACK_WEBHOOK_URL` enables drift notifications.
+# All operator-supplied inputs flow through env: blocks (never inline-
+# interpolated into run: commands) to keep them out of the shell-injection path.
 on:
   workflow_dispatch:
     inputs:
@@ -27,6 +31,9 @@ on:
         description: Compare run against committed baseline
         required: false
         default: 'true'
+  schedule:
+    # Daily at 12:00 UTC (08:00 AST). M23 automated drift detector.
+    - cron: '0 12 * * *'
 
 jobs:
   live-corpus:
@@ -38,13 +45,14 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install -e .[dev]
       - name: Run full chain (live)
+        id: chain
         env:
           EPA_WATERS_API_KEY: ${{ secrets.EPA_WATERS_API_KEY }}
-          CITIES: ${{ inputs.cities }}
-          DAMAGE_CODES: ${{ inputs.damage_codes }}
-          MAX_FEMA_RECORDS: ${{ inputs.max_fema_records }}
-          BASELINE_WRITE: ${{ inputs.baseline_write }}
-          BASELINE_CHECK: ${{ inputs.baseline_check }}
+          CITIES: ${{ inputs.cities || 'BAYAMON,SAN_JUAN,PONCE,CAGUAS,MAYAGUEZ' }}
+          DAMAGE_CODES: ${{ inputs.damage_codes || 'D,F' }}
+          MAX_FEMA_RECORDS: ${{ inputs.max_fema_records || '50' }}
+          BASELINE_WRITE: ${{ inputs.baseline_write || 'false' }}
+          BASELINE_CHECK: ${{ inputs.baseline_check || 'true' }}
         run: |
           ARGS=(--live --use-waters --cities "$CITIES" --damage-codes "$DAMAGE_CODES" --max-fema-records "$MAX_FEMA_RECORDS")
           if [ "$BASELINE_WRITE" = "true" ]; then
@@ -54,6 +62,17 @@ jobs:
             ARGS+=(--baseline-check)
           fi
           python scripts/run_full_chain.py "${ARGS[@]}"
+      - name: Notify Slack on drift
+        if: failure() && steps.chain.outcome == 'failure'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          TRIGGER: ${{ github.event_name }}
+        run: |
+          python scripts/notify_drift.py \
+            --title "live-corpus baseline drift" \
+            --severity critical \
+            --body "Trigger: $TRIGGER. The full-chain run against EPA FRS + FEMA + WATERS failed baseline check or live ingest. Run: $RUN_URL"
       - name: Upload outputs artifact
         if: always()
         uses: actions/upload-artifact@v4

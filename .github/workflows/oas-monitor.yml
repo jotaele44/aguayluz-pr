@@ -1,0 +1,51 @@
+name: oas-monitor
+
+# M23 OAS shape drift detector. Pulls the live WATERS OpenAPI document and
+# diffs its path/method/response-ref shape against the committed snapshot
+# at tests/baseline/waters_oas_shape.json. Exits non-zero on any drift so
+# CI fails loudly and Slack gets pinged.
+#
+# All operator-supplied inputs flow through env: blocks (never inline-
+# interpolated into run: commands) to keep them out of the shell-injection path.
+on:
+  workflow_dispatch:
+    inputs:
+      force_write:
+        description: Write the live shape into tests/baseline/waters_oas_shape.json
+        required: false
+        default: 'false'
+  schedule:
+    # Daily at 13:00 UTC (09:00 AST), one hour after live-corpus so failures
+    # don't pile into the same notification window.
+    - cron: '0 13 * * *'
+
+jobs:
+  check-oas-shape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e .[dev]
+      - name: Check OAS shape
+        id: shape
+        env:
+          FORCE_WRITE: ${{ inputs.force_write || 'false' }}
+        run: |
+          if [ "$FORCE_WRITE" = "true" ]; then
+            python scripts/check_oas_shape.py --write-snapshot
+          else
+            python scripts/check_oas_shape.py --check
+          fi
+      - name: Notify Slack on drift
+        if: failure() && steps.shape.outcome == 'failure'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          TRIGGER: ${{ github.event_name }}
+        run: |
+          python scripts/notify_drift.py \
+            --title "WATERS OAS shape drift" \
+            --severity critical \
+            --body "Trigger: $TRIGGER. The live api.epa.gov/waters/oas30 OpenAPI document changed shape (paths added/removed, methods changed, or response refs shifted). Workflow logs show the per-finding diff. Run: $RUN_URL"

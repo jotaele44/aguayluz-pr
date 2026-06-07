@@ -1,0 +1,93 @@
+{
+  "_README": "WATERS OAS shape snapshot. Regenerate via `python scripts/check_oas_shape.py --write-snapshot` after manually verifying an upstream change is safe to adopt. M23's oas-monitor.yml workflow runs --check against this file and notifies Slack on drift.",
+  "shape": {
+    "info_version": "0.1.0",
+    "paths": {
+      "/v1/drainageareadelineation": {
+        "get": "#/components/responses/x53",
+        "post": "#/components/responses/x53"
+      },
+      "/v1/eventindexing": {
+        "get": "#/components/responses/x240",
+        "post": "#/components/responses/x240"
+      },
+      "/v1/gnisnamelookup": {
+        "get": "#/components/responses/x336",
+        "post": "#/components/responses/x336"
+      },
+      "/v1/owldlocator": {
+        "get": "#/components/responses/x404",
+        "post": "#/components/responses/x404"
+      },
+      "/v1/pointindexing": {
+        "get": "#/components/responses/x414",
+        "post": "#/components/responses/x414"
+      },
+      "/v1/upstreamdownstream": {
+        "get": "#/components/responses/x484",
+        "post": "#/components/responses/x484"
+      },
+      "/v1/visualization": {
+        "get": "#/components/responses/x947",
+        "post": "#/components/responses/x947"
+      },
+      "/v2/navigation1": {
+        "get": "#/components/responses/x1025",
+        "post": "#/components/responses/x1025"
+      },
+      "/v2/navigation2": {
+        "get": "#/components/responses/x1069",
+        "post": "#/components/responses/x1069"
+      },
+      "/v2/navigation3": {
+        "get": "#/components/responses/x1071",
+        "post": "#/components/responses/x1071"
+      },
+      "/v2/randomcatchment": {
+        "get": "#/components/responses/x1153",
+        "post": "#/components/responses/x1153"
+      },
+      "/v2/randomhuc12": {
+        "get": "#/components/responses/x1167",
+        "post": "#/components/responses/x1167"
+      },
+      "/v2/randomnav": {
+        "get": "#/components/responses/x1179",
+        "post": "#/components/responses/x1179"
+      },
+      "/v2/randompoint": {
+        "get": "#/components/responses/x1188",
+        "post": "#/components/responses/x1188"
+      },
+      "/v2/randomppnav": {
+        "get": "#/components/responses/x1195",
+        "post": "#/components/responses/x1195"
+      },
+      "/v2/watershedsp": {
+        "get": "#/components/responses/x1205",
+        "post": "#/components/responses/x1205"
+      },
+      "/v2_5/nhdplus_feature": {
+        "get": null
+      },
+      "/v2_5/nhdplus_json": {
+        "get": null
+      },
+      "/v3/drainageareadelineation": {
+        "get": "#/components/responses/x154",
+        "post": "#/components/responses/x154"
+      },
+      "/v3/pointindexing": {
+        "get": "#/components/responses/x1074",
+        "post": "#/components/responses/x1074"
+      },
+      "/v4/upstreamdownstream": {
+        "get": "#/components/responses/x600",
+        "post": "#/components/responses/x600"
+      }
+    },
+    "server_url": "https://api.epa.gov/waters",
+    "version": "1.0"
+  },
+  "shape_signature": "3e98c113e6af72555a88288f9e1323da76acfa39ec0c9e756dd6893ce5e526e1"
+}
