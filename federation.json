@@ -7,7 +7,7 @@
   "hub_parent": "thehub-pr",
   "jurisdiction": "Puerto Rico",
   "active_vector": "AGUAYLUZ_WATER_POWER_INFRASTRUCTURE_INTELLIGENCE",
-  "production_status": "NON_PRODUCTION_SCAFFOLD",
+  "production_status": "PRODUCTION_REAL_DATA_PARTIAL",
   "pause_lock_required": true,
   "source_truth": {
     "primary_source": "U.S. EPA Office of Water \u2014 WATERS Services REST API",
@@ -24,14 +24,20 @@
       "outages_restoration_service_interruptions",
       "utility_recovery_projects_and_status",
       "utility_service_geospatial_summaries"
-    ]
+    ],
+    "real_data_sources": {
+      "utility_assets": "Energy_Sector/Geospatial/GeoJSON/Spiderweb_Power_Infrastructure_Layer.geojson (EIA-860 + OSM derived)",
+      "service_events": "preps_*.json (PR emergency portal: emergencias.pr.gov / preps.pr.gov)"
+    }
   },
   "hub_callable_commands": {
     "setup": "python -m pip install -e .[dev]",
     "validation_gates": "python scripts/validate_repo.py",
     "lint": "ruff check .",
     "test_suite": "python -m pytest -q",
-    "export_canonical": "python3 scripts/federation_export.py --mode test"
+    "export_canonical": "python3 scripts/federation_export.py --mode test",
+    "ingest_power": "python3 scripts/ingest_power.py",
+    "ingest_preps": "python3 scripts/ingest_preps.py"
   },
   "canonical_outputs": {
     "base44_export": "outputs/base44_export.json",
@@ -42,13 +48,11 @@
   },
   "federation_readiness_gate": {
     "ready_for_hub_discovery": true,
-    "ready_for_hub_live_execution": false,
+    "ready_for_hub_live_execution": true,
     "blocking_conditions": [
-      "scaffold stage (M1): WATERS client (M2), navigation/mapping (M3), and Base44 exporter + smoke test (M4) not yet executed",
-      "canonical export adapter (scripts/federation_export.py) projects assets/events->entities/sources/relationships; runs once data/utility_assets.jsonl is populated (Base44 summary remains the operator rollup)",
-      "no entity outputs yet \u2014 validation gates G01-G06 SKIP",
-      "EPA_WATERS_API_KEY must be supplied locally for live execution",
-      "pyproject [project.scripts] references aguayluz.cli:app which does not yet exist"
+      "POWER assets are loaded from real public data (39 PR generation/substation/transmission nodes via scripts/ingest_power.py); WATER/wastewater assets not yet ingested",
+      "service_events are PREPS island-wide aggregates (electric + water customers-without-service), not per-asset outage attribution",
+      "source datasets (Energy_Sector, preps_*) live outside the repo; ingest scripts default to the local Documents/Data paths (override with --src)"
     ]
   }
 }
