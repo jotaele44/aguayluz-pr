@@ -102,6 +102,17 @@ from, to}`). Same shape for `events_*` and `findings_*`. `summary.headline`
 is the human-readable diff line (e.g. `assets +5/-3/~0`). source_hash and
 confidence changes are deliberately filtered out as noise.
 
+## `municipality_summary` — M21's per-municipality dossier
+
+`schemas/municipality_summary.schema.json`
+
+Per-PR-municipality aggregation of assets, events, reconciliation findings,
+and watershed area, sorted by total asset count descending. Drives the
+federation hub's geographic dashboard and a printable operational brief. The
+`unattributed` bucket carries the counts of records whose municipality
+couldn't be recognized (M8 normalization with NFKD diacritic stripping, so
+`Bayamon` === `BAYAMON` === `bayamón`).
+
 ## `foia_roster` — M20's public-records request targets
 
 `schemas/foia_roster.schema.json`

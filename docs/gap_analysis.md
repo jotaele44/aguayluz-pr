@@ -122,11 +122,11 @@ PRs that change them without committing the update.
 <!-- gap-counts-begin -->
 | Inventory | Count |
 |---|---|
-| `analysis_modules` | 3 |
-| `cli_subcommands` | 14 |
+| `analysis_modules` | 4 |
+| `cli_subcommands` | 15 |
 | `ingest_adapters` | 7 |
-| `schemas` | 14 |
-| `scripts` | 16 |
-| `test_files` | 25 |
+| `schemas` | 15 |
+| `scripts` | 17 |
+| `test_files` | 26 |
 | `waters_endpoints_wrapped` | 6 |
 <!-- gap-counts-end -->

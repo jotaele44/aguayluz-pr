@@ -195,6 +195,20 @@ def diff(
 
 
 @app.command()
+def municipalities(
+    outputs_dir: Path = typer.Option(OUTPUTS_DIR, "--outputs-dir"),
+) -> None:
+    """Aggregate per-municipality dossiers from current outputs/."""
+    _scripts = Path(__file__).resolve().parent.parent.parent / "scripts"
+    if str(_scripts) not in sys.path:
+        sys.path.insert(0, str(_scripts))
+    import generate_municipality_summaries as _ms  # type: ignore[import-not-found]
+
+    argv = ["--outputs-dir", str(outputs_dir)]
+    raise typer.Exit(_ms.main(argv))
+
+
+@app.command()
 def foia(
     outputs_dir: Path = typer.Option(OUTPUTS_DIR, "--outputs-dir"),
     config_dir: Path = typer.Option(None, "--config-dir"),

@@ -125,6 +125,17 @@ aguayluz diff --from <run_id> --to <run_id>           # explicit
 
 **CLI** — `aguayluz emit-handoffs`.
 
+## AYL_MUNICIPALITY_SUMMARIES
+
+**What** — Aggregate per-municipality dossiers (asset counts by type, status
+mix, watershed area, active events, contradictions, top findings) from the
+current entity set. Records whose municipality can't be recognized go to a
+single `unattributed` bucket.
+
+**Outputs** — `outputs/municipality_summaries.json`.
+
+**CLI** — `aguayluz municipalities`.
+
 ## AYL_GENERATE_FOIA_ROSTER
 
 **What** — Convert producer-observed data gaps (review_queue items, missing-
