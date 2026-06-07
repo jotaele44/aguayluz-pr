@@ -50,7 +50,7 @@
     "ready_for_hub_discovery": true,
     "ready_for_hub_live_execution": true,
     "blocking_conditions": [
-      "POWER assets are loaded from real public data (39 PR generation/substation/transmission nodes via scripts/ingest_power.py); WATER/wastewater assets not yet ingested",
+      "POWER assets (39 generation/substation/transmission nodes via scripts/ingest_power.py) and WATER/wastewater assets (234 treatment/wastewater/pumping/reservoir nodes via scripts/ingest_water.py, OSM-derived, review_status=needs_review) are loaded from real public data — 273 utility_assets total",
       "service_events are PREPS island-wide aggregates (electric + water customers-without-service), not per-asset outage attribution",
       "source datasets (Energy_Sector, preps_*) live outside the repo; ingest scripts default to the local Documents/Data paths (override with --src)"
     ]
