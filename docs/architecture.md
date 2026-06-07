@@ -91,7 +91,7 @@ without source manifests, confidence scores, review queues, and sanitization.
   go under `outputs/history/<run_id>/` (gitignored). Diff surfaces
   asset/event/finding deltas with a one-line headline.
 
-## Schemas (13 federation contracts)
+## Schemas (14 federation contracts)
 
 JSON Schema Draft 2020-12, all `additionalProperties: false`. See
 `docs/schemas.md` for one-paragraph-per-schema.
@@ -111,6 +111,7 @@ JSON Schema Draft 2020-12, all `additionalProperties: false`. See
 | `run_diff` | Snapshot delta (M14) |
 | `federation_handoff` | Per-receiver projection (M15) |
 | `hub_packet` | Self-contained signed bundle for thehub-pr (M19) |
+| `foia_roster` | FOIA request targets per data gap (M20) |
 
 ## Vectors (8 production execution modes)
 

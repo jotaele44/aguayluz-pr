@@ -194,6 +194,24 @@ def diff(
     raise typer.Exit(_df.main(argv))
 
 
+@app.command()
+def foia(
+    outputs_dir: Path = typer.Option(OUTPUTS_DIR, "--outputs-dir"),
+    config_dir: Path = typer.Option(None, "--config-dir"),
+    slug: str = typer.Option("roster", "--slug"),
+) -> None:
+    """Generate a FOIA roster from producer-observed data gaps."""
+    _scripts = Path(__file__).resolve().parent.parent.parent / "scripts"
+    if str(_scripts) not in sys.path:
+        sys.path.insert(0, str(_scripts))
+    import generate_foia_roster as _fr  # type: ignore[import-not-found]
+
+    argv = ["--outputs-dir", str(outputs_dir), "--slug", slug]
+    if config_dir:
+        argv += ["--config-dir", str(config_dir)]
+    raise typer.Exit(_fr.main(argv))
+
+
 @app.command("export-hub-packet")
 def export_hub_packet(
     outputs_dir: Path = typer.Option(OUTPUTS_DIR, "--outputs-dir"),

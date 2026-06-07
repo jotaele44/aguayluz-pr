@@ -1,0 +1,46 @@
+# Maps producer-observed data sources to the responsible public-records office.
+# `default_sla_business_days` is informational — drives operator routing urgency,
+# not validated.
+
+agencies:
+  PRASA:
+    full_name: Puerto Rico Aqueduct and Sewer Authority
+    contact_url: https://www.acueductospr.com/public-records
+    contact_email: acceso.records@acueductospr.com
+    default_sla_business_days: 10
+    handles: [water, wastewater]
+
+  AAA:
+    full_name: Autoridad de Acueductos y Alcantarillados
+    contact_url: https://www.acueductospr.com/public-records
+    contact_email: acceso.records@acueductospr.com
+    default_sla_business_days: 10
+    handles: [water, wastewater]
+
+  PREPA:
+    full_name: Puerto Rico Electric Power Authority
+    contact_url: https://www.aeepr.com/es-pr/Paginas/PublicRecords.aspx
+    contact_email: records@aeepr.com
+    default_sla_business_days: 10
+    handles: [power]
+
+  LUMA:
+    full_name: LUMA Energy
+    contact_url: https://lumapr.com/contact/
+    contact_email: foia@lumapr.com
+    default_sla_business_days: 15
+    handles: [power]
+
+  FEMA:
+    full_name: Federal Emergency Management Agency
+    contact_url: https://www.fema.gov/foia
+    contact_email: fema-foia@fema.dhs.gov
+    default_sla_business_days: 20
+    handles: [recovery]
+
+  EPA:
+    full_name: U.S. Environmental Protection Agency
+    contact_url: https://www.epa.gov/foia
+    contact_email: hq.foia@epa.gov
+    default_sla_business_days: 20
+    handles: [water, wastewater, nhdplus_extension]

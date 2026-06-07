@@ -125,6 +125,18 @@ aguayluz diff --from <run_id> --to <run_id>           # explicit
 
 **CLI** — `aguayluz emit-handoffs`.
 
+## AYL_GENERATE_FOIA_ROSTER
+
+**What** — Convert producer-observed data gaps (review_queue items, missing-
+coverage findings, VPU 21 partial-coverage assets) into structured FOIA
+request targets. One target per `(agency, missing_fields)` pair after
+deduplication; agencies and contact info come from
+`config/foia_agencies.yaml`.
+
+**Outputs** — `outputs/foia_roster.json`.
+
+**CLI** — `aguayluz foia`.
+
 ## AYL_EXPORT_HUB_PACKET
 
 **What** — Bundle the Base44 envelope, every per-receiver federation handoff,

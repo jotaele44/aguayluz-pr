@@ -102,6 +102,18 @@ from, to}`). Same shape for `events_*` and `findings_*`. `summary.headline`
 is the human-readable diff line (e.g. `assets +5/-3/~0`). source_hash and
 confidence changes are deliberately filtered out as noise.
 
+## `foia_roster` — M20's public-records request targets
+
+`schemas/foia_roster.schema.json`
+
+Converts producer-observed gaps into structured FOIA request packets. Each
+target maps a gap (`review_queue` item / `missing_coverage` finding / VPU 21
+partial-coverage asset) to an agency (PRASA/AAA/PREPA/LUMA/FEMA/EPA per
+`config/foia_agencies.yaml`), a list of missing fields, a request body the
+operator can submit verbatim, and a queued/drafted/sent/fulfilled/denied
+status. Deduplicates by `(agency, frozenset(missing_fields))` so two assets
+in the same agency missing the same fields merge into one target.
+
 ## `hub_packet` — M19's self-contained bundle for thehub-pr
 
 `schemas/hub_packet.schema.json`

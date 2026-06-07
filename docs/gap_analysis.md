@@ -123,10 +123,10 @@ PRs that change them without committing the update.
 | Inventory | Count |
 |---|---|
 | `analysis_modules` | 3 |
-| `cli_subcommands` | 13 |
+| `cli_subcommands` | 14 |
 | `ingest_adapters` | 7 |
-| `schemas` | 13 |
-| `scripts` | 15 |
-| `test_files` | 24 |
+| `schemas` | 14 |
+| `scripts` | 16 |
+| `test_files` | 25 |
 | `waters_endpoints_wrapped` | 6 |
 <!-- gap-counts-end -->

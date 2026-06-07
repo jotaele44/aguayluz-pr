@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/foia_roster.schema.json",
+  "title": "FOIARoster",
+  "description": "Public-records request roster derived from gaps the producer already surfaces. Each target maps a producer-observed data gap (review-queue item, missing-coverage finding, partial-attribute record) to a specific agency request packet with structured fields the operator can submit verbatim.",
+  "type": "object",
+  "required": ["roster_id", "module_id", "generated_at", "targets"],
+  "additionalProperties": false,
+  "properties": {
+    "module_id":    { "const": "aguayluz-pr" },
+    "roster_id":    { "type": "string", "pattern": "^AYL_FOIA_[0-9]{8}_[A-Za-z0-9_-]+$" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "targets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "target_id",
+          "agency",
+          "missing_fields",
+          "supporting_evidence",
+          "request_body",
+          "status",
+          "confidence"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "target_id":          { "type": "string", "pattern": "^AYL_FOIA_TGT_[A-Za-z0-9_-]+$" },
+          "agency":             { "type": "string", "minLength": 1 },
+          "agency_contact_url": { "type": ["string", "null"] },
+          "agency_contact_email": { "type": ["string", "null"], "format": "email" },
+          "missing_fields": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "minItems": 1
+          },
+          "supporting_evidence": {
+            "type": "object",
+            "required": ["record_ref", "reason"],
+            "additionalProperties": false,
+            "properties": {
+              "record_ref": { "type": "string", "minLength": 1 },
+              "reason":     { "type": "string", "minLength": 1 },
+              "severity":   { "enum": ["info", "warn", "critical"] },
+              "municipality": { "type": ["string", "null"] }
+            }
+          },
+          "request_body": { "type": "string", "minLength": 1 },
+          "status":       { "enum": ["queued", "drafted", "sent", "fulfilled", "denied"] },
+          "confidence":   { "type": "integer", "minimum": 0, "maximum": 100 },
+          "sla_business_days": { "type": ["integer", "null"], "minimum": 0 }
+        }
+      }
+    }
+  }
+}
