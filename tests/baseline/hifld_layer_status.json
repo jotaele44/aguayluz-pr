@@ -1,0 +1,26 @@
+{
+  "_README": "HIFLD per-layer status baseline. Regenerate via `python scripts/check_hifld_status.py --write-baseline` after manually verifying a transition (e.g. a URL came back online). M24's oas-monitor.yml workflow runs --check against this file and notifies Slack on drift.",
+  "layers": {
+    "electric_substations": {
+      "error": "HTTP 400",
+      "feature_count": 0,
+      "observed_at": "2026-06-07T16:42:54Z",
+      "status": "down",
+      "url": "https://services1.arcgis.com/Hp6G80Pky0om7QvQ/ArcGIS/rest/services/Electric_Substations/FeatureServer/0/query"
+    },
+    "public_water_supply_systems": {
+      "error": "HTTP 400",
+      "feature_count": 0,
+      "observed_at": "2026-06-07T16:42:54Z",
+      "status": "down",
+      "url": "https://services1.arcgis.com/Hp6G80Pky0om7QvQ/ArcGIS/rest/services/Public_Water_Supply_Service_Areas/FeatureServer/0/query"
+    },
+    "wastewater_treatment_plants": {
+      "error": "HTTP 400",
+      "feature_count": 0,
+      "observed_at": "2026-06-07T16:42:54Z",
+      "status": "down",
+      "url": "https://services1.arcgis.com/Hp6G80Pky0om7QvQ/ArcGIS/rest/services/Wastewater_Treatment_Plants/FeatureServer/0/query"
+    }
+  }
+}

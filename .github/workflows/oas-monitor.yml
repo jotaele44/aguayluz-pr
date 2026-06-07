@@ -20,6 +20,10 @@ on:
         description: Refresh tests/baseline/classifier_rate.json from live
         required: false
         default: 'false'
+      force_write_hifld:
+        description: Refresh tests/baseline/hifld_layer_status.json from live
+        required: false
+        default: 'false'
   schedule:
     # Daily at 13:00 UTC (09:00 AST), one hour after live-corpus so failures
     # don't pile into the same notification window.
@@ -85,3 +89,33 @@ jobs:
             --title "FRS classifier rate drift" \
             --severity warn \
             --body "Trigger: $TRIGGER. The FRS classifier utility-detect rate moved outside tolerance. Either EPA changed facility naming conventions or our classifier needs updating. Workflow logs show the per-finding diff. Run: $RUN_URL"
+
+  check-hifld:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e .[dev]
+      - name: Probe HIFLD layer URLs
+        id: hifld
+        env:
+          FORCE_WRITE: ${{ inputs.force_write_hifld || 'false' }}
+        run: |
+          if [ "$FORCE_WRITE" = "true" ]; then
+            python scripts/check_hifld_status.py --write-baseline
+          else
+            python scripts/check_hifld_status.py --check
+          fi
+      - name: Notify Slack on HIFLD drift
+        if: failure() && steps.hifld.outcome == 'failure'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          TRIGGER: ${{ github.event_name }}
+        run: |
+          python scripts/notify_drift.py \
+            --title "HIFLD layer status drift" \
+            --severity warn \
+            --body "Trigger: $TRIGGER. One or more HIFLD ArcGIS FeatureServer URLs changed state (live <-> down/service_error, or feature_count moved >25%). A 'came back' transition is good news: run --refresh-snapshot to regenerate the committed fixture. A 'went down' transition means HIFLD moved a layer we depend on. Workflow logs show the per-layer diff. Run: $RUN_URL"

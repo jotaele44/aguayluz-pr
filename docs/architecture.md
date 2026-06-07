@@ -185,6 +185,7 @@ scheduled GitHub Actions workflow + a Slack notification step:
 | Headline counts (M18) | `tests/baseline/live_corpus_summary.json` | `live-corpus.yml` | Daily 12:00 UTC + manual |
 | WATERS OAS shape (M23a) | `tests/baseline/waters_oas_shape.json` | `oas-monitor.yml` → `check-oas-shape` | Daily 13:00 UTC + manual |
 | FRS classifier rate (M23b) | `tests/baseline/classifier_rate.json` | `oas-monitor.yml` → `check-classifier` | Same workflow, separate job |
+| HIFLD layer status (M24) | `tests/baseline/hifld_layer_status.json` | `oas-monitor.yml` → `check-hifld` | Same workflow, separate job |
 
 Detection is automated; **acceptance is operator-driven** — see
 `docs/upstream-changes.md` for the per-finding runbook.

@@ -1,6 +1,6 @@
 # Gap analysis
 
-Refreshed for the M1→M23 build. Sorts every artifact in the repo into
+Refreshed for the M1→M24 build. Sorts every artifact in the repo into
 **Complete** (fully wired, tested, exercised), **Partial** (wired and
 tested but not yet exercised in a production path), **Stub** (shape is
 right, logic is heuristic or incomplete), **Missing** (declared in the
@@ -14,9 +14,9 @@ PRs that change them without regenerating the doc (`tests/test_gap_audit.py`).
 Fully wired, has tests, exercised end-to-end in the demo chain
 (`README.md` quickstart).
 
-- **All 13 schemas** validate at G01 (`src/aguayluz/validation.py` →
+- **All 15 schemas** validate at G01 (`src/aguayluz/validation.py` →
   `_ENTITY_SCHEMAS`). The `additionalProperties: false` rule mechanically
-  catches drift. `hub_packet.json` (M19) is the latest addition.
+  catches drift.
 - **WATERS layer** — `client.py` with 429 retry, env-var fallback, header/
   query auth modes (19 mocked tests). `mapping.py` with VPU 21 partial-
   coverage rule. `navigation.py` with the WATERS-primary trace path.
@@ -46,18 +46,25 @@ Fully wired, has tests, exercised end-to-end in the demo chain
 - **Live-corpus baseline** (M22) — `tests/baseline/live_corpus_summary.json`
   committed from a real 5-city / 50-FEMA-record run: 29 assets, 50
   events, 50 contradictions, all 8 gates PASS.
-- **Automated drift detection** (M23):
+- **Automated drift detection** (M23+M24):
   - Daily live-corpus cron (`live-corpus.yml` 12:00 UTC) + Slack notifier
   - Daily WATERS OAS shape monitor (`oas-monitor.yml` 13:00 UTC) with
     21 paths × method × response-ref signature pinned at
     `tests/baseline/waters_oas_shape.json`
   - Daily FRS classifier audit (same workflow) with reference at
     `tests/baseline/classifier_rate.json` (live: BAYAMON 8/648 = 1.23%)
+  - Daily HIFLD layer-status monitor (M24, same workflow) with per-layer
+    status pinned at `tests/baseline/hifld_layer_status.json`
+    (3 layers currently down — drift fires `came_back` info when EPA
+    republishes; `went_down` critical if a working URL retires)
+  - `--refresh-snapshot LAYER PATH` regenerates the committed fixture
+    when a HIFLD URL is live, closing the M23 "live HIFLD URL refresh"
+    follow-up
   - `docs/upstream-changes.md` runbook for the operator-driven
-    acceptance path
+    acceptance path (now covers all 4 drift signals)
 - **8 federation gates** (G01–G08) PASS on the demo chain.
 - **CLI** — `aguayluz` Typer entry point with 15 subcommands.
-- **332 tests pass** with 4 live-mode skips (no API keys in CI).
+- **354 tests pass** with 4 live-mode skips (no API keys in CI).
 - **CI workflow** — ruff + pytest + validate_repo on every push;
   scheduled live-corpus + oas-monitor crons for drift detection.
 - **Architecture docs** with drift guard (`tests/test_docs.py`).
@@ -99,8 +106,11 @@ placeholder-grade.
   ~60% utility-detect rate seen in the live Bayamón pull.
 - **HIFLD client fallback URLs** — `LAYER_URLS` in `hifld_client.py` were
   drafted from memory; the live `services1.arcgis.com` endpoints intermittently
-  404 (this drove the fallback design). Confirming current URLs against
-  the HIFLD hub would let live mode work without committed snapshots.
+  404 (this drove the fallback design). M24 added daily monitoring of the
+  URLs so the moment one comes back the operator gets a Slack ping with a
+  ready-to-run `--refresh-snapshot` command. Confirming current URLs via
+  the HIFLD hub remains a discovery task; the monitoring infrastructure is
+  now in place to capture the result.
 - **No notification confirmation loop** — the M23 Slack notifier posts on
   drift but there's no way to acknowledge ("Yes, I saw this; tracking it
   in PR #N"). For now, operator workflow is: see Slack ping → check the
@@ -146,7 +156,7 @@ PRs that change them without committing the update.
 | `cli_subcommands` | 15 |
 | `ingest_adapters` | 7 |
 | `schemas` | 15 |
-| `scripts` | 20 |
-| `test_files` | 29 |
+| `scripts` | 21 |
+| `test_files` | 30 |
 | `waters_endpoints_wrapped` | 6 |
 <!-- gap-counts-end -->

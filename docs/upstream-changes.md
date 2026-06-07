@@ -11,6 +11,7 @@ this runbook, each with its own committed baseline + acceptance command.
 | `live-corpus` workflow fails (`--baseline-check`) | `.github/workflows/live-corpus.yml` (daily 12:00 UTC) | Headline asset/event/watershed counts moved >10%, OR a federation gate flipped to FAIL, OR the live ingest itself crashed | critical |
 | `oas-monitor / check-oas-shape` fails | `.github/workflows/oas-monitor.yml` (daily 13:00 UTC) | EPA changed the WATERS OpenAPI surface (new path, removed path, response ref shifted) | critical |
 | `oas-monitor / check-classifier` fails | Same workflow, separate job | FRS classifier utility-detect rate moved outside tolerance, OR facility-total swung >25% — EPA likely changed naming/coverage | warn |
+| `oas-monitor / check-hifld` fails | Same workflow, separate job | A HIFLD layer URL changed state (live ↔ down/service_error) OR feature_count moved >25% | warn |
 | `G01_SCHEMA` gate fails on any push | `validate.yml` (every push) | An entity output ended up with an unexpected field — adapter regressed | critical |
 
 Slack notifications post to `$SLACK_WEBHOOK_URL` if the repo secret is set;
@@ -127,6 +128,63 @@ git add src/aguayluz/ingest/frs.py tests/test_ingest_frs.py tests/baseline/class
 git commit -m "ops: extend FRS classifier — <list of new keywords>"
 ```
 
+### HIFLD layer status drift (`oas-monitor / check-hifld` failed)
+
+The workflow log lists transitions per layer:
+```
+hifld status drift:
+  - [info] electric_substations: layer came back online: down → live (62 features). Consider running --refresh-snapshot electric_substations <fixture-path>.
+  - [critical] wastewater_treatment_plants: layer went down: live → service_error
+```
+
+Three transition kinds, each with a distinct response:
+
+**`came_back` (info)** — a previously-flaky URL is responding now. This is the
+positive path: regenerate the committed fixture from real data.
+
+```bash
+# 1. Refresh the committed fixture from live HIFLD.
+python scripts/check_hifld_status.py --refresh-snapshot \
+    electric_substations tests/fixtures/hifld/pr_substations_sample.geojson
+
+# 2. Accept the new status in the baseline.
+python scripts/check_hifld_status.py --write-baseline
+
+# 3. Commit
+git add tests/fixtures/hifld/pr_substations_sample.geojson \
+        tests/baseline/hifld_layer_status.json
+git commit -m "ops: refresh HIFLD electric_substations fixture — URL is live again"
+```
+
+**`went_down` (critical)** — HIFLD moved a layer we depend on. The M11
+fallback to the committed fixture keeps the producer running, but the
+fixture will go stale. Either find the new URL or accept the stale-fixture
+status:
+
+```bash
+# Option A: find the new URL via the HIFLD hub, patch hifld_client.LAYER_URLS,
+#          then --write-baseline. PR includes both the URL change and the
+#          fresh baseline.
+# Option B: accept that the layer is down. --write-baseline locks in the
+#          new status; the producer falls back to the (now-aging) fixture.
+python scripts/check_hifld_status.py --write-baseline
+git add src/aguayluz/ingest/hifld_client.py tests/baseline/hifld_layer_status.json
+git commit -m "ops: HIFLD electric_substations URL retired — switch to <new>"
+```
+
+**`count_drift` (warn)** — same URL, but the PR feature count moved >25%.
+HIFLD added/removed records. Refresh the fixture if the count is reasonable
+or investigate if it dropped to zero:
+
+```bash
+python scripts/check_hifld_status.py --refresh-snapshot \
+    electric_substations tests/fixtures/hifld/pr_substations_sample.geojson
+python scripts/check_hifld_status.py --write-baseline
+git add tests/fixtures/hifld/pr_substations_sample.geojson \
+        tests/baseline/hifld_layer_status.json
+git commit -m "ops: refresh HIFLD electric_substations fixture — count moved <X%>"
+```
+
 ### G01 schema drift (validate.yml failed on push)
 
 This is the "EPA added a field we don't know about" path. `additionalProperties:
@@ -155,6 +213,7 @@ the gate.
 | `tests/baseline/live_corpus_summary.json` | M18 headline counts for the 5-city live run | `python scripts/run_full_chain.py --live --use-waters --baseline-write` |
 | `tests/baseline/waters_oas_shape.json` | M23 EPA WATERS OpenAPI path × method × response-ref | `python scripts/check_oas_shape.py --write-snapshot` |
 | `tests/baseline/classifier_rate.json` | M23 FRS classifier utility-detect rate (BAYAMON) | `python scripts/audit_classifier.py --write-reference` |
+| `tests/baseline/hifld_layer_status.json` | M24 HIFLD per-layer live/down status + feature_count | `python scripts/check_hifld_status.py --write-baseline` |
 | `docs/gap_analysis.md` (inventory counts) | M17 file/test counts | `python scripts/gap_audit.py` |
 
 Every refresh is "operator runs the command + commits the file + opens a
