@@ -106,6 +106,11 @@ def main(argv: list[str] | None = None) -> int:
                    help="Heuristic edges only (no WATERS calls); this is the default.")
     p.add_argument("--use-waters", action="store_true",
                    help="Also emit downstream_of edges via WATERS /v4/upstreamdownstream.")
+    p.add_argument("--max-traces", type=int, default=5,
+                   help="Cap WATERS /v4/upstreamdownstream calls (default 5) so a single "
+                        "build doesn't exhaust the 1000/hr free-tier budget.")
+    p.add_argument("--distance-km", type=int, default=10,
+                   help="Network distance for WATERS downstream traces.")
     args = p.parse_args(argv)
 
     assets = _load(args.outputs_dir / "utility_assets.json", [])
@@ -121,14 +126,25 @@ def main(argv: list[str] | None = None) -> int:
         from aguayluz.waters.navigation import trace_downstream
 
         client = WatersClient()
+        traces_used = 0
+        max_traces = args.max_traces
 
         def nav_fn(comid: int, distance_km: int) -> list[dict[str, Any]]:
+            nonlocal traces_used
+            if traces_used >= max_traces:
+                # Hit the cap — return empty so the analyzer treats it as
+                # "no downstream" rather than crashing the run.
+                return []
+            traces_used += 1
             return [
                 {"comid": fl.comid, "reachcode": fl.reachcode, "gnis_name": fl.gnis_name}
                 for fl in trace_downstream(client, comid=comid, distance_km=float(distance_km))
             ]
 
-    nodes, edges = build_dependency_graph(assets=assets, events=events, nav_fn=nav_fn)
+    nodes, edges = build_dependency_graph(
+        assets=assets, events=events,
+        nav_fn=nav_fn, nav_distance_km=args.distance_km,
+    )
 
     run_id = _make_run_id("graph")
     now_iso = _now_iso()

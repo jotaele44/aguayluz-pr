@@ -214,3 +214,25 @@ def test_graph_node_basic_fields():
     n = GraphNode(id="X", kind="asset", label="Asset X")
     assert n.id == "X"
     assert n.municipality is None
+
+
+# ---------- nav_distance_km propagation ----------
+
+
+def test_nav_distance_km_threaded_to_nav_fn():
+    """The build_dependency_graph caller can pick the distance; the analyzer
+    forwards it verbatim to nav_fn for each asset."""
+    captured: list[tuple[int, int]] = []
+
+    def spying_nav(comid: int, distance_km: int) -> list[dict]:
+        captured.append((comid, distance_km))
+        return []
+
+    build_dependency_graph(
+        assets=[_asset("AYL_AST_A", comid=21000100), _asset("AYL_AST_B", comid=21000101)],
+        events=[],
+        nav_fn=spying_nav,
+        nav_distance_km=7,
+    )
+    assert all(d == 7 for _, d in captured)
+    assert {c for c, _ in captured} == {21000100, 21000101}
