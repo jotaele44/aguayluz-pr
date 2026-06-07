@@ -2,74 +2,67 @@
 
 Puerto Rico public water, wastewater, power, grid, outage, and recovery-project
 intelligence producer for the Federation control plane (Base44 / INTSYS-PR /
-thehub-pr). Maps PRASA / AAA / LUMA / Genera public records to EPA NHDPlus V2.1
-reaches via the U.S. EPA Office of Water [WATERS Services REST API][waters].
+thehub-pr). Ingests EPA FRS, FEMA OpenFEMA, and HIFLD; snaps every record to
+NHDPlus V2.1 via the EPA WATERS API; emits a sanitized Base44 envelope plus
+per-receiver federation handoff payloads.
 
 > AguaYLuz does not allege wrongdoing. It maps systems, dependencies, service
 > gaps, project status, and evidence-backed infrastructure relationships.
 
-**Status:** scaffold (M1) — schemas + validation gates + tests. WATERS HTTP
-client lands in M2, navigation/mapping in M3, Base44 exporter + smoke test in
-M4. See [skill spec](./AGUAYLUZ_PR_SKILL.md) (delivered out-of-band) and the
-build plan at `~/.claude/plans/u-s-epa-office-of-pure-newell.md`.
-
-## Install
+## Install + run
 
 ```
 python -m pip install -e .[dev]
+python scripts/validate_repo.py
+pytest -q
 ```
 
 Python 3.10+ required (works on iOS a-Shell).
 
-## Run the validation gates
+## Try a full run (demo mode, no API key needed)
 
 ```
-python scripts/validate_repo.py
+aguayluz ingest-frs --input tests/fixtures/frs/pr_bayamon_npdes.json --demo-mode
+aguayluz ingest-fema --input tests/fixtures/fema/pr_public_assistance_sample.json
+aguayluz build-graph --demo-mode
+aguayluz reconcile
+aguayluz delineate --demo-mode
+aguayluz emit-handoffs
+aguayluz snapshot --slug demo-run
+aguayluz validate-repo
 ```
 
-Eight gates (G01-G08) per the skill spec. Exits non-zero on any blocking failure.
+After the run, `outputs/base44_export.json` is the federation envelope and
+`outputs/handoff_*.json` are the per-receiver payloads.
 
-## Run tests
+## Live mode
 
-```
-pytest -q
-```
-
-## EPA WATERS API key
-
-Get a free key at [api.data.gov/signup][signup] (one key works across all
-api.data.gov-fronted services). Then:
+EPA WATERS needs a free api.data.gov key:
 
 ```
-export EPA_WATERS_API_KEY=<your-key>
+export EPA_WATERS_API_KEY=<your-key>     # https://api.data.gov/signup/
+aguayluz ingest-frs --live --state PR --city BAYAMON --demo-mode
+aguayluz ingest-fema --live --state PR --damage-codes D,F --max-records 50
+aguayluz delineate --max-calls 10
 ```
 
-The client falls back to `API_DATA_GOV_KEY` if `EPA_WATERS_API_KEY` is not set.
-Free tier is 1,000 requests/hour (rolling).
+FRS, FEMA, and HIFLD don't need a key.
 
 ## Puerto Rico caveat — NHDPlus V2.1 VPU 21
 
-PR is covered as VPU 21, but the `VogelExtension`, `VPUAttributeExtension`, and
-`VPUAttributeExtensionNLCD` datasets are **not available** for VPU 21. Records
-sourced from PR are stamped `attribute_coverage: "partial"` rather than
-silently filled (skill spec rule 8 — no silent substitution).
+PR is covered as VPU 21, but `VogelExtension`, `VPUAttributeExtension`, and
+`VPUAttributeExtensionNLCD` are **not available** for VPU 21. Records sourced
+from PR are stamped `attribute_coverage: "partial"` rather than silently
+filled (skill spec rule 8 — no silent substitution).
 
-## Repo layout
+## Docs
 
-```
-schemas/         JSON Schema (Draft 2020-12) for utility_asset, service_event,
-                 aguayluz_bridge_summary, base44_export, source_manifest,
-                 review_queue, integration_report.
-src/aguayluz/    Pydantic models, validation gates, confidence scorer,
-                 (M2+) waters/ HTTP client and pynhd navigation.
-scripts/         CLI entry points runnable from a-Shell.
-config/          module.yaml, federation_manifest.yaml, validation_gates.yaml.
-tests/           pytest suite (schemas, validation, fixtures).
-```
+- [`docs/architecture.md`](./docs/architecture.md) — 4 layers, 12 schemas, 8 vectors, entity flow.
+- [`docs/vectors.md`](./docs/vectors.md) — input/output per execution vector + CLI usage.
+- [`docs/schemas.md`](./docs/schemas.md) — one paragraph per JSON Schema.
+- [`docs/contributing.md`](./docs/contributing.md) — how to add an adapter / analyzer / schema.
+- [`AGUAYLUZ_PR_SKILL.md`](./AGUAYLUZ_PR_SKILL.md) — the federation contract this module satisfies.
 
 ## License
 
 MIT — see [LICENSE](./LICENSE).
-
-[waters]: https://watersgeo.epa.gov/openapi/waters/
-[signup]: https://api.data.gov/signup/
