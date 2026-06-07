@@ -30,6 +30,7 @@ from aguayluz import OUTPUTS_DIR  # noqa: E402
 from aguayluz.exporters import build_base44_envelope  # noqa: E402
 from aguayluz.ingest import ingest_event_seeds  # noqa: E402
 from aguayluz.ingest.fema import parse_fema_response  # noqa: E402
+from aguayluz.ingest.fema_client import fetch_all_pa_records  # noqa: E402
 from aguayluz.models import validate_against_schema  # noqa: E402
 from aguayluz.validation import run_gates  # noqa: E402
 
@@ -53,6 +54,23 @@ def _load_seeds(source: str, path: Path):  # type: ignore[no-untyped-def]
     if source == "fema":
         return parse_fema_response(raw)
     raise SystemExit(f"unknown --source: {source!r} (supported: fema)")
+
+
+def _live_seeds(
+    source: str,
+    *,
+    state: str,
+    damage_codes: list[str] | None,
+    max_records: int,
+):  # type: ignore[no-untyped-def]
+    if source != "fema":
+        raise SystemExit(f"--live not supported for --source {source!r}")
+    envelope = fetch_all_pa_records(
+        state_abbr=state,
+        damage_codes=damage_codes,
+        max_records=max_records,
+    )
+    return parse_fema_response(envelope)
 
 
 def _load_existing(path: Path, default):  # type: ignore[no-untyped-def]
@@ -179,13 +197,32 @@ def _write_outputs(
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Ingest PR service events from public sources")
-    p.add_argument("--input", type=Path, required=True)
+    p.add_argument("--input", type=Path, default=None,
+                   help="Path to a fixture JSON (omit when using --live).")
     p.add_argument("--source", default="fema", choices=["fema"])
+    p.add_argument("--live", action="store_true",
+                   help="Fetch records live from the source API instead of reading --input.")
+    p.add_argument("--state", default="PR")
+    p.add_argument("--damage-codes", default="D,F",
+                   help="Comma-separated FEMA damage codes (D=Water Control, F=Utilities).")
+    p.add_argument("--max-records", type=int, default=200,
+                   help="Cap for --live mode pagination.")
     p.add_argument("--outputs-dir", type=Path, default=OUTPUTS_DIR)
     p.add_argument("--vector", default=DEFAULT_VECTOR)
     args = p.parse_args(argv)
 
-    seeds = _load_seeds(args.source, args.input)
+    if args.live:
+        damage_codes = [c.strip().upper() for c in args.damage_codes.split(",") if c.strip()]
+        seeds = _live_seeds(
+            args.source,
+            state=args.state,
+            damage_codes=damage_codes or None,
+            max_records=args.max_records,
+        )
+    else:
+        if args.input is None:
+            raise SystemExit("--input required unless --live is set")
+        seeds = _load_seeds(args.source, args.input)
     if not seeds:
         print(f"ingest_events: no seeds found in {args.input}", file=sys.stderr)
         return 1

@@ -31,6 +31,7 @@ from aguayluz import OUTPUTS_DIR  # noqa: E402
 from aguayluz.exporters import build_base44_envelope  # noqa: E402
 from aguayluz.ingest import ingest_seeds  # noqa: E402
 from aguayluz.ingest.frs import parse_frs_response  # noqa: E402
+from aguayluz.ingest.frs_client import fetch_all_pr_facilities, fetch_facilities  # noqa: E402
 from aguayluz.models import validate_against_schema  # noqa: E402
 from aguayluz.validation import run_gates  # noqa: E402
 from aguayluz.waters import WatersClient  # noqa: E402
@@ -60,6 +61,31 @@ def _load_seeds(source: str, path: Path):  # type: ignore[no-untyped-def]
     if source == "frs":
         return parse_frs_response(raw)
     raise SystemExit(f"unknown --source: {source!r} (supported: frs)")
+
+
+def _live_seeds(
+    source: str,
+    *,
+    state: str,
+    city: str | None,
+    county: str | None,
+    cities: list[str] | None,
+    counties: list[str] | None,
+):  # type: ignore[no-untyped-def]
+    """Fetch live records from the source API and parse into seeds."""
+    if source != "frs":
+        raise SystemExit(f"--live not supported for --source {source!r}")
+    if cities or counties:
+        raw_records = fetch_all_pr_facilities(cities=cities or [], counties=counties or [])
+        # Wrap to look like a parse_frs_response envelope.
+        envelope = {"Results": {"FRSFacility": raw_records}}
+    elif city or county:
+        envelope = fetch_facilities(state_abbr=state, city_name=city, county_name=county)
+    else:
+        raise SystemExit(
+            "--live requires at least one of --city, --county, --cities, --counties"
+        )
+    return parse_frs_response(envelope)
 
 
 def _write_outputs(
@@ -174,15 +200,41 @@ def _write_outputs(
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Ingest PR utility facilities via WATERS")
-    p.add_argument("--input", type=Path, required=True)
+    p.add_argument("--input", type=Path, default=None,
+                   help="Path to a fixture JSON (omit when using --live).")
     p.add_argument("--source", default="frs", choices=["frs"])
+    p.add_argument("--live", action="store_true",
+                   help="Fetch records live from the source API instead of reading --input.")
+    p.add_argument("--state", default="PR", help="State abbreviation for --live mode.")
+    p.add_argument("--city", default=None,
+                   help="Single city name for --live mode (case-sensitive at FRS).")
+    p.add_argument("--county", default=None,
+                   help="Single county name for --live mode.")
+    p.add_argument("--cities", default=None,
+                   help="Comma-separated city names for --live mode (parallel pulls, deduped).")
+    p.add_argument("--counties", default=None,
+                   help="Comma-separated county names for --live mode.")
     p.add_argument("--demo-mode", action="store_true",
                    help="Use the recorded WATERS fixture for every seed (no API key needed)")
     p.add_argument("--outputs-dir", type=Path, default=OUTPUTS_DIR)
     p.add_argument("--vector", default=DEFAULT_VECTOR)
     args = p.parse_args(argv)
 
-    seeds = _load_seeds(args.source, args.input)
+    if args.live:
+        cities = [c.strip() for c in args.cities.split(",")] if args.cities else None
+        counties = [c.strip() for c in args.counties.split(",")] if args.counties else None
+        seeds = _live_seeds(
+            args.source,
+            state=args.state,
+            city=args.city,
+            county=args.county,
+            cities=cities,
+            counties=counties,
+        )
+    else:
+        if args.input is None:
+            raise SystemExit("--input required unless --live is set")
+        seeds = _load_seeds(args.source, args.input)
     if not seeds:
         print(f"ingest_facilities: no seeds found in {args.input}", file=sys.stderr)
         return 1
