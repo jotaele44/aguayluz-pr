@@ -254,3 +254,7 @@ tile_cache/
 
 # generated canonical export (scripts/federation_export.py)
 exports/federation/
+
+# Real-data reference inputs materialized from public sources by scripts/ingest_*.py
+!data/utility_assets.jsonl
+!data/service_events.jsonl
