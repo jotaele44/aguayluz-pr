@@ -57,10 +57,11 @@ filled (skill spec rule 8 — no silent substitution).
 
 ## Docs
 
-- [`docs/architecture.md`](./docs/architecture.md) — 4 layers, 12 schemas, 8 vectors, entity flow.
+- [`docs/architecture.md`](./docs/architecture.md) — layers, schemas, vectors, entity flow.
 - [`docs/vectors.md`](./docs/vectors.md) — input/output per execution vector + CLI usage.
 - [`docs/schemas.md`](./docs/schemas.md) — one paragraph per JSON Schema.
 - [`docs/contributing.md`](./docs/contributing.md) — how to add an adapter / analyzer / schema.
+- [`docs/upstream-changes.md`](./docs/upstream-changes.md) — drift detection + acceptance runbook.
 - [`AGUAYLUZ_PR_SKILL.md`](./AGUAYLUZ_PR_SKILL.md) — the federation contract this module satisfies.
 
 ## License

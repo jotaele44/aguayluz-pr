@@ -1,0 +1,14 @@
+{
+  "_README": "FRS classifier baseline. Regenerate via `python scripts/audit_classifier.py --write-reference` after manually verifying a classifier change was intentional. M23's oas-monitor.yml workflow runs --check against this file and notifies Slack on drift.",
+  "minimum_utility_pct": 0.5,
+  "reference_city": "BAYAMON",
+  "reference_run": {
+    "observed_at": "2026-06-07T13:42:33Z",
+    "total": 648,
+    "utility": 8,
+    "utility_pct": 1.23,
+    "with_coords": 5
+  },
+  "reference_state": "PR",
+  "tolerance_pct_points": 0.5
+}

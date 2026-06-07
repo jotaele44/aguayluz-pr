@@ -1,6 +1,6 @@
 # Gap analysis
 
-Refreshed for the M1→M19 build. Sorts every artifact in the repo into
+Refreshed for the M1→M23 build. Sorts every artifact in the repo into
 **Complete** (fully wired, tested, exercised), **Partial** (wired and
 tested but not yet exercised in a production path), **Stub** (shape is
 right, logic is heuristic or incomplete), **Missing** (declared in the
@@ -39,11 +39,27 @@ Fully wired, has tests, exercised end-to-end in the demo chain
   the committed corpus.
 - **Contradictions preservation** (M18 bug fix) — `load_contradictions_
   from_report` keeps M8 findings on the envelope across M13/M15 rebuilds.
+- **Live data resilience** (M22) — FRS client repairs malformed JSON
+  escapes (PONCE `\S`, CAGUAS `\B`, MAYAGUEZ literal TAB), tolerates
+  per-city failures without sinking the baseline, normalizes
+  `SAN_JUAN` → `SAN JUAN` at the edge.
+- **Live-corpus baseline** (M22) — `tests/baseline/live_corpus_summary.json`
+  committed from a real 5-city / 50-FEMA-record run: 29 assets, 50
+  events, 50 contradictions, all 8 gates PASS.
+- **Automated drift detection** (M23):
+  - Daily live-corpus cron (`live-corpus.yml` 12:00 UTC) + Slack notifier
+  - Daily WATERS OAS shape monitor (`oas-monitor.yml` 13:00 UTC) with
+    21 paths × method × response-ref signature pinned at
+    `tests/baseline/waters_oas_shape.json`
+  - Daily FRS classifier audit (same workflow) with reference at
+    `tests/baseline/classifier_rate.json` (live: BAYAMON 8/648 = 1.23%)
+  - `docs/upstream-changes.md` runbook for the operator-driven
+    acceptance path
 - **8 federation gates** (G01–G08) PASS on the demo chain.
-- **CLI** — `aguayluz` Typer entry point with 13 subcommands.
-- **249 tests pass** with 4 live-mode skips (no API keys in CI).
-- **CI workflow** — ruff + pytest + validate_repo on every push, plus a
-  manual `workflow_dispatch` live-corpus job behind a repo secret.
+- **CLI** — `aguayluz` Typer entry point with 15 subcommands.
+- **332 tests pass** with 4 live-mode skips (no API keys in CI).
+- **CI workflow** — ruff + pytest + validate_repo on every push;
+  scheduled live-corpus + oas-monitor crons for drift detection.
 - **Architecture docs** with drift guard (`tests/test_docs.py`).
 
 ## Partial
@@ -85,6 +101,10 @@ placeholder-grade.
   drafted from memory; the live `services1.arcgis.com` endpoints intermittently
   404 (this drove the fallback design). Confirming current URLs against
   the HIFLD hub would let live mode work without committed snapshots.
+- **No notification confirmation loop** — the M23 Slack notifier posts on
+  drift but there's no way to acknowledge ("Yes, I saw this; tracking it
+  in PR #N"). For now, operator workflow is: see Slack ping → check the
+  CI run → open PR per the runbook. Acknowledgement bot is a future M24+.
 
 ## Missing
 
@@ -126,7 +146,7 @@ PRs that change them without committing the update.
 | `cli_subcommands` | 15 |
 | `ingest_adapters` | 7 |
 | `schemas` | 15 |
-| `scripts` | 17 |
-| `test_files` | 26 |
+| `scripts` | 20 |
+| `test_files` | 29 |
 | `waters_endpoints_wrapped` | 6 |
 <!-- gap-counts-end -->

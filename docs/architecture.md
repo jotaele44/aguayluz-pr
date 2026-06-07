@@ -174,9 +174,25 @@ flowchart LR
     base44 & handoffs --> hub[Base44 / thehub-pr]
 ```
 
+## Drift detection (M22+M23)
+
+Three independent monitors watch the live producer for upstream change.
+Each ships a committed baseline file + a `--check` mode wired into a
+scheduled GitHub Actions workflow + a Slack notification step:
+
+| Monitor | Baseline | Workflow | Frequency |
+|---|---|---|---|
+| Headline counts (M18) | `tests/baseline/live_corpus_summary.json` | `live-corpus.yml` | Daily 12:00 UTC + manual |
+| WATERS OAS shape (M23a) | `tests/baseline/waters_oas_shape.json` | `oas-monitor.yml` → `check-oas-shape` | Daily 13:00 UTC + manual |
+| FRS classifier rate (M23b) | `tests/baseline/classifier_rate.json` | `oas-monitor.yml` → `check-classifier` | Same workflow, separate job |
+
+Detection is automated; **acceptance is operator-driven** — see
+`docs/upstream-changes.md` for the per-finding runbook.
+
 ## See also
 
 - `docs/vectors.md` — input/output per execution vector
 - `docs/schemas.md` — one paragraph per JSON Schema
 - `docs/contributing.md` — how to add an adapter / analyzer / schema
+- `docs/upstream-changes.md` — drift detection + acceptance runbook
 - `AGUAYLUZ_PR_SKILL.md` — the federation contract this module satisfies
