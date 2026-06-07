@@ -81,6 +81,7 @@ _ENTITY_SCHEMAS = {
     "reconciliation_report.json": "reconciliation_report",
     "watershed_delineation.json": "watershed_delineation",
     "run_diff.json": "run_diff",
+    "hub_packet.json": "hub_packet",
     # Federation handoff files are written one per linked module
     # (handoff_moneysweep-pr.json, handoff_spiderweb-pr.json, ...).
     # The validation gate runner picks them up by prefix below.

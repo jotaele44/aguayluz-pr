@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/hub_packet.schema.json",
+  "title": "HubPacket",
+  "description": "Self-contained inline bundle for thehub-pr ingestion. Inlines the Base44 envelope, every per-receiver federation handoff, and the entity records that drive federation decisions. A SHA-256 signature over a canonical (sorted-keys) serialization of `envelope+handoffs+entities` lets the receiver verify integrity without contacting the producer.",
+  "type": "object",
+  "required": [
+    "packet_version",
+    "module_id",
+    "run_id",
+    "generated_at",
+    "signature_sha256",
+    "envelope",
+    "handoffs",
+    "entities"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "packet_version": { "const": "1.0" },
+    "module_id":      { "const": "aguayluz-pr" },
+    "run_id":         { "type": "string", "pattern": "^[0-9]{8}T[0-9]{6}Z_[A-Za-z0-9_-]+$" },
+    "generated_at":   { "type": "string", "format": "date-time" },
+    "signature_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "envelope": {
+      "type": "object",
+      "description": "Inlined Base44Export — receivers can validate this independently against base44_export.schema.json.",
+      "additionalProperties": true
+    },
+    "handoffs": {
+      "type": "array",
+      "description": "Inlined per-receiver FederationHandoff payloads — one entry per `linked_modules` entry in the producer's federation_manifest.yaml.",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "entities": {
+      "type": "object",
+      "required": ["utility_assets", "service_events", "bridge_summary", "reconciliation_summary"],
+      "additionalProperties": false,
+      "properties": {
+        "utility_assets":          { "type": "array", "items": { "type": "object" } },
+        "service_events":          { "type": "array", "items": { "type": "object" } },
+        "bridge_summary":          { "type": ["object", "null"] },
+        "reconciliation_summary":  {
+          "type": "object",
+          "required": ["consistent_count", "status_mismatches", "missing_coverage", "stale_assets"],
+          "additionalProperties": false,
+          "properties": {
+            "consistent_count":  { "type": "integer", "minimum": 0 },
+            "status_mismatches": { "type": "integer", "minimum": 0 },
+            "missing_coverage":  { "type": "integer", "minimum": 0 },
+            "stale_assets":      { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    }
+  }
+}

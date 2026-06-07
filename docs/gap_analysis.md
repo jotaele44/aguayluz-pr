@@ -1,7 +1,7 @@
 # Gap analysis
 
-Final review pass for the M1→M16 build. Sorts every artifact in the repo
-into **Complete** (fully wired, tested, exercised), **Partial** (wired and
+Refreshed for the M1→M19 build. Sorts every artifact in the repo into
+**Complete** (fully wired, tested, exercised), **Partial** (wired and
 tested but not yet exercised in a production path), **Stub** (shape is
 right, logic is heuristic or incomplete), **Missing** (declared in the
 spec but not implemented), and **Dead** (exists, but no path reaches it).
@@ -14,9 +14,9 @@ PRs that change them without regenerating the doc (`tests/test_gap_audit.py`).
 Fully wired, has tests, exercised end-to-end in the demo chain
 (`README.md` quickstart).
 
-- **All 12 schemas** validate at G01 (`src/aguayluz/validation.py` →
+- **All 13 schemas** validate at G01 (`src/aguayluz/validation.py` →
   `_ENTITY_SCHEMAS`). The `additionalProperties: false` rule mechanically
-  catches drift.
+  catches drift. `hub_packet.json` (M19) is the latest addition.
 - **WATERS layer** — `client.py` with 429 retry, env-var fallback, header/
   query auth modes (19 mocked tests). `mapping.py` with VPU 21 partial-
   coverage rule. `navigation.py` with the WATERS-primary trace path.
@@ -27,12 +27,23 @@ Fully wired, has tests, exercised end-to-end in the demo chain
   (4 finding kinds), watershed delineation (per-asset upstream area).
 - **Federation handoff** — 5 per-receiver projections; G01 catches
   `handoff_*.json` files by prefix-match.
+- **Hub packet** (M19) — `outputs/hub_packet.json` bundles envelope +
+  handoffs + entities + deterministic SHA-256 signature; receivers can
+  cache by signature and detect tamper via
+  `aguayluz.hub_packet.verify_packet_signature()`.
 - **History + diff** — snapshot/diff between runs; surfaces deltas as
   `RunDiff`.
+- **Full-chain runner** (M18) — `scripts/run_full_chain.py` orchestrates
+  M5→M15 in one command; demo mode is a regression check, `--live` hits
+  the real EPA APIs, `--baseline-write`/`--baseline-check` compare against
+  the committed corpus.
+- **Contradictions preservation** (M18 bug fix) — `load_contradictions_
+  from_report` keeps M8 findings on the envelope across M13/M15 rebuilds.
 - **8 federation gates** (G01–G08) PASS on the demo chain.
-- **CLI** — `aguayluz` Typer entry point with 11 subcommands.
-- **229 tests pass** with 4 live-mode skips (no API keys in CI).
-- **CI workflow** — ruff + pytest + validate_repo on every push.
+- **CLI** — `aguayluz` Typer entry point with 13 subcommands.
+- **249 tests pass** with 4 live-mode skips (no API keys in CI).
+- **CI workflow** — ruff + pytest + validate_repo on every push, plus a
+  manual `workflow_dispatch` live-corpus job behind a repo secret.
 - **Architecture docs** with drift guard (`tests/test_docs.py`).
 
 ## Partial
@@ -112,10 +123,10 @@ PRs that change them without committing the update.
 | Inventory | Count |
 |---|---|
 | `analysis_modules` | 3 |
-| `cli_subcommands` | 12 |
+| `cli_subcommands` | 13 |
 | `ingest_adapters` | 7 |
-| `schemas` | 12 |
-| `scripts` | 14 |
-| `test_files` | 23 |
+| `schemas` | 13 |
+| `scripts` | 15 |
+| `test_files` | 24 |
 | `waters_endpoints_wrapped` | 6 |
 <!-- gap-counts-end -->

@@ -125,6 +125,17 @@ aguayluz diff --from <run_id> --to <run_id>           # explicit
 
 **CLI** — `aguayluz emit-handoffs`.
 
+## AYL_EXPORT_HUB_PACKET
+
+**What** — Bundle the Base44 envelope, every per-receiver federation handoff,
+and the entity records into a single signed inline artifact. Output is content-
+addressed: identical inputs produce identical signatures so thehub-pr can
+cache by signature.
+
+**Outputs** — `outputs/hub_packet.json` + `outputs/hub_packet.sha256` sidecar.
+
+**CLI** — `aguayluz export-hub-packet`.
+
 ## AYL_EXPORT_CONTROL_PLANE
 
 Every vector implicitly exports `outputs/base44_export.json`. The standalone

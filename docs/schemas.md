@@ -102,6 +102,20 @@ from, to}`). Same shape for `events_*` and `findings_*`. `summary.headline`
 is the human-readable diff line (e.g. `assets +5/-3/~0`). source_hash and
 confidence changes are deliberately filtered out as noise.
 
+## `hub_packet` — M19's self-contained bundle for thehub-pr
+
+`schemas/hub_packet.schema.json`
+
+Where M15's federation handoffs are file-per-receiver and reference the
+producer's outputs/ by path, a `hub_packet` is a single self-contained inline
+bundle. Inlines the Base44 envelope, every per-target FederationHandoff, and
+the entity records that drive federation decisions. The `signature_sha256`
+field is a deterministic hash over the canonical serialization of
+`envelope+handoffs+entities` — same inputs always produce the same signature
+(content-addressed caching at thehub-pr). Tampering with any inlined field
+breaks the signature; `aguayluz.hub_packet.verify_packet_signature()` checks
+it on the receiver side.
+
 ## `federation_handoff` — M15's per-receiver projection
 
 `schemas/federation_handoff.schema.json`

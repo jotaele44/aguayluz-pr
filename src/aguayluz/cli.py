@@ -194,6 +194,23 @@ def diff(
     raise typer.Exit(_df.main(argv))
 
 
+@app.command("export-hub-packet")
+def export_hub_packet(
+    outputs_dir: Path = typer.Option(OUTPUTS_DIR, "--outputs-dir"),
+    run_id: str = typer.Option(None, "--run-id"),
+) -> None:
+    """Bundle envelope + handoffs + entities into a signed HubPacket."""
+    _scripts = Path(__file__).resolve().parent.parent.parent / "scripts"
+    if str(_scripts) not in sys.path:
+        sys.path.insert(0, str(_scripts))
+    import export_hub_packet as _hp  # type: ignore[import-not-found]
+
+    argv = ["--outputs-dir", str(outputs_dir)]
+    if run_id:
+        argv += ["--run-id", run_id]
+    raise typer.Exit(_hp.main(argv))
+
+
 @app.command("emit-handoffs")
 def emit_handoffs(
     outputs_dir: Path = typer.Option(OUTPUTS_DIR, "--outputs-dir"),
