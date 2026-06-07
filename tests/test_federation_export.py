@@ -41,3 +41,20 @@ def test_deterministic_ids():
     a = build_streams(ASSETS, EVENTS, "t")
     b = build_streams(ASSETS, EVENTS, "t")
     assert [e["entity_id"] for e in a["entities"]] == [e["entity_id"] for e in b["entities"]]
+
+
+def test_asset_carries_location_when_coords_present():
+    # Z2: a utility_asset with real coords gets a canonical `location`; entities
+    # without point coords (operator/municipality/event) must not carry one.
+    assets = [{**ASSETS[0], "lat": 18.0108, "lon": -66.6141}]
+    s = build_streams(assets, EVENTS, "t")
+    asset = next(e for e in s["entities"] if e["entity_type"] == "utility_asset")
+    assert asset["location"] == {"lat": 18.0108, "lon": -66.6141, "municipality": "Ponce"}
+    others = [e for e in s["entities"] if e["entity_type"] != "utility_asset"]
+    assert all("location" not in e for e in others)
+
+
+def test_asset_without_coords_has_no_location():
+    s = build_streams(ASSETS, EVENTS, "t")  # fixture asset has no lat/lon
+    asset = next(e for e in s["entities"] if e["entity_type"] == "utility_asset")
+    assert "location" not in asset

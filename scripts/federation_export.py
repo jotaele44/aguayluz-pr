@@ -99,6 +99,15 @@ def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], no
         if not entities[aid]["external_ids"]:
             del entities[aid]["external_ids"]
 
+        # Z2: carry real WGS84 coords onto the canonical entity for cross-producer
+        # spatial joins (spiderweb correlate_spatial, PRIIS scoring).
+        lat, lon = a.get("lat"), a.get("lon")
+        if isinstance(lat, (int, float)) and isinstance(lon, (int, float)):
+            loc: dict[str, Any] = {"lat": round(float(lat), 6), "lon": round(float(lon), 6)}
+            if a.get("municipality"):
+                loc["municipality"] = a["municipality"]
+            entities[aid]["location"] = loc
+
         if a.get("operator"):
             op_id = _fid("ent", "operator", _norm(a["operator"]))
             entities.setdefault(op_id, _entity(op_id, sid, a["operator"], "utility_operator", 0.9, inputs, now))
