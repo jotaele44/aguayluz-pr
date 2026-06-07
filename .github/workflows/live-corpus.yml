@@ -1,0 +1,63 @@
+name: live-corpus
+
+# Manual-only — never runs automatically. Hits live EPA WATERS + FRS + FEMA APIs.
+# Repo secret `EPA_WATERS_API_KEY` must be set for --use-waters runs.
+# All workflow_dispatch inputs are passed via env vars (never inline-interpolated
+# into run: commands) to avoid shell-injection risk from operator-supplied values.
+on:
+  workflow_dispatch:
+    inputs:
+      cities:
+        description: PR cities for the FRS live pull (comma-separated)
+        required: false
+        default: BAYAMON,SAN_JUAN,PONCE,CAGUAS,MAYAGUEZ
+      damage_codes:
+        description: FEMA damage codes (D=Water Control, F=Utilities)
+        required: false
+        default: D,F
+      max_fema_records:
+        description: Cap for FEMA pagination
+        required: false
+        default: '50'
+      baseline_write:
+        description: Write tests/baseline/live_corpus_summary.json
+        required: false
+        default: 'false'
+      baseline_check:
+        description: Compare run against committed baseline
+        required: false
+        default: 'true'
+
+jobs:
+  live-corpus:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e .[dev]
+      - name: Run full chain (live)
+        env:
+          EPA_WATERS_API_KEY: ${{ secrets.EPA_WATERS_API_KEY }}
+          CITIES: ${{ inputs.cities }}
+          DAMAGE_CODES: ${{ inputs.damage_codes }}
+          MAX_FEMA_RECORDS: ${{ inputs.max_fema_records }}
+          BASELINE_WRITE: ${{ inputs.baseline_write }}
+          BASELINE_CHECK: ${{ inputs.baseline_check }}
+        run: |
+          ARGS=(--live --use-waters --cities "$CITIES" --damage-codes "$DAMAGE_CODES" --max-fema-records "$MAX_FEMA_RECORDS")
+          if [ "$BASELINE_WRITE" = "true" ]; then
+            ARGS+=(--baseline-write)
+          fi
+          if [ "$BASELINE_CHECK" = "true" ]; then
+            ARGS+=(--baseline-check)
+          fi
+          python scripts/run_full_chain.py "${ARGS[@]}"
+      - name: Upload outputs artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-corpus-outputs
+          path: outputs/
+          if-no-files-found: warn

@@ -115,7 +115,7 @@ PRs that change them without committing the update.
 | `cli_subcommands` | 12 |
 | `ingest_adapters` | 7 |
 | `schemas` | 12 |
-| `scripts` | 13 |
-| `test_files` | 22 |
+| `scripts` | 14 |
+| `test_files` | 23 |
 | `waters_endpoints_wrapped` | 6 |
 <!-- gap-counts-end -->

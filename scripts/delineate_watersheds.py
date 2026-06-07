@@ -28,7 +28,7 @@ if _SRC.exists() and str(_SRC) not in sys.path:
 
 from aguayluz import OUTPUTS_DIR  # noqa: E402
 from aguayluz.analysis import delineate_assets  # noqa: E402
-from aguayluz.exporters import build_base44_envelope  # noqa: E402
+from aguayluz.exporters import build_base44_envelope, load_contradictions_from_report  # noqa: E402
 from aguayluz.models import validate_against_schema  # noqa: E402
 from aguayluz.validation import run_gates  # noqa: E402
 
@@ -185,6 +185,9 @@ def main(argv: list[str] | None = None) -> int:
             f"Delineated {len(records)} watershed(s) for water/wastewater asset(s); "
             f"{partial_count} carry attribute_coverage='partial' (VPU 21). "
             f"{len(review_items)} routed to review queue."
+        ),
+        contradictions=load_contradictions_from_report(
+            args.outputs_dir / "reconciliation_report.json"
         ),
         gaps=(
             ["StreamCat NLCD/Vogel/VPUAttribute unavailable for VPU 21"]

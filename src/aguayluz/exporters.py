@@ -17,7 +17,9 @@ Why centralize this here:
 
 from __future__ import annotations
 
+import json
 import re
+from pathlib import Path
 from typing import Any
 
 from .models import Base44Export, ExportStatus
@@ -58,6 +60,35 @@ def _assert_no_secrets(text: str) -> None:
             "sanitized_summary contains a key-shaped string — refuse to export. "
             "Strip the value before passing it to build_base44_envelope."
         )
+
+
+def load_contradictions_from_report(report_path: Path | str) -> list[dict[str, Any]]:
+    """Read `outputs/reconciliation_report.json` and project warn+critical findings
+    into the Base44 envelope's `contradictions` shape.
+
+    The reconciliation report is the source of truth — every envelope-refreshing
+    script calls this so M8's findings survive M13/M15 rebuilds.
+    """
+    path = Path(report_path)
+    if not path.exists():
+        return []
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return []
+    findings = data.get("findings", []) if isinstance(data, dict) else []
+    return [
+        {
+            "finding_id": f["finding_id"],
+            "kind": f["kind"],
+            "severity": f["severity"],
+            "municipality": f.get("municipality"),
+            "details": f.get("details"),
+            "confidence": f.get("confidence"),
+        }
+        for f in findings
+        if isinstance(f, dict) and f.get("severity") in ("warn", "critical")
+    ]
 
 
 def build_base44_envelope(

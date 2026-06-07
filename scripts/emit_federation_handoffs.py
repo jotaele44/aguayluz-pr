@@ -21,7 +21,7 @@ if _SRC.exists() and str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 from aguayluz import CONFIG_DIR, OUTPUTS_DIR  # noqa: E402
-from aguayluz.exporters import build_base44_envelope  # noqa: E402
+from aguayluz.exporters import build_base44_envelope, load_contradictions_from_report  # noqa: E402
 from aguayluz.federation import HANDOFF_VECTOR, build_handoff_payload  # noqa: E402
 from aguayluz.models import validate_against_schema  # noqa: E402
 from aguayluz.validation import run_gates  # noqa: E402
@@ -102,6 +102,9 @@ def main(argv: list[str] | None = None) -> int:
         sanitized_summary=(
             f"Emitted {len(handoff_paths)} federation handoff(s): "
             + ", ".join(h["target_module_id"] for h in handoff_paths)
+        ),
+        contradictions=load_contradictions_from_report(
+            args.outputs_dir / "reconciliation_report.json"
         ),
         federation_handoffs=handoff_paths,
         next_actions=["AYL_EXPORT_CONTROL_PLANE"],
