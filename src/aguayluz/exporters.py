@@ -75,6 +75,7 @@ def build_base44_envelope(
     contradictions: list[dict[str, Any]] | None = None,
     gaps: list[str] | None = None,
     next_actions: list[str] | None = None,
+    federation_handoffs: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Return a Base44-export dict that round-trips through `Base44Export`.
 
@@ -103,5 +104,6 @@ def build_base44_envelope(
         contradictions=contradictions or [],
         gaps=gaps or [],
         next_actions=next_actions or [],
+        federation_handoffs=federation_handoffs or [],
     )
     return envelope.model_dump()

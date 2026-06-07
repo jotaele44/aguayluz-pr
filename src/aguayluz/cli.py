@@ -194,6 +194,26 @@ def diff(
     raise typer.Exit(_df.main(argv))
 
 
+@app.command("emit-handoffs")
+def emit_handoffs(
+    outputs_dir: Path = typer.Option(OUTPUTS_DIR, "--outputs-dir"),
+    vector: str = typer.Option("AGUAYLUZ_EMIT_FEDERATION_HANDOFFS", "--vector"),
+    confidence_floor: int = typer.Option(50, "--confidence-floor"),
+) -> None:
+    """Emit per-receiver federation handoff payloads."""
+    _scripts = Path(__file__).resolve().parent.parent.parent / "scripts"
+    if str(_scripts) not in sys.path:
+        sys.path.insert(0, str(_scripts))
+    import emit_federation_handoffs as _eh  # type: ignore[import-not-found]
+
+    argv = [
+        "--outputs-dir", str(outputs_dir),
+        "--vector", vector,
+        "--confidence-floor", str(confidence_floor),
+    ]
+    raise typer.Exit(_eh.main(argv))
+
+
 @app.command()
 def delineate(
     outputs_dir: Path = typer.Option(OUTPUTS_DIR, "--outputs-dir"),

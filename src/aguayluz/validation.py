@@ -81,6 +81,9 @@ _ENTITY_SCHEMAS = {
     "reconciliation_report.json": "reconciliation_report",
     "watershed_delineation.json": "watershed_delineation",
     "run_diff.json": "run_diff",
+    # Federation handoff files are written one per linked module
+    # (handoff_moneysweep-pr.json, handoff_spiderweb-pr.json, ...).
+    # The validation gate runner picks them up by prefix below.
 }
 
 
@@ -94,6 +97,9 @@ def gate_g01_schema() -> GateResult:
     errors: list[str] = []
     for p in files:
         schema_name = _ENTITY_SCHEMAS.get(p.name)
+        # Per-target federation handoffs: `handoff_<target_module_id>.json`.
+        if schema_name is None and p.name.startswith("handoff_") and p.name.endswith(".json"):
+            schema_name = "federation_handoff"
         if schema_name is None:
             continue
         try:

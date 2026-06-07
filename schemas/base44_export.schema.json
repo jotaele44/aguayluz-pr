@@ -39,6 +39,19 @@
     "top_findings":    { "type": "array", "items": { "type": "object" } },
     "contradictions":  { "type": "array", "items": { "type": "object" } },
     "gaps":            { "type": "array", "items": { "type": "string" } },
-    "next_actions":    { "type": "array", "items": { "type": "string" } }
+    "next_actions":    { "type": "array", "items": { "type": "string" } },
+    "federation_handoffs": {
+      "type": "array",
+      "description": "Pointers to the per-receiver federation handoff files emitted alongside this envelope (one entry per linked module).",
+      "items": {
+        "type": "object",
+        "required": ["target_module_id", "path"],
+        "additionalProperties": false,
+        "properties": {
+          "target_module_id": { "type": "string", "minLength": 1 },
+          "path":             { "type": "string", "minLength": 1 }
+        }
+      }
+    }
   }
 }

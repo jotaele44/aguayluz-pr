@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/federation_handoff.schema.json",
+  "title": "FederationHandoff",
+  "description": "Per-receiver-module handoff payload. Each linked module in config/federation_manifest.yaml gets a tailored copy so it can join AguaYLuz records into its own dataset without re-deriving. join_keys carry the cross-module identifiers; payload carries receiver-specific projections.",
+  "type": "object",
+  "required": [
+    "module_id",
+    "target_module_id",
+    "run_id",
+    "vector",
+    "generated_at",
+    "join_keys",
+    "confidence_floor"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "module_id":        { "const": "aguayluz-pr" },
+    "target_module_id": { "type": "string", "minLength": 1 },
+    "run_id":           { "type": "string", "pattern": "^[0-9]{8}T[0-9]{6}Z_[A-Za-z0-9_-]+$" },
+    "vector":           { "type": "string", "minLength": 1 },
+    "generated_at":     { "type": "string", "format": "date-time" },
+    "time_window": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["from", "to"],
+      "properties": {
+        "from": { "type": "string", "format": "date" },
+        "to":   { "type": "string", "format": "date" }
+      }
+    },
+    "confidence_floor": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "join_keys": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key_type", "value"],
+        "additionalProperties": false,
+        "properties": {
+          "key_type": {
+            "enum": ["municipality", "comid", "reachcode", "gnis_id", "fema_disaster_number", "registry_id"]
+          },
+          "value": { "type": "string", "minLength": 1 },
+          "asset_id": { "type": ["string", "null"] },
+          "event_id": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "payload": {
+      "type": "object",
+      "description": "Receiver-specific projection of AguaYLuz records.",
+      "additionalProperties": true
+    }
+  }
+}

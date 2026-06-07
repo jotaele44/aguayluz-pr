@@ -138,3 +138,4 @@ class Base44Export(_SchemaValidated):
     contradictions: list[dict[str, Any]] = Field(default_factory=list)
     gaps: list[str] = Field(default_factory=list)
     next_actions: list[str] = Field(default_factory=list)
+    federation_handoffs: list[dict[str, Any]] = Field(default_factory=list)
