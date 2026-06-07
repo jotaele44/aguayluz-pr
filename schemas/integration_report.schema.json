@@ -39,7 +39,7 @@
         "required": ["id", "status"],
         "additionalProperties": false,
         "properties": {
-          "id":      { "type": "string", "pattern": "^G0[1-8]_[A-Z_]+$" },
+          "id":      { "type": "string", "pattern": "^G0[1-8]_[A-Z0-9_]+$" },
           "status":  { "enum": ["PASS", "WARN", "FAIL", "SKIP"] },
           "details": { "type": ["string", "null"] }
         }
