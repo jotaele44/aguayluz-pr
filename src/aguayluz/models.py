@@ -101,6 +101,7 @@ class ServiceEvent(_SchemaValidated):
     confidence: Confidence
     review_status: ReviewStatus
     linked_asset_ids: list[str] = Field(default_factory=list)
+    notes: str | None = None
 
 
 class AguayluzBridgeSummary(_SchemaValidated):

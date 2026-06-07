@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/reconciliation_report.schema.json",
+  "title": "ReconciliationReport",
+  "description": "Cross-checks FEMA project status against asset operational status. Findings populate the Base44 envelope's `contradictions` field so the federation hub can see status drift without re-deriving it.",
+  "type": "object",
+  "required": ["module_id", "run_id", "vector", "generated_at", "findings", "summary"],
+  "additionalProperties": false,
+  "properties": {
+    "module_id": { "const": "aguayluz-pr" },
+    "run_id":    { "type": "string", "pattern": "^[0-9]{8}T[0-9]{6}Z_[A-Za-z0-9_-]+$" },
+    "vector":    { "type": "string", "minLength": 1 },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["finding_id", "kind", "severity", "municipality", "details", "confidence"],
+        "additionalProperties": false,
+        "properties": {
+          "finding_id":   { "type": "string", "pattern": "^AYL_FIND_[A-Za-z0-9_-]+$" },
+          "kind":         { "enum": ["status_mismatch", "missing_coverage", "stale_asset", "consistent"] },
+          "severity":     { "enum": ["info", "warn", "critical"] },
+          "asset_id":     { "type": ["string", "null"] },
+          "event_id":     { "type": ["string", "null"] },
+          "municipality": { "type": "string", "minLength": 1 },
+          "details":      { "type": "string", "minLength": 1 },
+          "confidence":   { "type": "integer", "minimum": 0, "maximum": 100 },
+          "fema_step":    { "type": ["string", "null"] },
+          "asset_status": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["consistent_count", "status_mismatches", "missing_coverage", "stale_assets"],
+      "additionalProperties": false,
+      "properties": {
+        "consistent_count":   { "type": "integer", "minimum": 0 },
+        "status_mismatches":  { "type": "integer", "minimum": 0 },
+        "missing_coverage":   { "type": "integer", "minimum": 0 },
+        "stale_assets":       { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

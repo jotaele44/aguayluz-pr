@@ -30,6 +30,7 @@
       "type": "array",
       "items": { "type": "string" },
       "default": []
-    }
+    },
+    "notes": { "type": ["string", "null"], "description": "Free-text provenance / context (e.g. FEMA `step=...`). Carry source metadata that downstream analyzers (M8 reconciliation) need." }
   }
 }

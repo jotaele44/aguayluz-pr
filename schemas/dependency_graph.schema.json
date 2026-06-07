@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/dependency_graph.schema.json",
+  "title": "DependencyGraph",
+  "description": "Asset-and-event dependency graph produced by AYL_BUILD_DEPENDENCY_GRAPH. Edges carry the evidence that justifies the link so a reviewer can audit the relation without re-deriving it.",
+  "type": "object",
+  "required": ["module_id", "run_id", "vector", "generated_at", "nodes", "edges"],
+  "additionalProperties": false,
+  "properties": {
+    "module_id": { "const": "aguayluz-pr" },
+    "run_id":    { "type": "string", "pattern": "^[0-9]{8}T[0-9]{6}Z_[A-Za-z0-9_-]+$" },
+    "vector":    { "type": "string", "minLength": 1 },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind", "label"],
+        "additionalProperties": false,
+        "properties": {
+          "id":    { "type": "string", "minLength": 1 },
+          "kind":  { "enum": ["asset", "event"] },
+          "label": { "type": "string", "minLength": 1 },
+          "municipality": { "type": ["string", "null"] },
+          "asset_type":   { "type": ["string", "null"] },
+          "vpuid":        { "type": ["string", "null"] }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["from", "to", "kind", "evidence"],
+        "additionalProperties": false,
+        "properties": {
+          "from": { "type": "string", "minLength": 1 },
+          "to":   { "type": "string", "minLength": 1 },
+          "kind": {
+            "enum": [
+              "same_reach",
+              "downstream_of",
+              "upstream_of",
+              "same_municipality",
+              "affects_municipality",
+              "shares_disaster"
+            ]
+          },
+          "weight":   { "type": "number", "minimum": 0, "maximum": 1 },
+          "evidence": { "type": "string", "minLength": 1 },
+          "confidence": { "type": "integer", "minimum": 0, "maximum": 100 }
+        }
+      }
+    }
+  }
+}

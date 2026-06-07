@@ -77,6 +77,8 @@ _ENTITY_SCHEMAS = {
     "source_manifest.json":  "source_manifest",
     "review_queue.json":     "review_queue",
     "integration_report.json": "integration_report",
+    "dependency_graph.json": "dependency_graph",
+    "reconciliation_report.json": "reconciliation_report",
 }
 
 
