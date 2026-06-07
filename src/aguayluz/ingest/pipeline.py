@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from ..confidence import score as confidence_score
-from ..models import AssetType, ServiceEvent, UtilityAsset
+from ..models import AssetType, GeometryType, ServiceEvent, UtilityAsset
 from ..waters.mapping import ReviewQueueItem, point_to_utility_asset
 
 logger = logging.getLogger("aguayluz.ingest")
@@ -39,6 +39,7 @@ class FacilitySeed:
     operator: str | None = None
     source_provenance: str = ""           # adapter writes this (e.g. "EPA FRS NPDES")
     is_utility: bool = True               # adapter marks non-utility records False
+    geometry_type: GeometryType = "point"  # HIFLD lines/polygons keep their shape
 
 
 @dataclass
@@ -128,6 +129,7 @@ def ingest_seeds(
             operator=seed.operator,
             snap_lat=seed.lat,
             snap_lon=seed.lon,
+            geometry_type=seed.geometry_type,
         )
 
         if isinstance(asset_or_review, ReviewQueueItem):

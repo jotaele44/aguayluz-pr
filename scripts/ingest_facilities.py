@@ -32,6 +32,8 @@ from aguayluz.exporters import build_base44_envelope  # noqa: E402
 from aguayluz.ingest import ingest_seeds  # noqa: E402
 from aguayluz.ingest.frs import parse_frs_response  # noqa: E402
 from aguayluz.ingest.frs_client import fetch_all_pr_facilities, fetch_facilities  # noqa: E402
+from aguayluz.ingest.hifld import parse_hifld_geojson  # noqa: E402
+from aguayluz.ingest.hifld_client import fetch_layer  # noqa: E402
 from aguayluz.models import validate_against_schema  # noqa: E402
 from aguayluz.validation import run_gates  # noqa: E402
 from aguayluz.waters import WatersClient  # noqa: E402
@@ -60,7 +62,9 @@ def _load_seeds(source: str, path: Path):  # type: ignore[no-untyped-def]
     raw = json.loads(path.read_text(encoding="utf-8"))
     if source == "frs":
         return parse_frs_response(raw)
-    raise SystemExit(f"unknown --source: {source!r} (supported: frs)")
+    if source == "hifld":
+        return parse_hifld_geojson(raw, state_filter="PR")
+    raise SystemExit(f"unknown --source: {source!r} (supported: frs, hifld)")
 
 
 def _live_seeds(
@@ -71,21 +75,32 @@ def _live_seeds(
     county: str | None,
     cities: list[str] | None,
     counties: list[str] | None,
+    hifld_layer: str | None,
+    hifld_fallback: Path | None,
+    max_features: int,
 ):  # type: ignore[no-untyped-def]
     """Fetch live records from the source API and parse into seeds."""
-    if source != "frs":
-        raise SystemExit(f"--live not supported for --source {source!r}")
-    if cities or counties:
-        raw_records = fetch_all_pr_facilities(cities=cities or [], counties=counties or [])
-        # Wrap to look like a parse_frs_response envelope.
-        envelope = {"Results": {"FRSFacility": raw_records}}
-    elif city or county:
-        envelope = fetch_facilities(state_abbr=state, city_name=city, county_name=county)
-    else:
-        raise SystemExit(
-            "--live requires at least one of --city, --county, --cities, --counties"
+    if source == "frs":
+        if cities or counties:
+            raw_records = fetch_all_pr_facilities(cities=cities or [], counties=counties or [])
+            envelope = {"Results": {"FRSFacility": raw_records}}
+        elif city or county:
+            envelope = fetch_facilities(state_abbr=state, city_name=city, county_name=county)
+        else:
+            raise SystemExit(
+                "--live --source frs requires --city, --county, --cities, or --counties"
+            )
+        return parse_frs_response(envelope)
+    if source == "hifld":
+        layer = hifld_layer or "electric_substations"
+        envelope = fetch_layer(
+            layer=layer,
+            state=state,
+            max_features=max_features,
+            fallback_path=hifld_fallback,
         )
-    return parse_frs_response(envelope)
+        return parse_hifld_geojson(envelope, state_filter=state)
+    raise SystemExit(f"--live not supported for --source {source!r}")
 
 
 def _write_outputs(
@@ -202,7 +217,7 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Ingest PR utility facilities via WATERS")
     p.add_argument("--input", type=Path, default=None,
                    help="Path to a fixture JSON (omit when using --live).")
-    p.add_argument("--source", default="frs", choices=["frs"])
+    p.add_argument("--source", default="frs", choices=["frs", "hifld"])
     p.add_argument("--live", action="store_true",
                    help="Fetch records live from the source API instead of reading --input.")
     p.add_argument("--state", default="PR", help="State abbreviation for --live mode.")
@@ -214,6 +229,13 @@ def main(argv: list[str] | None = None) -> int:
                    help="Comma-separated city names for --live mode (parallel pulls, deduped).")
     p.add_argument("--counties", default=None,
                    help="Comma-separated county names for --live mode.")
+    p.add_argument("--hifld-layer", default=None,
+                   help="HIFLD layer name for --live --source hifld "
+                        "(electric_substations, wastewater_treatment_plants, ...).")
+    p.add_argument("--hifld-fallback", type=Path, default=None,
+                   help="Committed GeoJSON snapshot for HIFLD live failure fallback.")
+    p.add_argument("--max-features", type=int, default=500,
+                   help="Cap for --live --source hifld pulls.")
     p.add_argument("--demo-mode", action="store_true",
                    help="Use the recorded WATERS fixture for every seed (no API key needed)")
     p.add_argument("--outputs-dir", type=Path, default=OUTPUTS_DIR)
@@ -230,6 +252,9 @@ def main(argv: list[str] | None = None) -> int:
             county=args.county,
             cities=cities,
             counties=counties,
+            hifld_layer=args.hifld_layer,
+            hifld_fallback=args.hifld_fallback,
+            max_features=args.max_features,
         )
     else:
         if args.input is None:
