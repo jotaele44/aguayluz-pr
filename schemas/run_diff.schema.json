@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/run_diff.schema.json",
+  "title": "RunDiff",
+  "description": "Delta between two snapshotted runs of aguayluz-pr. Surfaces asset add/remove/change, event status flips, finding adds/removes, and headline counts so the federation hub (and the M15 handoff) can show 'what changed since last run' without re-deriving anything.",
+  "type": "object",
+  "required": [
+    "module_id",
+    "run_from",
+    "run_to",
+    "generated_at",
+    "assets_added",
+    "assets_removed",
+    "assets_changed",
+    "events_added",
+    "events_removed",
+    "events_changed",
+    "findings_added",
+    "findings_removed",
+    "summary"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "module_id":   { "const": "aguayluz-pr" },
+    "run_from":    { "type": "string", "minLength": 1 },
+    "run_to":      { "type": "string", "minLength": 1 },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "assets_added":   { "type": "array", "items": { "type": "string" } },
+    "assets_removed": { "type": "array", "items": { "type": "string" } },
+    "assets_changed": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["asset_id", "field", "from", "to"],
+        "additionalProperties": false,
+        "properties": {
+          "asset_id": { "type": "string" },
+          "field":    { "type": "string" },
+          "from":     {},
+          "to":       {}
+        }
+      }
+    },
+    "events_added":   { "type": "array", "items": { "type": "string" } },
+    "events_removed": { "type": "array", "items": { "type": "string" } },
+    "events_changed": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["event_id", "field", "from", "to"],
+        "additionalProperties": false,
+        "properties": {
+          "event_id": { "type": "string" },
+          "field":    { "type": "string" },
+          "from":     {},
+          "to":       {}
+        }
+      }
+    },
+    "findings_added":   { "type": "array", "items": { "type": "string" } },
+    "findings_removed": { "type": "array", "items": { "type": "string" } },
+    "summary": {
+      "type": "object",
+      "required": ["total_changes", "headline"],
+      "additionalProperties": false,
+      "properties": {
+        "total_changes": { "type": "integer", "minimum": 0 },
+        "headline":      { "type": "string" }
+      }
+    }
+  }
+}

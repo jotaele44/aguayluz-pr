@@ -157,6 +157,44 @@ def reconcile(
 
 
 @app.command()
+def snapshot(
+    outputs_dir: Path = typer.Option(OUTPUTS_DIR, "--outputs-dir"),
+    run_id: str = typer.Option(None, "--run-id"),
+    slug: str = typer.Option("snapshot", "--slug"),
+) -> None:
+    """Snapshot current outputs/ entity files under outputs/history/<run_id>/."""
+    _scripts = Path(__file__).resolve().parent.parent.parent / "scripts"
+    if str(_scripts) not in sys.path:
+        sys.path.insert(0, str(_scripts))
+    import snapshot_run as _sn  # type: ignore[import-not-found]
+
+    argv = ["--outputs-dir", str(outputs_dir), "--slug", slug]
+    if run_id:
+        argv += ["--run-id", run_id]
+    raise typer.Exit(_sn.main(argv))
+
+
+@app.command()
+def diff(
+    outputs_dir: Path = typer.Option(OUTPUTS_DIR, "--outputs-dir"),
+    run_from: str = typer.Option(None, "--from", help="Source run_id"),
+    run_to: str = typer.Option(None, "--to", help="Target run_id"),
+) -> None:
+    """Diff two snapshotted runs; writes outputs/run_diff.json."""
+    _scripts = Path(__file__).resolve().parent.parent.parent / "scripts"
+    if str(_scripts) not in sys.path:
+        sys.path.insert(0, str(_scripts))
+    import diff_runs as _df  # type: ignore[import-not-found]
+
+    argv = ["--outputs-dir", str(outputs_dir)]
+    if run_from:
+        argv += ["--from", run_from]
+    if run_to:
+        argv += ["--to", run_to]
+    raise typer.Exit(_df.main(argv))
+
+
+@app.command()
 def delineate(
     outputs_dir: Path = typer.Option(OUTPUTS_DIR, "--outputs-dir"),
     demo_mode: bool = typer.Option(False, "--demo-mode"),
