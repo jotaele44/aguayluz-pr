@@ -11,7 +11,9 @@ records up to a server-side cap (~10k). For large queries pass narrow filters
 
 from __future__ import annotations
 
+import json
 import logging
+import re
 from collections.abc import Iterable
 from typing import Any
 
@@ -23,6 +25,39 @@ FRS_BASE_URL = "https://frs-public.epa.gov/ords/frs_public2/frs_rest_services.ge
 DEFAULT_TIMEOUT_S = 30.0
 DEFAULT_MAX_RETRIES = 2
 USER_AGENT = "aguayluz-pr/0.1 (+https://github.com/jotaele44/aguayluz-pr)"
+
+# Stray-backslash repair: EPA FRS occasionally serves invalid JSON with bare
+# backslashes inside strings (e.g. `"PRPBA\SYNERGY GROUP"` where `\S` isn't a
+# valid JSON escape). Empirically confirmed for PONCE + CAGUAS PR pulls in
+# M22. We escape any `\` not followed by a valid JSON escape character.
+_INVALID_ESCAPE_RE = re.compile(r'\\(?!["\\/bfnrtu]|u[0-9a-fA-F]{4})')
+
+
+def _repair_frs_json(text: str) -> str:
+    """Double-escape stray backslashes that aren't part of a valid JSON escape."""
+    return _INVALID_ESCAPE_RE.sub(r"\\\\", text)
+
+
+def _parse_frs_response(response: httpx.Response) -> dict[str, Any]:
+    """Parse FRS JSON, falling back to a repaired+lenient parse on bad data.
+
+    Three real-world failure modes seen against api.epa.gov FRS:
+      - Stray backslash before a non-escape char (e.g. `\\S` in "PRPBA\\SYNERGY")
+      - Literal tab/control character inside a string (e.g. MAYAGUEZ)
+      - The HTTP body returns 200 but the text is not JSON at all (rare; raises)
+
+    We try strict parse first to keep the fast path zero-overhead; on
+    JSONDecodeError we run the regex repair AND pass strict=False to tolerate
+    embedded control chars. Logged at WARN so operators see the degradation.
+    """
+    try:
+        return response.json()
+    except json.JSONDecodeError as exc:
+        logger.warning(
+            "FRS returned non-strict JSON (%s); attempting repair pass", exc.msg
+        )
+        repaired = _repair_frs_json(response.text)
+        return json.loads(repaired, strict=False)
 
 
 class FRSClientError(Exception):
@@ -68,7 +103,7 @@ def fetch_facilities(
         for attempt in range(max_retries + 1):
             response = client.get(FRS_BASE_URL, params=params)
             if response.status_code == 200:
-                return response.json()
+                return _parse_frs_response(response)
             if 500 <= response.status_code < 600 and attempt < max_retries:
                 logger.warning("FRS %s on attempt %d/%d; retrying", response.status_code, attempt + 1, max_retries)
                 continue
@@ -105,9 +140,22 @@ def fetch_all_pr_facilities(
 
     with httpx.Client(timeout=timeout, headers={"User-Agent": USER_AGENT}) as client:
         for q in queries:
-            resp = fetch_facilities(state_abbr="PR", client=client, **q)  # type: ignore[arg-type]
+            try:
+                resp = fetch_facilities(state_abbr="PR", client=client, **q)  # type: ignore[arg-type]
+            except (FRSClientError, json.JSONDecodeError) as exc:
+                # Don't sink the whole baseline because one locality returned
+                # broken data — log and skip so the run still produces
+                # partial coverage rather than nothing.
+                logger.warning("FRS pull failed for %s: %s — skipping", q, exc)
+                continue
             for f in resp.get("Results", {}).get("FRSFacility", []):
                 rid = f.get("RegistryId")
                 if rid and rid not in seen:
                     seen[rid] = f
     return list(seen.values())
+
+
+def normalize_city_name(name: str) -> str:
+    """FRS expects city names with spaces, not underscores. The CLI accepts
+    `SAN_JUAN` to avoid quoting issues; we translate at the edge."""
+    return name.replace("_", " ").strip().upper()

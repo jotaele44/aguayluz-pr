@@ -31,7 +31,11 @@ from aguayluz import OUTPUTS_DIR  # noqa: E402
 from aguayluz.exporters import build_base44_envelope  # noqa: E402
 from aguayluz.ingest import ingest_seeds  # noqa: E402
 from aguayluz.ingest.frs import parse_frs_response  # noqa: E402
-from aguayluz.ingest.frs_client import fetch_all_pr_facilities, fetch_facilities  # noqa: E402
+from aguayluz.ingest.frs_client import (  # noqa: E402
+    fetch_all_pr_facilities,
+    fetch_facilities,
+    normalize_city_name,
+)
 from aguayluz.ingest.hifld import parse_hifld_geojson  # noqa: E402
 from aguayluz.ingest.hifld_client import fetch_layer  # noqa: E402
 from aguayluz.models import validate_against_schema  # noqa: E402
@@ -82,10 +86,18 @@ def _live_seeds(
     """Fetch live records from the source API and parse into seeds."""
     if source == "frs":
         if cities or counties:
-            raw_records = fetch_all_pr_facilities(cities=cities or [], counties=counties or [])
+            normalized_cities = [normalize_city_name(c) for c in (cities or [])]
+            normalized_counties = [normalize_city_name(c) for c in (counties or [])]
+            raw_records = fetch_all_pr_facilities(
+                cities=normalized_cities, counties=normalized_counties,
+            )
             envelope = {"Results": {"FRSFacility": raw_records}}
         elif city or county:
-            envelope = fetch_facilities(state_abbr=state, city_name=city, county_name=county)
+            envelope = fetch_facilities(
+                state_abbr=state,
+                city_name=normalize_city_name(city) if city else None,
+                county_name=normalize_city_name(county) if county else None,
+            )
         else:
             raise SystemExit(
                 "--live --source frs requires --city, --county, --cities, or --counties"
