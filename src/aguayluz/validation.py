@@ -79,6 +79,7 @@ _ENTITY_SCHEMAS = {
     "integration_report.json": "integration_report",
     "dependency_graph.json": "dependency_graph",
     "reconciliation_report.json": "reconciliation_report",
+    "watershed_delineation.json": "watershed_delineation",
 }
 
 

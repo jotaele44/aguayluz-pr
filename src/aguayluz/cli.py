@@ -156,6 +156,29 @@ def reconcile(
     raise typer.Exit(_rs.main(["--outputs-dir", str(outputs_dir), "--vector", vector]))
 
 
+@app.command()
+def delineate(
+    outputs_dir: Path = typer.Option(OUTPUTS_DIR, "--outputs-dir"),
+    demo_mode: bool = typer.Option(False, "--demo-mode"),
+    max_calls: int = typer.Option(10, "--max-calls"),
+    vector: str = typer.Option("AGUAYLUZ_DELINEATE_WATERSHEDS", "--vector"),
+) -> None:
+    """Delineate the upstream watershed of every water/wastewater asset."""
+    _scripts = Path(__file__).resolve().parent.parent.parent / "scripts"
+    if str(_scripts) not in sys.path:
+        sys.path.insert(0, str(_scripts))
+    import delineate_watersheds as _del  # type: ignore[import-not-found]
+
+    argv = [
+        "--outputs-dir", str(outputs_dir),
+        "--vector", vector,
+        "--max-calls", str(max_calls),
+    ]
+    if demo_mode:
+        argv.append("--demo-mode")
+    raise typer.Exit(_del.main(argv))
+
+
 @app.command("export-base44")
 def export_base44(
     run_id: str = typer.Option(..., "--run-id", help="YYYYMMDDTHHMMSSZ_slug"),

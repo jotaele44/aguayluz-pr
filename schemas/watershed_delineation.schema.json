@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/watershed_delineation.schema.json",
+  "title": "WatershedDelineation",
+  "description": "Per-asset upstream drainage area summary. Geometry stays in a separate sidecar file under outputs/geometry/ so the entity record can fit in the Base44 envelope and the JSON Schema gate stays fast. Set `geometry_sidecar` to the relative path of the GeoJSON.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "asset_id",
+      "nhdplus_id",
+      "area_sqkm",
+      "headwater_comids",
+      "bounds_bbox",
+      "source_ref",
+      "evidence_tier",
+      "confidence",
+      "review_status"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "asset_id":   { "type": "string", "minLength": 1 },
+      "nhdplus_id": { "type": ["integer", "null"], "description": "NHDPlusID at the snap point that the watershed was delineated from." },
+      "area_sqkm":  { "type": "number", "minimum": 0 },
+      "headwater_comids": {
+        "type": "array",
+        "items": { "type": "integer" },
+        "description": "COMIDs at the upstream edges of the delineated area; empty when the snap point is itself a headwater."
+      },
+      "bounds_bbox": {
+        "type": "array",
+        "items": { "type": "number" },
+        "minItems": 4,
+        "maxItems": 4,
+        "description": "[lon_min, lat_min, lon_max, lat_max] in WGS-84."
+      },
+      "geometry_sidecar": {
+        "type": ["string", "null"],
+        "description": "Relative path to the GeoJSON sidecar (e.g. 'geometry/watershed_<asset_id>.geojson'); null when the geometry wasn't persisted."
+      },
+      "source_ref":    { "type": "string", "minLength": 1 },
+      "source_hash":   { "type": ["string", "null"] },
+      "evidence_tier": { "enum": ["T1", "T2", "T3", "T4"] },
+      "confidence":    { "type": "integer", "minimum": 0, "maximum": 100 },
+      "review_status": { "enum": ["accepted", "needs_review", "rejected", "blocked"] },
+      "attribute_coverage": { "enum": ["full", "partial"] }
+    }
+  }
+}
