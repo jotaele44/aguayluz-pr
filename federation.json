@@ -56,7 +56,7 @@
     "ready_for_hub_discovery": true,
     "ready_for_hub_live_execution": true,
     "blocking_conditions": [
-      "POWER assets are loaded from real public data (39 PR generation/substation/transmission nodes via scripts/ingest_power.py); WATER/wastewater assets not yet ingested",
+      "POWER assets (39 generation/substation/transmission nodes via scripts/ingest_power.py) and WATER/wastewater assets (234 treatment/wastewater/pumping/reservoir nodes via scripts/ingest_water.py, OSM-derived, review_status=needs_review) are loaded from real public data — 273 utility_assets total",
       "PREPS service_events remain island-wide aggregates; per-municipality outage attribution is now provided by aee_incidents (LUMA outages_by_town) at tier T2/needs_review (third-party snapshot) — promote to T1 if/when a direct utility feed is wired",
       "aee_incidents is a point-in-time snapshot (2025-03-03); the recommended SuperSonicHub1 mirror is itself inactive since then and the payload carries no timestamps, so a LIVE per-municipio source is required for ongoing attribution; outage start/end + restoration events require a commit-walk + snapshot-diff (future extension)",
       "source datasets (Energy_Sector, preps_*, outages_by_town.json, Census gazetteer) live outside the repo; ingest scripts default to local paths (override with --src)"
