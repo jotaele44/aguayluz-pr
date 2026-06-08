@@ -59,15 +59,17 @@ def load_geo(path: Path) -> dict[str, dict]:
     return {unaccent_upper(m["name"]): m for m in doc["municipios"]}
 
 
-def _slug(*parts: str) -> str:
-    """Stable [A-Za-z0-9_-] id fragment from a municipio (+ zone) pair.
+def _slug(*parts: str, ts: str = "") -> str:
+    """Stable [A-Za-z0-9_-] id fragment from a (snapshot_ts, municipio, zone) tuple.
 
-    Mirrors AEEIncidents' dedupe key (town+area, lowercased/whitespace-stripped):
-    a short content hash keeps distinct zones in one municipio unique while the
-    readable prefix keeps ids human-scannable.
+    Including `ts` in the hash distinguishes separate observations of the same zone
+    on the same calendar day (different live-fetch runs) while remaining idempotent
+    for identical inputs — two calls with the same ts + parts always produce the same
+    slug, matching AEEIncidents' dedupe-key intent.
     """
     readable = re.sub(r"[^A-Za-z0-9]+", "_", unaccent_upper(parts[0]).title()).strip("_")
-    digest = hashlib.sha1("|".join(p.lower().strip() for p in parts).encode()).hexdigest()[:8]
+    payload = (ts + "|" if ts else "") + "|".join(p.lower().strip() for p in parts)
+    digest = hashlib.sha1(payload.encode()).hexdigest()[:8]
     return f"{readable}_{digest}"
 
 
@@ -111,7 +113,7 @@ def build_events(doc: dict, snapshot_ts: str, geo: dict[str, dict], source_ref: 
 
         if granularity == "municipio":
             rows.append(_event(
-                event_id=f"AYL_EVT_{date8}_{_slug(raw_muni)}",
+                event_id=f"AYL_EVT_{date8}_{_slug(raw_muni, ts=snapshot_ts)}",
                 affected_area=canonical,
                 municipality=municipality,
                 zone="; ".join(zone_names) or None,
@@ -120,7 +122,7 @@ def build_events(doc: dict, snapshot_ts: str, geo: dict[str, dict], source_ref: 
         else:  # per-zone (default)
             for zone in zone_names or [""]:
                 rows.append(_event(
-                    event_id=f"AYL_EVT_{date8}_{_slug(raw_muni, zone)}",
+                    event_id=f"AYL_EVT_{date8}_{_slug(raw_muni, zone, ts=snapshot_ts)}",
                     affected_area=f"{canonical} / {zone}" if zone else canonical,
                     municipality=municipality,
                     zone=zone or None,

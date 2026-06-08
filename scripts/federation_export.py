@@ -147,7 +147,8 @@ def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], no
         if muni:
             m_id = _fid("ent", "municipality", _norm(muni))
             entities.setdefault(m_id, _entity(m_id, sid, muni, "municipality", 0.95, inputs, now))
-            relationships.update(_rel_kv(ev_id, "located_in", m_id, sid, conf, now))
+            ev_src = ["data/aee_incidents.jsonl"] if e.get("evidence_tier") == "T2" else ["data/service_events.jsonl"]
+            relationships.update(_rel_kv(ev_id, "located_in", m_id, sid, conf, now, source_inputs=ev_src))
             centroid = geo.get(_geo_key(muni))
             if centroid:
                 entities[ev_id]["location"] = {
@@ -174,13 +175,13 @@ def _entity(eid, sid, name, etype, conf, inputs, now):
     }
 
 
-def _rel_kv(src_ent, rtype, tgt_ent, sid, conf, now):
+def _rel_kv(src_ent, rtype, tgt_ent, sid, conf, now, source_inputs=None):
     rid = _fid("rel", src_ent, rtype, tgt_ent)
     return {rid: {
         "relationship_id": rid, "source_id": sid,
         "source_entity_id": src_ent, "target_entity_id": tgt_ent,
         "relationship_type": rtype, "evidence_source_id": sid, "confidence": conf,
-        "lineage": _lineage("RELATIONSHIP", ["data/service_events.jsonl"]),
+        "lineage": _lineage("RELATIONSHIP", source_inputs or ["data/service_events.jsonl"]),
         "synthetic": False, "created_at": now, "extracted_at": now,
     }}
 
