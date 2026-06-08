@@ -92,6 +92,9 @@ class ServiceEvent(_SchemaValidated):
     event_id: str
     event_type: EventType
     affected_area: str
+    municipality: str | None = None
+    zone: str | None = None
+    status_text: str | None = None
     start_time: str | None = None
     end_time: str | None = None
     reported_customers_or_users: int | None = None

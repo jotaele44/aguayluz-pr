@@ -258,3 +258,9 @@ exports/federation/
 # Real-data reference inputs materialized from public sources by scripts/ingest_*.py
 !data/utility_assets.jsonl
 !data/service_events.jsonl
+!data/aee_incidents.jsonl
+# Census-derived PR geodata: centroids (normalization/spatial joins) + boundary polygons (map layer)
+!data/geo/
+!data/geo/pr_municipios.json
+!data/geo/pr_municipios.geojson
+!data/geo/pr_barrios.geojson

@@ -27,7 +27,9 @@
     ],
     "real_data_sources": {
       "utility_assets": "Energy_Sector/Geospatial/GeoJSON/Spiderweb_Power_Infrastructure_Layer.geojson (EIA-860 + OSM derived)",
-      "service_events": "preps_*.json (PR emergency portal: emergencias.pr.gov / preps.pr.gov)"
+      "service_events": "preps_*.json (PR emergency portal: emergencias.pr.gov / preps.pr.gov)",
+      "aee_incidents": "SuperSonicHub1/luma-energy-outages outages_by_town.json (CC0; modern per-municipio realization of the legacy AEEIncidents town/area model after PREPA->LUMA 2021). NOTE: that mirror is itself inactive since 2025-03-03; committed data is a reproducible point-in-time snapshot at tier T2/needs_review. Wire a LIVE source (PR Energy Bureau regulatory outage reports / MiLUMA with permission) for ongoing attribution — the adapter (scripts/ingest_aee.py) is source-agnostic.",
+      "pr_municipios_geo": "data/geo/pr_municipios.json (Census Gazetteer centroids: normalization + spatial joins) + data/geo/pr_municipios.geojson (78 municipio polygons) + data/geo/pr_barrios.geojson (901 barrios, each linked to its municipio) for the map layer; U.S. Census cartographic boundaries (public domain), WGS84"
     }
   },
   "hub_callable_commands": {
@@ -37,7 +39,11 @@
     "test_suite": "python -m pytest -q",
     "export_canonical": "python3 scripts/federation_export.py --mode test",
     "ingest_power": "python3 scripts/ingest_power.py",
-    "ingest_preps": "python3 scripts/ingest_preps.py"
+    "ingest_preps": "python3 scripts/ingest_preps.py",
+    "fetch_luma_live": "python3 scripts/fetch_luma_live.py --out /tmp/outages_by_town.json  (LIVE MiLUMA API; ToS-gated, see script header)",
+    "ingest_aee": "python3 scripts/ingest_aee.py --src <outages_by_town.json> --snapshot-ts <commit_iso8601>",
+    "build_municipios_geo": "python3 scripts/build_pr_municipios_geo.py --src <census_gazetteer_counties.txt>",
+    "build_geo_boundaries": "python3 scripts/build_pr_geo_boundaries.py --counties <cb_us_county_500k.shp> --barrios <cb_72_cousub_500k.shp>"
   },
   "canonical_outputs": {
     "base44_export": "outputs/base44_export.json",
@@ -51,8 +57,9 @@
     "ready_for_hub_live_execution": true,
     "blocking_conditions": [
       "POWER assets (39 generation/substation/transmission nodes via scripts/ingest_power.py) and WATER/wastewater assets (234 treatment/wastewater/pumping/reservoir nodes via scripts/ingest_water.py, OSM-derived, review_status=needs_review) are loaded from real public data — 273 utility_assets total",
-      "service_events are PREPS island-wide aggregates (electric + water customers-without-service), not per-asset outage attribution",
-      "source datasets (Energy_Sector, preps_*) live outside the repo; ingest scripts default to the local Documents/Data paths (override with --src)"
+      "PREPS service_events remain island-wide aggregates; per-municipality outage attribution is now provided by aee_incidents (LUMA outages_by_town) at tier T2/needs_review (third-party snapshot) — promote to T1 if/when a direct utility feed is wired",
+      "aee_incidents is a point-in-time snapshot (2025-03-03); the recommended SuperSonicHub1 mirror is itself inactive since then and the payload carries no timestamps, so a LIVE per-municipio source is required for ongoing attribution; outage start/end + restoration events require a commit-walk + snapshot-diff (future extension)",
+      "source datasets (Energy_Sector, preps_*, outages_by_town.json, Census gazetteer) live outside the repo; ingest scripts default to local paths (override with --src)"
     ]
   }
 }

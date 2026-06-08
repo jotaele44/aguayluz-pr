@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -43,6 +44,20 @@ def _norm(name: str) -> str:
     return " ".join(str(name).strip().upper().split())
 
 
+def _geo_key(name: str) -> str:
+    """unaccent + upper -> match canonical municipios regardless of diacritics."""
+    folded = unicodedata.normalize("NFKD", str(name)).encode("ascii", "ignore").decode()
+    return " ".join(folded.upper().split())
+
+
+def _load_geo(path: Path) -> dict[str, dict]:
+    """Index data/geo/pr_municipios.json centroids by their unaccent/upper key."""
+    if not path.exists():
+        return {}
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    return {_geo_key(m["name"]): m for m in doc.get("municipios", [])}
+
+
 def _conf(value: Any) -> float:
     try:
         c = float(value)
@@ -60,8 +75,9 @@ def _lineage(phase: str, inputs: list[str]) -> dict[str, Any]:
     }
 
 
-def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], now: str) -> dict[str, list[dict[str, Any]]]:
-    inputs = ["data/utility_assets.jsonl", "data/service_events.jsonl"]
+def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], now: str, geo: dict[str, dict] | None = None) -> dict[str, list[dict[str, Any]]]:
+    inputs = ["data/utility_assets.jsonl", "data/service_events.jsonl", "data/aee_incidents.jsonl"]
+    geo = geo or {}
     sources: dict[str, dict[str, Any]] = {}
     entities: dict[str, dict[str, Any]] = {}
     relationships: dict[str, dict[str, Any]] = {}
@@ -123,6 +139,24 @@ def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], no
         ev_id = _fid("ent", "event", e.get("event_id"))
         label = f"{e.get('event_type', 'event')} @ {e.get('affected_area', '')}".strip()
         entities[ev_id] = _entity(ev_id, sid, label, "service_event", conf, inputs, now)
+
+        # Per-municipality outage attribution: link the event to its municipio node
+        # (merges with asset-derived municipality entities via _norm) and carry the
+        # municipio centroid onto the event for spatial joins.
+        muni = e.get("municipality")
+        if muni:
+            m_id = _fid("ent", "municipality", _norm(muni))
+            entities.setdefault(m_id, _entity(m_id, sid, muni, "municipality", 0.95, inputs, now))
+            ev_src = ["data/aee_incidents.jsonl"] if e.get("evidence_tier") == "T2" else ["data/service_events.jsonl"]
+            relationships.update(_rel_kv(ev_id, "located_in", m_id, sid, conf, now, source_inputs=ev_src))
+            centroid = geo.get(_geo_key(muni))
+            if centroid:
+                entities[ev_id]["location"] = {
+                    "lat": round(float(centroid["lat"]), 6),
+                    "lon": round(float(centroid["lon"]), 6),
+                    "municipality": muni,
+                }
+
         for asset_ref in e.get("linked_asset_ids", []):
             aid = _fid("ent", "asset", asset_ref)
             relationships.update(_rel_kv(aid, "affected_by", ev_id, sid, conf, now))
@@ -141,13 +175,13 @@ def _entity(eid, sid, name, etype, conf, inputs, now):
     }
 
 
-def _rel_kv(src_ent, rtype, tgt_ent, sid, conf, now):
+def _rel_kv(src_ent, rtype, tgt_ent, sid, conf, now, source_inputs=None):
     rid = _fid("rel", src_ent, rtype, tgt_ent)
     return {rid: {
         "relationship_id": rid, "source_id": sid,
         "source_entity_id": src_ent, "target_entity_id": tgt_ent,
         "relationship_type": rtype, "evidence_source_id": sid, "confidence": conf,
-        "lineage": _lineage("RELATIONSHIP", ["data/service_events.jsonl"]),
+        "lineage": _lineage("RELATIONSHIP", source_inputs or ["data/service_events.jsonl"]),
         "synthetic": False, "created_at": now, "extracted_at": now,
     }}
 
@@ -189,17 +223,21 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Export AguaYLuz assets/events as PRII canonical streams.")
     ap.add_argument("--assets", default=str(REPO_ROOT / "data/utility_assets.jsonl"))
     ap.add_argument("--events", default=str(REPO_ROOT / "data/service_events.jsonl"))
+    ap.add_argument("--incidents", default=str(REPO_ROOT / "data/aee_incidents.jsonl"),
+                    help="per-municipality outage events (AEE/LUMA model); merged into events")
+    ap.add_argument("--geo", default=str(REPO_ROOT / "data/geo/pr_municipios.json"))
     ap.add_argument("--out", default=str(REPO_ROOT / "exports/federation"))
     ap.add_argument("--mode", default="test", choices=["test", "production"])
     args = ap.parse_args()
 
     assets = _load_jsonl(Path(args.assets))
-    events = _load_jsonl(Path(args.events))
+    events = _load_jsonl(Path(args.events)) + _load_jsonl(Path(args.incidents))
+    geo = _load_geo(Path(args.geo))
     if not assets and not events:
-        print("no input data (data/utility_assets.jsonl / data/service_events.jsonl absent) — nothing to export")
+        print("no input data (data/utility_assets.jsonl / service_events / aee_incidents absent) — nothing to export")
         return 0
     now = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
-    streams = build_streams(assets, events, now)
+    streams = build_streams(assets, events, now, geo)
     manifest_path = write_package(streams, Path(args.out), args.mode, now)
     counts = {k: len(v) for k, v in streams.items()}
     print(f"wrote {manifest_path} — {counts}")
