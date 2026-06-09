@@ -20,20 +20,57 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import sys
 import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+# Allow `python scripts/federation_export.py` from a fresh clone without an
+# editable install. The outputs/* generator imports aguayluz.{models,validation}
+# lazily; without this bootstrap those imports raise ModuleNotFoundError mid-run
+# (after the streams have already been written). Mirrors the pattern in
+# scripts/validate_repo.py.
+_SRC = Path(__file__).resolve().parent.parent / "src"
+if _SRC.exists() and str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PRODUCER = "aguayluz-pr"
 CONTRACT_VERSION = "1.0.0"
 PRODUCER_SCRIPT = "scripts/federation_export.py"
+VECTOR = "AGUAYLUZ_WATER_POWER_INFRASTRUCTURE_INTELLIGENCE"
 STREAM_SCHEMA = {
     "sources": "federation_source.schema.json",
     "entities": "federation_entity.schema.json",
     "relationships": "federation_relationship.schema.json",
 }
+
+# outputs/* deliverable: the operator-facing snapshot half of the canonical
+# contract. Each filename maps to a schema in schemas/. Validated against its
+# schema before write so the gate set (G01-G06) sees only compliant records.
+OUTPUT_FILES = (
+    "utility_assets.json",      # array of utility_asset records
+    "service_events.json",      # array of service_event records (PREPS + AEE merged)
+    "monitoring_readings.json", # array of monitoring_reading records (USGS time-series)
+    "source_manifest.json",     # SourceManifest envelope
+    "review_queue.json",        # ReviewQueue envelope
+    "bridge_summary.json",      # AguayluzBridgeSummary envelope
+    "base44_export.json",       # Base44 envelope (Hub-conformant)
+    "integration_report.json",  # IntegrationReport (coverage + gates ledger); WRITTEN LAST
+)
+GATE_IDS = (
+    "G01_SCHEMA", "G02_SOURCE_MANIFEST", "G03_CONFIDENCE", "G04_REVIEW_QUEUE",
+    "G05_COVERAGE_LEDGER", "G06_BASE44_EXPORT", "G07_NO_SECRETS", "G08_TESTS",
+)
+WELL_KNOWN_GAPS = [
+    "StreamCat NLCD attributes unavailable for VPU 21",
+    "aee_incidents.jsonl is a 2025-03-03 point-in-time snapshot; LIVE per-municipio feed pending",
+]
+NEXT_ACTIONS_DEFAULT = [
+    "AYL_INGEST_LIVE_OUTAGES",
+    "AYL_REVIEWER_PASS_OSM_WATER",
+]
 
 
 def _fid(prefix: str, *parts: Any) -> str:
@@ -219,19 +256,311 @@ def _load_jsonl(path: Path) -> list[dict[str, Any]]:
     return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
 
 
+# ---------------------------------------------------------------------------
+# outputs/* deliverable generator (operator-facing snapshot)
+# ---------------------------------------------------------------------------
+
+def _run_id(now: str) -> str:
+    """Build a run_id matching ^[0-9]{8}T[0-9]{6}Z_[A-Za-z0-9_-]+$."""
+    stamp = now.replace("-", "").replace(":", "")  # 2026-06-08T13:45:24Z -> 20260608T134524Z
+    return f"{stamp}_export"
+
+
+def _summary_id(now: str) -> str:
+    """Build a summary_id matching ^AYL_SUM_[0-9]{8}_[A-Za-z0-9_-]+$."""
+    return f"AYL_SUM_{now[:10].replace('-', '')}_export"
+
+
+def _compute_aggregates(assets: list[dict[str, Any]], events: list[dict[str, Any]]) -> dict[str, Any]:
+    """Aggregate counts + averages for the base44/bridge_summary envelopes."""
+    all_records = list(assets) + list(events)
+    review = sum(1 for r in all_records if r.get("review_status") == "needs_review")
+    blocked = sum(1 for r in all_records if r.get("review_status") == "blocked")
+    confidences = [r["confidence"] for r in all_records if isinstance(r.get("confidence"), (int, float))]
+    conf_avg = round(sum(confidences) / len(confidences), 2) if confidences else 0.0
+    munis = sorted({
+        r.get("municipality") for r in all_records
+        if r.get("municipality") and r.get("municipality") != "unknown"
+    })
+    located = sum(1 for r in all_records if isinstance(r.get("lat"), (int, float)))
+    return {
+        "records_total": len(all_records),
+        "records_review": review,
+        "records_blocked": blocked,
+        "confidence_avg": conf_avg,
+        "municipalities_covered": munis,
+        "located": located,
+    }
+
+
+def _validate_and_write(path: Path, schema_name: str, data: Any) -> None:
+    """Validate against the named schema (raise on mismatch) then write JSON."""
+    # Local import so the script doesn't require the package on a fresh clone for
+    # the streams-only path; needed only when the outputs/ generator runs.
+    from aguayluz.models import validate_against_schema
+    validate_against_schema(schema_name, data)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, indent=2, sort_keys=True))
+
+
+def _validate_record_list(records: list[dict[str, Any]], schema_name: str) -> None:
+    """Per-record schema validation (mirrors gate G01_SCHEMA's list-iteration path)."""
+    from aguayluz.models import validate_against_schema
+    for i, rec in enumerate(records):
+        try:
+            validate_against_schema(schema_name, rec)
+        except Exception as exc:
+            raise ValueError(f"{schema_name}[{i}] failed schema validation: {exc}") from exc
+
+
+def _derive_aggregate_status(gate_results: list[Any]) -> str:
+    """Roll an iterable of GateResult into a base44 envelope status.
+
+    Precedence: any FAIL → FAIL; else any WARN → WARN; else PASS.
+    SKIP is treated as benign (the gate had nothing to check). This mirrors
+    the way `validate_repo.py` decides whether to exit 0 or 1.
+    """
+    statuses = [getattr(r, "status", r) for r in gate_results]
+    if any(s == "FAIL" for s in statuses):
+        return "FAIL"
+    if any(s == "WARN" for s in statuses):
+        return "WARN"
+    return "PASS"
+
+
+def _coverage_pct(located: int, total: int) -> float:
+    """Real coverage ratio. 0% when no records to cover (vs. dividing by zero)."""
+    if total <= 0:
+        return 0.0
+    return round((located / total) * 100, 2)
+
+
+def build_outputs(
+    assets: list[dict[str, Any]],
+    events: list[dict[str, Any]],
+    aggregates: dict[str, Any],
+    now: str,
+    outputs_dir: Path,
+    readings: list[dict[str, Any]] | None = None,
+) -> dict[str, int]:
+    """Materialize all 8 files under outputs/. integration_report.json is last
+    (references the others). Returns per-file record counts for logging.
+
+    `readings` (monitoring_reading rows, e.g. USGS daily reservoir levels) are a
+    parallel time-series deliverable — validated and written to
+    monitoring_readings.json, but intentionally NOT folded into the asset/event
+    coverage aggregates (they have no lat/lon of their own; they reference an
+    asset_id) nor projected as entity-graph nodes (anti-bloat: 1 reservoir × daily
+    history would dwarf the entity set)."""
+    readings = readings or []
+    outputs_dir.mkdir(parents=True, exist_ok=True)
+    run_id = _run_id(now)
+    summary_id = _summary_id(now)
+    today = now[:10]
+
+    # 1+2. Per-record arrays — validated individually for the same per-record
+    # iteration the G01 gate does, then written as a JSON array.
+    _validate_record_list(assets, "utility_asset")
+    (outputs_dir / "utility_assets.json").write_text(json.dumps(assets, indent=2, sort_keys=True))
+    _validate_record_list(events, "service_event")
+    (outputs_dir / "service_events.json").write_text(json.dumps(events, indent=2, sort_keys=True))
+
+    # 2b. monitoring_readings — time-series observations (always written, even if
+    # empty, so the deliverable file-set is deterministic).
+    _validate_record_list(readings, "monitoring_reading")
+    (outputs_dir / "monitoring_readings.json").write_text(json.dumps(readings, indent=2, sort_keys=True))
+
+    # 3. source_manifest — one entry per unique source_ref across both record lists.
+    seen: dict[str, dict[str, Any]] = {}
+    for r in assets + events:
+        ref = r.get("source_ref")
+        if not ref or ref in seen:
+            continue
+        seen[ref] = {
+            "source_ref": ref,
+            "source_hash": r.get("source_hash"),
+            "tier": r.get("evidence_tier", "T3"),
+            "access_date": today,
+            "citation": None,
+            "notes": None,
+        }
+    manifest = {
+        "module_id": "aguayluz-pr",
+        "generated_at": now,
+        "entries": sorted(seen.values(), key=lambda e: e["source_ref"]),
+    }
+    _validate_and_write(outputs_dir / "source_manifest.json", "source_manifest", manifest)
+
+    # 4. review_queue — one item per record where review_status ∈ {needs_review, blocked}.
+    items: list[dict[str, Any]] = []
+    for r in assets + events:
+        status = r.get("review_status")
+        if status not in ("needs_review", "blocked"):
+            continue
+        ref = r.get("asset_id") or r.get("event_id") or "unknown"
+        item: dict[str, Any] = {
+            "record_ref": ref,
+            "reason": f"upstream review_status={status} (evidence_tier={r.get('evidence_tier', '?')})",
+            "severity": "warn" if status == "needs_review" else "block",
+        }
+        if r.get("evidence_tier"):
+            item["evidence_tier"] = r["evidence_tier"]
+        if isinstance(r.get("confidence"), int):
+            item["confidence"] = r["confidence"]
+        items.append(item)
+    review_queue = {"module_id": "aguayluz-pr", "generated_at": now, "items": items}
+    _validate_and_write(outputs_dir / "review_queue.json", "review_queue", review_queue)
+
+    # 5. bridge_summary — module-level aggregates for the Hub.
+    coverage_pct = _coverage_pct(aggregates["located"], aggregates["records_total"])
+    bridge = {
+        "module_id": "aguayluz-pr",
+        "summary_id": summary_id,
+        "assets_total": len(assets),
+        "events_total": len(events),
+        "municipalities_covered": aggregates["municipalities_covered"],
+        "service_risk_summary": (
+            f"{aggregates['records_review']} of {aggregates['records_total']} records carry "
+            f"review_status=needs_review; {aggregates['records_blocked']} blocked; "
+            f"coverage_pct={coverage_pct}; mean evidence confidence "
+            f"{aggregates['confidence_avg']}/100 across {len(aggregates['municipalities_covered'])} "
+            "municipalities."
+        ),
+        "infrastructure_dependencies": [
+            "NHDPlus V2.1 (VPU 21)",
+            "EPA WATERS REST API",
+            "USGS NWIS Site Service",
+            "HIFLD electric substations",
+            "PR_Geodata OSM extracts (water/wastewater)",
+            "LUMA outages_by_town (SuperSonicHub1 mirror)",
+        ],
+        "linked_modules": ["thehub-pr"],
+        "confidence": round(aggregates["confidence_avg"]),
+        "review_status": "needs_review" if aggregates["records_review"] > 0 else "accepted",
+    }
+    _validate_and_write(outputs_dir / "bridge_summary.json", "aguayluz_bridge_summary", bridge)
+
+    # 6 + 7. The health-signal pair (base44_export + integration_report) must
+    # report REAL gate state, not constants. Otherwise the deliverable's
+    # headline is a green light wired to "on": a future failure (a leaked
+    # secret → G07 FAIL; a blocked record arriving) would still emit
+    # status=PASS, defeating the point of the gate system.
+    #
+    # Bootstrap dance:
+    #   - delete any stale base44_export.json and integration_report.json so
+    #     gates G05/G06 honestly report SKIP on this pass (rather than
+    #     re-validating last run's file)
+    #   - run validate_repo gates against the 5 files we just wrote
+    #   - derive the aggregate status (any FAIL → FAIL; any WARN → WARN;
+    #     else PASS); record each gate's real result in the ledger
+    #   - write base44_export and integration_report with those measured
+    #     values. Subsequent validate_repo runs will inspect these files
+    #     for G05/G06 and PASS/FAIL them on their own merits.
+    for stale in ("integration_report.json", "base44_export.json"):
+        (outputs_dir / stale).unlink(missing_ok=True)
+
+    from aguayluz.validation import run_gates  # local import; same reason as _validate_and_write
+    report = run_gates()
+    gate_ledger = [
+        {"id": r.gate_id, "status": r.status, "details": r.details or None}
+        for r in report.results
+    ]
+    aggregate_status = _derive_aggregate_status(report.results)
+
+    n_power = sum(1 for a in assets if a.get("asset_type") == "power")
+    n_water = sum(1 for a in assets if a.get("asset_type") in ("water", "wastewater"))
+    base44 = {
+        "module_id": "aguayluz-pr",
+        "run_id": run_id,
+        "vector": VECTOR,
+        "status": aggregate_status,
+        "coverage_pct": coverage_pct,
+        "records_total": aggregates["records_total"],
+        "records_review": aggregates["records_review"],
+        "records_blocked": aggregates["records_blocked"],
+        "confidence_avg": aggregates["confidence_avg"],
+        "source_manifest_path": "outputs/source_manifest.json",
+        "integration_report_path": "outputs/integration_report.json",
+        "sanitized_summary": (
+            f"{aggregates['records_total']} canonical records ({n_power} power, {n_water} water/wastewater, "
+            f"{len(assets) - n_power - n_water} other assets, {len(events)} service events) across "
+            f"{len(aggregates['municipalities_covered'])} municipalities. "
+            f"{aggregates['records_review']} await reviewer adjudication; mean confidence "
+            f"{aggregates['confidence_avg']}/100. "
+            f"coverage_pct = geolocation rate "
+            f"({aggregates['located']}/{aggregates['records_total']} records carry lat/lon); "
+            "ingestion completeness is implicit 100% (no target population enumerated upstream)."
+        ),
+        "top_findings": [],
+        "contradictions": [],
+        "gaps": list(WELL_KNOWN_GAPS),
+        "next_actions": list(NEXT_ACTIONS_DEFAULT),
+    }
+    _validate_and_write(outputs_dir / "base44_export.json", "base44_export", base44)
+
+    # Coverage ledger: `unresolved` and `gaps` must reflect REAL state, not
+    # constants. Without coords means the record can't participate in spatial
+    # joins downstream (PRIIS scoring, spiderweb correlate_spatial), so each
+    # such record is a measurable coverage gap.
+    unresolved = aggregates["records_total"] - aggregates["located"]
+    coverage_gaps: list[str] = []
+    if unresolved > 0:
+        coverage_gaps.append(
+            f"{unresolved} record(s) lack lat/lon and cannot anchor spatial joins "
+            "(typically: PREPS island-wide events + AEE incidents whose geo "
+            "centroid is injected at stream-build time, not input ingest)"
+        )
+    integration = {
+        "module_id": "aguayluz-pr",
+        "run_id": run_id,
+        "vector": VECTOR,
+        "generated_at": now,
+        "coverage": {
+            "expected": aggregates["records_total"],
+            "located": aggregates["located"],
+            "ingested": aggregates["records_total"],
+            "deduped": 0,
+            "unresolved": unresolved,
+            "gaps": coverage_gaps,
+            "coverage_pct": coverage_pct,
+        },
+        "gates": gate_ledger,
+    }
+    _validate_and_write(outputs_dir / "integration_report.json", "integration_report", integration)
+
+    return {
+        "utility_assets": len(assets),
+        "service_events": len(events),
+        "monitoring_readings": len(readings),
+        "source_manifest_entries": len(manifest["entries"]),
+        "review_queue_items": len(items),
+        "bridge_summary": 1,
+        "base44_export": 1,
+        "integration_report": 1,
+    }
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Export AguaYLuz assets/events as PRII canonical streams.")
     ap.add_argument("--assets", default=str(REPO_ROOT / "data/utility_assets.jsonl"))
     ap.add_argument("--events", default=str(REPO_ROOT / "data/service_events.jsonl"))
     ap.add_argument("--incidents", default=str(REPO_ROOT / "data/aee_incidents.jsonl"),
                     help="per-municipality outage events (AEE/LUMA model); merged into events")
+    ap.add_argument("--readings", default=str(REPO_ROOT / "data/reservoir_levels.jsonl"),
+                    help="monitoring_reading time-series (USGS levels); written to outputs/monitoring_readings.json")
     ap.add_argument("--geo", default=str(REPO_ROOT / "data/geo/pr_municipios.json"))
     ap.add_argument("--out", default=str(REPO_ROOT / "exports/federation"))
+    ap.add_argument("--outputs", default=str(REPO_ROOT / "outputs"),
+                    help="operator-facing snapshot directory (7-file deliverable). Pass empty string to skip.")
+    ap.add_argument("--no-outputs", action="store_true",
+                    help="skip the outputs/* deliverable; emit canonical streams only")
     ap.add_argument("--mode", default="test", choices=["test", "production"])
     args = ap.parse_args()
 
+    raw_events = _load_jsonl(Path(args.events))
+    raw_incidents = _load_jsonl(Path(args.incidents))
     assets = _load_jsonl(Path(args.assets))
-    events = _load_jsonl(Path(args.events)) + _load_jsonl(Path(args.incidents))
+    events = raw_events + raw_incidents
     geo = _load_geo(Path(args.geo))
     if not assets and not events:
         print("no input data (data/utility_assets.jsonl / service_events / aee_incidents absent) — nothing to export")
@@ -241,6 +570,12 @@ def main() -> int:
     manifest_path = write_package(streams, Path(args.out), args.mode, now)
     counts = {k: len(v) for k, v in streams.items()}
     print(f"wrote {manifest_path} — {counts}")
+
+    if not args.no_outputs and args.outputs:
+        readings = _load_jsonl(Path(args.readings))
+        aggregates = _compute_aggregates(assets, events)
+        outputs_counts = build_outputs(assets, events, aggregates, now, Path(args.outputs), readings)
+        print(f"wrote outputs/* — {outputs_counts}")
     return 0
 
 
