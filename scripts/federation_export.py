@@ -20,10 +20,20 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import sys
 import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+# Allow `python scripts/federation_export.py` from a fresh clone without an
+# editable install. The outputs/* generator imports aguayluz.{models,validation}
+# lazily; without this bootstrap those imports raise ModuleNotFoundError mid-run
+# (after the streams have already been written). Mirrors the pattern in
+# scripts/validate_repo.py.
+_SRC = Path(__file__).resolve().parent.parent / "src"
+if _SRC.exists() and str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PRODUCER = "aguayluz-pr"
@@ -473,6 +483,18 @@ def build_outputs(
     }
     _validate_and_write(outputs_dir / "base44_export.json", "base44_export", base44)
 
+    # Coverage ledger: `unresolved` and `gaps` must reflect REAL state, not
+    # constants. Without coords means the record can't participate in spatial
+    # joins downstream (PRIIS scoring, spiderweb correlate_spatial), so each
+    # such record is a measurable coverage gap.
+    unresolved = aggregates["records_total"] - aggregates["located"]
+    coverage_gaps: list[str] = []
+    if unresolved > 0:
+        coverage_gaps.append(
+            f"{unresolved} record(s) lack lat/lon and cannot anchor spatial joins "
+            "(typically: PREPS island-wide events + AEE incidents whose geo "
+            "centroid is injected at stream-build time, not input ingest)"
+        )
     integration = {
         "module_id": "aguayluz-pr",
         "run_id": run_id,
@@ -483,8 +505,8 @@ def build_outputs(
             "located": aggregates["located"],
             "ingested": aggregates["records_total"],
             "deduped": 0,
-            "unresolved": 0,
-            "gaps": [],
+            "unresolved": unresolved,
+            "gaps": coverage_gaps,
             "coverage_pct": coverage_pct,
         },
         "gates": gate_ledger,
