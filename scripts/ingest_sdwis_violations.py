@@ -38,6 +38,23 @@ from typing import Any
 
 EFSERVICE = "https://data.epa.gov/efservice"
 PAGE = 10000
+
+# SDWIS RULE_GROUP_CODE values in EPA's "Microbials" family (100) — the pathogen
+# rules whose Tier-1 acute violations warrant a BOIL-WATER response:
+#   100 Microbials (family)  110 Total Coliform Rule  111 Revised TCR
+#   120 Surface Water Treatment Rules  130 Filter Backwash Rule  140 Ground Water Rule
+# We keep BOTH the family code (100) and its subcodes so the filter is correct
+# whether a row carries the broad group or the specific rule — do NOT narrow to
+# just {"100"} or just the subcodes. Everything from 200 up is NON-microbial and
+# must NOT trigger boil_water: 200/210/220/230 Disinfectants & Disinfection
+# Byproducts (e.g. chlorine dioxide — acute, but "do NOT boil"), 300s Chemicals,
+# 400s Public Notice / CCR, 500 Not Regulated.
+# Source: EPA SDWIS / ECHO SDWA RULE_GROUP_CODE dictionary. There is no public
+# machine-readable PRASA boil-water feed (the AAA portal is a Webflow marketing
+# site with no API), so Tier-1 acute microbial SDWIS notices are the authoritative
+# regulatory boil-water signal; other Tier-1 notices stay water_quality_violation
+# (honest: not every Tier-1 notice is "boil the water").
+MICROBIAL_RULE_GROUPS = {"100", "110", "111", "120", "130", "140"}
 REPO = Path(__file__).resolve().parent.parent
 MUNI_GEOJSON = REPO / "data" / "geo" / "pr_municipios.geojson"
 SDWIS_SOURCE_PREFIX = "EPA SDWIS VIOLATION"
@@ -145,12 +162,18 @@ def build_events(
         health = (v.get("is_health_based_ind") or "").strip().upper() == "Y"
         resolved = (v.get("compliance_status_code") or "").strip().upper() == "R"
         try:
+            tier = int(v.get("public_notification_tier"))
+        except (TypeError, ValueError):
+            tier = None
+        rule_group = str(v.get("rule_group_code") or "").strip()
+        is_boil_water = health and tier == 1 and rule_group in MICROBIAL_RULE_GROUPS
+        try:
             pop = int(float(v.get("population_served_count")))
         except (TypeError, ValueError):
             pop = None
         rows.append({
             "event_id": f"AYL_EVT_{day}_{pwsid}_{vid}",
-            "event_type": "water_quality_violation",
+            "event_type": "boil_water" if is_boil_water else "water_quality_violation",
             "affected_area": affected,
             "municipality": muni,
             "zone": None,

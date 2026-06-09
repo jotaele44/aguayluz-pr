@@ -240,6 +240,10 @@ tile_cache/
 *.pem
 *.key
 .DS_Store
+# USGS publishes site metadata in RDB (tab-delimited text, NOT a Redis dump); the
+# `*.rdb` rule in the Redis section above would otherwise silently drop our
+# sanitized USGS fixtures and leave CI unable to find them.
+!tests/fixtures/*.rdb
 
 # Top-level data dumps (allow tests/fixtures/**/*.json and schemas/*.json)
 /*.csv
