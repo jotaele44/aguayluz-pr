@@ -72,6 +72,7 @@ def _load_gate_toggles() -> dict[str, dict]:
 _ENTITY_SCHEMAS = {
     "utility_assets.json":   "utility_asset",            # list of utility_asset
     "service_events.json":   "service_event",            # list of service_event
+    "monitoring_readings.json": "monitoring_reading",    # list of monitoring_reading
     "bridge_summary.json":   "aguayluz_bridge_summary",
     "base44_export.json":    "base44_export",
     "source_manifest.json":  "source_manifest",

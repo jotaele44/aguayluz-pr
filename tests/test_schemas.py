@@ -197,7 +197,7 @@ def test_integration_report_minimal_valid():
 def test_every_schema_loads_and_validates_itself(schemas_dir):
     from jsonschema import Draft202012Validator
     schemas = list(schemas_dir.glob("*.schema.json"))
-    assert len(schemas) == 7, f"expected 7 schemas, found {len(schemas)}"
+    assert len(schemas) == 8, f"expected 8 schemas, found {len(schemas)}"
     for p in schemas:
         s = json.loads(p.read_text(encoding="utf-8"))
         Draft202012Validator.check_schema(s)

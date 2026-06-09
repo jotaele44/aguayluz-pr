@@ -94,15 +94,17 @@ def test_outputs_deliverable_against_real_corpus(real_corpus, tmp_path, monkeypa
     from aguayluz import validation as ayl_validation
     monkeypatch.setattr(ayl_validation, "OUTPUTS_DIR", outputs)
 
-    counts = build_outputs(assets, events, aggregates, now, outputs)
+    readings = _load_jsonl(REPO_ROOT / "data/reservoir_levels.jsonl")
+    counts = build_outputs(assets, events, aggregates, now, outputs, readings)
 
-    # All 7 declared deliverables present.
+    # All 8 declared deliverables present (incl. monitoring_readings time-series).
     expected_files = {
-        "utility_assets.json", "service_events.json", "source_manifest.json",
-        "review_queue.json", "bridge_summary.json", "base44_export.json",
-        "integration_report.json",
+        "utility_assets.json", "service_events.json", "monitoring_readings.json",
+        "source_manifest.json", "review_queue.json", "bridge_summary.json",
+        "base44_export.json", "integration_report.json",
     }
     assert {p.name for p in outputs.iterdir()} == expected_files
+    assert counts["monitoring_readings"] == len(readings)
 
     # Aggregates spot-checks — these numbers come straight from the merged
     # corpus (273+ assets ranging across power/water/USGS, 2 PREPS + 6 AEE

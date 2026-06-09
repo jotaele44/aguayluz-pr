@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/monitoring_reading.schema.json",
+  "title": "MonitoringReading",
+  "description": "A single time-series observation for a Puerto Rico utility asset (reservoir level, streamflow, drinking-water sample, etc.). The routine time-series backbone of the monitoring system; discrete service disruptions belong in service_event, static infrastructure in utility_asset.",
+  "type": "object",
+  "required": [
+    "reading_id",
+    "asset_id",
+    "metric",
+    "value",
+    "unit",
+    "observed_date",
+    "source_ref",
+    "evidence_tier",
+    "confidence",
+    "review_status"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "reading_id":  { "type": "string", "pattern": "^AYL_RDG_[0-9]{8}_[A-Za-z0-9_.-]+$", "description": "AYL_RDG_<YYYYMMDD>_<site>_<metric> — stable per asset/metric/day." },
+    "asset_id":    { "type": "string", "minLength": 1, "description": "FK to a utility_asset.asset_id (e.g. USGS_50059000)." },
+    "site_no":     { "type": ["string", "null"], "description": "Upstream station id for provenance (USGS site, PWSID, EIA plant)." },
+    "metric":      { "enum": ["reservoir_elevation", "reservoir_storage_pct", "streamflow", "gage_height", "water_quality", "generation", "other"] },
+    "parameter_code": { "type": ["string", "null"], "description": "Source parameter code (USGS parm_cd, EPA contaminant code, EIA series)." },
+    "value":       { "type": "number" },
+    "unit":        { "type": "string", "minLength": 1 },
+    "observed_date": { "type": "string", "format": "date" },
+    "provisional": { "type": ["boolean", "null"], "description": "True when the upstream value is flagged provisional/subject to revision (e.g. USGS 'P')." },
+    "source_ref":    { "type": "string", "minLength": 1 },
+    "source_hash":   { "type": ["string", "null"] },
+    "evidence_tier": { "enum": ["T1", "T2", "T3", "T4"] },
+    "confidence":    { "type": "integer", "minimum": 0, "maximum": 100 },
+    "review_status": { "enum": ["accepted", "needs_review", "rejected", "blocked"] }
+  }
+}

@@ -52,6 +52,7 @@ STREAM_SCHEMA = {
 OUTPUT_FILES = (
     "utility_assets.json",      # array of utility_asset records
     "service_events.json",      # array of service_event records (PREPS + AEE merged)
+    "monitoring_readings.json", # array of monitoring_reading records (USGS time-series)
     "source_manifest.json",     # SourceManifest envelope
     "review_queue.json",        # ReviewQueue envelope
     "bridge_summary.json",      # AguayluzBridgeSummary envelope
@@ -340,9 +341,18 @@ def build_outputs(
     aggregates: dict[str, Any],
     now: str,
     outputs_dir: Path,
+    readings: list[dict[str, Any]] | None = None,
 ) -> dict[str, int]:
-    """Materialize all 7 files under outputs/. integration_report.json is last
-    (references the others). Returns per-file record counts for logging."""
+    """Materialize all 8 files under outputs/. integration_report.json is last
+    (references the others). Returns per-file record counts for logging.
+
+    `readings` (monitoring_reading rows, e.g. USGS daily reservoir levels) are a
+    parallel time-series deliverable — validated and written to
+    monitoring_readings.json, but intentionally NOT folded into the asset/event
+    coverage aggregates (they have no lat/lon of their own; they reference an
+    asset_id) nor projected as entity-graph nodes (anti-bloat: 1 reservoir × daily
+    history would dwarf the entity set)."""
+    readings = readings or []
     outputs_dir.mkdir(parents=True, exist_ok=True)
     run_id = _run_id(now)
     summary_id = _summary_id(now)
@@ -354,6 +364,11 @@ def build_outputs(
     (outputs_dir / "utility_assets.json").write_text(json.dumps(assets, indent=2, sort_keys=True))
     _validate_record_list(events, "service_event")
     (outputs_dir / "service_events.json").write_text(json.dumps(events, indent=2, sort_keys=True))
+
+    # 2b. monitoring_readings — time-series observations (always written, even if
+    # empty, so the deliverable file-set is deterministic).
+    _validate_record_list(readings, "monitoring_reading")
+    (outputs_dir / "monitoring_readings.json").write_text(json.dumps(readings, indent=2, sort_keys=True))
 
     # 3. source_manifest — one entry per unique source_ref across both record lists.
     seen: dict[str, dict[str, Any]] = {}
@@ -516,6 +531,7 @@ def build_outputs(
     return {
         "utility_assets": len(assets),
         "service_events": len(events),
+        "monitoring_readings": len(readings),
         "source_manifest_entries": len(manifest["entries"]),
         "review_queue_items": len(items),
         "bridge_summary": 1,
@@ -530,6 +546,8 @@ def main() -> int:
     ap.add_argument("--events", default=str(REPO_ROOT / "data/service_events.jsonl"))
     ap.add_argument("--incidents", default=str(REPO_ROOT / "data/aee_incidents.jsonl"),
                     help="per-municipality outage events (AEE/LUMA model); merged into events")
+    ap.add_argument("--readings", default=str(REPO_ROOT / "data/reservoir_levels.jsonl"),
+                    help="monitoring_reading time-series (USGS levels); written to outputs/monitoring_readings.json")
     ap.add_argument("--geo", default=str(REPO_ROOT / "data/geo/pr_municipios.json"))
     ap.add_argument("--out", default=str(REPO_ROOT / "exports/federation"))
     ap.add_argument("--outputs", default=str(REPO_ROOT / "outputs"),
@@ -554,8 +572,9 @@ def main() -> int:
     print(f"wrote {manifest_path} — {counts}")
 
     if not args.no_outputs and args.outputs:
+        readings = _load_jsonl(Path(args.readings))
         aggregates = _compute_aggregates(assets, events)
-        outputs_counts = build_outputs(assets, events, aggregates, now, Path(args.outputs))
+        outputs_counts = build_outputs(assets, events, aggregates, now, Path(args.outputs), readings)
         print(f"wrote outputs/* — {outputs_counts}")
     return 0
 
