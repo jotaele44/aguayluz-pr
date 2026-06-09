@@ -302,6 +302,28 @@ def _validate_record_list(records: list[dict[str, Any]], schema_name: str) -> No
             raise ValueError(f"{schema_name}[{i}] failed schema validation: {exc}") from exc
 
 
+def _derive_aggregate_status(gate_results: list[Any]) -> str:
+    """Roll an iterable of GateResult into a base44 envelope status.
+
+    Precedence: any FAIL → FAIL; else any WARN → WARN; else PASS.
+    SKIP is treated as benign (the gate had nothing to check). This mirrors
+    the way `validate_repo.py` decides whether to exit 0 or 1.
+    """
+    statuses = [getattr(r, "status", r) for r in gate_results]
+    if any(s == "FAIL" for s in statuses):
+        return "FAIL"
+    if any(s == "WARN" for s in statuses):
+        return "WARN"
+    return "PASS"
+
+
+def _coverage_pct(located: int, total: int) -> float:
+    """Real coverage ratio. 0% when no records to cover (vs. dividing by zero)."""
+    if total <= 0:
+        return 0.0
+    return round((located / total) * 100, 2)
+
+
 def build_outputs(
     assets: list[dict[str, Any]],
     events: list[dict[str, Any]],
@@ -365,6 +387,7 @@ def build_outputs(
     _validate_and_write(outputs_dir / "review_queue.json", "review_queue", review_queue)
 
     # 5. bridge_summary — module-level aggregates for the Hub.
+    coverage_pct = _coverage_pct(aggregates["located"], aggregates["records_total"])
     bridge = {
         "module_id": "aguayluz-pr",
         "summary_id": summary_id,
@@ -374,7 +397,7 @@ def build_outputs(
         "service_risk_summary": (
             f"{aggregates['records_review']} of {aggregates['records_total']} records carry "
             f"review_status=needs_review; {aggregates['records_blocked']} blocked; "
-            f"coverage_pct=100.0; mean evidence confidence "
+            f"coverage_pct={coverage_pct}; mean evidence confidence "
             f"{aggregates['confidence_avg']}/100 across {len(aggregates['municipalities_covered'])} "
             "municipalities."
         ),
@@ -392,15 +415,41 @@ def build_outputs(
     }
     _validate_and_write(outputs_dir / "bridge_summary.json", "aguayluz_bridge_summary", bridge)
 
-    # 6. base44_export — Hub-conformant envelope.
+    # 6 + 7. The health-signal pair (base44_export + integration_report) must
+    # report REAL gate state, not constants. Otherwise the deliverable's
+    # headline is a green light wired to "on": a future failure (a leaked
+    # secret → G07 FAIL; a blocked record arriving) would still emit
+    # status=PASS, defeating the point of the gate system.
+    #
+    # Bootstrap dance:
+    #   - delete any stale base44_export.json and integration_report.json so
+    #     gates G05/G06 honestly report SKIP on this pass (rather than
+    #     re-validating last run's file)
+    #   - run validate_repo gates against the 5 files we just wrote
+    #   - derive the aggregate status (any FAIL → FAIL; any WARN → WARN;
+    #     else PASS); record each gate's real result in the ledger
+    #   - write base44_export and integration_report with those measured
+    #     values. Subsequent validate_repo runs will inspect these files
+    #     for G05/G06 and PASS/FAIL them on their own merits.
+    for stale in ("integration_report.json", "base44_export.json"):
+        (outputs_dir / stale).unlink(missing_ok=True)
+
+    from aguayluz.validation import run_gates  # local import; same reason as _validate_and_write
+    report = run_gates()
+    gate_ledger = [
+        {"id": r.gate_id, "status": r.status, "details": r.details or None}
+        for r in report.results
+    ]
+    aggregate_status = _derive_aggregate_status(report.results)
+
     n_power = sum(1 for a in assets if a.get("asset_type") == "power")
     n_water = sum(1 for a in assets if a.get("asset_type") in ("water", "wastewater"))
     base44 = {
         "module_id": "aguayluz-pr",
         "run_id": run_id,
         "vector": VECTOR,
-        "status": "PASS",
-        "coverage_pct": 100.0,
+        "status": aggregate_status,
+        "coverage_pct": coverage_pct,
         "records_total": aggregates["records_total"],
         "records_review": aggregates["records_review"],
         "records_blocked": aggregates["records_blocked"],
@@ -421,10 +470,6 @@ def build_outputs(
     }
     _validate_and_write(outputs_dir / "base44_export.json", "base44_export", base44)
 
-    # 7. integration_report — written LAST; bootstraps the gate ledger from
-    # the files we just wrote (status=PASS for every gate we just satisfied;
-    # G07/G08 are filesystem-wide checks reported as PASS by static analysis).
-    gates = [{"id": gid, "status": "PASS", "details": None} for gid in GATE_IDS]
     integration = {
         "module_id": "aguayluz-pr",
         "run_id": run_id,
@@ -437,9 +482,9 @@ def build_outputs(
             "deduped": 0,
             "unresolved": 0,
             "gaps": [],
-            "coverage_pct": 100.0,
+            "coverage_pct": coverage_pct,
         },
-        "gates": gates,
+        "gates": gate_ledger,
     }
     _validate_and_write(outputs_dir / "integration_report.json", "integration_report", integration)
 
