@@ -209,6 +209,54 @@ def test_coverage_pct_formula():
     assert _coverage_pct(7, 10) == 70.0
 
 
+def test_base44_status_reflects_g03_warning(tmp_path, monkeypatch):
+    """Synthetic-anomaly test — proves `build_outputs` actually CONSULTS the
+    helper instead of hardcoding `"PASS"`.
+
+    Closes the gap the unit + corpus tests can't: both `_derive_aggregate_status`
+    in isolation (the unit test) and the real-corpus assertions (the e2e test)
+    accept PASS, so neither would catch a regression that reverted
+    `build_outputs` to `"status": "PASS"`. Here we feed one accepted record
+    with confidence < 50 — that trips G03 to WARN; the deliverable's headline
+    status must follow.
+    """
+    bad = {
+        "asset_id": "AYL_AST_TEST_LOWCONF",
+        "asset_name": "synthetic low-confidence sentinel",
+        "asset_type": "power",
+        "asset_subtype": "substation",
+        "operator": "test",
+        "municipality": "San Juan",
+        "lat": 18.4655, "lon": -66.1057,
+        "geometry_type": "point",
+        "status": "active",
+        "source_ref": "test://synthetic",
+        "evidence_tier": "T4",
+        "confidence": 30,  # < 50 with review_status=accepted -> G03 WARN
+        "review_status": "accepted",
+    }
+    assets = [bad]
+    events: list = []
+    aggregates = _compute_aggregates(assets, events)
+    outputs = tmp_path / "outputs"
+
+    from aguayluz import validation as ayl_validation
+    monkeypatch.setattr(ayl_validation, "OUTPUTS_DIR", outputs)
+
+    build_outputs(assets, events, aggregates, "2026-06-08T13:45:24Z", outputs)
+
+    base44 = json.loads((outputs / "base44_export.json").read_text())
+    assert base44["status"] == "WARN", (
+        f"expected WARN from G03 on accepted+confidence<50; got "
+        f"{base44['status']}. If this regresses to PASS, build_outputs "
+        "may have reverted to a hardcoded status literal."
+    )
+    # Cross-check the integration_report ledger surfaced the right gate row.
+    report = json.loads((outputs / "integration_report.json").read_text())
+    g03 = next(g for g in report["gates"] if g["id"] == "G03_CONFIDENCE")
+    assert g03["status"] == "WARN"
+
+
 @NEEDS_Z3_CORPUS
 def test_aggregates_are_pure(real_corpus):
     """_compute_aggregates is a pure function — same input → same output."""

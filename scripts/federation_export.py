@@ -461,7 +461,10 @@ def build_outputs(
             f"{len(assets) - n_power - n_water} other assets, {len(events)} service events) across "
             f"{len(aggregates['municipalities_covered'])} municipalities. "
             f"{aggregates['records_review']} await reviewer adjudication; mean confidence "
-            f"{aggregates['confidence_avg']}/100."
+            f"{aggregates['confidence_avg']}/100. "
+            f"coverage_pct = geolocation rate "
+            f"({aggregates['located']}/{aggregates['records_total']} records carry lat/lon); "
+            "ingestion completeness is implicit 100% (no target population enumerated upstream)."
         ),
         "top_findings": [],
         "contradictions": [],
