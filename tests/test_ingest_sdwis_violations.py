@@ -36,18 +36,28 @@ def test_municipality_resolved_to_canonical_accented():
     assert muni == "Bayamón"
 
 
+def test_tier1_microbial_acute_maps_to_boil_water():
+    rows = {r["event_id"]: r for r in _events()}
+    # PR0002000 9100777: health_based=Y, tier=1, rule_group=100 (coliform) -> boil_water
+    bw = rows["AYL_EVT_20240915_PR0002000_9100777"]
+    assert bw["event_type"] == "boil_water"
+    assert bw["review_status"] == "needs_review"  # health-based + unresolved
+    # PR0002591 9001234: health_based=Y but tier=2 -> stays water_quality_violation
+    assert rows["AYL_EVT_20230401_PR0002591_9001234"]["event_type"] == "water_quality_violation"
+
+
 def test_events_are_schema_shaped():
     import re
 
     rows = _events()
-    assert len(rows) == 3
+    assert len(rows) == 4
     req = set(SCHEMA["required"])
     allowed = set(SCHEMA["properties"])
     enums = {k: set(v["enum"]) for k, v in SCHEMA["properties"].items() if "enum" in v}
     pat = re.compile(SCHEMA["properties"]["event_id"]["pattern"])
     for r in rows:
         assert req <= set(r) and set(r) <= allowed
-        assert r["event_type"] == "water_quality_violation"
+        assert r["event_type"] in ("water_quality_violation", "boil_water")
         for k, choices in enums.items():
             if k in r:
                 assert r[k] in choices

@@ -38,6 +38,16 @@ from typing import Any
 
 EFSERVICE = "https://data.epa.gov/efservice"
 PAGE = 10000
+
+# SDWIS rule groups that are microbial / pathogen-driven — the contaminations
+# that trigger a BOIL-WATER advisory (vs. e.g. nitrate, which is acute but "do
+# not boil"). Total Coliform / Revised TCR (100/110/120), Surface Water Treatment
+# rules incl. IESWTR/LT1/LT2 (200/210/220/230), Ground Water Rule (410/420).
+# There is NO public machine-readable PRASA boil-water feed (the AAA portal is a
+# Webflow marketing site with no API), so Tier-1 acute microbial SDWIS notices are
+# the authoritative regulatory boil-water signal. Non-microbial acute notices stay
+# water_quality_violation (honest: not every Tier-1 notice is "boil the water").
+MICROBIAL_RULE_GROUPS = {"100", "110", "120", "200", "210", "220", "230", "410", "420"}
 REPO = Path(__file__).resolve().parent.parent
 MUNI_GEOJSON = REPO / "data" / "geo" / "pr_municipios.geojson"
 SDWIS_SOURCE_PREFIX = "EPA SDWIS VIOLATION"
@@ -145,12 +155,18 @@ def build_events(
         health = (v.get("is_health_based_ind") or "").strip().upper() == "Y"
         resolved = (v.get("compliance_status_code") or "").strip().upper() == "R"
         try:
+            tier = int(v.get("public_notification_tier"))
+        except (TypeError, ValueError):
+            tier = None
+        rule_group = str(v.get("rule_group_code") or "").strip()
+        is_boil_water = health and tier == 1 and rule_group in MICROBIAL_RULE_GROUPS
+        try:
             pop = int(float(v.get("population_served_count")))
         except (TypeError, ValueError):
             pop = None
         rows.append({
             "event_id": f"AYL_EVT_{day}_{pwsid}_{vid}",
-            "event_type": "water_quality_violation",
+            "event_type": "boil_water" if is_boil_water else "water_quality_violation",
             "affected_area": affected,
             "municipality": muni,
             "zone": None,
