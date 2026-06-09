@@ -44,13 +44,17 @@ def test_tier1_microbial_acute_maps_to_boil_water():
     assert bw["review_status"] == "needs_review"  # health-based + unresolved
     # PR0002591 9001234: health_based=Y but tier=2 -> stays water_quality_violation
     assert rows["AYL_EVT_20230401_PR0002591_9001234"]["event_type"] == "water_quality_violation"
+    # PR0002000 9200888: health_based=Y, tier=1, but rule_group=210 (Disinfection
+    # Byproducts / chlorine dioxide — acute but "do NOT boil") -> water_quality_violation,
+    # NOT boil_water. Regression guard: 210 was in the old over-broad rule-group set.
+    assert rows["AYL_EVT_20241001_PR0002000_9200888"]["event_type"] == "water_quality_violation"
 
 
 def test_events_are_schema_shaped():
     import re
 
     rows = _events()
-    assert len(rows) == 4
+    assert len(rows) == 5
     req = set(SCHEMA["required"])
     allowed = set(SCHEMA["properties"])
     enums = {k: set(v["enum"]) for k, v in SCHEMA["properties"].items() if "enum" in v}

@@ -39,15 +39,22 @@ from typing import Any
 EFSERVICE = "https://data.epa.gov/efservice"
 PAGE = 10000
 
-# SDWIS rule groups that are microbial / pathogen-driven — the contaminations
-# that trigger a BOIL-WATER advisory (vs. e.g. nitrate, which is acute but "do
-# not boil"). Total Coliform / Revised TCR (100/110/120), Surface Water Treatment
-# rules incl. IESWTR/LT1/LT2 (200/210/220/230), Ground Water Rule (410/420).
-# There is NO public machine-readable PRASA boil-water feed (the AAA portal is a
-# Webflow marketing site with no API), so Tier-1 acute microbial SDWIS notices are
-# the authoritative regulatory boil-water signal. Non-microbial acute notices stay
-# water_quality_violation (honest: not every Tier-1 notice is "boil the water").
-MICROBIAL_RULE_GROUPS = {"100", "110", "120", "200", "210", "220", "230", "410", "420"}
+# SDWIS RULE_GROUP_CODE values in EPA's "Microbials" family (100) — the pathogen
+# rules whose Tier-1 acute violations warrant a BOIL-WATER response:
+#   100 Microbials (family)  110 Total Coliform Rule  111 Revised TCR
+#   120 Surface Water Treatment Rules  130 Filter Backwash Rule  140 Ground Water Rule
+# We keep BOTH the family code (100) and its subcodes so the filter is correct
+# whether a row carries the broad group or the specific rule — do NOT narrow to
+# just {"100"} or just the subcodes. Everything from 200 up is NON-microbial and
+# must NOT trigger boil_water: 200/210/220/230 Disinfectants & Disinfection
+# Byproducts (e.g. chlorine dioxide — acute, but "do NOT boil"), 300s Chemicals,
+# 400s Public Notice / CCR, 500 Not Regulated.
+# Source: EPA SDWIS / ECHO SDWA RULE_GROUP_CODE dictionary. There is no public
+# machine-readable PRASA boil-water feed (the AAA portal is a Webflow marketing
+# site with no API), so Tier-1 acute microbial SDWIS notices are the authoritative
+# regulatory boil-water signal; other Tier-1 notices stay water_quality_violation
+# (honest: not every Tier-1 notice is "boil the water").
+MICROBIAL_RULE_GROUPS = {"100", "110", "111", "120", "130", "140"}
 REPO = Path(__file__).resolve().parent.parent
 MUNI_GEOJSON = REPO / "data" / "geo" / "pr_municipios.geojson"
 SDWIS_SOURCE_PREFIX = "EPA SDWIS VIOLATION"
