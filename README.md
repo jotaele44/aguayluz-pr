@@ -1,75 +1,85 @@
-# aguayluz-pr
+# aguayluz-pr — Water / Grid Monitoring Producer (PRII federation)
 
-Puerto Rico public water, wastewater, power, grid, outage, and recovery-project
-intelligence producer for the Federation control plane (Base44 / INTSYS-PR /
-thehub-pr). Maps PRASA / AAA / LUMA / Genera public records to EPA NHDPlus V2.1
-reaches via the U.S. EPA Office of Water [WATERS Services REST API][waters].
+`aguayluz-pr` is the Puerto Rico water, wastewater, power, grid, outage, and recovery-project intelligence producer for the Puerto Rico Integrated Intelligence (PRII) federation.
 
-> AguaYLuz does not allege wrongdoing. It maps systems, dependencies, service
-> gaps, project status, and evidence-backed infrastructure relationships.
+It maps PRASA / AAA, LUMA, Genera, PREPA, emergency-portal, public infrastructure, and geospatial records into reviewable utility assets, service events, source manifests, and canonical federation exports for [`thehub-pr`](https://github.com/jotaele44/thehub-pr).
 
-**Status:** scaffold (M1) — schemas + validation gates + tests. WATERS HTTP
-client lands in M2, navigation/mapping in M3, Base44 exporter + smoke test in
-M4. See [skill spec](./AGUAYLUZ_PR_SKILL.md) (delivered out-of-band) and the
-build plan at `~/.claude/plans/u-s-epa-office-of-pure-newell.md`.
+> AguaYLuz does not allege wrongdoing. It maps systems, dependencies, service gaps, project status, and evidence-backed infrastructure relationships.
+
+## Current operating state
+
+| Field | Value |
+|---|---|
+| Program id | `aguayluz-pr` |
+| Federation role | `water_grid_monitoring_node` |
+| Parent hub | [`thehub-pr`](https://github.com/jotaele44/thehub-pr) |
+| Production status | `PRODUCTION_REAL_DATA_PARTIAL` |
+| Live execution gate | Ready for Hub live execution, subject to local source/key availability |
+
+The repository has moved beyond scaffold-only status. Current federation metadata identifies real-data partial operation, with loaded power and water/wastewater assets plus service-event/outage inputs that retain coverage caveats and review status.
+
+## Scope
+
+| Domain | Ownership |
+|---|---|
+| Water and wastewater assets | PRASA / AAA and related public references |
+| Power and grid assets | PREPA / LUMA / Genera public records, generation, substations, feeders, poles, transmission, distribution |
+| Service interruptions | Outages, restoration, service events, emergency-portal records |
+| Recovery projects | Utility recovery project status and spatial summaries |
+| Geospatial joins | Puerto Rico municipios, barrios, and NHDPlus V2.1 / VPU 21 references |
+
+## Data-source caveats
+
+Puerto Rico is covered as NHDPlus V2.1 VPU 21, but `VogelExtension`, `VPUAttributeExtension`, and `VPUAttributeExtensionNLCD` are unavailable for VPU 21. Puerto Rico records are stamped with partial attribute coverage rather than silently substituted.
+
+Some outage inputs are point-in-time or third-party snapshots. Treat those as review-grade until a direct recurring source is wired and promoted.
 
 ## Install
 
-```
+```bash
 python -m pip install -e .[dev]
 ```
 
-Python 3.10+ required (works on iOS a-Shell).
+Python 3.10+ required.
 
-## Run the validation gates
+## Run gates
 
-```
+```bash
 python scripts/validate_repo.py
-```
-
-Eight gates (G01-G08) per the skill spec. Exits non-zero on any blocking failure.
-
-## Run tests
-
-```
 pytest -q
+ruff check .
+```
+
+## Federation commands
+
+```bash
+python3 scripts/federation_export.py --mode test
+python3 scripts/ingest_power.py
+python3 scripts/ingest_preps.py
+python3 scripts/ingest_aee.py --src <outages_by_town.json> --snapshot-ts <commit_iso8601>
+python3 scripts/build_pr_municipios_geo.py --src <census_gazetteer_counties.txt>
 ```
 
 ## EPA WATERS API key
 
-Get a free key at [api.data.gov/signup][signup] (one key works across all
-api.data.gov-fronted services). Then:
-
-```
+```bash
 export EPA_WATERS_API_KEY=<your-key>
 ```
 
 The client falls back to `API_DATA_GOV_KEY` if `EPA_WATERS_API_KEY` is not set.
-Free tier is 1,000 requests/hour (rolling).
-
-## Puerto Rico caveat — NHDPlus V2.1 VPU 21
-
-PR is covered as VPU 21, but the `VogelExtension`, `VPUAttributeExtension`, and
-`VPUAttributeExtensionNLCD` datasets are **not available** for VPU 21. Records
-sourced from PR are stamped `attribute_coverage: "partial"` rather than
-silently filled (skill spec rule 8 — no silent substitution).
 
 ## Repo layout
 
-```
-schemas/         JSON Schema (Draft 2020-12) for utility_asset, service_event,
-                 aguayluz_bridge_summary, base44_export, source_manifest,
-                 review_queue, integration_report.
-src/aguayluz/    Pydantic models, validation gates, confidence scorer,
-                 (M2+) waters/ HTTP client and pynhd navigation.
-scripts/         CLI entry points runnable from a-Shell.
-config/          module.yaml, federation_manifest.yaml, validation_gates.yaml.
-tests/           pytest suite (schemas, validation, fixtures).
+```text
+schemas/         JSON Schema files for utility assets, service events, exports, manifests, queues, and reports
+src/aguayluz/    Pydantic models, validators, confidence scoring, WATERS/client logic
+scripts/         CLI entry points and ingest/export commands
+config/          module and validation configuration
+tests/           pytest suite
+outputs/         generated local outputs; do not promote without gate review
+exports/         federation export packages
 ```
 
 ## License
 
 MIT — see [LICENSE](./LICENSE).
-
-[waters]: https://watersgeo.epa.gov/openapi/waters/
-[signup]: https://api.data.gov/signup/
