@@ -268,3 +268,8 @@ exports/federation/
 !data/geo/pr_municipios.json
 !data/geo/pr_municipios.geojson
 !data/geo/pr_barrios.geojson
+
+# Frontend hand-written code lives in dashboard/src/lib — the Python `lib/` rule
+# above wrongly ignores it. Re-include it.
+!dashboard/src/lib/
+!dashboard/src/lib/**
