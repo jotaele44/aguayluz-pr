@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/alert_module.schema.json",
+  "title": "AlertModule",
+  "description": "A sector module in the AguaYLuz-PR alert system registry. Defines activation state, priority, hydro-dependency relevance, and the default severity floor for events classified into the module.",
+  "type": "object",
+  "required": [
+    "module_id",
+    "module_name",
+    "sector",
+    "activation_status",
+    "priority",
+    "hydro_dependency_relevance",
+    "default_severity_floor"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "module_id":   { "enum": ["HYDRO_OPS", "POWER_OPS", "WEATHER_HAZARD", "CONTAMINATION", "TRANSPORT_ACCESS", "TELECOM_SCADA", "DAM_SAFETY", "SEISMIC_GEO", "INDUSTRIAL", "PUBLIC_NOTICE"] },
+    "module_name": { "type": "string", "minLength": 1 },
+    "sector":      { "type": "string", "minLength": 1 },
+    "activation_status": { "enum": ["active", "dormant"] },
+    "priority":    { "enum": ["critical", "high", "medium", "low"] },
+    "hydro_dependency_relevance": { "enum": ["direct", "indirect", "evidence"] },
+    "default_severity_floor": { "type": "integer", "minimum": 0, "maximum": 5 },
+    "primary_sources": { "type": ["string", "null"] },
+    "notes":       { "type": ["string", "null"] }
+  }
+}

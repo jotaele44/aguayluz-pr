@@ -89,5 +89,54 @@ def base44_export_valid() -> dict:
     }
 
 
+@pytest.fixture
+def alert_event_valid() -> dict:
+    return {
+        "alert_id": "AYL_ALR_20260627_carraizo_001",
+        "module_id": "HYDRO_OPS",
+        "event_type": "maintenance",
+        "status": "draft",
+        "source_title": "Trabajos en la represa Carraízo",
+        "source_ref": "archive://carraizo_notice_2026-06-27.jpeg",
+        "source_hash": None,
+        "published_at": None,
+        "start_at": "2026-06-27T20:00:00-04:00",
+        "end_at": "2026-06-28T02:00:00-04:00",
+        "estimated_duration_hr": 6,
+        "asset_name": "Represa Carraízo",
+        "asset_id": None,
+        "operator": "AAA/PRASA",
+        "municipalities": ["Carolina", "San Juan", "Trujillo Alto"],
+        "sectors_impacted": ["Cupey", "Saint Just"],
+        "latitude": 18.344,
+        "longitude": -66.01,
+        "coord_confidence": "approximate",
+        "severity": 2,
+        "confidence": 60,
+        "ilap_score": 3,
+        "covert_flags": ["intake_dependency", "service_area_disruption"],
+        "gap_status": "minor",
+        "review_status": "needs_review",
+        "evidence_tier": "T3",
+        "linked_asset_ids": [],
+        "validation_notes": "Seed from provided notice image.",
+    }
+
+
+@pytest.fixture
+def alert_module_valid() -> dict:
+    return {
+        "module_id": "HYDRO_OPS",
+        "module_name": "Hydro Operations Alerts",
+        "sector": "Water",
+        "activation_status": "active",
+        "priority": "critical",
+        "hydro_dependency_relevance": "direct",
+        "default_severity_floor": 2,
+        "primary_sources": "AAA/PRASA notices",
+        "notes": "Reservoir, intake, WTP interruptions.",
+    }
+
+
 def load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))

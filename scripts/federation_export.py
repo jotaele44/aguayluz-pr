@@ -44,7 +44,9 @@ STREAM_SCHEMA = {
     "sources": "federation_source.schema.json",
     "entities": "federation_entity.schema.json",
     "relationships": "federation_relationship.schema.json",
+    "alerts": "federation_alert.schema.json",
 }
+ALERT_INPUTS = ["data/alert_events.jsonl"]
 
 # outputs/* deliverable: the operator-facing snapshot half of the canonical
 # contract. Each filename maps to a schema in schemas/. Validated against its
@@ -112,12 +114,13 @@ def _lineage(phase: str, inputs: list[str]) -> dict[str, Any]:
     }
 
 
-def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], now: str, geo: dict[str, dict] | None = None) -> dict[str, list[dict[str, Any]]]:
+def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], now: str, geo: dict[str, dict] | None = None, alerts: list[dict[str, Any]] | None = None) -> dict[str, list[dict[str, Any]]]:
     inputs = ["data/utility_assets.jsonl", "data/service_events.jsonl", "data/aee_incidents.jsonl"]
     geo = geo or {}
     sources: dict[str, dict[str, Any]] = {}
     entities: dict[str, dict[str, Any]] = {}
     relationships: dict[str, dict[str, Any]] = {}
+    alert_rows: dict[str, dict[str, Any]] = {}
 
     def source_for(ref: str, ref_hash: Any, conf: float) -> str:
         key = ref_hash or ref
@@ -198,9 +201,58 @@ def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], no
             aid = _fid("ent", "asset", asset_ref)
             relationships.update(_rel_kv(aid, "affected_by", ev_id, sid, conf, now))
 
+    # Operational alert events -> canonical `alerts` stream. Each alert registers
+    # its source, scales confidence to 0-1, and (when matched) links to the
+    # affected utility asset entity for cross-producer correlation in the Hub.
+    for al in alerts or []:
+        conf = _conf(al.get("confidence"))
+        sid = source_for(al.get("source_ref", ""), al.get("source_hash"), conf)
+        alert_id = _fid("alrt", al.get("alert_id"))
+        attributes = {
+            "aguayluz_alert_id": al.get("alert_id"),
+            "asset_name": al.get("asset_name"),
+            "municipalities": al.get("municipalities", []),
+            "sectors_impacted": al.get("sectors_impacted", []),
+            "coord_confidence": al.get("coord_confidence"),
+            "review_status": al.get("review_status"),
+            "evidence_tier": al.get("evidence_tier"),
+            "covert_flags": al.get("covert_flags", []),
+        }
+        attributes = {k: v for k, v in attributes.items() if v not in (None, [], "")}
+        row: dict[str, Any] = {
+            "alert_id": alert_id,
+            "source_id": sid,
+            "module": al.get("module_id"),
+            "alert_type": al.get("event_type"),
+            "severity": al.get("severity"),
+            "status": al.get("status"),
+            "gap_status": al.get("gap_status"),
+            "start_at": al.get("start_at"),
+            "observed_at": al.get("published_at") or al.get("start_at"),
+            "attributes": attributes,
+            "confidence": conf,
+            "lineage": _lineage("ALERT_EVENT", ALERT_INPUTS),
+            "synthetic": str(al.get("source_ref", "")).startswith("seed://"),
+            "created_at": now,
+            "extracted_at": now,
+        }
+        if al.get("end_at"):
+            row["end_at"] = al["end_at"]
+        if al.get("asset_id"):
+            row["entity_id"] = _fid("ent", "asset", al["asset_id"])
+        lat, lon = al.get("latitude"), al.get("longitude")
+        if isinstance(lat, (int, float)) and isinstance(lon, (int, float)):
+            loc = {"lat": round(float(lat), 6), "lon": round(float(lon), 6)}
+            munis = al.get("municipalities") or []
+            if munis and munis[0] != "(unscoped)":
+                loc["municipality"] = munis[0]
+            row["location"] = loc
+        alert_rows[alert_id] = row
+
     return {"sources": list(sources.values()),
             "entities": list(entities.values()),
-            "relationships": list(relationships.values())}
+            "relationships": list(relationships.values()),
+            "alerts": list(alert_rows.values())}
 
 
 def _entity(eid, sid, name, etype, conf, inputs, now):
@@ -230,8 +282,8 @@ def _sha256(path: Path) -> str:
 def write_package(streams, out_dir: Path, mode: str, now: str) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     files = []
-    for stream in ("sources", "entities", "relationships"):
-        rows = streams[stream]
+    for stream in ("sources", "entities", "relationships", "alerts"):
+        rows = streams.get(stream, [])
         if not rows:
             continue
         fpath = out_dir / f"{stream}.jsonl"
@@ -548,6 +600,8 @@ def main() -> int:
                     help="per-municipality outage events (AEE/LUMA model); merged into events")
     ap.add_argument("--readings", default=str(REPO_ROOT / "data/reservoir_levels.jsonl"),
                     help="monitoring_reading time-series (USGS levels); written to outputs/monitoring_readings.json")
+    ap.add_argument("--alerts", default=str(REPO_ROOT / "data/alert_events.jsonl"),
+                    help="operational alert events; projected into the canonical alerts stream")
     ap.add_argument("--geo", default=str(REPO_ROOT / "data/geo/pr_municipios.json"))
     ap.add_argument("--out", default=str(REPO_ROOT / "exports/federation"))
     ap.add_argument("--outputs", default=str(REPO_ROOT / "outputs"),
@@ -560,13 +614,14 @@ def main() -> int:
     raw_events = _load_jsonl(Path(args.events))
     raw_incidents = _load_jsonl(Path(args.incidents))
     assets = _load_jsonl(Path(args.assets))
+    alerts = _load_jsonl(Path(args.alerts))
     events = raw_events + raw_incidents
     geo = _load_geo(Path(args.geo))
-    if not assets and not events:
-        print("no input data (data/utility_assets.jsonl / service_events / aee_incidents absent) — nothing to export")
+    if not assets and not events and not alerts:
+        print("no input data (data/utility_assets.jsonl / service_events / aee_incidents / alert_events absent) — nothing to export")
         return 0
     now = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
-    streams = build_streams(assets, events, now, geo)
+    streams = build_streams(assets, events, now, geo, alerts)
     manifest_path = write_package(streams, Path(args.out), args.mode, now)
     counts = {k: len(v) for k, v in streams.items()}
     print(f"wrote {manifest_path} — {counts}")
@@ -576,6 +631,14 @@ def main() -> int:
         aggregates = _compute_aggregates(assets, events)
         outputs_counts = build_outputs(assets, events, aggregates, now, Path(args.outputs), readings)
         print(f"wrote outputs/* — {outputs_counts}")
+        # outputs/alert_events.json: operator-facing alert snapshot, validated
+        # per-record against the alert_event schema so gate G01 covers it.
+        if alerts:
+            _validate_record_list(alerts, "alert_event")
+            (Path(args.outputs) / "alert_events.json").write_text(
+                json.dumps(alerts, indent=2, sort_keys=True)
+            )
+            print(f"wrote outputs/alert_events.json — {len(alerts)} record(s)")
     return 0
 
 

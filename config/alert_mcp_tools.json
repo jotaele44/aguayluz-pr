@@ -1,0 +1,54 @@
+{
+  "name": "aguayluz_alerts_mcp_spec_v0_2",
+  "description": "Claude MCP tool contract for the AguaYLuz-PR alert system. Claude extracts, classifies, and validates; AguaYLuz-PR is the system of record. Tools are backed by aguayluz.alerts (models), aguayluz.alert_validation (VAL-001..010), and scripts/build_alert_system.py.",
+  "tools": [
+    {
+      "name": "ingest_alert_source",
+      "input": {
+        "source_file_path": "string|null",
+        "source_url": "string|null",
+        "source_type": "image|pdf|html|text|csv",
+        "module_hint": "string|null"
+      },
+      "output": "extracted_alert_json, source_hash, gap_list",
+      "backed_by": "OCR/vision extraction + classification (produces an AlertEvent draft)"
+    },
+    {
+      "name": "validate_alert",
+      "input": "alert_json",
+      "output": "valid, violations, normalized_alert_json",
+      "backed_by": "aguayluz.alert_validation.validate_alert (VAL-001..010) + JSON Schema alert_event"
+    },
+    {
+      "name": "upsert_alert",
+      "input": "validated_alert_json",
+      "output": "alert_id, db_status",
+      "backed_by": "scripts/build_alert_system.py SQLite upsert; must not accept an unvalidated record"
+    },
+    {
+      "name": "link_asset",
+      "input": "alert_id, asset_candidate",
+      "output": "asset_id, confidence, alternatives",
+      "backed_by": "match against data/utility_assets.jsonl"
+    },
+    {
+      "name": "write_geo_event",
+      "input": "alert_id, geometry_geojson",
+      "output": "geojson_feature, layer_path",
+      "backed_by": "outputs/alert_events.geojson"
+    },
+    {
+      "name": "add_gap",
+      "input": "alert_id, gap_type, owner, severity, next_action",
+      "output": "gap_id",
+      "backed_by": "alert_gaps table / data/alert_gaps.jsonl"
+    }
+  ],
+  "guardrails": [
+    "Never accept source-less alerts (VAL-004).",
+    "Never overwrite source evidence or hashes without an explicit update event.",
+    "Unsupported covert interpretation is rejected; only structural indicators are allowed (VAL-010).",
+    "Low-confidence records cannot be marked gap-free (VAL-009).",
+    "Claude classifies and extracts but cannot overwrite validated historical records; AguaYLuz-PR remains the system of record."
+  ]
+}
