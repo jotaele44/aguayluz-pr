@@ -11,7 +11,7 @@ import json
 
 import typer
 
-from . import __version__
+from . import OUTPUTS_DIR, __version__
 from .maintenance import run_maintenance
 from .validation import assert_schemas_resolvable, run_gates
 
@@ -20,6 +20,12 @@ app = typer.Typer(
     no_args_is_help=True,
     add_completion=False,
 )
+
+alerts_app = typer.Typer(
+    help="Operational alert system (build SQLite, validate VAL-001..010, export GeoJSON).",
+    no_args_is_help=True,
+)
+app.add_typer(alerts_app, name="alerts")
 
 
 @app.command()
@@ -74,6 +80,42 @@ def maintenance(
             typer.echo(f"  [{finding.severity:8}] {finding.category:16} {finding.message}")
     if fail_on_blocker and report.promotion_blocked:
         raise typer.Exit(code=1)
+
+
+@alerts_app.command("build")
+def alerts_build(
+    db: str = typer.Option(str(OUTPUTS_DIR / "alert_system.sqlite"), help="SQLite output path."),
+    in_memory: bool = typer.Option(False, "--in-memory", help="Build in memory; do not write the DB."),
+) -> None:
+    """Build the alert SQLite DB from the DDL + seeds and emit GeoJSON."""
+    from .alert_db import build_sqlite, events_to_geojson, load_events
+
+    events = load_events()
+    target = ":memory:" if in_memory else db
+    conn = build_sqlite(target, events=events)
+    conn.close()
+    geo = events_to_geojson(events)
+    (OUTPUTS_DIR / "alert_events.geojson").parent.mkdir(parents=True, exist_ok=True)
+    (OUTPUTS_DIR / "alert_events.geojson").write_text(
+        json.dumps(geo, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    typer.echo(f"built {target}; {len(events)} events, {len(geo['features'])} geo feature(s)")
+
+
+@alerts_app.command("validate")
+def alerts_validate() -> None:
+    """Run VAL-001..010 over the seed alert events. Exits non-zero on rejection."""
+    from .alert_db import validate_seed_events
+
+    results = validate_seed_events()
+    rejected = [r for r in results if not r.valid]
+    for r in results:
+        for v in r.violations:
+            typer.echo(f"{r.alert_id}  {v.rule_id}  {v.severity:8}  {v.message}")
+    if rejected:
+        typer.echo(f"\nFAIL — {len(rejected)} alert(s) rejected.")
+        raise typer.Exit(code=1)
+    typer.echo(f"OK — {len(results)} alert(s) structurally valid.")
 
 
 if __name__ == "__main__":

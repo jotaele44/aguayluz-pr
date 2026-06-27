@@ -1,0 +1,94 @@
+# AguaYLuz-PR alert system — sector module registry.
+# Five modules are activated immediately (active); the rest are seeded dormant
+# and enabled by relevance. default_severity_floor is the workbook 0-5 floor.
+modules:
+  - module_id: HYDRO_OPS
+    module_name: Hydro Operations Alerts
+    sector: Water
+    activation_status: active
+    priority: critical
+    hydro_dependency_relevance: direct
+    default_severity_floor: 2
+    primary_sources: AAA/PRASA notices, reservoir operators, municipal alerts
+    notes: Reservoir, intake, WTP, well, pump, tank, canal, dam, distribution interruptions.
+  - module_id: POWER_OPS
+    module_name: Power Operations Alerts
+    sector: Energy
+    activation_status: active
+    priority: critical
+    hydro_dependency_relevance: direct
+    default_severity_floor: 2
+    primary_sources: LUMA/PREPA outage notices, emergency reports
+    notes: Power outages that affect pumps, WTPs, dams, telemetry, PRASA facilities.
+  - module_id: WEATHER_HAZARD
+    module_name: Weather Hazard Alerts
+    sector: Weather
+    activation_status: active
+    priority: critical
+    hydro_dependency_relevance: direct
+    default_severity_floor: 2
+    primary_sources: NWS San Juan, NHC, USGS gauges, DRNA
+    notes: Flood, drought, rainfall, landslide risk, reservoir operations.
+  - module_id: CONTAMINATION
+    module_name: Contamination / Water Quality Alerts
+    sector: Public health/environment
+    activation_status: active
+    priority: critical
+    hydro_dependency_relevance: direct
+    default_severity_floor: 3
+    primary_sources: AAA, Salud, EPA, EQB/DRNA
+    notes: Boil-water, turbidity, sewer overflow, chemical contamination.
+  - module_id: TRANSPORT_ACCESS
+    module_name: Transport Access Alerts
+    sector: Transportation
+    activation_status: dormant
+    priority: high
+    hydro_dependency_relevance: indirect
+    default_severity_floor: 1
+    primary_sources: DTOP, municipal, police, news
+    notes: Road/bridge access constraints to hydro assets.
+  - module_id: TELECOM_SCADA
+    module_name: Telecom / SCADA Alerts
+    sector: Telecom
+    activation_status: dormant
+    priority: high
+    hydro_dependency_relevance: direct
+    default_severity_floor: 2
+    primary_sources: carrier notices, operator reports
+    notes: Telemetry and control loss at remote infrastructure.
+  - module_id: DAM_SAFETY
+    module_name: Dam Safety / Structural Alerts
+    sector: Water infrastructure
+    activation_status: active
+    priority: critical
+    hydro_dependency_relevance: direct
+    default_severity_floor: 4
+    primary_sources: NID, DRNA, dam owners, inspection reports
+    notes: Spillway, gate, embankment, abnormal seepage, emergency action plans.
+  - module_id: SEISMIC_GEO
+    module_name: Seismic / Geotechnical Alerts
+    sector: Geohazard
+    activation_status: dormant
+    priority: high
+    hydro_dependency_relevance: direct
+    default_severity_floor: 2
+    primary_sources: USGS earthquake feed, PRSN, landslide reports
+    notes: Earthquake/landslide effects on reservoirs, pipes, slopes, karst.
+  - module_id: INDUSTRIAL
+    module_name: Industrial / Port / Facility Alerts
+    sector: Industrial
+    activation_status: dormant
+    priority: medium
+    hydro_dependency_relevance: indirect
+    default_severity_floor: 2
+    primary_sources: facility notices, EPA, news
+    notes: Industrial incidents that could affect intakes, aquifers, coastal discharge.
+  - module_id: PUBLIC_NOTICE
+    module_name: Public Notice Archive
+    sector: Archive
+    activation_status: active
+    priority: critical
+    hydro_dependency_relevance: evidence
+    default_severity_floor: 0
+    primary_sources: all preserved notices/images/PDFs
+    notes: Evidence layer for every alert event.

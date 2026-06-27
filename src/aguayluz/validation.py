@@ -78,6 +78,7 @@ _ENTITY_SCHEMAS = {
     "source_manifest.json":  "source_manifest",
     "review_queue.json":     "review_queue",
     "integration_report.json": "integration_report",
+    "alert_events.json":     "alert_event",            # list of alert_event
 }
 
 
