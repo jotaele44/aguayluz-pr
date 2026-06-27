@@ -11,6 +11,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 SCHEMAS_DIR = REPO_ROOT / "schemas"
 CONFIG_DIR = REPO_ROOT / "config"
 OUTPUTS_DIR = REPO_ROOT / "outputs"
+DATA_DIR = REPO_ROOT / "data"
 
 __all__ = [
     "__version__",
@@ -19,4 +20,5 @@ __all__ = [
     "SCHEMAS_DIR",
     "CONFIG_DIR",
     "OUTPUTS_DIR",
+    "DATA_DIR",
 ]

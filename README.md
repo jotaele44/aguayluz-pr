@@ -60,6 +60,19 @@ python3 scripts/ingest_aee.py --src <outages_by_town.json> --snapshot-ts <commit
 python3 scripts/build_pr_municipios_geo.py --src <census_gazetteer_counties.txt>
 ```
 
+## Operational alert system
+
+A permanent multi-sector operational-alert framework (10 modules; 5 active) with
+its own JSON schema, SQLite/PostGIS DDL, validation pipeline (VAL-001..010),
+dependency graph, gap log, and Claude MCP tool contract. Alerts project into the
+federation `alerts` stream consumed by [`thehub-pr`](https://github.com/jotaele44/thehub-pr).
+See [docs/ALERT_SYSTEM.md](./docs/ALERT_SYSTEM.md).
+
+```bash
+python3 scripts/build_alert_system.py    # build SQLite from DDL + seeds, run VAL rules, emit GeoJSON
+aguayluz alerts validate                 # run VAL-001..010 over the seed alerts
+```
+
 ## EPA WATERS API key
 
 ```bash
@@ -71,10 +84,12 @@ The client falls back to `API_DATA_GOV_KEY` if `EPA_WATERS_API_KEY` is not set.
 ## Repo layout
 
 ```text
-schemas/         JSON Schema files for utility assets, service events, exports, manifests, queues, and reports
-src/aguayluz/    Pydantic models, validators, confidence scoring, WATERS/client logic
-scripts/         CLI entry points and ingest/export commands
-config/          module and validation configuration
+schemas/         JSON Schema files for utility assets, service events, alerts, exports, manifests, queues, and reports
+schemas/sql/     SQLite/PostGIS-ready DDL (alert system)
+src/aguayluz/    Pydantic models, validators, confidence scoring, alert system, WATERS/client logic
+scripts/         CLI entry points and ingest/export/build commands
+config/          module, validation, alert-module, and MCP-tool configuration
+docs/            subsystem documentation (alert system)
 tests/           pytest suite
 outputs/         generated local outputs; do not promote without gate review
 exports/         federation export packages

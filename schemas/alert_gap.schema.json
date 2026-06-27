@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/alert_gap.schema.json",
+  "title": "AlertGap",
+  "description": "A logged data/coverage gap for the AguaYLuz-PR alert system: a missing source, coordinate, dependency mapping, feed, or backfill that must be closed before promotion.",
+  "type": "object",
+  "required": [
+    "gap_id",
+    "module_id",
+    "gap_type",
+    "severity",
+    "blocking",
+    "description",
+    "next_action"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "gap_id":      { "type": "string", "minLength": 1 },
+    "alert_id":    { "type": ["string", "null"], "description": "Specific alert this gap belongs to, when applicable." },
+    "module_id":   { "type": "string", "minLength": 1, "description": "Module id or 'ALL' for federation-wide gaps." },
+    "gap_type":    { "type": "string", "minLength": 1, "examples": ["source_verification", "coordinate_precision", "dependency_mapping", "feed_integration", "historical_backfill"] },
+    "severity":    { "enum": ["minor", "major", "blocking"] },
+    "blocking":    { "type": "boolean" },
+    "description": { "type": "string", "minLength": 1 },
+    "next_action": { "type": "string", "minLength": 1 },
+    "status":      { "enum": ["open", "closed"], "default": "open" }
+  }
+}
