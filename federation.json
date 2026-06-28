@@ -38,6 +38,7 @@
     "lint": "ruff check .",
     "test_suite": "python -m pytest -q",
     "export_canonical": "python3 scripts/federation_export.py --mode test",
+    "maintenance": "aguayluz maintenance --mode audit",
     "ingest_power": "python3 scripts/ingest_power.py",
     "ingest_preps": "python3 scripts/ingest_preps.py",
     "fetch_luma_live": "python3 scripts/fetch_luma_live.py --out /tmp/outages_by_town.json  (LIVE MiLUMA API; ToS-gated, see script header)",
@@ -50,7 +51,8 @@
     "integration_report": "outputs/integration_report.json",
     "source_manifest": "outputs/source_manifest.json",
     "review_queue": "outputs/review_queue.json",
-    "canonical_export_dir": "exports/federation"
+    "canonical_export_dir": "exports/federation",
+    "maintenance_report": "reports/maintenance/latest.json"
   },
   "federation_readiness_gate": {
     "ready_for_hub_discovery": true,
