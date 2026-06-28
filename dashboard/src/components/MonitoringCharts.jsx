@@ -7,55 +7,72 @@ import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts'
 import { READING_KINDS } from '@/lib/aguayluz-format'
+import { Activity, Database } from 'lucide-react'
 
-const tip = { background: '#0f172a', border: '1px solid #1e293b', borderRadius: 6, fontSize: 12 }
+const tip = { background: '#0f172a', border: '1px solid #1e293b', borderRadius: 6, fontSize: 12, color: '#e2e8f0' }
 const axis = { fill: '#94a3b8', fontSize: 11 }
+const SOURCE_NOTE = {
+  reservoir: 'Reservoir readings are source-derived time series. Missing records are left blank rather than interpolated.',
+  generation: 'Generation is summed by observed month from available records.',
+  reliability: 'Reliability metrics are shown as reported values; compare labels before drawing operational conclusions.',
+}
 
 export default function MonitoringCharts() {
   const [kind, setKind] = useState('reservoir')
   const { data: readings = [], isLoading } = useReadings(kind)
 
-  // Shape the data per kind: time-series for reservoir/generation, bars for reliability.
   const chart = useMemo(() => {
     if (kind === 'reliability') {
       return readings.map((r) => ({ name: `${r.metric}`.toUpperCase(), value: r.value, site: r.site_no }))
     }
     if (kind === 'generation') {
-      // sum MWh by month
       const byMonth = {}
       for (const r of readings) {
-        const m = (r.observed_date || '').slice(0, 7)
-        if (!m) continue
-        byMonth[m] = (byMonth[m] || 0) + (r.value || 0)
+        const month = (r.observed_date || '').slice(0, 7)
+        if (!month) continue
+        byMonth[month] = (byMonth[month] || 0) + (Number(r.value) || 0)
       }
       return Object.entries(byMonth).sort().map(([name, value]) => ({ name, value: Math.round(value) }))
     }
-    // reservoir: value over observed_date
     return [...readings]
       .sort((a, b) => (a.observed_date || '').localeCompare(b.observed_date || ''))
       .map((r) => ({ name: (r.observed_date || '').slice(5), value: r.value, site: r.site_no }))
   }, [readings, kind])
 
+  const meta = READING_KINDS.find((k) => k.key === kind)
   const isBar = kind === 'reliability'
 
   return (
     <div className="h-full overflow-auto p-3 space-y-3">
-      <div className="flex items-center justify-between">
-        <h4 className="text-sm font-medium text-slate-200">Monitoring</h4>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h4 className="flex items-center gap-2 text-sm font-medium text-slate-200"><Activity className="h-4 w-4 text-sky-300" /> Monitoring</h4>
+          <p className="mt-1 text-[11px] leading-relaxed text-slate-500">Reservoir, generation, and grid-reliability observations from the repo backend.</p>
+        </div>
         <Select value={kind} onValueChange={setKind}>
-          <SelectTrigger className="h-7 w-[160px] text-xs"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="h-8 w-[170px] border-slate-800 bg-slate-950 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>{READING_KINDS.map((k) => <SelectItem key={k.key} value={k.key} className="text-xs">{k.label}</SelectItem>)}</SelectContent>
         </Select>
       </div>
 
-      <div className="rounded-md border border-slate-800 bg-slate-900 p-3">
-        <div className="text-xs uppercase tracking-wide text-slate-500 mb-2">
-          {READING_KINDS.find((k) => k.key === kind)?.label} · {readings.length} readings
-          {READING_KINDS.find((k) => k.key === kind)?.unit ? ` (${READING_KINDS.find((k) => k.key === kind).unit})` : ''}
+      <div className="rounded-lg border border-slate-800 bg-slate-900 p-3 shadow-sm">
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div>
+            <div className="text-xs uppercase tracking-wide text-slate-400">
+              {meta?.label} · {readings.length} readings{meta?.unit ? ` (${meta.unit})` : ''}
+            </div>
+            <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{SOURCE_NOTE[kind]}</p>
+          </div>
+          <div className="rounded border border-slate-800 bg-slate-950 px-2 py-1 text-[10px] text-slate-400">
+            {chart.length} plotted
+          </div>
         </div>
-        <div className="h-56">
+        <div className="h-60">
           {chart.length === 0 ? (
-            <div className="h-full flex items-center justify-center text-sm text-slate-500">{isLoading ? 'Loading…' : 'No readings'}</div>
+            <div className="flex h-full flex-col items-center justify-center gap-2 rounded border border-dashed border-slate-800 text-sm text-slate-500">
+              <Database className="h-5 w-5 text-slate-600" />
+              {isLoading ? 'Loading readings…' : 'No readings available for this metric.'}
+            </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               {isBar ? (
