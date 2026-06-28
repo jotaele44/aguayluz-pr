@@ -7,9 +7,12 @@ this module provides that ``app``. Wraps the federation validation gates
 """
 from __future__ import annotations
 
+import json
+
 import typer
 
 from . import __version__
+from .maintenance import run_maintenance
 from .validation import assert_schemas_resolvable, run_gates
 
 app = typer.Typer(
@@ -41,6 +44,36 @@ def validate() -> None:
         typer.echo(f"\nFAIL — {len(blocking)} blocking gate(s).")
         raise typer.Exit(code=1)
     typer.echo("\nOK — no blocking gate failures.")
+
+
+@app.command()
+def maintenance(
+    mode: str = typer.Option("audit", help="audit (default) or safe-correct"),
+    write_report: bool = typer.Option(True, help="write reports/maintenance/latest.json"),
+    json_out: bool = typer.Option(False, "--json", help="print the report as JSON"),
+    fail_on_blocker: bool = typer.Option(False, help="exit 1 if promotion is blocked"),
+) -> None:
+    """Run the deterministic, audit-first maintenance layer.
+
+    Detects manifest/lineage/duplicate issues; quarantines interpretive ones.
+    Auto-correction only runs with ``--mode safe-correct``. Emits a report the
+    Hub rolls up via ``hub maintenance``.
+    """
+    report = run_maintenance(mode=mode, write=write_report)
+    payload = report.to_dict()
+    if json_out:
+        typer.echo(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        typer.echo(
+            f"{report.repo} maintenance ({mode}): "
+            f"{payload['findings_count']} finding(s), "
+            f"{payload['critical_count']} critical, "
+            f"promotion_blocked={payload['promotion_blocked']}"
+        )
+        for finding in report.findings:
+            typer.echo(f"  [{finding.severity:8}] {finding.category:16} {finding.message}")
+    if fail_on_blocker and report.promotion_blocked:
+        raise typer.Exit(code=1)
 
 
 if __name__ == "__main__":

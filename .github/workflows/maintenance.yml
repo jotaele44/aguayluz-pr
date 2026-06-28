@@ -1,0 +1,33 @@
+name: maintenance
+
+# Audit-first maintenance for aguayluz-pr. Runs the maintenance tests and the
+# audit-mode CLI, uploads the report as an artifact, and never auto-commits.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 6 * * 1"   # Mondays 06:23 UTC
+
+jobs:
+  maintenance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install
+        run: python -m pip install -e .[dev]
+      - name: Maintenance tests
+        run: pytest -q tests/test_adapter_local.py tests/test_maintenance_detection.py tests/test_maintenance_corrections.py
+      - name: Audit run
+        run: aguayluz maintenance --mode audit --json
+      - name: Upload maintenance report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aguayluz-maintenance-report
+          path: reports/maintenance/latest.json
+          if-no-files-found: ignore
