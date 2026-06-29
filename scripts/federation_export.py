@@ -112,9 +112,10 @@ def _lineage(phase: str, inputs: list[str]) -> dict[str, Any]:
     }
 
 
-def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], now: str, geo: dict[str, dict] | None = None) -> dict[str, list[dict[str, Any]]]:
+def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], now: str, geo: dict[str, dict] | None = None, crosswalk: list[dict[str, Any]] | None = None) -> dict[str, list[dict[str, Any]]]:
     inputs = ["data/utility_assets.jsonl", "data/service_events.jsonl", "data/aee_incidents.jsonl"]
     geo = geo or {}
+    crosswalk = crosswalk or []
     sources: dict[str, dict[str, Any]] = {}
     entities: dict[str, dict[str, Any]] = {}
     relationships: dict[str, dict[str, Any]] = {}
@@ -197,6 +198,27 @@ def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], no
         for asset_ref in e.get("linked_asset_ids", []):
             aid = _fid("ent", "asset", asset_ref)
             relationships.update(_rel_kv(aid, "affected_by", ev_id, sid, conf, now))
+
+    # Cross-source dedup: each non-canonical member -[duplicate_of]-> canonical.
+    # Additive (all asset entities are kept); consumers collapse to the canonical
+    # set by dropping nodes that have an outgoing duplicate_of edge. Source: the
+    # data/asset_crosswalk.jsonl produced by scripts/dedup_power_assets.py.
+    cw_inputs = ["data/asset_crosswalk.jsonl"]
+    for cl in crosswalk:
+        canon_ref = cl.get("canonical_asset_id")
+        canon_ent = _fid("ent", "asset", canon_ref)
+        if canon_ent not in entities:
+            continue
+        for member_ref in cl.get("member_asset_ids", []):
+            if member_ref == canon_ref:
+                continue
+            mem_ent = _fid("ent", "asset", member_ref)
+            if mem_ent not in entities:
+                continue
+            sid = entities[mem_ent]["source_id"]
+            relationships.update(_rel_kv(mem_ent, "duplicate_of", canon_ent, sid,
+                                         entities[mem_ent].get("confidence", 0.5), now,
+                                         source_inputs=cw_inputs))
 
     return {"sources": list(sources.values()),
             "entities": list(entities.values()),
@@ -546,9 +568,13 @@ def main() -> int:
     ap.add_argument("--events", default=str(REPO_ROOT / "data/service_events.jsonl"))
     ap.add_argument("--incidents", default=str(REPO_ROOT / "data/aee_incidents.jsonl"),
                     help="per-municipality outage events (AEE/LUMA model); merged into events")
-    ap.add_argument("--readings", default=str(REPO_ROOT / "data/reservoir_levels.jsonl"),
-                    help="monitoring_reading time-series (USGS levels); written to outputs/monitoring_readings.json")
+    ap.add_argument("--readings", nargs="*", default=None,
+                    help="monitoring_reading time-series files. Default: data/reservoir_levels.jsonl "
+                         "+ every data/*_readings.jsonl (reliability, generation, …) — new sources "
+                         "flow in automatically. Concatenated into outputs/monitoring_readings.json")
     ap.add_argument("--geo", default=str(REPO_ROOT / "data/geo/pr_municipios.json"))
+    ap.add_argument("--crosswalk", default=str(REPO_ROOT / "data/asset_crosswalk.jsonl"),
+                    help="cross-source dedup clusters; emits member -[duplicate_of]-> canonical edges")
     ap.add_argument("--out", default=str(REPO_ROOT / "exports/federation"))
     ap.add_argument("--outputs", default=str(REPO_ROOT / "outputs"),
                     help="operator-facing snapshot directory (7-file deliverable). Pass empty string to skip.")
@@ -562,17 +588,22 @@ def main() -> int:
     assets = _load_jsonl(Path(args.assets))
     events = raw_events + raw_incidents
     geo = _load_geo(Path(args.geo))
+    crosswalk = _load_jsonl(Path(args.crosswalk))
     if not assets and not events:
         print("no input data (data/utility_assets.jsonl / service_events / aee_incidents absent) — nothing to export")
         return 0
     now = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
-    streams = build_streams(assets, events, now, geo)
+    streams = build_streams(assets, events, now, geo, crosswalk)
     manifest_path = write_package(streams, Path(args.out), args.mode, now)
     counts = {k: len(v) for k, v in streams.items()}
     print(f"wrote {manifest_path} — {counts}")
 
     if not args.no_outputs and args.outputs:
-        readings = _load_jsonl(Path(args.readings))
+        reading_paths = args.readings if args.readings is not None else (
+            [str(REPO_ROOT / "data/reservoir_levels.jsonl")]
+            + sorted(str(p) for p in (REPO_ROOT / "data").glob("*_readings.jsonl"))
+        )
+        readings = [r for p in reading_paths for r in _load_jsonl(Path(p))]
         aggregates = _compute_aggregates(assets, events)
         outputs_counts = build_outputs(assets, events, aggregates, now, Path(args.outputs), readings)
         print(f"wrote outputs/* — {outputs_counts}")

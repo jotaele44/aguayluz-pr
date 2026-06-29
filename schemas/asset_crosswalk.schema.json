@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/asset_crosswalk.schema.json",
+  "title": "AssetCrosswalk",
+  "description": "A cluster of utility_asset records (across HIFLD / EIA / OSM / Spiderweb sources) that refer to the same real-world facility. Non-destructive: raw utility_assets.jsonl keeps every source row; this layer records the equivalence + a best-evidence canonical so downstream consumers can collapse duplicates without losing provenance.",
+  "type": "object",
+  "required": [
+    "cluster_id",
+    "canonical_asset_id",
+    "asset_class",
+    "match_method",
+    "member_asset_ids",
+    "members"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "cluster_id": { "type": "string", "pattern": "^AYLX_[A-Za-z0-9]+$" },
+    "canonical_asset_id": { "type": "string", "minLength": 1, "description": "Best-evidence member (lowest tier, prefers coords, source HIFLD>EIA>Spiderweb>OSM)." },
+    "asset_class": { "enum": ["generation", "substation", "transmission_line", "other"] },
+    "match_method": { "enum": ["plant_code", "proximity", "plant_code+proximity"] },
+    "max_distance_m": { "type": ["number", "null"], "minimum": 0, "description": "Largest pairwise distance (m) among geolocated members; null if matched only by plant_code with a coordless member." },
+    "member_asset_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 2,
+      "uniqueItems": true
+    },
+    "members": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": ["asset_id", "source", "evidence_tier"],
+        "additionalProperties": false,
+        "properties": {
+          "asset_id": { "type": "string", "minLength": 1 },
+          "source": { "enum": ["HIFLD", "EIA", "Spiderweb", "OSM", "other"] },
+          "evidence_tier": { "enum": ["T1", "T2", "T3", "T4"] },
+          "lat": { "type": ["number", "null"] },
+          "lon": { "type": ["number", "null"] }
+        }
+      }
+    }
+  }
+}
