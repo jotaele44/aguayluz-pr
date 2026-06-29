@@ -56,14 +56,17 @@ def test_streams_round_trip_with_z3_corpus(real_corpus, tmp_path):
     now = "2026-06-08T13:45:24Z"
     streams = build_streams(assets, events, now, geo)
 
-    # Z3 invariant: every aee_incident (T2 service_event with municipality) must
-    # both materialize as an entity and carry a location block sourced from geo.
+    # Invariant: every service_event with a resolvable municipality (AEE outages +
+    # SDWIS violations once the live pulls land) materializes as an entity AND carries
+    # a geo-sourced location block with lat/lon. (Count is data-dependent — was 6 with
+    # only the AEE snapshot; grows into the thousands once live SDWIS municipalities
+    # resolve — so assert the invariant, not a magic number.)
     service_events = [e for e in streams["entities"] if e["entity_type"] == "service_event"]
     with_muni = [e for e in service_events if e.get("location", {}).get("municipality")]
-    assert len(with_muni) == 6, f"expected 6 AEE events with municipality, got {len(with_muni)}"
+    assert len(with_muni) >= 6, f"expected ≥6 municipality-located events, got {len(with_muni)}"
     for e in with_muni:
         loc = e["location"]
-        assert "lat" in loc and "lon" in loc, f"AEE event missing lat/lon: {e['entity_id']}"
+        assert "lat" in loc and "lon" in loc, f"event missing lat/lon: {e['entity_id']}"
 
     # located_in relationships: one per asset-with-municipality + one per AEE event.
     located_in = [r for r in streams["relationships"] if r["relationship_type"] == "located_in"]
@@ -94,7 +97,9 @@ def test_outputs_deliverable_against_real_corpus(real_corpus, tmp_path, monkeypa
     from aguayluz import validation as ayl_validation
     monkeypatch.setattr(ayl_validation, "OUTPUTS_DIR", outputs)
 
-    readings = _load_jsonl(REPO_ROOT / "data/reservoir_levels.jsonl")
+    reading_files = [REPO_ROOT / "data/reservoir_levels.jsonl"] + sorted(
+        (REPO_ROOT / "data").glob("*_readings.jsonl"))
+    readings = [r for p in reading_files for r in _load_jsonl(p)]
     counts = build_outputs(assets, events, aggregates, now, outputs, readings)
 
     # All 8 declared deliverables present (incl. monitoring_readings time-series).
