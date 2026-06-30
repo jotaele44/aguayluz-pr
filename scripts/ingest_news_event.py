@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
-"""Record a news- or announcement-sourced service event into service_events.jsonl.
+"""Import receptor for centinelas-pr event signals into service_events.jsonl.
 
-Use this when an environmental incident, contamination event, or infrastructure
-story surfaces in media or government press releases before it appears in a
-structured regulatory feed (SDWIS, PREPS, etc.). Events created here carry
-evidence_tier T3 (verifiable public source, not yet in a regulatory feed) and
-review_status needs_review.
+centinelas-pr is the PRII federation sentinel module. It monitors public media,
+government press releases, and environmental agency communications, then pushes
+structured signals to aguayluz-pr when a story touches water, wastewater, or
+power infrastructure in Puerto Rico.
+
+Each imported signal becomes a schema-valid service_event row at evidence_tier T3
+(verifiable public source, not yet promoted to a regulatory feed) with
+review_status needs_review. Once a centinelas-pr signal is confirmed in a
+regulatory feed (SDWIS, PREPS, etc.), the event is superseded by the T1 record
+from the appropriate ingest script.
 
 Examples:
 
-  # Oil/grease contamination at an AAA pumping station (Radio Isla story):
+  # Oil/grease contamination at an AAA pumping station (centinelas-pr signal):
   python scripts/ingest_news_event.py \\
     --url "https://radioisla.tv/recursos-naturales-activa-unidad-..." \\
     --title "DRNA investiga procedencia de grasa y aceite en estación AAA en Canóvanas" \\
@@ -18,7 +23,8 @@ Examples:
     --date 2026-06-28 \\
     --link-asset AYL_AST_CANOVANAS_PUMP_001  # optional
 
-  # With no linked asset, omit --link-asset.
+  # Dry run to preview without writing:
+  python scripts/ingest_news_event.py ... --dry-run
 """
 from __future__ import annotations
 
