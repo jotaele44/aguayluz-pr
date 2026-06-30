@@ -26,7 +26,7 @@ import argparse
 import json
 import re
 import sys
-from datetime import date, timezone, datetime
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
