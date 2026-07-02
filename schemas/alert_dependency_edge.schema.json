@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/alert_dependency_edge.schema.json",
+  "title": "AlertDependencyEdge",
+  "description": "A directed dependency edge in the AguaYLuz-PR infrastructure dependency graph (e.g. a power node energizing a hydro asset, or a hazard area hydrologically affecting a reservoir). Edges are evidence-gated.",
+  "type": "object",
+  "required": [
+    "edge_id",
+    "from_node_type",
+    "to_node_type",
+    "dependency_type",
+    "confidence",
+    "evidence_required"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "edge_id":         { "type": "string", "minLength": 1 },
+    "from_node_type":  { "type": "string", "minLength": 1, "examples": ["asset", "power_node", "hazard_area", "transport_node", "telecom_node"] },
+    "from_node_id":    { "type": ["string", "null"] },
+    "to_node_type":    { "type": "string", "minLength": 1, "examples": ["service_area", "hydro_asset"] },
+    "to_node_id":      { "type": ["string", "null"] },
+    "dependency_type": { "type": "string", "minLength": 1, "examples": ["supplies/impacts", "energizes", "hydrologically_affects", "access_to", "controls_or_monitors"] },
+    "confidence":      { "type": "integer", "minimum": 0, "maximum": 100 },
+    "evidence_required": { "type": "boolean" },
+    "notes":           { "type": ["string", "null"] }
+  }
+}
