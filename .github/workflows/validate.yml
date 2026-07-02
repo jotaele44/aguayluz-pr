@@ -60,6 +60,23 @@ jobs:
       - name: Validation gates
         run: python scripts/validate_repo.py
 
+  geo-import-check:
+    # build_pr_geo_boundaries.py imports geopandas, which is not in the default
+    # install. Install the `geo` extra and import-check the script (its --help
+    # loads geopandas at module level, then exits 0 without needing the Census
+    # shapefiles) so a missing/broken geo dependency fails CI instead of only
+    # surfacing when someone runs the script.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install with geo extra
+        run: python -m pip install -e .[geo]
+      - name: Import-check geo boundary builder
+        run: python scripts/build_pr_geo_boundaries.py --help
+
   live-smoke:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest

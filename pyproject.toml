@@ -37,6 +37,11 @@ dev = [
   "pytest-cov>=5",
   "ruff>=0.5",
 ]
+# Heavy geospatial stack used only by scripts/build_pr_geo_boundaries.py (GDAL-backed).
+# Kept out of the default install so `pip install -e .[dev]` and CI stay lightweight.
+geo = [
+  "geopandas>=0.14",
+]
 
 [project.scripts]
 aguayluz = "aguayluz.cli:app"
