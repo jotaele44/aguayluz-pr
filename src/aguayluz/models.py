@@ -22,7 +22,8 @@ AssetType = Literal["water", "wastewater", "power", "telecom", "fuel", "unknown"
 GeometryType = Literal["point", "line", "polygon", "unknown"]
 AssetStatus = Literal["active", "inactive", "damaged", "planned", "unknown"]
 EventType = Literal[
-    "outage", "restoration", "boil_water", "service_interruption", "project_update", "unknown"
+    "outage", "restoration", "boil_water", "service_interruption",
+    "water_quality_violation", "contamination_incident", "project_update", "unknown"
 ]
 AttributeCoverage = Literal["full", "partial"]
 ExportStatus = Literal["PASS", "WARN", "FAIL", "BLOCKED"]

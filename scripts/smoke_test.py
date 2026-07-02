@@ -100,6 +100,42 @@ def check_live_waters() -> bool:
     return True
 
 
+def check_refreshed_data() -> bool:
+    """Warn if refreshed data files are missing or empty after a --weekly run.
+
+    Only run when reservoir_levels.jsonl exists (i.e. refresh has been executed).
+    Returns True even when files are absent (repo is pre-refresh); returns False
+    only if a file exists but contains 0 valid rows.
+    """
+    levels_path = REPO_ROOT / "data" / "reservoir_levels.jsonl"
+    events_path = REPO_ROOT / "data" / "service_events.jsonl"
+
+    if not levels_path.exists():
+        print("[data] SKIP: reservoir_levels.jsonl not present (run refresh.py --weekly first)")
+        return True
+
+    levels_rows = [ln for ln in levels_path.read_text().splitlines() if ln.strip()]
+    if not levels_rows:
+        print("[data] FAIL: reservoir_levels.jsonl exists but has 0 rows")
+        return False
+    print(f"[data] OK: reservoir_levels.jsonl has {len(levels_rows)} row(s)")
+
+    if not events_path.exists():
+        print("[data] WARN: service_events.jsonl not present")
+        return True
+
+    import json as _json
+    events = [_json.loads(ln) for ln in events_path.read_text().splitlines() if ln.strip()]
+    sdwis = [e for e in events if str(e.get("source_ref", "")).startswith("EPA SDWIS VIOLATION")]
+    if not sdwis:
+        print(f"[data] WARN: service_events.jsonl has {len(events)} rows but 0 SDWIS events "
+              "(run refresh.py --weekly to populate)")
+    else:
+        print(f"[data] OK: service_events.jsonl has {len(events)} row(s), "
+              f"{len(sdwis)} SDWIS violation(s)")
+    return True
+
+
 def main() -> int:
     ok = check_offline_pipeline()
 
@@ -107,6 +143,8 @@ def main() -> int:
         ok = check_live_waters() and ok
     else:
         print(f"[live] SKIP: no API key ({' / '.join(_API_KEY_VARS)} unset); live check skipped")
+
+    ok = check_refreshed_data() and ok
 
     print("SMOKE PASS" if ok else "SMOKE FAIL")
     return 0 if ok else 1
