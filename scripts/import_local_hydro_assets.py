@@ -22,13 +22,14 @@ import math
 import shutil
 import sqlite3
 import sys
+import tarfile
 import tempfile
 import zipfile
-import tarfile
 from collections import Counter
+from collections.abc import Iterable
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 REPO = Path(__file__).resolve().parent.parent
 DATA = REPO / "data"
@@ -351,7 +352,8 @@ def iter_xlsx(path: Path) -> Iterable[dict[str, Any]]:
         if not headers:
             continue
         for source_row_number, values in enumerate(rows, start=1):
-            row = dict(zip(headers, values))
+            # spreadsheet rows may be ragged vs the header; truncate deliberately
+            row = dict(zip(headers, values, strict=False))
             if not any(clean(v) for v in row.values()):
                 continue
             row["source_row_number"] = source_row_number
