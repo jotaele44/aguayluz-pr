@@ -22,8 +22,8 @@ OUTPUTS = REPO_ROOT / "outputs"
 
 READINGS_FILES: dict[str, Path] = {
     "reservoir": DATA / "reservoir_levels.jsonl",
-    "generation": DATA / "generation.jsonl",
-    "reliability": DATA / "reliability.jsonl",
+    "generation": DATA / "generation_readings.jsonl",
+    "reliability": DATA / "reliability_readings.jsonl",
 }
 
 app = FastAPI(title="AguaYLuz-PR")
