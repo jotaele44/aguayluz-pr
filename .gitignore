@@ -277,3 +277,12 @@ exports/federation/
 # above wrongly ignores it. Re-include it.
 !dashboard/src/lib/
 !dashboard/src/lib/**
+
+# Desktop wrapper (see desktop/README.md)
+.venv/
+dashboard/node_modules/
+dashboard/dist/
+desktop/.setup-complete
+!desktop/pyinstaller.spec
+dist-desktop/
+build/
