@@ -233,8 +233,18 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
       })
 
       readyRef.current = true
-      map.on('mouseenter', 'assets-dot', () => (map.getCanvas().style.cursor = 'pointer'))
-      map.on('mouseleave', 'assets-dot', () => (map.getCanvas().style.cursor = ''))
+      const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 8 })
+      map.on('mouseenter', 'assets-dot', (e) => {
+        map.getCanvas().style.cursor = 'pointer'
+        const p = e.features[0]?.properties || {}
+        popup.setLngLat(e.features[0].geometry.coordinates)
+          .setHTML(`<div style="font:12px/1.5 system-ui,sans-serif;color:#e2e8f0;background:#0f172a;padding:6px 8px;border-radius:6px;max-width:200px"><strong>${p.asset_name || 'Asset'}</strong><br/><span style="color:#94a3b8;font-size:11px">${(p.asset_type || 'unknown').replace(/_/g,' ')} · ${p.municipality || ''}</span></div>`)
+          .addTo(map)
+      })
+      map.on('mouseleave', 'assets-dot', () => {
+        map.getCanvas().style.cursor = ''
+        popup.remove()
+      })
       map.on('click', 'assets-dot', (e) => onSelectRef.current?.(e.features[0].properties))
       map.on('click', 'clusters', async (e) => {
         const features = map.queryRenderedFeatures(e.point, { layers: ['clusters'] })
@@ -304,6 +314,22 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
         >
           Review-needed assets only
         </button>
+      </div>
+
+      <div className="absolute bottom-3 left-3 rounded-lg border border-slate-700/70 bg-slate-950/85 px-2.5 py-2 shadow-xl backdrop-blur">
+        <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-1.5">Asset type</div>
+        {[
+          { type: 'power', label: 'Power', color: '#f59e0b' },
+          { type: 'water', label: 'Water', color: '#38bdf8' },
+          { type: 'wastewater', label: 'Wastewater', color: '#10b981' },
+          { type: 'telecom', label: 'Telecom', color: '#a78bfa' },
+          { type: 'other', label: 'Other', color: '#64748b' },
+        ].map(({ type, label, color }) => (
+          <div key={type} className="flex items-center gap-1.5 text-[11px] text-slate-300 mb-0.5 last:mb-0">
+            <span style={{ background: color }} className="inline-block h-2 w-2 rounded-full shrink-0" />
+            {label}
+          </div>
+        ))}
       </div>
 
       <div className="absolute right-3 bottom-3 max-w-[280px] rounded-xl border border-slate-700/70 bg-slate-950/85 p-3 shadow-xl backdrop-blur">

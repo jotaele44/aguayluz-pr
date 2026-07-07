@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from '@/components/ui/sheet'
@@ -34,6 +34,13 @@ function RelatedEvents({ assetId }) {
 
 export default function AssetDetail({ asset: a, onClose }) {
   const [rawOpen, setRawOpen] = useState(false)
+
+  useEffect(() => {
+    if (!a) return
+    const handler = (e) => { if (e.key === 'Escape') onClose?.() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [a, onClose])
 
   return (
     <Sheet open={!!a} onOpenChange={(o) => !o && onClose?.()}>

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
-import { useAssetsGeojson, useEvents, useHealth, useReviewQueue, useSummary } from '@/lib/hooks'
-import { Activity, AlertTriangle, Database, Droplets, MapPinned, ShieldCheck, WifiOff, X } from 'lucide-react'
+import { useAssetsGeojson, useEvents, useHealth, useReviewQueue, useRunExport, useSummary } from '@/lib/hooks'
+import { Activity, AlertTriangle, Database, Droplets, MapPinned, RefreshCw, ShieldCheck, WifiOff, X } from 'lucide-react'
 
 function Kpi({ icon: Icon, label, value, hint, tone = 'text-slate-300', emphasis = false }) {
   return (
@@ -22,6 +22,7 @@ export default function StatsBar() {
   const { data: reviewQueue = [] } = useReviewQueue()
   const { data: summary } = useSummary()
   const [dismissed, setDismissed] = useState(false)
+  const { mutate: runExport, isPending: exporting } = useRunExport()
 
   const up = health?.status === 'ok'
   const c = health?.counts ?? {}
@@ -70,6 +71,15 @@ export default function StatsBar() {
           </span>
         )}
         {!up && <Kpi icon={WifiOff} label="Fallback" value="cached" hint="API unavailable" tone="text-red-300" />}
+        <button
+          onClick={() => runExport()}
+          disabled={exporting}
+          title="Run federation export (regenerates outputs/)"
+          className="ml-auto shrink-0 flex items-center gap-1.5 rounded-md border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-[11px] text-slate-400 hover:text-slate-200 hover:border-slate-600 disabled:opacity-50 transition"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${exporting ? 'animate-spin' : ''}`} />
+          {exporting ? 'Exporting…' : 'Run export'}
+        </button>
       </div>
     </div>
   )

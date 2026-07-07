@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
 } from '@/components/ui/table'
@@ -11,7 +11,8 @@ import {
 } from '@/components/ui/select'
 import { tierBadge, typeMeta, statusBadge } from '@/lib/format'
 import { cn } from '@/lib/utils'
-import { AlertTriangle, ChevronsUpDown, ChevronUp, ChevronDown, FilterX } from 'lucide-react'
+import { AlertTriangle, ChevronsUpDown, ChevronUp, ChevronDown, Download, FilterX } from 'lucide-react'
+import { downloadCSV } from '@/lib/csv'
 
 function normalized(value) {
   return `${value ?? ''}`.toLowerCase()
@@ -41,6 +42,18 @@ export default function AssetsTable({ assets = [], isLoading, selectedId, onSele
   const [reviewOnly, setReviewOnly] = useState(false)
   const [q, setQ] = useState('')
   const [sort, setSort] = useState({ col: 'asset_name', dir: 'asc' })
+  const searchRef = useRef(null)
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+        e.preventDefault()
+        searchRef.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
 
   const types = useMemo(
     () => ['all', ...Array.from(new Set(assets.map((a) => a.asset_type).filter(Boolean))).sort()],
@@ -92,11 +105,15 @@ export default function AssetsTable({ assets = [], isLoading, selectedId, onSele
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search asset, municipio, operator, source…"
+            ref={searchRef}
+            placeholder="Search asset, municipio, operator, source… (press / to focus)"
             className="h-8 flex-1 border-slate-800 bg-slate-950 text-xs"
           />
           <Button size="sm" variant="outline" onClick={clear} className="h-8 border-slate-800 bg-slate-950 px-2 text-xs text-slate-400 hover:text-slate-100">
             <FilterX className="h-3.5 w-3.5" />
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => downloadCSV('assets.csv', rows, ['asset_id','asset_name','asset_type','municipality','status','operator','evidence_tier'])} className="h-8 border-slate-800 bg-slate-950 px-2 text-xs text-slate-400 hover:text-slate-100" title="Export CSV">
+            <Download className="h-3.5 w-3.5" />
           </Button>
         </div>
         <div className="flex items-center gap-2">

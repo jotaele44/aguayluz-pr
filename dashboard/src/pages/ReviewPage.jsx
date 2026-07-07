@@ -5,7 +5,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { tierBadge, severityTone } from '@/lib/format'
 import { cn } from '@/lib/utils'
-import { AlertTriangle, CheckCircle, X, SkipForward, ChevronLeft, ChevronRight } from 'lucide-react'
+import { AlertTriangle, CheckCircle, X, SkipForward, ChevronLeft, ChevronRight, Download } from 'lucide-react'
+import { downloadCSV } from '@/lib/csv'
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select'
@@ -43,6 +44,9 @@ export default function ReviewPage() {
   return (
     <div className="flex flex-col h-full">
       <PageHeader title="Review Queue" subtitle={`${total.toLocaleString()} items pending review`}>
+        <Button size="sm" variant="outline" onClick={() => downloadCSV('review-queue.csv', items, ['record_ref','severity','evidence_tier','confidence','record_type','reason','source_ref'])} className="h-8 border-slate-800 bg-slate-950 px-2 text-xs text-slate-400 hover:text-slate-100" title="Export page as CSV">
+          <Download className="h-3.5 w-3.5" />
+        </Button>
         <Select value={sev} onValueChange={(v) => { setSev(v); setOffset(0) }}>
           <SelectTrigger className="h-7 w-[110px] text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>{SEVERITIES.map((s) => <SelectItem key={s} value={s} className="text-xs capitalize">{s}</SelectItem>)}</SelectContent>

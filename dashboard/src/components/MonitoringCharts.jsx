@@ -18,7 +18,16 @@ const SOURCE_NOTE = {
 
 export default function MonitoringCharts() {
   const [kind, setKind] = useState('reservoir')
-  const { data: readings = [], isLoading } = useReadings(kind)
+  const [range, setRange] = useState('all')
+
+  const sinceParam = range === 'all' ? undefined : (() => {
+    const d = new Date()
+    const days = { '7d': 7, '30d': 30, '90d': 90 }[range] || 30
+    d.setDate(d.getDate() - days)
+    return d.toISOString()
+  })()
+
+  const { data: readings = [], isLoading } = useReadings({ kind, since: sinceParam })
 
   const chart = useMemo(() => {
     if (kind === 'reliability') {
@@ -48,10 +57,23 @@ export default function MonitoringCharts() {
           <h4 className="flex items-center gap-2 text-sm font-medium text-slate-200"><Activity className="h-4 w-4 text-sky-300" /> Monitoring</h4>
           <p className="mt-1 text-[11px] leading-relaxed text-slate-500">Reservoir, generation, and grid-reliability observations from the repo backend.</p>
         </div>
-        <Select value={kind} onValueChange={setKind}>
-          <SelectTrigger className="h-8 w-[170px] border-slate-800 bg-slate-950 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>{READING_KINDS.map((k) => <SelectItem key={k.key} value={k.key} className="text-xs">{k.label}</SelectItem>)}</SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 rounded-md border border-slate-800 bg-slate-950 p-0.5">
+            {['7d', '30d', '90d', 'all'].map((r) => (
+              <button
+                key={r}
+                onClick={() => setRange(r)}
+                className={`rounded px-2 py-1 text-[10px] uppercase tracking-wide transition ${range === r ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
+          <Select value={kind} onValueChange={setKind}>
+            <SelectTrigger className="h-8 w-[160px] border-slate-800 bg-slate-950 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>{READING_KINDS.map((k) => <SelectItem key={k.key} value={k.key} className="text-xs">{k.label}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="rounded-lg border border-slate-800 bg-slate-900 p-3 shadow-sm">
