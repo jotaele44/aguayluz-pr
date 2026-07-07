@@ -4,6 +4,7 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Input } from '@/components/ui/input'
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
@@ -11,7 +12,7 @@ import {
 import { tierBadge } from '@/lib/format'
 import { typeMeta, statusBadge } from '@/lib/aguayluz-format'
 import { cn } from '@/lib/utils'
-import { AlertTriangle, FilterX } from 'lucide-react'
+import { AlertTriangle, ChevronsUpDown, ChevronUp, ChevronDown, FilterX } from 'lucide-react'
 
 function normalized(value) {
   return `${value ?? ''}`.toLowerCase()
@@ -21,11 +22,26 @@ function needsReview(asset) {
   return asset.review_status === 'needs_review' || asset.status === 'needs_review' || asset.review_status === 'review'
 }
 
-export default function AssetsTable({ assets = [], selectedId, onSelect }) {
+function SortIcon({ col, sort }) {
+  if (sort.col !== col) return <ChevronsUpDown className="inline h-3 w-3 ml-0.5 text-slate-600" />
+  return sort.dir === 'asc'
+    ? <ChevronUp className="inline h-3 w-3 ml-0.5 text-sky-400" />
+    : <ChevronDown className="inline h-3 w-3 ml-0.5 text-sky-400" />
+}
+
+const COLS = [
+  { key: 'asset_name', label: 'Asset' },
+  { key: 'asset_type', label: 'Type' },
+  { key: 'municipality', label: 'Municipio' },
+  { key: 'status', label: 'Evidence' },
+]
+
+export default function AssetsTable({ assets = [], isLoading, selectedId, onSelect }) {
   const [type, setType] = useState('all')
   const [status, setStatus] = useState('all')
   const [reviewOnly, setReviewOnly] = useState(false)
   const [q, setQ] = useState('')
+  const [sort, setSort] = useState({ col: 'asset_name', dir: 'asc' })
 
   const types = useMemo(
     () => ['all', ...Array.from(new Set(assets.map((a) => a.asset_type).filter(Boolean))).sort()],
@@ -36,23 +52,37 @@ export default function AssetsTable({ assets = [], selectedId, onSelect }) {
     [assets],
   )
 
-  const rows = useMemo(() => assets.filter((a) => {
-    const haystack = [a.asset_name, a.municipality, a.operator, a.asset_type, a.asset_subtype, a.source_ref, a.asset_id]
-      .map(normalized)
-      .join(' ')
-    return (
-      (type === 'all' || a.asset_type === type) &&
-      (status === 'all' || a.status === status) &&
-      (!reviewOnly || needsReview(a)) &&
-      (!q || haystack.includes(normalized(q)))
-    )
-  }), [assets, type, status, reviewOnly, q])
+  const toggleSort = (col) => {
+    setSort((s) => s.col === col ? { col, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { col, dir: 'asc' })
+  }
 
-  const clear = () => {
-    setType('all')
-    setStatus('all')
-    setReviewOnly(false)
-    setQ('')
+  const rows = useMemo(() => {
+    const filtered = assets.filter((a) => {
+      const haystack = [a.asset_name, a.municipality, a.operator, a.asset_type, a.asset_subtype, a.source_ref, a.asset_id]
+        .map(normalized).join(' ')
+      return (
+        (type === 'all' || a.asset_type === type) &&
+        (status === 'all' || a.status === status) &&
+        (!reviewOnly || needsReview(a)) &&
+        (!q || haystack.includes(normalized(q)))
+      )
+    })
+    return [...filtered].sort((a, b) => {
+      const av = normalized(a[sort.col])
+      const bv = normalized(b[sort.col])
+      return sort.dir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av)
+    })
+  }, [assets, type, status, reviewOnly, q, sort])
+
+  const clear = () => { setType('all'); setStatus('all'); setReviewOnly(false); setQ('') }
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-full p-2 space-y-1">
+        <Skeleton className="h-7 w-full mb-1" />
+        {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-9 w-full" />)}
+      </div>
+    )
   }
 
   return (
@@ -94,10 +124,15 @@ export default function AssetsTable({ assets = [], selectedId, onSelect }) {
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-slate-900 shadow-sm shadow-slate-950">
             <TableRow className="border-slate-800 hover:bg-transparent">
-              <TableHead className="text-slate-400">Asset</TableHead>
-              <TableHead className="text-slate-400">Type</TableHead>
-              <TableHead className="text-slate-400">Municipio</TableHead>
-              <TableHead className="text-slate-400">Evidence</TableHead>
+              {COLS.map(({ key, label }) => (
+                <TableHead
+                  key={key}
+                  className="text-slate-400 cursor-pointer select-none hover:text-slate-200"
+                  onClick={() => toggleSort(key)}
+                >
+                  {label}<SortIcon col={key} sort={sort} />
+                </TableHead>
+              ))}
             </TableRow>
           </TableHeader>
           <TableBody>

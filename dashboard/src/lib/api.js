@@ -31,7 +31,38 @@ export const getHealth = () => getJSON('/health', { status: 'down', counts: {}, 
 export const getAssets = (f = {}) => getJSON(`/assets${qs(f)}`, [])
 export const getAssetsGeojson = () => getJSON('/assets.geojson', { type: 'FeatureCollection', features: [] })
 export const getMunicipiosGeojson = () => getJSON('/municipios.geojson', { type: 'FeatureCollection', features: [] })
-export const getEvents = (f = {}) => getJSON(`/events${qs(f)}`, [])
-export const getReadings = (kind = 'reservoir') => getJSON(`/readings${qs({ kind })}`, [])
-export const getReviewQueue = () => getJSON('/review-queue', [])
+// /events returns {total, offset, items}; getEvents unwraps to the array for backward compat.
+export const getEvents = async (f = {}) => {
+  const r = await getJSON(`/events${qs(f)}`, { items: [] })
+  return r?.items ?? r ?? []
+}
+export const getEventsPaged = (f = {}) => getJSON(`/events${qs(f)}`, { total: 0, offset: 0, items: [] })
+export const getAssetEvents = (id) => getJSON(`/assets/${id}/events`, [])
+export const getMunicipioSummary = (name) => getJSON(`/municipios/${encodeURIComponent(name)}/summary`, null)
+export const getReadings = (f = {}) => getJSON(`/readings${qs(typeof f === 'string' ? { kind: f } : f)}`, [])
+// /review-queue returns {total, offset, items}
+export const getReviewQueue = async (f = {}) => {
+  const r = await getJSON(`/review-queue${qs(f)}`, { items: [] })
+  return r?.items ?? r ?? []
+}
+export const getReviewQueuePaged = (f = {}) => getJSON(`/review-queue${qs(f)}`, { total: 0, offset: 0, items: [] })
 export const getSummary = () => getJSON('/summary', {})
+export const getSummarySectors = () => getJSON('/summary/sectors', {})
+export const postDecision = async (ref, decision) => {
+  if (OFFLINE) return { ok: true }
+  const res = await fetch(`${API_BASE}/review-queue/${encodeURIComponent(ref)}/decision`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ decision }),
+    signal: AbortSignal.timeout(8000),
+  })
+  return res.json()
+}
+export const postRunExport = async () => {
+  if (OFFLINE) return { ok: true }
+  const res = await fetch(`${API_BASE}/admin/run-export`, {
+    method: 'POST',
+    signal: AbortSignal.timeout(120000),
+  })
+  return res.json()
+}
