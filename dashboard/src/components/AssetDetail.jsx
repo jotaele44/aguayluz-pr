@@ -4,21 +4,45 @@ import {
 } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { tierBadge, fmtDate } from '@/lib/format'
 import { typeMeta, statusBadge } from '@/lib/aguayluz-format'
+import { useAssetEvents } from '@/lib/hooks'
 import { cn } from '@/lib/utils'
-import { ChevronDown, ChevronRight, Database, Link2, MapPin } from 'lucide-react'
+import { ChevronDown, ChevronRight, Database, ExternalLink, MapPin, Zap } from 'lucide-react'
 
-function matchesAsset(event, asset) {
-  if (!event || !asset) return false
-  if ((event.linked_asset_ids || []).includes(asset.asset_id)) return true
-  if (event.municipality && asset.municipality && event.municipality === asset.municipality) return true
-  return false
+const TYPE_TONE = {
+  outage: 'text-red-400',
+  service_interruption: 'text-amber-400',
+  restoration: 'text-emerald-400',
+  boil_water: 'text-sky-400',
+  project_update: 'text-violet-400',
 }
 
-export default function AssetDetail({ asset: a, events = [], onClose }) {
+function RelatedEvents({ assetId }) {
+  const { data: events = [], isLoading } = useAssetEvents(assetId)
+  if (isLoading) return <Skeleton className="h-12 w-full" />
+  if (!events.length) return <p className="text-xs text-slate-500">No related events found</p>
+  return (
+    <div className="space-y-2">
+      {events.slice(0, 8).map((e, i) => (
+        <div key={e.event_id ?? i} className="rounded-md border border-slate-800 bg-slate-900 p-2">
+          <div className="flex items-center gap-2">
+            <Zap className={cn('h-3 w-3 shrink-0', TYPE_TONE[e.event_type] ?? 'text-slate-400')} />
+            <span className="text-xs font-medium capitalize text-slate-200">{(e.event_type || '').replace(/_/g, ' ')}</span>
+            {e.evidence_tier && <Badge variant="outline" className={cn('text-[10px]', tierBadge(e.evidence_tier))}>{e.evidence_tier}</Badge>}
+            <span className="ml-auto text-[10px] text-slate-500">{fmtDate(e.start_time)}</span>
+          </div>
+          <p className="mt-1 text-[11px] text-slate-400">{e.affected_area || e.municipality || 'Area unavailable'}</p>
+        </div>
+      ))}
+      {events.length > 8 && <p className="text-[11px] text-slate-500">+ {events.length - 8} more events</p>}
+    </div>
+  )
+}
+
+export default function AssetDetail({ asset: a, onClose }) {
   const [rawOpen, setRawOpen] = useState(false)
-  const linkedEvents = useMemo(() => events.filter((event) => matchesAsset(event, a)), [events, a])
 
   return (
     <Sheet open={!!a} onOpenChange={(o) => !o && onClose?.()}>
@@ -49,7 +73,7 @@ export default function AssetDetail({ asset: a, events = [], onClose }) {
               <Section title="Location" icon={MapPin}>
                 <Row k="Municipio" v={a.municipality} />
                 <Row k="Zone / area" v={a.zone || a.affected_area} />
-                <Row k="Coordinates" v={a.lat != null && a.lon != null ? `${a.lat}, ${a.lon}` : '—'} mono />
+                <Row k="Coordinates" v={a.lat != null && a.lon != null ? `${a.lat}, ${a.lon}` : null} mono />
               </Section>
 
               <Section title="Operator / owner">
@@ -62,28 +86,12 @@ export default function AssetDetail({ asset: a, events = [], onClose }) {
                 <Row k="Evidence tier" v={a.evidence_tier} />
                 <Row k="Confidence" v={a.confidence} />
                 <Row k="Review status" v={a.review_status} />
-                <Row k="Source" v={a.source_ref} />
+                <SourceRow sourceRef={a.source_ref} />
                 <Row k="Source hash" v={a.source_hash} mono />
               </Section>
 
-              <Section title={`Linked events (${linkedEvents.length})`} icon={Link2}>
-                {linkedEvents.length === 0 ? (
-                  <p className="text-xs text-slate-500">No service events are directly linked or municipio-matched for this asset.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {linkedEvents.slice(0, 8).map((event) => (
-                      <div key={event.event_id} className="rounded-md border border-slate-800 bg-slate-900 p-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium capitalize text-slate-200">{(event.event_type || 'event').replace(/_/g, ' ')}</span>
-                          {event.evidence_tier && <Badge variant="outline" className={cn('text-[10px]', tierBadge(event.evidence_tier))}>{event.evidence_tier}</Badge>}
-                          <span className="ml-auto text-[10px] text-slate-500">{fmtDate(event.start_time)}</span>
-                        </div>
-                        <p className="mt-1 text-[11px] text-slate-400">{event.affected_area || event.municipality || 'Area unavailable'}</p>
-                      </div>
-                    ))}
-                    {linkedEvents.length > 8 && <p className="text-[11px] text-slate-500">+ {linkedEvents.length - 8} additional municipio-matched events</p>}
-                  </div>
-                )}
+              <Section title="Related events">
+                <RelatedEvents assetId={a.asset_id} />
               </Section>
 
               <div className="rounded-lg border border-slate-800 bg-slate-900/60">
@@ -126,6 +134,23 @@ function Row({ k, v, mono = false }) {
     <div className="flex justify-between gap-4 border-b border-slate-800/70 pb-1.5 last:border-b-0 last:pb-0">
       <dt className="text-xs text-slate-500">{k}</dt>
       <dd className={cn('max-w-[65%] break-words text-right text-xs text-slate-200', mono && 'font-mono text-[11px]')}>{v ?? '—'}</dd>
+    </div>
+  )
+}
+
+function SourceRow({ sourceRef }) {
+  const isUrl = typeof sourceRef === 'string' && (sourceRef.startsWith('http://') || sourceRef.startsWith('https://'))
+  return (
+    <div className="flex justify-between gap-4 border-b border-slate-800/70 pb-1.5 last:border-b-0 last:pb-0">
+      <dt className="text-xs text-slate-500">Source</dt>
+      <dd className="max-w-[65%] break-words text-right text-xs text-slate-200">
+        {isUrl
+          ? <a href={sourceRef} target="_blank" rel="noreferrer" className="text-sky-400 hover:underline flex items-center gap-1 justify-end">
+              {sourceRef.replace(/^https?:\/\//, '').slice(0, 40)}…
+              <ExternalLink className="h-3 w-3 shrink-0" />
+            </a>
+          : (sourceRef ?? '—')}
+      </dd>
     </div>
   )
 }
