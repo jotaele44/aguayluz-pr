@@ -2,6 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import { Activity, Layers, MapPinned } from 'lucide-react'
 
+// Resolve against the configured base so it works in the normal build
+// (served from '/') and the VITE_OFFLINE single-file file:// export (base './').
+const MUNICIPIOS_URL = new URL('geo/pr_municipios.geojson', document.baseURI).href
+
 // Municipality outlines ship with the app (public/geo/) and sit under the
 // raster tiles, so the map still shows Puerto Rico geography when offline.
 const OSM_STYLE = {
@@ -13,7 +17,7 @@ const OSM_STYLE = {
       tileSize: 256,
       attribution: '© OpenStreetMap contributors',
     },
-    municipios: { type: 'geojson', data: '/geo/pr_municipios.geojson' },
+    municipios: { type: 'geojson', data: MUNICIPIOS_URL },
   },
   layers: [
     { id: 'bg', type: 'background', paint: { 'background-color': '#020617' } },
