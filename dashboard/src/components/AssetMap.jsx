@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import { Activity, Layers, MapPinned } from 'lucide-react'
 
+// Municipality outlines ship with the app (public/geo/) and sit under the
+// raster tiles, so the map still shows Puerto Rico geography when offline.
 const OSM_STYLE = {
   version: 8,
   sources: {
@@ -11,9 +13,12 @@ const OSM_STYLE = {
       tileSize: 256,
       attribution: '© OpenStreetMap contributors',
     },
+    municipios: { type: 'geojson', data: '/geo/pr_municipios.geojson' },
   },
   layers: [
     { id: 'bg', type: 'background', paint: { 'background-color': '#020617' } },
+    { id: 'municipios-fill', type: 'fill', source: 'municipios', paint: { 'fill-color': '#0d1b30', 'fill-opacity': 0.9 } },
+    { id: 'municipios-line', type: 'line', source: 'municipios', paint: { 'line-color': '#31507a', 'line-width': 0.8 } },
     {
       id: 'osm',
       type: 'raster',
@@ -162,7 +167,9 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
     mapRef.current = map
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
 
-    map.on('load', () => {
+    // 'style.load' instead of 'load': the latter waits for raster tiles,
+    // which never resolve offline, and the data layers would never appear.
+    map.on('style.load', () => {
       map.addSource('municipios', { type: 'geojson', data: municipios || EMPTY })
       map.addSource('assets', { type: 'geojson', data: visibleAssets || EMPTY, cluster: true, clusterMaxZoom: 10, clusterRadius: 36 })
       map.addSource('selected-asset', { type: 'geojson', data: selectedAsset })
