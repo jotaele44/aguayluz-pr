@@ -31,11 +31,13 @@ READINGS_FILES: dict[str, Path] = {
     "reliability": DATA / "reliability_readings.jsonl",
 }
 
-SECTOR_TYPE_MAP: dict[str, list[str]] = {
-    "power": ["power_plant", "substation", "transmission_line", "generation"],
-    "water": ["water_treatment", "water_distribution", "reservoir", "pump_station", "water"],
-    "wastewater": ["wastewater_treatment", "sewage", "wastewater"],
-    "telecom": ["cell_tower", "fiber", "telecom", "communications"],
+# Canonical asset_type values for each sector.  Exact-match is used (not substring)
+# to prevent "water" matching "wastewater" assets, etc.
+SECTOR_TYPE_MAP: dict[str, set[str]] = {
+    "power": {"power", "power_plant", "substation", "transmission_line", "generation"},
+    "water": {"water", "water_treatment", "water_distribution", "reservoir", "pump_station"},
+    "wastewater": {"wastewater", "wastewater_treatment", "sewage"},
+    "telecom": {"telecom", "cell_tower", "fiber", "communications"},
 }
 
 app = FastAPI(title="AguaYLuz-PR")
@@ -244,6 +246,7 @@ def review_queue(
 ) -> JSONResponse:
     data = _load_json(OUTPUTS / "review_queue.json")
     items: list[dict[str, Any]] = data.get("items", []) if data else []
+    items = [i for i in items if _decisions.get(i.get("record_ref", "")) not in ("accept", "reject")]
     if severity:
         items = [i for i in items if i.get("severity") == severity]
     if tier:
@@ -276,7 +279,7 @@ def summary_sectors() -> JSONResponse:
     for sector, types in SECTOR_TYPE_MAP.items():
         sector_assets = [
             a for a in _assets
-            if any(t in (a.get("asset_type") or "").lower() for t in types)
+            if (a.get("asset_type") or "").lower() in types
         ]
         active = sum(1 for a in sector_assets if a.get("status") == "active")
         sectors[sector] = {

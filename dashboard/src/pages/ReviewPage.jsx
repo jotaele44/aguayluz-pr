@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/select'
 import { useToast } from '@/components/ui/use-toast'
 
-const SEVERITIES = ['all', 'critical', 'high', 'warn', 'low']
+const SEVERITIES = ['all', 'block', 'warn', 'info']
 const TIERS = ['all', 'T1', 'T2', 'T3', 'T4']
 const PAGE_SIZE = 25
 

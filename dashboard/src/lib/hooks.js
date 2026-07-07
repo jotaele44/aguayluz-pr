@@ -24,7 +24,10 @@ export const useDecision = () => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ ref, decision }) => postDecision(ref, decision),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['review'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['review'] })
+      qc.invalidateQueries({ queryKey: ['review/paged'] })
+    },
   })
 }
 
