@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useReviewQueuePaged, useDecision } from '@/lib/hooks'
+import { postAiQuery } from '@/lib/api'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { tierBadge, severityTone } from '@/lib/format'
 import { cn } from '@/lib/utils'
-import { AlertTriangle, CheckCircle, X, SkipForward, ChevronLeft, ChevronRight, Download } from 'lucide-react'
+import { AlertTriangle, Bot, CheckCircle, Download, Loader2, SkipForward, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { downloadCSV } from '@/lib/csv'
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
@@ -21,6 +22,8 @@ export default function ReviewPage() {
   const [sev, setSev] = useState('all')
   const [tier, setTier] = useState('all')
   const [offset, setOffset] = useState(0)
+  const [suggestions, setSuggestions] = useState({})
+  const [suggesting, setSuggesting] = useState({})
   const { toast } = useToast()
 
   const { data, isLoading } = useReviewQueuePaged({
@@ -39,6 +42,22 @@ export default function ReviewPage() {
       onSuccess: () => toast({ title: `Marked ${decision}`, description: ref }),
       onError: () => toast({ variant: 'destructive', title: 'Decision failed' }),
     })
+  }
+
+  const handleAiSuggest = async (item) => {
+    const ref = item.record_ref
+    setSuggesting((s) => ({ ...s, [ref]: true }))
+    const result = await postAiQuery(
+      `Review queue item for Puerto Rico infrastructure data: ` +
+      `record_ref=${ref}, type=${item.record_type ?? 'unknown'}, ` +
+      `severity=${item.severity}, evidence_tier=${item.evidence_tier ?? 'unknown'}, ` +
+      `confidence=${item.confidence ?? 'unknown'}. ` +
+      `Reason: ${item.reason ?? 'no reason provided'}. ` +
+      `Should this record be accepted (data is valid), rejected (data is incorrect/duplicate), ` +
+      `or skipped (needs more context)? Respond in one concise sentence with your recommendation.`
+    )
+    setSuggestions((s) => ({ ...s, [ref]: result?.answer ?? result?.error ?? 'No response' }))
+    setSuggesting((s) => ({ ...s, [ref]: false }))
   }
 
   return (
@@ -61,28 +80,48 @@ export default function ReviewPage() {
         {isLoading
           ? Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-md" />)
           : items.map((r, i) => (
-            <div key={r.record_ref ?? i} className="rounded-lg border border-slate-800 bg-slate-900 p-4 flex items-start gap-4">
-              <AlertTriangle className={cn('h-4 w-4 shrink-0 mt-0.5', severityTone(r.severity))} />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <span className={cn('text-xs uppercase tracking-wide font-semibold', severityTone(r.severity))}>{r.severity}</span>
-                  {r.evidence_tier && <Badge variant="outline" className={cn('text-[10px]', tierBadge(r.evidence_tier))}>{r.evidence_tier}</Badge>}
-                  {r.confidence != null && <span className="text-[11px] text-slate-500">conf {r.confidence}</span>}
-                  <span className="text-[11px] font-mono text-slate-500 ml-auto truncate max-w-[200px]">{r.record_ref}</span>
+            <div key={r.record_ref ?? i} className="rounded-lg border border-slate-800 bg-slate-900">
+              <div className="p-4 flex items-start gap-4">
+                <AlertTriangle className={cn('h-4 w-4 shrink-0 mt-0.5', severityTone(r.severity))} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <span className={cn('text-xs uppercase tracking-wide font-semibold', severityTone(r.severity))}>{r.severity}</span>
+                    {r.evidence_tier && <Badge variant="outline" className={cn('text-[10px]', tierBadge(r.evidence_tier))}>{r.evidence_tier}</Badge>}
+                    {r.confidence != null && <span className="text-[11px] text-slate-500">conf {r.confidence}</span>}
+                    <span className="text-[11px] font-mono text-slate-500 ml-auto truncate max-w-[200px]">{r.record_ref}</span>
+                  </div>
+                  <p className="text-sm text-slate-300">{r.reason}</p>
                 </div>
-                <p className="text-sm text-slate-300">{r.reason}</p>
+                <div className="flex gap-1.5 shrink-0">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-2 text-xs text-sky-400 border-sky-900 hover:bg-sky-950"
+                    disabled={suggesting[r.record_ref]}
+                    onClick={() => handleAiSuggest(r)}
+                    title="Ask AI for a recommendation"
+                  >
+                    {suggesting[r.record_ref]
+                      ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      : <Bot className="h-3.5 w-3.5" />}
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-emerald-400 border-emerald-800 hover:bg-emerald-950" disabled={isPending} onClick={() => handleDecision(r.record_ref, 'accept')}>
+                    <CheckCircle className="h-3.5 w-3.5 mr-1" />Accept
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-red-400 border-red-900 hover:bg-red-950" disabled={isPending} onClick={() => handleDecision(r.record_ref, 'reject')}>
+                    <X className="h-3.5 w-3.5 mr-1" />Reject
+                  </Button>
+                  <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-slate-500" disabled={isPending} onClick={() => handleDecision(r.record_ref, 'skip')}>
+                    <SkipForward className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               </div>
-              <div className="flex gap-1.5 shrink-0">
-                <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-emerald-400 border-emerald-800 hover:bg-emerald-950" disabled={isPending} onClick={() => handleDecision(r.record_ref, 'accept')}>
-                  <CheckCircle className="h-3.5 w-3.5 mr-1" />Accept
-                </Button>
-                <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-red-400 border-red-900 hover:bg-red-950" disabled={isPending} onClick={() => handleDecision(r.record_ref, 'reject')}>
-                  <X className="h-3.5 w-3.5 mr-1" />Reject
-                </Button>
-                <Button size="sm" variant="ghost" aria-label="Skip" title="Skip" className="h-7 px-2 text-xs text-slate-500" disabled={isPending} onClick={() => handleDecision(r.record_ref, 'skip')}>
-                  <SkipForward className="h-3.5 w-3.5" />
-                </Button>
-              </div>
+              {suggestions[r.record_ref] && (
+                <div className="border-t border-sky-900/30 bg-sky-950/20 px-4 py-2.5 flex items-start gap-2 rounded-b-lg">
+                  <Bot className="h-3.5 w-3.5 text-sky-400 shrink-0 mt-0.5" />
+                  <p className="text-xs text-sky-200 leading-relaxed">{suggestions[r.record_ref]}</p>
+                </div>
+              )}
             </div>
           ))}
         {!isLoading && items.length === 0 && (

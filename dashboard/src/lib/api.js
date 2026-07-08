@@ -66,3 +66,19 @@ export const postRunExport = async () => {
   })
   return res.json()
 }
+
+export const postAiQuery = async (query) => {
+  if (OFFLINE) return { answer: 'AI query not available in offline mode.' }
+  try {
+    const res = await fetch(`${API_BASE}/ai/query`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query }),
+      signal: AbortSignal.timeout(30000),
+    })
+    if (!res.ok) return { answer: null, error: `Backend error ${res.status}` }
+    return res.json()
+  } catch (e) {
+    return { answer: null, error: String(e) }
+  }
+}

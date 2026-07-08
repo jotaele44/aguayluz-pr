@@ -1,13 +1,17 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAssetsGeojson, useEvents, useHealth, useReviewQueue, useRunExport, useSummary } from '@/lib/hooks'
-import { Activity, AlertTriangle, Database, Droplets, MapPinned, RefreshCw, ShieldCheck, WifiOff, X } from 'lucide-react'
+import { Activity, AlertTriangle, Database, Droplets, MapPinned, RefreshCw, ShieldCheck, TrendingDown, TrendingUp, WifiOff, X } from 'lucide-react'
 
-function Kpi({ icon: Icon, label, value, hint, tone = 'text-slate-300', emphasis = false }) {
+function Kpi({ icon: Icon, label, value, hint, tone = 'text-slate-300', emphasis = false, trend }) {
   return (
     <div className={`flex min-w-[132px] items-center gap-2 rounded-lg border px-3 py-2 shrink-0 ${emphasis ? 'border-sky-500/30 bg-sky-500/10' : 'border-slate-800 bg-slate-900/70'}`}>
       <Icon className={`h-4 w-4 ${tone}`} />
       <div className="min-w-0 leading-none">
-        <div className="text-sm font-semibold text-slate-100">{value ?? '–'}</div>
+        <div className="flex items-center gap-1">
+          <div className="text-sm font-semibold text-slate-100">{value ?? '–'}</div>
+          {trend === 'up' && <TrendingUp className="h-3 w-3 text-emerald-400" />}
+          {trend === 'down' && <TrendingDown className="h-3 w-3 text-red-400" />}
+        </div>
         <div className="mt-1 text-[10px] uppercase tracking-wide text-slate-500">{label}</div>
         {hint && <div className="mt-1 truncate text-[10px] text-slate-400">{hint}</div>}
       </div>
@@ -23,6 +27,7 @@ export default function StatsBar() {
   const { data: summary } = useSummary()
   const [dismissed, setDismissed] = useState(false)
   const { mutate: runExport, isPending: exporting } = useRunExport()
+  const prevRef = useRef({})
 
   const up = health?.status === 'ok'
   const c = health?.counts ?? {}
@@ -38,6 +43,18 @@ export default function StatsBar() {
   const reviewCount = r.records_review ?? reviewQueue.length
   const reviewTone = reviewCount > 0 ? 'text-amber-300' : 'text-emerald-300'
   const showDownBanner = (isError || (!up && health != null)) && !dismissed
+
+  const coverageTrend = prevRef.current.coverage != null && r.coverage_pct != null
+    ? r.coverage_pct > prevRef.current.coverage ? 'up' : r.coverage_pct < prevRef.current.coverage ? 'down' : undefined
+    : undefined
+  const reviewTrend = prevRef.current.review != null && reviewCount != null
+    ? reviewCount > prevRef.current.review ? 'up' : reviewCount < prevRef.current.review ? 'down' : undefined
+    : undefined
+
+  useEffect(() => {
+    if (r.coverage_pct != null) prevRef.current.coverage = r.coverage_pct
+    if (reviewCount != null) prevRef.current.review = reviewCount
+  }, [r.coverage_pct, reviewCount])
 
   return (
     <div className="flex flex-col border-b border-slate-800 bg-slate-900/60">
@@ -63,8 +80,8 @@ export default function StatsBar() {
         <Kpi icon={MapPinned} label="Mapped" value={mapped} hint="GeoJSON features" tone="text-cyan-300" />
         <Kpi icon={Activity} label="Events" value={c.events ?? events.length} hint="service records" tone="text-amber-300" />
         <Kpi icon={Droplets} label="Readings" value={readingsCount} hint="reservoir · generation · reliability" tone="text-blue-300" />
-        <Kpi icon={ShieldCheck} label="Coverage" value={coverage} hint={r.module_status ? `readiness ${r.module_status}` : 'summary'} tone="text-emerald-300" />
-        <Kpi icon={AlertTriangle} label="Review" value={reviewCount} hint="human adjudication" tone={reviewTone} />
+        <Kpi icon={ShieldCheck} label="Coverage" value={coverage} hint={r.module_status ? `readiness ${r.module_status}` : 'summary'} tone="text-emerald-300" trend={coverageTrend} />
+        <Kpi icon={AlertTriangle} label="Review" value={reviewCount} hint="human adjudication" tone={reviewTone} trend={reviewTrend} />
         {summary?.sanitized_summary && (
           <span className="text-[11px] text-slate-500 shrink-0 max-w-xs truncate ml-2" title={summary.sanitized_summary}>
             {summary.sanitized_summary}

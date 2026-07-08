@@ -4,10 +4,10 @@ import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select'
 import {
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+  LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceArea,
 } from 'recharts'
 import { READING_KINDS, CHART_TOOLTIP_STYLE } from '@/lib/format'
-import { Activity, Database } from 'lucide-react'
+import { Activity, AlertCircle, Database } from 'lucide-react'
 
 const axis = { fill: '#94a3b8', fontSize: 11 }
 const SOURCE_NOTE = {
@@ -44,11 +44,38 @@ export default function MonitoringCharts() {
     }
     return [...readings]
       .sort((a, b) => (a.observed_date || '').localeCompare(b.observed_date || ''))
-      .map((r) => ({ name: (r.observed_date || '').slice(5), value: r.value, site: r.site_no }))
+      .map((r) => ({ name: (r.observed_date || '').slice(5), fullDate: r.observed_date || '', value: r.value, site: r.site_no }))
   }, [readings, kind])
 
   const meta = READING_KINDS.find((k) => k.key === kind)
   const isBar = kind === 'reliability'
+
+  const { anomalySet, anomalies, gapBands } = useMemo(() => {
+    if (isBar || chart.length < 5) return { anomalySet: new Set(), anomalies: [], gapBands: [] }
+    const vals = chart.map((d) => Number(d.value)).filter((v) => !Number.isNaN(v))
+    if (vals.length < 5) return { anomalySet: new Set(), anomalies: [], gapBands: [] }
+    const mean = vals.reduce((s, v) => s + v, 0) / vals.length
+    const std = Math.sqrt(vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length)
+    const threshold = 2 * (std || 1)
+    const anomalyList = chart
+      .filter((d) => d.value != null && Math.abs(Number(d.value) - mean) > threshold)
+      .map((d) => ({ ...d, sigma: ((Number(d.value) - mean) / (std || 1)).toFixed(1) }))
+      .slice(0, 6)
+    const aSet = new Set(anomalyList.map((a) => a.name))
+    const gaps = []
+    if (kind === 'reservoir' && chart.length > 1) {
+      for (let i = 1; i < chart.length; i++) {
+        const prev = chart[i - 1].fullDate
+        const curr = chart[i].fullDate
+        if (!prev || !curr) continue
+        const days = (new Date(curr) - new Date(prev)) / 86400000
+        if (days > 30) {
+          gaps.push({ x1: chart[i - 1].name, x2: chart[i].name, days: Math.round(days) })
+        }
+      }
+    }
+    return { anomalySet: aSet, anomalies: anomalyList, gapBands: gaps }
+  }, [chart, isBar, kind])
 
   return (
     <div className="h-full overflow-auto p-3 space-y-3">
@@ -110,12 +137,61 @@ export default function MonitoringCharts() {
                   <XAxis dataKey="name" tick={axis} />
                   <YAxis tick={axis} domain={['auto', 'auto']} />
                   <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
-                  <Line type="monotone" dataKey="value" stroke="#38bdf8" dot={false} strokeWidth={2} />
+                  {gapBands.map((gap, i) => (
+                    <ReferenceArea key={i} x1={gap.x1} x2={gap.x2} fill="#0f172a" fillOpacity={0.85} stroke="#334155" strokeOpacity={0.4} />
+                  ))}
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#38bdf8"
+                    strokeWidth={2}
+                    dot={(props) => {
+                      if (props.payload && anomalySet.has(props.payload.name)) {
+                        return <circle key={props.index} cx={props.cx} cy={props.cy} r={5} fill="#ef4444" stroke="#7f1d1d" strokeWidth={1} />
+                      }
+                      return null
+                    }}
+                    activeDot={{ r: 4, fill: '#38bdf8' }}
+                  />
                 </LineChart>
               )}
             </ResponsiveContainer>
           )}
         </div>
+
+        {(anomalies.length > 0 || gapBands.length > 0) && (
+          <div className="mt-3 space-y-2 border-t border-slate-800 pt-3">
+            {anomalies.length > 0 && (
+              <div className="rounded border border-red-900/40 bg-red-950/20 p-2.5">
+                <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-red-400 mb-2">
+                  <AlertCircle className="h-3 w-3" /> {anomalies.length} anomalous reading{anomalies.length > 1 ? 's' : ''} (&gt;2σ from mean)
+                </p>
+                <div className="space-y-1">
+                  {anomalies.map((a) => (
+                    <div key={a.name} className="flex items-center justify-between text-[11px]">
+                      <span className="text-slate-400 font-mono">{a.name}{a.site ? ` · ${a.site}` : ''}</span>
+                      <span className="text-red-300 font-mono">{Number(a.value).toFixed(2)} ({a.sigma}σ)</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {gapBands.length > 0 && (
+              <div className="rounded border border-slate-700/50 bg-slate-900/50 p-2.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
+                  Data gaps (shaded gray on chart)
+                </p>
+                <div className="space-y-0.5">
+                  {gapBands.map((g, i) => (
+                    <p key={i} className="text-[11px] text-slate-500 font-mono">
+                      {g.x1} → {g.x2} <span className="text-slate-600">({g.days}d gap)</span>
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
