@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from '@/components/ui/sheet'
@@ -9,7 +10,7 @@ import { tierBadge, fmtDate, typeMeta, statusBadge, eventTone } from '@/lib/form
 import { useAssetEvents, useFlagAsset } from '@/lib/hooks'
 import { useToast } from '@/components/ui/use-toast'
 import { cn } from '@/lib/utils'
-import { ChevronDown, ChevronRight, Database, ExternalLink, Flag, MapPin, Zap } from 'lucide-react'
+import { ChevronDown, ChevronRight, Database, ExternalLink, Flag, Map, MapPin, Zap } from 'lucide-react'
 
 function RelatedEvents({ assetId }) {
   const { data: events = [], isLoading } = useAssetEvents(assetId)
@@ -37,6 +38,15 @@ export default function AssetDetail({ asset: a, onClose }) {
   const [rawOpen, setRawOpen] = useState(false)
   const { mutate: flagAsset, isPending: flagging } = useFlagAsset()
   const { toast } = useToast()
+  const navigate = useNavigate()
+
+  const canShowOnMap = a?.lat != null && a?.lon != null
+
+  const handleShowOnMap = () => {
+    if (!a) return
+    onClose?.()
+    navigate(`/map?flyTo=${encodeURIComponent(a.asset_id)}&lat=${a.lat}&lon=${a.lon}`)
+  }
 
   useEffect(() => {
     if (!a) return
@@ -65,10 +75,22 @@ export default function AssetDetail({ asset: a, onClose }) {
                 <Badge variant="outline" className={cn('text-[10px] capitalize', statusBadge(a.status))}>{a.status || 'unknown'}</Badge>
                 {a.evidence_tier && <Badge variant="outline" className={cn('text-[10px]', tierBadge(a.evidence_tier))}>{a.evidence_tier}</Badge>}
                 {a.review_status && <Badge variant="outline" className="border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-300">{a.review_status}</Badge>}
+                {canShowOnMap && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="ml-auto h-6 px-2 text-[10px] text-sky-400 border-sky-800 hover:bg-sky-950"
+                    onClick={handleShowOnMap}
+                    title="Fly to this asset on the map"
+                  >
+                    <Map className="h-3 w-3 mr-1" />
+                    Show on map
+                  </Button>
+                )}
                 <Button
                   size="sm"
                   variant="outline"
-                  className={cn('ml-auto h-6 px-2 text-[10px]', a.review_status === 'needs_review' ? 'text-amber-300 border-amber-700 bg-amber-950/30' : 'text-slate-400 border-slate-700')}
+                  className={cn('h-6 px-2 text-[10px]', canShowOnMap ? '' : 'ml-auto', a.review_status === 'needs_review' ? 'text-amber-300 border-amber-700 bg-amber-950/30' : 'text-slate-400 border-slate-700')}
                   disabled={flagging}
                   onClick={handleFlag}
                   title="Flag this asset for human review"

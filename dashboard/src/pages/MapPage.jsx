@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useAssets, useAssetsGeojson, useMunicipiosGeojson, useEvents } from '@/lib/hooks'
 import AssetMap from '@/components/AssetMap'
 import AssetsTable from '@/components/AssetsTable'
@@ -12,6 +13,12 @@ export default function MapPage() {
   const { data: events = [] } = useEvents()
   const [selected, setSelected] = useState(null)
   const [selectedMunicipio, setSelectedMunicipio] = useState(null)
+  const [searchParams] = useSearchParams()
+
+  // fly-to from ?flyTo=ASSET_ID&lat=...&lon=... (set by AssetDetail "Show on map")
+  const flyToLat = parseFloat(searchParams.get('lat'))
+  const flyToLon = parseFloat(searchParams.get('lon'))
+  const flyToId = searchParams.get('flyTo')
 
   const selectByProps = (props) => {
     const full = assets.find((a) => a.asset_id === props.asset_id)
@@ -30,6 +37,7 @@ export default function MapPage() {
           selectedMunicipio={selectedMunicipio}
           onSelect={selectByProps}
           onMunicipioSelect={setSelectedMunicipio}
+          flyTo={flyToId && !isNaN(flyToLat) && !isNaN(flyToLon) ? { id: flyToId, lat: flyToLat, lon: flyToLon } : null}
         />
         <div className="pointer-events-none absolute bottom-2 left-2 rounded bg-slate-900/80 px-2 py-1 text-[11px] text-slate-400">
           {assetsGeo?.features?.length ?? 0} mapped assets · {selectedMunicipio?.name ? `${selectedMunicipio.name} selected` : 'colored by type'}

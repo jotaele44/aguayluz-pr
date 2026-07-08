@@ -133,7 +133,7 @@ function ControlButton({ active, children, onClick, tone }) {
   )
 }
 
-export default function AssetMap({ assets, assetRows = [], municipios, events = [], selectedAssetId, selectedMunicipio, onSelect, onMunicipioSelect }) {
+export default function AssetMap({ assets, assetRows = [], municipios, events = [], selectedAssetId, selectedMunicipio, onSelect, onMunicipioSelect, flyTo }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const readyRef = useRef(false)
@@ -276,6 +276,11 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
     if (!readyRef.current || !mapRef.current) return
     mapRef.current.getSource('assets')?.setData(visibleAssets || EMPTY)
   }, [visibleAssets])
+
+  useEffect(() => {
+    if (!readyRef.current || !mapRef.current || !flyTo) return
+    mapRef.current.flyTo({ center: [flyTo.lon, flyTo.lat], zoom: 14, duration: 1200 })
+  }, [flyTo?.id])
 
   useEffect(() => {
     if (!readyRef.current || !mapRef.current) return
