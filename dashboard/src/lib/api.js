@@ -82,3 +82,5 @@ export const postAiQuery = async (query) => {
     return { answer: null, error: String(e) }
   }
 }
+
+export const getEvent = (id) => getJSON(`/events/${encodeURIComponent(id)}`, null)

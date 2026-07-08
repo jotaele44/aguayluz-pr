@@ -183,6 +183,14 @@ def municipio_summary(name: str) -> JSONResponse:
     })
 
 
+@app.get("/events/{event_id}")
+def event_detail(event_id: str) -> JSONResponse:
+    for e in _events:
+        if str(e.get("event_id", "")) == event_id:
+            return JSONResponse(e)
+    raise HTTPException(status_code=404, detail="Event not found")
+
+
 @app.get("/events")
 def events(
     type: str | None = Query(default=None),

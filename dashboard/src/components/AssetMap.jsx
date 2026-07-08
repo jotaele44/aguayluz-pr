@@ -1,14 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
-import { Activity, Layers, MapPinned } from 'lucide-react'
+import { Activity, Layers, MapPinned, Satellite } from 'lucide-react'
 
 // Resolve against the configured base so it works in the normal build
 // (served from '/') and the VITE_OFFLINE single-file file:// export (base './').
 const MUNICIPIOS_URL = new URL('geo/pr_municipios.geojson', document.baseURI).href
 
-// Municipality outlines ship with the app (public/geo/) and sit under the
-// raster tiles, so the map still shows Puerto Rico geography when offline.
-const OSM_STYLE = {
+const BASE_STYLE = {
   version: 8,
   sources: {
     osm: {
@@ -17,7 +15,12 @@ const OSM_STYLE = {
       tileSize: 256,
       attribution: '© OpenStreetMap contributors',
     },
-    municipios: { type: 'geojson', data: MUNICIPIOS_URL },
+    satellite: {
+      type: 'raster',
+      tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+      tileSize: 256,
+      attribution: '© Esri World Imagery',
+    },
   },
   layers: [
     { id: 'bg', type: 'background', paint: { 'background-color': '#020617' } },
@@ -33,6 +36,13 @@ const OSM_STYLE = {
         'raster-contrast': -0.15,
         'raster-brightness-max': 0.68,
       },
+    },
+    {
+      id: 'satellite',
+      type: 'raster',
+      source: 'satellite',
+      layout: { visibility: 'none' },
+      paint: { 'raster-opacity': 0.9 },
     },
   ],
 }
@@ -130,6 +140,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
   const onSelectRef = useRef(onSelect); onSelectRef.current = onSelect
   const onMunicipioSelectRef = useRef(onMunicipioSelect); onMunicipioSelectRef.current = onMunicipioSelect
   const [layers, setLayers] = useState({ power: true, water: true, wastewater: true, other: true, municipios: true, events: true, review: false })
+  const [basemap, setBasemap] = useState('osm')
 
   const assetFeatures = assets?.features ?? []
   const visibleAssets = useMemo(() => {
@@ -167,14 +178,14 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
 
   useEffect(() => {
     if (!containerRef.current) return undefined
-    const map = new maplibregl.Map({ container: containerRef.current, style: OSM_STYLE, center: PR_CENTER, zoom: 8.25, minZoom: 7.2 })
+    const map = new maplibregl.Map({ container: containerRef.current, style: BASE_STYLE, center: PR_CENTER, zoom: 8.25, minZoom: 7.2 })
     mapRef.current = map
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
 
     // 'style.load' instead of 'load': the latter waits for raster tiles,
     // which never resolve offline, and the data layers would never appear.
     map.on('style.load', () => {
-      map.addSource('municipios', { type: 'geojson', data: municipios || EMPTY })
+      map.addSource('municipios', { type: 'geojson', data: municipios || MUNICIPIOS_URL })
       map.addSource('assets', { type: 'geojson', data: visibleAssets || EMPTY, cluster: true, clusterMaxZoom: 10, clusterRadius: 36 })
       map.addSource('selected-asset', { type: 'geojson', data: selectedAsset })
       map.addSource('service-events', { type: 'geojson', data: eventGeo })
@@ -290,6 +301,14 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
     mapRef.current.setLayoutProperty('events-dot', 'visibility', layers.events ? 'visible' : 'none')
   }, [layers.municipios, layers.events])
 
+  useEffect(() => {
+    if (!readyRef.current || !mapRef.current) return
+    try {
+      mapRef.current.setLayoutProperty('osm', 'visibility', basemap === 'osm' ? 'visible' : 'none')
+      mapRef.current.setLayoutProperty('satellite', 'visibility', basemap === 'satellite' ? 'visible' : 'none')
+    } catch { /* layers may not be ready yet */ }
+  }, [basemap])
+
   return (
     <div className="relative h-full w-full">
       <div ref={containerRef} className="h-full w-full" />
@@ -314,6 +333,22 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
         >
           Review-needed assets only
         </button>
+        <div className="mt-2 flex gap-1">
+          <button
+            type="button"
+            onClick={() => setBasemap('osm')}
+            className={`flex-1 flex items-center justify-center gap-1 rounded border px-2 py-1.5 text-[11px] transition ${basemap === 'osm' ? 'border-sky-500/40 bg-sky-500/10 text-sky-300' : 'border-slate-800 bg-slate-950/70 text-slate-500 hover:text-slate-300'}`}
+          >
+            <Layers className="h-3 w-3" /> Map
+          </button>
+          <button
+            type="button"
+            onClick={() => setBasemap('satellite')}
+            className={`flex-1 flex items-center justify-center gap-1 rounded border px-2 py-1.5 text-[11px] transition ${basemap === 'satellite' ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300' : 'border-slate-800 bg-slate-950/70 text-slate-500 hover:text-slate-300'}`}
+          >
+            <Satellite className="h-3 w-3" /> Satellite
+          </button>
+        </div>
       </div>
 
       <div className="absolute bottom-3 left-3 rounded-lg border border-slate-700/70 bg-slate-950/85 px-2.5 py-2 shadow-xl backdrop-blur">

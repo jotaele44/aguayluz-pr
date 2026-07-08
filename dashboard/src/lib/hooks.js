@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   getHealth, getAssets, getAssetsGeojson, getMunicipiosGeojson,
-  getEvents, getEventsPaged, getAssetEvents, getMunicipioSummary,
+  getEvents, getEventsPaged, getAssetEvents, getEvent, getMunicipioSummary,
   getReadings, getReviewQueue, getReviewQueuePaged,
   getSummary, getSummarySectors, postDecision, postRunExport,
 } from '@/lib/api'
@@ -26,6 +26,7 @@ export const useEventsPaged = (f = {}) => {
   return useQuery({ queryKey: ['events/paged', params], queryFn: () => getEventsPaged(params) })
 }
 export const useAssetEvents = (id) => useQuery({ queryKey: ['asset-events', id], queryFn: () => getAssetEvents(id), enabled: !!id })
+export const useEvent = (id) => useQuery({ queryKey: ['event', id], queryFn: () => getEvent(id), enabled: !!id })
 export const useMunicipioSummary = (name) => useQuery({ queryKey: ['municipio', name], queryFn: () => getMunicipioSummary(name), enabled: !!name })
 export const useReadings = (f = {}) => useQuery({ queryKey: ['readings', f], queryFn: () => getReadings(f) })
 export const useReviewQueue = (f = {}) => useQuery({ queryKey: ['review', f], queryFn: () => getReviewQueue(f) })
