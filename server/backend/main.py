@@ -10,15 +10,21 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os as _os
+import smtplib as _smtplib
 import subprocess
 import sys
+import urllib.request as _notify_urllib
+from collections import Counter
 from datetime import datetime, timezone
+from email.message import EmailMessage as _EmailMessage
 from pathlib import Path
 from typing import Any
 
+from fastapi import Depends as _Depends
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 DATA = REPO_ROOT / "data"
@@ -50,9 +56,8 @@ SECTOR_TYPE_MAP: dict[str, set[str]] = {
 app = FastAPI(title="AguaYLuz-PR")
 
 # CORS: allow the Vite dev server and any configured ALLOWED_ORIGINS
-import os as _env_os
 _cors_origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
-_extra = _env_os.getenv("ALLOWED_ORIGINS", "")
+_extra = _os.getenv("ALLOWED_ORIGINS", "")
 if _extra:
     _cors_origins.extend(o.strip() for o in _extra.split(",") if o.strip())
 
@@ -69,7 +74,7 @@ app.add_middleware(
 # GET /municipios*, GET /export/*) remain open for read-only dashboard access.
 # Write / admin endpoints require the key in the Authorization header:
 #   Authorization: Bearer <API_SECRET_KEY>
-_API_KEY = _env_os.getenv("API_SECRET_KEY", "")
+_API_KEY = _os.getenv("API_SECRET_KEY", "")
 _WRITE_PATHS = {"/admin/run-export", "/notify", "/review-queue"}  # prefixes
 
 
@@ -82,9 +87,6 @@ async def _require_key(request: Request):
     auth = request.headers.get("Authorization", "")
     if not auth.startswith("Bearer ") or auth[7:] != _API_KEY:
         raise HTTPException(status_code=401, detail="Invalid or missing API key")
-
-
-from fastapi import Depends as _Depends
 
 
 def _load_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -183,16 +185,16 @@ def auth_status() -> JSONResponse:
     """Returns whether API key auth is enabled and which channels are configured."""
     return JSONResponse({
         "auth_enabled": bool(_API_KEY),
-        "slack_configured": bool(_env_os.getenv("SLACK_WEBHOOK_URL")),
-        "ntfy_configured": bool(_env_os.getenv("NTFY_TOPIC")),
-        "email_configured": bool(_env_os.getenv("NOTIFY_EMAIL_FROM") and _env_os.getenv("NOTIFY_EMAIL_TO")),
-        "sentry_dsn_set": bool(_env_os.getenv("SENTRY_DSN")),
-        "ai_enabled": bool(_env_os.getenv("ANTHROPIC_API_KEY")),
+        "slack_configured": bool(_os.getenv("SLACK_WEBHOOK_URL")),
+        "ntfy_configured": bool(_os.getenv("NTFY_TOPIC")),
+        "email_configured": bool(_os.getenv("NOTIFY_EMAIL_FROM") and _os.getenv("NOTIFY_EMAIL_TO")),
+        "sentry_dsn_set": bool(_os.getenv("SENTRY_DSN")),
+        "ai_enabled": bool(_os.getenv("ANTHROPIC_API_KEY")),
     })
 
 
 @app.patch("/assets/{asset_id}")
-async def patch_asset(asset_id: str, request: Request, _=_Depends(_require_key)) -> JSONResponse:
+async def patch_asset(asset_id: str, request: Request, _=_Depends(_require_key)) -> JSONResponse:  # noqa: B008
     """Update mutable fields (review_status) on an asset."""
     for a in _assets:
         if a.get("asset_id") == asset_id:
@@ -253,7 +255,7 @@ def event_detail(event_id: str) -> JSONResponse:
 
 
 @app.patch("/events/{event_id}")
-async def patch_event(event_id: str, request: Request, _=_Depends(_require_key)) -> JSONResponse:
+async def patch_event(event_id: str, request: Request, _=_Depends(_require_key)) -> JSONResponse:  # noqa: B008
     """Update mutable fields (resolution_status, review_status) on an event."""
     for e in _events:
         if str(e.get("event_id", "")) == event_id:
@@ -354,7 +356,7 @@ def review_queue(
 
 
 @app.post("/review-queue/{ref}/decision")
-async def review_decision(ref: str, request: Request, _=_Depends(_require_key)) -> JSONResponse:
+async def review_decision(ref: str, request: Request, _=_Depends(_require_key)) -> JSONResponse:  # noqa: B008
     body = await request.json()
     decision = body.get("decision")
     if decision not in ("accept", "reject", "skip"):
@@ -386,7 +388,7 @@ def summary_sectors() -> JSONResponse:
 
 
 @app.post("/admin/run-export")
-async def run_export(request: Request, _=_Depends(_require_key)) -> JSONResponse:
+async def run_export(request: Request, _=_Depends(_require_key)) -> JSONResponse:  # noqa: B008
     script = SCRIPTS / "federation_export.py"
     if not script.exists():
         raise HTTPException(status_code=404, detail="federation_export.py not found")
@@ -468,11 +470,8 @@ async def ai_query(request: Request) -> JSONResponse:
 
 
 @app.get("/export/report.html")
-def export_report_html() -> "HTMLResponse":
+def export_report_html() -> HTMLResponse:
     """Generate a printable HTML status report for the dashboard."""
-    from fastapi.responses import HTMLResponse
-    from datetime import datetime, timezone
-
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     total_assets = len(_assets)
     total_events = len(_events)
@@ -486,7 +485,6 @@ def export_report_html() -> "HTMLResponse":
         sector_rows += f"<tr><td>{sector.title()}</td><td>{len(sa)}</td><td>{active}</td><td>{pct}%</td></tr>\n"
 
     # Top 10 municipios by event count
-    from collections import Counter
     mun_counts = Counter(
         e.get("municipality") or e.get("affected_area") or "Unknown"
         for e in _events
@@ -569,11 +567,6 @@ def export_report_html() -> "HTMLResponse":
 # event is detected.  Returns 200 OK regardless; errors are logged but not
 # surfaced to the caller so a broken webhook never blocks the dashboard.
 
-import os as _os
-import smtplib as _smtplib
-import urllib.request as _notify_urllib
-from email.message import EmailMessage as _EmailMessage
-
 
 def _send_slack(webhook: str, text: str) -> None:
     body = json.dumps({"text": text}).encode()
@@ -604,7 +597,7 @@ def _send_email(from_addr: str, to_addr: str, smtp_host: str, subject: str, body
 
 
 @app.post("/notify")
-async def notify(request: Request, _=_Depends(_require_key)) -> JSONResponse:
+async def notify(request: Request, _=_Depends(_require_key)) -> JSONResponse:  # noqa: B008
     """Dispatch a notification to configured channels (Slack, ntfy, email).
 
     Body: {"message": str, "title": str = "AguaYLuz-PR Alert"}
