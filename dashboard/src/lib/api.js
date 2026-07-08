@@ -110,3 +110,19 @@ export const patchAsset = async (id, data) => {
 }
 
 export const getReportUrl = () => `${API_BASE}/export/report.html`
+
+export const postNotify = async ({ message, title }) => {
+  if (OFFLINE) return { ok: false, error: 'Notifications not available in offline mode.' }
+  try {
+    const res = await fetch(`${API_BASE}/notify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, title }),
+      signal: AbortSignal.timeout(15000),
+    })
+    if (!res.ok) return { ok: false, error: `Backend error ${res.status}` }
+    return res.json()
+  } catch (e) {
+    return { ok: false, error: String(e) }
+  }
+}

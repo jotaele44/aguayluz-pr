@@ -513,3 +513,88 @@ def export_report_html() -> "HTMLResponse":
 </body>
 </html>"""
     return HTMLResponse(content=html)
+
+
+# ── Notification dispatch ──────────────────────────────────────────────────────
+# Opt-in via env vars:
+#   SLACK_WEBHOOK_URL  — Slack incoming webhook (POST JSON)
+#   NOTIFY_EMAIL_FROM / NOTIFY_EMAIL_TO / SMTP_HOST — SMTP email alerts
+#   NTFY_TOPIC — ntfy.sh push topic (e.g. "aguayluz-pr-alerts")
+#
+# POST /notify — internal helper called by the dashboard or CI after a critical
+# event is detected.  Returns 200 OK regardless; errors are logged but not
+# surfaced to the caller so a broken webhook never blocks the dashboard.
+
+import os as _os
+import smtplib as _smtplib
+import urllib.request as _notify_urllib
+from email.message import EmailMessage as _EmailMessage
+
+
+def _send_slack(webhook: str, text: str) -> None:
+    body = json.dumps({"text": text}).encode()
+    req = _notify_urllib.Request(webhook, data=body, headers={"Content-Type": "application/json"}, method="POST")
+    with _notify_urllib.urlopen(req, timeout=10):
+        pass
+
+
+def _send_ntfy(topic: str, text: str, title: str = "AguaYLuz-PR Alert") -> None:
+    req = _notify_urllib.Request(
+        f"https://ntfy.sh/{topic}",
+        data=text.encode(),
+        headers={"Title": title, "Priority": "high", "Tags": "warning"},
+        method="POST",
+    )
+    with _notify_urllib.urlopen(req, timeout=10):
+        pass
+
+
+def _send_email(from_addr: str, to_addr: str, smtp_host: str, subject: str, body: str) -> None:
+    msg = _EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = from_addr
+    msg["To"] = to_addr
+    msg.set_content(body)
+    with _smtplib.SMTP(smtp_host, 587, timeout=10) as server:
+        server.sendmail(from_addr, [to_addr], msg.as_string())
+
+
+@app.post("/notify")
+async def notify(request: Request) -> JSONResponse:
+    """Dispatch a notification to configured channels (Slack, ntfy, email).
+
+    Body: {"message": str, "title": str = "AguaYLuz-PR Alert"}
+    """
+    body = await request.json()
+    message = (body.get("message") or "").strip()
+    title = (body.get("title") or "AguaYLuz-PR Alert").strip()
+    if not message:
+        raise HTTPException(status_code=400, detail="message field required")
+
+    errors: list[str] = []
+
+    slack_url = _os.getenv("SLACK_WEBHOOK_URL")
+    if slack_url:
+        try:
+            _send_slack(slack_url, f"*{title}*\n{message}")
+        except Exception as e:
+            errors.append(f"slack: {e}")
+
+    ntfy_topic = _os.getenv("NTFY_TOPIC")
+    if ntfy_topic:
+        try:
+            _send_ntfy(ntfy_topic, message, title)
+        except Exception as e:
+            errors.append(f"ntfy: {e}")
+
+    email_from = _os.getenv("NOTIFY_EMAIL_FROM")
+    email_to = _os.getenv("NOTIFY_EMAIL_TO")
+    smtp_host = _os.getenv("SMTP_HOST")
+    if email_from and email_to and smtp_host:
+        try:
+            _send_email(email_from, email_to, smtp_host, title, message)
+        except Exception as e:
+            errors.append(f"email: {e}")
+
+    channels_active = bool(slack_url or ntfy_topic or (email_from and email_to and smtp_host))
+    return JSONResponse({"ok": True, "channels_active": channels_active, "errors": errors})
