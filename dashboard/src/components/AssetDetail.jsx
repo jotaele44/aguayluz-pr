@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from '@/components/ui/sheet'
@@ -6,9 +6,10 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { tierBadge, fmtDate, typeMeta, statusBadge, eventTone } from '@/lib/format'
-import { useAssetEvents } from '@/lib/hooks'
+import { useAssetEvents, useFlagAsset } from '@/lib/hooks'
+import { useToast } from '@/components/ui/use-toast'
 import { cn } from '@/lib/utils'
-import { ChevronDown, ChevronRight, Database, ExternalLink, MapPin, Zap } from 'lucide-react'
+import { ChevronDown, ChevronRight, Database, ExternalLink, Flag, MapPin, Zap } from 'lucide-react'
 
 function RelatedEvents({ assetId }) {
   const { data: events = [], isLoading } = useAssetEvents(assetId)
@@ -34,6 +35,8 @@ function RelatedEvents({ assetId }) {
 
 export default function AssetDetail({ asset: a, onClose }) {
   const [rawOpen, setRawOpen] = useState(false)
+  const { mutate: flagAsset, isPending: flagging } = useFlagAsset()
+  const { toast } = useToast()
 
   useEffect(() => {
     if (!a) return
@@ -41,6 +44,15 @@ export default function AssetDetail({ asset: a, onClose }) {
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [a, onClose])
+
+  const handleFlag = () => {
+    if (!a) return
+    const next = a.review_status === 'needs_review' ? 'accepted' : 'needs_review'
+    flagAsset(
+      { id: a.asset_id, reviewStatus: next },
+      { onSuccess: () => toast({ title: next === 'needs_review' ? 'Flagged for review' : 'Flag cleared', description: a.asset_name }) }
+    )
+  }
 
   return (
     <Sheet open={!!a} onOpenChange={(o) => !o && onClose?.()}>
@@ -53,6 +65,17 @@ export default function AssetDetail({ asset: a, onClose }) {
                 <Badge variant="outline" className={cn('text-[10px] capitalize', statusBadge(a.status))}>{a.status || 'unknown'}</Badge>
                 {a.evidence_tier && <Badge variant="outline" className={cn('text-[10px]', tierBadge(a.evidence_tier))}>{a.evidence_tier}</Badge>}
                 {a.review_status && <Badge variant="outline" className="border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-300">{a.review_status}</Badge>}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className={cn('ml-auto h-6 px-2 text-[10px]', a.review_status === 'needs_review' ? 'text-amber-300 border-amber-700 bg-amber-950/30' : 'text-slate-400 border-slate-700')}
+                  disabled={flagging}
+                  onClick={handleFlag}
+                  title="Flag this asset for human review"
+                >
+                  <Flag className="h-3 w-3 mr-1" />
+                  {a.review_status === 'needs_review' ? 'Unflag' : 'Flag for review'}
+                </Button>
               </div>
               <SheetTitle className="text-left text-slate-100">{a.asset_name}</SheetTitle>
               <SheetDescription className="text-left text-slate-400">

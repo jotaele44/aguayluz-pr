@@ -4,6 +4,7 @@ import {
   getEvents, getEventsPaged, getAssetEvents, getEvent, getMunicipioSummary,
   getReadings, getReviewQueue, getReviewQueuePaged,
   getSummary, getSummarySectors, postDecision, postRunExport,
+  patchEvent, patchAsset,
 } from '@/lib/api'
 
 export const useHealth = () => useQuery({ queryKey: ['health'], queryFn: getHealth, refetchInterval: 15_000 })
@@ -51,6 +52,27 @@ export const useRunExport = () => {
       qc.invalidateQueries({ queryKey: ['health'] })
       qc.invalidateQueries({ queryKey: ['review'] })
       qc.invalidateQueries({ queryKey: ['summary'] })
+    },
+  })
+}
+
+export const useAckEvent = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, status }) => patchEvent(id, { resolution_status: status }),
+    onSuccess: (_, { id }) => {
+      qc.invalidateQueries({ queryKey: ['event', id] })
+      qc.invalidateQueries({ queryKey: ['events'] })
+    },
+  })
+}
+
+export const useFlagAsset = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, reviewStatus }) => patchAsset(id, { review_status: reviewStatus }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['assets'] })
     },
   })
 }

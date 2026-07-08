@@ -90,6 +90,9 @@ _municipios_geojson: dict[str, Any] = _load_json(
 
 # In-memory store for review decisions (survives only until server restart).
 _decisions: dict[str, str] = {}
+# In-memory patches for event/asset acknowledgements & flags (volatile).
+_event_patches: dict[str, dict[str, Any]] = {}
+_asset_patches: dict[str, dict[str, Any]] = {}
 
 
 @app.get("/health")
@@ -144,6 +147,19 @@ def asset_events(asset_id: str) -> JSONResponse:
     return JSONResponse(related)
 
 
+@app.patch("/assets/{asset_id}")
+async def patch_asset(asset_id: str, request: Request) -> JSONResponse:
+    """Update mutable fields (review_status) on an asset."""
+    for a in _assets:
+        if a.get("asset_id") == asset_id:
+            body = await request.json()
+            allowed = {"review_status", "status"}
+            patch = {k: v for k, v in body.items() if k in allowed}
+            _asset_patches.setdefault(asset_id, {}).update(patch)
+            return JSONResponse({**a, **_asset_patches[asset_id]})
+    raise HTTPException(status_code=404, detail="Asset not found")
+
+
 @app.get("/assets.geojson")
 def assets_geojson() -> JSONResponse:
     features = []
@@ -187,7 +203,21 @@ def municipio_summary(name: str) -> JSONResponse:
 def event_detail(event_id: str) -> JSONResponse:
     for e in _events:
         if str(e.get("event_id", "")) == event_id:
-            return JSONResponse(e)
+            merged = {**e, **_event_patches.get(event_id, {})}
+            return JSONResponse(merged)
+    raise HTTPException(status_code=404, detail="Event not found")
+
+
+@app.patch("/events/{event_id}")
+async def patch_event(event_id: str, request: Request) -> JSONResponse:
+    """Update mutable fields (resolution_status, review_status) on an event."""
+    for e in _events:
+        if str(e.get("event_id", "")) == event_id:
+            body = await request.json()
+            allowed = {"resolution_status", "review_status"}
+            patch = {k: v for k, v in body.items() if k in allowed}
+            _event_patches.setdefault(event_id, {}).update(patch)
+            return JSONResponse({**e, **_event_patches[event_id]})
     raise HTTPException(status_code=404, detail="Event not found")
 
 
@@ -391,3 +421,95 @@ async def ai_query(request: Request) -> JSONResponse:
         return JSONResponse({"answer": text})
     except Exception as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@app.get("/export/report.html")
+def export_report_html() -> "HTMLResponse":
+    """Generate a printable HTML status report for the dashboard."""
+    from fastapi.responses import HTMLResponse
+    from datetime import datetime, timezone
+
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    total_assets = len(_assets)
+    total_events = len(_events)
+
+    # Sector rollup
+    sector_rows = ""
+    for sector, types in SECTOR_TYPE_MAP.items():
+        sa = [a for a in _assets if (a.get("asset_type") or "").lower() in types]
+        active = sum(1 for a in sa if a.get("status") == "active")
+        pct = round(active / len(sa) * 100, 1) if sa else 0
+        sector_rows += f"<tr><td>{sector.title()}</td><td>{len(sa)}</td><td>{active}</td><td>{pct}%</td></tr>\n"
+
+    # Top 10 municipios by event count
+    from collections import Counter
+    mun_counts = Counter(
+        e.get("municipality") or e.get("affected_area") or "Unknown"
+        for e in _events
+    )
+    top10_rows = ""
+    for mun, cnt in mun_counts.most_common(10):
+        top10_rows += f"<tr><td>{mun}</td><td>{cnt}</td></tr>\n"
+
+    # Recent events
+    recent_events = _events[-20:]
+    recent_rows = ""
+    for e in reversed(recent_events):
+        etype = (e.get("event_type") or "event").replace("_", " ").title()
+        area = e.get("affected_area") or e.get("municipality") or "—"
+        start = (e.get("start_time") or "")[:10]
+        recent_rows += f"<tr><td>{etype}</td><td>{area}</td><td>{start}</td></tr>\n"
+
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AguaYLuz-PR Status Report — {now}</title>
+  <style>
+    @page {{ margin: 2cm; }}
+    body {{ font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; line-height: 1.6; }}
+    h1 {{ font-size: 1.5rem; color: #0c4a6e; border-bottom: 2px solid #0ea5e9; padding-bottom: .5rem; margin-bottom: 1.5rem; }}
+    h2 {{ font-size: 1rem; color: #0c4a6e; margin-top: 2rem; margin-bottom: .5rem; }}
+    .meta {{ font-size: .8rem; color: #64748b; margin-top: -.75rem; margin-bottom: 1.5rem; }}
+    .kpi-grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem; }}
+    .kpi {{ border: 1px solid #e2e8f0; border-radius: .5rem; padding: 1rem; text-align: center; }}
+    .kpi .val {{ font-size: 2rem; font-weight: 700; color: #0369a1; }}
+    .kpi .lbl {{ font-size: .75rem; color: #64748b; text-transform: uppercase; letter-spacing: .05em; }}
+    table {{ width: 100%; border-collapse: collapse; font-size: .875rem; }}
+    th {{ background: #f1f5f9; text-align: left; padding: .4rem .75rem; border: 1px solid #e2e8f0; font-size: .75rem; text-transform: uppercase; color: #475569; }}
+    td {{ padding: .4rem .75rem; border: 1px solid #e2e8f0; }}
+    tr:nth-child(even) td {{ background: #f8fafc; }}
+    @media print {{ button {{ display: none; }} }}
+  </style>
+</head>
+<body>
+  <button onclick="window.print()" style="float:right;padding:.5rem 1rem;background:#0ea5e9;color:#fff;border:none;border-radius:.375rem;cursor:pointer;">Print / Save PDF</button>
+  <h1>AguaYLuz-PR Infrastructure Status Report</h1>
+  <div class="meta">Generated: {now} &nbsp;|&nbsp; Data: in-memory snapshot</div>
+
+  <div class="kpi-grid">
+    <div class="kpi"><div class="val">{total_assets:,}</div><div class="lbl">Total Assets</div></div>
+    <div class="kpi"><div class="val">{total_events:,}</div><div class="lbl">Service Events</div></div>
+    <div class="kpi"><div class="val">{sum(1 for a in _assets if a.get("status") == "active"):,}</div><div class="lbl">Active Assets</div></div>
+  </div>
+
+  <h2>Sector Summary</h2>
+  <table>
+    <tr><th>Sector</th><th>Total Assets</th><th>Active</th><th>% Active</th></tr>
+    {sector_rows}
+  </table>
+
+  <h2>Top 10 Affected Municipios (by Event Count)</h2>
+  <table>
+    <tr><th>Municipio / Area</th><th>Events</th></tr>
+    {top10_rows}
+  </table>
+
+  <h2>Recent Events (last 20)</h2>
+  <table>
+    <tr><th>Type</th><th>Area</th><th>Date</th></tr>
+    {recent_rows}
+  </table>
+</body>
+</html>"""
+    return HTMLResponse(content=html)

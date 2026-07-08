@@ -84,3 +84,29 @@ export const postAiQuery = async (query) => {
 }
 
 export const getEvent = (id) => getJSON(`/events/${encodeURIComponent(id)}`, null)
+
+export const patchEvent = async (id, data) => {
+  if (OFFLINE) return null
+  const res = await fetch(`${API_BASE}/events/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+    signal: AbortSignal.timeout(8000),
+  })
+  if (!res.ok) throw new Error(`PATCH event failed: ${res.status}`)
+  return res.json()
+}
+
+export const patchAsset = async (id, data) => {
+  if (OFFLINE) return null
+  const res = await fetch(`${API_BASE}/assets/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+    signal: AbortSignal.timeout(8000),
+  })
+  if (!res.ok) throw new Error(`PATCH asset failed: ${res.status}`)
+  return res.json()
+}
+
+export const getReportUrl = () => `${API_BASE}/export/report.html`

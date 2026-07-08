@@ -1,9 +1,12 @@
 import { Link, useParams } from 'react-router-dom'
-import { useEvent, useAssets } from '@/lib/hooks'
+import { useEvent, useAssets, useAckEvent } from '@/lib/hooks'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, AlertTriangle, Calendar, MapPin, Users, Link2, Clock } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { useToast } from '@/components/ui/use-toast'
+import { ArrowLeft, AlertTriangle, Calendar, MapPin, Users, Link2, Clock, CheckCircle2, FileText } from 'lucide-react'
 import { fmtDate } from '@/lib/format'
+import { getReportUrl } from '@/lib/api'
 
 const TYPE_COLOR = {
   outage: 'text-red-400 border-red-900 bg-red-950/20',
@@ -26,6 +29,8 @@ export default function EventDetailPage() {
   const { id } = useParams()
   const { data: event, isLoading, isError } = useEvent(id)
   const { data: assets = [] } = useAssets()
+  const { mutate: ack, isPending: acking } = useAckEvent()
+  const { toast } = useToast()
 
   const linkedAssets = (event?.linked_asset_ids ?? [])
     .map((aid) => assets.find((a) => a.asset_id === aid))
@@ -78,12 +83,36 @@ export default function EventDetailPage() {
               {event.resolution_status ?? (isActive ? 'active' : 'closed')}
             </Badge>
           </div>
-          {isActive && (
-            <span className="inline-flex items-center gap-1.5 text-xs text-red-300 bg-red-950/30 border border-red-900/40 rounded-full px-2.5 py-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-red-400 animate-pulse" />
-              Active
-            </span>
-          )}
+          <div className="flex items-center gap-2 flex-wrap">
+            {isActive && (
+              <span className="inline-flex items-center gap-1.5 text-xs text-red-300 bg-red-950/30 border border-red-900/40 rounded-full px-2.5 py-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-red-400 animate-pulse" />
+                Active
+              </span>
+            )}
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={acking || event.resolution_status === 'resolved'}
+              onClick={() => ack(
+                { id: String(event.event_id), status: 'resolved' },
+                { onSuccess: () => toast({ title: 'Event acknowledged', description: 'Marked as resolved' }) }
+              )}
+              className="h-7 px-2 text-xs text-emerald-400 border-emerald-800 hover:bg-emerald-950"
+            >
+              <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+              {event.resolution_status === 'resolved' ? 'Resolved' : 'ACK'}
+            </Button>
+            <a
+              href={getReportUrl()}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 h-7 px-2 text-xs text-slate-400 border border-slate-700 rounded-md hover:text-slate-200 hover:border-slate-600 bg-slate-900 transition"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              Report
+            </a>
+          </div>
         </div>
 
         <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
