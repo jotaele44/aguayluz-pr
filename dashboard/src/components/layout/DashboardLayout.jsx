@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import StatsBar from '@/components/StatsBar'
+import AiQueryPanel from '@/components/AiQueryPanel'
 import { SidebarProvider, useSidebar } from '@/contexts/SidebarContext'
 
 function Inner() {
@@ -14,6 +15,7 @@ function Inner() {
           <Outlet />
         </main>
       </div>
+      <AiQueryPanel />
     </div>
   )
 }
