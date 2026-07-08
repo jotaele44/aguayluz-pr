@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { tierBadge, severityTone } from '@/lib/format'
 import { cn } from '@/lib/utils'
-import { AlertTriangle, Bot, CheckCircle, Download, Loader2, SkipForward, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { AlertTriangle, Bot, CheckCircle, Download, Loader2, SkipForward, X, ChevronLeft, ChevronRight, CheckSquare, Square } from 'lucide-react'
 import { downloadCSV } from '@/lib/csv'
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
@@ -24,6 +24,8 @@ export default function ReviewPage() {
   const [offset, setOffset] = useState(0)
   const [suggestions, setSuggestions] = useState({})
   const [suggesting, setSuggesting] = useState({})
+  const [selected, setSelected] = useState(new Set())
+  const [batchPending, setBatchPending] = useState(false)
   const { toast } = useToast()
 
   const { data, isLoading } = useReviewQueuePaged({
@@ -60,9 +62,70 @@ export default function ReviewPage() {
     setSuggesting((s) => ({ ...s, [ref]: false }))
   }
 
+  const allSelected = items.length > 0 && items.every((r) => selected.has(r.record_ref))
+  const someSelected = items.some((r) => selected.has(r.record_ref))
+
+  const toggleAll = () => {
+    if (allSelected) {
+      setSelected((prev) => {
+        const next = new Set(prev)
+        items.forEach((r) => next.delete(r.record_ref))
+        return next
+      })
+    } else {
+      setSelected((prev) => {
+        const next = new Set(prev)
+        items.forEach((r) => next.add(r.record_ref))
+        return next
+      })
+    }
+  }
+
+  const toggleOne = (ref) => {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      next.has(ref) ? next.delete(ref) : next.add(ref)
+      return next
+    })
+  }
+
+  const handleBatchDecision = async (decision) => {
+    const refs = items.filter((r) => selected.has(r.record_ref)).map((r) => r.record_ref)
+    if (!refs.length) return
+    setBatchPending(true)
+    let done = 0
+    for (const ref of refs) {
+      await new Promise((resolve) => {
+        decide({ ref, decision }, { onSuccess: resolve, onError: resolve })
+        done++
+      })
+    }
+    setSelected(new Set())
+    setBatchPending(false)
+    toast({ title: `Batch ${decision}`, description: `${refs.length} items processed` })
+  }
+
+  const selCount = items.filter((r) => selected.has(r.record_ref)).length
+
   return (
     <div className="flex flex-col h-full">
       <PageHeader title="Review Queue" subtitle={`${total.toLocaleString()} items pending review`}>
+        {someSelected && (
+          <>
+            <span className="text-xs text-slate-400">{selCount} selected</span>
+            <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-emerald-400 border-emerald-800 hover:bg-emerald-950" disabled={batchPending} onClick={() => handleBatchDecision('accept')}>
+              {batchPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <CheckCircle className="h-3.5 w-3.5 mr-1" />}
+              Approve all
+            </Button>
+            <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-red-400 border-red-900 hover:bg-red-950" disabled={batchPending} onClick={() => handleBatchDecision('reject')}>
+              {batchPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <X className="h-3.5 w-3.5 mr-1" />}
+              Reject all
+            </Button>
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-slate-500" disabled={batchPending} onClick={() => handleBatchDecision('skip')}>
+              Skip all
+            </Button>
+          </>
+        )}
         <Button size="sm" variant="outline" onClick={() => downloadCSV('review-queue.csv', items, ['record_ref','severity','evidence_tier','confidence','record_type','reason','source_ref'])} className="h-8 border-slate-800 bg-slate-950 px-2 text-xs text-slate-400 hover:text-slate-100" title="Export page as CSV">
           <Download className="h-3.5 w-3.5" />
         </Button>
@@ -76,12 +139,33 @@ export default function ReviewPage() {
         </Select>
       </PageHeader>
 
+      {items.length > 0 && (
+        <div className="flex items-center gap-2 px-6 py-2 border-b border-slate-800/60 bg-slate-900/40 shrink-0">
+          <button onClick={toggleAll} className="flex items-center gap-2 text-xs text-slate-400 hover:text-slate-200">
+            {allSelected
+              ? <CheckSquare className="h-4 w-4 text-sky-400" />
+              : someSelected
+                ? <CheckSquare className="h-4 w-4 text-slate-500" />
+                : <Square className="h-4 w-4" />}
+            {allSelected ? 'Deselect all' : 'Select all on page'}
+          </button>
+        </div>
+      )}
+
       <div className="flex-1 overflow-auto p-6 space-y-2">
         {isLoading
           ? Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-md" />)
           : items.map((r, i) => (
-            <div key={r.record_ref ?? i} className="rounded-lg border border-slate-800 bg-slate-900">
-              <div className="p-4 flex items-start gap-4">
+            <div key={r.record_ref ?? i} className={cn('rounded-lg border bg-slate-900', selected.has(r.record_ref) ? 'border-sky-600/50 bg-sky-950/20' : 'border-slate-800')}>
+              <div className="p-4 flex items-start gap-3">
+                <button
+                  onClick={() => toggleOne(r.record_ref)}
+                  className="mt-0.5 shrink-0 text-slate-500 hover:text-sky-400"
+                >
+                  {selected.has(r.record_ref)
+                    ? <CheckSquare className="h-4 w-4 text-sky-400" />
+                    : <Square className="h-4 w-4" />}
+                </button>
                 <AlertTriangle className={cn('h-4 w-4 shrink-0 mt-0.5', severityTone(r.severity))} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
