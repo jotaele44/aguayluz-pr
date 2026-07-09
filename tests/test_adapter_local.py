@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import json
 
-from aguayluz.maintenance import state as state_mod
+from prii_maintenance import state as state_mod
+
 from aguayluz.maintenance.adapters import local
 
 

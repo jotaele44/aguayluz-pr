@@ -28,6 +28,7 @@ dependencies = [
   "pyyaml>=6.0",
   "jsonschema>=4.21",
   "typer>=0.12",
+  "prii-maintenance @ git+https://github.com/jotaele44/thehub-pr.git@3c9e51e3de406f8455605a06fabd4823452d9b63#subdirectory=packages/prii_maintenance",
 ]
 
 [project.optional-dependencies]
@@ -48,6 +49,9 @@ aguayluz = "aguayluz.cli:app"
 
 [project.urls]
 "Skill spec" = "https://github.com/jotaele44/aguayluz-pr/blob/main/AGUAYLUZ_PR_SKILL.md"
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/aguayluz"]
