@@ -13,7 +13,7 @@ import json
 import os
 from pathlib import Path
 
-from ..models import MaintenanceFinding
+from prii_maintenance import MaintenanceFinding
 
 
 def _load_json_list(path: Path) -> list | None:
