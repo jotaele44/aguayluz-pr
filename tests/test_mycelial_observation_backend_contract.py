@@ -4,6 +4,8 @@ import json
 import sys
 from pathlib import Path
 
+from fastapi.testclient import TestClient
+
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
@@ -46,7 +48,10 @@ def test_mycelial_backend_endpoint_shapes(monkeypatch, tmp_path) -> None:
 
     obs = _observation()
     grid = {"grid_id": "18.16_-66.72", "observation_count": 1, "accepted_count": 1}
-    report = {"status": "ok", "license_gaps": ["license_abcdef123456"]}
+    report = {
+        "status": "ok",
+        "remaining_source_license_gaps": ["license_abcdef123456"],
+    }
     obs_geojson = observations_geojson([obs])
     grid_geojson = {
         "type": "FeatureCollection",
@@ -71,20 +76,31 @@ def test_mycelial_backend_endpoint_shapes(monkeypatch, tmp_path) -> None:
     monkeypatch.setattr(main, "_mycelial_grid_geojson", grid_geojson)
     monkeypatch.setattr(main, "OUTPUTS", outputs_dir)
 
-    health_payload = json.loads(main.health().body)
+    client = TestClient(main.app)
+
+    health_response = client.get("/health")
+    assert health_response.status_code == 200
+    health_payload = health_response.json()
     assert health_payload["counts"]["mycelial_observations"] == 1
     assert health_payload["counts"]["mycelial_grid_cells"] == 1
 
-    # FastAPI resolves Query defaults only through request injection. Direct unit
-    # calls must pass ordinary Python values for every query parameter.
-    observations_payload = json.loads(
-        main.mycelial_observations(
-            municipio="Adjuntas",
-            taxon=None,
-            verified_only=False,
-        ).body
+    observations_response = client.get(
+        "/mycelial-observations",
+        params={"municipio": "Adjuntas"},
     )
-    assert observations_payload[0]["municipality"] == "Adjuntas"
-    assert json.loads(main.mycelial_observations_geojson().body)["features"][0]["geometry"]["type"] == "Point"
-    assert json.loads(main.mycelial_grid_geojson().body)["features"][0]["properties"]["grid_id"]
-    assert json.loads(main.mycelial_summary().body)["license_gaps"] == ["license_abcdef123456"]
+    assert observations_response.status_code == 200
+    assert observations_response.json()[0]["municipality"] == "Adjuntas"
+
+    observations_geojson_response = client.get("/mycelial-observations.geojson")
+    assert observations_geojson_response.status_code == 200
+    assert observations_geojson_response.json()["features"][0]["geometry"]["type"] == "Point"
+
+    grid_geojson_response = client.get("/mycelial-grid.geojson")
+    assert grid_geojson_response.status_code == 200
+    assert grid_geojson_response.json()["features"][0]["properties"]["grid_id"]
+
+    summary_response = client.get("/mycelial-summary")
+    assert summary_response.status_code == 200
+    assert summary_response.json()["remaining_source_license_gaps"] == [
+        "license_abcdef123456"
+    ]
