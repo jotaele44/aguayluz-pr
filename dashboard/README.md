@@ -1,9 +1,16 @@
 # AguaYLuz-PR Dashboard
 
+> **Diagnostic-only surface (ADR 0001, Phase 2).** This repo's dashboard is a
+> development and diagnostic tool for this producer only. The supported product
+> surface for the PRII federation is the hub app
+> (`thehub-pr/server/frontend`), which renders this producer's data alongside
+> the other engines. See `thehub-pr/docs/adr/0001-federated-engines-single-hub.md`.
+
 Local-only React dashboard for the AguaYLuz water & power continuity module.
 Same federation process — Vite + React (JSX) + Tailwind + shadcn/ui + react-query,
 Base44 auth stripped, **MapLibre GL** map. This module carries **real** data
-(`federation.json` status `ready_for_live`), so nothing here is synthetic.
+(`federation.json` gate `federation_readiness_gate.ready_for_hub_live_execution`
+is `true`), so nothing here is synthetic.
 
 ## Run
 
