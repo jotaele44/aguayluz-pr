@@ -1,101 +1,77 @@
-# aguayluz-pr
+# AguaYLuz — Puerto Rico Water & Power Infrastructure Producer (PRII federation)
 
-**Puerto Rico water / power / utility infrastructure intelligence producer for the
-PRII Federation control plane.**
+`AguaYLuz` is the water/wastewater/power/outage monitoring node of the Puerto
+Rico Integrated Intelligence (PRII) federation.
 
-`aguayluz-pr` is a federation *producer* (role: `water_grid_monitoring_node`,
-hub parent: [`thehub-pr`](https://github.com/jotaele44/thehub-pr)). It ingests
-public water, power, and utility-infrastructure data for Puerto Rico — EPA WATERS /
-NHDPlus hydrology, generation and substation/transmission assets, treatment and
-wastewater facilities, and outage/service events — and publishes a canonical,
-reviewable export package that the hub aggregates alongside the other producers.
+Its federation alias is `aguayluz-pr`. It owns water and wastewater assets,
+power generation/grid infrastructure, outage and service-interruption events,
+and utility geospatial summaries, exporting them as canonical streams for
+downstream correlation in [`thehub-pr`](https://github.com/jotaele44/thehub-pr).
+
+> **Diagnostic-only surface (ADR 0001, Phase 2).** This repo's dashboard is a
+> development and diagnostic tool for this producer only. The supported product
+> surface for the PRII federation is the hub app
+> (`thehub-pr/server/frontend`), which renders this producer's data alongside
+> the other engines. See `thehub-pr/docs/adr/0001-federated-engines-single-hub.md`.
 
 ## Federation role
 
-| | |
+| Field | Value |
 |---|---|
-| Program id | `aguayluz-pr` |
-| Federation role | `water_grid_monitoring_node` |
-| Hub parent | `thehub-pr` |
-| Canonical export | `exports/federation/` (via `scripts/federation_export.py`) |
+| Repository | `jotaele44/aguayluz-pr` |
+| Federation alias | `aguayluz-pr` |
+| Parent hub | [`thehub-pr`](https://github.com/jotaele44/thehub-pr) |
+| Primary function | Water/wastewater/power asset registry, outage and service-event monitoring |
+| Jurisdiction focus | Puerto Rico |
+| Upstream signal source | `centinelas-pr` (news/regulatory signals via `scripts/ingest_news_event.py`) |
 
-Canonical outputs (see `federation.json`): `outputs/base44_export.json`,
-`outputs/integration_report.json`, `outputs/source_manifest.json`,
-`outputs/review_queue.json`, and `reports/maintenance/latest.json`.
+## Real-data status
 
-## Repository layout
+Production status is `PRODUCTION_REAL_DATA_PARTIAL` (`federation.json`): the
+corpus is real public data, with some sources external or point-in-time.
 
-| Path | Purpose |
-|---|---|
-| `src/aguayluz/` | Package + `aguayluz` CLI (waters client, models, alerts, maintenance) |
-| `scripts/` | Ingest/build/export scripts (POWER, PREPS, AEE/LUMA, geo boundaries, federation export) |
-| `server/` | FastAPI backend that serves the dashboard data API |
-| `dashboard/` | Frontend (npm-built) |
-| `desktop/` | Double-click desktop wrapper (see `desktop/README.md`) |
-| `schemas/`, `registry/`, `config/` | Manifest schemas, source registry, config |
-| `data/`, `outputs/`, `exports/`, `reports/` | Inputs and generated artifacts |
-| `tests/` | Pytest suite |
+- 273 utility assets from public ingests — 39 power generation/substation/
+  transmission nodes (`scripts/ingest_power.py`, EIA-860 + OSM derived) and 234
+  OSM-derived water/wastewater treatment/pumping/reservoir nodes
+  (`scripts/ingest_water.py`, `review_status=needs_review`). Locally imported
+  historical hydro registers (`scripts/import_local_hydro_assets.py`) grow
+  `data/utility_assets.jsonl` beyond that core.
+- PREPS island-wide service events (`scripts/ingest_preps.py`) plus
+  per-municipio AEE/LUMA outage incidents (`scripts/ingest_aee.py`, tier
+  T2/needs_review point-in-time snapshot).
+- Operational alert events (`docs/ALERT_SYSTEM.md`) and the 78-municipio /
+  901-barrio geo layer under `data/geo/` (U.S. Census cartographic boundaries).
 
-## Setup / Development
+Advisory/provenance notes live in
+`federation.json#federation_readiness_gate.resolved_conditions`; both readiness
+booleans are `true` and `blocking_conditions` is empty.
 
-Requires **Python 3.10+** (CI tests 3.10 and 3.12).
+## Run
 
-```bash
-git clone https://github.com/jotaele44/aguayluz-pr.git
-cd aguayluz-pr
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e .[dev]          # runtime + lint/test tooling (matches federation.json `setup`)
-```
-
-Run the quality gates locally — these are the same checks `validate.yml` runs in CI:
+Commands as declared in `federation.json#hub_callable_commands`:
 
 ```bash
-ruff check .                      # lint
-pytest -q                         # tests
-python scripts/validate_repo.py   # federation validation gates
+python -m pip install -e .[dev]              # setup
+python -m pytest -q                          # test_suite
+python scripts/validate_repo.py              # validation gates G01-G08
+python3 scripts/federation_export.py --mode test   # export_canonical
 ```
 
-The heavy geospatial stack (GDAL-backed `geopandas`) is only needed by
-`scripts/build_pr_geo_boundaries.py` and is kept out of the default install:
+## Desktop app
 
-```bash
-pip install -e .[geo]          # only if you run the geo boundary builder
-```
+Double-click launchers at the repo root start the local desktop app (first run
+installs dependencies, later runs work offline):
 
-The backend that serves the dashboard data API uses `server/backend/requirements.txt`;
-CI installs it before running the suite:
+- `PRII-AGUAYLUZ.command` (macOS) / `PRII-AGUAYLUZ.app`
+- `PRII-AGUAYLUZ.bat` (Windows)
+- `PRII-AGUAYLUZ.sh` (Linux)
 
-```bash
-pip install -r server/backend/requirements.txt
-```
+## Federation contract
 
-### Desktop app
-
-To run AGUAYLUZ as a native double-click app (bundled dashboard + local API), see
-[`desktop/README.md`](desktop/README.md). Quick version:
-
-```bash
-python desktop/setup.py                     # one-time setup (needs internet + Node.js once)
-.venv/bin/python desktop/launch.py          # native window
-```
-
-## Federation commands
-
-The hub invokes these via `federation.json` → `hub_callable_commands`:
-
-```bash
-python -m pip install -e .[dev]                       # setup
-python scripts/validate_repo.py                       # validation_gates
-python -m pytest -q                                   # test_suite
-python3 scripts/federation_export.py --mode test      # export_canonical
-aguayluz maintenance --mode audit                     # maintenance
-```
-
-Ingest/build commands (POWER, PREPS, LUMA/AEE outages, municipio & boundary geometry)
-are also declared in `federation.json`; several require operator-supplied source
-files or hit ToS-gated live APIs — see each script's header.
-
-## License
-
-MIT — see [`LICENSE`](LICENSE).
+`federation.json` is this producer's manifest, conformant to
+`thehub-pr/schemas/repo_federation_manifest.schema.json`.
+`scripts/federation_export.py` writes
+`exports/federation/{sources,entities,relationships,alerts}.jsonl` plus a
+`manifest.json` validated against the vendored hub schema
+`schemas/federation_export_manifest.schema.json`
+(`tests/test_federation_contract_compat.py`).
