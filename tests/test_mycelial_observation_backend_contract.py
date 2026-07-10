@@ -75,7 +75,15 @@ def test_mycelial_backend_endpoint_shapes(monkeypatch, tmp_path) -> None:
     assert health_payload["counts"]["mycelial_observations"] == 1
     assert health_payload["counts"]["mycelial_grid_cells"] == 1
 
-    observations_payload = json.loads(main.mycelial_observations(municipio="Adjuntas").body)
+    # FastAPI resolves Query defaults only through request injection. Direct unit
+    # calls must pass ordinary Python values for every query parameter.
+    observations_payload = json.loads(
+        main.mycelial_observations(
+            municipio="Adjuntas",
+            taxon=None,
+            verified_only=False,
+        ).body
+    )
     assert observations_payload[0]["municipality"] == "Adjuntas"
     assert json.loads(main.mycelial_observations_geojson().body)["features"][0]["geometry"]["type"] == "Point"
     assert json.loads(main.mycelial_grid_geojson().body)["features"][0]["properties"]["grid_id"]
