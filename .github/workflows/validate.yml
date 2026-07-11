@@ -56,7 +56,21 @@ jobs:
       - name: Lint
         run: ruff check .
       - name: Tests
-        run: pytest -q
+        id: tests
+        shell: bash
+        run: |
+          set +e
+          pytest -q --tb=short > pytest-${{ matrix.python-version }}.log 2>&1
+          status=$?
+          cat pytest-${{ matrix.python-version }}.log
+          exit "$status"
+      - name: Upload pytest failure log
+        if: failure() && steps.tests.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-${{ matrix.python-version }}-failure
+          path: pytest-${{ matrix.python-version }}.log
+          if-no-files-found: error
       - name: Validation gates
         run: python scripts/validate_repo.py
 
