@@ -28,10 +28,25 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 import unicodedata
+import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
+
+# Distinct exit code so callers (refresh.py --all treats this step as optional) and
+# humans can tell a WAF/403/network block apart from a real crash (bug / bad geo file).
+EXIT_SOURCE_UNAVAILABLE = 2
+
+
+class SourceUnavailable(Exception):
+    """The MiLUMA feed could not be reached (Incapsula WAF 403 or a network error).
+
+    This is an expected, non-fatal condition — the endpoint is ToS/WAF-gated — not a
+    bug in the adapter. ``main`` turns it into a typed one-line message + a dedicated
+    exit code instead of letting a raw traceback escape.
+    """
 
 API = "https://api.miluma.lumapr.com/miluma-outage-api"
 TOWNS_URL = f"{API}/outage/municipality/towns"
@@ -60,8 +75,14 @@ def fetch_towns(municipios: list[str], timeout: float) -> dict:
         TOWNS_URL, data=body, method="POST",
         headers={**BROWSER_HEADERS, "Content-Type": "application/json"},
     )
-    with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310 (https only)
-        return json.loads(resp.read())
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310 (https only)
+            return json.loads(resp.read())
+    except urllib.error.HTTPError as exc:  # 403 = Incapsula WAF block (the expected case)
+        hint = " (Incapsula WAF block — needs a permissioned LUMA/PREB data path)" if exc.code == 403 else ""
+        raise SourceUnavailable(f"HTTP {exc.code} from MiLUMA{hint}") from exc
+    except urllib.error.URLError as exc:  # DNS / TLS / connection refused / timeout
+        raise SourceUnavailable(f"cannot reach MiLUMA: {exc.reason}") from exc
 
 
 def main() -> int:
@@ -71,7 +92,13 @@ def main() -> int:
     ap.add_argument("--timeout", type=float, default=30.0)
     args = ap.parse_args()
 
-    towns = fetch_towns(municipio_keys(Path(args.geo)), args.timeout)
+    try:
+        towns = fetch_towns(municipio_keys(Path(args.geo)), args.timeout)
+    except SourceUnavailable as exc:
+        # Expected, non-fatal: emit a typed one-liner (no traceback) and a dedicated
+        # exit code so refresh.py --all can warn-and-continue on this optional step.
+        print(f"source-unavailable: {exc}", file=sys.stderr)
+        return EXIT_SOURCE_UNAVAILABLE
     ts = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
     out = Path(args.out)
