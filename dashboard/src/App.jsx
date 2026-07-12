@@ -13,6 +13,7 @@ import AnalyticsPage from './pages/AnalyticsPage'
 import LiveLogsPage from './pages/LiveLogsPage'
 import SectorDetailPage from './pages/SectorDetailPage'
 import RepoAnalyzerPage from './pages/RepoAnalyzerPage'
+import MycelialAssistantPage from './pages/MycelialAssistantPage'
 import PageNotFound from './lib/PageNotFound'
 import ScrollToTop from './components/ScrollToTop'
 
@@ -33,6 +34,7 @@ function App() {
             <Route path="/review" element={<ReviewPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/logs" element={<LiveLogsPage />} />
+            <Route path="/mycelial" element={<MycelialAssistantPage />} />
             <Route path="/sector/:sector" element={<SectorDetailPage />} />
             <Route path="/tools/repo-analyzer" element={<RepoAnalyzerPage />} />
             <Route path="*" element={<PageNotFound />} />
