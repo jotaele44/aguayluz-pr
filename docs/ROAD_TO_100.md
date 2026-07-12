@@ -136,6 +136,35 @@ diff would populate.
 
 ---
 
+## Live-run log
+
+Real materializations of the corpus from the keyless public federal APIs. Each row
+is what the producer **actually fetched** on the stated date (no fabricated data);
+counts are post-merge file totals where noted.
+
+### 2026-07-12 — keyless weekly refresh
+
+Run with `scripts/refresh.py --weekly` (venv, live network via proxy). Keyless
+producers only — `fetch_luma_live.py` was skipped (Incapsula WAF 403, expected).
+
+| Source | Host | Result | Rows |
+|--------|------|--------|------|
+| NWS active alerts | `api.weather.gov` | OK | 0 active PR alerts (no change; 6 events in file) |
+| USGS site network → `utility_assets` | `waterservices.usgs.gov` | OK | +1267 fetched (lake 22, stream_gage 1085, irrigation_canal 61, reservoir 99); file total **8340** |
+| USGS daily levels → `reservoir_levels` (gitignored) | `waterservices.usgs.gov` | OK | 3557 readings across 132 assets (streamflow 1363, gage_height 1486, reservoir_elevation 708) |
+| EPA SDWIS violations → `service_events` | `data.epa.gov` (Envirofacts) | OK | 38799 violations fetched (4519 health-based, 2209 need-review); file total **24841** events |
+| EPA ECHO CWA enforcement | `echo.epa.gov` | **FAILED (upstream 404)** | endpoint `cwa_rest_services.get_facilities` returns HTTP 404 from the server; no rows written |
+| FEMA disaster declarations | `www.fema.gov` | **FAILED (upstream 404)** | `open/v2/disasterDeclarationsSummaries` returns HTTP 404 (Drupal "Page not found"); no rows written |
+| Federation export | (local) | OK | manifest: 33286 entities / 40964 relationships / 26134 sources / 10 alerts |
+
+Tracked-data files updated this run: `data/utility_assets.jsonl` (7088→8340),
+`data/service_events.jsonl` (6→24841). ECHO and FEMA are genuine upstream endpoint
+breakages (both hosts reachable, both specific REST paths 404) — not proxy blocks and
+not manufacturable; their adapters remain source-agnostic (`--src`) and untouched.
+Gates G01–G08 PASS; `ruff check` clean; `pytest -q -m "not live"` = 197 passed, 1 skipped.
+
+---
+
 ## Verification (offline)
 
 ```
