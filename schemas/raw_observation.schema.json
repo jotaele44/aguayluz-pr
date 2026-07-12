@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "raw_observation.schema.json",
+  "title": "RawObservation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "observation_id",
+    "source_id",
+    "taxon_label_raw",
+    "taxon_rank",
+    "municipality",
+    "lat",
+    "lon",
+    "coordinate_precision_m",
+    "location_source",
+    "source_ref",
+    "evidence_tier",
+    "license_id",
+    "access_guidance_present",
+    "review_status",
+    "confidence"
+  ],
+  "properties": {
+    "observation_id": {"type": "string", "pattern": "^myc_obs_[A-Fa-f0-9]{12,64}$"},
+    "source_id": {"type": "string", "pattern": "^obs_src_[A-Fa-f0-9]{12,64}$"},
+    "observed_at": {"type": ["string", "null"], "format": "date-time"},
+    "reported_at": {"type": ["string", "null"], "format": "date-time"},
+    "taxon_label_raw": {"type": "string", "minLength": 1},
+    "taxon_rank": {
+      "type": "string",
+      "enum": ["kingdom", "phylum", "class", "order", "family", "genus", "species", "unknown"]
+    },
+    "scientific_name": {"type": ["string", "null"]},
+    "common_name": {"type": ["string", "null"]},
+    "substrate": {
+      "type": "string",
+      "enum": ["soil", "wood", "leaf_litter", "root_zone", "waterlogged_soil", "built_environment", "unknown"]
+    },
+    "habitat_context": {
+      "type": "string",
+      "enum": ["forest", "mangrove", "karst", "riparian", "urban", "agricultural", "coastal", "reservoir_margin", "unknown"]
+    },
+    "municipality": {"type": ["string", "null"]},
+    "lat": {"type": "number", "minimum": 17.5, "maximum": 18.7},
+    "lon": {"type": "number", "minimum": -67.4, "maximum": -65.0},
+    "coordinate_precision_m": {"type": "number", "minimum": 0},
+    "location_source": {
+      "type": "string",
+      "enum": ["gps", "geocoded", "centroid", "source_metadata", "unknown"]
+    },
+    "photo_refs": {"type": "array", "items": {"type": "string"}, "default": []},
+    "voucher_ref": {"type": ["string", "null"]},
+    "observer_type": {
+      "type": "string",
+      "enum": ["agency", "researcher", "citizen", "automated", "unknown"]
+    },
+    "source_ref": {"type": "string", "minLength": 1},
+    "source_hash": {"type": ["string", "null"], "pattern": "^[A-Fa-f0-9]{64}$"},
+    "evidence_tier": {"type": "string", "enum": ["T1", "T2", "T3", "T4"]},
+    "license_id": {"type": "string", "pattern": "^license_[A-Fa-f0-9]{12,64}$"},
+    "access_guidance_present": {"type": "boolean", "const": false},
+    "review_status": {"type": "string", "enum": ["accepted", "needs_review", "rejected", "blocked"]},
+    "confidence": {"type": "integer", "minimum": 0, "maximum": 100}
+  }
+}

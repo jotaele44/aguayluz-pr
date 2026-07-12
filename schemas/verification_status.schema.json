@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "verification_status.schema.json",
+  "title": "VerificationStatus",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "verification_id",
+    "observation_id",
+    "status",
+    "verification_method",
+    "confidence_delta",
+    "flags"
+  ],
+  "properties": {
+    "verification_id": {"type": "string", "pattern": "^ver_[A-Fa-f0-9]{12,64}$"},
+    "observation_id": {"type": "string", "pattern": "^myc_obs_[A-Fa-f0-9]{12,64}$"},
+    "status": {
+      "type": "string",
+      "enum": ["unverified", "source_verified", "taxon_verified", "location_verified", "duplicate", "rejected", "blocked"]
+    },
+    "verification_method": {
+      "type": "string",
+      "enum": ["source_authority", "image_review", "metadata_consistency", "spatial_consistency", "cross_source_match", "manual_review"]
+    },
+    "reviewer": {"type": ["string", "null"]},
+    "verified_at": {"type": ["string", "null"], "format": "date-time"},
+    "confidence_delta": {"type": "integer", "minimum": -100, "maximum": 100},
+    "flags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "taxon_uncertain",
+          "location_uncertain",
+          "duplicate_candidate",
+          "license_restricted",
+          "sensitive_site",
+          "access_guidance_detected",
+          "needs_expert_review"
+        ]
+      },
+      "default": []
+    },
+    "notes": {"type": ["string", "null"]}
+  }
+}

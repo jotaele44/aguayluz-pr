@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "observation_source.schema.json",
+  "title": "ObservationSource",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "source_id",
+    "source_name",
+    "source_type",
+    "source_ref",
+    "access_method",
+    "evidence_tier",
+    "license_id",
+    "attribution_required",
+    "access_date",
+    "extracted_at"
+  ],
+  "properties": {
+    "source_id": {"type": "string", "pattern": "^obs_src_[A-Fa-f0-9]{12,64}$"},
+    "source_name": {"type": "string", "minLength": 1},
+    "source_type": {
+      "type": "string",
+      "enum": ["public_database", "research_partner", "field_survey", "literature", "agency_record", "citizen_science", "derived_dataset"]
+    },
+    "source_ref": {"type": "string", "minLength": 1},
+    "source_url": {"type": ["string", "null"]},
+    "access_method": {
+      "type": "string",
+      "enum": ["manual_download", "api", "archive", "local_file", "partner_transfer"]
+    },
+    "evidence_tier": {"type": "string", "enum": ["T1", "T2", "T3", "T4"]},
+    "license_id": {"type": "string", "pattern": "^license_[A-Fa-f0-9]{12,64}$"},
+    "attribution_required": {"type": "boolean"},
+    "access_date": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+    "extracted_at": {"type": "string", "format": "date-time"},
+    "source_hash": {"type": ["string", "null"], "pattern": "^[A-Fa-f0-9]{64}$"},
+    "notes": {"type": ["string", "null"]}
+  }
+}

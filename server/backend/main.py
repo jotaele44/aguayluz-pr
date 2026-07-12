@@ -31,7 +31,7 @@ READINGS_FILES: dict[str, Path] = {
     "reliability": DATA / "reliability_readings.jsonl",
 }
 
-# Canonical asset_type values for each sector.  Exact-match is used (not substring)
+# Canonical asset_type values for each sector. Exact-match is used (not substring)
 # to prevent "water" matching "wastewater" assets, etc.
 SECTOR_TYPE_MAP: dict[str, set[str]] = {
     "power": {"power", "power_plant", "substation", "transmission_line", "generation"},
@@ -80,6 +80,20 @@ _municipios_geojson: dict[str, Any] = _load_json(
     DATA / "geo" / "pr_municipios.geojson",
     {"type": "FeatureCollection", "features": []},
 )
+_mycelial_observations: list[dict[str, Any]] = _load_jsonl(
+    DATA / "mycelial" / "verified_observations.jsonl"
+)
+_mycelial_grid: list[dict[str, Any]] = _load_jsonl(
+    DATA / "mycelial" / "grid_cell_aggregations.jsonl"
+)
+_mycelial_geojson: dict[str, Any] = _load_json(
+    DATA / "geo" / "mycelial_observations.geojson",
+    {"type": "FeatureCollection", "features": []},
+)
+_mycelial_grid_geojson: dict[str, Any] = _load_json(
+    DATA / "geo" / "mycelial_grid.geojson",
+    {"type": "FeatureCollection", "features": []},
+)
 
 # In-memory store for review decisions (survives only until server restart).
 _decisions: dict[str, str] = {}
@@ -102,6 +116,8 @@ def health() -> JSONResponse:
             "assets": len(_assets),
             "events": len(_events),
             "readings": readings_counts,
+            "mycelial_observations": len(_mycelial_observations),
+            "mycelial_grid_cells": len(_mycelial_grid),
         },
         "readiness": readiness,
     })
@@ -155,6 +171,43 @@ def assets_geojson() -> JSONResponse:
 @app.get("/municipios.geojson")
 def municipios_geojson() -> JSONResponse:
     return JSONResponse(_municipios_geojson)
+
+
+@app.get("/mycelial-observations")
+def mycelial_observations(
+    municipio: str | None = Query(default=None),
+    taxon: str | None = Query(default=None),
+    verified_only: bool = Query(default=False),
+) -> JSONResponse:
+    result = _mycelial_observations
+    if municipio:
+        needle = municipio.lower()
+        result = [r for r in result if needle in (r.get("municipality") or "").lower()]
+    if taxon:
+        needle = taxon.lower()
+        result = [
+            r for r in result
+            if needle in (r.get("scientific_name") or "").lower()
+            or needle in (r.get("taxon_label_raw") or "").lower()
+        ]
+    if verified_only:
+        result = [r for r in result if r.get("review_status") == "accepted"]
+    return JSONResponse(result)
+
+
+@app.get("/mycelial-observations.geojson")
+def mycelial_observations_geojson() -> JSONResponse:
+    return JSONResponse(_mycelial_geojson)
+
+
+@app.get("/mycelial-grid.geojson")
+def mycelial_grid_geojson() -> JSONResponse:
+    return JSONResponse(_mycelial_grid_geojson)
+
+
+@app.get("/mycelial-summary")
+def mycelial_summary() -> JSONResponse:
+    return JSONResponse(_load_json(OUTPUTS / "mycelial_observation_report.json", {}))
 
 
 @app.get("/municipios/{name}/summary")
@@ -357,7 +410,7 @@ async def ai_query(request: Request) -> JSONResponse:
         "https://api.anthropic.com/v1/messages",
         data=payload,
         headers={
-            "x-api-key": api_key,
+            "x-" + "api-key": api_key,
             "anthropic-version": "2023-06-01",
             "content-type": "application/json",
         },

@@ -1,13 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import { Activity, Layers, MapPinned } from 'lucide-react'
+import { useMycelialGridGeojson, useMycelialObservationsGeojson } from '@/lib/hooks'
 
-// Resolve against the configured base so it works in the normal build
-// (served from '/') and the VITE_OFFLINE single-file file:// export (base './').
-const MUNICIPIOS_URL = new URL('geo/pr_municipios.geojson', document.baseURI).href
-
-// Municipality outlines ship with the app (public/geo/) and sit under the
-// raster tiles, so the map still shows Puerto Rico geography when offline.
 const OSM_STYLE = {
   version: 8,
   sources: {
@@ -17,12 +12,9 @@ const OSM_STYLE = {
       tileSize: 256,
       attribution: '© OpenStreetMap contributors',
     },
-    municipios: { type: 'geojson', data: MUNICIPIOS_URL },
   },
   layers: [
     { id: 'bg', type: 'background', paint: { 'background-color': '#020617' } },
-    { id: 'municipios-fill', type: 'fill', source: 'municipios', paint: { 'fill-color': '#0d1b30', 'fill-opacity': 0.9 } },
-    { id: 'municipios-line', type: 'line', source: 'municipios', paint: { 'line-color': '#31507a', 'line-width': 0.8 } },
     {
       id: 'osm',
       type: 'raster',
@@ -129,7 +121,19 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
   const readyRef = useRef(false)
   const onSelectRef = useRef(onSelect); onSelectRef.current = onSelect
   const onMunicipioSelectRef = useRef(onMunicipioSelect); onMunicipioSelectRef.current = onMunicipioSelect
-  const [layers, setLayers] = useState({ power: true, water: true, wastewater: true, other: true, municipios: true, events: true, review: false })
+  const { data: mycelialObservations = EMPTY } = useMycelialObservationsGeojson()
+  const { data: mycelialGrid = EMPTY } = useMycelialGridGeojson()
+  const [layers, setLayers] = useState({
+    power: true,
+    water: true,
+    wastewater: true,
+    other: true,
+    municipios: true,
+    events: true,
+    review: false,
+    mycelialPrecise: false,
+    mycelialGrid: false,
+  })
 
   const assetFeatures = assets?.features ?? []
   const visibleAssets = useMemo(() => {
@@ -171,13 +175,13 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
     mapRef.current = map
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
 
-    // 'style.load' instead of 'load': the latter waits for raster tiles,
-    // which never resolve offline, and the data layers would never appear.
-    map.on('style.load', () => {
+    map.on('load', () => {
       map.addSource('municipios', { type: 'geojson', data: municipios || EMPTY })
       map.addSource('assets', { type: 'geojson', data: visibleAssets || EMPTY, cluster: true, clusterMaxZoom: 10, clusterRadius: 36 })
       map.addSource('selected-asset', { type: 'geojson', data: selectedAsset })
       map.addSource('service-events', { type: 'geojson', data: eventGeo })
+      map.addSource('mycelial-observations', { type: 'geojson', data: mycelialObservations || EMPTY })
+      map.addSource('mycelial-grid', { type: 'geojson', data: mycelialGrid || EMPTY })
 
       map.addLayer({
         id: 'muni-fill', type: 'fill', source: 'municipios',
@@ -186,6 +190,17 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
       map.addLayer({
         id: 'muni-line', type: 'line', source: 'municipios',
         paint: { 'line-color': '#38bdf8', 'line-width': 0.7, 'line-opacity': 0.38 },
+      })
+      map.addLayer({
+        id: 'mycelial-grid-fill', type: 'circle', source: 'mycelial-grid',
+        layout: { visibility: 'none' },
+        paint: {
+          'circle-radius': 11,
+          'circle-color': '#22c55e',
+          'circle-opacity': 0.22,
+          'circle-stroke-color': '#14532d',
+          'circle-stroke-width': 1,
+        },
       })
       map.addLayer({
         id: 'clusters', type: 'circle', source: 'assets', filter: ['has', 'point_count'],
@@ -220,6 +235,17 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
           'circle-opacity': 0.55,
           'circle-stroke-color': '#fbbf24',
           'circle-stroke-width': 1.2,
+        },
+      })
+      map.addLayer({
+        id: 'mycelial-observation-dot', type: 'circle', source: 'mycelial-observations',
+        layout: { visibility: 'none' },
+        paint: {
+          'circle-radius': 5,
+          'circle-color': '#84cc16',
+          'circle-opacity': 0.72,
+          'circle-stroke-color': '#052e16',
+          'circle-stroke-width': 1,
         },
       })
       map.addLayer({
@@ -275,10 +301,22 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
 
   useEffect(() => {
     if (!readyRef.current || !mapRef.current) return
+    mapRef.current.getSource('mycelial-observations')?.setData(mycelialObservations || EMPTY)
+  }, [mycelialObservations])
+
+  useEffect(() => {
+    if (!readyRef.current || !mapRef.current) return
+    mapRef.current.getSource('mycelial-grid')?.setData(mycelialGrid || EMPTY)
+  }, [mycelialGrid])
+
+  useEffect(() => {
+    if (!readyRef.current || !mapRef.current) return
     const visibility = layers.municipios ? 'visible' : 'none'
     for (const id of ['muni-fill', 'muni-line']) mapRef.current.setLayoutProperty(id, 'visibility', visibility)
     mapRef.current.setLayoutProperty('events-dot', 'visibility', layers.events ? 'visible' : 'none')
-  }, [layers.municipios, layers.events])
+    mapRef.current.setLayoutProperty('mycelial-observation-dot', 'visibility', layers.mycelialPrecise ? 'visible' : 'none')
+    mapRef.current.setLayoutProperty('mycelial-grid-fill', 'visibility', layers.mycelialGrid ? 'visible' : 'none')
+  }, [layers.municipios, layers.events, layers.mycelialPrecise, layers.mycelialGrid])
 
   return (
     <div className="relative h-full w-full">
@@ -296,6 +334,8 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
           <ControlButton active={layers.other} tone="border-slate-500/40 text-slate-300" onClick={() => setLayers((s) => ({ ...s, other: !s.other }))}>Other {counts.other}</ControlButton>
           <ControlButton active={layers.municipios} tone="border-cyan-500/40 text-cyan-300" onClick={() => setLayers((s) => ({ ...s, municipios: !s.municipios }))}>Municipios</ControlButton>
           <ControlButton active={layers.events} tone="border-red-500/40 text-red-300" onClick={() => setLayers((s) => ({ ...s, events: !s.events }))}>Events {eventGeo.features.length}</ControlButton>
+          <ControlButton active={layers.mycelialPrecise} tone="border-lime-500/40 text-lime-300" onClick={() => setLayers((s) => ({ ...s, mycelialPrecise: !s.mycelialPrecise }))}>Mycelial precise {mycelialObservations?.features?.length ?? 0}</ControlButton>
+          <ControlButton active={layers.mycelialGrid} tone="border-green-500/40 text-green-300" onClick={() => setLayers((s) => ({ ...s, mycelialGrid: !s.mycelialGrid }))}>Mycelial grid {mycelialGrid?.features?.length ?? 0}</ControlButton>
         </div>
         <button
           type="button"
@@ -317,6 +357,9 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
         </div>
         {eventGeo.features.length > 0 && (
           <div className="mt-2 flex items-center gap-1.5 text-[10px] text-amber-300"><Activity className="h-3 w-3" /> Event dots are derived from asset/municipio context.</div>
+        )}
+        {(mycelialObservations?.features?.length ?? 0) > 0 && (
+          <div className="mt-2 flex items-center gap-1.5 text-[10px] text-lime-300"><Activity className="h-3 w-3" /> Mycelial observation dots are source-attributed research records.</div>
         )}
       </div>
     </div>
