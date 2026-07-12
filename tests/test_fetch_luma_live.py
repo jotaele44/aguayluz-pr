@@ -64,3 +64,14 @@ def test_non_403_http_error_still_typed(monkeypatch):
     with pytest.raises(SourceUnavailable) as ei:
         fetch_towns(["SAN JUAN"], timeout=1.0)
     assert "500" in str(ei.value)
+
+
+def test_read_timeout_becomes_typed_source_unavailable(monkeypatch):
+    # A read-phase socket timeout surfaces as a bare TimeoutError (not a URLError
+    # subclass), so it must still be converted rather than escaping as a traceback.
+    monkeypatch.setattr(
+        fetch_luma_live.urllib.request, "urlopen", _raise(TimeoutError("timed out")),
+    )
+    with pytest.raises(SourceUnavailable) as ei:
+        fetch_towns(["SAN JUAN"], timeout=1.0)
+    assert "MiLUMA" in str(ei.value)

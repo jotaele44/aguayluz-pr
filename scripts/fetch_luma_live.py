@@ -81,8 +81,12 @@ def fetch_towns(municipios: list[str], timeout: float) -> dict:
     except urllib.error.HTTPError as exc:  # 403 = Incapsula WAF block (the expected case)
         hint = " (Incapsula WAF block — needs a permissioned LUMA/PREB data path)" if exc.code == 403 else ""
         raise SourceUnavailable(f"HTTP {exc.code} from MiLUMA{hint}") from exc
-    except urllib.error.URLError as exc:  # DNS / TLS / connection refused / timeout
-        raise SourceUnavailable(f"cannot reach MiLUMA: {exc.reason}") from exc
+    except (urllib.error.URLError, TimeoutError) as exc:  # DNS / TLS / conn refused / timeout
+        # A read-phase socket timeout raises TimeoutError directly (urllib only wraps
+        # connect-phase OSErrors in URLError), so catch both to keep the no-traceback
+        # source-unavailable contract on a slow/hung MiLUMA response.
+        reason = getattr(exc, "reason", None) or "connection timed out"
+        raise SourceUnavailable(f"cannot reach MiLUMA: {reason}") from exc
 
 
 def main() -> int:
