@@ -22,7 +22,7 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
       - name: Install
-        run: python -m pip install -e .[dev]
+        run: python -m pip install -e .[dev] -r server/backend/requirements.txt
       - name: Federation manifest gate
         run: |
           python - <<'PY'
@@ -75,11 +75,6 @@ jobs:
         run: python scripts/validate_repo.py
 
   geo-import-check:
-    # build_pr_geo_boundaries.py imports geopandas, which is not in the default
-    # install. Install the `geo` extra and import-check the script (its --help
-    # loads geopandas at module level, then exits 0 without needing the Census
-    # shapefiles) so a missing/broken geo dependency fails CI instead of only
-    # surfacing when someone runs the script.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -97,7 +92,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: npm
           cache-dependency-path: dashboard/package-lock.json
       - name: Install

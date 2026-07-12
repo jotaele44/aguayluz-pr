@@ -26,6 +26,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from prii_export_utils import fid as _fid
+from prii_export_utils import norm as _norm
+from prii_export_utils import sha256 as _sha256
+
 # Allow `python scripts/federation_export.py` from a fresh clone without an
 # editable install. The outputs/* generator imports aguayluz.{models,validation}
 # lazily; without this bootstrap those imports raise ModuleNotFoundError mid-run
@@ -73,14 +77,6 @@ NEXT_ACTIONS_DEFAULT = [
     "AYL_INGEST_LIVE_OUTAGES",
     "AYL_REVIEWER_PASS_OSM_WATER",
 ]
-
-
-def _fid(prefix: str, *parts: Any) -> str:
-    return f"{prefix}_{hashlib.sha256('|'.join(str(p) for p in parts).encode()).hexdigest()[:32]}"
-
-
-def _norm(name: str) -> str:
-    return " ".join(str(name).strip().upper().split())
 
 
 def _geo_key(name: str) -> str:
@@ -295,10 +291,6 @@ def _rel_kv(src_ent, rtype, tgt_ent, sid, conf, now, source_inputs=None):
         "lineage": _lineage("RELATIONSHIP", source_inputs or ["data/service_events.jsonl"]),
         "synthetic": False, "created_at": now, "extracted_at": now,
     }}
-
-
-def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def write_package(streams, out_dir: Path, mode: str, now: str) -> Path:

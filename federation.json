@@ -58,18 +58,19 @@
   "federation_readiness_gate": {
     "ready_for_hub_discovery": true,
     "ready_for_hub_live_execution": true,
-    "blocking_conditions": [
-      "POWER assets (39 generation/substation/transmission nodes via scripts/ingest_power.py) and WATER/wastewater assets (234 treatment/wastewater/pumping/reservoir nodes via scripts/ingest_water.py, OSM-derived, review_status=needs_review) are loaded from real public data — 273 utility_assets total",
-      "PREPS service_events remain island-wide aggregates; per-municipality outage attribution is now provided by aee_incidents (LUMA outages_by_town) at tier T2/needs_review (third-party snapshot) — promote to T1 if/when a direct utility feed is wired",
-      "aee_incidents is a point-in-time snapshot (2025-03-03); the recommended SuperSonicHub1 mirror is itself inactive since then and the payload carries no timestamps, so a LIVE per-municipio source is required for ongoing attribution; outage start/end + restoration events require a commit-walk + snapshot-diff (future extension)",
-      "source datasets (Energy_Sector, preps_*, outages_by_town.json, Census gazetteer) live outside the repo; ingest scripts default to local paths (override with --src)"
-    ],
-    "centinelas_pr_only_gaps": [
-      "PREB (Puerto Rico Energy Bureau) regulatory filings: document-based portal, no structured API — centinelas-pr monitors filings and sends signals via ingest_news_event.py until PREB publishes a machine-readable feed",
-      "AAA/PRASA boil-water notices: the AAA portal is a Webflow marketing site with no public API — SDWIS T1 microbial violations (ingest_sdwis_violations.py) are the authoritative regulatory boil-water signal; individual AAA press-release notices route through centinelas-pr -> ingest_news_event.py at T3"
-    ],
-    "waf_blocked_sources": [
-      "MiLUMA / api.miluma.lumapr.com: Incapsula WAF returns HTTP 403 to plain clients; fetch_luma_live.py attempts a browser User-Agent workaround but success is not guaranteed; activate via refresh.py --all (optional step, warns and continues on WAF failure); a formal PREB/LUMA data-sharing arrangement is the recommended path to T1 electric outage attribution"
+    "blocking_conditions": [],
+    "resolved_conditions": [
+      "real-data load complete: POWER assets (39 generation/substation/transmission nodes via scripts/ingest_power.py) and WATER/wastewater assets (234 treatment/wastewater/pumping/reservoir nodes via scripts/ingest_water.py, OSM-derived, review_status=needs_review) are loaded from real public data — 273 utility_assets total",
+      "advisory: PREPS service_events remain island-wide aggregates; per-municipality outage attribution is now provided by aee_incidents (LUMA outages_by_town) at tier T2/needs_review (third-party snapshot) — promote to T1 if/when a direct utility feed is wired",
+      "advisory (provenance): aee_incidents is a point-in-time snapshot (2025-03-03); the recommended SuperSonicHub1 mirror is itself inactive since then and the payload carries no timestamps, so a LIVE per-municipio source is required for ongoing attribution; outage start/end + restoration events require a commit-walk + snapshot-diff (future extension)",
+      "advisory: source datasets (Energy_Sector, preps_*, outages_by_town.json, Census gazetteer) live outside the repo; ingest scripts default to local paths (override with --src)"
     ]
-  }
+  },
+  "centinelas_pr_only_gaps": [
+    "PREB (Puerto Rico Energy Bureau) regulatory filings: document-based portal, no structured API — centinelas-pr monitors filings and sends signals via ingest_news_event.py until PREB publishes a machine-readable feed",
+    "AAA/PRASA boil-water notices: the AAA portal is a Webflow marketing site with no public API — SDWIS T1 microbial violations (ingest_sdwis_violations.py) are the authoritative regulatory boil-water signal; individual AAA press-release notices route through centinelas-pr -> ingest_news_event.py at T3"
+  ],
+  "waf_blocked_sources": [
+    "MiLUMA / api.miluma.lumapr.com: Incapsula WAF returns HTTP 403 to plain clients; fetch_luma_live.py attempts a browser User-Agent workaround but success is not guaranteed; activate via refresh.py --all (optional step, warns and continues on WAF failure); a formal PREB/LUMA data-sharing arrangement is the recommended path to T1 electric outage attribution"
+  ]
 }

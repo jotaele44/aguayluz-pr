@@ -37,3 +37,41 @@ python desktop/setup.py          # one-time setup
 .venv/bin/python desktop/launch.py --browser  # browser tab instead
 .venv/bin/python desktop/launch.py --no-window  # server only
 ```
+
+## macOS app icon
+
+`PRII-AGUAYLUZ.app` is a double-click macOS app (Apple-silicon and Intel). Double-click
+it in Finder and the dashboard opens in its own window — no Terminal. The first
+launch runs the one-time setup (needs internet once, plus Node.js for the
+dashboard build); after that it starts straight away and works offline.
+
+Because the app is a small self-locating wrapper around `desktop/launch.py`, it
+must stay at the repo root (it finds the repo from its own location). If macOS
+blocks the first open, see **If macOS won't open the app** below.
+No-Python-required standalone builds are still produced separately by the
+`desktop-build` workflow.
+
+## If macOS won't open the app
+
+The app is safe — it's an open-source launcher script you can read in
+`Contents/MacOS/`. macOS blocks it only because it isn't signed with a paid
+Apple Developer ID or notarized by Apple, so the first open may show *"cannot be
+opened because Apple cannot check it for malicious software"* or an
+*"unidentified developer"* notice. That's macOS quarantining files downloaded
+from the internet (it happens especially with GitHub's **Download ZIP**). Any
+one of the following clears it — you only do this once per download:
+
+- **Easiest — run the helper.** Double-click **`Fix-Gatekeeper.command`** in the
+  repo root, then open the app normally. If the helper is itself blocked,
+  right-click it → **Open** to run it once.
+- **Terminal (always works).** Paste this into Terminal (pasting a command is
+  never blocked), then press Return:
+  ```bash
+  xattr -dr com.apple.quarantine "/path/to/aguayluz-pr/PRII-AGUAYLUZ.app"
+  ```
+  Tip: type `xattr -dr com.apple.quarantine ` (with a trailing space) and drag
+  the app onto the Terminal window to fill in its path.
+- **System Settings.** Double-click the app, let macOS block it, then open
+  **System Settings → Privacy & Security**, scroll to the message naming the app,
+  and click **Open Anyway**. On macOS Sequoia 15 and later this replaces the old
+  right-click → **Open** trick.

@@ -10,9 +10,10 @@ from __future__ import annotations
 import json
 
 import typer
+from prii_maintenance import run_maintenance
 
-from . import OUTPUTS_DIR, __version__
-from .maintenance import run_maintenance
+from . import OUTPUTS_DIR, REPO_ROOT, __module_id__, __version__
+from .maintenance.adapters import local
 from .validation import assert_schemas_resolvable, run_gates
 
 app = typer.Typer(
@@ -65,7 +66,13 @@ def maintenance(
     Auto-correction only runs with ``--mode safe-correct``. Emits a report the
     Hub rolls up via ``hub maintenance``.
     """
-    report = run_maintenance(mode=mode, write=write_report)
+    report = run_maintenance(
+        root=REPO_ROOT,
+        mode=mode,
+        write=write_report,
+        program_id=__module_id__,
+        local_checks=local.run_checks,
+    )
     payload = report.to_dict()
     if json_out:
         typer.echo(json.dumps(payload, indent=2, sort_keys=True))
