@@ -16,9 +16,13 @@ sandbox, whose proxy may block waterservices.usgs.gov / data.epa.gov):
              USGS site network             -> utility_assets.jsonl
              USGS daily levels             -> reservoir_levels.jsonl
              EPA SDWIS violations          -> service_events.jsonl
-             EPA ECHO CWA enforcement      -> service_events.jsonl
-             FEMA disaster declarations    -> service_events.jsonl        (+ export)
-             Sites + violations change slowly; refresh weekly.
+             EPA ECHO CWA enforcement      -> service_events.jsonl   (optional)
+             FEMA disaster declarations    -> service_events.jsonl   (optional, + export)
+             Sites + violations change slowly; refresh weekly. ECHO and FEMA are
+             best-effort: their public REST endpoints (echo.epa.gov CWA services,
+             fema.gov open/v2) currently return HTTP 404 upstream, so the run
+             warns-and-continues past them (like the WAF-gated MiLUMA step) rather
+             than aborting before USGS/SDWIS land and the federation export runs.
 
   --all      everything above, plus MiLUMA live outages (optional — WAF may block;
              warns and continues rather than failing). Requires a permissioned
@@ -73,12 +77,12 @@ STEP_SDWIS = (
 STEP_ECHO = (
     "EPA ECHO CWA enforcement → service_events",
     ["scripts/ingest_echo.py"],
-    False,
+    True,   # optional — best-effort; echo.epa.gov CWA REST endpoint currently 404s
 )
 STEP_FEMA = (
     "FEMA disaster declarations → service_events",
     ["scripts/ingest_fema.py"],
-    False,
+    True,   # optional — best-effort; fema.gov open/v2 endpoint currently 404s
 )
 STEP_AEE_FETCH = (
     "MiLUMA live fetch → /tmp/outages_by_town.json",

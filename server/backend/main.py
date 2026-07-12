@@ -31,6 +31,13 @@ READINGS_FILES: dict[str, Path] = {
     "reliability": DATA / "reliability_readings.jsonl",
 }
 
+# Default page size for GET /events. The service_events corpus includes the full
+# EPA SDWIS violation history (tens of thousands of rows, ~13 MB), so an unbounded
+# response would make a normal dashboard load download the entire corpus. Callers
+# still get the true `total`; pass an explicit `limit` (or a negative value for
+# "all") to fetch more. The dashboard's default views only need the most recent slice.
+DEFAULT_EVENTS_LIMIT = 500
+
 # Canonical asset_type values for each sector.  Exact-match is used (not substring)
 # to prevent "water" matching "wastewater" assets, etc.
 SECTOR_TYPE_MAP: dict[str, set[str]] = {
@@ -209,10 +216,16 @@ def events(
                 continue
             filtered.append(e)
         result = filtered
+    # Recent-first so a bounded default page returns the newest events (the SDWIS
+    # bulk is historical). Stable sort keeps input order among equal timestamps.
+    result = sorted(result, key=lambda e: e.get("start_time") or "", reverse=True)
     total = len(result)
     result = result[offset:]
-    if limit is not None:
-        result = result[:limit]
+    # Bound the response by default; an explicit non-negative limit overrides it,
+    # and an explicit negative limit opts out entirely ("give me everything").
+    effective_limit = DEFAULT_EVENTS_LIMIT if limit is None else limit
+    if effective_limit is not None and effective_limit >= 0:
+        result = result[:effective_limit]
     return JSONResponse({"total": total, "offset": offset, "items": result})
 
 

@@ -144,8 +144,13 @@ counts are post-merge file totals where noted.
 
 ### 2026-07-12 — keyless weekly refresh
 
-Run with `scripts/refresh.py --weekly` (venv, live network via proxy). Keyless
-producers only — `fetch_luma_live.py` was skipped (Incapsula WAF 403, expected).
+Run with `scripts/refresh.py --weekly` (venv, live network via proxy), which
+executes in order: **NWS → USGS sites → USGS levels → SDWIS → ECHO (best-effort) →
+FEMA (best-effort) → federation export**. ECHO and FEMA are marked **optional**
+(warn-and-continue, like the WAF-gated MiLUMA step), so the chain completes through
+the export even while those two endpoints 404. `fetch_luma_live.py` is not part of
+`--weekly` and was skipped (Incapsula WAF 403, expected). The full run exits 0 and
+reaches the export step.
 
 | Source | Host | Result | Rows |
 |--------|------|--------|------|
@@ -153,15 +158,19 @@ producers only — `fetch_luma_live.py` was skipped (Incapsula WAF 403, expected
 | USGS site network → `utility_assets` | `waterservices.usgs.gov` | OK | +1267 fetched (lake 22, stream_gage 1085, irrigation_canal 61, reservoir 99); file total **8340** |
 | USGS daily levels → `reservoir_levels` (gitignored) | `waterservices.usgs.gov` | OK | 3557 readings across 132 assets (streamflow 1363, gage_height 1486, reservoir_elevation 708) |
 | EPA SDWIS violations → `service_events` | `data.epa.gov` (Envirofacts) | OK | 38799 violations fetched (4519 health-based, 2209 need-review); file total **24841** events |
-| EPA ECHO CWA enforcement | `echo.epa.gov` | **FAILED (upstream 404)** | endpoint `cwa_rest_services.get_facilities` returns HTTP 404 from the server; no rows written |
-| FEMA disaster declarations | `www.fema.gov` | **FAILED (upstream 404)** | `open/v2/disasterDeclarationsSummaries` returns HTTP 404 (Drupal "Page not found"); no rows written |
+| EPA ECHO CWA enforcement | `echo.epa.gov` | **best-effort — upstream 404** | endpoint `cwa_rest_services.get_facilities` returns HTTP 404 from the server; step is optional, no rows written, run continues |
+| FEMA disaster declarations | `www.fema.gov` | **best-effort — upstream 404** | `open/v2/disasterDeclarationsSummaries` returns HTTP 404 (Drupal "Page not found"); step is optional, no rows written, run continues |
 | Federation export | (local) | OK | manifest: 33286 entities / 40964 relationships / 26134 sources / 10 alerts |
 
 Tracked-data files updated this run: `data/utility_assets.jsonl` (7088→8340),
 `data/service_events.jsonl` (6→24841). ECHO and FEMA are genuine upstream endpoint
 breakages (both hosts reachable, both specific REST paths 404) — not proxy blocks and
-not manufacturable; their adapters remain source-agnostic (`--src`) and untouched.
-Gates G01–G08 PASS; `ruff check` clean; `pytest -q -m "not live"` = 197 passed, 1 skipped.
+not manufacturable; their adapters remain source-agnostic (`--src`) and untouched, and
+their steps are now best-effort so a `--weekly` run reproduces this materialization
+(USGS/SDWIS land, then export runs) rather than aborting at the first 404.
+Gates G01–G08 PASS; `ruff check` clean; `pytest -q -m "not live"` = **210 passed**
+with `fastapi`+`httpx` present (includes the new backend `/events` bounding tests);
+on the lightweight offline deps without `fastapi`, those backend tests skip → 197 passed.
 
 ---
 

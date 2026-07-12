@@ -12,8 +12,19 @@ export const useSummarySectors = () => useQuery({ queryKey: ['summary/sectors'],
 export const useAssets = (f = {}) => useQuery({ queryKey: ['assets', f], queryFn: () => getAssets(f) })
 export const useAssetsGeojson = () => useQuery({ queryKey: ['assets.geojson'], queryFn: getAssetsGeojson })
 export const useMunicipiosGeojson = () => useQuery({ queryKey: ['municipios.geojson'], queryFn: getMunicipiosGeojson })
-export const useEvents = (f = {}) => useQuery({ queryKey: ['events', f], queryFn: () => getEvents(f) })
-export const useEventsPaged = (f = {}) => useQuery({ queryKey: ['events/paged', f], queryFn: () => getEventsPaged(f) })
+// Default page size so a normal load doesn't pull the entire service-events
+// corpus (the full SDWIS violation history is ~25k rows / ~13 MB). The backend
+// returns the most-recent events first; callers can override `limit` (or pass a
+// negative limit) to fetch more.
+export const DEFAULT_EVENT_LIMIT = 500
+export const useEvents = (f = {}) => {
+  const params = { limit: DEFAULT_EVENT_LIMIT, ...f }
+  return useQuery({ queryKey: ['events', params], queryFn: () => getEvents(params) })
+}
+export const useEventsPaged = (f = {}) => {
+  const params = { limit: DEFAULT_EVENT_LIMIT, ...f }
+  return useQuery({ queryKey: ['events/paged', params], queryFn: () => getEventsPaged(params) })
+}
 export const useAssetEvents = (id) => useQuery({ queryKey: ['asset-events', id], queryFn: () => getAssetEvents(id), enabled: !!id })
 export const useMunicipioSummary = (name) => useQuery({ queryKey: ['municipio', name], queryFn: () => getMunicipioSummary(name), enabled: !!name })
 export const useReadings = (f = {}) => useQuery({ queryKey: ['readings', f], queryFn: () => getReadings(f) })
