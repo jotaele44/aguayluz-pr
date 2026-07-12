@@ -66,3 +66,16 @@ export const postRunExport = async () => {
   })
   return res.json()
 }
+
+export const postMycelialQuery = async (query, conditions) => {
+  if (OFFLINE) return { status: 'offline', answer: 'Mycelial assistant requires the local backend.' }
+  const res = await fetch(`${API_BASE}/mycelial/query`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query, conditions }),
+    signal: AbortSignal.timeout(8000),
+  })
+  const payload = await res.json()
+  if (!res.ok) throw new Error(payload?.detail ?? 'Mycelial query failed')
+  return payload
+}
