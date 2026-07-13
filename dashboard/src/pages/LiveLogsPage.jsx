@@ -7,16 +7,7 @@ import {
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { Zap, Play, Pause } from 'lucide-react'
-import { fmtDate } from '@/lib/format'
-
-const TYPE_TONE = {
-  outage: 'bg-red-950/60 text-red-300 border-red-900',
-  service_interruption: 'bg-amber-950/60 text-amber-300 border-amber-900',
-  restoration: 'bg-emerald-950/60 text-emerald-300 border-emerald-900',
-  boil_water: 'bg-sky-950/60 text-sky-300 border-sky-900',
-  project_update: 'bg-violet-950/60 text-violet-300 border-violet-900',
-}
-const EVENT_TYPES = ['all', 'outage', 'service_interruption', 'restoration', 'boil_water', 'project_update']
+import { fmtDate, eventPill, EVENT_TYPES } from '@/lib/format'
 
 export default function LiveLogsPage() {
   const [events, setEvents] = useState([])
@@ -74,7 +65,7 @@ export default function LiveLogsPage() {
         {filtered.map((e, i) => (
           <div key={e.event_id ?? i} className={cn(
             'flex items-center gap-3 rounded border px-3 py-2',
-            TYPE_TONE[e.event_type] ?? 'bg-slate-900 border-slate-800 text-slate-400',
+            eventPill(e.event_type),
           )}>
             <Zap className="h-3 w-3 shrink-0 opacity-70" />
             <span className="shrink-0 text-[10px] opacity-50 w-24">{fmtDate(e.start_time)}</span>

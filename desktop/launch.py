@@ -34,6 +34,7 @@ for _name in ("stdout", "stderr"):
         setattr(sys, _name, open(os.devnull, "w"))  # noqa: SIM115
 
 from desktop.config import APP_TITLE, HEALTH_PATH  # noqa: E402
+from desktop._page import SPINNER_CSS, render_page  # noqa: E402
 
 # Records the running instance (pid + url) so a second double-click reuses it
 # instead of starting another server. Lives beside this file; gitignored.
@@ -193,35 +194,15 @@ def wait_healthy(url: str, timeout: float = 30.0) -> None:
     raise SystemExit(f"Backend did not become healthy at {url}: {last_error}")
 
 
-# Kept as short pieces so every source line stays within strict line-length lints.
-_FONT = "-apple-system,Segoe UI,Roboto,sans-serif"
-_PAGE_CSS = (
-    "html,body{height:100%;margin:0}"
-    "body{display:flex;flex-direction:column;align-items:center;"
-    f"justify-content:center;font-family:{_FONT};background:#0f172a;color:#e2e8f0;"
-    "text-align:center;padding:0 32px}"
-    "h1{font-size:17px;margin:0 0 10px}"
-    "p{color:#94a3b8;font-size:13px;max-width:34rem}"
-    "code{background:#1e293b;padding:2px 6px;border-radius:4px}"
-    ".spin{width:34px;height:34px;border:4px solid #334155;border-top-color:#818cf8;"
-    "border-radius:50%;animation:s .8s linear infinite;margin-bottom:18px}"
-    "@keyframes s{to{transform:rotate(360deg)}}"
-)
-
-
-def _page(body: str) -> str:
-    return (
-        '<!doctype html><html><head><meta charset="utf-8">'
-        f"<style>{_PAGE_CSS}</style></head><body>{body}</body></html>"
+def _splash_html(message: str) -> str:
+    return render_page(
+        f'<div class="spin"></div><p>Starting {message}…</p>',
+        extra_css=SPINNER_CSS,
     )
 
 
-def _splash_html(message: str) -> str:
-    return _page(f'<div class="spin"></div><p>Starting {message}…</p>')
-
-
 def _error_html(message: str, detail: str) -> str:
-    return _page(
+    return render_page(
         f"<h1>{message} could not start</h1>"
         "<p>The local server did not become ready. Try again, or run "
         "<code>python desktop/setup.py</code> from the repo to repair it.</p>"

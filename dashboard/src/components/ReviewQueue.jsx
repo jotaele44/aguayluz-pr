@@ -6,8 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select'
-import { tierBadge } from '@/lib/format'
-import { severityTone } from '@/lib/aguayluz-format'
+import { tierBadge, severityTone } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { AlertTriangle, Search } from 'lucide-react'
 

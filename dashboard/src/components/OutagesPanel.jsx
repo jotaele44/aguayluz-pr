@@ -6,19 +6,9 @@ import { Input } from '@/components/ui/input'
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select'
-import { tierBadge, fmtDate } from '@/lib/format'
+import { tierBadge, fmtDate, eventTone, EVENT_TYPES } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { AlertTriangle, Zap } from 'lucide-react'
-
-const TYPE_TONE = {
-  outage: 'text-red-300',
-  service_interruption: 'text-amber-300',
-  restoration: 'text-emerald-300',
-  boil_water: 'text-sky-300',
-  project_update: 'text-violet-300',
-}
-
-const EVENT_TYPES = ['all', 'outage', 'service_interruption', 'restoration', 'boil_water', 'project_update']
 
 function eventLabel(event) {
   return (event.event_type || 'event').replace(/_/g, ' ')
@@ -39,16 +29,6 @@ export default function OutagesPanel() {
            (e.municipality || '').toLowerCase().includes(q.toLowerCase()))
   ), [events, type, q])
 
-  if (isLoading) {
-    return (
-      <div className="h-full p-2 space-y-1.5">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="h-16 w-full rounded-md" />
-        ))}
-      </div>
-    )
-  }
-
   const groups = useMemo(() => {
     const map = new Map()
     for (const event of filtered) {
@@ -58,6 +38,16 @@ export default function OutagesPanel() {
     }
     return Array.from(map.entries()).sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]))
   }, [filtered])
+
+  if (isLoading) {
+    return (
+      <div className="h-full p-2 space-y-1.5">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Skeleton key={i} className="h-16 w-full rounded-md" />
+        ))}
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -86,7 +76,7 @@ export default function OutagesPanel() {
               {rows.map((e) => (
                 <div key={e.event_id} className="rounded-md border border-slate-800 bg-slate-900 p-2.5">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <Zap className={cn('h-3.5 w-3.5 shrink-0', TYPE_TONE[e.event_type] ?? 'text-slate-400')} />
+                    <Zap className={cn('h-3.5 w-3.5 shrink-0', eventTone(e.event_type))} />
                     <span className="text-xs font-medium capitalize text-slate-200">{eventLabel(e)}</span>
                     {e.evidence_tier && <Badge variant="outline" className={cn('text-[10px]', tierBadge(e.evidence_tier))}>{e.evidence_tier}</Badge>}
                     <span className="ml-auto text-[11px] text-slate-500">{fmtDate(e.start_time)}</span>

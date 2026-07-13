@@ -1,8 +1,9 @@
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 // Auth-stripped 404 (no base44 auth lookup).
 export default function PageNotFound() {
   const location = useLocation()
+  const navigate = useNavigate()
   const pageName = location.pathname.substring(1)
 
   return (
@@ -20,7 +21,7 @@ export default function PageNotFound() {
         </div>
         <div className="pt-2">
           <button
-            onClick={() => (window.location.href = '/')}
+            onClick={() => navigate('/')}
             className="inline-flex items-center px-4 py-2 text-sm font-medium text-slate-200 bg-slate-900 border border-slate-700 rounded-lg hover:bg-slate-800 transition-colors"
           >
             Go Home
