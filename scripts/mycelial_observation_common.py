@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Shared helpers for AguaYLuz mycelial observation materialization.
-
-The pipeline is intentionally batch-oriented: source files are normalized into
-JSONL, checked against schemas, aggregated, then exported as dashboard-safe
-GeoJSON and summary JSON.
-"""
+"""Shared helpers for AguaYLuz mycelial observation materialization."""
 from __future__ import annotations
 
 import argparse
@@ -21,12 +16,17 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from aguayluz.mycelial_models import GridCellAggregation, ObservationSource, RawObservation, SourceLicense, VerificationStatus  # noqa: E402
+from aguayluz.mycelial_models import (  # noqa: E402
+    GridCellAggregation,
+    ObservationSource,
+    RawObservation,
+    SourceLicense,
+    VerificationStatus,
+)
 
 DATA_DIR = ROOT / "data" / "mycelial"
 GEO_DIR = ROOT / "data" / "geo"
 OUTPUTS_DIR = ROOT / "outputs"
-
 RAW = DATA_DIR / "raw_observations.jsonl"
 NORMALIZED = DATA_DIR / "normalized_observations.jsonl"
 VERIFIED = DATA_DIR / "verified_observations.jsonl"
@@ -45,7 +45,7 @@ def now_utc() -> str:
 
 
 def stable_id(prefix: str, *parts: Any) -> str:
-    payload = "|".join(str(p) for p in parts if p is not None)
+    payload = "|".join(str(part) for part in parts if part is not None)
     return f"{prefix}_{hashlib.sha256(payload.encode()).hexdigest()[:32]}"
 
 
@@ -78,11 +78,14 @@ def validate_sources() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
 def normalize_record(row: dict[str, Any]) -> dict[str, Any]:
     source_ref = str(row.get("source_ref") or row.get("source_url") or "local://unknown")
     source_id = row.get("source_id") or stable_id("obs_src", source_ref)
-    taxon_label = str(row.get("taxon_label_raw") or row.get("scientific_name") or row.get("taxon") or "Fungi")
+    taxon_label = str(
+        row.get("taxon_label_raw") or row.get("scientific_name") or row.get("taxon") or "Fungi"
+    )
     lat = float(row["lat"])
     lon = float(row["lon"])
     record = {
-        "observation_id": row.get("observation_id") or stable_id("myc_obs", source_id, source_ref, taxon_label, lat, lon, row.get("observed_at")),
+        "observation_id": row.get("observation_id")
+        or stable_id("myc_obs", source_id, source_ref, taxon_label, lat, lon, row.get("observed_at")),
         "source_id": source_id,
         "observed_at": row.get("observed_at"),
         "reported_at": row.get("reported_at"),
@@ -126,49 +129,44 @@ def dedupe_rows(rows: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[
             row.get("observed_at"),
         )
         buckets[key].append(row)
-
-    clusters: list[dict[str, Any]] = []
+    clusters = []
     for key, members in buckets.items():
         if len(members) < 2:
             continue
-        cluster_id = stable_id("myc_dup", *key)
-        canonical = sorted(members, key=lambda r: (-int(r.get("confidence", 0)), r["observation_id"]))[0]
+        canonical = sorted(members, key=lambda item: (-int(item.get("confidence", 0)), item["observation_id"]))[0]
         clusters.append({
-            "cluster_id": cluster_id,
+            "cluster_id": stable_id("myc_dup", *key),
             "canonical_observation_id": canonical["observation_id"],
-            "member_observation_ids": sorted(row["observation_id"] for row in members),
+            "member_observation_ids": sorted(item["observation_id"] for item in members),
             "match_key": {"taxon": key[0], "lat_bin": key[1], "lon_bin": key[2], "observed_at": key[3]},
         })
     return rows, clusters
 
 
-def verify_rows(rows: list[dict[str, Any]], clusters: list[dict[str, Any]] | None = None) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+def verify_rows(
+    rows: list[dict[str, Any]], clusters: list[dict[str, Any]] | None = None
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     duplicate_members = set()
     for cluster in clusters or []:
         canonical = cluster["canonical_observation_id"]
-        duplicate_members.update(obs for obs in cluster["member_observation_ids"] if obs != canonical)
-
-    verified: list[dict[str, Any]] = []
-    statuses: list[dict[str, Any]] = []
+        duplicate_members.update(
+            observation for observation in cluster["member_observation_ids"] if observation != canonical
+        )
+    statuses = []
     for row in rows:
         flags: list[str] = []
-        status = "location_verified"
-        delta = 10
+        status, delta = "location_verified", 10
         if row["observation_id"] in duplicate_members:
             flags.append("duplicate_candidate")
-            status = "duplicate"
-            delta = -10
+            status, delta = "duplicate", -10
         if row.get("access_guidance_present"):
             flags.append("access_guidance_detected")
-            status = "blocked"
-            delta = -100
+            status, delta = "blocked", -100
             row["review_status"] = "blocked"
         elif row.get("review_status") == "rejected":
-            status = "rejected"
-            delta = -50
+            status, delta = "rejected", -50
         elif row.get("scientific_name"):
-            status = "taxon_verified"
-            delta = 15
+            status, delta = "taxon_verified", 15
         row["confidence"] = max(0, min(100, int(row.get("confidence", 0)) + delta))
         RawObservation(**row)
         verification = {
@@ -184,33 +182,30 @@ def verify_rows(rows: list[dict[str, Any]], clusters: list[dict[str, Any]] | Non
         }
         VerificationStatus(**verification)
         statuses.append(verification)
-        verified.append(row)
-    return verified, statuses
+    return rows, statuses
 
 
 def _cell_key(row: dict[str, Any], resolution: float = 0.05) -> tuple[float, float]:
-    lat_bin = round(round(float(row["lat"]) / resolution) * resolution, 4)
-    lon_bin = round(round(float(row["lon"]) / resolution) * resolution, 4)
-    return lat_bin, lon_bin
+    return (
+        round(round(float(row["lat"]) / resolution) * resolution, 4),
+        round(round(float(row["lon"]) / resolution) * resolution, 4),
+    )
 
 
 def _dominant(values: list[str | None]) -> str | None:
-    usable = [v for v in values if v and v != "unknown"]
+    usable = [value for value in values if value and value != "unknown"]
     return Counter(usable).most_common(1)[0][0] if usable else None
 
 
 def aggregate_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     cells: dict[tuple[float, float], list[dict[str, Any]]] = defaultdict(list)
     for row in rows:
-        if row.get("review_status") in {"rejected", "blocked"}:
-            continue
-        cells[_cell_key(row)].append(row)
-
-    aggregates: list[dict[str, Any]] = []
+        if row.get("review_status") not in {"rejected", "blocked"}:
+            cells[_cell_key(row)].append(row)
+    aggregates = []
     for (lat, lon), members in sorted(cells.items()):
-        taxon_values = {m.get("scientific_name") or m.get("taxon_label_raw") for m in members}
-        confidences = [int(m.get("confidence", 0)) for m in members]
-        observed = sorted(m.get("observed_at") for m in members if m.get("observed_at"))
+        observed = sorted(item.get("observed_at") for item in members if item.get("observed_at"))
+        confidences = [int(item.get("confidence", 0)) for item in members]
         row = {
             "grid_id": stable_id("myc_grid", lat, lon),
             "grid_scheme": "degree_bin",
@@ -218,19 +213,21 @@ def aggregate_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "geometry": None,
             "centroid_lat": lat,
             "centroid_lon": lon,
-            "municipalities": sorted({m["municipality"] for m in members if m.get("municipality")}),
+            "municipalities": sorted({item["municipality"] for item in members if item.get("municipality")}),
             "observation_count": len(members),
-            "verified_count": sum(1 for m in members if m.get("review_status") == "accepted"),
-            "taxa_count": len(taxon_values),
-            "dominant_habitat_context": _dominant([m.get("habitat_context") for m in members]),
-            "dominant_substrate": _dominant([m.get("substrate") for m in members]),
+            "verified_count": sum(1 for item in members if item.get("review_status") == "accepted"),
+            "taxa_count": len({item.get("scientific_name") or item.get("taxon_label_raw") for item in members}),
+            "dominant_habitat_context": _dominant([item.get("habitat_context") for item in members]),
+            "dominant_substrate": _dominant([item.get("substrate") for item in members]),
             "first_observed_at": observed[0] if observed else None,
             "last_observed_at": observed[-1] if observed else None,
             "mean_confidence": round(sum(confidences) / len(confidences), 2) if confidences else 0,
-            "source_count": len({m["source_id"] for m in members}),
-            "attribution_refs": sorted({m["source_id"] for m in members}),
+            "source_count": len({item["source_id"] for item in members}),
+            "attribution_refs": sorted({item["source_id"] for item in members}),
             "precision_mode": "aggregate_public",
-            "review_status": "accepted" if all(m.get("review_status") == "accepted" for m in members) else "needs_review",
+            "review_status": "accepted"
+            if all(item.get("review_status") == "accepted" for item in members)
+            else "needs_review",
         }
         GridCellAggregation(**row)
         aggregates.append(row)
@@ -238,40 +235,77 @@ def aggregate_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def observations_geojson(rows: list[dict[str, Any]]) -> dict[str, Any]:
-    features = []
-    for row in rows:
-        if row.get("review_status") in {"rejected", "blocked"}:
-            continue
-        features.append({
-            "type": "Feature",
-            "geometry": {"type": "Point", "coordinates": [row["lon"], row["lat"]]},
-            "properties": row,
-        })
-    return {"type": "FeatureCollection", "features": features}
+    return {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "geometry": {"type": "Point", "coordinates": [row["lon"], row["lat"]]},
+                "properties": row,
+            }
+            for row in rows
+            if row.get("review_status") not in {"rejected", "blocked"}
+        ],
+    }
 
 
 def grid_geojson(rows: list[dict[str, Any]]) -> dict[str, Any]:
-    features = []
+    return {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "geometry": row.get("geometry")
+                or {"type": "Point", "coordinates": [row["centroid_lon"], row["centroid_lat"]]},
+                "properties": {key: value for key, value in row.items() if key != "geometry"},
+            }
+            for row in rows
+        ],
+    }
+
+
+def source_license_gaps(
+    rows: list[dict[str, Any]],
+    sources: list[dict[str, Any]],
+    licenses: list[dict[str, Any]],
+) -> list[str]:
+    """Return deterministic unresolved source/license references for exported observations."""
+    source_by_id = {str(source.get("source_id")): source for source in sources}
+    license_by_id = {str(license_row.get("license_id")): license_row for license_row in licenses}
+    gaps: set[str] = set()
     for row in rows:
-        features.append({
-            "type": "Feature",
-            "geometry": row.get("geometry") or {"type": "Point", "coordinates": [row["centroid_lon"], row["centroid_lat"]]},
-            "properties": {k: v for k, v in row.items() if k != "geometry"},
-        })
-    return {"type": "FeatureCollection", "features": features}
+        source_id = str(row.get("source_id") or "")
+        license_id = str(row.get("license_id") or "")
+        source = source_by_id.get(source_id)
+        if not source:
+            gaps.add(f"missing_source:{source_id or 'unknown'}")
+        elif source.get("license_id") != license_id:
+            gaps.add(f"source_license_mismatch:{source_id}:{license_id or 'unknown'}")
+        if not license_id or license_id not in license_by_id:
+            gaps.add(f"missing_license:{license_id or 'unknown'}")
+    return sorted(gaps)
 
 
-def build_summary(rows: list[dict[str, Any]], aggregates: list[dict[str, Any]]) -> dict[str, Any]:
+def build_summary(
+    rows: list[dict[str, Any]],
+    aggregates: list[dict[str, Any]],
+    sources: list[dict[str, Any]] | None = None,
+    licenses: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    sources = load_jsonl(SOURCES) if sources is None else sources
+    licenses = load_jsonl(LICENSES) if licenses is None else licenses
     return {
         "module_id": "aguayluz-pr",
         "generated_at": now_utc(),
         "research_only": True,
         "records_total": len(rows),
-        "records_exported_precise": sum(1 for r in rows if r.get("review_status") not in {"rejected", "blocked"}),
+        "records_exported_precise": sum(
+            1 for row in rows if row.get("review_status") not in {"rejected", "blocked"}
+        ),
         "grid_cells_total": len(aggregates),
-        "municipalities_covered": sorted({r["municipality"] for r in rows if r.get("municipality")}),
-        "source_ids": sorted({r["source_id"] for r in rows}),
-        "remaining_source_license_gaps": [],
+        "municipalities_covered": sorted({row["municipality"] for row in rows if row.get("municipality")}),
+        "source_ids": sorted({row["source_id"] for row in rows}),
+        "remaining_source_license_gaps": source_license_gaps(rows, sources, licenses),
         "safety_notes": [
             "Precise coordinates are retained for research/operator workflows.",
             "Access-use guidance is blocked by schema and verification gates.",
@@ -287,7 +321,7 @@ def write_exports(rows: list[dict[str, Any]], aggregates: list[dict[str, Any]]) 
 
 
 def parser(description: str) -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description=description)
-    p.add_argument("--input", type=Path, default=None)
-    p.add_argument("--output", type=Path, default=None)
-    return p
+    result = argparse.ArgumentParser(description=description)
+    result.add_argument("--input", type=Path, default=None)
+    result.add_argument("--output", type=Path, default=None)
+    return result
