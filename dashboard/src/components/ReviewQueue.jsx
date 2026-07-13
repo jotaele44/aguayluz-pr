@@ -6,13 +6,11 @@ import { Skeleton } from '@/components/ui/skeleton'
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select'
-import { tierBadge, severityTone } from '@/lib/format'
+import { tierBadge, severityTone, SEVERITIES, TIERS } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { AlertTriangle, Search } from 'lucide-react'
 
 const SEVERITY_RANK = { block: 0, warn: 1, info: 2 }
-const SEVERITIES = ['all', 'block', 'warn', 'info']
-const TIERS = ['all', 'T1', 'T2', 'T3', 'T4']
 
 function normalized(value) {
   return `${value ?? ''}`.toLowerCase()

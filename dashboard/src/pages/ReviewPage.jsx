@@ -3,7 +3,7 @@ import { useReviewQueuePaged, useDecision } from '@/lib/hooks'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
-import { tierBadge, severityTone } from '@/lib/format'
+import { tierBadge, severityTone, SEVERITIES, TIERS } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { AlertTriangle, CheckCircle, X, SkipForward, ChevronLeft, ChevronRight } from 'lucide-react'
 import {
@@ -12,8 +12,6 @@ import {
 import { useToast } from '@/components/ui/use-toast'
 import PageHeader from '@/components/common/PageHeader'
 
-const SEVERITIES = ['all', 'block', 'warn', 'info']
-const TIERS = ['all', 'T1', 'T2', 'T3', 'T4']
 const PAGE_SIZE = 25
 
 export default function ReviewPage() {
