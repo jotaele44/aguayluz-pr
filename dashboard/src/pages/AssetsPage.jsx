@@ -3,6 +3,7 @@ import { useAssets } from '@/lib/hooks'
 import AssetsTable from '@/components/AssetsTable'
 import AssetDetail from '@/components/AssetDetail'
 import ErrorBoundary from '@/components/ErrorBoundary'
+import PageHeader from '@/components/common/PageHeader'
 
 export default function AssetsPage() {
   const { data: assets = [], isLoading } = useAssets()
@@ -10,10 +11,7 @@ export default function AssetsPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-6 py-4 border-b border-slate-800 shrink-0">
-        <h1 className="text-lg font-semibold text-slate-100">Assets</h1>
-        <p className="text-xs text-slate-500 mt-0.5">All tracked infrastructure assets across Puerto Rico</p>
-      </div>
+      <PageHeader title="Assets" subtitle="All tracked infrastructure assets across Puerto Rico" />
       <div className="flex-1 min-h-0">
         <ErrorBoundary label="Assets">
           <AssetsTable assets={assets} isLoading={isLoading} selectedId={selected?.asset_id} onSelect={setSelected} />

@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { GitBranch, Search, GitPullRequest, GitMerge } from 'lucide-react'
+import Panel from '@/components/common/Panel'
+import StatTile from '@/components/common/StatTile'
 
 export default function RepoAnalyzerPage() {
   const [repo, setRepo] = useState('jotaele44/aguayluz-pr')
@@ -81,19 +83,19 @@ export default function RepoAnalyzerPage() {
       {result && (
         <div className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Stat label="Stars" value={(result.repo.stargazers_count ?? 0).toLocaleString()} />
-            <Stat label="Open Issues" value={(result.repo.open_issues_count ?? 0).toLocaleString()} />
-            <Stat label="Language" value={result.repo.language ?? '—'} />
-            <Stat label="Default Branch" value={result.repo.default_branch ?? 'main'} />
+            <StatTile label="Stars" value={(result.repo.stargazers_count ?? 0).toLocaleString()} />
+            <StatTile label="Open Issues" value={(result.repo.open_issues_count ?? 0).toLocaleString()} />
+            <StatTile label="Language" value={result.repo.language ?? '—'} />
+            <StatTile label="Default Branch" value={result.repo.default_branch ?? 'main'} />
           </div>
 
           <div className="grid grid-cols-3 gap-4">
-            <Stat label="Merged PRs" value={merged} color="text-violet-400" />
-            <Stat label="Open PRs" value={open} color="text-emerald-400" />
-            <Stat label="Closed PRs" value={closed} color="text-red-400" />
+            <StatTile label="Merged PRs" value={merged} valueClass="text-violet-400" />
+            <StatTile label="Open PRs" value={open} valueClass="text-emerald-400" />
+            <StatTile label="Closed PRs" value={closed} valueClass="text-red-400" />
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 rounded-lg p-5">
+          <Panel className="p-5">
             <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
               <GitPullRequest className="h-3.5 w-3.5" />
               Recent Pull Requests ({result.prs.length} shown)
@@ -133,18 +135,9 @@ export default function RepoAnalyzerPage() {
                 <p className="text-sm text-slate-500 text-center py-4">No pull requests found</p>
               )}
             </div>
-          </div>
+          </Panel>
         </div>
       )}
-    </div>
-  )
-}
-
-function Stat({ label, value, color = 'text-slate-100' }) {
-  return (
-    <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
-      <p className="text-xs text-slate-500 font-mono uppercase tracking-wider mb-1">{label}</p>
-      <p className={`text-xl font-semibold font-mono ${color}`}>{value}</p>
     </div>
   )
 }

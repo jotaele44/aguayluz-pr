@@ -3,14 +3,14 @@ import { useReviewQueuePaged, useDecision } from '@/lib/hooks'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
-import { tierBadge } from '@/lib/format'
-import { severityTone } from '@/lib/aguayluz-format'
+import { tierBadge, severityTone } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { AlertTriangle, CheckCircle, X, SkipForward, ChevronLeft, ChevronRight } from 'lucide-react'
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select'
 import { useToast } from '@/components/ui/use-toast'
+import PageHeader from '@/components/common/PageHeader'
 
 const SEVERITIES = ['all', 'block', 'warn', 'info']
 const TIERS = ['all', 'T1', 'T2', 'T3', 'T4']
@@ -42,22 +42,16 @@ export default function ReviewPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-6 py-4 border-b border-slate-800 flex items-center gap-4 flex-wrap shrink-0">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-100">Review Queue</h1>
-          <p className="text-xs text-slate-500 mt-0.5">{total.toLocaleString()} items pending review</p>
-        </div>
-        <div className="flex items-center gap-2 ml-auto">
-          <Select value={sev} onValueChange={(v) => { setSev(v); setOffset(0) }}>
-            <SelectTrigger className="h-7 w-[110px] text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>{SEVERITIES.map((s) => <SelectItem key={s} value={s} className="text-xs capitalize">{s}</SelectItem>)}</SelectContent>
-          </Select>
-          <Select value={tier} onValueChange={(v) => { setTier(v); setOffset(0) }}>
-            <SelectTrigger className="h-7 w-[90px] text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>{TIERS.map((t) => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
-      </div>
+      <PageHeader title="Review Queue" subtitle={`${total.toLocaleString()} items pending review`}>
+        <Select value={sev} onValueChange={(v) => { setSev(v); setOffset(0) }}>
+          <SelectTrigger className="h-7 w-[110px] text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>{SEVERITIES.map((s) => <SelectItem key={s} value={s} className="text-xs capitalize">{s}</SelectItem>)}</SelectContent>
+        </Select>
+        <Select value={tier} onValueChange={(v) => { setTier(v); setOffset(0) }}>
+          <SelectTrigger className="h-7 w-[90px] text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>{TIERS.map((t) => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}</SelectContent>
+        </Select>
+      </PageHeader>
 
       <div className="flex-1 overflow-auto p-6 space-y-2">
         {isLoading
@@ -81,7 +75,7 @@ export default function ReviewPage() {
                 <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-red-400 border-red-900 hover:bg-red-950" disabled={isPending} onClick={() => handleDecision(r.record_ref, 'reject')}>
                   <X className="h-3.5 w-3.5 mr-1" />Reject
                 </Button>
-                <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-slate-500" disabled={isPending} onClick={() => handleDecision(r.record_ref, 'skip')}>
+                <Button size="sm" variant="ghost" aria-label="Skip" title="Skip" className="h-7 px-2 text-xs text-slate-500" disabled={isPending} onClick={() => handleDecision(r.record_ref, 'skip')}>
                   <SkipForward className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -96,10 +90,10 @@ export default function ReviewPage() {
         <div className="flex items-center justify-between px-6 py-3 border-t border-slate-800 shrink-0">
           <span className="text-xs text-slate-500">{offset + 1}–{Math.min(offset + PAGE_SIZE, total)} of {total.toLocaleString()}</span>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" className="h-7" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}>
+            <Button size="sm" variant="outline" aria-label="Previous page" className="h-7" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}>
               <ChevronLeft className="h-3.5 w-3.5" />
             </Button>
-            <Button size="sm" variant="outline" className="h-7" disabled={offset + PAGE_SIZE >= total} onClick={() => setOffset(offset + PAGE_SIZE)}>
+            <Button size="sm" variant="outline" aria-label="Next page" className="h-7" disabled={offset + PAGE_SIZE >= total} onClick={() => setOffset(offset + PAGE_SIZE)}>
               <ChevronRight className="h-3.5 w-3.5" />
             </Button>
           </div>

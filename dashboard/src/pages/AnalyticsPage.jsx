@@ -5,8 +5,9 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
   PieChart, Pie, Cell,
 } from 'recharts'
+import { CHART_TOOLTIP_STYLE } from '@/lib/format'
+import Panel from '@/components/common/Panel'
 
-const TIP = { background: '#0f172a', border: '1px solid #1e293b', borderRadius: 6, fontSize: 11, color: '#cbd5e1' }
 const COLORS = ['#38bdf8', '#34d399', '#fbbf24', '#f87171', '#a78bfa', '#fb923c', '#e879f9']
 
 export default function AnalyticsPage() {
@@ -71,43 +72,43 @@ export default function AnalyticsPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Chart title="Events by Type">
+        <Panel title="Events by Type">
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={eventsByType} layout="vertical" margin={{ top: 4, right: 12, left: 90, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" horizontal={false} />
               <XAxis type="number" tick={{ fill: '#64748b', fontSize: 10 }} tickLine={false} axisLine={false} />
               <YAxis type="category" dataKey="name" tick={{ fill: '#94a3b8', fontSize: 10 }} width={90} tickLine={false} axisLine={false} />
-              <Tooltip contentStyle={TIP} />
+              <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
               <Bar dataKey="value" fill="#38bdf8" radius={[0, 3, 3, 0]} />
             </BarChart>
           </ResponsiveContainer>
-        </Chart>
+        </Panel>
 
-        <Chart title="Top Municipios by Event Count">
+        <Panel title="Top Municipios by Event Count">
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={eventsByMunicipality} layout="vertical" margin={{ top: 4, right: 12, left: 90, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" horizontal={false} />
               <XAxis type="number" tick={{ fill: '#64748b', fontSize: 10 }} tickLine={false} axisLine={false} />
               <YAxis type="category" dataKey="name" tick={{ fill: '#94a3b8', fontSize: 10 }} width={90} tickLine={false} axisLine={false} />
-              <Tooltip contentStyle={TIP} />
+              <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
               <Bar dataKey="value" fill="#a78bfa" radius={[0, 3, 3, 0]} />
             </BarChart>
           </ResponsiveContainer>
-        </Chart>
+        </Panel>
 
-        <Chart title="Assets by Type (top 12)">
+        <Panel title="Assets by Type (top 12)">
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={assetsByType} layout="vertical" margin={{ top: 4, right: 12, left: 110, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" horizontal={false} />
               <XAxis type="number" tick={{ fill: '#64748b', fontSize: 10 }} tickLine={false} axisLine={false} />
               <YAxis type="category" dataKey="name" tick={{ fill: '#94a3b8', fontSize: 10 }} width={110} tickLine={false} axisLine={false} />
-              <Tooltip contentStyle={TIP} />
+              <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
               <Bar dataKey="value" fill="#34d399" radius={[0, 3, 3, 0]} />
             </BarChart>
           </ResponsiveContainer>
-        </Chart>
+        </Panel>
 
-        <Chart title="Asset Status Distribution">
+        <Panel title="Asset Status Distribution">
           <ResponsiveContainer width="100%" height={220}>
             <PieChart>
               <Pie
@@ -123,20 +124,11 @@ export default function AnalyticsPage() {
               >
                 {assetsByStatus.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
               </Pie>
-              <Tooltip contentStyle={TIP} />
+              <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
             </PieChart>
           </ResponsiveContainer>
-        </Chart>
+        </Panel>
       </div>
-    </div>
-  )
-}
-
-function Chart({ title, children }) {
-  return (
-    <div className="bg-slate-900 border border-slate-800 rounded-lg p-5">
-      <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">{title}</h3>
-      {children}
     </div>
   )
 }

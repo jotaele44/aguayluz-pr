@@ -9,8 +9,7 @@ import { Input } from '@/components/ui/input'
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select'
-import { tierBadge } from '@/lib/format'
-import { typeMeta, statusBadge } from '@/lib/aguayluz-format'
+import { tierBadge, typeMeta, statusBadge } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { AlertTriangle, ChevronsUpDown, ChevronUp, ChevronDown, FilterX } from 'lucide-react'
 
@@ -127,8 +126,12 @@ export default function AssetsTable({ assets = [], isLoading, selectedId, onSele
               {COLS.map(({ key, label }) => (
                 <TableHead
                   key={key}
+                  role="columnheader"
+                  aria-sort={sort.col === key ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}
+                  tabIndex={0}
                   className="text-slate-400 cursor-pointer select-none hover:text-slate-200"
                   onClick={() => toggleSort(key)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSort(key) } }}
                 >
                   {label}<SortIcon col={key} sort={sort} />
                 </TableHead>

@@ -3,19 +3,12 @@ import { useMemo } from 'react'
 import { useAssets, useEvents, useSummarySectors } from '@/lib/hooks'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
-import { Zap, Droplets, Radio, Trash2, ArrowLeft } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
-import { statusBadge } from '@/lib/aguayluz-format'
+import { statusBadge, CHART_TOOLTIP_STYLE } from '@/lib/format'
+import { SECTOR_META } from '@/lib/sectors'
 import { cn } from '@/lib/utils'
-
-const TIP = { background: '#0f172a', border: '1px solid #1e293b', borderRadius: 6, fontSize: 11, color: '#cbd5e1' }
-
-const SECTOR_META = {
-  power: { label: 'Power', icon: Zap, color: 'text-amber-400', types: ['power_plant', 'substation', 'transmission_line', 'generation', 'power'] },
-  water: { label: 'Water', icon: Droplets, color: 'text-sky-400', types: ['water_treatment', 'water_distribution', 'reservoir', 'pump_station', 'water'] },
-  wastewater: { label: 'Wastewater', icon: Trash2, color: 'text-emerald-400', types: ['wastewater_treatment', 'sewage', 'wastewater'] },
-  telecom: { label: 'Telecom', icon: Radio, color: 'text-violet-400', types: ['cell_tower', 'fiber', 'telecom', 'communications'] },
-}
+import Panel from '@/components/common/Panel'
 
 export default function SectorDetailPage() {
   const { sector } = useParams()
@@ -68,27 +61,23 @@ export default function SectorDetailPage() {
       ) : (
         <>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-slate-900 border border-slate-800 rounded-lg p-5">
-              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Asset Status</h3>
+            <Panel title="Asset Status">
               {byStatus.length > 0 ? (
                 <ResponsiveContainer width="100%" height={180}>
                   <BarChart data={byStatus} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
                     <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10 }} tickLine={false} axisLine={false} />
                     <YAxis tick={{ fill: '#64748b', fontSize: 10 }} tickLine={false} axisLine={false} />
-                    <Tooltip contentStyle={TIP} />
+                    <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
                     <Bar dataKey="value" fill="#38bdf8" radius={[3, 3, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
                 <p className="text-sm text-slate-500 text-center py-8">No data</p>
               )}
-            </div>
+            </Panel>
 
-            <div className="bg-slate-900 border border-slate-800 rounded-lg p-5">
-              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">
-                Related Events ({sectorEvents.length})
-              </h3>
+            <Panel title={`Related Events (${sectorEvents.length})`}>
               <div className="space-y-1.5 max-h-[190px] overflow-auto">
                 {sectorEvents.slice(0, 10).map((e, i) => (
                   <div key={e.event_id ?? i} className="flex items-center gap-2 text-xs py-1.5 border-b border-slate-800 last:border-0">
@@ -99,21 +88,18 @@ export default function SectorDetailPage() {
                 ))}
                 {sectorEvents.length === 0 && <p className="text-slate-500 text-xs">No related events</p>}
               </div>
-            </div>
+            </Panel>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 rounded-lg p-5">
-            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">
-              Assets ({sectorAssets.length})
-            </h3>
+          <Panel title={`Assets (${sectorAssets.length})`}>
             <div className="overflow-auto max-h-[400px]">
               <table className="w-full text-xs text-slate-300">
                 <thead className="sticky top-0 bg-slate-900">
                   <tr className="border-b border-slate-800 text-slate-500 text-left">
-                    <th className="py-2 pr-4 font-medium">Name</th>
-                    <th className="py-2 pr-4 font-medium">Type</th>
-                    <th className="py-2 pr-4 font-medium">Municipality</th>
-                    <th className="py-2 font-medium">Status</th>
+                    <th scope="col" className="py-2 pr-4 font-medium">Name</th>
+                    <th scope="col" className="py-2 pr-4 font-medium">Type</th>
+                    <th scope="col" className="py-2 pr-4 font-medium">Municipality</th>
+                    <th scope="col" className="py-2 font-medium">Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -133,7 +119,7 @@ export default function SectorDetailPage() {
                 <p className="text-xs text-slate-500 text-center py-2">Showing 100 of {sectorAssets.length}</p>
               )}
             </div>
-          </div>
+          </Panel>
         </>
       )}
     </div>

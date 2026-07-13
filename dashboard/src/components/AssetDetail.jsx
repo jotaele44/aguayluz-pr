@@ -1,23 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { tierBadge, fmtDate } from '@/lib/format'
-import { typeMeta, statusBadge } from '@/lib/aguayluz-format'
+import { tierBadge, fmtDate, typeMeta, statusBadge, eventTone } from '@/lib/format'
 import { useAssetEvents } from '@/lib/hooks'
 import { cn } from '@/lib/utils'
 import { ChevronDown, ChevronRight, Database, ExternalLink, MapPin, Zap } from 'lucide-react'
-
-const TYPE_TONE = {
-  outage: 'text-red-400',
-  service_interruption: 'text-amber-400',
-  restoration: 'text-emerald-400',
-  boil_water: 'text-sky-400',
-  project_update: 'text-violet-400',
-}
 
 function RelatedEvents({ assetId }) {
   const { data: events = [], isLoading } = useAssetEvents(assetId)
@@ -28,7 +19,7 @@ function RelatedEvents({ assetId }) {
       {events.slice(0, 8).map((e, i) => (
         <div key={e.event_id ?? i} className="rounded-md border border-slate-800 bg-slate-900 p-2">
           <div className="flex items-center gap-2">
-            <Zap className={cn('h-3 w-3 shrink-0', TYPE_TONE[e.event_type] ?? 'text-slate-400')} />
+            <Zap className={cn('h-3 w-3 shrink-0', eventTone(e.event_type))} />
             <span className="text-xs font-medium capitalize text-slate-200">{(e.event_type || '').replace(/_/g, ' ')}</span>
             {e.evidence_tier && <Badge variant="outline" className={cn('text-[10px]', tierBadge(e.evidence_tier))}>{e.evidence_tier}</Badge>}
             <span className="ml-auto text-[10px] text-slate-500">{fmtDate(e.start_time)}</span>

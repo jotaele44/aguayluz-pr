@@ -2,27 +2,14 @@ import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useHealth, useAssets, useEvents, useReadings, useSummarySectors } from '@/lib/hooks'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Badge } from '@/components/ui/badge'
-import { Activity, AlertTriangle, CheckCircle2, Clock, Zap, Droplets, Radio, Trash2 } from 'lucide-react'
+import { Activity, AlertTriangle, CheckCircle2, Clock } from 'lucide-react'
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts'
-import { fmtDate } from '@/lib/format'
-
-const SECTOR_META = {
-  power: { label: 'Power', icon: Zap, color: 'text-amber-400', border: 'border-amber-500/30', bg: 'bg-amber-500/5' },
-  water: { label: 'Water', icon: Droplets, color: 'text-sky-400', border: 'border-sky-500/30', bg: 'bg-sky-500/5' },
-  wastewater: { label: 'Wastewater', icon: Trash2, color: 'text-emerald-400', border: 'border-emerald-500/30', bg: 'bg-emerald-500/5' },
-  telecom: { label: 'Telecom', icon: Radio, color: 'text-violet-400', border: 'border-violet-500/30', bg: 'bg-violet-500/5' },
-}
-
-const TOOLTIP_STYLE = {
-  background: 'hsl(222 47% 11%)',
-  border: '1px solid hsl(217 33% 17%)',
-  borderRadius: 8,
-  fontSize: 11,
-  color: 'hsl(210 40% 96%)',
-}
+import { fmtDate, CHART_TOOLTIP_STYLE } from '@/lib/format'
+import { SECTOR_META } from '@/lib/sectors'
+import Panel from '@/components/common/Panel'
+import StatTile from '@/components/common/StatTile'
 
 export default function OverviewPage() {
   const { data: health, isLoading: healthLoading } = useHealth()
@@ -73,10 +60,10 @@ export default function OverviewPage() {
     <div className="p-6 space-y-6 max-w-[1400px]">
       {/* KPI row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Kpi icon={Activity} label="Total Assets" value={c.assets ?? assets.length} />
-        <Kpi icon={AlertTriangle} label="Active Outages" value={activeOutages.length} valueClass="text-red-400" />
-        <Kpi icon={CheckCircle2} label="Grid Coverage" value={r.coverage_pct != null ? `${r.coverage_pct}%` : '–'} valueClass="text-emerald-400" />
-        <Kpi icon={Clock} label="Pending Review" value={r.records_review ?? '–'} valueClass="text-amber-400" />
+        <StatTile icon={Activity} label="Total Assets" value={c.assets ?? assets.length} />
+        <StatTile icon={AlertTriangle} label="Active Outages" value={activeOutages.length} valueClass="text-red-400" />
+        <StatTile icon={CheckCircle2} label="Grid Coverage" value={r.coverage_pct != null ? `${r.coverage_pct}%` : '–'} valueClass="text-emerald-400" />
+        <StatTile icon={Clock} label="Pending Review" value={r.records_review ?? '–'} valueClass="text-amber-400" />
       </div>
 
       {/* Sector cards */}
@@ -103,25 +90,23 @@ export default function OverviewPage() {
 
       {/* Chart + Alerts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-lg p-5">
-          <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Reservoir Levels (last 30 readings)</h3>
+        <Panel title="Reservoir Levels (last 30 readings)" className="lg:col-span-2">
           {chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
               <AreaChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis dataKey="t" hide />
                 <YAxis tick={{ fill: '#64748b', fontSize: 10 }} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={TOOLTIP_STYLE} labelFormatter={() => ''} formatter={(v) => [`${v}%`, 'Level']} />
+                <Tooltip contentStyle={CHART_TOOLTIP_STYLE} labelFormatter={() => ''} formatter={(v) => [`${v}%`, 'Level']} />
                 <Area type="monotone" dataKey="v" stroke="#38bdf8" fill="#38bdf8" fillOpacity={0.1} strokeWidth={1.5} dot={false} />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
             <p className="text-sm text-slate-500 text-center py-12">No reservoir data available</p>
           )}
-        </div>
+        </Panel>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-lg p-5">
-          <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Recent Events</h3>
+        <Panel title="Recent Events">
           {recentEvents.length === 0 ? (
             <p className="text-xs text-slate-500 text-center py-8">No events</p>
           ) : (
@@ -138,20 +123,8 @@ export default function OverviewPage() {
               ))}
             </div>
           )}
-        </div>
+        </Panel>
       </div>
-    </div>
-  )
-}
-
-function Kpi({ icon: Icon, label, value, valueClass = 'text-slate-100' }) {
-  return (
-    <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
-      <div className="flex items-center gap-2 text-xs text-slate-400 font-mono uppercase tracking-wider mb-2">
-        <Icon className="h-3.5 w-3.5" />
-        {label}
-      </div>
-      <p className={`text-2xl font-semibold font-mono ${valueClass}`}>{value}</p>
     </div>
   )
 }

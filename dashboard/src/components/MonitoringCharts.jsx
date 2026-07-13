@@ -6,10 +6,9 @@ import {
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts'
-import { READING_KINDS } from '@/lib/aguayluz-format'
+import { READING_KINDS, CHART_TOOLTIP_STYLE } from '@/lib/format'
 import { Activity, Database } from 'lucide-react'
 
-const tip = { background: '#0f172a', border: '1px solid #1e293b', borderRadius: 6, fontSize: 12, color: '#e2e8f0' }
 const axis = { fill: '#94a3b8', fontSize: 11 }
 const SOURCE_NOTE = {
   reservoir: 'Reservoir readings are source-derived time series. Missing records are left blank rather than interpolated.',
@@ -80,7 +79,7 @@ export default function MonitoringCharts() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
                   <XAxis dataKey="name" tick={axis} />
                   <YAxis tick={axis} />
-                  <Tooltip contentStyle={tip} />
+                  <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
                   <Bar dataKey="value" fill="#38bdf8" radius={[3, 3, 0, 0]} />
                 </BarChart>
               ) : (
@@ -88,7 +87,7 @@ export default function MonitoringCharts() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
                   <XAxis dataKey="name" tick={axis} />
                   <YAxis tick={axis} domain={['auto', 'auto']} />
-                  <Tooltip contentStyle={tip} />
+                  <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
                   <Line type="monotone" dataKey="value" stroke="#38bdf8" dot={false} strokeWidth={2} />
                 </LineChart>
               )}

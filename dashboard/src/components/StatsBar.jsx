@@ -44,7 +44,7 @@ export default function StatsBar() {
         <div className="flex items-center gap-2 px-4 py-1.5 bg-red-950/60 border-b border-red-800/40 text-red-300 text-xs">
           <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
           <span className="flex-1">Backend unreachable — data may be stale. Check <code className="font-mono">uvicorn server.backend.main:app --port 8000</code>.</span>
-          <button onClick={() => setDismissed(true)} className="hover:text-red-100">
+          <button onClick={() => setDismissed(true)} aria-label="Dismiss backend-down warning" className="hover:text-red-100">
             <X className="h-3.5 w-3.5" />
           </button>
         </div>

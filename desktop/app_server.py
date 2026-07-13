@@ -18,26 +18,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse  # noqa: E402
 from server.backend.main import app  # noqa: E402
 
+from desktop._page import render_page  # noqa: E402
 from desktop.config import DIST_DIR  # noqa: E402
 
 _PASSTHROUGH_PREFIXES = ("/docs", "/redoc", "/openapi")
 
-_MISSING_BUILD_CSS = (
-    "html,body{height:100%;margin:0}"
-    "body{display:flex;flex-direction:column;align-items:center;"
-    "justify-content:center;font-family:-apple-system,Segoe UI,Roboto,sans-serif;"
-    "background:#0f172a;color:#e2e8f0;text-align:center;padding:0 32px}"
-    "h1{font-size:18px;margin:0 0 12px}"
-    "p{color:#94a3b8;font-size:14px;max-width:34rem}"
-    "code{background:#1e293b;padding:2px 6px;border-radius:4px}"
-)
-_MISSING_BUILD_PAGE = (
-    '<!doctype html><html><head><meta charset="utf-8"><title>Setup needed</title>'
-    f"<style>{_MISSING_BUILD_CSS}</style></head>"
-    "<body><h1>The dashboard isn't built yet</h1>"
+_MISSING_BUILD_PAGE = render_page(
+    "<h1>The dashboard isn't built yet</h1>"
     "<p>Run <code>python desktop/setup.py</code> from the repository once (it "
-    "needs internet the first time) to build the interface, then reopen the app.</p>"
-    "</body></html>"
+    "needs internet the first time) to build the interface, then reopen the app.</p>",
+    title="Setup needed",
 )
 
 
