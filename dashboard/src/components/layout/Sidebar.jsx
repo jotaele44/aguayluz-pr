@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, Map, Database, Zap, Activity, ClipboardList,
-  BarChart3, ScrollText, GitBranch, Droplets, ChevronLeft, ChevronRight,
+  BarChart3, ScrollText, Droplets, ChevronLeft, ChevronRight,
 } from 'lucide-react'
 import { useHealth } from '@/lib/hooks'
 import { useSidebar } from '@/contexts/SidebarContext'
@@ -16,7 +16,6 @@ const NAV = [
   { to: '/review', icon: ClipboardList, label: 'Review Queue' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
   { to: '/logs', icon: ScrollText, label: 'Live Logs' },
-  { to: '/tools/repo-analyzer', icon: GitBranch, label: 'Repo Analyzer' },
 ]
 
 export default function Sidebar() {
