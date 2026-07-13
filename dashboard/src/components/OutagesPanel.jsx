@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useEvents } from '@/lib/hooks'
+import { useEventsPaged } from '@/lib/hooks'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Input } from '@/components/ui/input'
@@ -29,7 +29,11 @@ function groupKey(event) {
 }
 
 export default function OutagesPanel() {
-  const { data: events = [], isLoading } = useEvents()
+  // Bounded/paged fetch: render only the most recent slice (default limit) but
+  // surface the true corpus total so the count stays honest.
+  const { data: paged, isLoading } = useEventsPaged()
+  const events = paged?.items ?? []
+  const total = paged?.total ?? events.length
   const [q, setQ] = useState('')
   const [type, setType] = useState('all')
 
@@ -74,7 +78,7 @@ export default function OutagesPanel() {
           Service-event records are shown as reported/snapshot-grade. Do not infer live utility attribution unless the source record explicitly supports it.
         </div>
 
-        <div className="px-1 pb-1 text-xs text-slate-400">{filtered.length} of {events.length} events · {groups.length} areas</div>
+        <div className="px-1 pb-1 text-xs text-slate-400">{filtered.length} of {events.length} recent loaded · {total.toLocaleString()} total · {groups.length} areas</div>
 
         {groups.map(([area, rows]) => (
           <section key={area} className="rounded-lg border border-slate-800 bg-slate-950/80">
