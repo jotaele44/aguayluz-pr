@@ -40,13 +40,18 @@ a broken UI.
 
 ## 2. Defects to fix first (correctness)
 
+> **Resolved design decisions (drive several items below):** (1) **drop** the
+> neon theme entirely — retune the semantic tokens to the slate palette the app
+> actually renders; (2) **remove** the Repo Analyzer page outright. Items D4/D5,
+> §3, §4.1, §7, and §9 reflect these.
+
 | # | Issue | Location | Fix | Effort |
 |---|-------|----------|-----|--------|
 | D1 | **Rules-of-Hooks violation.** `useMemo` for `groups` is declared *after* an early `return` (the `isLoading` guard), so the hook count changes between renders. Works today only because loading→loaded remounts, but it is a latent crash. | `components/OutagesPanel.jsx:52` (after the `return` at `:42-50`) | Move the `groups` `useMemo` above the loading guard. | S |
 | D2 | **Dead Leaflet override** for a MapLibre app. `.leaflet-container` rule has no effect; the real map background lives in `AssetMap`'s `OSM_STYLE`. | `index.css:95-98` | Delete the rule. | S |
 | D3 | **Tailwind references undefined tokens.** `tailwind.config.js` maps `chart-1..5` and `sidebar-*` colors to CSS vars that `index.css` never defines, so any `bg-chart-1`/`bg-sidebar` resolves to an invalid color. | `tailwind.config.js` colors vs `index.css:8-40` | Either define the tokens or drop the unused color keys. | S |
 | D4 | **External font `@import` breaks offline builds.** `index.css:1` render-blocks on Google Fonts over the network — a `file://` offline export cannot reach it, so the export silently falls back to system fonts. | `index.css:1` | Self-host the two families (or use a system stack) so online and offline render identically. | M |
-| D5 | **Unauthenticated GitHub calls from the browser.** Repo Analyzer hits `api.github.com` directly (60 req/hr shared IP limit, no token); it fails opaquely under load and is out of scope for a water/power diagnostic. | `pages/RepoAnalyzerPage.jsx:23-30` | Decide in Phase 4 (remove, or move behind the backend). | — |
+| D5 | **Unauthenticated GitHub calls from the browser.** Repo Analyzer hits `api.github.com` directly (60 req/hr shared IP limit, no token); it fails opaquely under load and is out of scope for a water/power diagnostic. | `pages/RepoAnalyzerPage.jsx:23-30` | **Remove** the Repo Analyzer (see §7) — retires this by deletion. | S |
 
 ---
 
@@ -63,7 +68,11 @@ Removing these shrinks the surface with zero behavior change.
   `tierBadge`, `fmtDate`, which are used).
 - **Unused `index.css` cosmetics:** `.glow-cyan`, `.glow-border`,
   `.panel-glass`, `.stream-cursor`, and the `--glow-*`/`--panel-bg`/`--grid-color`
-  tokens are not referenced by any component. **Delete** (or adopt — see §4).
+  tokens are not referenced by any component. **Delete** — part of the neon-theme
+  removal decision (§4.1).
+- **`pages/RepoAnalyzerPage.jsx` (150 lines) — remove per decision.** Delete the
+  file, its route (`App.jsx:15,37`), and the sidebar nav entry + now-unused
+  `GitBranch` import (`Sidebar.jsx:2-4,19`). Retires D5.
 - **Unused shadcn/ui primitives:** ~45 files in `components/ui/`, of which only
   ~12 are imported (`badge, button, input, select, skeleton, sheet, tabs,
   table, toast/toaster, use-toast`). The rest (carousel, calendar, menubar,
@@ -88,14 +97,18 @@ component re-derives its own accent maps.
 
 **Goal:** one source of truth for color and one for chart styling.
 
-1. **Pick one palette.** Recommend keeping the rendered slate/`sky-400` look and
-   *retiring* the neon tokens (grid `body` background at `index.css:48-54`,
-   `--primary: 187 100% 50%`). Set the semantic tokens
-   (`--background/card/border/primary`) to the slate values already in use so
-   `bg-background`/`border-border` and the hardcoded classes finally agree.
-   Decide whether to keep the dotted grid background (currently cyan at 3%
-   opacity over a slate app — visually muddy). *(Needs a design call — see
-   Phase 0.)*
+1. **Drop the neon theme (decided).** Keep the rendered slate/`sky-400` look and
+   *remove* the cyan-neon layer wholesale:
+   - Delete the dotted-grid `body` background (`index.css:48-54`) and the
+     `--glow-*`/`--panel-bg`/`--grid-color` tokens + `.glow-*`/`.panel-glass`/
+     `.stream-cursor` rules (also §3).
+   - Retune the semantic tokens (`--primary`, `--accent`, `--ring` at
+     `index.css:15,21,27`, currently `187 100% 50%` cyan) to the slate/sky
+     values the app already renders, and set `--background/card/border` to those
+     same slate values so `bg-background`/`border-border` finally agree with the
+     literal `slate-*` classes.
+   - Replace the Google-Fonts `@import` (`index.css:1`) with a system font stack
+     (or self-host) — this also fixes D4 (offline export).
 2. **Centralize accent maps** into `lib/aguayluz-format.js` (already the home for
    `typeMeta`/`statusBadge`/`severityTone`). Today the same maps are copied:
    - **Event-type → color** duplicated 3× with drifting shades:
@@ -191,8 +204,13 @@ Highest operator-value items, roughly in priority order:
 
 ## 7. Performance & build
 
-- **Route-level code splitting (S).** All 10 pages + MapLibre + Recharts load in
-  the initial bundle via static imports in `App.jsx`. `React.lazy` +
+- **Remove Repo Analyzer (S, decided).** Delete `pages/RepoAnalyzerPage.jsx`,
+  its `App.jsx` import + `/tools/repo-analyzer` route, and the `Sidebar.jsx` nav
+  entry (drop the `GitBranch` import). Removes the out-of-scope browser→GitHub
+  dependency (D5) and one route from the bundle. Do this in Phase 1 with the
+  other deletions.
+- **Route-level code splitting (S).** The remaining 9 pages + MapLibre + Recharts
+  load in the initial bundle via static imports in `App.jsx`. `React.lazy` +
   `Suspense` per route pulls MapLibre (`~200KB+`) and Recharts off the critical
   path for users who land on Overview.
 - **Dependency prune (S).** Follows §3 — dropping unused Radix/UI deps shrinks
@@ -212,31 +230,35 @@ Highest operator-value items, roughly in priority order:
 The task references "skywatcher-pr"; this repository is **`aguayluz-pr`**. The
 neon theme, `.leaflet-container` override, and `bandMeta` anomaly helpers are
 fingerprints of a shared upstream "skywatcher"-style dashboard template that
-`aguayluz` was scaffolded from. Several items above (D2, §3 dead helpers, §4.1)
-are precisely the un-adapted remnants of that template. Cleaning them is also a
-de-branding pass.
+`aguayluz` was scaffolded from. Several items above (D2, §3 dead helpers, the
+generic Repo Analyzer, and the §4.1 neon theme) are precisely the un-adapted
+remnants of that template. Cleaning them — the two decided removals foremost —
+is also a de-branding pass.
 
 ---
 
 ## 9. Sequenced phases
 
-**Phase 0 — Design decisions (before coding).** Two calls block the rest:
-(a) keep or drop the neon tokens + grid background (§4.1); (b) keep, remove, or
-relocate Repo Analyzer (§2/D5). Resolve via a short design review.
+**Phase 0 — Design decisions.** ✅ Resolved: (a) **drop** the neon theme +
+grid background (§4.1); (b) **remove** the Repo Analyzer (§2/D5, §7). No
+review pending — folded into Phases 1–2 below.
 
 **Phase 1 — Correctness & dead code (low risk, high signal).** §2 defects
-D1–D3 + §3 deletions. One "fix + prune" PR, gated by `npm run build` and
-`npm run lint`. No visual change intended.
+D1–D3 + §3 deletions, **including deleting the Repo Analyzer** (page, route,
+nav entry). One "fix + prune" PR, gated by `npm run build` and `npm run lint`.
+No visual change intended (the analyzer was a standalone tool page).
 
 **Phase 2 — Design-system consolidation.** §4.2 (accent maps) → §4.3 (chart
-theme) → §4.4 (StatCard), each its own commit. Then §4.1 palette per Phase-0
-decision, and D4 fonts.
+theme) → §4.4 (StatCard), each its own commit. Then §4.1 — **drop the neon
+theme**: retune the semantic tokens to slate, remove the grid/glow CSS, and
+swap the Google-Fonts `@import` for a system stack (also closes D4).
 
 **Phase 3 — Workflow redundancy.** §5 (dedupe KPIs/status, unify review
 surfaces) and §6.4/6.5 (state consistency).
 
-**Phase 4 — Interaction & performance.** §6.1–6.3, §6.6 (a11y), §7. Repo
-Analyzer resolution.
+**Phase 4 — Interaction & performance.** §6.1–6.3, §6.6 (a11y), and the §7
+perf items (code splitting, cache tuning, map memoization). The Repo Analyzer
+removal already landed in Phase 1.
 
 Phases 1–2 are pure cleanup and shippable immediately; 3–4 are the optimization
 payload and can land incrementally.
