@@ -18,8 +18,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse  # noqa: E402
 from server.backend.main import app  # noqa: E402
 
-from desktop.config import DIST_DIR  # noqa: E402
 from desktop._page import render_page  # noqa: E402
+from desktop.config import DIST_DIR  # noqa: E402
 
 _PASSTHROUGH_PREFIXES = ("/docs", "/redoc", "/openapi")
 

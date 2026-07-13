@@ -33,8 +33,8 @@ for _name in ("stdout", "stderr"):
     if getattr(sys, _name, None) is None:
         setattr(sys, _name, open(os.devnull, "w"))  # noqa: SIM115
 
-from desktop.config import APP_TITLE, HEALTH_PATH  # noqa: E402
 from desktop._page import SPINNER_CSS, render_page  # noqa: E402
+from desktop.config import APP_TITLE, HEALTH_PATH  # noqa: E402
 
 # Records the running instance (pid + url) so a second double-click reuses it
 # instead of starting another server. Lives beside this file; gitignored.
