@@ -73,7 +73,7 @@ export default function OverviewPage() {
           {Object.entries(SECTOR_META).map(([key, meta]) => {
             const s = sectors?.[key] ?? {}
             return (
-              <Link key={key} to={`/sector/${key}`} className={`block rounded-lg border ${meta.border} ${meta.bg} p-4 hover:brightness-110 transition-all`}>
+              <Link key={key} to={`/sector/${key}`} className={`block rounded-lg border ${meta.border} ${meta.bg} p-4 hover:brightness-110 transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-500/50`}>
                 <div className="flex items-center gap-2 mb-3">
                   <meta.icon className={`h-4 w-4 ${meta.color}`} />
                   <span className={`text-xs font-semibold uppercase tracking-wider ${meta.color}`}>{meta.label}</span>

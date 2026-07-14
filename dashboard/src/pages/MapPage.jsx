@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useAssets, useAssetsGeojson, useMunicipiosGeojson, useEvents } from '@/lib/hooks'
 import AssetMap from '@/components/AssetMap'
 import AssetsTable from '@/components/AssetsTable'
@@ -13,10 +13,9 @@ export default function MapPage() {
   const [selected, setSelected] = useState(null)
   const [selectedMunicipio, setSelectedMunicipio] = useState(null)
 
-  const selectByProps = (props) => {
-    const full = assets.find((a) => a.asset_id === props.asset_id)
-    setSelected(full ?? props)
-  }
+  const selectByProps = useCallback((props) => {
+    setSelected(assets.find((a) => a.asset_id === props.asset_id) ?? props)
+  }, [assets])
 
   return (
     <div className="flex h-full">

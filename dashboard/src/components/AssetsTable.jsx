@@ -95,7 +95,7 @@ export default function AssetsTable({ assets = [], isLoading, selectedId, onSele
             placeholder="Search asset, municipio, operator, source…"
             className="h-8 flex-1 border-slate-800 bg-slate-950 text-xs"
           />
-          <Button size="sm" variant="outline" onClick={clear} className="h-8 border-slate-800 bg-slate-950 px-2 text-xs text-slate-400 hover:text-slate-100">
+          <Button size="sm" variant="outline" onClick={clear} aria-label="Clear filters" title="Clear filters" className="h-8 border-slate-800 bg-slate-950 px-2 text-xs text-slate-400 hover:text-slate-100">
             <FilterX className="h-3.5 w-3.5" />
           </Button>
         </div>
@@ -143,7 +143,9 @@ export default function AssetsTable({ assets = [], isLoading, selectedId, onSele
               <TableRow
                 key={a.asset_id}
                 onClick={() => onSelect?.(a)}
-                className={cn('cursor-pointer border-slate-800', selectedId === a.asset_id ? 'bg-sky-500/10 ring-1 ring-inset ring-sky-500/30' : 'hover:bg-slate-800/50')}
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect?.(a) } }}
+                className={cn('cursor-pointer border-slate-800 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-sky-500/50', selectedId === a.asset_id ? 'bg-sky-500/10 ring-1 ring-inset ring-sky-500/30' : 'hover:bg-slate-800/50')}
               >
                 <TableCell className="max-w-[190px] align-top">
                   <div className="truncate text-xs font-medium text-slate-200">{a.asset_name}</div>
