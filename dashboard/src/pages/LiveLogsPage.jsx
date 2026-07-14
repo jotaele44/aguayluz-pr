@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { API_BASE } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,8 +11,14 @@ import { Zap, Play, Pause } from 'lucide-react'
 import { fmtDate, eventPill, EVENT_TYPES } from '@/lib/format'
 
 export default function LiveLogsPage() {
+  const [params, setParams] = useSearchParams()
+  const type = params.get('type') || 'all'
+  const setType = (v) => setParams((p) => {
+    const n = new URLSearchParams(p)
+    if (!v || v === 'all') n.delete('type'); else n.set('type', v)
+    return n
+  }, { replace: true })
   const [events, setEvents] = useState([])
-  const [type, setType] = useState('all')
   const [q, setQ] = useState('')
   const [autoScroll, setAutoScroll] = useState(true)
   const [connected, setConnected] = useState(false)
