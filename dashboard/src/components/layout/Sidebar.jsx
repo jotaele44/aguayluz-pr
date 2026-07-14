@@ -3,7 +3,6 @@ import {
   LayoutDashboard, Map, Database, Zap, Activity, ClipboardList,
   BarChart3, ScrollText, Droplets, ChevronLeft, ChevronRight,
 } from 'lucide-react'
-import { useHealth } from '@/lib/hooks'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { cn } from '@/lib/utils'
 
@@ -20,8 +19,6 @@ const NAV = [
 
 export default function Sidebar() {
   const { collapsed, setCollapsed } = useSidebar()
-  const { data: health } = useHealth()
-  const up = health?.status === 'ok'
 
   return (
     <aside className={cn(
@@ -64,16 +61,6 @@ export default function Sidebar() {
           </NavLink>
         ))}
       </nav>
-
-      <div className="p-3 border-t border-slate-800">
-        <div className="flex items-center gap-2 text-xs text-slate-500 font-mono">
-          <span className={cn(
-            'w-1.5 h-1.5 rounded-full shrink-0',
-            up ? 'bg-emerald-400 animate-pulse' : 'bg-red-400',
-          )} />
-          {!collapsed && (up ? 'Backend online' : 'Backend down')}
-        </div>
-      </div>
     </aside>
   )
 }

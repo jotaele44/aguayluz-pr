@@ -1,14 +1,13 @@
 import { useMemo, useState } from 'react'
-import { useEventsPaged } from '@/lib/hooks'
+import { useEventsPaged, useHealth } from '@/lib/hooks'
 import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Input } from '@/components/ui/input'
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select'
 import { tierBadge, fmtDate, eventTone, EVENT_TYPES } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { AlertTriangle, Zap } from 'lucide-react'
+import PanelState from '@/components/common/PanelState'
 
 function eventLabel(event) {
   return (event.event_type || 'event').replace(/_/g, ' ')
@@ -22,6 +21,8 @@ export default function OutagesPanel() {
   // Bounded/paged fetch: render only the most recent slice (default limit) but
   // surface the true corpus total so the count stays honest.
   const { data: paged, isLoading } = useEventsPaged()
+  const { data: health } = useHealth()
+  const backendDown = health != null && health.status !== 'ok'
   const events = paged?.items ?? []
   const total = paged?.total ?? events.length
   const [q, setQ] = useState('')
@@ -43,13 +44,16 @@ export default function OutagesPanel() {
     return Array.from(map.entries()).sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]))
   }, [filtered])
 
-  if (isLoading) {
+  if (isLoading || !events.length) {
     return (
-      <div className="h-full p-2 space-y-1.5">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="h-16 w-full rounded-md" />
-        ))}
-      </div>
+      <PanelState
+        isLoading={isLoading}
+        isError={backendDown}
+        isEmpty={!events.length}
+        rows={5}
+        skeletonClass="h-16"
+        emptyText="No service events available."
+      />
     )
   }
 
