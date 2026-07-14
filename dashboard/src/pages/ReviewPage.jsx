@@ -1,17 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useReviewQueuePaged, useDecision } from '@/lib/hooks'
-import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
-import { tierBadge, severityTone, SEVERITIES, TIERS } from '@/lib/format'
-import { cn } from '@/lib/utils'
-import { AlertTriangle, CheckCircle, X, SkipForward, ChevronLeft, ChevronRight } from 'lucide-react'
+import { SEVERITIES, TIERS } from '@/lib/format'
+import { CheckCircle, X, SkipForward, ChevronLeft, ChevronRight } from 'lucide-react'
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select'
 import { useToast } from '@/components/ui/use-toast'
 import PageHeader from '@/components/common/PageHeader'
+import ReviewRecordCard from '@/components/ReviewRecordCard'
 
 const PAGE_SIZE = 25
 
@@ -103,37 +102,26 @@ export default function ReviewPage() {
         {isLoading
           ? Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-md" />)
           : items.map((r, i) => (
-            <div
+            <ReviewRecordCard
               key={r.record_ref ?? i}
-              ref={(el) => { rowRefs.current[i] = el }}
+              record={r}
+              active={i === cursor}
+              innerRef={(el) => { rowRefs.current[i] = el }}
               onClick={() => setCursor(i)}
-              className={cn(
-                'rounded-lg border bg-slate-900 p-4 flex items-start gap-4',
-                i === cursor ? 'border-sky-500/50 ring-1 ring-inset ring-sky-500/30' : 'border-slate-800',
-              )}
-            >
-              <AlertTriangle className={cn('h-4 w-4 shrink-0 mt-0.5', severityTone(r.severity))} />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <span className={cn('text-xs uppercase tracking-wide font-semibold', severityTone(r.severity))}>{r.severity}</span>
-                  {r.evidence_tier && <Badge variant="outline" className={cn('text-[10px]', tierBadge(r.evidence_tier))}>{r.evidence_tier}</Badge>}
-                  {r.confidence != null && <span className="text-[11px] text-slate-500">conf {r.confidence}</span>}
-                  <span className="text-[11px] font-mono text-slate-500 ml-auto truncate max-w-[200px]">{r.record_ref}</span>
+              actions={(
+                <div className="flex gap-1.5 shrink-0">
+                  <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-emerald-400 border-emerald-800 hover:bg-emerald-950" disabled={isPending} onClick={(e) => { e.stopPropagation(); handleDecision(r.record_ref, 'accept') }}>
+                    <CheckCircle className="h-3.5 w-3.5 mr-1" />Accept
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-red-400 border-red-900 hover:bg-red-950" disabled={isPending} onClick={(e) => { e.stopPropagation(); handleDecision(r.record_ref, 'reject') }}>
+                    <X className="h-3.5 w-3.5 mr-1" />Reject
+                  </Button>
+                  <Button size="sm" variant="ghost" aria-label="Skip" title="Skip" className="h-7 px-2 text-xs text-slate-500" disabled={isPending} onClick={(e) => { e.stopPropagation(); handleDecision(r.record_ref, 'skip') }}>
+                    <SkipForward className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
-                <p className="text-sm text-slate-300">{r.reason}</p>
-              </div>
-              <div className="flex gap-1.5 shrink-0">
-                <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-emerald-400 border-emerald-800 hover:bg-emerald-950" disabled={isPending} onClick={() => handleDecision(r.record_ref, 'accept')}>
-                  <CheckCircle className="h-3.5 w-3.5 mr-1" />Accept
-                </Button>
-                <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-red-400 border-red-900 hover:bg-red-950" disabled={isPending} onClick={() => handleDecision(r.record_ref, 'reject')}>
-                  <X className="h-3.5 w-3.5 mr-1" />Reject
-                </Button>
-                <Button size="sm" variant="ghost" aria-label="Skip" title="Skip" className="h-7 px-2 text-xs text-slate-500" disabled={isPending} onClick={() => handleDecision(r.record_ref, 'skip')}>
-                  <SkipForward className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </div>
+              )}
+            />
           ))}
         {!isLoading && items.length === 0 && (
           <p className="text-center text-sm text-slate-500 py-16">No items match filters</p>
