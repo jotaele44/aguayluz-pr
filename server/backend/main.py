@@ -75,15 +75,9 @@ app.add_middleware(
 # Write / admin endpoints require the key in the Authorization header:
 #   Authorization: Bearer <API_SECRET_KEY>
 _API_KEY = _os.getenv("API_SECRET_KEY", "")
-_WRITE_PATHS = {"/admin/run-export", "/notify", "/review-queue"}  # prefixes
-
-
 async def _require_key(request: Request):
     if not _API_KEY:
         return  # auth disabled globally
-    path = request.url.path
-    if not any(path.startswith(p) for p in _WRITE_PATHS) and not path.endswith("/decision"):
-        return  # read-only path, no auth needed
     auth = request.headers.get("Authorization", "")
     if not auth.startswith("Bearer ") or auth[7:] != _API_KEY:
         raise HTTPException(status_code=401, detail="Invalid or missing API key")
@@ -245,6 +239,18 @@ def municipio_summary(name: str) -> JSONResponse:
     })
 
 
+@app.get("/events/stream")
+async def events_stream() -> StreamingResponse:
+    """SSE endpoint: pushes latest 20 events every 5 s."""
+    async def generator():
+        while True:
+            payload = _events[-20:]
+            yield f"data: {json.dumps(payload)}\n\n"
+            await asyncio.sleep(5)
+
+    return StreamingResponse(generator(), media_type="text/event-stream")
+
+
 @app.get("/events/{event_id}")
 def event_detail(event_id: str) -> JSONResponse:
     for e in _events:
@@ -402,18 +408,6 @@ async def run_export(request: Request, _=_Depends(_require_key)) -> JSONResponse
     if result.returncode != 0:
         raise HTTPException(status_code=500, detail=result.stderr[-2000:] or "Export failed")
     return JSONResponse({"ok": True, "stdout": result.stdout[-2000:]})
-
-
-@app.get("/events/stream")
-async def events_stream() -> StreamingResponse:
-    """SSE endpoint: pushes latest 20 events every 5 s."""
-    async def generator():
-        while True:
-            payload = _events[-20:]
-            yield f"data: {json.dumps(payload)}\n\n"
-            await asyncio.sleep(5)
-
-    return StreamingResponse(generator(), media_type="text/event-stream")
 
 
 @app.post("/ai/query")

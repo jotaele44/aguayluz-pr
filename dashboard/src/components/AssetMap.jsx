@@ -24,8 +24,6 @@ const BASE_STYLE = {
   },
   layers: [
     { id: 'bg', type: 'background', paint: { 'background-color': '#020617' } },
-    { id: 'municipios-fill', type: 'fill', source: 'municipios', paint: { 'fill-color': '#0d1b30', 'fill-opacity': 0.9 } },
-    { id: 'municipios-line', type: 'line', source: 'municipios', paint: { 'line-color': '#31507a', 'line-width': 0.8 } },
     {
       id: 'osm',
       type: 'raster',

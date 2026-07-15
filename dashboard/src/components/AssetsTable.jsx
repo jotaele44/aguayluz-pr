@@ -44,28 +44,6 @@ export default function AssetsTable({ assets = [], isLoading, selectedId, onSele
   const [sort, setSort] = useState({ col: 'asset_name', dir: 'asc' })
   const searchRef = useRef(null)
 
-  useEffect(() => {
-    const handler = (e) => {
-      const tag = document.activeElement?.tagName
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return
-      if (e.key === '/') {
-        e.preventDefault()
-        searchRef.current?.focus()
-        return
-      }
-      if (e.key === 'j' || e.key === 'k') {
-        e.preventDefault()
-        const idx = rows.findIndex((a) => a.asset_id === selectedId)
-        const next = e.key === 'j'
-          ? Math.min(idx + 1, rows.length - 1)
-          : Math.max(idx - 1, 0)
-        if (rows[next]) onSelect?.(rows[next])
-      }
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [rows, selectedId, onSelect])
-
   const types = useMemo(
     () => ['all', ...Array.from(new Set(assets.map((a) => a.asset_type).filter(Boolean))).sort()],
     [assets],
@@ -96,6 +74,28 @@ export default function AssetsTable({ assets = [], isLoading, selectedId, onSele
       return sort.dir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av)
     })
   }, [assets, type, status, reviewOnly, q, sort])
+
+  useEffect(() => {
+    const handler = (e) => {
+      const tag = document.activeElement?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      if (e.key === '/') {
+        e.preventDefault()
+        searchRef.current?.focus()
+        return
+      }
+      if (e.key === 'j' || e.key === 'k') {
+        e.preventDefault()
+        const idx = rows.findIndex((a) => a.asset_id === selectedId)
+        const next = e.key === 'j'
+          ? Math.min(idx + 1, rows.length - 1)
+          : Math.max(idx - 1, 0)
+        if (rows[next]) onSelect?.(rows[next])
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [rows, selectedId, onSelect])
 
   const clear = () => { setType('all'); setStatus('all'); setReviewOnly(false); setQ('') }
 
