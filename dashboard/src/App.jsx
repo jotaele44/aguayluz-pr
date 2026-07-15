@@ -23,6 +23,8 @@ const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'))
 const LiveLogsPage = lazy(() => import('./pages/LiveLogsPage'))
 const SectorDetailPage = lazy(() => import('./pages/SectorDetailPage'))
 const RepoAnalyzerPage = lazy(() => import('./pages/RepoAnalyzerPage'))
+const EventDetailPage = lazy(() => import('./pages/EventDetailPage'))
+const MunicipioDetailPage = lazy(() => import('./pages/MunicipioDetailPage'))
 const PageNotFound = lazy(() => import('./lib/PageNotFound'))
 
 function PageFallback() {
@@ -54,6 +56,8 @@ function App() {
               <Route path="/logs" element={<LiveLogsPage />} />
               <Route path="/sector/:sector" element={<SectorDetailPage />} />
               <Route path="/tools/repo-analyzer" element={<RepoAnalyzerPage />} />
+              <Route path="/events/:id" element={<EventDetailPage />} />
+              <Route path="/municipios/:name" element={<MunicipioDetailPage />} />
               <Route path="*" element={<PageNotFound />} />
             </Route>
           </Routes>

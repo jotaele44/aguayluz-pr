@@ -66,3 +66,63 @@ export const postRunExport = async () => {
   })
   return res.json()
 }
+
+export const postAiQuery = async (query) => {
+  if (OFFLINE) return { answer: 'AI query not available in offline mode.' }
+  try {
+    const res = await fetch(`${API_BASE}/ai/query`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query }),
+      signal: AbortSignal.timeout(30000),
+    })
+    if (!res.ok) return { answer: null, error: `Backend error ${res.status}` }
+    return res.json()
+  } catch (e) {
+    return { answer: null, error: String(e) }
+  }
+}
+
+export const getEvent = (id) => getJSON(`/events/${encodeURIComponent(id)}`, null)
+
+export const patchEvent = async (id, data) => {
+  if (OFFLINE) return null
+  const res = await fetch(`${API_BASE}/events/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+    signal: AbortSignal.timeout(8000),
+  })
+  if (!res.ok) throw new Error(`PATCH event failed: ${res.status}`)
+  return res.json()
+}
+
+export const patchAsset = async (id, data) => {
+  if (OFFLINE) return null
+  const res = await fetch(`${API_BASE}/assets/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+    signal: AbortSignal.timeout(8000),
+  })
+  if (!res.ok) throw new Error(`PATCH asset failed: ${res.status}`)
+  return res.json()
+}
+
+export const getReportUrl = () => `${API_BASE}/export/report.html`
+
+export const postNotify = async ({ message, title }) => {
+  if (OFFLINE) return { ok: false, error: 'Notifications not available in offline mode.' }
+  try {
+    const res = await fetch(`${API_BASE}/notify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, title }),
+      signal: AbortSignal.timeout(15000),
+    })
+    if (!res.ok) return { ok: false, error: `Backend error ${res.status}` }
+    return res.json()
+  } catch (e) {
+    return { ok: false, error: String(e) }
+  }
+}
