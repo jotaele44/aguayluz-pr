@@ -1,0 +1,19 @@
+name: Semgrep
+
+on:
+  pull_request:
+    branches: ["main"]
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+  schedule:
+    - cron: "41 3 * * 5"
+
+permissions:
+  contents: read
+
+jobs:
+  semgrep:
+    uses: jotaele44/thehub-pr/.github/workflows/semgrep.yml@9a32f0af41445a815635638cb49b7ffb0ace187d
+    secrets:
+      SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
