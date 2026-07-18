@@ -1,9 +1,8 @@
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, Map, Database, Zap, Activity, ClipboardList,
-  BarChart3, ScrollText, GitBranch, Droplets, ChevronLeft, ChevronRight, X,
+  BarChart3, ScrollText, Droplets, ChevronLeft, ChevronRight, X,
 } from 'lucide-react'
-import { useHealth } from '@/lib/hooks'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
@@ -17,14 +16,11 @@ const NAV = [
   { to: '/review', icon: ClipboardList, label: 'Review Queue' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
   { to: '/logs', icon: ScrollText, label: 'Live Logs' },
-  { to: '/tools/repo-analyzer', icon: GitBranch, label: 'Repo Analyzer' },
 ]
 
 export default function Sidebar() {
   const { collapsed, setCollapsed } = useSidebar()
-  const { data: health } = useHealth()
   const isMobile = useIsMobile()
-  const up = health?.status === 'ok'
 
   // On mobile, sidebar is a full drawer hidden off-screen when collapsed
   const hiddenOnMobile = isMobile && collapsed
@@ -74,16 +70,6 @@ export default function Sidebar() {
           </NavLink>
         ))}
       </nav>
-
-      <div className="p-3 border-t border-slate-800">
-        <div className="flex items-center gap-2 text-xs text-slate-500 font-mono">
-          <span className={cn(
-            'w-1.5 h-1.5 rounded-full shrink-0',
-            up ? 'bg-emerald-400 animate-pulse' : 'bg-red-400',
-          )} />
-          {(!collapsed || isMobile) && (up ? 'Backend online' : 'Backend down')}
-        </div>
-      </div>
     </aside>
   )
 }

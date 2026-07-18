@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAssets, useAssetsGeojson, useMunicipiosGeojson, useEvents } from '@/lib/hooks'
 import AssetMap from '@/components/AssetMap'
@@ -20,10 +20,9 @@ export default function MapPage() {
   const flyToLon = parseFloat(searchParams.get('lon'))
   const flyToId = searchParams.get('flyTo')
 
-  const selectByProps = (props) => {
-    const full = assets.find((a) => a.asset_id === props.asset_id)
-    setSelected(full ?? props)
-  }
+  const selectByProps = useCallback((props) => {
+    setSelected(assets.find((a) => a.asset_id === props.asset_id) ?? props)
+  }, [assets])
 
   return (
     <div className="flex h-full">

@@ -1,18 +1,15 @@
 import { useMemo, useState } from 'react'
 import { useReviewQueue } from '@/lib/hooks'
-import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select'
-import { tierBadge, severityTone } from '@/lib/format'
-import { cn } from '@/lib/utils'
+import { SEVERITIES, TIERS } from '@/lib/format'
 import { AlertTriangle, Search } from 'lucide-react'
+import ReviewRecordCard from '@/components/ReviewRecordCard'
 
 const SEVERITY_RANK = { block: 0, warn: 1, info: 2 }
-const SEVERITIES = ['all', 'block', 'warn', 'info']
-const TIERS = ['all', 'T1', 'T2', 'T3', 'T4']
 
 function normalized(value) {
   return `${value ?? ''}`.toLowerCase()
@@ -71,20 +68,17 @@ export default function ReviewQueue() {
 
       <div className="h-full overflow-auto p-2 space-y-1.5">
         {rows.map((r, i) => (
-          <div key={r.record_ref ?? i} className="rounded-md border border-slate-800 bg-slate-900 p-2.5">
-            <div className="flex items-center gap-2 flex-wrap">
-              <AlertTriangle className={cn('h-3.5 w-3.5 shrink-0', severityTone(r.severity))} />
-              <span className={cn('text-[11px] uppercase tracking-wide', severityTone(r.severity))}>{r.severity || 'review'}</span>
-              {r.evidence_tier && <Badge variant="outline" className={cn('text-[10px]', tierBadge(r.evidence_tier))}>{r.evidence_tier}</Badge>}
-              {r.confidence != null && <span className="text-[11px] text-slate-500">conf {r.confidence}</span>}
-              <span className="ml-auto max-w-[150px] truncate font-mono text-[11px] text-slate-500">{r.record_ref}</span>
-            </div>
-            <p className="mt-1 text-xs leading-relaxed text-slate-300">{r.reason || 'No review reason provided.'}</p>
-            <div className="mt-2 flex flex-wrap gap-2 text-[10px] text-slate-500">
-              {r.record_type && <span>type: {r.record_type}</span>}
-              {r.source_ref && <span className="truncate">source: {r.source_ref}</span>}
-            </div>
-          </div>
+          <ReviewRecordCard
+            key={r.record_ref ?? i}
+            record={r}
+            compact
+            footer={(r.record_type || r.source_ref) && (
+              <div className="mt-2 flex flex-wrap gap-2 text-[10px] text-slate-500">
+                {r.record_type && <span>type: {r.record_type}</span>}
+                {r.source_ref && <span className="truncate">source: {r.source_ref}</span>}
+              </div>
+            )}
+          />
         ))}
         {rows.length === 0 && <p className="py-8 text-center text-sm text-slate-500">No review records match the active filters.</p>}
       </div>

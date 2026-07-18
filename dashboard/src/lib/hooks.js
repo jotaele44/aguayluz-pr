@@ -33,11 +33,34 @@ export const useReadings = (f = {}) => useQuery({ queryKey: ['readings', f], que
 export const useReviewQueue = (f = {}) => useQuery({ queryKey: ['review', f], queryFn: () => getReviewQueue(f) })
 export const useReviewQueuePaged = (f = {}) => useQuery({ queryKey: ['review/paged', f], queryFn: () => getReviewQueuePaged(f) })
 
+// Adjudicating a record optimistically drops it from every cached review list
+// so the queue advances instantly; a failed POST rolls the snapshots back.
+const dropRef = (data, ref) => {
+  if (Array.isArray(data)) return data.filter((r) => r.record_ref !== ref)
+  if (data?.items) {
+    return { ...data, items: data.items.filter((r) => r.record_ref !== ref), total: Math.max(0, (data.total ?? data.items.length) - 1) }
+  }
+  return data
+}
+
 export const useDecision = () => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ ref, decision }) => postDecision(ref, decision),
-    onSuccess: () => {
+    onMutate: async ({ ref }) => {
+      await qc.cancelQueries({ queryKey: ['review'] })
+      await qc.cancelQueries({ queryKey: ['review/paged'] })
+      const prev = [
+        ...qc.getQueriesData({ queryKey: ['review'] }),
+        ...qc.getQueriesData({ queryKey: ['review/paged'] }),
+      ]
+      prev.forEach(([key, data]) => qc.setQueryData(key, dropRef(data, ref)))
+      return { prev }
+    },
+    onError: (_err, _vars, context) => {
+      context?.prev?.forEach(([key, data]) => qc.setQueryData(key, data))
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ['review'] })
       qc.invalidateQueries({ queryKey: ['review/paged'] })
     },

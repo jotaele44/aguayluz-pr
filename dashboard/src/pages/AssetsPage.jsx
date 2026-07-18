@@ -14,7 +14,7 @@ export default function AssetsPage() {
       <PageHeader title="Assets" subtitle="All tracked infrastructure assets across Puerto Rico" />
       <div className="flex-1 min-h-0">
         <ErrorBoundary label="Assets">
-          <AssetsTable assets={assets} isLoading={isLoading} selectedId={selected?.asset_id} onSelect={setSelected} />
+          <AssetsTable assets={assets} isLoading={isLoading} selectedId={selected?.asset_id} onSelect={setSelected} syncUrl />
         </ErrorBoundary>
       </div>
       <AssetDetail asset={selected} onClose={() => setSelected(null)} />
