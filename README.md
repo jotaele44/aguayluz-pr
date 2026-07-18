@@ -39,6 +39,9 @@ corpus is real public data, with some sources external or point-in-time.
 - PREPS island-wide service events (`scripts/ingest_preps.py`) plus
   per-municipio AEE/LUMA outage incidents (`scripts/ingest_aee.py`, tier
   T2/needs_review point-in-time snapshot).
+- PR-region seismic events (`scripts/ingest_usgs_quakes.py`, keyless USGS FDSN
+  earthquake feed) into `data/service_events.jsonl`, backing the `SEISMIC_GEO`
+  alert module.
 - Operational alert events (`docs/ALERT_SYSTEM.md`) and the 78-municipio /
   901-barrio geo layer under `data/geo/` (U.S. Census cartographic boundaries).
 

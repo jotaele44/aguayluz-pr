@@ -40,10 +40,11 @@ Core package and pipelines are real, committed, and tested.
 
 - **Core `src/aguayluz/` package** — EPA WATERS REST client (NHDPlus V2.1, PR = VPU 21),
   alert engine, confidence/tier model, and the `aguayluz` Typer CLI.
-- **15+ real ingest pipelines** (`scripts/ingest_*.py`, 11 `ingest_*` + builders/fetchers):
+- **15+ real ingest pipelines** (`scripts/ingest_*.py`, 12 `ingest_*` + builders/fetchers):
   POWER assets, WATER/wastewater assets, NWS active alerts, USGS water sites + daily
-  levels, EPA SDWIS violations, EPA ECHO CWA enforcement, FEMA disaster declarations,
-  PREPS emergency-portal events, AEE/LUMA per-municipio outages, news-event signals.
+  levels, USGS PR-region earthquakes (keyless FDSN feed), EPA SDWIS violations,
+  EPA ECHO CWA enforcement, FEMA disaster declarations, PREPS emergency-portal events,
+  AEE/LUMA per-municipio outages, news-event signals.
 - **8 federation validation gates** (`src/aguayluz/validation.py`, run via
   `scripts/validate_repo.py`):
   - G01 — schema validation of every exported entity
@@ -141,6 +142,23 @@ diff would populate.
 Real materializations of the corpus from the keyless public federal APIs. Each row
 is what the producer **actually fetched** on the stated date (no fabricated data);
 counts are post-merge file totals where noted.
+
+### 2026-07-18 — new vector: USGS PR-region earthquakes
+
+Added `scripts/ingest_usgs_quakes.py` (keyless USGS FDSN event service) and ran it
+live via the proxy against the PR bounding box (lat 17.5–19.0, lon -68.0 to -65.0)
+at the default M≥2.5 / 30-day window. This is the feed that backs the now-active
+`SEISMIC_GEO` alert module.
+
+| Source | Host | Result | Rows |
+|--------|------|--------|------|
+| USGS earthquakes → `service_events` | `earthquake.usgs.gov` | OK | 80 PR-region events (M≥2.5, trailing 30 days); file total **24923** |
+
+The step is idempotent (merges by `USGS-EQ` `source_ref` prefix) and now runs first
+in both `--daily` and `--weekly` alongside NWS. Committed rows are a trailing-window
+snapshot; a later refresh replaces the whole `USGS-EQ` slice. Offline unit tests
+(`tests/test_ingest_usgs_quakes.py`, fixture `tests/fixtures/usgs_pr_quakes_sample.json`)
+cover bbox/magnitude filtering, schema conformance, and merge idempotency — no network.
 
 ### 2026-07-12 — keyless weekly refresh
 
