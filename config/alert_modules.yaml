@@ -1,6 +1,8 @@
 # AguaYLuz-PR alert system — sector module registry.
-# Five modules are activated immediately (active); the rest are seeded dormant
-# and enabled by relevance. default_severity_floor is the workbook 0-5 floor.
+# The core sector modules are active; the rest are seeded dormant and enabled by
+# relevance once a real feed backs them (e.g. SEISMIC_GEO activated by the USGS
+# earthquake ingest, scripts/ingest_usgs_quakes.py). default_severity_floor is
+# the workbook 0-5 floor.
 modules:
   - module_id: HYDRO_OPS
     module_name: Hydro Operations Alerts
@@ -68,11 +70,11 @@ modules:
   - module_id: SEISMIC_GEO
     module_name: Seismic / Geotechnical Alerts
     sector: Geohazard
-    activation_status: dormant
+    activation_status: active
     priority: high
     hydro_dependency_relevance: direct
     default_severity_floor: 2
-    primary_sources: USGS earthquake feed, PRSN, landslide reports
+    primary_sources: USGS earthquake feed (scripts/ingest_usgs_quakes.py), PRSN, landslide reports
     notes: Earthquake/landslide effects on reservoirs, pipes, slopes, karst.
   - module_id: INDUSTRIAL
     module_name: Industrial / Port / Facility Alerts

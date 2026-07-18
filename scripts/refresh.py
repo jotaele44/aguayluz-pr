@@ -9,10 +9,12 @@ Cadence (each ingest hits a live federal API — run on a networked host, NOT th
 sandbox, whose proxy may block waterservices.usgs.gov / data.epa.gov):
 
   --daily    NWS active alerts             -> service_events.jsonl
+             USGS earthquakes (PR region)  -> service_events.jsonl
              USGS daily reservoir levels   -> reservoir_levels.jsonl     (+ export)
-             The fast-moving signals (weather hazards, drought/supply). Seconds.
+             The fast-moving signals (weather hazards, seismic, drought/supply). Seconds.
 
   --weekly   NWS active alerts             -> service_events.jsonl
+             USGS earthquakes (PR region)  -> service_events.jsonl
              USGS site network             -> utility_assets.jsonl
              USGS daily levels             -> reservoir_levels.jsonl
              EPA SDWIS violations          -> service_events.jsonl
@@ -69,6 +71,11 @@ STEP_USGS_LEVELS = (
     ["scripts/ingest_usgs_levels.py", "--days", "14"],
     False,
 )
+STEP_USGS_QUAKES = (
+    "USGS earthquakes → service_events",
+    ["scripts/ingest_usgs_quakes.py"],
+    False,
+)
 STEP_SDWIS = (
     "EPA SDWIS violations → service_events",
     ["scripts/ingest_sdwis_violations.py"],
@@ -105,10 +112,11 @@ STEP_EXPORT = (
 )
 
 PLANS: dict[str, list[tuple]] = {
-    "daily": [STEP_NWS, STEP_USGS_LEVELS],
-    "weekly": [STEP_NWS, STEP_USGS_ASSETS, STEP_USGS_LEVELS, STEP_SDWIS, STEP_ECHO, STEP_FEMA],
-    "all":   [STEP_NWS, STEP_USGS_ASSETS, STEP_USGS_LEVELS, STEP_SDWIS, STEP_ECHO, STEP_FEMA,
-              STEP_AEE_FETCH, STEP_AEE_INGEST],
+    "daily": [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_LEVELS],
+    "weekly": [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_ASSETS, STEP_USGS_LEVELS, STEP_SDWIS,
+               STEP_ECHO, STEP_FEMA],
+    "all":   [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_ASSETS, STEP_USGS_LEVELS, STEP_SDWIS,
+              STEP_ECHO, STEP_FEMA, STEP_AEE_FETCH, STEP_AEE_INGEST],
 }
 
 
