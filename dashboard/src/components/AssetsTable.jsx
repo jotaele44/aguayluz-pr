@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import {
@@ -13,7 +13,8 @@ import {
 } from '@/components/ui/select'
 import { tierBadge, typeMeta, statusBadge } from '@/lib/format'
 import { cn } from '@/lib/utils'
-import { AlertTriangle, ChevronsUpDown, ChevronUp, ChevronDown, FilterX } from 'lucide-react'
+import { AlertTriangle, ChevronsUpDown, ChevronUp, ChevronDown, Download, FilterX } from 'lucide-react'
+import { downloadCSV } from '@/lib/csv'
 
 function normalized(value) {
   return `${value ?? ''}`.toLowerCase()
@@ -72,6 +73,7 @@ export default function AssetsTable({ assets = [], isLoading, selectedId, onSele
   const [{ type, status, reviewOnly, q }, setFilters] = useAssetFilters(syncUrl)
   const [sort, setSort] = useState({ col: 'asset_name', dir: 'asc' })
   const scrollRef = useRef(null)
+  const searchRef = useRef(null)
 
   const types = useMemo(
     () => ['all', ...Array.from(new Set(assets.map((a) => a.asset_type).filter(Boolean))).sort()],
@@ -116,6 +118,32 @@ export default function AssetsTable({ assets = [], isLoading, selectedId, onSele
   const paddingTop = vItems.length ? vItems[0].start : 0
   const paddingBottom = vItems.length ? virtualizer.getTotalSize() - vItems[vItems.length - 1].end : 0
 
+  // "/" focuses search; j/k move the selection (skips while typing in a field).
+  useEffect(() => {
+    const handler = (e) => {
+      const tag = document.activeElement?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      if (e.key === '/') {
+        e.preventDefault()
+        searchRef.current?.focus()
+        return
+      }
+      if (e.key === 'j' || e.key === 'k') {
+        e.preventDefault()
+        const idx = rows.findIndex((a) => a.asset_id === selectedId)
+        const next = e.key === 'j'
+          ? Math.min(idx + 1, rows.length - 1)
+          : Math.max(idx - 1, 0)
+        if (rows[next]) {
+          onSelect?.(rows[next])
+          virtualizer.scrollToIndex(next, { align: 'auto' })
+        }
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [rows, selectedId, onSelect, virtualizer])
+
   const clear = () => setFilters(DEFAULT_FILTERS)
 
   if (isLoading) {
@@ -135,11 +163,15 @@ export default function AssetsTable({ assets = [], isLoading, selectedId, onSele
           <Input
             value={q}
             onChange={(e) => setFilters({ q: e.target.value })}
-            placeholder="Search asset, municipio, operator, source…"
+            ref={searchRef}
+            placeholder="Search asset, municipio, operator, source… (press / to focus)"
             className="h-8 flex-1 border-slate-800 bg-slate-950 text-xs"
           />
           <Button size="sm" variant="outline" onClick={clear} aria-label="Clear filters" title="Clear filters" className="h-8 border-slate-800 bg-slate-950 px-2 text-xs text-slate-400 hover:text-slate-100">
             <FilterX className="h-3.5 w-3.5" />
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => downloadCSV('assets.csv', rows, ['asset_id','asset_name','asset_type','municipality','status','operator','evidence_tier'])} className="h-8 border-slate-800 bg-slate-950 px-2 text-xs text-slate-400 hover:text-slate-100" title="Export CSV">
+            <Download className="h-3.5 w-3.5" />
           </Button>
         </div>
         <div className="flex items-center gap-2">

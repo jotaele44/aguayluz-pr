@@ -1,9 +1,10 @@
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, Map, Database, Zap, Activity, ClipboardList,
-  BarChart3, ScrollText, Droplets, ChevronLeft, ChevronRight,
+  BarChart3, ScrollText, Droplets, ChevronLeft, ChevronRight, X,
 } from 'lucide-react'
 import { useSidebar } from '@/contexts/SidebarContext'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
 
 const NAV = [
@@ -19,11 +20,16 @@ const NAV = [
 
 export default function Sidebar() {
   const { collapsed, setCollapsed } = useSidebar()
+  const isMobile = useIsMobile()
+
+  // On mobile, sidebar is a full drawer hidden off-screen when collapsed
+  const hiddenOnMobile = isMobile && collapsed
 
   return (
     <aside className={cn(
       'fixed left-0 top-0 h-screen bg-slate-900 border-r border-slate-800 flex flex-col z-40 transition-all duration-200',
-      collapsed ? 'w-14' : 'w-56',
+      isMobile ? 'w-64' : collapsed ? 'w-14' : 'w-56',
+      hiddenOnMobile && '-translate-x-full',
     )}>
       <div className="h-14 flex items-center gap-2.5 px-3 border-b border-slate-800 shrink-0">
         <Droplets className="h-5 w-5 text-sky-400 shrink-0" />
@@ -38,7 +44,9 @@ export default function Sidebar() {
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           className="ml-auto p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 shrink-0"
         >
-          {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
+          {isMobile
+            ? <X className="h-3.5 w-3.5" />
+            : collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
         </button>
       </div>
 
@@ -48,16 +56,17 @@ export default function Sidebar() {
             key={to}
             to={to}
             end={end}
+            onClick={() => isMobile && setCollapsed(true)}
             className={({ isActive }) => cn(
               'flex items-center gap-3 px-2 py-2 rounded-md text-sm font-medium transition-colors',
               isActive
                 ? 'bg-sky-500/15 text-sky-400'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60',
             )}
-            title={collapsed ? label : undefined}
+            title={collapsed && !isMobile ? label : undefined}
           >
             <Icon className="h-4 w-4 shrink-0" />
-            {!collapsed && <span className="truncate">{label}</span>}
+            {(!collapsed || isMobile) && <span className="truncate">{label}</span>}
           </NavLink>
         ))}
       </nav>

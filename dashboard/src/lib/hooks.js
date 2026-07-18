@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   getHealth, getAssets, getAssetsGeojson, getMunicipiosGeojson,
-  getEvents, getEventsPaged, getAssetEvents, getMunicipioSummary,
+  getEvents, getEventsPaged, getAssetEvents, getEvent, getMunicipioSummary,
   getReadings, getReviewQueue, getReviewQueuePaged,
   getSummary, getSummarySectors, postDecision, postRunExport,
+  patchEvent, patchAsset,
 } from '@/lib/api'
 
 export const useHealth = () => useQuery({ queryKey: ['health'], queryFn: getHealth, refetchInterval: 15_000 })
@@ -26,6 +27,7 @@ export const useEventsPaged = (f = {}) => {
   return useQuery({ queryKey: ['events/paged', params], queryFn: () => getEventsPaged(params) })
 }
 export const useAssetEvents = (id) => useQuery({ queryKey: ['asset-events', id], queryFn: () => getAssetEvents(id), enabled: !!id })
+export const useEvent = (id) => useQuery({ queryKey: ['event', id], queryFn: () => getEvent(id), enabled: !!id })
 export const useMunicipioSummary = (name) => useQuery({ queryKey: ['municipio', name], queryFn: () => getMunicipioSummary(name), enabled: !!name })
 export const useReadings = (f = {}) => useQuery({ queryKey: ['readings', f], queryFn: () => getReadings(f) })
 export const useReviewQueue = (f = {}) => useQuery({ queryKey: ['review', f], queryFn: () => getReviewQueue(f) })
@@ -73,6 +75,27 @@ export const useRunExport = () => {
       qc.invalidateQueries({ queryKey: ['health'] })
       qc.invalidateQueries({ queryKey: ['review'] })
       qc.invalidateQueries({ queryKey: ['summary'] })
+    },
+  })
+}
+
+export const useAckEvent = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, status }) => patchEvent(id, { resolution_status: status }),
+    onSuccess: (_, { id }) => {
+      qc.invalidateQueries({ queryKey: ['event', id] })
+      qc.invalidateQueries({ queryKey: ['events'] })
+    },
+  })
+}
+
+export const useFlagAsset = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, reviewStatus }) => patchAsset(id, { review_status: reviewStatus }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['assets'] })
     },
   })
 }

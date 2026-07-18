@@ -10,15 +10,21 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os as _os
+import smtplib as _smtplib
 import subprocess
 import sys
+import urllib.request as _notify_urllib
+from collections import Counter
 from datetime import datetime, timezone
+from email.message import EmailMessage as _EmailMessage
 from pathlib import Path
 from typing import Any
 
+from fastapi import Depends as _Depends
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 DATA = REPO_ROOT / "data"
@@ -48,12 +54,33 @@ SECTOR_TYPE_MAP: dict[str, set[str]] = {
 }
 
 app = FastAPI(title="AguaYLuz-PR")
+
+# CORS: allow the Vite dev server and any configured ALLOWED_ORIGINS
+_cors_origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
+_extra = _os.getenv("ALLOWED_ORIGINS", "")
+if _extra:
+    _cors_origins.extend(o.strip() for o in _extra.split(",") if o.strip())
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
-    allow_methods=["GET", "POST"],
+    allow_origins=_cors_origins,
+    allow_methods=["GET", "POST", "PATCH"],
     allow_headers=["*"],
 )
+
+
+# Optional API key auth — set API_SECRET_KEY env var to enable.
+# Public endpoints (GET /health, GET /assets*, GET /events*, GET /readings*,
+# GET /municipios*, GET /export/*) remain open for read-only dashboard access.
+# Write / admin endpoints require the key in the Authorization header:
+#   Authorization: Bearer <API_SECRET_KEY>
+_API_KEY = _os.getenv("API_SECRET_KEY", "")
+async def _require_key(request: Request):
+    if not _API_KEY:
+        return  # auth disabled globally
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Bearer ") or auth[7:] != _API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid or missing API key")
 
 
 def _load_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -90,6 +117,9 @@ _municipios_geojson: dict[str, Any] = _load_json(
 
 # In-memory store for review decisions (survives only until server restart).
 _decisions: dict[str, str] = {}
+# In-memory patches for event/asset acknowledgements & flags (volatile).
+_event_patches: dict[str, dict[str, Any]] = {}
+_asset_patches: dict[str, dict[str, Any]] = {}
 
 
 @app.get("/health")
@@ -144,6 +174,32 @@ def asset_events(asset_id: str) -> JSONResponse:
     return JSONResponse(related)
 
 
+@app.get("/auth/status")
+def auth_status() -> JSONResponse:
+    """Returns whether API key auth is enabled and which channels are configured."""
+    return JSONResponse({
+        "auth_enabled": bool(_API_KEY),
+        "slack_configured": bool(_os.getenv("SLACK_WEBHOOK_URL")),
+        "ntfy_configured": bool(_os.getenv("NTFY_TOPIC")),
+        "email_configured": bool(_os.getenv("NOTIFY_EMAIL_FROM") and _os.getenv("NOTIFY_EMAIL_TO")),
+        "sentry_dsn_set": bool(_os.getenv("SENTRY_DSN")),
+        "ai_enabled": bool(_os.getenv("ANTHROPIC_API_KEY")),
+    })
+
+
+@app.patch("/assets/{asset_id}")
+async def patch_asset(asset_id: str, request: Request, _=_Depends(_require_key)) -> JSONResponse:  # noqa: B008
+    """Update mutable fields (review_status) on an asset."""
+    for a in _assets:
+        if a.get("asset_id") == asset_id:
+            body = await request.json()
+            allowed = {"review_status", "status"}
+            patch = {k: v for k, v in body.items() if k in allowed}
+            _asset_patches.setdefault(asset_id, {}).update(patch)
+            return JSONResponse({**a, **_asset_patches[asset_id]})
+    raise HTTPException(status_code=404, detail="Asset not found")
+
+
 @app.get("/assets.geojson")
 def assets_geojson() -> JSONResponse:
     features = []
@@ -181,6 +237,40 @@ def municipio_summary(name: str) -> JSONResponse:
         "event_count": len(mun_events),
         "asset_types": list({a.get("asset_type") for a in mun_assets if a.get("asset_type")}),
     })
+
+
+@app.get("/events/stream")
+async def events_stream() -> StreamingResponse:
+    """SSE endpoint: pushes latest 20 events every 5 s."""
+    async def generator():
+        while True:
+            payload = _events[-20:]
+            yield f"data: {json.dumps(payload)}\n\n"
+            await asyncio.sleep(5)
+
+    return StreamingResponse(generator(), media_type="text/event-stream")
+
+
+@app.get("/events/{event_id}")
+def event_detail(event_id: str) -> JSONResponse:
+    for e in _events:
+        if str(e.get("event_id", "")) == event_id:
+            merged = {**e, **_event_patches.get(event_id, {})}
+            return JSONResponse(merged)
+    raise HTTPException(status_code=404, detail="Event not found")
+
+
+@app.patch("/events/{event_id}")
+async def patch_event(event_id: str, request: Request, _=_Depends(_require_key)) -> JSONResponse:  # noqa: B008
+    """Update mutable fields (resolution_status, review_status) on an event."""
+    for e in _events:
+        if str(e.get("event_id", "")) == event_id:
+            body = await request.json()
+            allowed = {"resolution_status", "review_status"}
+            patch = {k: v for k, v in body.items() if k in allowed}
+            _event_patches.setdefault(event_id, {}).update(patch)
+            return JSONResponse({**e, **_event_patches[event_id]})
+    raise HTTPException(status_code=404, detail="Event not found")
 
 
 @app.get("/events")
@@ -272,7 +362,7 @@ def review_queue(
 
 
 @app.post("/review-queue/{ref}/decision")
-async def review_decision(ref: str, request: Request) -> JSONResponse:
+async def review_decision(ref: str, request: Request, _=_Depends(_require_key)) -> JSONResponse:  # noqa: B008
     body = await request.json()
     decision = body.get("decision")
     if decision not in ("accept", "reject", "skip"):
@@ -304,7 +394,7 @@ def summary_sectors() -> JSONResponse:
 
 
 @app.post("/admin/run-export")
-def run_export() -> JSONResponse:
+async def run_export(request: Request, _=_Depends(_require_key)) -> JSONResponse:  # noqa: B008
     script = SCRIPTS / "federation_export.py"
     if not script.exists():
         raise HTTPException(status_code=404, detail="federation_export.py not found")
@@ -318,18 +408,6 @@ def run_export() -> JSONResponse:
     if result.returncode != 0:
         raise HTTPException(status_code=500, detail=result.stderr[-2000:] or "Export failed")
     return JSONResponse({"ok": True, "stdout": result.stdout[-2000:]})
-
-
-@app.get("/events/stream")
-async def events_stream() -> StreamingResponse:
-    """SSE endpoint: pushes latest 20 events every 5 s."""
-    async def generator():
-        while True:
-            payload = _events[-20:]
-            yield f"data: {json.dumps(payload)}\n\n"
-            await asyncio.sleep(5)
-
-    return StreamingResponse(generator(), media_type="text/event-stream")
 
 
 @app.post("/ai/query")
@@ -383,3 +461,171 @@ async def ai_query(request: Request) -> JSONResponse:
         return JSONResponse({"answer": text})
     except Exception as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@app.get("/export/report.html")
+def export_report_html() -> HTMLResponse:
+    """Generate a printable HTML status report for the dashboard."""
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    total_assets = len(_assets)
+    total_events = len(_events)
+
+    # Sector rollup
+    sector_rows = ""
+    for sector, types in SECTOR_TYPE_MAP.items():
+        sa = [a for a in _assets if (a.get("asset_type") or "").lower() in types]
+        active = sum(1 for a in sa if a.get("status") == "active")
+        pct = round(active / len(sa) * 100, 1) if sa else 0
+        sector_rows += f"<tr><td>{sector.title()}</td><td>{len(sa)}</td><td>{active}</td><td>{pct}%</td></tr>\n"
+
+    # Top 10 municipios by event count
+    mun_counts = Counter(
+        e.get("municipality") or e.get("affected_area") or "Unknown"
+        for e in _events
+    )
+    top10_rows = ""
+    for mun, cnt in mun_counts.most_common(10):
+        top10_rows += f"<tr><td>{mun}</td><td>{cnt}</td></tr>\n"
+
+    # Recent events
+    recent_events = _events[-20:]
+    recent_rows = ""
+    for e in reversed(recent_events):
+        etype = (e.get("event_type") or "event").replace("_", " ").title()
+        area = e.get("affected_area") or e.get("municipality") or "—"
+        start = (e.get("start_time") or "")[:10]
+        recent_rows += f"<tr><td>{etype}</td><td>{area}</td><td>{start}</td></tr>\n"
+
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AguaYLuz-PR Status Report — {now}</title>
+  <style>
+    @page {{ margin: 2cm; }}
+    body {{ font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; line-height: 1.6; }}
+    h1 {{ font-size: 1.5rem; color: #0c4a6e; border-bottom: 2px solid #0ea5e9; padding-bottom: .5rem; margin-bottom: 1.5rem; }}
+    h2 {{ font-size: 1rem; color: #0c4a6e; margin-top: 2rem; margin-bottom: .5rem; }}
+    .meta {{ font-size: .8rem; color: #64748b; margin-top: -.75rem; margin-bottom: 1.5rem; }}
+    .kpi-grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem; }}
+    .kpi {{ border: 1px solid #e2e8f0; border-radius: .5rem; padding: 1rem; text-align: center; }}
+    .kpi .val {{ font-size: 2rem; font-weight: 700; color: #0369a1; }}
+    .kpi .lbl {{ font-size: .75rem; color: #64748b; text-transform: uppercase; letter-spacing: .05em; }}
+    table {{ width: 100%; border-collapse: collapse; font-size: .875rem; }}
+    th {{ background: #f1f5f9; text-align: left; padding: .4rem .75rem; border: 1px solid #e2e8f0; font-size: .75rem; text-transform: uppercase; color: #475569; }}
+    td {{ padding: .4rem .75rem; border: 1px solid #e2e8f0; }}
+    tr:nth-child(even) td {{ background: #f8fafc; }}
+    @media print {{ button {{ display: none; }} }}
+  </style>
+</head>
+<body>
+  <button onclick="window.print()" style="float:right;padding:.5rem 1rem;background:#0ea5e9;color:#fff;border:none;border-radius:.375rem;cursor:pointer;">Print / Save PDF</button>
+  <h1>AguaYLuz-PR Infrastructure Status Report</h1>
+  <div class="meta">Generated: {now} &nbsp;|&nbsp; Data: in-memory snapshot</div>
+
+  <div class="kpi-grid">
+    <div class="kpi"><div class="val">{total_assets:,}</div><div class="lbl">Total Assets</div></div>
+    <div class="kpi"><div class="val">{total_events:,}</div><div class="lbl">Service Events</div></div>
+    <div class="kpi"><div class="val">{sum(1 for a in _assets if a.get("status") == "active"):,}</div><div class="lbl">Active Assets</div></div>
+  </div>
+
+  <h2>Sector Summary</h2>
+  <table>
+    <tr><th>Sector</th><th>Total Assets</th><th>Active</th><th>% Active</th></tr>
+    {sector_rows}
+  </table>
+
+  <h2>Top 10 Affected Municipios (by Event Count)</h2>
+  <table>
+    <tr><th>Municipio / Area</th><th>Events</th></tr>
+    {top10_rows}
+  </table>
+
+  <h2>Recent Events (last 20)</h2>
+  <table>
+    <tr><th>Type</th><th>Area</th><th>Date</th></tr>
+    {recent_rows}
+  </table>
+</body>
+</html>"""
+    return HTMLResponse(content=html)
+
+
+# ── Notification dispatch ──────────────────────────────────────────────────────
+# Opt-in via env vars:
+#   SLACK_WEBHOOK_URL  — Slack incoming webhook (POST JSON)
+#   NOTIFY_EMAIL_FROM / NOTIFY_EMAIL_TO / SMTP_HOST — SMTP email alerts
+#   NTFY_TOPIC — ntfy.sh push topic (e.g. "aguayluz-pr-alerts")
+#
+# POST /notify — internal helper called by the dashboard or CI after a critical
+# event is detected.  Returns 200 OK regardless; errors are logged but not
+# surfaced to the caller so a broken webhook never blocks the dashboard.
+
+
+def _send_slack(webhook: str, text: str) -> None:
+    body = json.dumps({"text": text}).encode()
+    req = _notify_urllib.Request(webhook, data=body, headers={"Content-Type": "application/json"}, method="POST")
+    with _notify_urllib.urlopen(req, timeout=10):
+        pass
+
+
+def _send_ntfy(topic: str, text: str, title: str = "AguaYLuz-PR Alert") -> None:
+    req = _notify_urllib.Request(
+        f"https://ntfy.sh/{topic}",
+        data=text.encode(),
+        headers={"Title": title, "Priority": "high", "Tags": "warning"},
+        method="POST",
+    )
+    with _notify_urllib.urlopen(req, timeout=10):
+        pass
+
+
+def _send_email(from_addr: str, to_addr: str, smtp_host: str, subject: str, body: str) -> None:
+    msg = _EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = from_addr
+    msg["To"] = to_addr
+    msg.set_content(body)
+    with _smtplib.SMTP(smtp_host, 587, timeout=10) as server:
+        server.sendmail(from_addr, [to_addr], msg.as_string())
+
+
+@app.post("/notify")
+async def notify(request: Request, _=_Depends(_require_key)) -> JSONResponse:  # noqa: B008
+    """Dispatch a notification to configured channels (Slack, ntfy, email).
+
+    Body: {"message": str, "title": str = "AguaYLuz-PR Alert"}
+    """
+    body = await request.json()
+    message = (body.get("message") or "").strip()
+    title = (body.get("title") or "AguaYLuz-PR Alert").strip()
+    if not message:
+        raise HTTPException(status_code=400, detail="message field required")
+
+    errors: list[str] = []
+
+    slack_url = _os.getenv("SLACK_WEBHOOK_URL")
+    if slack_url:
+        try:
+            _send_slack(slack_url, f"*{title}*\n{message}")
+        except Exception as e:
+            errors.append(f"slack: {e}")
+
+    ntfy_topic = _os.getenv("NTFY_TOPIC")
+    if ntfy_topic:
+        try:
+            _send_ntfy(ntfy_topic, message, title)
+        except Exception as e:
+            errors.append(f"ntfy: {e}")
+
+    email_from = _os.getenv("NOTIFY_EMAIL_FROM")
+    email_to = _os.getenv("NOTIFY_EMAIL_TO")
+    smtp_host = _os.getenv("SMTP_HOST")
+    if email_from and email_to and smtp_host:
+        try:
+            _send_email(email_from, email_to, smtp_host, title, message)
+        except Exception as e:
+            errors.append(f"email: {e}")
+
+    channels_active = bool(slack_url or ntfy_topic or (email_from and email_to and smtp_host))
+    return JSONResponse({"ok": True, "channels_active": channels_active, "errors": errors})

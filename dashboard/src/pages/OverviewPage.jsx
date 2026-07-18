@@ -1,8 +1,10 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useHealth, useAssets, useEvents, useReadings, useSummarySectors } from '@/lib/hooks'
+import { postAiQuery, postNotify } from '@/lib/api'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Activity, AlertTriangle, CheckCircle2, Clock } from 'lucide-react'
+import { useToast } from '@/components/ui/use-toast'
+import { Activity, AlertTriangle, Bell, Bot, CheckCircle2, Clock, Loader2 } from 'lucide-react'
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts'
@@ -17,16 +19,48 @@ export default function OverviewPage() {
   const { data: events = [], isLoading: eventsLoading } = useEvents()
   const { data: sectors } = useSummarySectors()
   const { data: readings = [] } = useReadings({ kind: 'reservoir' })
+  const [aiSummary, setAiSummary] = useState(null)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [notifying, setNotifying] = useState(false)
+  const { toast } = useToast()
 
   const isLoading = healthLoading || assetsLoading || eventsLoading
 
   const c = health?.counts ?? {}
   const r = health?.readiness ?? {}
 
+  const handleSummarize = async () => {
+    setAiLoading(true)
+    setAiSummary(null)
+    const result = await postAiQuery(
+      `AguaYLuz-PR dashboard status: ${c.assets ?? assets.length} assets tracked, ` +
+      `${activeOutages.length} active outages, ${c.events ?? events.length} events recorded, ` +
+      `${r.records_review ?? 0} records awaiting human review, ` +
+      `grid coverage ${r.coverage_pct != null ? r.coverage_pct + '%' : 'unknown'}. ` +
+      `Provide a 2-3 sentence plain-language status brief for a Puerto Rico infrastructure operator, ` +
+      `highlighting what needs urgent attention.`
+    )
+    setAiSummary(result?.answer ?? result?.error ?? 'No response received.')
+    setAiLoading(false)
+  }
+
   const activeOutages = useMemo(
     () => events.filter((e) => e.event_type === 'outage'),
     [events],
   )
+
+  const handleNotify = async () => {
+    setNotifying(true)
+    const msg = `AguaYLuz-PR Dashboard Alert: ${activeOutages.length} active outages across Puerto Rico. ` +
+      `${c.assets ?? assets.length} assets tracked. ${r.records_review ?? 0} records awaiting review.`
+    const result = await postNotify({ message: msg, title: 'AguaYLuz-PR Status Alert' })
+    setNotifying(false)
+    if (result?.channels_active) {
+      toast({ title: 'Alert dispatched', description: `Sent to configured channels${result.errors?.length ? ` (${result.errors.length} error(s))` : ''}` })
+    } else {
+      toast({ variant: 'destructive', title: 'No channels configured', description: 'Set SLACK_WEBHOOK_URL, NTFY_TOPIC, or SMTP_HOST in the backend environment.' })
+    }
+  }
 
   const recentEvents = useMemo(
     () => [...events].sort((a, b) => (b.start_time ?? '').localeCompare(a.start_time ?? '')).slice(0, 5),
@@ -64,6 +98,32 @@ export default function OverviewPage() {
         <StatTile icon={AlertTriangle} label="Active Outages" value={activeOutages.length} valueClass="text-red-400" />
         <StatTile icon={CheckCircle2} label="Grid Coverage" value={r.coverage_pct != null ? `${r.coverage_pct}%` : '–'} valueClass="text-emerald-400" />
         <StatTile icon={Clock} label="Pending Review" value={r.records_review ?? '–'} valueClass="text-amber-400" />
+      </div>
+
+      {/* AI status recap + notifications */}
+      <div className="flex items-start gap-3 flex-wrap">
+        <button
+          onClick={handleSummarize}
+          disabled={aiLoading}
+          className="shrink-0 flex items-center gap-1.5 rounded-md border border-sky-700/50 bg-sky-950/40 px-3 py-1.5 text-xs text-sky-300 hover:bg-sky-900/40 hover:border-sky-600/60 disabled:opacity-50 transition"
+        >
+          {aiLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bot className="h-3.5 w-3.5" />}
+          {aiLoading ? 'Summarizing…' : 'AI Status Recap'}
+        </button>
+        <button
+          onClick={handleNotify}
+          disabled={notifying}
+          title="Send current status alert to Slack / ntfy / email (configured in backend env)"
+          className="shrink-0 flex items-center gap-1.5 rounded-md border border-amber-700/40 bg-amber-950/20 px-3 py-1.5 text-xs text-amber-300 hover:bg-amber-900/30 hover:border-amber-600/50 disabled:opacity-50 transition"
+        >
+          {notifying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bell className="h-3.5 w-3.5" />}
+          {notifying ? 'Sending…' : 'Send Alert'}
+        </button>
+        {aiSummary && (
+          <div className="flex-1 min-w-0 rounded-lg border border-sky-900/40 bg-sky-950/20 px-4 py-2.5 text-sm text-slate-300 leading-relaxed">
+            {aiSummary}
+          </div>
+        )}
       </div>
 
       {/* Sector cards */}

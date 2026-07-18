@@ -1,14 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
-import { Activity, Layers, MapPinned } from 'lucide-react'
+import { Activity, Layers, MapPinned, Satellite } from 'lucide-react'
 
 // Resolve against the configured base so it works in the normal build
 // (served from '/') and the VITE_OFFLINE single-file file:// export (base './').
 const MUNICIPIOS_URL = new URL('geo/pr_municipios.geojson', document.baseURI).href
 
-// Municipality outlines ship with the app (public/geo/) and sit under the
-// raster tiles, so the map still shows Puerto Rico geography when offline.
-const OSM_STYLE = {
+const BASE_STYLE = {
   version: 8,
   sources: {
     osm: {
@@ -17,12 +15,15 @@ const OSM_STYLE = {
       tileSize: 256,
       attribution: '© OpenStreetMap contributors',
     },
-    municipios: { type: 'geojson', data: MUNICIPIOS_URL },
+    satellite: {
+      type: 'raster',
+      tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+      tileSize: 256,
+      attribution: '© Esri World Imagery',
+    },
   },
   layers: [
     { id: 'bg', type: 'background', paint: { 'background-color': '#020617' } },
-    { id: 'municipios-fill', type: 'fill', source: 'municipios', paint: { 'fill-color': '#0d1b30', 'fill-opacity': 0.9 } },
-    { id: 'municipios-line', type: 'line', source: 'municipios', paint: { 'line-color': '#31507a', 'line-width': 0.8 } },
     {
       id: 'osm',
       type: 'raster',
@@ -33,6 +34,13 @@ const OSM_STYLE = {
         'raster-contrast': -0.15,
         'raster-brightness-max': 0.68,
       },
+    },
+    {
+      id: 'satellite',
+      type: 'raster',
+      source: 'satellite',
+      layout: { visibility: 'none' },
+      paint: { 'raster-opacity': 0.9 },
     },
   ],
 }
@@ -123,13 +131,14 @@ function ControlButton({ active, children, onClick, tone }) {
   )
 }
 
-export default function AssetMap({ assets, assetRows = [], municipios, events = [], selectedAssetId, selectedMunicipio, onSelect, onMunicipioSelect }) {
+export default function AssetMap({ assets, assetRows = [], municipios, events = [], selectedAssetId, selectedMunicipio, onSelect, onMunicipioSelect, flyTo }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const readyRef = useRef(false)
   const onSelectRef = useRef(onSelect); onSelectRef.current = onSelect
   const onMunicipioSelectRef = useRef(onMunicipioSelect); onMunicipioSelectRef.current = onMunicipioSelect
   const [layers, setLayers] = useState({ power: true, water: true, wastewater: true, other: true, municipios: true, events: true, review: false })
+  const [basemap, setBasemap] = useState('osm')
 
   const assetFeatures = assets?.features ?? []
   const visibleAssets = useMemo(() => {
@@ -167,14 +176,14 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
 
   useEffect(() => {
     if (!containerRef.current) return undefined
-    const map = new maplibregl.Map({ container: containerRef.current, style: OSM_STYLE, center: PR_CENTER, zoom: 8.25, minZoom: 7.2 })
+    const map = new maplibregl.Map({ container: containerRef.current, style: BASE_STYLE, center: PR_CENTER, zoom: 8.25, minZoom: 7.2 })
     mapRef.current = map
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
 
     // 'style.load' instead of 'load': the latter waits for raster tiles,
     // which never resolve offline, and the data layers would never appear.
     map.on('style.load', () => {
-      map.addSource('municipios', { type: 'geojson', data: municipios || EMPTY })
+      map.addSource('municipios', { type: 'geojson', data: municipios || MUNICIPIOS_URL })
       map.addSource('assets', { type: 'geojson', data: visibleAssets || EMPTY, cluster: true, clusterMaxZoom: 10, clusterRadius: 36 })
       map.addSource('selected-asset', { type: 'geojson', data: selectedAsset })
       map.addSource('service-events', { type: 'geojson', data: eventGeo })
@@ -233,8 +242,18 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
       })
 
       readyRef.current = true
-      map.on('mouseenter', 'assets-dot', () => (map.getCanvas().style.cursor = 'pointer'))
-      map.on('mouseleave', 'assets-dot', () => (map.getCanvas().style.cursor = ''))
+      const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 8 })
+      map.on('mouseenter', 'assets-dot', (e) => {
+        map.getCanvas().style.cursor = 'pointer'
+        const p = e.features[0]?.properties || {}
+        popup.setLngLat(e.features[0].geometry.coordinates)
+          .setHTML(`<div style="font:12px/1.5 system-ui,sans-serif;color:#e2e8f0;background:#0f172a;padding:6px 8px;border-radius:6px;max-width:200px"><strong>${p.asset_name || 'Asset'}</strong><br/><span style="color:#94a3b8;font-size:11px">${(p.asset_type || 'unknown').replace(/_/g,' ')} · ${p.municipality || ''}</span></div>`)
+          .addTo(map)
+      })
+      map.on('mouseleave', 'assets-dot', () => {
+        map.getCanvas().style.cursor = ''
+        popup.remove()
+      })
       map.on('click', 'assets-dot', (e) => onSelectRef.current?.(e.features[0].properties))
       map.on('click', 'clusters', async (e) => {
         const features = map.queryRenderedFeatures(e.point, { layers: ['clusters'] })
@@ -255,6 +274,11 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
     if (!readyRef.current || !mapRef.current) return
     mapRef.current.getSource('assets')?.setData(visibleAssets || EMPTY)
   }, [visibleAssets])
+
+  useEffect(() => {
+    if (!readyRef.current || !mapRef.current || !flyTo) return
+    mapRef.current.flyTo({ center: [flyTo.lon, flyTo.lat], zoom: 14, duration: 1200 })
+  }, [flyTo?.id])
 
   useEffect(() => {
     if (!readyRef.current || !mapRef.current) return
@@ -280,6 +304,14 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
     mapRef.current.setLayoutProperty('events-dot', 'visibility', layers.events ? 'visible' : 'none')
   }, [layers.municipios, layers.events])
 
+  useEffect(() => {
+    if (!readyRef.current || !mapRef.current) return
+    try {
+      mapRef.current.setLayoutProperty('osm', 'visibility', basemap === 'osm' ? 'visible' : 'none')
+      mapRef.current.setLayoutProperty('satellite', 'visibility', basemap === 'satellite' ? 'visible' : 'none')
+    } catch { /* layers may not be ready yet */ }
+  }, [basemap])
+
   return (
     <div className="relative h-full w-full">
       <div ref={containerRef} className="h-full w-full" />
@@ -304,6 +336,38 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
         >
           Review-needed assets only
         </button>
+        <div className="mt-2 flex gap-1">
+          <button
+            type="button"
+            onClick={() => setBasemap('osm')}
+            className={`flex-1 flex items-center justify-center gap-1 rounded border px-2 py-1.5 text-[11px] transition ${basemap === 'osm' ? 'border-sky-500/40 bg-sky-500/10 text-sky-300' : 'border-slate-800 bg-slate-950/70 text-slate-500 hover:text-slate-300'}`}
+          >
+            <Layers className="h-3 w-3" /> Map
+          </button>
+          <button
+            type="button"
+            onClick={() => setBasemap('satellite')}
+            className={`flex-1 flex items-center justify-center gap-1 rounded border px-2 py-1.5 text-[11px] transition ${basemap === 'satellite' ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300' : 'border-slate-800 bg-slate-950/70 text-slate-500 hover:text-slate-300'}`}
+          >
+            <Satellite className="h-3 w-3" /> Satellite
+          </button>
+        </div>
+      </div>
+
+      <div className="absolute bottom-3 left-3 rounded-lg border border-slate-700/70 bg-slate-950/85 px-2.5 py-2 shadow-xl backdrop-blur">
+        <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-1.5">Asset type</div>
+        {[
+          { type: 'power', label: 'Power', color: '#f59e0b' },
+          { type: 'water', label: 'Water', color: '#38bdf8' },
+          { type: 'wastewater', label: 'Wastewater', color: '#10b981' },
+          { type: 'telecom', label: 'Telecom', color: '#a78bfa' },
+          { type: 'other', label: 'Other', color: '#64748b' },
+        ].map(({ type, label, color }) => (
+          <div key={type} className="flex items-center gap-1.5 text-[11px] text-slate-300 mb-0.5 last:mb-0">
+            <span style={{ background: color }} className="inline-block h-2 w-2 rounded-full shrink-0" />
+            {label}
+          </div>
+        ))}
       </div>
 
       <div className="absolute right-3 bottom-3 max-w-[280px] rounded-xl border border-slate-700/70 bg-slate-950/85 p-3 shadow-xl backdrop-blur">
