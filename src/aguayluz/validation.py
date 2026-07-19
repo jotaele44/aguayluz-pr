@@ -79,6 +79,7 @@ _ENTITY_SCHEMAS = {
     "review_queue.json":     "review_queue",
     "integration_report.json": "integration_report",
     "alert_events.json":     "alert_event",            # list of alert_event
+    "pr_natural_features.json": "pr_natural_feature",   # list of pr_natural_feature (hydro slice)
 }
 
 
