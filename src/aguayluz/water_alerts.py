@@ -32,7 +32,8 @@ into ``data/alert_events.jsonl``. Every returned object is a validated
 from __future__ import annotations
 
 import unicodedata
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 from .alerts import AlertEvent
 
