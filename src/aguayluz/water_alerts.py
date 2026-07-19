@@ -105,6 +105,15 @@ def _event_date(event: dict[str, Any]) -> str:
     return digits[:8] if len(digits) >= 8 else "00000000"
 
 
+def _reading_date(reading: dict[str, Any]) -> str | None:
+    """The observation date of a monitoring reading.
+
+    The canonical `monitoring_reading` schema (and `scripts/ingest_usgs_levels.py`)
+    names this field ``observed_date``; ``date`` is accepted as a fallback.
+    """
+    return reading.get("observed_date") or reading.get("date")
+
+
 def contamination_alert(
     event: dict[str, Any], geo: dict[str, dict[str, Any]]
 ) -> AlertEvent | None:
@@ -223,7 +232,7 @@ def reservoir_alerts(
         key = (str(r.get("asset_id")), str(metric))
         by_key.setdefault(key, []).append(val)
         prev = latest.get(key)
-        if prev is None or str(r.get("date") or "") >= str(prev.get("date") or ""):
+        if prev is None or str(_reading_date(r) or "") >= str(_reading_date(prev) or ""):
             latest[key] = r
 
     alerts: list[AlertEvent] = []
@@ -245,7 +254,8 @@ def reservoir_alerts(
         lat, lon = _centroid(munis[0], geo) if munis[0] != "(unscoped)" else (
             cur.get("lat"), cur.get("lon"),
         )
-        date = "".join(ch for ch in str(cur.get("date") or "")[:10] if ch.isdigit())[:8] or "00000000"
+        observed = _reading_date(cur)
+        date = "".join(ch for ch in str(observed or "")[:10] if ch.isdigit())[:8] or "00000000"
         name = cur.get("asset_name") or asset_id
         alerts.append(
             AlertEvent(
@@ -257,7 +267,7 @@ def reservoir_alerts(
                 source_ref=cur.get("source_ref") or f"USGS NWIS {asset_id}",
                 source_hash=None,
                 published_at=None,
-                start_at=cur.get("date"),
+                start_at=observed,
                 end_at=None,
                 asset_name=str(name),
                 asset_id=asset_id,

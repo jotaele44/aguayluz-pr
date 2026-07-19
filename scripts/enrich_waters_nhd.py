@@ -27,6 +27,8 @@ _SRC = Path(__file__).resolve().parent.parent / "src"
 if _SRC.exists() and str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
+import httpx  # noqa: E402
+
 from aguayluz.waters import AuthError, WatersClient, WatersError  # noqa: E402
 from aguayluz.waters.endpoints import first_flowline, point_indexing  # noqa: E402
 
@@ -87,12 +89,18 @@ def main() -> int:
                 try:
                     if enrich_asset(client, a):
                         enriched += 1
-                except WatersError as exc:
+                except (WatersError, httpx.HTTPStatusError) as exc:
+                    # A single asset's server/HTTP-status error is non-fatal; skip it.
+                    # A transport error (network down) is NOT caught here — it escapes
+                    # to the source-unavailable boundary below.
                     print(f"  skip {a.get('asset_id')}: {exc}", file=sys.stderr)
     except AuthError as exc:
         print(f"source-unavailable: WATERS key missing ({exc})", file=sys.stderr)
         return EXIT_SOURCE_UNAVAILABLE
-    except WatersError as exc:
+    except (WatersError, httpx.HTTPError) as exc:
+        # No network / gateway down / transport failure -> honor the offline-safe
+        # contract: typed source-unavailable, no data written (httpx.HTTPError is the
+        # base of both RequestError (transport) and HTTPStatusError (non-auth 4xx)).
         print(f"source-unavailable: WATERS request failed ({exc})", file=sys.stderr)
         return EXIT_SOURCE_UNAVAILABLE
 

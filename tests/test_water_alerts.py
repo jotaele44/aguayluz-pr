@@ -83,10 +83,11 @@ def test_unknown_municipality_yields_unscoped_no_coords():
 
 # ---------------- reservoir proxy ----------------
 
-def _readings(asset_id, values, metric="reservoir_storage_pct"):
+def _readings(asset_id, values, metric="reservoir_storage_pct", date_field="observed_date"):
+    # ingest_usgs_levels.py / the monitoring_reading schema name this `observed_date`.
     return [
         {"asset_id": asset_id, "asset_name": "Lago X", "metric": metric,
-         "value": v, "date": f"2026-01-{i + 1:02d}", "municipality": "Maunabo",
+         "value": v, date_field: f"2026-01-{i + 1:02d}", "municipality": "Maunabo",
          "source_ref": f"USGS {asset_id}"}
         for i, v in enumerate(values)
     ]
@@ -103,6 +104,19 @@ def test_reservoir_low_flags_lower_tail():
     assert a.review_status == "needs_review"
     assert a.gap_status == "major"
     assert "Statistical proxy" in (a.validation_notes or "")
+    # start_at must be populated from observed_date (required AlertEvent field).
+    assert a.start_at == "2026-01-20"
+    assert a.alert_id.endswith("resvlow_usgs_1")
+
+
+def test_reservoir_reads_observed_date_field():
+    # Regression: ingest_usgs_levels emits `observed_date`, not `date`. A reading
+    # keyed only on `observed_date` must still yield a valid start_at (not None,
+    # which would fail AlertEvent validation and abort the non-optional refresh step).
+    vals = list(range(100, 60, -2))
+    alerts = reservoir_alerts(_readings("USGS_9", vals, date_field="observed_date"), GEO)
+    assert len(alerts) == 1
+    assert alerts[0].start_at is not None
 
 
 def test_reservoir_normal_level_no_alert():
