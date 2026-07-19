@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 from jsonschema import ValidationError
@@ -10,10 +11,13 @@ from jsonschema import ValidationError
 from aguayluz.models import (
     AguayluzBridgeSummary,
     Base44Export,
+    NaturalFeature,
     ServiceEvent,
     UtilityAsset,
     validate_against_schema,
 )
+
+_REPO = Path(__file__).resolve().parents[1]
 
 # ---------------- utility_asset ----------------
 
@@ -197,7 +201,35 @@ def test_integration_report_minimal_valid():
 def test_every_schema_loads_and_validates_itself(schemas_dir):
     from jsonschema import Draft202012Validator
     schemas = list(schemas_dir.glob("*.schema.json"))
-    assert len(schemas) == 14, f"expected 14 schemas, found {len(schemas)}"
+    assert len(schemas) == 15, f"expected 15 schemas, found {len(schemas)}"
     for p in schemas:
         s = json.loads(p.read_text(encoding="utf-8"))
         Draft202012Validator.check_schema(s)
+
+
+# ---------------- pr_natural_feature (hydro slice) ----------------
+
+def _first_natural_feature() -> dict:
+    data = json.loads((_REPO / "data" / "geo" / "pr_natural_features.json").read_text("utf-8"))
+    return data["features"][0]
+
+
+def test_natural_feature_dataset_valid_and_hydro_only():
+    data = json.loads((_REPO / "data" / "geo" / "pr_natural_features.json").read_text("utf-8"))
+    assert data["_count"] == len(data["features"]) == 991
+    for rec in data["features"]:
+        validate_against_schema("pr_natural_feature", rec)
+        assert rec["group"] == "hydro"  # aguayluz consumes the hydro slice only
+    NaturalFeature(**_first_natural_feature())
+
+
+def test_natural_feature_rejects_out_of_pr_bbox():
+    bad = {**_first_natural_feature(), "lat": 40.7128, "lon": -74.0060}
+    with pytest.raises(ValidationError):
+        validate_against_schema("pr_natural_feature", bad)
+
+
+def test_natural_feature_rejects_unknown_group():
+    bad = {**_first_natural_feature(), "group": "financial"}
+    with pytest.raises(ValidationError):
+        validate_against_schema("pr_natural_feature", bad)

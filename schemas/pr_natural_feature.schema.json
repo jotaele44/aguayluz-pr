@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/federation/schemas/pr_natural_feature.schema.json",
+  "title": "PR Natural Feature",
+  "description": "Canonical Puerto Rico natural-feature record shared across PRII federation repos. Derived from USGS GNIS DomesticNames.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "canonical_id",
+    "gnis_id",
+    "canonical_name",
+    "normalized_name",
+    "feature_type",
+    "group",
+    "municipality",
+    "lat",
+    "lon",
+    "feature_class",
+    "source"
+  ],
+  "properties": {
+    "canonical_id": {
+      "type": "string",
+      "pattern": "^place_[a-z0-9_]+$"
+    },
+    "gnis_id": {
+      "type": "string",
+      "pattern": "^[0-9]+$"
+    },
+    "canonical_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "normalized_name": {
+      "type": "string",
+      "pattern": "^[A-Z0-9 ]+$"
+    },
+    "feature_type": {
+      "type": "string",
+      "enum": [
+        "bar",
+        "basin",
+        "bay",
+        "beach",
+        "canal",
+        "cape",
+        "channel",
+        "cliff",
+        "flat",
+        "gap",
+        "gut",
+        "island",
+        "lake",
+        "mountain",
+        "mountain_range",
+        "peak",
+        "plain",
+        "quebrada",
+        "reservoir",
+        "ridge",
+        "river",
+        "sea",
+        "spring",
+        "stream",
+        "valley",
+        "waterfall",
+        "wetland",
+        "woods"
+      ]
+    },
+    "group": {
+      "type": "string",
+      "enum": [
+        "hydro",
+        "terrain",
+        "coastal"
+      ]
+    },
+    "feature_class": {
+      "type": "string"
+    },
+    "municipality": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "lat": {
+      "type": "number",
+      "minimum": 17.7,
+      "maximum": 18.7
+    },
+    "lon": {
+      "type": "number",
+      "minimum": -68.1,
+      "maximum": -65.1
+    },
+    "aliases": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "source": {
+      "type": "string"
+    }
+  }
+}

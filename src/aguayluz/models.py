@@ -141,3 +141,27 @@ class Base44Export(_SchemaValidated):
     contradictions: list[dict[str, Any]] = Field(default_factory=list)
     gaps: list[str] = Field(default_factory=list)
     next_actions: list[str] = Field(default_factory=list)
+
+
+class NaturalFeature(_SchemaValidated):
+    """A PR natural feature from the shared federation gazetteer (hydro slice).
+
+    Canonical dataset is owned by spiderweb-pr; aguayluz consumes the ``hydro``
+    slice as reference geography (data/geo/pr_natural_features.{json,geojson}).
+    Shared contract: schemas/pr_natural_feature.schema.json.
+    """
+
+    _schema_name: str = "pr_natural_feature"
+
+    canonical_id: str
+    gnis_id: str
+    canonical_name: str
+    normalized_name: str
+    feature_type: str
+    group: str
+    feature_class: str
+    municipality: str | None = None
+    lat: float
+    lon: float
+    aliases: list[str] = Field(default_factory=list)
+    source: str
