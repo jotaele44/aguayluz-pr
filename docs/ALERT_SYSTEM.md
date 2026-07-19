@@ -75,13 +75,44 @@ tools (`ingest_alert_source`, `validate_alert`, `upsert_alert`, `link_asset`,
 the VAL pipeline above; the guardrails restate VAL-004/009/010 plus the
 system-of-record rule.
 
+## Data-driven alert generation
+
+The alert layer is no longer seed-only. Two builders project the producer's real,
+already-ingested corpus into the alert/dependency layer (run automatically by
+`scripts/refresh.py` after ingest, before export):
+
+```bash
+# EPA SDWIS boil-water + health-based quality violations -> CONTAMINATION alerts;
+# USGS reservoir readings -> HYDRO_OPS reservoir-low alerts (statistical proxy).
+python scripts/build_water_alerts.py
+
+# Nearest-power-asset spatial proxy -> water -[energizes]-> power dependency edges
+# (closes GAP-003; replaces the null EDGE-POWER-PUMP-SEED placeholder).
+python scripts/build_water_power_crosswalk.py
+```
+
+Provenance rules the builders honor:
+
+- SDWIS-derived CONTAMINATION alerts inherit the source event's **T1** tier and
+  confidence. Only acute (boil-water) and **health-based** quality violations are
+  promoted; non-health monitoring/reporting violations stay in the service-event
+  stream.
+- Reservoir-low alerts are a **statistical proxy** stamped **T2 / needs_review**
+  (a reading in the site's own lower percentile), not an official AAA operating
+  level. `validation_notes` records the disclaimer and the T1 unblock.
+- Crosswalk edges are **proximity inferences** (`evidence_required=true`,
+  sub-T1 confidence), not verified circuits.
+
+`aguayluz.water_alerts` holds the pure logic; the pydantic `AlertEvent` model
+validates every generated row, and gate G01 re-validates them at export.
+
 ## Build & run
 
 ```bash
-# Build the SQLite DB from the DDL, load seeds, run VAL-001..010, emit GeoJSON
+# Build the SQLite DB from the DDL, load seeds+generated rows, run VAL-001..010
 python scripts/build_alert_system.py            # writes outputs/alert_system.sqlite + outputs/alert_events.geojson
 aguayluz alerts build                            # same, via the CLI
-aguayluz alerts validate                         # run VAL-001..010 over the seeds
+aguayluz alerts validate                         # run VAL-001..010
 
 # Project alerts into the federation `alerts` stream (+ outputs/alert_events.json)
 python scripts/federation_export.py --mode test

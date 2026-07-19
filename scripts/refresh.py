@@ -105,18 +105,34 @@ STEP_AEE_INGEST = (
     ],
     True,   # optional — only runs if fetch succeeded
 )
+# Derived analytic layers — run after ingests, before export. They read the
+# freshly-ingested corpus (service_events, reservoir_levels, utility_assets) and
+# write the alert/dependency layers the exporter projects into canonical streams.
+STEP_WATER_ALERTS = (
+    "SDWIS/reservoir → water AlertEvents (CONTAMINATION/HYDRO_OPS)",
+    ["scripts/build_water_alerts.py"],
+    False,
+)
+STEP_WATER_POWER = (
+    "water↔power dependency crosswalk (GAP-003)",
+    ["scripts/build_water_power_crosswalk.py"],
+    False,
+)
 STEP_EXPORT = (
     "federation + outputs rebuild",
     ["scripts/federation_export.py"],
     False,
 )
 
+# The derived-layer steps every cadence runs before export.
+_DERIVE = [STEP_WATER_POWER, STEP_WATER_ALERTS]
+
 PLANS: dict[str, list[tuple]] = {
-    "daily": [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_LEVELS],
+    "daily": [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_LEVELS, *_DERIVE],
     "weekly": [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_ASSETS, STEP_USGS_LEVELS, STEP_SDWIS,
-               STEP_ECHO, STEP_FEMA],
+               STEP_ECHO, STEP_FEMA, *_DERIVE],
     "all":   [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_ASSETS, STEP_USGS_LEVELS, STEP_SDWIS,
-              STEP_ECHO, STEP_FEMA, STEP_AEE_FETCH, STEP_AEE_INGEST],
+              STEP_ECHO, STEP_FEMA, STEP_AEE_FETCH, STEP_AEE_INGEST, *_DERIVE],
 }
 
 

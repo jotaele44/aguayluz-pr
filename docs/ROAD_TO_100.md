@@ -64,9 +64,27 @@ Core package and pipelines are real, committed, and tested.
 
 ---
 
+## Water-monitoring analytic layer (closed here)
+
+The water-monitoring vectors that were *declared but unbuilt* — active alert
+modules with a seed-only `alert_events.jsonl`, a blocking dependency gap, and an
+unwired NHDPlus enricher — are now real, tested code:
+
+| Vector | What landed | Tier | T1 unblock (external) |
+|---|---|---|---|
+| SDWIS → CONTAMINATION alerts | `scripts/build_water_alerts.py` promotes 725 boil-water + 2,515 health-based quality violations to `AlertEvent`s | **T1** (real EPA data) | — already T1 |
+| Reservoir low / drought → HYDRO_OPS | per-site percentile proxy over `reservoir_levels.jsonl` | **T2 / needs_review** | official AAA operating levels (niveles de control) |
+| Water↔power crosswalk (GAP-003) | `scripts/build_water_power_crosswalk.py` — 87 `energizes` edges by nearest-power proximity; GAP-003 → closed | proxy (`evidence_required`) | real utility feeder map |
+| NHDPlus enrichment | `scripts/enrich_waters_nhd.py` wires the existing WATERS client; exporter emits `comid/reachcode/vpuid` | T1 when run | api.data.gov WATERS key + network |
+| Rich export → Hub | `federation_export.py` carries asset `attributes` + `energized_by` relationships for the Hub water surface | — | — |
+
+Only fully-sourced vectors (SDWIS) claim T1; proxies are transparently tagged and
+carry their unblock condition. `owld_locator` downstream-contamination cascade is a
+noted follow-up (client implemented, not yet wired to alert generation).
+
 ## Remaining — code (closed here)
 
-Exactly one small, clearly-safe robustness fix, applied in this PR:
+Exactly one small, clearly-safe robustness fix, applied in an earlier PR:
 
 - **`scripts/fetch_luma_live.py` — typed source-unavailable result on WAF/403.**
   Previously `fetch_towns` let `urllib.error.HTTPError` (the expected Incapsula WAF
