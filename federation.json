@@ -5,13 +5,15 @@
   "repository_legacy_name": "aguayluz-pr",
   "federation_role": "water_grid_monitoring_node",
   "hub_parent": "thehub-pr",
-  "upstream_signal_sources": ["centinelas-pr"],
+  "upstream_signal_sources": [
+    "centinelas-pr"
+  ],
   "jurisdiction": "Puerto Rico",
   "active_vector": "AGUAYLUZ_WATER_POWER_INFRASTRUCTURE_INTELLIGENCE",
   "production_status": "PRODUCTION_REAL_DATA_PARTIAL",
   "pause_lock_required": true,
   "source_truth": {
-    "primary_source": "U.S. EPA Office of Water \u2014 WATERS Services REST API",
+    "primary_source": "U.S. EPA Office of Water — WATERS Services REST API",
     "geofabric": "NHDPlus V2.1 (Puerto Rico = VPU 21; Vogel/VPUAttribute extensions unavailable -> attribute_coverage stamped partial)",
     "export_envelope": "schemas/base44_export.schema.json",
     "runtime_required_keys": [
@@ -63,7 +65,8 @@
       "real-data load complete: POWER assets (39 generation/substation/transmission nodes via scripts/ingest_power.py) and WATER/wastewater assets (234 treatment/wastewater/pumping/reservoir nodes via scripts/ingest_water.py, OSM-derived, review_status=needs_review) are loaded from real public data — 273 utility_assets total",
       "advisory: PREPS service_events remain island-wide aggregates; per-municipality outage attribution is now provided by aee_incidents (LUMA outages_by_town) at tier T2/needs_review (third-party snapshot) — promote to T1 if/when a direct utility feed is wired",
       "advisory (provenance): aee_incidents is a point-in-time snapshot (2025-03-03); the recommended SuperSonicHub1 mirror is itself inactive since then and the payload carries no timestamps, so a LIVE per-municipio source is required for ongoing attribution; outage start/end + restoration events require a commit-walk + snapshot-diff (future extension)",
-      "advisory: source datasets (Energy_Sector, preps_*, outages_by_town.json, Census gazetteer) live outside the repo; ingest scripts default to local paths (override with --src)"
+      "advisory: source datasets (Energy_Sector, preps_*, outages_by_town.json, Census gazetteer) live outside the repo; ingest scripts default to local paths (override with --src)",
+      "water-monitoring analytic layer built: scripts/build_water_alerts.py promotes real EPA SDWIS boil-water + health-based quality violations to CONTAMINATION AlertEvents (T1), plus a T2/needs_review reservoir-low HYDRO_OPS proxy; scripts/build_water_power_crosswalk.py adds water->power `energizes` edges (closes GAP-003); the WATERS NHDPlus enricher is wired (scripts/enrich_waters_nhd.py). Rich asset attributes + energized_by relationships now flow to thehub-pr. Proxies are transparently tier-tagged; T1 unblocks (AAA operating levels, utility feeder map, WATERS key) recorded in docs/ROAD_TO_100.md."
     ]
   },
   "centinelas_pr_only_gaps": [

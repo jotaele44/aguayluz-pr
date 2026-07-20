@@ -1,0 +1,50 @@
+name: Centinelas signal intake
+
+# Federation ingress: receive a repository_dispatch (centinelas-signal) from
+# centinelas-pr's dispatch-signals-aguayluz.yml, map the routed intake record
+# (a PR water/utility ENVIRONMENTAL signal, with domain_tags) into a service_event
+# via scripts/ingest_centinelas_dispatch.py, and commit the updated corpus.
+#
+# The client_payload is the routed aguayluz intake record. Also runnable manually
+# (workflow_dispatch) with an inline JSON payload for testing.
+
+on:
+  repository_dispatch:
+    types: [centinelas-signal]
+  workflow_dispatch:
+    inputs:
+      payload_json:
+        description: "Inline JSON client_payload (for manual testing)"
+        required: true
+
+permissions:
+  contents: write   # commit the updated service_events.jsonl
+
+jobs:
+  intake:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Ingest Centinelas signal into service_events
+        env:
+          CENTINELAS_CLIENT_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
+          MANUAL_PAYLOAD: ${{ github.event.inputs.payload_json }}
+        run: |
+          if [ -n "${MANUAL_PAYLOAD:-}" ]; then
+            python3 scripts/ingest_centinelas_dispatch.py --payload-json "$MANUAL_PAYLOAD"
+          else
+            python3 scripts/ingest_centinelas_dispatch.py
+          fi
+
+      - name: Commit updated corpus
+        run: |
+          git config user.name  "aguayluz-bot"
+          git config user.email "noreply@github.com"
+          git add data/service_events.jsonl
+          git diff --cached --quiet \
+            || git commit -m "data: ingest Centinelas water/utility signal [skip ci]"
+          git push || echo "nothing to push"

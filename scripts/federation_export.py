@@ -101,6 +101,25 @@ def _conf(value: Any) -> float:
     return round(c / 100.0, 4) if c > 1 else c
 
 
+# Operational severity (0-5) at or above which an alert is life-safety critical and
+# eligible for the Hub's push / SMS fan-out. Kept in sync with
+# aguayluz.alert_promotion.CRITICAL_SEVERITY; inlined here to keep the exporter
+# dependency-free (it must run from a bare clone without importing the package).
+_CRITICAL_SEVERITY = 4
+_ALERT_INACTIVE_STATUS = frozenset({"closed", "rejected"})
+
+
+def _alert_is_critical(severity: Any, status: Any) -> bool:
+    """True when an alert clears the life-safety threshold and is still actionable."""
+    try:
+        sev = int(severity)
+    except (TypeError, ValueError):
+        return False
+    if str(status) in _ALERT_INACTIVE_STATUS:
+        return False
+    return sev >= _CRITICAL_SEVERITY
+
+
 def _lineage(phase: str, inputs: list[str]) -> dict[str, Any]:
     return {
         "producer_script": PRODUCER_SCRIPT,
@@ -110,10 +129,11 @@ def _lineage(phase: str, inputs: list[str]) -> dict[str, Any]:
     }
 
 
-def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], now: str, geo: dict[str, dict] | None = None, crosswalk: list[dict[str, Any]] | None = None, alerts: list[dict[str, Any]] | None = None) -> dict[str, list[dict[str, Any]]]:
+def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], now: str, geo: dict[str, dict] | None = None, crosswalk: list[dict[str, Any]] | None = None, alerts: list[dict[str, Any]] | None = None, dep_edges: list[dict[str, Any]] | None = None) -> dict[str, list[dict[str, Any]]]:
     inputs = ["data/utility_assets.jsonl", "data/service_events.jsonl", "data/aee_incidents.jsonl"]
     geo = geo or {}
     crosswalk = crosswalk or []
+    dep_edges = dep_edges or []
     sources: dict[str, dict[str, Any]] = {}
     entities: dict[str, dict[str, Any]] = {}
     relationships: dict[str, dict[str, Any]] = {}
@@ -151,6 +171,30 @@ def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], no
         }
         if not entities[aid]["external_ids"]:
             del entities[aid]["external_ids"]
+
+        # Rich, operator-facing asset fields for the Hub's water surface
+        # (AguaYLuz page columns: municipality/status/operator/sensitivity). These
+        # already live on the source rows; carry them through the canonical export
+        # in an `attributes` block so the Hub renders them instead of blank cells.
+        attrs = {
+            "municipality": a.get("municipality"),
+            "asset_subtype": a.get("asset_subtype"),
+            "status": a.get("status"),
+            "review_status": a.get("review_status"),
+            "operator": a.get("operator"),
+            "owner_agency": a.get("operator"),
+            "evidence_tier": a.get("evidence_tier"),
+            "attribute_coverage": a.get("attribute_coverage"),
+            # coarse criticality signal for the Continuity Risks surface: power-drawing
+            # water assets are the ones a grid outage takes offline.
+            "sensitivity": "power_dependent"
+            if any(k in (a.get("asset_subtype") or "").lower()
+                   for k in ("pumping_station", "pump", "treatment", "wtp"))
+            else None,
+        }
+        attrs = {k: v for k, v in attrs.items() if v not in (None, "", [])}
+        if attrs:
+            entities[aid]["attributes"] = attrs
 
         # Z2: carry real WGS84 coords onto the canonical entity for cross-producer
         # spatial joins (spiderweb correlate_spatial, PRIIS scoring).
@@ -219,6 +263,28 @@ def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], no
                                          entities[mem_ent].get("confidence", 0.5), now,
                                          source_inputs=cw_inputs))
 
+    # Water<->power dependency crosswalk -> canonical `relationships`. Each
+    # `energizes` edge (power_node -> hydro_asset) becomes a water-asset
+    # -[energized_by]-> power-asset relationship, so the Hub can surface which
+    # water assets a grid outage would take offline (Continuity Risks). Only edges
+    # whose both endpoints are exported assets are emitted.
+    de_inputs = ["data/alert_dependency_edges.jsonl"]
+    for de in dep_edges:
+        if de.get("dependency_type") != "energizes":
+            continue
+        water_ref, power_ref = de.get("to_node_id"), de.get("from_node_id")
+        if not water_ref or not power_ref:
+            continue
+        w_ent = _fid("ent", "asset", water_ref)
+        p_ent = _fid("ent", "asset", power_ref)
+        if w_ent not in entities or p_ent not in entities:
+            continue
+        sid = entities[w_ent]["source_id"]
+        conf = _conf(de.get("confidence"))
+        relationships.update(
+            _rel_kv(w_ent, "energized_by", p_ent, sid, conf, now, source_inputs=de_inputs)
+        )
+
     # Operational alert events -> canonical `alerts` stream. Each alert registers
     # its source, scales confidence to 0-1, and (when matched) links to the
     # affected utility asset entity for cross-producer correlation in the Hub.
@@ -243,6 +309,7 @@ def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], no
             "module": al.get("module_id"),
             "alert_type": al.get("event_type"),
             "severity": al.get("severity"),
+            "is_critical": _alert_is_critical(al.get("severity"), al.get("status")),
             "status": al.get("status"),
             "gap_status": al.get("gap_status"),
             "start_at": al.get("start_at"),
@@ -621,6 +688,8 @@ def main() -> int:
     ap.add_argument("--geo", default=str(REPO_ROOT / "data/geo/pr_municipios.json"))
     ap.add_argument("--crosswalk", default=str(REPO_ROOT / "data/asset_crosswalk.jsonl"),
                     help="cross-source dedup clusters; emits member -[duplicate_of]-> canonical edges")
+    ap.add_argument("--dep-edges", default=str(REPO_ROOT / "data/alert_dependency_edges.jsonl"),
+                    help="alert dependency edges; `energizes` edges emit water -[energized_by]-> power relationships")
     ap.add_argument("--out", default=str(REPO_ROOT / "exports/federation"))
     ap.add_argument("--outputs", default=str(REPO_ROOT / "outputs"),
                     help="operator-facing snapshot directory (7-file deliverable). Pass empty string to skip.")
@@ -636,11 +705,12 @@ def main() -> int:
     events = raw_events + raw_incidents
     geo = _load_geo(Path(args.geo))
     crosswalk = _load_jsonl(Path(args.crosswalk))
+    dep_edges = _load_jsonl(Path(args.dep_edges))
     if not assets and not events and not alerts:
         print("no input data (data/utility_assets.jsonl / service_events / aee_incidents / alert_events absent) — nothing to export")
         return 0
     now = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
-    streams = build_streams(assets, events, now, geo, crosswalk, alerts)
+    streams = build_streams(assets, events, now, geo, crosswalk, alerts, dep_edges)
     manifest_path = write_package(streams, Path(args.out), args.mode, now)
     counts = {k: len(v) for k, v in streams.items()}
     print(f"wrote {manifest_path} — {counts}")

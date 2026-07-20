@@ -105,18 +105,40 @@ STEP_AEE_INGEST = (
     ],
     True,   # optional — only runs if fetch succeeded
 )
+# Derived analytic layers — run after ingests, before export. They read the
+# freshly-ingested corpus (service_events, reservoir_levels, utility_assets) and
+# write the alert/dependency layers the exporter projects into canonical streams.
+STEP_ALERTS = (
+    "signals → AlertEvents (CONTAMINATION/HYDRO_OPS/SEISMIC_GEO/WEATHER_HAZARD)",
+    ["scripts/build_alerts.py"],
+    False,
+)
+STEP_WATER_POWER = (
+    "water↔power dependency crosswalk (GAP-003)",
+    ["scripts/build_water_power_crosswalk.py"],
+    False,
+)
 STEP_EXPORT = (
     "federation + outputs rebuild",
     ["scripts/federation_export.py"],
     False,
 )
 
+# The derived-layer steps every cadence runs before export. build_alerts.py promotes
+# the freshly-ingested service_events/readings across every domain (water, seismic,
+# weather) into the alert layer the exporter projects.
+_DERIVE = [STEP_WATER_POWER, STEP_ALERTS]
+
 PLANS: dict[str, list[tuple]] = {
-    "daily": [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_LEVELS],
+    # fast: the near-real-time hazard feeds only (seismic + NWS) + alert promotion +
+    # export. Meant for a ~15-minute cron so a quake / hurricane warning becomes a
+    # pushed alert in minutes, not the next daily batch.
+    "fast": [STEP_NWS, STEP_USGS_QUAKES, *_DERIVE],
+    "daily": [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_LEVELS, *_DERIVE],
     "weekly": [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_ASSETS, STEP_USGS_LEVELS, STEP_SDWIS,
-               STEP_ECHO, STEP_FEMA],
+               STEP_ECHO, STEP_FEMA, *_DERIVE],
     "all":   [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_ASSETS, STEP_USGS_LEVELS, STEP_SDWIS,
-              STEP_ECHO, STEP_FEMA, STEP_AEE_FETCH, STEP_AEE_INGEST],
+              STEP_ECHO, STEP_FEMA, STEP_AEE_FETCH, STEP_AEE_INGEST, *_DERIVE],
 }
 
 
@@ -148,6 +170,8 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     g = ap.add_mutually_exclusive_group()
+    g.add_argument("--fast", action="store_true",
+                   help="near-real-time hazard feeds only (NWS + USGS quakes) + alerts + export")
     g.add_argument("--daily", action="store_true",
                    help="NWS alerts + USGS levels + export")
     g.add_argument("--weekly", action="store_true",
@@ -160,7 +184,8 @@ def main() -> int:
                     help="print the plan, don't execute")
     args = ap.parse_args()
 
-    cadence = "weekly" if args.weekly else "all" if args.all else "daily"
+    cadence = ("fast" if args.fast else "weekly" if args.weekly
+               else "all" if args.all else "daily")
     steps = list(PLANS[cadence])
     if not args.no_export:
         steps.append(STEP_EXPORT)
