@@ -101,6 +101,25 @@ def _conf(value: Any) -> float:
     return round(c / 100.0, 4) if c > 1 else c
 
 
+# Operational severity (0-5) at or above which an alert is life-safety critical and
+# eligible for the Hub's push / SMS fan-out. Kept in sync with
+# aguayluz.alert_promotion.CRITICAL_SEVERITY; inlined here to keep the exporter
+# dependency-free (it must run from a bare clone without importing the package).
+_CRITICAL_SEVERITY = 4
+_ALERT_INACTIVE_STATUS = frozenset({"closed", "rejected"})
+
+
+def _alert_is_critical(severity: Any, status: Any) -> bool:
+    """True when an alert clears the life-safety threshold and is still actionable."""
+    try:
+        sev = int(severity)
+    except (TypeError, ValueError):
+        return False
+    if str(status) in _ALERT_INACTIVE_STATUS:
+        return False
+    return sev >= _CRITICAL_SEVERITY
+
+
 def _lineage(phase: str, inputs: list[str]) -> dict[str, Any]:
     return {
         "producer_script": PRODUCER_SCRIPT,
@@ -290,6 +309,7 @@ def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], no
             "module": al.get("module_id"),
             "alert_type": al.get("event_type"),
             "severity": al.get("severity"),
+            "is_critical": _alert_is_critical(al.get("severity"), al.get("status")),
             "status": al.get("status"),
             "gap_status": al.get("gap_status"),
             "start_at": al.get("start_at"),

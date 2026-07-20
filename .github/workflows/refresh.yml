@@ -2,12 +2,13 @@ name: refresh
 
 on:
   schedule:
+    - cron: "*/15 * * * *"  # every 15 min — near-real-time hazard feeds (NWS + quakes)
     - cron: "0 7 * * *"    # daily 07:00 UTC — NWS alerts + USGS levels
     - cron: "0 7 * * 1"    # Monday 07:00 UTC — full weekly refresh
   workflow_dispatch:
     inputs:
       cadence:
-        description: "Refresh cadence: daily | weekly | all"
+        description: "Refresh cadence: fast | daily | weekly | all"
         required: false
         default: "weekly"
 
@@ -30,6 +31,12 @@ jobs:
       - name: Install dependencies
         run: pip install -e ".[dev]"
 
+      - name: Fast refresh (near-real-time hazard feeds — NWS + quakes)
+        if: >
+          (github.event_name == 'schedule' && github.event.schedule == '*/15 * * * *') ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.cadence == 'fast')
+        run: python scripts/refresh.py --fast
+
       - name: Daily refresh (NWS alerts + USGS levels)
         if: >
           github.event_name == 'schedule' &&
@@ -49,11 +56,34 @@ jobs:
         run: python scripts/refresh.py --all
 
       - name: Commit updated data
+        id: commit
         run: |
           git config user.name  "aguayluz-bot"
           git config user.email "noreply@github.com"
           git add data/ outputs/ reports/
-          git diff --cached --quiet \
-            && echo "No data changes to commit." \
-            || git commit -m "chore: scheduled refresh $(date -u +%Y-%m-%dT%H:%MZ) [skip ci]"
-          git push
+          if git diff --cached --quiet; then
+            echo "No data changes to commit."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            git commit -m "chore: scheduled refresh $(date -u +%Y-%m-%dT%H:%MZ) [skip ci]"
+            git push
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Producer -> Hub push: tell thehub-pr to re-aggregate as soon as a new export
+      # lands, instead of waiting for the Hub's own schedule. No-op unless the
+      # FEDERATION_DISPATCH_TOKEN secret (contents:write on thehub-pr) is configured,
+      # so forks and unprivileged runs stay quiet. This is the event-driven
+      # federation hop that closes the "Hub is not triggered by aguayluz" gap.
+      - name: Notify Hub of new export (repository_dispatch)
+        if: steps.commit.outputs.changed == 'true' && env.FEDERATION_DISPATCH_TOKEN != ''
+        env:
+          FEDERATION_DISPATCH_TOKEN: ${{ secrets.FEDERATION_DISPATCH_TOKEN }}
+        run: |
+          curl -sSf -X POST \
+            -H "Authorization: Bearer $FEDERATION_DISPATCH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/jotaele44/thehub-pr/dispatches \
+            -d '{"event_type":"aguayluz-export","client_payload":{"producer":"aguayluz-pr"}}' \
+            && echo "Dispatched aguayluz-export to thehub-pr." \
+            || echo "Hub dispatch failed (non-fatal)."

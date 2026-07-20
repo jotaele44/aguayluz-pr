@@ -21,8 +21,23 @@ relevance.
 
 | Activation | Modules |
 |---|---|
-| `active` | HYDRO_OPS, POWER_OPS, WEATHER_HAZARD, CONTAMINATION, DAM_SAFETY, PUBLIC_NOTICE |
-| `dormant` | TRANSPORT_ACCESS, TELECOM_SCADA, SEISMIC_GEO, INDUSTRIAL |
+| `active` | HYDRO_OPS, POWER_OPS, WEATHER_HAZARD, CONTAMINATION, DAM_SAFETY, SEISMIC_GEO, PUBLIC_NOTICE |
+| `dormant` | TRANSPORT_ACCESS, TELECOM_SCADA, INDUSTRIAL |
+
+Modules with a **data-driven generator** (real ingested signals promoted to `AlertEvent`s
+by `scripts/build_alerts.py`, see [`src/aguayluz/alert_promotion/`](../src/aguayluz/alert_promotion/)):
+
+| Module | Source | Promoter |
+|---|---|---|
+| `CONTAMINATION` | EPA SDWIS boil-water / health-based violations | `water_alerts.contamination_alert` |
+| `HYDRO_OPS` | USGS reservoir levels (statistical low proxy, T2) | `water_alerts.reservoir_alerts` |
+| `SEISMIC_GEO` | USGS FDSN earthquakes (severity from magnitude) | `alert_promotion.seismic` |
+| `WEATHER_HAZARD` | NWS active hazard alerts (severity from hazard type + urgency) | `alert_promotion.weather` |
+
+`POWER_OPS` and `INDUSTRIAL` promoters are ready in the registry but gated on their
+sources (live outage feed / EPA ECHO), which are currently unavailable. Every alert with
+operational severity ≥ 4 that is still actionable is flagged `is_critical` in the exported
+`alerts` stream, driving the Hub's push / SMS fan-out.
 
 ## Data model
 
