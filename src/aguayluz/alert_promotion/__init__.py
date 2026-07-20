@@ -13,10 +13,12 @@ the I/O):
 * water     — :func:`aguayluz.water_alerts.build_water_alerts`  (CONTAMINATION + HYDRO_OPS)
 * seismic   — :func:`aguayluz.alert_promotion.seismic.seismic_alerts`   (SEISMIC_GEO)
 * weather   — :func:`aguayluz.alert_promotion.weather.weather_alerts`   (WEATHER_HAZARD)
+* osha      — :func:`aguayluz.alert_promotion.osha.osha_alerts`         (INDUSTRIAL)
 
 Each promoter stamps a distinct ``alert_id`` marker (``_sdwis_`` / ``_resvlow_`` /
-``_seismic_`` / ``_weather_``) so the idempotent merge in the CLI can replace only its
-own previously-generated rows while preserving seeds and manual entries.
+``_seismic_`` / ``_weather_`` / ``_osha_``) so the idempotent merge in the CLI can
+replace only its own previously-generated rows while preserving seeds and manual
+entries.
 """
 
 from __future__ import annotations
@@ -25,11 +27,14 @@ from typing import Any
 
 from ..alerts import AlertEvent
 from ..water_alerts import build_water_alerts, load_geo
+from .osha import OSHA_MARKER, osha_alerts
 from .seismic import SEISMIC_MARKER, seismic_alerts
 from .weather import WEATHER_MARKER, weather_alerts
 
 #: Every alert_id substring that marks a row as machine-generated (safe to replace).
-GENERATED_MARKERS: tuple[str, ...] = ("_sdwis_", "_resvlow_", SEISMIC_MARKER, WEATHER_MARKER)
+GENERATED_MARKERS: tuple[str, ...] = (
+    "_sdwis_", "_resvlow_", SEISMIC_MARKER, WEATHER_MARKER, OSHA_MARKER,
+)
 
 #: Operational-severity floor (0-5 scale) at or above which an alert is life-safety
 #: critical and eligible for push / SMS fan-out. Boil-water acute (4), major quake
@@ -68,6 +73,7 @@ def build_all_alerts(
     )
     alerts.extend(seismic_alerts(events, geo))
     alerts.extend(weather_alerts(events, geo))
+    alerts.extend(osha_alerts(events, geo))
     return alerts
 
 
@@ -79,5 +85,6 @@ __all__ = [
     "build_water_alerts",
     "seismic_alerts",
     "weather_alerts",
+    "osha_alerts",
     "load_geo",
 ]

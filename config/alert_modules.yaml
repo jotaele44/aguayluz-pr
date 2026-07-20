@@ -79,12 +79,12 @@ modules:
   - module_id: INDUSTRIAL
     module_name: Industrial / Port / Facility Alerts
     sector: Industrial
-    activation_status: dormant
+    activation_status: active
     priority: medium
     hydro_dependency_relevance: indirect
     default_severity_floor: 2
-    primary_sources: facility notices, EPA, news
-    notes: Industrial incidents that could affect intakes, aquifers, coastal discharge.
+    primary_sources: OSHA/DOL enforcement, facility notices, EPA, news
+    notes: Industrial incidents that could affect intakes, aquifers, coastal discharge; backed by OSHA inspection promotion (scripts/ingest_osha.py).
   - module_id: PUBLIC_NOTICE
     module_name: Public Notice Archive
     sector: Archive
