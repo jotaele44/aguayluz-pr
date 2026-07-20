@@ -31,9 +31,24 @@ def test_isodate_normalizes_and_handles_null():
 
 def test_only_pr_inspections_kept():
     events = _events()
-    # The FL record (Miami) is filtered out; the three PR ones remain.
-    assert len(events) == 3
+    # The FL record (Miami) is filtered out; the four PR ones remain.
+    assert len(events) == 4
     assert all(e["source_ref"].startswith(SOURCE_PREFIX) for e in events)
+
+
+def test_closed_inspection_carries_end_time_and_no_review():
+    ev = {e["source_ref"]: e for e in _events()}["OSHA ENFORCEMENT activity_nr=310100200"]
+    # A closed historical fatality inspection records its close date in end_time
+    # and does not re-enter the review queue.
+    assert ev["end_time"] == "2019-11-20T00:00:00Z"
+    assert ev["review_status"] == "accepted"
+    assert "case=closed" in ev["status_text"]
+
+
+def test_open_inspection_has_no_end_time():
+    ev = {e["source_ref"]: e for e in _events()}["OSHA ENFORCEMENT activity_nr=317405066"]
+    assert ev["end_time"] is None
+    assert "case=open" in ev["status_text"]
 
 
 def test_event_shape_and_status_text_carries_osha_fields():
@@ -68,4 +83,4 @@ def test_merge_is_idempotent_and_preserves_other_sources():
     assert len(first) == len(second)  # re-run replaces, does not duplicate
     assert any(e["source_ref"].startswith("EPA ECHO CWA") for e in second)  # other source kept
     osha = [e for e in second if e["source_ref"].startswith(SOURCE_PREFIX)]
-    assert len(osha) == 3
+    assert len(osha) == 4

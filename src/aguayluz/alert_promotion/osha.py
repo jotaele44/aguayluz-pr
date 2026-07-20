@@ -81,6 +81,12 @@ def osha_alert(event: dict[str, Any], geo: dict[str, dict[str, Any]]) -> AlertEv
 
     event_type, severity = _classify(insp_type)
 
+    # Closure state (from the service_event's end_time): a closed inspection is a
+    # historical record, not a current hazard, so it becomes a `closed` alert —
+    # which is_critical() excludes from push/SMS regardless of its severity.
+    close_at = event.get("end_time")
+    status = "closed" if close_at else "active"
+
     muni = event.get("municipality") or _municipality(city, geo)
     munis = [muni] if muni else ["(unscoped)"]
     lat, lon = _centroid(muni, geo) if muni else (None, None)
@@ -91,13 +97,13 @@ def osha_alert(event: dict[str, Any], geo: dict[str, dict[str, Any]]) -> AlertEv
         alert_id=f"AYL_ALR_{date}{OSHA_MARKER}{_slug(activity_nr)}",
         module_id="INDUSTRIAL",
         event_type=event_type,
-        status="active",
+        status=status,
         source_title=f"OSHA {insp_type} — {estab}",
         source_ref=event.get("source_ref") or _OSHA_SOURCE_PREFIX,
         source_hash=event.get("source_hash"),
         published_at=None,
         start_at=event.get("start_time"),
-        end_at=None,
+        end_at=close_at,
         asset_name=estab,
         asset_id=None,
         operator="OSHA",

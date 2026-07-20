@@ -58,6 +58,22 @@ def test_fatality_inspection_is_critical():
     assert is_critical(a.severity, a.status) is True
 
 
+def test_closed_fatality_inspection_is_not_critical():
+    # A closed historical fatality (end_time set) is severity 5 but must NOT be a
+    # current push/SMS hazard — it becomes a `closed` alert that is_critical excludes.
+    a = osha_alert(_osha(end_time="2019-11-20T00:00:00Z"), GEO)
+    assert a.severity == 5
+    assert a.status == "closed"
+    assert a.end_at == "2019-11-20T00:00:00Z"
+    assert is_critical(a.severity, a.status) is False
+
+
+def test_open_inspection_status_active():
+    a = osha_alert(_osha(), GEO)  # no end_time
+    assert a.status == "active"
+    assert a.end_at is None
+
+
 def test_programmed_inspection_not_critical():
     st = "osha inspection activity_nr=2 estab='Y' insp_type='Programmed Planned' naics=1 city='Ponce'"
     a = osha_alert(_osha(status_text=st, municipality="Ponce"), GEO)

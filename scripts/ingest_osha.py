@@ -137,15 +137,23 @@ def build_events(doc: Any, canon: dict[str, str], state: str = "PR") -> list[dic
         day = (open_iso or "")[:10].replace("-", "")
         if len(day) != 8:
             continue  # event_id pattern requires YYYYMMDD
+        # Closure state: a state-only query returns years of history, so a closed
+        # inspection must not surface as a current hazard. Carry the case-close
+        # date in end_time (an existing service_event field); the promoter maps a
+        # closed inspection to a non-critical alert status.
+        close_iso = _isodate(_first(rec, "close_conf_date", "close_case_date", "close_out_date"))
         estab = _first(rec, "estab_name", "estab") or f"activity {activity_nr}"
         insp_type = _first(rec, "insp_type", "inspection_type") or "Unknown"
         naics = _first(rec, "naics_code", "naics")
         city = _first(rec, "site_city", "city").title()
         muni = canon.get(_unaccent(city))
-        needs_review = any(t in insp_type.lower() for t in _REVIEW_INSP_TYPES)
+        # Only open inspections of a life-safety type still warrant review; a
+        # closed historical record does not.
+        needs_review = close_iso is None and any(t in insp_type.lower() for t in _REVIEW_INSP_TYPES)
         status_text = (
             f"osha inspection activity_nr={activity_nr} estab='{estab}' "
-            f"insp_type='{insp_type}' naics={naics or 'NA'} city='{city}'"
+            f"insp_type='{insp_type}' naics={naics or 'NA'} city='{city}' "
+            f"case={'closed' if close_iso else 'open'}"
         )
         rows.append({
             "event_id": f"AYL_EVT_{day}_{_slug(f'OSHA-{activity_nr}')}",
@@ -155,7 +163,7 @@ def build_events(doc: Any, canon: dict[str, str], state: str = "PR") -> list[dic
             "zone": None,
             "status_text": status_text,
             "start_time": open_iso,
-            "end_time": None,
+            "end_time": close_iso,
             "reported_customers_or_users": None,
             "source_ref": f"{SOURCE_PREFIX} activity_nr={activity_nr}",
             "source_hash": None,
