@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from ingest_osha import (  # noqa: E402
     SOURCE_PREFIX,
+    _build_filter,
     _isodate,
     build_events,
     merge,
@@ -23,6 +24,19 @@ def _events():
     return build_events(DOC, CANON, "PR")
 
 
+def test_build_filter_shapes():
+    # Single condition -> flat object; state + since -> and-wrapper with gte.
+    # (Shapes verified against the live DOL v4 API.)
+    assert _build_filter("PR", None) == {"field": "site_state", "operator": "eq", "value": "PR"}
+    assert _build_filter("PR", "2024-01-01") == {
+        "and": [
+            {"field": "site_state", "operator": "eq", "value": "PR"},
+            {"field": "open_date", "operator": "gte", "value": "2024-01-01"},
+        ]
+    }
+    assert _build_filter("", None) is None
+
+
 def test_isodate_normalizes_and_handles_null():
     assert _isodate("2026-05-12") == "2026-05-12T00:00:00Z"
     assert _isodate(None) is None
@@ -31,9 +45,17 @@ def test_isodate_normalizes_and_handles_null():
 
 def test_only_pr_inspections_kept():
     events = _events()
-    # The FL record (Miami) is filtered out; the four PR ones remain.
-    assert len(events) == 4
+    # The FL record (Miami) is filtered out; the five PR ones remain.
+    assert len(events) == 5
     assert all(e["source_ref"].startswith(SOURCE_PREFIX) for e in events)
+
+
+def test_coded_accident_inspection_flags_review():
+    # Real DOL v4 insp_type is a single-letter IMIS code; an open "A" (accident)
+    # inspection must still be flagged for review.
+    ev = {e["source_ref"]: e for e in _events()}["OSHA ENFORCEMENT activity_nr=320500777"]
+    assert ev["review_status"] == "needs_review"
+    assert "insp_type='A'" in ev["status_text"]
 
 
 def test_closed_inspection_carries_end_time_and_no_review():
@@ -83,4 +105,4 @@ def test_merge_is_idempotent_and_preserves_other_sources():
     assert len(first) == len(second)  # re-run replaces, does not duplicate
     assert any(e["source_ref"].startswith("EPA ECHO CWA") for e in second)  # other source kept
     osha = [e for e in second if e["source_ref"].startswith(SOURCE_PREFIX)]
-    assert len(osha) == 4
+    assert len(osha) == 5

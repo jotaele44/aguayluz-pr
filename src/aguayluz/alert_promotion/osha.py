@@ -39,20 +39,56 @@ def _field(pattern: re.Pattern[str], text: str | None) -> str:
     return (m.group(1) if m else "").strip()
 
 
+# OSHA IMIS inspection-type codes (the live DOL v4 `insp_type` field is a single
+# letter, not a label). See the OSHA enforcement data dictionary.
+_INSP_TYPE_LABELS: dict[str, str] = {
+    "A": "Accident",
+    "B": "Complaint",
+    "C": "Referral",
+    "D": "Monitoring",
+    "E": "Variance",
+    "F": "Follow-up",
+    "G": "Unprogrammed related",
+    "H": "Planned",
+    "I": "Programmed related",
+    "J": "Unprogrammed other",
+    "K": "Other",
+    "L": "Programmed other",
+    "M": "Fatality/Catastrophe",
+}
+#: Fatality/catastrophe inspection code — life-safety (severity 5).
+_FATALITY_CODES = {"M"}
+#: Accident inspection code — reactive to an injury (severity 4).
+_ACCIDENT_CODES = {"A"}
+#: Reactive (complaint/referral/unprogrammed) inspection codes — elevated.
+_REACTIVE_CODES = {"B", "C", "G", "J"}
+
+
+def _insp_label(insp_type: str) -> str:
+    """Human label for an inspection type — decodes a single-letter IMIS code."""
+    code = insp_type.strip().upper()
+    if len(code) == 1 and code in _INSP_TYPE_LABELS:
+        return _INSP_TYPE_LABELS[code]
+    return insp_type
+
+
 def _classify(insp_type: str) -> tuple[str, int]:
     """Map an OSHA inspection type to (AlertEvent event_type, 0-5 severity).
 
+    Handles both the live single-letter IMIS codes and descriptive text labels.
     Fatality/catastrophe and imminent-danger inspections are life-safety hazards
     (severity 5); accident inspections are severe (4, still push-eligible);
-    complaint/referral-driven inspections are elevated (3); programmed and other
-    inspections sit at the INDUSTRIAL module's default floor (2).
+    complaint/referral/unprogrammed inspections are elevated (3); programmed and
+    other inspections sit at the INDUSTRIAL module's default floor (2).
     """
     t = insp_type.lower()
-    if "fatal" in t or "catastrophe" in t or "imminent" in t:
+    raw = insp_type.strip().upper()
+    code = raw if len(raw) == 1 else ""  # single-letter IMIS code, else a text label
+    if "fatal" in t or "catastrophe" in t or "imminent" in t or code in _FATALITY_CODES:
         return "hazard", 5
-    if "accident" in t:
+    if code in _ACCIDENT_CODES or "accident" in t:
         return "hazard", 4
-    if "complaint" in t or "referral" in t:
+    if code in _REACTIVE_CODES or "complaint" in t or "referral" in t:
         return "inspection", 3
     return "inspection", 2
 
@@ -98,7 +134,7 @@ def osha_alert(event: dict[str, Any], geo: dict[str, dict[str, Any]]) -> AlertEv
         module_id="INDUSTRIAL",
         event_type=event_type,
         status=status,
-        source_title=f"OSHA {insp_type} — {estab}",
+        source_title=f"OSHA {_insp_label(insp_type)} — {estab}",
         source_ref=event.get("source_ref") or _OSHA_SOURCE_PREFIX,
         source_hash=event.get("source_hash"),
         published_at=None,

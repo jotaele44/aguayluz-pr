@@ -41,15 +41,41 @@ def test_inspection_promotes_to_industrial_alert():
     assert a.severity == 5  # Fatality/Catastrophe -> life-safety band
 
 
-def test_inspection_type_severity_bands():
-    def sev(insp_type):
-        st = f"osha inspection activity_nr=1 estab='X' insp_type='{insp_type}' naics=1 city='Ponce'"
-        return osha_alert(_osha(status_text=st, municipality=None), GEO).severity
-    assert sev("Fatality/Catastrophe") == 5
-    assert sev("Accident") == 4
-    assert sev("Complaint") == 3
-    assert sev("Referral") == 3
-    assert sev("Programmed Planned") == 2
+def _sev(insp_type):
+    st = f"osha inspection activity_nr=1 estab='X' insp_type='{insp_type}' naics=1 city='Ponce'"
+    return osha_alert(_osha(status_text=st, municipality=None), GEO).severity
+
+
+def test_inspection_type_severity_bands_text():
+    assert _sev("Fatality/Catastrophe") == 5
+    assert _sev("Accident") == 4
+    assert _sev("Complaint") == 3
+    assert _sev("Referral") == 3
+    assert _sev("Programmed Planned") == 2
+
+
+def test_inspection_type_severity_bands_imis_codes():
+    # The live DOL v4 insp_type is a single-letter IMIS code, not a label.
+    assert _sev("M") == 5   # Fatality/Catastrophe
+    assert _sev("A") == 4   # Accident
+    assert _sev("B") == 3   # Complaint
+    assert _sev("C") == 3   # Referral
+    assert _sev("G") == 3   # Unprogrammed related
+    assert _sev("H") == 2   # Planned
+    assert _sev("I") == 2   # Programmed related
+    assert _sev("F") == 2   # Follow-up
+
+
+def test_code_label_decoded_in_title():
+    st = "osha inspection activity_nr=1 estab='ACME' insp_type='A' naics=1 city='Ponce'"
+    a = osha_alert(_osha(status_text=st, municipality="Ponce"), GEO)
+    # The single-letter code is decoded to a human label in the alert title.
+    assert a.source_title == "OSHA Accident — ACME"
+
+
+def test_monitoring_label_not_misread_as_fatality():
+    # Regression: "Monitoring" starts with 'M' but must not be read as code M.
+    assert _sev("Monitoring") == 2
 
 
 def test_fatality_inspection_is_critical():

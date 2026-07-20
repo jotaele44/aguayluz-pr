@@ -34,8 +34,13 @@ import os
 import re
 import sys
 import unicodedata
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
+
+# Default look-back for the live query: only ingest reasonably recent inspections
+# so the monitor surfaces actionable records, not decades of closed history.
+_DEFAULT_LOOKBACK_DAYS = 730
 
 DOL_V4_URL = "https://apiprod.dol.gov/v4/get/OSHA/inspection/json"
 REPO = Path(__file__).resolve().parent.parent
@@ -43,7 +48,10 @@ MUNI_GEOJSON = REPO / "data" / "geo" / "pr_municipios.geojson"
 SOURCE_PREFIX = "OSHA ENFORCEMENT"
 SLUG_RE = re.compile(r"[^A-Za-z0-9_-]")
 # Inspection types whose records warrant a review before acceptance (life-safety).
-_REVIEW_INSP_TYPES = ("fatal", "catastrophe", "accident", "imminent")
+# The live DOL v4 `insp_type` is a single-letter IMIS code (A=Accident,
+# M=Fatality/Catastrophe); descriptive labels are also matched for robustness.
+_REVIEW_INSP_CODES = {"A", "M"}
+_REVIEW_INSP_TEXT = ("fatal", "catastrophe", "accident", "imminent")
 
 
 def _resolve_api_key() -> str | None:
@@ -51,23 +59,37 @@ def _resolve_api_key() -> str | None:
     return os.environ.get("OSHA_API_KEY") or os.environ.get("DOL_API_KEY")
 
 
-def _fetch_live(state: str) -> dict[str, Any]:
+def _build_filter(state: str, since: str | None) -> dict[str, Any] | None:
+    """DOL v4 filter_object for a state (+ optional open_date >= cutoff).
+
+    Verified against the live API: a single condition is a flat
+    ``{field, operator, value}`` object; multiple conditions nest under ``and``;
+    the ``gte`` operator bounds a date. (A list form or the ``ge`` operator is
+    rejected 500.)
+    """
+    conds: list[dict[str, Any]] = []
+    if state:
+        conds.append({"field": "site_state", "operator": "eq", "value": state})
+    if since:
+        conds.append({"field": "open_date", "operator": "gte", "value": since})
+    if not conds:
+        return None
+    return conds[0] if len(conds) == 1 else {"and": conds}
+
+
+def _fetch_live(state: str, since: str | None) -> dict[str, Any]:
     import httpx
 
     key = _resolve_api_key()
     if not key:
         raise RuntimeError("no OSHA_API_KEY/DOL_API_KEY set; pass --src <osha.json> for offline")
-    params = {
-        "limit": 1000,
-        "filter_object": json.dumps(
-            [{"field": "site_state", "operator": "eq", "value": state}]
-        ),
-    }
-    # The DOL v4 gateway authenticates on the X-API-KEY header, not a query param.
-    r = httpx.get(
-        DOL_V4_URL, params=params, headers={"X-API-KEY": key},
-        timeout=120, follow_redirects=True,
-    )
+    # The DOL v4 /v4/get endpoint authenticates on the X-API-KEY *query param*
+    # (the header is rejected 401) — verified against the live API.
+    params: dict[str, Any] = {"limit": 1000, "X-API-KEY": key}
+    filt = _build_filter(state, since)
+    if filt is not None:
+        params["filter_object"] = json.dumps(filt)
+    r = httpx.get(DOL_V4_URL, params=params, timeout=120, follow_redirects=True)
     r.raise_for_status()
     return r.json()
 
@@ -149,7 +171,10 @@ def build_events(doc: Any, canon: dict[str, str], state: str = "PR") -> list[dic
         muni = canon.get(_unaccent(city))
         # Only open inspections of a life-safety type still warrant review; a
         # closed historical record does not.
-        needs_review = close_iso is None and any(t in insp_type.lower() for t in _REVIEW_INSP_TYPES)
+        needs_review = close_iso is None and (
+            insp_type.strip().upper() in _REVIEW_INSP_CODES
+            or any(t in insp_type.lower() for t in _REVIEW_INSP_TEXT)
+        )
         status_text = (
             f"osha inspection activity_nr={activity_nr} estab='{estab}' "
             f"insp_type='{insp_type}' naics={naics or 'NA'} city='{city}' "
@@ -195,17 +220,27 @@ def main() -> int:
     ap.add_argument("--src", type=Path, default=None,
                     help="Offline: path to a pre-downloaded DOL v4 OSHA inspection JSON.")
     ap.add_argument("--state", default="PR", help="Jurisdiction filter (default PR).")
+    ap.add_argument("--since", default=None,
+                    help="Only inspections with open_date >= this ISO date "
+                         f"(default: ~{_DEFAULT_LOOKBACK_DAYS} days ago). Pass 'all' for no bound.")
     ap.add_argument("--out", default="data/service_events.jsonl")
     ap.add_argument("--muni-geojson", default=str(MUNI_GEOJSON))
     ap.add_argument("--dry-run", action="store_true", help="Print records without writing.")
     args = ap.parse_args()
+
+    if args.since == "all":
+        since: str | None = None
+    elif args.since:
+        since = args.since
+    else:
+        since = (date.today() - timedelta(days=_DEFAULT_LOOKBACK_DAYS)).isoformat()
 
     if args.src:
         doc = json.loads(Path(args.src).read_text())
         origin = str(args.src)
     else:
         try:
-            doc = _fetch_live(args.state)
+            doc = _fetch_live(args.state, since)
             origin = DOL_V4_URL
         except Exception as e:  # noqa: BLE001
             print(f"live fetch failed ({e}); pass --src <osha.json>", file=sys.stderr)
