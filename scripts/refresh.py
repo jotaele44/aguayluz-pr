@@ -91,6 +91,11 @@ STEP_FEMA = (
     ["scripts/ingest_fema.py"],
     True,   # optional — best-effort; fema.gov open/v2 endpoint currently 404s
 )
+STEP_OSHA = (
+    "OSHA enforcement → service_events (INDUSTRIAL)",
+    ["scripts/ingest_osha.py"],
+    True,   # optional — best-effort; DOL v4 needs OSHA_API_KEY, absent in most runs
+)
 STEP_AEE_FETCH = (
     "MiLUMA live fetch → /tmp/outages_by_town.json",
     ["scripts/fetch_luma_live.py", "--out", "/tmp/outages_by_town.json"],
@@ -136,9 +141,9 @@ PLANS: dict[str, list[tuple]] = {
     "fast": [STEP_NWS, STEP_USGS_QUAKES, *_DERIVE],
     "daily": [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_LEVELS, *_DERIVE],
     "weekly": [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_ASSETS, STEP_USGS_LEVELS, STEP_SDWIS,
-               STEP_ECHO, STEP_FEMA, *_DERIVE],
+               STEP_ECHO, STEP_FEMA, STEP_OSHA, *_DERIVE],
     "all":   [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_ASSETS, STEP_USGS_LEVELS, STEP_SDWIS,
-              STEP_ECHO, STEP_FEMA, STEP_AEE_FETCH, STEP_AEE_INGEST, *_DERIVE],
+              STEP_ECHO, STEP_FEMA, STEP_OSHA, STEP_AEE_FETCH, STEP_AEE_INGEST, *_DERIVE],
 }
 
 
