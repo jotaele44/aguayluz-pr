@@ -34,7 +34,7 @@
     }
   },
   "hub_callable_commands": {
-    "setup": "python -m pip install -e .[dev]",
+    "setup": "python -m pip install uv && uv pip install --system -e .[dev]",
     "validation_gates": "python scripts/validate_repo.py",
     "lint": "ruff check .",
     "test_suite": "python -m pytest -q",
