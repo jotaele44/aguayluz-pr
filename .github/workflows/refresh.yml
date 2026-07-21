@@ -47,12 +47,18 @@ jobs:
         if: >
           (github.event_name == 'schedule' && github.event.schedule == '0 7 * * 1') ||
           (github.event_name == 'workflow_dispatch' && github.event.inputs.cadence == 'weekly')
+        # OSHA_API_KEY (optional) lets the weekly cadence's STEP_OSHA fetch live
+        # DOL v4 enforcement data; absent, that step is a best-effort no-op.
+        env:
+          OSHA_API_KEY: ${{ secrets.OSHA_API_KEY }}
         run: python scripts/refresh.py --weekly
 
       - name: Full refresh (includes optional MiLUMA)
         if: >
           github.event_name == 'workflow_dispatch' &&
           github.event.inputs.cadence == 'all'
+        env:
+          OSHA_API_KEY: ${{ secrets.OSHA_API_KEY }}
         run: python scripts/refresh.py --all
 
       - name: Commit updated data
