@@ -84,12 +84,12 @@ STEP_SDWIS = (
 STEP_ECHO = (
     "EPA ECHO CWA enforcement → service_events",
     ["scripts/ingest_echo.py"],
-    True,   # optional — best-effort; echo.epa.gov CWA REST endpoint currently 404s
+    True,   # optional — best-effort; endpoint live again at echodata.epa.gov
 )
 STEP_FEMA = (
     "FEMA disaster declarations → service_events",
     ["scripts/ingest_fema.py"],
-    True,   # optional — best-effort; fema.gov open/v2 endpoint currently 404s
+    True,   # optional — best-effort; endpoint live (case-sensitive entity name)
 )
 STEP_OSHA = (
     "OSHA enforcement → service_events (INDUSTRIAL)",

@@ -10,8 +10,9 @@ Only infrastructure-relevant incident types are ingested:
   Hurricane, Tropical Storm, Flood, Severe Storm, Typhoon, Tsunami,
   Earthquake, Landslide, Mud/Landslide
 
-Source: https://www.fema.gov/api/open/v2/disasterDeclarationsSummaries
-        (public OData API, no auth required)
+Source: https://www.fema.gov/api/open/v2/DisasterDeclarationsSummaries
+        (public OData API, no auth required; the entity name is case-sensitive —
+        the lowercase form 404s)
 
 Merges idempotently: existing FEMA rows (matched by source_ref prefix "FEMA DR")
 are replaced; all other events are preserved.
@@ -30,7 +31,7 @@ from pathlib import Path
 from typing import Any
 
 FEMA_URL = (
-    "https://www.fema.gov/api/open/v2/disasterDeclarationsSummaries"
+    "https://www.fema.gov/api/open/v2/DisasterDeclarationsSummaries"
     "?$filter=state eq 'PR'&$orderby=declarationDate desc&$top=200"
 )
 REPO = Path(__file__).resolve().parent.parent
