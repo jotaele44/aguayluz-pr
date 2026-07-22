@@ -36,7 +36,7 @@
     }
   },
   "hub_callable_commands": {
-    "setup": "python -m pip install -e .[dev]",
+    "setup": "[ -d ../thehub-pr ] || git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr; python -m pip install uv && uv pip install --system -e .[dev]",
     "validation_gates": "python scripts/validate_repo.py",
     "lint": "ruff check .",
     "test_suite": "python -m pytest -q",
