@@ -6,7 +6,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { tierBadge, fmtDate, typeMeta, statusBadge, eventTone } from '@/lib/format'
+import { tierBadge, fmtDate, typeMeta, statusTone, eventTone } from '@/lib/format'
 import { useAssetEvents, useFlagAsset } from '@/lib/hooks'
 import { useToast } from '@/components/ui/use-toast'
 import { cn } from '@/lib/utils'
@@ -72,7 +72,7 @@ export default function AssetDetail({ asset: a, onClose }) {
             <SheetHeader>
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant="outline" className={cn('text-[10px]', typeMeta(a.asset_type).badge)}>{typeMeta(a.asset_type).label}</Badge>
-                <Badge variant="outline" className={cn('text-[10px] capitalize', statusBadge(a.status))}>{a.status || 'unknown'}</Badge>
+                <span {...statusTone(a.status, 'text-[10px] capitalize')}>{a.status || 'unknown'}</span>
                 {a.evidence_tier && <Badge variant="outline" className={cn('text-[10px]', tierBadge(a.evidence_tier))}>{a.evidence_tier}</Badge>}
                 {a.review_status && <Badge variant="outline" className="border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-300">{a.review_status}</Badge>}
                 {canShowOnMap && (

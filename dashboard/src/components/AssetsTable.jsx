@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input'
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select'
-import { tierBadge, typeMeta, statusBadge } from '@/lib/format'
+import { tierBadge, typeMeta, statusTone } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { AlertTriangle, ChevronsUpDown, ChevronUp, ChevronDown, Download, FilterX } from 'lucide-react'
 import { downloadCSV } from '@/lib/csv'
@@ -237,7 +237,7 @@ export default function AssetsTable({ assets = [], isLoading, selectedId, onSele
                   <TableCell className="align-top">
                     <div className="flex flex-wrap gap-1">
                       {a.evidence_tier && <Badge variant="outline" className={cn('text-[10px]', tierBadge(a.evidence_tier))}>{a.evidence_tier}</Badge>}
-                      <Badge variant="outline" className={cn('text-[10px] capitalize', statusBadge(a.status))}>{a.status || 'unknown'}</Badge>
+                      <span {...statusTone(a.status, 'text-[10px] capitalize')}>{a.status || 'unknown'}</span>
                       {needsReview(a) && <Badge variant="outline" className="border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-300">review</Badge>}
                     </div>
                   </TableCell>
