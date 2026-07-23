@@ -20,6 +20,8 @@
     "affected_area": { "type": "string", "minLength": 1, "description": "Municipality or region label." },
     "municipality": { "type": ["string", "null"], "description": "Canonical PR municipio name (accented), when the event is attributable to one." },
     "zone": { "type": ["string", "null"], "description": "Sub-municipal area/sector/barrio, if the source reports one (e.g. LUMA zone)." },
+    "lat": { "type": ["number", "null"], "description": "Exact source latitude (WGS84), when the upstream feed carries a point (e.g. a USGS earthquake epicenter). Wider than the on-land alert bounds — offshore points are permitted here." },
+    "lon": { "type": ["number", "null"], "description": "Exact source longitude (WGS84), paired with lat." },
     "status_text": { "type": ["string", "null"], "description": "Raw upstream status string for provenance, if the source carries one." },
     "start_time": { "type": ["string", "null"], "format": "date-time" },
     "end_time":   { "type": ["string", "null"], "format": "date-time" },
