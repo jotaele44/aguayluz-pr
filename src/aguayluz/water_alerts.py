@@ -36,6 +36,7 @@ from collections.abc import Iterable
 from typing import Any
 
 from .alerts import AlertEvent
+from .impact import MODULE_RADIUS_KM, AssetIndex, link_impact, merge_asset_ids
 
 # Contamination severities on the workbook's 0-5 operational floor. The
 # CONTAMINATION module's default floor is 3 (see config/alert_modules.yaml); an
@@ -115,13 +116,16 @@ def _reading_date(reading: dict[str, Any]) -> str | None:
 
 
 def contamination_alert(
-    event: dict[str, Any], geo: dict[str, dict[str, Any]]
+    event: dict[str, Any],
+    geo: dict[str, dict[str, Any]],
+    index: AssetIndex | None = None,
 ) -> AlertEvent | None:
     """Project one SDWIS service event into a CONTAMINATION AlertEvent.
 
     Returns ``None`` for events that are not acute and not health-based — those
     stay in the service-event stream rather than becoming alerts.
     """
+    index = index or AssetIndex()
     etype = event.get("event_type")
     if etype not in _CONTAMINATION_EVENT_TYPES:
         return None
@@ -155,6 +159,12 @@ def contamination_alert(
     area = event.get("affected_area") or (munis[0] if munis else "")
     alert_id = f"AYL_ALR_{_event_date(event)}_sdwis_{_slug(event.get('event_id') or area)}"
 
+    # SDWIS violations name a public water system by municipality, not a point — link the
+    # water/wastewater assets in that municipality.
+    linked, sectors = link_impact(
+        None, None, munis, index, radius_km=MODULE_RADIUS_KM["CONTAMINATION"]
+    )
+
     return AlertEvent(
         alert_id=alert_id,
         module_id="CONTAMINATION",
@@ -170,7 +180,7 @@ def contamination_alert(
         asset_id=None,
         operator=None,
         municipalities=munis,
-        sectors_impacted=[],
+        sectors_impacted=sectors,
         latitude=lat,
         longitude=lon,
         coord_confidence="approximate" if lat is not None else "unknown",
@@ -181,7 +191,7 @@ def contamination_alert(
         gap_status="none",
         review_status=review_status,
         evidence_tier=event.get("evidence_tier") or "T1",
-        linked_asset_ids=list(event.get("linked_asset_ids") or []),
+        linked_asset_ids=merge_asset_ids(event.get("linked_asset_ids"), linked),
         validation_notes="Derived from EPA SDWIS violation record; health-based/acute filter applied.",
     )
 
@@ -207,6 +217,7 @@ _RESERVOIR_LOW_METRICS = ("reservoir_storage_pct", "reservoir_elevation")
 def reservoir_alerts(
     readings: list[dict[str, Any]],
     geo: dict[str, dict[str, Any]],
+    index: AssetIndex | None = None,
     percentile: float = RESERVOIR_LOW_PERCENTILE,
     min_history: int = RESERVOIR_MIN_HISTORY,
 ) -> list[AlertEvent]:
@@ -218,6 +229,7 @@ def reservoir_alerts(
     (percentile not yet meaningful). Only storage-percent and reservoir-elevation
     metrics are considered — the ones where a low value signals drawdown.
     """
+    index = index or AssetIndex()
     # Group values by (asset_id, metric), keeping the newest reading per group.
     by_key: dict[tuple[str, str], list[float]] = {}
     latest: dict[tuple[str, str], dict[str, Any]] = {}
@@ -257,6 +269,15 @@ def reservoir_alerts(
         observed = _reading_date(cur)
         date = "".join(ch for ch in str(observed or "")[:10] if ch.isdigit())[:8] or "00000000"
         name = cur.get("asset_name") or asset_id
+
+        # The flagged reservoir is itself a water asset; also link any co-located
+        # water/wastewater/power assets in the same municipality. Sectors always include
+        # water (the reservoir), plus whatever the municipality linkage adds.
+        linked_ids, sectors = link_impact(
+            None, None, munis, index, radius_km=MODULE_RADIUS_KM["HYDRO_OPS"]
+        )
+        linked_ids = merge_asset_ids([asset_id], linked_ids)
+        sectors = sorted(set(sectors) | {"water"})
         alerts.append(
             AlertEvent(
                 alert_id=f"AYL_ALR_{date}_resvlow_{_slug(asset_id)}",
@@ -273,7 +294,7 @@ def reservoir_alerts(
                 asset_id=asset_id,
                 operator=cur.get("operator"),
                 municipalities=munis,
-                sectors_impacted=[],
+                sectors_impacted=sectors,
                 latitude=lat if isinstance(lat, (int, float)) else None,
                 longitude=lon if isinstance(lon, (int, float)) else None,
                 coord_confidence="approximate" if isinstance(lat, (int, float)) else "unknown",
@@ -284,7 +305,7 @@ def reservoir_alerts(
                 gap_status="major",
                 review_status="needs_review",
                 evidence_tier="T2",
-                linked_asset_ids=[asset_id],
+                linked_asset_ids=linked_ids,
                 validation_notes=(
                     f"Statistical proxy: latest {metric}={cur_val} at or below this site's "
                     f"{percentile:g}th-percentile of {len(vals)} readings ({threshold:.3f}). "
@@ -299,14 +320,20 @@ def build_water_alerts(
     events: list[dict[str, Any]],
     readings: list[dict[str, Any]] | None,
     geo: dict[str, dict[str, Any]],
+    index: AssetIndex | None = None,
     reservoir_percentile: float = RESERVOIR_LOW_PERCENTILE,
 ) -> list[AlertEvent]:
-    """Build the full set of data-driven water AlertEvents (CONTAMINATION + HYDRO_OPS)."""
+    """Build the full set of data-driven water AlertEvents (CONTAMINATION + HYDRO_OPS).
+
+    ``index`` links each alert to the utility assets it affects; omitting it (or passing
+    an empty index) yields empty linkage, preserving the prior behaviour.
+    """
+    idx = index if index is not None else AssetIndex()
     alerts: list[AlertEvent] = []
     for ev in events:
-        alert = contamination_alert(ev, geo)
+        alert = contamination_alert(ev, geo, idx)
         if alert is not None:
             alerts.append(alert)
     if readings:
-        alerts.extend(reservoir_alerts(readings, geo, percentile=reservoir_percentile))
+        alerts.extend(reservoir_alerts(readings, geo, idx, percentile=reservoir_percentile))
     return alerts

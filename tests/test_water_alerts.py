@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from aguayluz.impact import build_asset_index
 from aguayluz.water_alerts import (
     build_water_alerts,
     contamination_alert,
@@ -12,6 +13,12 @@ from aguayluz.water_alerts import (
 GEO = load_geo([
     {"name": "Bayamón", "lat": 18.398, "lon": -66.155},
     {"name": "Maunabo", "lat": 18.007, "lon": -65.899},
+])
+
+INDEX = build_asset_index([
+    {"asset_id": "WTR-BAY", "asset_type": "water", "municipality": "Bayamón"},
+    {"asset_id": "WW-BAY", "asset_type": "wastewater", "municipality": "Bayamón"},
+    {"asset_id": "WTR-MAU", "asset_type": "water", "municipality": "Maunabo"},
 ])
 
 
@@ -138,3 +145,30 @@ def test_build_water_alerts_combines_sources():
     alerts = build_water_alerts(events, readings, GEO)
     mods = sorted({a.module_id for a in alerts})
     assert mods == ["CONTAMINATION", "HYDRO_OPS"]
+
+
+# ---------------- infrastructure linkage ----------------
+
+def test_contamination_links_municipality_assets():
+    a = contamination_alert(_boil_water(), GEO, INDEX)  # Bayamón
+    assert set(a.linked_asset_ids) == {"WTR-BAY", "WW-BAY"}
+    assert a.sectors_impacted == ["wastewater", "water"]
+
+
+def test_contamination_without_index_has_no_linkage():
+    a = contamination_alert(_boil_water(), GEO)
+    assert a.sectors_impacted == [] and a.linked_asset_ids == []
+
+
+def test_reservoir_alert_always_reports_water_sector_and_own_asset():
+    vals = list(range(100, 60, -2))
+    a = reservoir_alerts(_readings("USGS_1", vals), GEO)[0]  # no index
+    assert "water" in a.sectors_impacted
+    assert "USGS_1" in a.linked_asset_ids  # the flagged reservoir itself
+
+
+def test_reservoir_alert_links_co_located_assets_with_index():
+    vals = list(range(100, 60, -2))
+    a = reservoir_alerts(_readings("USGS_1", vals), GEO, INDEX)[0]  # readings in Maunabo
+    assert "WTR-MAU" in a.linked_asset_ids  # co-located Maunabo water asset
+    assert "USGS_1" in a.linked_asset_ids

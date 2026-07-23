@@ -21,6 +21,13 @@ import re
 from typing import Any
 
 from ..alerts import AlertEvent
+from ..impact import (
+    MODULE_RADIUS_KM,
+    AssetIndex,
+    in_alert_bounds,
+    link_impact,
+    merge_asset_ids,
+)
 from ..water_alerts import _centroid, _geo_key, _slug
 
 SEISMIC_MARKER = "_seismic_"
@@ -76,8 +83,13 @@ def _place_municipality(place: str, geo: dict[str, dict[str, Any]]) -> str | Non
     return None
 
 
-def seismic_alert(event: dict[str, Any], geo: dict[str, dict[str, Any]]) -> AlertEvent | None:
+def seismic_alert(
+    event: dict[str, Any],
+    geo: dict[str, dict[str, Any]],
+    index: AssetIndex | None = None,
+) -> AlertEvent | None:
     """Project one USGS earthquake service-event into a SEISMIC_GEO AlertEvent."""
+    index = index or AssetIndex()
     if not str(event.get("source_ref", "")).startswith(_SEISMIC_SOURCE_PREFIX):
         return None
     mag = _magnitude(event.get("status_text"))
@@ -87,7 +99,24 @@ def seismic_alert(event: dict[str, Any], geo: dict[str, dict[str, Any]]) -> Aler
     place = _place(event.get("status_text"), event.get("affected_area") or "PR region")
     muni = _place_municipality(place, geo)
     munis = [muni] if muni else ["(unscoped)"]
-    lat, lon = _centroid(muni, geo) if muni else (None, None)
+
+    # Prefer the real USGS epicenter when it falls inside the alert schema's PR bounds;
+    # an offshore quake (outside the bounds) cannot be stored, so fall back to the
+    # municipality centroid rather than clamping to a misleading on-land point.
+    ev_lat, ev_lon = event.get("lat"), event.get("lon")
+    if in_alert_bounds(ev_lat, ev_lon):
+        lat: float | None = round(float(ev_lat), 6)
+        lon: float | None = round(float(ev_lon), 6)
+        coord_confidence = "exact"
+    else:
+        lat, lon = _centroid(muni, geo) if muni else (None, None)
+        coord_confidence = "approximate" if isinstance(lat, (int, float)) else "unknown"
+
+    link_lat = lat if isinstance(lat, (int, float)) else None
+    link_lon = lon if isinstance(lon, (int, float)) else None
+    linked, sectors = link_impact(
+        link_lat, link_lon, munis, index, radius_km=MODULE_RADIUS_KM["SEISMIC_GEO"]
+    )
 
     severity = _severity_for_magnitude(mag)
     quake_id = str(event.get("source_ref", "")).split(":", 1)[-1] or (event.get("event_id") or place)
@@ -108,10 +137,10 @@ def seismic_alert(event: dict[str, Any], geo: dict[str, dict[str, Any]]) -> Aler
         asset_id=None,
         operator="USGS",
         municipalities=munis,
-        sectors_impacted=[],
+        sectors_impacted=sectors,
         latitude=lat if isinstance(lat, (int, float)) else None,
         longitude=lon if isinstance(lon, (int, float)) else None,
-        coord_confidence="approximate" if isinstance(lat, (int, float)) else "unknown",
+        coord_confidence=coord_confidence,
         severity=severity,
         confidence=int(event.get("confidence") or 85),
         ilap_score=None,
@@ -119,18 +148,20 @@ def seismic_alert(event: dict[str, Any], geo: dict[str, dict[str, Any]]) -> Aler
         gap_status="none",
         review_status=event.get("review_status") or "accepted",
         evidence_tier=event.get("evidence_tier") or "T1",
-        linked_asset_ids=list(event.get("linked_asset_ids") or []),
+        linked_asset_ids=merge_asset_ids(event.get("linked_asset_ids"), linked),
         validation_notes=f"Derived from USGS FDSN earthquake M{mag:g}; severity scaled from magnitude.",
     )
 
 
 def seismic_alerts(
-    events: list[dict[str, Any]], geo: dict[str, dict[str, Any]]
+    events: list[dict[str, Any]],
+    geo: dict[str, dict[str, Any]],
+    index: AssetIndex | None = None,
 ) -> list[AlertEvent]:
     """Promote every USGS earthquake service-event into a SEISMIC_GEO alert."""
     out: list[AlertEvent] = []
     for ev in events:
-        alert = seismic_alert(ev, geo)
+        alert = seismic_alert(ev, geo, index)
         if alert is not None:
             out.append(alert)
     return out

@@ -35,6 +35,7 @@ _SRC = Path(__file__).resolve().parent.parent / "src"
 if _SRC.exists() and str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
+from aguayluz.impact import build_asset_index  # noqa: E402
 from aguayluz.water_alerts import build_water_alerts, load_geo  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -70,6 +71,8 @@ def main() -> int:
                     help="USGS reservoir readings (source of HYDRO_OPS proxy alerts); optional")
     ap.add_argument("--geo", default="data/geo/pr_municipios.json",
                     help="municipio centroids for alert coordinates")
+    ap.add_argument("--assets", default="data/utility_assets.jsonl",
+                    help="utility assets (linked to each alert via sectors_impacted/linked_asset_ids)")
     ap.add_argument("--out", default="data/alert_events.jsonl")
     ap.add_argument("--percentile", type=float, default=10.0,
                     help="lower-tail percentile for the reservoir-low proxy")
@@ -77,10 +80,11 @@ def main() -> int:
 
     events = _read_jsonl(REPO_ROOT / args.events)
     readings = _read_jsonl(REPO_ROOT / args.reservoir)
+    index = build_asset_index(_read_jsonl(REPO_ROOT / args.assets))
     geo_doc = json.loads((REPO_ROOT / args.geo).read_text()) if (REPO_ROOT / args.geo).is_file() else {}
     geo = load_geo(geo_doc.get("municipios", []) if isinstance(geo_doc, dict) else geo_doc)
 
-    alerts = build_water_alerts(events, readings, geo, reservoir_percentile=args.percentile)
+    alerts = build_water_alerts(events, readings, geo, index, reservoir_percentile=args.percentile)
     generated = [a.model_dump() for a in alerts]
 
     out = REPO_ROOT / args.out

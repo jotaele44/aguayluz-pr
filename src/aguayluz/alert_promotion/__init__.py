@@ -26,6 +26,7 @@ from __future__ import annotations
 from typing import Any
 
 from ..alerts import AlertEvent
+from ..impact import AssetIndex, build_asset_index
 from ..water_alerts import build_water_alerts, load_geo
 from .osha import OSHA_MARKER, osha_alerts
 from .seismic import SEISMIC_MARKER, seismic_alerts
@@ -59,21 +60,28 @@ def build_all_alerts(
     events: list[dict[str, Any]],
     readings: list[dict[str, Any]] | None,
     geo: dict[str, dict[str, Any]],
+    assets: list[dict[str, Any]] | None = None,
     *,
     reservoir_percentile: float = 10.0,
 ) -> list[AlertEvent]:
     """Run every registered promoter over the ingested signals.
 
     ``events`` is the full ``data/service_events.jsonl`` set — each promoter filters
-    to the event types it owns, so the streams stay decoupled.
+    to the event types it owns, so the streams stay decoupled. ``assets`` is
+    ``data/utility_assets.jsonl``; it is indexed once and threaded into every promoter so
+    each alert names the infrastructure it affects (``sectors_impacted`` /
+    ``linked_asset_ids``). Omitting it yields empty linkage, preserving prior behaviour.
     """
+    index = build_asset_index(assets or [])
     alerts: list[AlertEvent] = []
     alerts.extend(
-        build_water_alerts(events, readings, geo, reservoir_percentile=reservoir_percentile)
+        build_water_alerts(
+            events, readings, geo, index, reservoir_percentile=reservoir_percentile
+        )
     )
-    alerts.extend(seismic_alerts(events, geo))
-    alerts.extend(weather_alerts(events, geo))
-    alerts.extend(osha_alerts(events, geo))
+    alerts.extend(seismic_alerts(events, geo, index))
+    alerts.extend(weather_alerts(events, geo, index))
+    alerts.extend(osha_alerts(events, geo, index))
     return alerts
 
 
@@ -87,4 +95,6 @@ __all__ = [
     "weather_alerts",
     "osha_alerts",
     "load_geo",
+    "AssetIndex",
+    "build_asset_index",
 ]

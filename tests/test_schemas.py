@@ -81,6 +81,14 @@ def test_service_event_rejects_bad_event_type(service_event_valid):
         validate_against_schema("service_event", bad)
 
 
+def test_service_event_accepts_optional_epicenter_coords(service_event_valid):
+    # A USGS quake epicenter can be offshore (wider than the on-land alert bounds);
+    # service_event lat/lon are unbounded and optional.
+    ok = {**service_event_valid, "lat": 17.55, "lon": -66.9}
+    validate_against_schema("service_event", ok)
+    ServiceEvent(**ok)
+
+
 # ---------------- bridge_summary ----------------
 
 def test_bridge_summary_valid():

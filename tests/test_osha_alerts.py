@@ -4,11 +4,16 @@ from __future__ import annotations
 
 from aguayluz.alert_promotion import is_critical
 from aguayluz.alert_promotion.osha import osha_alert, osha_alerts
+from aguayluz.impact import build_asset_index
 from aguayluz.water_alerts import load_geo
 
 GEO = load_geo([
     {"name": "Bayamón", "lat": 18.40, "lon": -66.15},
     {"name": "Ponce", "lat": 18.011, "lon": -66.614},
+])
+
+INDEX = build_asset_index([
+    {"asset_id": "PWR-BAY", "asset_type": "power", "municipality": "Bayamón"},
 ])
 
 
@@ -123,3 +128,14 @@ def test_osha_alerts_filters_stream():
     events = [_osha(), {"source_ref": "EPA SDWIS VIOLATION", "status_text": "viol=21"}]
     out = osha_alerts(events, GEO)
     assert len(out) == 1 and out[0].module_id == "INDUSTRIAL"
+
+
+def test_links_assets_by_site_municipality():
+    a = osha_alert(_osha(), GEO, INDEX)  # site in Bayamón
+    assert a.linked_asset_ids == ["PWR-BAY"]
+    assert a.sectors_impacted == ["power"]
+
+
+def test_no_index_leaves_linkage_empty():
+    a = osha_alert(_osha(), GEO)
+    assert a.sectors_impacted == [] and a.linked_asset_ids == []
