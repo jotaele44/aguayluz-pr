@@ -71,6 +71,16 @@ STEP_USGS_LEVELS = (
     ["scripts/ingest_usgs_levels.py", "--days", "14"],
     False,
 )
+STEP_USGS_GW = (
+    "USGS groundwater → groundwater_levels",
+    ["scripts/ingest_usgs_groundwater.py", "--days", "365"],
+    True,   # optional — network feed; a failure must not abort the refresh
+)
+STEP_NOAA_TIDES = (
+    "NOAA CO-OPS tides → coastal_levels",
+    ["scripts/ingest_noaa_tides.py", "--days", "90"],
+    True,   # optional — near-real-time coastal surge signal
+)
 STEP_USGS_QUAKES = (
     "USGS earthquakes → service_events",
     ["scripts/ingest_usgs_quakes.py"],
@@ -138,12 +148,13 @@ PLANS: dict[str, list[tuple]] = {
     # fast: the near-real-time hazard feeds only (seismic + NWS) + alert promotion +
     # export. Meant for a ~15-minute cron so a quake / hurricane warning becomes a
     # pushed alert in minutes, not the next daily batch.
-    "fast": [STEP_NWS, STEP_USGS_QUAKES, *_DERIVE],
-    "daily": [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_LEVELS, *_DERIVE],
-    "weekly": [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_ASSETS, STEP_USGS_LEVELS, STEP_SDWIS,
-               STEP_ECHO, STEP_FEMA, STEP_OSHA, *_DERIVE],
-    "all":   [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_ASSETS, STEP_USGS_LEVELS, STEP_SDWIS,
-              STEP_ECHO, STEP_FEMA, STEP_OSHA, STEP_AEE_FETCH, STEP_AEE_INGEST, *_DERIVE],
+    "fast": [STEP_NWS, STEP_USGS_QUAKES, STEP_NOAA_TIDES, *_DERIVE],
+    "daily": [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_LEVELS, STEP_USGS_GW, STEP_NOAA_TIDES, *_DERIVE],
+    "weekly": [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_ASSETS, STEP_USGS_LEVELS, STEP_USGS_GW,
+               STEP_NOAA_TIDES, STEP_SDWIS, STEP_ECHO, STEP_FEMA, STEP_OSHA, *_DERIVE],
+    "all":   [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_ASSETS, STEP_USGS_LEVELS, STEP_USGS_GW,
+              STEP_NOAA_TIDES, STEP_SDWIS, STEP_ECHO, STEP_FEMA, STEP_OSHA,
+              STEP_AEE_FETCH, STEP_AEE_INGEST, *_DERIVE],
 }
 
 

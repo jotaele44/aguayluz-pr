@@ -34,7 +34,8 @@ from .weather import WEATHER_MARKER, weather_alerts
 
 #: Every alert_id substring that marks a row as machine-generated (safe to replace).
 GENERATED_MARKERS: tuple[str, ...] = (
-    "_sdwis_", "_resvlow_", SEISMIC_MARKER, WEATHER_MARKER, OSHA_MARKER,
+    "_sdwis_", "_resvlow_", "_gwlow_", "_coasthi_",
+    SEISMIC_MARKER, WEATHER_MARKER, OSHA_MARKER,
 )
 
 #: Operational-severity floor (0-5 scale) at or above which an alert is life-safety

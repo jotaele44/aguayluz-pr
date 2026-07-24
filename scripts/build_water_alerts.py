@@ -41,7 +41,7 @@ from aguayluz.water_alerts import build_water_alerts, load_geo  # noqa: E402
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 # Markers identifying alert rows produced by this generator (so re-runs are clean).
-_GENERATED_MARKERS = ("_sdwis_", "_resvlow_")
+_GENERATED_MARKERS = ("_sdwis_", "_resvlow_", "_gwlow_", "_coasthi_")
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:

@@ -65,18 +65,28 @@ def main() -> int:
     ap.add_argument("--events", default="data/service_events.jsonl",
                     help="service events (source of CONTAMINATION/SEISMIC_GEO/WEATHER_HAZARD alerts)")
     ap.add_argument("--reservoir", default="data/reservoir_levels.jsonl",
-                    help="USGS reservoir readings (source of HYDRO_OPS proxy alerts); optional")
+                    help="USGS reservoir/river readings (HYDRO_OPS reservoir-low proxy); optional")
+    ap.add_argument("--groundwater", default="data/groundwater_levels.jsonl",
+                    help="USGS groundwater readings (HYDRO_OPS aquifer-drawdown proxy); optional")
+    ap.add_argument("--coastal", default="data/coastal_levels.jsonl",
+                    help="NOAA tide-gauge readings (HYDRO_OPS coastal high-water proxy); optional")
     ap.add_argument("--geo", default="data/geo/pr_municipios.json",
                     help="municipio centroids for alert coordinates")
     ap.add_argument("--assets", default="data/utility_assets.jsonl",
                     help="utility assets (linked to each alert via sectors_impacted/linked_asset_ids)")
     ap.add_argument("--out", default="data/alert_events.jsonl")
     ap.add_argument("--percentile", type=float, default=10.0,
-                    help="lower-tail percentile for the reservoir-low proxy")
+                    help="tail percentile for the level proxies (reservoir/aquifer/coastal)")
     args = ap.parse_args()
 
     events = _read_jsonl(REPO_ROOT / args.events)
-    readings = _read_jsonl(REPO_ROOT / args.reservoir)
+    # One combined readings list across every water time-series; each HYDRO_OPS proxy
+    # filters to the metrics it owns (reservoir/river, groundwater, coastal).
+    readings = (
+        _read_jsonl(REPO_ROOT / args.reservoir)
+        + _read_jsonl(REPO_ROOT / args.groundwater)
+        + _read_jsonl(REPO_ROOT / args.coastal)
+    )
     assets = _read_jsonl(REPO_ROOT / args.assets)
     geo_path = REPO_ROOT / args.geo
     geo_doc = json.loads(geo_path.read_text()) if geo_path.is_file() else {}

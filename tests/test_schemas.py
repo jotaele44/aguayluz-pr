@@ -89,6 +89,33 @@ def test_service_event_accepts_optional_epicenter_coords(service_event_valid):
     ServiceEvent(**ok)
 
 
+# ---------------- monitoring_reading ----------------
+
+def _reading(metric):
+    return {
+        "reading_id": "AYL_RDG_20260114_X_gw",
+        "asset_id": "USGSGW_1",
+        "metric": metric,
+        "value": 12.3,
+        "unit": "ft",
+        "observed_date": "2026-01-14",
+        "source_ref": "test",
+        "evidence_tier": "T1",
+        "confidence": 80,
+        "review_status": "accepted",
+    }
+
+
+@pytest.mark.parametrize("metric", ["groundwater_level", "coastal_water_level"])
+def test_monitoring_reading_accepts_new_metrics(metric):
+    validate_against_schema("monitoring_reading", _reading(metric))
+
+
+def test_monitoring_reading_rejects_unknown_metric():
+    with pytest.raises(ValidationError):
+        validate_against_schema("monitoring_reading", _reading("temperature"))
+
+
 # ---------------- bridge_summary ----------------
 
 def test_bridge_summary_valid():
