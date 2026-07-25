@@ -2,6 +2,9 @@
 // and the side panels. Hex values feed MapLibre paint; class strings feed
 // shadcn <Badge>.
 
+import { federationTone } from '@pr-federation/react'
+import { cn } from '@/lib/utils'
+
 // Evidence tier T1 (strongest) → T4 (weakest).
 const TIER = {
   T1: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
@@ -38,13 +41,20 @@ export function typeMeta(t) {
 }
 export const typeHex = (t) => typeMeta(t).hex
 
-const STATUS = {
-  active: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
-  inactive: 'bg-slate-500/15 text-slate-300 border-slate-500/30',
-  damaged: 'bg-red-500/15 text-red-300 border-red-500/30',
-  planned: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+// Asset status now renders on the shared federation status tokens instead of
+// local Tailwind hues. Map the app's status vocabulary to canonical roles;
+// federationTone() returns { className: 'fd-status', 'data-status': role } and
+// the colors come from the imported @pr-federation/react/styles.css.
+const STATUS_ROLE = {
+  active: 'success',
+  inactive: 'neutral',
+  damaged: 'danger',
+  planned: 'warning',
 }
-export const statusBadge = (s) => STATUS[s] ?? 'bg-slate-500/15 text-slate-300 border-slate-500/30'
+export const statusTone = (s, extra) => {
+  const { className, ...toneAttrs } = federationTone(STATUS_ROLE[s] ?? 'neutral')
+  return { className: cn(className, extra), ...toneAttrs }
+}
 
 export const READING_KINDS = [
   { key: 'reservoir', label: 'Reservoir levels', unit: 'ft', metricField: 'reservoir_elevation' },

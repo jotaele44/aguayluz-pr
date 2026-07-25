@@ -2,12 +2,10 @@ import { useParams, Link } from 'react-router-dom'
 import { useMemo } from 'react'
 import { useAssets, useEvents, useSummarySectors } from '@/lib/hooks'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Badge } from '@/components/ui/badge'
 import { ArrowLeft } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
-import { statusBadge, CHART_TOOLTIP_STYLE } from '@/lib/format'
+import { statusTone, CHART_TOOLTIP_STYLE } from '@/lib/format'
 import { SECTOR_META } from '@/lib/sectors'
-import { cn } from '@/lib/utils'
 import Panel from '@/components/common/Panel'
 
 export default function SectorDetailPage() {
@@ -109,7 +107,7 @@ export default function SectorDetailPage() {
                       <td className="py-2 pr-4 text-slate-500 capitalize">{a.asset_type}</td>
                       <td className="py-2 pr-4 text-slate-500">{a.municipality || '—'}</td>
                       <td className="py-2">
-                        <Badge variant="outline" className={cn('text-[10px] capitalize', statusBadge(a.status))}>{a.status || '—'}</Badge>
+                        <span {...statusTone(a.status, 'text-[10px] capitalize')}>{a.status || '—'}</span>
                       </td>
                     </tr>
                   ))}
