@@ -83,3 +83,14 @@ def test_merge_preserves_non_usgs_eq_and_replaces_usgs_eq():
 
 def test_default_min_magnitude_constant():
     assert DEFAULT_MIN_MAGNITUDE == 2.5
+
+
+def test_exact_epicenter_persisted_on_row():
+    # The exact USGS epicenter (geometry.coordinates) is carried on the row so alert
+    # promotion can link by real distance instead of a municipality centroid.
+    rows = build_events(_doc())
+    r = next(x for x in rows if x["source_ref"] == f"{SOURCE_PREFIX}:pr71401234")
+    assert isinstance(r["lat"], float) and isinstance(r["lon"], float)
+    # PR region: negative longitude, positive latitude.
+    assert 17.0 <= r["lat"] <= 19.0
+    assert -68.0 <= r["lon"] <= -65.0

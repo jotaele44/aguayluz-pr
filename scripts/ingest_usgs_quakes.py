@@ -161,6 +161,10 @@ def build_events(doc: dict[str, Any], min_magnitude: float = DEFAULT_MIN_MAGNITU
             "start_time": start_time,
             "end_time": None,
             "reported_customers_or_users": None,
+            # Preserve the exact USGS epicenter so downstream alert promotion can link
+            # by real distance instead of falling back to a municipality centroid.
+            "lat": round(float(lat), 6) if isinstance(lat, (int, float)) else None,
+            "lon": round(float(lon), 6) if isinstance(lon, (int, float)) else None,
             "source_ref": f"{SOURCE_PREFIX}:{usgs_id}",
             "source_hash": None,
             "evidence_tier": "T1",

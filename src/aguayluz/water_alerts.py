@@ -36,6 +36,7 @@ from collections.abc import Iterable
 from typing import Any
 
 from .alerts import AlertEvent
+from .impact import MODULE_RADIUS_KM, AssetIndex, link_impact, merge_asset_ids
 
 # Contamination severities on the workbook's 0-5 operational floor. The
 # CONTAMINATION module's default floor is 3 (see config/alert_modules.yaml); an
@@ -115,13 +116,16 @@ def _reading_date(reading: dict[str, Any]) -> str | None:
 
 
 def contamination_alert(
-    event: dict[str, Any], geo: dict[str, dict[str, Any]]
+    event: dict[str, Any],
+    geo: dict[str, dict[str, Any]],
+    index: AssetIndex | None = None,
 ) -> AlertEvent | None:
     """Project one SDWIS service event into a CONTAMINATION AlertEvent.
 
     Returns ``None`` for events that are not acute and not health-based — those
     stay in the service-event stream rather than becoming alerts.
     """
+    index = index or AssetIndex()
     etype = event.get("event_type")
     if etype not in _CONTAMINATION_EVENT_TYPES:
         return None
@@ -155,6 +159,12 @@ def contamination_alert(
     area = event.get("affected_area") or (munis[0] if munis else "")
     alert_id = f"AYL_ALR_{_event_date(event)}_sdwis_{_slug(event.get('event_id') or area)}"
 
+    # SDWIS violations name a public water system by municipality, not a point — link the
+    # water/wastewater assets in that municipality.
+    linked, sectors = link_impact(
+        None, None, munis, index, radius_km=MODULE_RADIUS_KM["CONTAMINATION"]
+    )
+
     return AlertEvent(
         alert_id=alert_id,
         module_id="CONTAMINATION",
@@ -170,7 +180,7 @@ def contamination_alert(
         asset_id=None,
         operator=None,
         municipalities=munis,
-        sectors_impacted=[],
+        sectors_impacted=sectors,
         latitude=lat,
         longitude=lon,
         coord_confidence="approximate" if lat is not None else "unknown",
@@ -181,7 +191,7 @@ def contamination_alert(
         gap_status="none",
         review_status=review_status,
         evidence_tier=event.get("evidence_tier") or "T1",
-        linked_asset_ids=list(event.get("linked_asset_ids") or []),
+        linked_asset_ids=merge_asset_ids(event.get("linked_asset_ids"), linked),
         validation_notes="Derived from EPA SDWIS violation record; health-based/acute filter applied.",
     )
 
@@ -200,30 +210,46 @@ def _percentile(sorted_vals: list[float], pct: float) -> float:
     return sorted_vals[lo] + frac * (sorted_vals[lo + 1] - sorted_vals[lo])
 
 
-# Reservoir metrics where a LOW value is the concerning direction.
+# Per-metric concerning direction. Reservoir storage/elevation drop when a supply is
+# drawn down (LOW tail). Groundwater depth-to-water and coastal water level are the
+# opposite — a HIGH reading means a deeper water table (aquifer drawdown) or a storm
+# surge / coastal flood.
 _RESERVOIR_LOW_METRICS = ("reservoir_storage_pct", "reservoir_elevation")
+_AQUIFER_METRICS = ("groundwater_level",)
+_COASTAL_METRICS = ("coastal_water_level",)
 
 
-def reservoir_alerts(
+def _tail_anomaly_alerts(
     readings: list[dict[str, Any]],
     geo: dict[str, dict[str, Any]],
+    index: AssetIndex | None,
+    *,
+    metrics: tuple[str, ...],
+    direction: str,
+    marker: str,
+    label: str,
+    caveat: str,
     percentile: float = RESERVOIR_LOW_PERCENTILE,
     min_history: int = RESERVOIR_MIN_HISTORY,
 ) -> list[AlertEvent]:
-    """Flag the most-recent reading per (site, metric) that sits in the site's own
-    historical lower tail as a HYDRO_OPS reservoir-low alert.
+    """Flag the newest reading per (site, metric) that sits in the site's own historical
+    concerning tail as a HYDRO_OPS AlertEvent.
 
-    This is a *statistical* proxy (T2/needs_review), not an official AAA operating
-    level. A site with fewer than ``min_history`` readings for a metric is skipped
-    (percentile not yet meaningful). Only storage-percent and reservoir-elevation
-    metrics are considered — the ones where a low value signals drawdown.
+    Shared machinery for the reservoir / aquifer / coastal proxies. ``direction`` is
+    ``"low"`` (concerning when the value is small — reservoir drawdown) or ``"high"``
+    (concerning when large — groundwater depth-to-water, coastal surge). Every alert is a
+    *statistical* proxy vs the site's own history (T2/needs_review), never an official
+    operating threshold. Sites with fewer than ``min_history`` readings are skipped.
     """
+    index = index or AssetIndex()
+    high = direction == "high"
+    metric_set = set(metrics)
     # Group values by (asset_id, metric), keeping the newest reading per group.
     by_key: dict[tuple[str, str], list[float]] = {}
     latest: dict[tuple[str, str], dict[str, Any]] = {}
     for r in readings:
         metric = r.get("metric")
-        if metric not in _RESERVOIR_LOW_METRICS:
+        if metric not in metric_set:
             continue
         try:
             val = float(r.get("value"))
@@ -239,14 +265,15 @@ def reservoir_alerts(
     for key, vals in by_key.items():
         if len(vals) < min_history:
             continue
-        threshold = _percentile(sorted(vals), percentile)
+        pct = (100.0 - percentile) if high else percentile
+        threshold = _percentile(sorted(vals), pct)
         cur = latest[key]
         try:
             cur_val = float(cur.get("value"))
         except (TypeError, ValueError):
             continue
-        if cur_val > threshold:
-            continue  # not in the lower tail
+        if (cur_val < threshold) if high else (cur_val > threshold):
+            continue  # not in the concerning tail
 
         asset_id, metric = key
         muni = cur.get("municipality") or ""
@@ -257,13 +284,23 @@ def reservoir_alerts(
         observed = _reading_date(cur)
         date = "".join(ch for ch in str(observed or "")[:10] if ch.isdigit())[:8] or "00000000"
         name = cur.get("asset_name") or asset_id
+
+        # The flagged station is itself a water asset; also link any co-located
+        # water/wastewater/power assets in the same municipality. Sectors always include
+        # water (the station), plus whatever the municipality linkage adds.
+        linked_ids, sectors = link_impact(
+            None, None, munis, index, radius_km=MODULE_RADIUS_KM["HYDRO_OPS"]
+        )
+        linked_ids = merge_asset_ids([asset_id], linked_ids)
+        sectors = sorted(set(sectors) | {"water"})
+        rel = "at or above" if high else "at or below"
         alerts.append(
             AlertEvent(
-                alert_id=f"AYL_ALR_{date}_resvlow_{_slug(asset_id)}",
+                alert_id=f"AYL_ALR_{date}{marker}{_slug(asset_id)}",
                 module_id="HYDRO_OPS",
                 event_type="hazard",
                 status="active",
-                source_title=f"Reservoir low ({metric}) at {name}",
+                source_title=f"{label} ({metric}) at {name}",
                 source_ref=cur.get("source_ref") or f"USGS NWIS {asset_id}",
                 source_hash=None,
                 published_at=None,
@@ -273,7 +310,7 @@ def reservoir_alerts(
                 asset_id=asset_id,
                 operator=cur.get("operator"),
                 municipalities=munis,
-                sectors_impacted=[],
+                sectors_impacted=sectors,
                 latitude=lat if isinstance(lat, (int, float)) else None,
                 longitude=lon if isinstance(lon, (int, float)) else None,
                 coord_confidence="approximate" if isinstance(lat, (int, float)) else "unknown",
@@ -284,29 +321,89 @@ def reservoir_alerts(
                 gap_status="major",
                 review_status="needs_review",
                 evidence_tier="T2",
-                linked_asset_ids=[asset_id],
+                linked_asset_ids=linked_ids,
                 validation_notes=(
-                    f"Statistical proxy: latest {metric}={cur_val} at or below this site's "
-                    f"{percentile:g}th-percentile of {len(vals)} readings ({threshold:.3f}). "
-                    "NOT an official AAA nivel de control — promote to T1 on AAA operating-level access."
+                    f"Statistical proxy: latest {metric}={cur_val} {rel} this site's "
+                    f"{pct:g}th-percentile of {len(vals)} readings ({threshold:.3f}). {caveat}"
                 ),
             )
         )
     return alerts
 
 
+def reservoir_alerts(
+    readings: list[dict[str, Any]],
+    geo: dict[str, dict[str, Any]],
+    index: AssetIndex | None = None,
+    percentile: float = RESERVOIR_LOW_PERCENTILE,
+    min_history: int = RESERVOIR_MIN_HISTORY,
+) -> list[AlertEvent]:
+    """HYDRO_OPS reservoir-low proxy: reservoir storage/elevation in the site's low tail."""
+    return _tail_anomaly_alerts(
+        readings, geo, index,
+        metrics=_RESERVOIR_LOW_METRICS, direction="low",
+        marker="_resvlow_", label="Reservoir low",
+        caveat="NOT an official AAA nivel de control — promote to T1 on AAA operating-level access.",
+        percentile=percentile, min_history=min_history,
+    )
+
+
+def aquifer_alerts(
+    readings: list[dict[str, Any]],
+    geo: dict[str, dict[str, Any]],
+    index: AssetIndex | None = None,
+    percentile: float = RESERVOIR_LOW_PERCENTILE,
+    min_history: int = RESERVOIR_MIN_HISTORY,
+) -> list[AlertEvent]:
+    """HYDRO_OPS aquifer-drawdown proxy: groundwater depth-to-water in the site's high tail."""
+    return _tail_anomaly_alerts(
+        readings, geo, index,
+        metrics=_AQUIFER_METRICS, direction="high",
+        marker="_gwlow_", label="Groundwater drawdown",
+        caveat="Depth-to-water proxy (deeper reading = lower aquifer); NOT an official well threshold.",
+        percentile=percentile, min_history=min_history,
+    )
+
+
+def coastal_alerts(
+    readings: list[dict[str, Any]],
+    geo: dict[str, dict[str, Any]],
+    index: AssetIndex | None = None,
+    percentile: float = RESERVOIR_LOW_PERCENTILE,
+    min_history: int = RESERVOIR_MIN_HISTORY,
+) -> list[AlertEvent]:
+    """HYDRO_OPS coastal high-water proxy: tide-gauge water level in the site's high tail."""
+    return _tail_anomaly_alerts(
+        readings, geo, index,
+        metrics=_COASTAL_METRICS, direction="high",
+        marker="_coasthi_", label="Coastal high water",
+        caveat="Surge/coastal-flood proxy vs this gauge's own history; NOT an official NWS coastal-flood threshold.",
+        percentile=percentile, min_history=min_history,
+    )
+
+
 def build_water_alerts(
     events: list[dict[str, Any]],
     readings: list[dict[str, Any]] | None,
     geo: dict[str, dict[str, Any]],
+    index: AssetIndex | None = None,
     reservoir_percentile: float = RESERVOIR_LOW_PERCENTILE,
 ) -> list[AlertEvent]:
-    """Build the full set of data-driven water AlertEvents (CONTAMINATION + HYDRO_OPS)."""
+    """Build the full set of data-driven water AlertEvents (CONTAMINATION + HYDRO_OPS).
+
+    ``index`` links each alert to the utility assets it affects; omitting it (or passing
+    an empty index) yields empty linkage, preserving the prior behaviour.
+    """
+    idx = index if index is not None else AssetIndex()
     alerts: list[AlertEvent] = []
     for ev in events:
-        alert = contamination_alert(ev, geo)
+        alert = contamination_alert(ev, geo, idx)
         if alert is not None:
             alerts.append(alert)
     if readings:
-        alerts.extend(reservoir_alerts(readings, geo, percentile=reservoir_percentile))
+        # One combined readings list; each proxy filters to the metrics it owns
+        # (reservoir/river levels, groundwater depth-to-water, coastal tide gauges).
+        alerts.extend(reservoir_alerts(readings, geo, idx, percentile=reservoir_percentile))
+        alerts.extend(aquifer_alerts(readings, geo, idx, percentile=reservoir_percentile))
+        alerts.extend(coastal_alerts(readings, geo, idx, percentile=reservoir_percentile))
     return alerts

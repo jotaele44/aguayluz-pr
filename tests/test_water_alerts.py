@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from aguayluz.impact import build_asset_index
 from aguayluz.water_alerts import (
+    aquifer_alerts,
     build_water_alerts,
+    coastal_alerts,
     contamination_alert,
     load_geo,
     reservoir_alerts,
@@ -12,6 +15,12 @@ from aguayluz.water_alerts import (
 GEO = load_geo([
     {"name": "Bayamón", "lat": 18.398, "lon": -66.155},
     {"name": "Maunabo", "lat": 18.007, "lon": -65.899},
+])
+
+INDEX = build_asset_index([
+    {"asset_id": "WTR-BAY", "asset_type": "water", "municipality": "Bayamón"},
+    {"asset_id": "WW-BAY", "asset_type": "wastewater", "municipality": "Bayamón"},
+    {"asset_id": "WTR-MAU", "asset_type": "water", "municipality": "Maunabo"},
 ])
 
 
@@ -138,3 +147,86 @@ def test_build_water_alerts_combines_sources():
     alerts = build_water_alerts(events, readings, GEO)
     mods = sorted({a.module_id for a in alerts})
     assert mods == ["CONTAMINATION", "HYDRO_OPS"]
+
+
+# ---------------- infrastructure linkage ----------------
+
+def test_contamination_links_municipality_assets():
+    a = contamination_alert(_boil_water(), GEO, INDEX)  # Bayamón
+    assert set(a.linked_asset_ids) == {"WTR-BAY", "WW-BAY"}
+    assert a.sectors_impacted == ["wastewater", "water"]
+
+
+def test_contamination_without_index_has_no_linkage():
+    a = contamination_alert(_boil_water(), GEO)
+    assert a.sectors_impacted == [] and a.linked_asset_ids == []
+
+
+def test_reservoir_alert_always_reports_water_sector_and_own_asset():
+    vals = list(range(100, 60, -2))
+    a = reservoir_alerts(_readings("USGS_1", vals), GEO)[0]  # no index
+    assert "water" in a.sectors_impacted
+    assert "USGS_1" in a.linked_asset_ids  # the flagged reservoir itself
+
+
+def test_reservoir_alert_links_co_located_assets_with_index():
+    vals = list(range(100, 60, -2))
+    a = reservoir_alerts(_readings("USGS_1", vals), GEO, INDEX)[0]  # readings in Maunabo
+    assert "WTR-MAU" in a.linked_asset_ids  # co-located Maunabo water asset
+    assert "USGS_1" in a.linked_asset_ids
+
+
+# ---------------- aquifer (groundwater) high-tail proxy ----------------
+
+def test_aquifer_drawdown_flags_high_tail():
+    # depth-to-water rising (deeper) — latest is the maximum -> high tail (drawdown).
+    vals = list(range(20, 60, 2))  # ascending, last is deepest & newest
+    a = aquifer_alerts(_readings("USGSGW_1", vals, metric="groundwater_level"), GEO,
+                       percentile=10.0, min_history=12)
+    assert len(a) == 1
+    assert a[0].module_id == "HYDRO_OPS"
+    assert "_gwlow_" in a[0].alert_id
+    assert a[0].evidence_tier == "T2" and a[0].review_status == "needs_review"
+    assert "Depth-to-water proxy" in (a[0].validation_notes or "")
+
+
+def test_aquifer_shallow_latest_no_alert():
+    # latest reading is the SHALLOWEST (lowest depth) -> not in the high tail.
+    vals = list(range(60, 20, -2))  # descending, last is shallowest & newest
+    assert aquifer_alerts(_readings("USGSGW_2", vals, metric="groundwater_level"), GEO) == []
+
+
+def test_aquifer_links_own_well_and_sector():
+    vals = list(range(20, 60, 2))
+    a = aquifer_alerts(_readings("USGSGW_1", vals, metric="groundwater_level"), GEO, INDEX)[0]
+    assert "USGSGW_1" in a.linked_asset_ids and "WTR-MAU" in a.linked_asset_ids
+    assert "water" in a.sectors_impacted
+
+
+# ---------------- coastal high-water proxy ----------------
+
+def test_coastal_high_water_flags_high_tail():
+    vals = [round(0.1 + 0.05 * i, 3) for i in range(14)]  # rising tide level, last highest
+    a = coastal_alerts(_readings("NOAA_9755371", vals, metric="coastal_water_level"), GEO,
+                       percentile=10.0, min_history=12)
+    assert len(a) == 1
+    assert a[0].module_id == "HYDRO_OPS"
+    assert "_coasthi_" in a[0].alert_id
+    assert "coastal-flood proxy" in (a[0].validation_notes or "")
+
+
+def test_coastal_calm_latest_no_alert():
+    vals = [round(1.0 - 0.05 * i, 3) for i in range(14)]  # falling, last lowest
+    assert coastal_alerts(_readings("NOAA_9755371", vals, metric="coastal_water_level"), GEO) == []
+
+
+def test_build_water_alerts_routes_by_metric():
+    # One combined readings list; reservoir/aquifer/coastal each pick their own metric.
+    readings = (
+        _readings("USGS_1", list(range(100, 60, -2)))  # reservoir low
+        + _readings("USGSGW_1", list(range(20, 60, 2)), metric="groundwater_level")  # aquifer high
+        + _readings("NOAA_1", [round(0.1 + 0.05 * i, 3) for i in range(14)], metric="coastal_water_level")
+    )
+    alerts = build_water_alerts([], readings, GEO)
+    markers = sorted(a.alert_id.split("_")[3] for a in alerts)  # the _<marker>_ token
+    assert markers == ["coasthi", "gwlow", "resvlow"]

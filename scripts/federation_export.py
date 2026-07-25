@@ -717,7 +717,11 @@ def main() -> int:
 
     if not args.no_outputs and args.outputs:
         reading_paths = args.readings if args.readings is not None else (
-            [str(REPO_ROOT / "data/reservoir_levels.jsonl")]
+            [
+                str(REPO_ROOT / "data/reservoir_levels.jsonl"),
+                str(REPO_ROOT / "data/groundwater_levels.jsonl"),
+                str(REPO_ROOT / "data/coastal_levels.jsonl"),
+            ]
             + sorted(str(p) for p in (REPO_ROOT / "data").glob("*_readings.jsonl"))
         )
         readings = [r for p in reading_paths for r in _load_jsonl(Path(p))]

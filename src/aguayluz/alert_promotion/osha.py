@@ -21,6 +21,7 @@ import re
 from typing import Any
 
 from ..alerts import AlertEvent
+from ..impact import MODULE_RADIUS_KM, AssetIndex, link_impact, merge_asset_ids
 from ..water_alerts import _centroid, _geo_key, _slug
 
 OSHA_MARKER = "_osha_"
@@ -104,8 +105,13 @@ def _municipality(city: str, geo: dict[str, dict[str, Any]]) -> str | None:
     return None
 
 
-def osha_alert(event: dict[str, Any], geo: dict[str, dict[str, Any]]) -> AlertEvent | None:
+def osha_alert(
+    event: dict[str, Any],
+    geo: dict[str, dict[str, Any]],
+    index: AssetIndex | None = None,
+) -> AlertEvent | None:
     """Project one OSHA enforcement service-event into an INDUSTRIAL AlertEvent."""
+    index = index or AssetIndex()
     if not str(event.get("source_ref", "")).startswith(_OSHA_SOURCE_PREFIX):
         return None
 
@@ -127,6 +133,12 @@ def osha_alert(event: dict[str, Any], geo: dict[str, dict[str, Any]]) -> AlertEv
     munis = [muni] if muni else ["(unscoped)"]
     lat, lon = _centroid(muni, geo) if muni else (None, None)
 
+    # OSHA rows carry only a site municipality, not the establishment's coordinates, so
+    # link by municipality rather than a radius around the (unrelated) municipio centroid.
+    linked, sectors = link_impact(
+        None, None, munis, index, radius_km=MODULE_RADIUS_KM["INDUSTRIAL"]
+    )
+
     date = "".join(ch for ch in str(event.get("start_time") or "")[:10] if ch.isdigit())[:8] or "00000000"
 
     return AlertEvent(
@@ -144,7 +156,7 @@ def osha_alert(event: dict[str, Any], geo: dict[str, dict[str, Any]]) -> AlertEv
         asset_id=None,
         operator="OSHA",
         municipalities=munis,
-        sectors_impacted=[],
+        sectors_impacted=sectors,
         latitude=lat if isinstance(lat, (int, float)) else None,
         longitude=lon if isinstance(lon, (int, float)) else None,
         coord_confidence="approximate" if isinstance(lat, (int, float)) else "unknown",
@@ -155,18 +167,20 @@ def osha_alert(event: dict[str, Any], geo: dict[str, dict[str, Any]]) -> AlertEv
         gap_status="none",
         review_status=event.get("review_status") or "accepted",
         evidence_tier=event.get("evidence_tier") or "T1",
-        linked_asset_ids=list(event.get("linked_asset_ids") or []),
+        linked_asset_ids=merge_asset_ids(event.get("linked_asset_ids"), linked),
         validation_notes=f"Derived from OSHA inspection ({insp_type}); severity scaled from inspection type.",
     )
 
 
 def osha_alerts(
-    events: list[dict[str, Any]], geo: dict[str, dict[str, Any]]
+    events: list[dict[str, Any]],
+    geo: dict[str, dict[str, Any]],
+    index: AssetIndex | None = None,
 ) -> list[AlertEvent]:
     """Promote every OSHA enforcement service-event into an INDUSTRIAL alert."""
     out: list[AlertEvent] = []
     for ev in events:
-        alert = osha_alert(ev, geo)
+        alert = osha_alert(ev, geo, index)
         if alert is not None:
             out.append(alert)
     return out

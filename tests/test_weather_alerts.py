@@ -4,9 +4,15 @@ from __future__ import annotations
 
 from aguayluz.alert_promotion import is_critical
 from aguayluz.alert_promotion.weather import weather_alert, weather_alerts
+from aguayluz.impact import build_asset_index
 from aguayluz.water_alerts import load_geo
 
 GEO = load_geo([{"name": "Ponce", "lat": 18.011, "lon": -66.614}])
+
+INDEX = build_asset_index([
+    {"asset_id": "WTR-PONCE", "asset_type": "water", "municipality": "Ponce"},
+    {"asset_id": "PWR-PONCE", "asset_type": "power", "municipality": "Ponce"},
+])
 
 
 def _nws(event_name, severity="Moderate", **over):
@@ -79,3 +85,15 @@ def test_weather_alerts_filters_stream():
     events = [_nws("Hurricane Warning"), {"source_ref": "USGS-EQ:x", "status_text": "earthquake M4.0"}]
     out = weather_alerts(events, GEO)
     assert len(out) == 1 and out[0].module_id == "WEATHER_HAZARD"
+
+
+def test_links_assets_across_named_areas_by_municipality():
+    # A hazard whose area names Ponce links every Ponce asset (area-based, no radius).
+    a = weather_alert(_nws("Flood Warning", affected_area="Ponce; Southeast"), GEO, INDEX)
+    assert set(a.linked_asset_ids) == {"WTR-PONCE", "PWR-PONCE"}
+    assert a.sectors_impacted == ["power", "water"]
+
+
+def test_no_index_leaves_linkage_empty():
+    a = weather_alert(_nws("Heat Advisory"), GEO)
+    assert a.sectors_impacted == [] and a.linked_asset_ids == []

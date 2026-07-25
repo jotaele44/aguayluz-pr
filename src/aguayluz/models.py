@@ -95,6 +95,8 @@ class ServiceEvent(_SchemaValidated):
     affected_area: str
     municipality: str | None = None
     zone: str | None = None
+    lat: float | None = None
+    lon: float | None = None
     status_text: str | None = None
     start_time: str | None = None
     end_time: str | None = None
