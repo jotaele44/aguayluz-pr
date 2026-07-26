@@ -38,7 +38,7 @@ export default function PanelState({
     // "nothing to show" reads identically across the federation.
     return (
       <FederationEmptyState
-        className="min-h-32"
+        className="h-full min-h-32"
         icon={<Database className="h-5 w-5" />}
         title={emptyText}
       />
