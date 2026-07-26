@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/select'
 import { tierBadge, typeMeta, statusTone } from '@/lib/format'
 import { cn } from '@/lib/utils'
-import { AlertTriangle, ChevronsUpDown, ChevronUp, ChevronDown, Download, FilterX } from 'lucide-react'
+import { AlertTriangle, ChevronsUpDown, ChevronUp, ChevronDown, Download, FilterX, MapPinOff } from 'lucide-react'
 import { downloadCSV } from '@/lib/csv'
 
 function normalized(value) {
@@ -24,7 +24,14 @@ function needsReview(asset) {
   return asset.review_status === 'needs_review' || asset.status === 'needs_review' || asset.review_status === 'review'
 }
 
-const DEFAULT_FILTERS = { type: 'all', status: 'all', reviewOnly: false, q: '' }
+const DEFAULT_FILTERS = { type: 'all', subtype: 'all', status: 'all', reviewOnly: false, unmappedOnly: false, q: '' }
+
+// An asset without lat/lon never renders on the map, so the map alone is not a way
+// to reach it. 43% of the corpus is in that state (canal segments, historic aqueduct
+// alignments), which is why this is a filter rather than a footnote.
+function isUnmapped(asset) {
+  return typeof asset.lat !== 'number' || typeof asset.lon !== 'number'
+}
 
 // Filter state. With `syncUrl` (the standalone Assets page) it lives in the URL so
 // a filtered view is shareable and reload-stable; otherwise (the map rail, where
@@ -37,16 +44,20 @@ function useAssetFilters(syncUrl) {
   if (syncUrl) {
     const filters = {
       type: params.get('type') || 'all',
+      subtype: params.get('subtype') || 'all',
       status: params.get('status') || 'all',
       reviewOnly: params.get('review') === '1',
+      unmappedOnly: params.get('unmapped') === '1',
       q: params.get('q') || '',
     }
     const setFilters = (patch) => setParams((prev) => {
       const merged = { ...filters, ...patch }
       const next = new URLSearchParams(prev)
       merged.type !== 'all' ? next.set('type', merged.type) : next.delete('type')
+      merged.subtype !== 'all' ? next.set('subtype', merged.subtype) : next.delete('subtype')
       merged.status !== 'all' ? next.set('status', merged.status) : next.delete('status')
       merged.reviewOnly ? next.set('review', '1') : next.delete('review')
+      merged.unmappedOnly ? next.set('unmapped', '1') : next.delete('unmapped')
       merged.q ? next.set('q', merged.q) : next.delete('q')
       return next
     }, { replace: true })
@@ -70,7 +81,7 @@ const COLS = [
 ]
 
 export default function AssetsTable({ assets = [], isLoading, selectedId, onSelect, syncUrl = false }) {
-  const [{ type, status, reviewOnly, q }, setFilters] = useAssetFilters(syncUrl)
+  const [{ type, subtype, status, reviewOnly, unmappedOnly, q }, setFilters] = useAssetFilters(syncUrl)
   const [sort, setSort] = useState({ col: 'asset_name', dir: 'asc' })
   const scrollRef = useRef(null)
   const searchRef = useRef(null)
@@ -79,6 +90,13 @@ export default function AssetsTable({ assets = [], isLoading, selectedId, onSele
     () => ['all', ...Array.from(new Set(assets.map((a) => a.asset_type).filter(Boolean))).sort()],
     [assets],
   )
+  // asset_type has 3 values for the whole corpus; asset_subtype has ~25 and is what
+  // actually distinguishes a reservoir from a canal segment. Scoped to the selected
+  // type so the list stays usable.
+  const subtypes = useMemo(() => {
+    const inScope = type === 'all' ? assets : assets.filter((a) => a.asset_type === type)
+    return ['all', ...Array.from(new Set(inScope.map((a) => a.asset_subtype).filter(Boolean))).sort()]
+  }, [assets, type])
   const statuses = useMemo(
     () => ['all', ...Array.from(new Set(assets.map((a) => a.status).filter(Boolean))).sort()],
     [assets],
@@ -94,8 +112,10 @@ export default function AssetsTable({ assets = [], isLoading, selectedId, onSele
         .map(normalized).join(' ')
       return (
         (type === 'all' || a.asset_type === type) &&
+        (subtype === 'all' || a.asset_subtype === subtype) &&
         (status === 'all' || a.status === status) &&
         (!reviewOnly || needsReview(a)) &&
+        (!unmappedOnly || isUnmapped(a)) &&
         (!q || haystack.includes(normalized(q)))
       )
     })
@@ -104,7 +124,7 @@ export default function AssetsTable({ assets = [], isLoading, selectedId, onSele
       const bv = normalized(b[sort.col])
       return sort.dir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av)
     })
-  }, [assets, type, status, reviewOnly, q, sort])
+  }, [assets, type, subtype, status, reviewOnly, unmappedOnly, q, sort])
 
   // Window the rows so large asset corpora stay smooth; heights are measured
   // dynamically because badge wrapping makes some rows taller than others.
@@ -170,27 +190,52 @@ export default function AssetsTable({ assets = [], isLoading, selectedId, onSele
           <Button size="sm" variant="outline" onClick={clear} aria-label="Clear filters" title="Clear filters" className="h-8 border-slate-800 bg-slate-950 px-2 text-xs text-slate-400 hover:text-slate-100">
             <FilterX className="h-3.5 w-3.5" />
           </Button>
-          <Button size="sm" variant="outline" onClick={() => downloadCSV('assets.csv', rows, ['asset_id','asset_name','asset_type','municipality','status','operator','evidence_tier'])} className="h-8 border-slate-800 bg-slate-950 px-2 text-xs text-slate-400 hover:text-slate-100" title="Export CSV">
+          <Button size="sm" variant="outline" onClick={() => downloadCSV('assets.csv', rows, ['asset_id','asset_name','asset_type','asset_subtype','municipality','status','operator','evidence_tier','lat','lon'])} className="h-8 border-slate-800 bg-slate-950 px-2 text-xs text-slate-400 hover:text-slate-100" title="Export CSV">
             <Download className="h-3.5 w-3.5" />
           </Button>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={type} onValueChange={(v) => setFilters({ type: v })}>
-            <SelectTrigger className="h-7 flex-1 border-slate-800 bg-slate-950 text-xs"><SelectValue /></SelectTrigger>
+          {/* Changing type resets subtype: the subtype list is scoped to the type. */}
+          <Select value={type} onValueChange={(v) => setFilters({ type: v, subtype: 'all' })}>
+            <SelectTrigger className="h-7 flex-1 border-slate-800 bg-slate-950 text-xs" aria-label="Filter by asset type"><SelectValue /></SelectTrigger>
             <SelectContent>{types.map((t) => <SelectItem key={t} value={t} className="text-xs capitalize">{t}</SelectItem>)}</SelectContent>
           </Select>
+          <Select value={subtype} onValueChange={(v) => setFilters({ subtype: v })}>
+            <SelectTrigger className="h-7 flex-1 border-slate-800 bg-slate-950 text-xs" aria-label="Filter by asset subtype">
+              <SelectValue placeholder="Subtype" />
+            </SelectTrigger>
+            <SelectContent>
+              {subtypes.map((s) => (
+                <SelectItem key={s} value={s} className="text-xs">
+                  {s === 'all' ? 'all subtypes' : s.replace(/_/g, ' ')}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Select value={status} onValueChange={(v) => setFilters({ status: v })}>
-            <SelectTrigger className="h-7 flex-1 border-slate-800 bg-slate-950 text-xs"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-7 flex-1 border-slate-800 bg-slate-950 text-xs" aria-label="Filter by status"><SelectValue /></SelectTrigger>
             <SelectContent>{statuses.map((s) => <SelectItem key={s} value={s} className="text-xs capitalize">{s}</SelectItem>)}</SelectContent>
           </Select>
+        </div>
+        <div className="flex items-center gap-2">
           <Button
             size="sm"
             variant="outline"
             aria-pressed={reviewOnly}
             onClick={() => setFilters({ reviewOnly: !reviewOnly })}
-            className={cn('h-7 border-slate-800 px-2 text-xs', reviewOnly ? 'bg-amber-500/10 text-amber-300 border-amber-500/30' : 'bg-slate-950 text-slate-400')}
+            className={cn('h-7 flex-1 border-slate-800 px-2 text-xs', reviewOnly ? 'bg-amber-500/10 text-amber-300 border-amber-500/30' : 'bg-slate-950 text-slate-400')}
           >
-            <AlertTriangle className="mr-1 h-3.5 w-3.5" /> Review
+            <AlertTriangle className="mr-1 h-3.5 w-3.5" /> Needs review
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            aria-pressed={unmappedOnly}
+            onClick={() => setFilters({ unmappedOnly: !unmappedOnly })}
+            title="Assets with no coordinates — they never appear on the map"
+            className={cn('h-7 flex-1 border-slate-800 px-2 text-xs', unmappedOnly ? 'bg-violet-500/10 text-violet-300 border-violet-500/30' : 'bg-slate-950 text-slate-400')}
+          >
+            <MapPinOff className="mr-1 h-3.5 w-3.5" /> Unmapped
           </Button>
         </div>
       </div>
@@ -232,8 +277,20 @@ export default function AssetsTable({ assets = [], isLoading, selectedId, onSele
                     <div className="truncate text-xs font-medium text-slate-200">{a.asset_name}</div>
                     <div className="mt-1 truncate text-[10px] text-slate-500">{a.operator || a.asset_id}</div>
                   </TableCell>
-                  <TableCell className="align-top"><Badge variant="outline" className={cn('text-[10px]', typeMeta(a.asset_type).badge)}>{typeMeta(a.asset_type).label}</Badge></TableCell>
-                  <TableCell className="align-top text-xs text-slate-400">{a.municipality || '—'}</TableCell>
+                  <TableCell className="align-top">
+                    <Badge variant="outline" className={cn('text-[10px]', typeMeta(a.asset_type).badge)}>{typeMeta(a.asset_type).label}</Badge>
+                    {a.asset_subtype && (
+                      <div className="mt-1 truncate text-[10px] text-slate-500">{a.asset_subtype.replace(/_/g, ' ')}</div>
+                    )}
+                  </TableCell>
+                  <TableCell className="align-top text-xs text-slate-400">
+                    {a.municipality || '—'}
+                    {isUnmapped(a) && (
+                      <div className="mt-1 flex items-center gap-1 text-[10px] text-violet-300/80" title="No coordinates — not on the map">
+                        <MapPinOff className="h-3 w-3 shrink-0" /> unmapped
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell className="align-top">
                     <div className="flex flex-wrap gap-1">
                       {a.evidence_tier && <Badge variant="outline" className={cn('text-[10px]', tierBadge(a.evidence_tier))}>{a.evidence_tier}</Badge>}

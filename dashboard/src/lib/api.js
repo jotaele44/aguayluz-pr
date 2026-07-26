@@ -48,6 +48,21 @@ export const getReviewQueue = async (f = {}) => {
 export const getReviewQueuePaged = (f = {}) => getJSON(`/review-queue${qs(f)}`, { total: 0, offset: 0, items: [] })
 export const getSummary = () => getJSON('/summary', {})
 export const getSummarySectors = () => getJSON('/summary/sectors', {})
+export const getCoverage = () => getJSON('/summary/coverage', null)
+export const getSystemStatus = () => getJSON('/system/status', null)
+
+// Operational alert layer (docs/ALERT_SYSTEM.md). /alerts returns {total, offset, items}
+// like /events; getAlerts unwraps to the array for panel-style consumers.
+export const getAlertsPaged = (f = {}) => getJSON(`/alerts${qs(f)}`, { total: 0, offset: 0, items: [] })
+export const getAlerts = async (f = {}) => {
+  const r = await getAlertsPaged(f)
+  return r?.items ?? []
+}
+export const getAlert = (id) => getJSON(`/alerts/${encodeURIComponent(id)}`, null)
+export const getAlertFacets = () => getJSON('/alerts/facets', null)
+export const getAlertsGeojson = (f = {}) => getJSON(`/alerts.geojson${qs(f)}`, { type: 'FeatureCollection', features: [] })
+export const getAlertDependencies = (f = {}) => getJSON(`/alerts/dependencies${qs(f)}`, [])
+export const getAlertGaps = () => getJSON('/alerts/gaps', [])
 export const postDecision = async (ref, decision) => {
   if (OFFLINE) return { ok: true }
   const res = await fetch(`${API_BASE}/review-queue/${encodeURIComponent(ref)}/decision`, {

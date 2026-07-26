@@ -3,7 +3,10 @@ import {
   getHealth, getAssets, getAssetsGeojson, getMunicipiosGeojson,
   getEvents, getEventsPaged, getAssetEvents, getEvent, getMunicipioSummary,
   getReadings, getReviewQueue, getReviewQueuePaged,
-  getSummary, getSummarySectors, postDecision, postRunExport,
+  getSummary, getSummarySectors, getCoverage, getSystemStatus,
+  getAlerts, getAlertsPaged, getAlert, getAlertFacets, getAlertsGeojson,
+  getAlertDependencies, getAlertGaps,
+  postDecision, postRunExport,
   patchEvent, patchAsset,
 } from '@/lib/api'
 
@@ -32,6 +35,25 @@ export const useMunicipioSummary = (name) => useQuery({ queryKey: ['municipio', 
 export const useReadings = (f = {}) => useQuery({ queryKey: ['readings', f], queryFn: () => getReadings(f) })
 export const useReviewQueue = (f = {}) => useQuery({ queryKey: ['review', f], queryFn: () => getReviewQueue(f) })
 export const useReviewQueuePaged = (f = {}) => useQuery({ queryKey: ['review/paged', f], queryFn: () => getReviewQueuePaged(f) })
+export const useCoverage = () => useQuery({ queryKey: ['summary/coverage'], queryFn: getCoverage })
+export const useSystemStatus = () => useQuery({ queryKey: ['system/status'], queryFn: getSystemStatus, refetchInterval: 30_000 })
+
+// Alerts share the events bound: the corpus carries the full SDWIS-derived
+// contamination history, so a bare list must not pull all of it.
+export const DEFAULT_ALERT_LIMIT = 500
+export const useAlerts = (f = {}) => {
+  const params = { limit: DEFAULT_ALERT_LIMIT, ...f }
+  return useQuery({ queryKey: ['alerts', params], queryFn: () => getAlerts(params) })
+}
+export const useAlertsPaged = (f = {}) => {
+  const params = { limit: DEFAULT_ALERT_LIMIT, ...f }
+  return useQuery({ queryKey: ['alerts/paged', params], queryFn: () => getAlertsPaged(params) })
+}
+export const useAlert = (id) => useQuery({ queryKey: ['alert', id], queryFn: () => getAlert(id), enabled: !!id })
+export const useAlertFacets = () => useQuery({ queryKey: ['alerts/facets'], queryFn: getAlertFacets })
+export const useAlertsGeojson = (f = {}) => useQuery({ queryKey: ['alerts.geojson', f], queryFn: () => getAlertsGeojson(f) })
+export const useAlertDependencies = (f = {}) => useQuery({ queryKey: ['alerts/dependencies', f], queryFn: () => getAlertDependencies(f) })
+export const useAlertGaps = () => useQuery({ queryKey: ['alerts/gaps'], queryFn: getAlertGaps })
 
 // Adjudicating a record optimistically drops it from every cached review list
 // so the queue advances instantly; a failed POST rolls the snapshots back.

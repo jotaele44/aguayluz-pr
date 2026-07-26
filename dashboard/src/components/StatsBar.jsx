@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useAssetsGeojson, useEvents, useHealth, useReviewQueue, useRunExport, useSummary } from '@/lib/hooks'
-import { Activity, AlertTriangle, Database, Droplets, MapPinned, RefreshCw, ShieldCheck, TrendingDown, TrendingUp, WifiOff, X } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { useAssetsGeojson, useEvents, useHealth, useReviewQueue, useSummary } from '@/lib/hooks'
+import { Activity, AlertTriangle, Database, Droplets, MapPinned, ShieldAlert, ShieldCheck, SlidersHorizontal, TrendingDown, TrendingUp, WifiOff, X } from 'lucide-react'
 
 function Kpi({ icon: Icon, label, value, hint, tone = 'text-slate-300', emphasis = false, trend }) {
   return (
@@ -26,7 +27,6 @@ export default function StatsBar() {
   const { data: reviewQueue = [] } = useReviewQueue()
   const { data: summary } = useSummary()
   const [dismissed, setDismissed] = useState(false)
-  const { mutate: runExport, isPending: exporting } = useRunExport()
   const prevRef = useRef({})
 
   const up = health?.status === 'ok'
@@ -79,7 +79,14 @@ export default function StatsBar() {
         <Kpi icon={Database} label="Assets" value={c.assets} hint="canonical JSONL" tone="text-sky-300" emphasis />
         <Kpi icon={MapPinned} label="Mapped" value={mapped} hint="GeoJSON features" tone="text-cyan-300" />
         <Kpi icon={Activity} label="Events" value={c.events ?? events.length} hint="service records" tone="text-amber-300" />
-        <Kpi icon={Droplets} label="Readings" value={readingsCount} hint="reservoir · generation · reliability" tone="text-blue-300" />
+        <Kpi
+          icon={ShieldAlert}
+          label="Alerts"
+          value={c.alerts_active}
+          hint={c.alerts_critical ? `${c.alerts_critical} critical` : 'active operational'}
+          tone={c.alerts_critical ? 'text-red-300' : 'text-orange-300'}
+        />
+        <Kpi icon={Droplets} label="Readings" value={readingsCount} hint="reservoir · groundwater · coastal" tone="text-blue-300" />
         <Kpi icon={ShieldCheck} label="Coverage" value={coverage} hint={r.module_status ? `readiness ${r.module_status}` : 'summary'} tone="text-emerald-300" trend={coverageTrend} />
         <Kpi icon={AlertTriangle} label="Review" value={reviewCount} hint="human adjudication" tone={reviewTone} trend={reviewTrend} />
         {summary?.sanitized_summary && (
@@ -88,15 +95,16 @@ export default function StatsBar() {
           </span>
         )}
         {!up && <Kpi icon={WifiOff} label="Fallback" value="cached" hint="API unavailable" tone="text-red-300" />}
-        <button
-          onClick={() => runExport()}
-          disabled={exporting}
-          title="Run federation export (regenerates outputs/)"
-          className="ml-auto shrink-0 flex items-center gap-1.5 rounded-md border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-[11px] text-slate-400 hover:text-slate-200 hover:border-slate-600 disabled:opacity-50 transition"
+        {/* The export/notify/report tools live on System & Tools, which can state each
+            one's backend precondition instead of failing at click time. */}
+        <Link
+          to="/system"
+          title="Backend configuration, artifact freshness, and operator tools"
+          className="ml-auto flex shrink-0 items-center gap-1.5 rounded-md border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-[11px] text-slate-400 transition hover:border-slate-600 hover:text-slate-200"
         >
-          <RefreshCw className={`h-3.5 w-3.5 ${exporting ? 'animate-spin' : ''}`} />
-          {exporting ? 'Exporting…' : 'Run export'}
-        </button>
+          <SlidersHorizontal className="h-3.5 w-3.5" />
+          System &amp; Tools
+        </Link>
       </div>
     </div>
   )
