@@ -1,5 +1,6 @@
 import { Skeleton } from '@/components/ui/skeleton'
 import { AlertTriangle, Database } from 'lucide-react'
+import { FederationEmptyState } from '@pr-federation/react'
 
 // Standard async-panel states so every data panel behaves the same: loading
 // skeletons, a distinct backend-unreachable state, and an empty state. Pass
@@ -33,11 +34,14 @@ export default function PanelState({
     )
   }
   if (isEmpty) {
+    // Shared federation empty state (@pr-federation/react) so every data panel's
+    // "nothing to show" reads identically across the federation.
     return (
-      <div className="flex h-full min-h-32 flex-col items-center justify-center gap-2 px-4 text-center text-sm text-slate-500">
-        <Database className="h-5 w-5 text-slate-600" />
-        {emptyText}
-      </div>
+      <FederationEmptyState
+        className="h-full min-h-32 content-center"
+        icon={<Database className="h-5 w-5" />}
+        title={emptyText}
+      />
     )
   }
   return children
