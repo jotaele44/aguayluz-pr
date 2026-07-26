@@ -252,3 +252,21 @@ def test_readings_since_filter_reads_observed_date(client, tmp_path, monkeypatch
     assert len(client.get("/readings?kind=coastal").json()) == 2
     recent = client.get("/readings?kind=coastal&since=2026-03-01T00:00:00Z").json()
     assert [r["observed_date"] for r in recent] == ["2026-06-01"]
+
+
+@pytest.mark.parametrize(
+    "value",
+    ["2026-03-01T00:00:00Z", "2026-03-01T00:00:00z", "2026-03-01T00:00:00+00:00"],
+)
+def test_parse_dt_accepts_zulu_timestamps(value):
+    """`Z` must parse on every supported Python, not just 3.11+.
+
+    datetime.fromisoformat only learned the trailing `Z` in 3.11. On 3.10 it raised,
+    _parse_dt returned None, and every caller reads None as "no bound" — so `?since=`
+    was silently ignored and the dashboard's 7d/30d/90d ranges returned everything.
+    The dashboard sends this exact shape via `new Date().toISOString()`.
+    """
+    parsed = backend._parse_dt(value)
+    assert parsed is not None
+    assert parsed.utcoffset().total_seconds() == 0
+    assert parsed.year == 2026 and parsed.month == 3 and parsed.day == 1

@@ -102,8 +102,16 @@ def _load_json(path: Path, default: Any = None) -> Any:
 def _parse_dt(s: str | None) -> datetime | None:
     if not s:
         return None
+    # datetime.fromisoformat only accepts a trailing "Z" from Python 3.11 on. The repo
+    # still supports 3.10, where a Z-suffixed value raised ValueError and this returned
+    # None — which callers read as "no bound", so `?since=` was silently ignored and the
+    # dashboard's 7d/30d/90d ranges returned the entire series. The dashboard sends
+    # exactly this shape (`new Date().toISOString()`), as do the canonical corpora.
+    text = s.strip()
+    if text.endswith(("Z", "z")):
+        text = f"{text[:-1]}+00:00"
     try:
-        dt = datetime.fromisoformat(s)
+        dt = datetime.fromisoformat(text)
         return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
     except ValueError:
         return None
