@@ -31,10 +31,14 @@ DATA = REPO_ROOT / "data"
 OUTPUTS = REPO_ROOT / "outputs"
 SCRIPTS = REPO_ROOT / "scripts"
 
+# Monitoring reading kinds -> their canonical JSONL. Every kind here has a producer
+# in scripts/ that scripts/refresh.py runs, so an empty series means "no data yet",
+# never "no such feed". All three share one record shape (site_no / metric / value /
+# observed_date), so the dashboard renders them with a single time-series path.
 READINGS_FILES: dict[str, Path] = {
-    "reservoir": DATA / "reservoir_levels.jsonl",
-    "generation": DATA / "generation_readings.jsonl",
-    "reliability": DATA / "reliability_readings.jsonl",
+    "reservoir": DATA / "reservoir_levels.jsonl",       # scripts/ingest_usgs_levels.py
+    "groundwater": DATA / "groundwater_levels.jsonl",   # scripts/ingest_usgs_groundwater.py
+    "coastal": DATA / "coastal_levels.jsonl",           # scripts/ingest_noaa_tides.py
 }
 
 # Default page size for GET /events. The service_events corpus includes the full
