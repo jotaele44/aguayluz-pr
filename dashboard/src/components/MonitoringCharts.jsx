@@ -19,6 +19,7 @@ const SOURCE_NOTE = {
 export default function MonitoringCharts() {
   const [kind, setKind] = useState('reservoir')
   const [range, setRange] = useState('all')
+  const [site, setSite] = useState(null)   // null = "not chosen yet"; resolved below
 
   const sinceParam = range === 'all' ? undefined : (() => {
     const d = new Date()
@@ -29,13 +30,30 @@ export default function MonitoringCharts() {
 
   const { data: readings = [], isLoading } = useReadings({ kind, since: sinceParam })
 
-  // Every registered kind is a site/date time series with the same record shape
-  // (site_no / metric / value / observed_date), so one projection covers them all.
+  // Every kind spans many independent monitoring sites (5 tide stations, 36
+  // groundwater wells, 1000+ stream gages), and their baselines are not comparable —
+  // a well's level is only meaningful against its own history. Plotting them as one
+  // date-sorted line joined unrelated stations and made ordinary baseline differences
+  // register as >2σ anomalies, so the chart is always scoped to a single site.
+  const sites = useMemo(() => {
+    const counts = new Map()
+    for (const r of readings) {
+      const id = r.site_no ?? 'unknown'
+      counts.set(id, (counts.get(id) ?? 0) + 1)
+    }
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([id, count]) => ({ id, count }))
+  }, [readings])
+
+  // Default to the best-covered site, and re-resolve when the kind (or the data)
+  // changes so the selection never points at a site absent from the new series.
+  const activeSite = sites.some((s) => s.id === site) ? site : sites[0]?.id
+
   const chart = useMemo(() => (
-    [...readings]
+    readings
+      .filter((r) => (r.site_no ?? 'unknown') === activeSite)
       .sort((a, b) => (a.observed_date || '').localeCompare(b.observed_date || ''))
       .map((r) => ({ name: (r.observed_date || '').slice(5), fullDate: r.observed_date || '', value: r.value, site: r.site_no }))
-  ), [readings])
+  ), [readings, activeSite])
 
   const meta = READING_KINDS.find((k) => k.key === kind)
 
@@ -86,9 +104,23 @@ export default function MonitoringCharts() {
             ))}
           </div>
           <Select value={kind} onValueChange={setKind}>
-            <SelectTrigger className="h-8 w-[160px] border-slate-800 bg-slate-950 text-xs"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-8 w-[160px] border-slate-800 bg-slate-950 text-xs" aria-label="Reading kind"><SelectValue /></SelectTrigger>
             <SelectContent>{READING_KINDS.map((k) => <SelectItem key={k.key} value={k.key} className="text-xs">{k.label}</SelectItem>)}</SelectContent>
           </Select>
+          {sites.length > 1 && (
+            <Select value={activeSite ?? ''} onValueChange={setSite}>
+              <SelectTrigger className="h-8 w-[150px] border-slate-800 bg-slate-950 text-xs" aria-label="Monitoring site">
+                <SelectValue placeholder="Site" />
+              </SelectTrigger>
+              <SelectContent>
+                {sites.map((s) => (
+                  <SelectItem key={s.id} value={s.id} className="text-xs">
+                    {s.id} · {s.count}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </div>
 
@@ -96,7 +128,10 @@ export default function MonitoringCharts() {
         <div className="mb-3 flex items-start justify-between gap-3">
           <div>
             <div className="text-xs uppercase tracking-wide text-slate-400">
-              {meta?.label} · {readings.length} readings{meta?.unit ? ` (${meta.unit})` : ''}
+              {meta?.label}
+              {activeSite ? ` · site ${activeSite}` : ''}
+              {' · '}{readings.length} readings across {sites.length} site(s)
+              {meta?.unit ? ` (${meta.unit})` : ''}
             </div>
             <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{SOURCE_NOTE[kind]}</p>
           </div>

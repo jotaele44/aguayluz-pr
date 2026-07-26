@@ -93,6 +93,11 @@ export default function SystemPage() {
   const notifyReady = Boolean(
     status?.slack_configured || status?.ntfy_configured || status?.email_configured,
   )
+  // /admin/run-export is key-gated when API_SECRET_KEY is set, and this dashboard
+  // holds no token — so the call would 401. State that up front rather than letting
+  // the operator click into a failure.
+  const exportBlockedByAuth = Boolean(status?.auth_enabled)
+  const exportReady = up && !exportBlockedByAuth
 
   const handleNotify = async () => {
     setNotifying(true)
@@ -121,7 +126,7 @@ export default function SystemPage() {
             <Button
               size="sm"
               variant="outline"
-              disabled={exporting || !up}
+              disabled={exporting || !exportReady}
               onClick={() => runExport(undefined, {
                 onSuccess: () => toast({ title: 'Export complete', description: 'outputs/ and exports/federation regenerated' }),
                 onError: (e) => toast({ variant: 'destructive', title: 'Export failed', description: String(e?.message ?? e) }),
@@ -134,9 +139,11 @@ export default function SystemPage() {
               {exporting ? 'Exporting…' : 'Run federation export'}
             </Button>
             <p className="mt-1.5 text-[10px] text-slate-500">
-              {up
-                ? 'Regenerates outputs/ and exports/federation from the current corpus.'
-                : 'Unavailable — the backend is unreachable.'}
+              {!up
+                ? 'Unavailable — the backend is unreachable.'
+                : exportBlockedByAuth
+                  ? 'Unavailable — API_SECRET_KEY is set and this dashboard sends no bearer token. Run scripts/federation_export.py directly.'
+                  : 'Regenerates outputs/ and exports/federation from the current corpus.'}
             </p>
           </div>
 

@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useAlertsPaged, useAlertFacets, useAlertGaps, useHealth } from '@/lib/hooks'
@@ -123,12 +123,18 @@ function AlertRow({ alert }) {
   )
 }
 
+const PAGE = 500
+
 export default function AlertsPage() {
   const [filters, setFilters] = useAlertFilters()
   const { data: facets } = useAlertFacets()
   const { data: gaps = [] } = useAlertGaps()
   const { isError: healthError } = useHealth()
   const scrollRef = useRef(null)
+  // How many rows to request. Narrowing the facets is not always enough to get under
+  // one page — CONTAMINATION alone is ~3200 — so "load more" raises the ceiling and
+  // the virtualized list absorbs the extra rows. Reset whenever the filters change.
+  const [limit, setLimit] = useState(PAGE)
 
   // Server-side filtering keeps the request bounded — the corpus carries the full
   // SDWIS-derived contamination history, far more than a page should transfer.
@@ -141,7 +147,14 @@ export default function AlertsPage() {
     q: filters.q || undefined,
   }), [filters])
 
-  const { data, isLoading } = useAlertsPaged(query)
+  // Key the reset on the filter *values*, not on `query`'s identity: `filters` is
+  // rebuilt from useSearchParams on every render, so `query` is a new object each
+  // time and an identity-keyed effect would reset the limit on every render —
+  // silently undoing "load more" the moment it was clicked.
+  const queryKey = JSON.stringify(query)
+  useEffect(() => { setLimit(PAGE) }, [queryKey])
+
+  const { data, isLoading } = useAlertsPaged({ ...query, limit })
   const items = data?.items ?? []
   const total = data?.total ?? 0
 
@@ -270,9 +283,21 @@ export default function AlertsPage() {
       </div>
 
       {total > items.length && (
-        <div className="shrink-0 border-t border-slate-800 px-4 py-2 text-[11px] text-slate-500">
-          Showing the {items.length} most recent of {total} matching alert(s). Narrow the
-          filters to reach older records.
+        <div
+          // The AI launcher is fixed at bottom-right (z-40), so the control sits next
+          // to the count rather than pinned right, where the launcher would cover it.
+          className="flex shrink-0 items-center gap-3 border-t border-slate-800 py-2 pl-4 pr-44 text-[11px] text-slate-500"
+        >
+          <span>Showing the {items.length.toLocaleString()} most recent of {total.toLocaleString()} matching alert(s).</span>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setLimit((n) => n + PAGE)}
+            disabled={isLoading}
+            className="h-7 shrink-0 border-slate-800 bg-slate-950 px-2 text-[11px] text-slate-300 hover:text-slate-100"
+          >
+            Load {Math.min(PAGE, total - items.length).toLocaleString()} more
+          </Button>
         </div>
       )}
     </div>

@@ -230,3 +230,25 @@ def test_readings_kinds_match_registered_producers(client):
     assert set(backend.READINGS_FILES) == {"reservoir", "groundwater", "coastal"}
     assert client.get("/readings?kind=coastal").json() == []
     assert client.get("/readings?kind=generation").json() == []
+
+
+def test_readings_since_filter_reads_observed_date(client, tmp_path, monkeypatch):
+    """`since` must parse the field the producers actually write.
+
+    Every reading ingest emits `observed_date`; filtering only on
+    timestamp/date/time parsed nothing, so the 7d/30d/90d ranges silently returned an
+    empty series for all three feeds while `all` looked fine.
+    """
+    series = tmp_path / "coastal_levels.jsonl"
+    series.write_text(
+        '{"site_no": "9755371", "metric": "coastal_water_level", "value": 1.1,'
+        ' "observed_date": "2026-01-01"}\n'
+        '{"site_no": "9755371", "metric": "coastal_water_level", "value": 1.4,'
+        ' "observed_date": "2026-06-01"}\n',
+        encoding="utf-8",
+    )
+    monkeypatch.setitem(backend.READINGS_FILES, "coastal", series)
+
+    assert len(client.get("/readings?kind=coastal").json()) == 2
+    recent = client.get("/readings?kind=coastal&since=2026-03-01T00:00:00Z").json()
+    assert [r["observed_date"] for r in recent] == ["2026-06-01"]

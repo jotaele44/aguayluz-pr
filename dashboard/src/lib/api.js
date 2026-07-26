@@ -79,6 +79,18 @@ export const postRunExport = async () => {
     method: 'POST',
     signal: AbortSignal.timeout(120000),
   })
+  // Throw on non-2xx so react-query routes it to onError. Returning res.json()
+  // unconditionally reported "export complete" for a 401 (auth enabled, no bearer
+  // token) or a 500 (the exporter itself failed) — the operator was told outputs
+  // were regenerated when nothing ran.
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '')
+    throw new Error(
+      res.status === 401
+        ? 'Export refused: API key auth is enabled and this dashboard sends no bearer token.'
+        : `Export failed (HTTP ${res.status}). ${detail.slice(0, 300)}`,
+    )
+  }
   return res.json()
 }
 

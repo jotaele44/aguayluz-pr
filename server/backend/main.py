@@ -360,7 +360,12 @@ def readings(
         if since_dt:
             filtered = []
             for r in data:
-                dt = _parse_dt(r.get("timestamp") or r.get("date") or r.get("time"))
+                # `observed_date` is what every reading producer actually writes
+                # (ingest_usgs_levels / _groundwater / noaa_tides); without it the
+                # 7d/30d/90d ranges parsed nothing and returned an empty series.
+                dt = _parse_dt(
+                    r.get("observed_date") or r.get("timestamp") or r.get("date") or r.get("time")
+                )
                 if dt and dt >= since_dt:
                     filtered.append(r)
             data = filtered

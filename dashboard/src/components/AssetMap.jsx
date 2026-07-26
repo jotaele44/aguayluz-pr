@@ -77,6 +77,14 @@ const SEVERITY_COLOR = [
   '#64748b',
 ]
 
+// MapLibre's setHTML parses its argument as HTML, and popup content comes from
+// ingested records — an alert's source_title originates in a third-party feed
+// (Centinelas/news/regulatory), so an `<img onerror=...>` in a headline would
+// execute in the dashboard's origin. Escape every interpolated value.
+const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => (
+  { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
+))
+
 function featureId(feature) {
   return feature?.properties?.asset_id ?? feature?.properties?.id
 }
@@ -288,7 +296,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
         map.getCanvas().style.cursor = 'pointer'
         const p = e.features[0]?.properties || {}
         popup.setLngLat(e.features[0].geometry.coordinates)
-          .setHTML(`<div style="font:12px/1.5 system-ui,sans-serif;color:#e2e8f0;background:#0f172a;padding:6px 8px;border-radius:6px;max-width:200px"><strong>${p.asset_name || 'Asset'}</strong><br/><span style="color:#94a3b8;font-size:11px">${(p.asset_type || 'unknown').replace(/_/g,' ')} · ${p.municipality || ''}</span></div>`)
+          .setHTML(`<div style="font:12px/1.5 system-ui,sans-serif;color:#e2e8f0;background:#0f172a;padding:6px 8px;border-radius:6px;max-width:200px"><strong>${esc(p.asset_name || 'Asset')}</strong><br/><span style="color:#94a3b8;font-size:11px">${esc((p.asset_type || 'unknown').replace(/_/g,' '))} · ${esc(p.municipality || '')}</span></div>`)
           .addTo(map)
       })
       map.on('mouseleave', 'assets-dot', () => {
@@ -299,7 +307,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
         map.getCanvas().style.cursor = 'pointer'
         const p = e.features[0]?.properties || {}
         popup.setLngLat(e.features[0].geometry.coordinates)
-          .setHTML(`<div style="font:12px/1.5 system-ui,sans-serif;color:#e2e8f0;background:#0f172a;padding:6px 8px;border-radius:6px;max-width:220px"><strong>${p.source_title || p.alert_id || 'Alert'}</strong><br/><span style="color:#94a3b8;font-size:11px">${p.module_id || 'alert'} · severity ${p.severity ?? '—'} · ${p.status || ''}</span></div>`)
+          .setHTML(`<div style="font:12px/1.5 system-ui,sans-serif;color:#e2e8f0;background:#0f172a;padding:6px 8px;border-radius:6px;max-width:220px"><strong>${esc(p.source_title || p.alert_id || 'Alert')}</strong><br/><span style="color:#94a3b8;font-size:11px">${esc(p.module_id || 'alert')} · severity ${esc(p.severity ?? '—')} · ${esc(p.status || '')}</span></div>`)
           .addTo(map)
       })
       map.on('mouseleave', 'alerts-dot', () => {
