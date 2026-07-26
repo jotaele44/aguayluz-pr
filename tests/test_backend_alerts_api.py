@@ -41,6 +41,16 @@ ALERTS = [
         "source_title": "Flood warning — Río Grande de Loíza", "asset_name": None,
         "municipalities": ["Loíza"],  # no coordinates -> not a map feature
     },
+    {
+        # A `draft` severity-4 alert. The exporter ships this to the Hub as critical
+        # (its rule is "not closed/rejected"), so the read layer must agree — an
+        # allowlist of active/validated here would under-report it.
+        "alert_id": "AYL_ALR_20260404_dam_d", "module_id": "DAM_SAFETY",
+        "status": "draft", "review_status": "needs_review", "evidence_tier": "T4",
+        "severity": 4, "start_at": "2026-04-04T00:00:00Z", "gap_status": "blocking",
+        "source_title": "Draft dam-safety advisory", "asset_name": "Carraízo",
+        "municipalities": ["Trujillo Alto"],
+    },
 ]
 
 ASSETS = [
@@ -72,8 +82,9 @@ def client(monkeypatch):
 
 def test_alerts_are_paged_and_recent_first(client):
     body = client.get("/alerts").json()
-    assert body["total"] == 3
+    assert body["total"] == 4
     assert [a["alert_id"] for a in body["items"]] == [
+        "AYL_ALR_20260404_dam_d",
         "AYL_ALR_20260303_weather_c",
         "AYL_ALR_20260202_seismic_b",
         "AYL_ALR_20260101_sdwis_a",
@@ -85,7 +96,8 @@ def test_alerts_are_paged_and_recent_first(client):
     [
         ("module_id=SEISMIC_GEO", ["AYL_ALR_20260202_seismic_b"]),
         ("status=closed", ["AYL_ALR_20260303_weather_c"]),
-        ("review_status=needs_review", ["AYL_ALR_20260101_sdwis_a"]),
+        ("status=draft", ["AYL_ALR_20260404_dam_d"]),
+        ("review_status=needs_review", ["AYL_ALR_20260404_dam_d", "AYL_ALR_20260101_sdwis_a"]),
         ("tier=T2", ["AYL_ALR_20260303_weather_c"]),
         ("municipio=ponce", ["AYL_ALR_20260101_sdwis_a"]),
         ("q=earthquake", ["AYL_ALR_20260202_seismic_b"]),
@@ -97,19 +109,26 @@ def test_alert_filters(client, query, expected):
 
 
 def test_severity_min_and_critical_only_differ(client):
-    """severity>=4 includes the closed alert; critical also requires it be actionable."""
+    """severity>=4 includes the closed alert; critical drops it but keeps the draft.
+
+    The exporter's rule is a blocklist ("not closed/rejected"), so a draft alert over
+    the threshold is critical. Matching it is what keeps this count equal to the Hub's.
+    """
     by_severity = client.get("/alerts?severity_min=4").json()
-    assert by_severity["total"] == 2
+    assert by_severity["total"] == 3
 
     critical = client.get("/alerts?critical_only=true").json()
-    assert [a["alert_id"] for a in critical["items"]] == ["AYL_ALR_20260202_seismic_b"]
+    assert [a["alert_id"] for a in critical["items"]] == [
+        "AYL_ALR_20260404_dam_d",      # draft, severity 4 -> still actionable
+        "AYL_ALR_20260202_seismic_b",
+    ]
 
 
 def test_explicit_limit_and_offset(client):
     body = client.get("/alerts?limit=1&offset=1").json()
-    assert body["total"] == 3
+    assert body["total"] == 4
     assert body["offset"] == 1
-    assert [a["alert_id"] for a in body["items"]] == ["AYL_ALR_20260202_seismic_b"]
+    assert [a["alert_id"] for a in body["items"]] == ["AYL_ALR_20260303_weather_c"]
 
 
 def test_alert_detail_and_missing(client):
@@ -130,12 +149,14 @@ def test_static_alert_routes_are_not_shadowed_by_the_id_route(client):
 
 def test_facets_are_derived_from_the_corpus(client):
     f = client.get("/alerts/facets").json()
-    assert f["total"] == 3
-    assert f["active"] == 2
-    assert f["critical"] == 1
+    assert f["total"] == 4
+    assert f["active"] == 3          # everything except the closed one
+    assert f["critical"] == 2        # the seismic alert and the severity-4 draft
     assert f["mapped"] == 2
-    assert f["module_id"] == {"CONTAMINATION": 1, "SEISMIC_GEO": 1, "WEATHER_HAZARD": 1}
-    assert f["evidence_tier"] == {"T1": 2, "T2": 1}
+    assert f["module_id"] == {
+        "CONTAMINATION": 1, "SEISMIC_GEO": 1, "WEATHER_HAZARD": 1, "DAM_SAFETY": 1,
+    }
+    assert f["evidence_tier"] == {"T1": 2, "T2": 1, "T4": 1}
 
 
 def test_geojson_skips_coordinate_less_alerts(client):
@@ -158,9 +179,9 @@ def test_dependency_edges_scope_by_alert_and_asset(client):
 
 def test_health_reports_alert_counts(client):
     counts = client.get("/health").json()["counts"]
-    assert counts["alerts"] == 3
-    assert counts["alerts_active"] == 2
-    assert counts["alerts_critical"] == 1
+    assert counts["alerts"] == 4
+    assert counts["alerts_active"] == 3
+    assert counts["alerts_critical"] == 2
 
 
 # ── coverage ─────────────────────────────────────────────────────────────────

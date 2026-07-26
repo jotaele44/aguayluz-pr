@@ -133,13 +133,17 @@ export function alertSeverityMeta(severity) {
   return ALERT_SEVERITY[severity] ?? { label: '—', tone: 'text-slate-400', dot: '#64748b' }
 }
 
-// Lifecycle states that make an alert current. Mirrors ACTIONABLE_ALERT_STATUS in
-// the backend, so "active" means the same thing in the list, the map, and /health.
-export const ACTIONABLE_ALERT_STATUS = ['active', 'validated']
+// Retired lifecycle states. Mirrors INACTIVE_ALERT_STATUS in the backend and
+// `_ALERT_INACTIVE_STATUS` in scripts/federation_export.py — a blocklist, not an
+// allowlist, so a `draft` alert still counts as actionable exactly as it does in the
+// stream shipped to the Hub. "active" therefore means the same thing in the list, the
+// map, /health, and the Hub.
+export const INACTIVE_ALERT_STATUS = ['closed', 'rejected']
+export const isAlertActionable = (a) => !INACTIVE_ALERT_STATUS.includes(a?.status)
 export const isAlertCritical = (a) =>
   Number.isInteger(a?.severity) &&
   a.severity >= CRITICAL_SEVERITY &&
-  ACTIONABLE_ALERT_STATUS.includes(a?.status)
+  isAlertActionable(a)
 
 // gap_status from the workbook: how complete the evidence behind an alert is.
 const GAP_STATUS = {

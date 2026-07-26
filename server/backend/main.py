@@ -126,10 +126,13 @@ _alert_edges: list[dict[str, Any]] = _load_jsonl(DATA / "alert_dependency_edges.
 _alert_gaps: list[dict[str, Any]] = _load_jsonl(DATA / "alert_gaps.jsonl")
 
 # Operational severity at or above which an alert is life-safety critical while still
-# actionable. Mirrors aguayluz.alert_promotion.CRITICAL_SEVERITY and the exporter's
-# `is_critical` projection, so the dashboard's critical count matches the Hub's.
+# actionable. Mirrors aguayluz.alert_promotion.CRITICAL_SEVERITY and, deliberately,
+# scripts/federation_export.py `_alert_is_critical` — which defines "actionable" as a
+# blocklist (anything not closed/rejected, so a `draft` still counts) rather than an
+# allowlist. Matching it exactly is the point: these counts must equal what the Hub
+# receives, and an allowlist here silently under-reported drafts by comparison.
 CRITICAL_SEVERITY = 4
-ACTIONABLE_ALERT_STATUS = {"active", "validated"}
+INACTIVE_ALERT_STATUS = {"closed", "rejected"}
 
 # In-memory store for review decisions (survives only until server restart).
 _decisions: dict[str, str] = {}
@@ -156,7 +159,7 @@ def health() -> JSONResponse:
             "events": len(_events),
             "readings": readings_counts,
             "alerts": len(_alerts),
-            "alerts_active": sum(1 for a in _alerts if a.get("status") in ACTIONABLE_ALERT_STATUS),
+            "alerts_active": sum(1 for a in _alerts if _alert_is_actionable(a)),
             "alerts_critical": sum(1 for a in _alerts if _alert_is_critical(a)),
         },
         "readiness": readiness,
@@ -513,13 +516,18 @@ def system_status() -> JSONResponse:
 # these endpoints give this producer's own dashboard the same view.
 
 
+def _alert_is_actionable(alert: dict[str, Any]) -> bool:
+    """Still in a live lifecycle state — anything the exporter has not retired."""
+    return str(alert.get("status")) not in INACTIVE_ALERT_STATUS
+
+
 def _alert_is_critical(alert: dict[str, Any]) -> bool:
     """Life-safety threshold cleared AND the alert is still actionable."""
     severity = alert.get("severity")
     return (
         isinstance(severity, int)
         and severity >= CRITICAL_SEVERITY
-        and alert.get("status") in ACTIONABLE_ALERT_STATUS
+        and _alert_is_actionable(alert)
     )
 
 
@@ -587,7 +595,7 @@ def alert_facets() -> JSONResponse:
     """Filter options + counts, derived from the corpus rather than hardcoded in the UI."""
     return JSONResponse({
         "total": len(_alerts),
-        "active": sum(1 for a in _alerts if a.get("status") in ACTIONABLE_ALERT_STATUS),
+        "active": sum(1 for a in _alerts if _alert_is_actionable(a)),
         "critical": sum(1 for a in _alerts if _alert_is_critical(a)),
         "mapped": sum(1 for a in _alerts
                       if isinstance(a.get("latitude"), (int, float))
