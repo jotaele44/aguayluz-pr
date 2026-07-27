@@ -66,7 +66,7 @@ function ArtifactRow({ name, entry }) {
 }
 
 const ARTIFACT_LABELS = {
-  base44_export: 'Base44 export',
+  hub_export: 'Hub export',
   review_queue: 'Review queue',
   integration_report: 'Integration report',
   source_manifest: 'Source manifest',

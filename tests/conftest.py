@@ -68,7 +68,7 @@ def service_event_valid() -> dict:
 
 
 @pytest.fixture
-def base44_export_valid() -> dict:
+def hub_export_valid() -> dict:
     return {
         "module_id": "aguayluz-pr",
         "run_id": "20260606T120000Z_demo",

@@ -52,7 +52,7 @@ Core package and pipelines are real, committed, and tested.
   - G03 — every entity carries confidence + tier
   - G04 — review-queue presence + shape
   - G05 — coverage ledger
-  - G06 — Base44 export sanitization
+  - G06 — Hub export sanitization
   - G07 — no secrets in tracked files
   - G08 — tests-pass marker
 - **Full React/Vite dashboard** (`dashboard/`) with geo map layers.

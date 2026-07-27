@@ -12,7 +12,7 @@ def test_all_gate_ids_present():
         "G03_CONFIDENCE",
         "G04_REVIEW_QUEUE",
         "G05_COVERAGE_LEDGER",
-        "G06_BASE44_EXPORT",
+        "G06_HUB_EXPORT",
         "G07_NO_SECRETS",
         "G08_TESTS",
     }

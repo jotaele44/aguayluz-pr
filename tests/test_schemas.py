@@ -10,7 +10,7 @@ from jsonschema import ValidationError
 
 from aguayluz.models import (
     AguayluzBridgeSummary,
-    Base44Export,
+    HubExport,
     NaturalFeature,
     ServiceEvent,
     UtilityAsset,
@@ -152,23 +152,23 @@ def test_bridge_summary_rejects_wrong_module_id():
         validate_against_schema("aguayluz_bridge_summary", s)
 
 
-# ---------------- base44_export ----------------
+# ---------------- hub_export ----------------
 
-def test_base44_export_valid(base44_export_valid):
-    validate_against_schema("base44_export", base44_export_valid)
-    Base44Export(**base44_export_valid)
+def test_hub_export_valid(hub_export_valid):
+    validate_against_schema("hub_export", hub_export_valid)
+    HubExport(**hub_export_valid)
 
 
-def test_base44_export_rejects_bad_status(base44_export_valid):
-    bad = {**base44_export_valid, "status": "OK"}
+def test_hub_export_rejects_bad_status(hub_export_valid):
+    bad = {**hub_export_valid, "status": "OK"}
     with pytest.raises(ValidationError):
-        validate_against_schema("base44_export", bad)
+        validate_against_schema("hub_export", bad)
 
 
-def test_base44_export_rejects_bad_run_id(base44_export_valid):
-    bad = {**base44_export_valid, "run_id": "yesterday"}
+def test_hub_export_rejects_bad_run_id(hub_export_valid):
+    bad = {**hub_export_valid, "run_id": "yesterday"}
     with pytest.raises(ValidationError):
-        validate_against_schema("base44_export", bad)
+        validate_against_schema("hub_export", bad)
 
 
 # ---------------- source_manifest / review_queue / integration_report (sanity) ----------------

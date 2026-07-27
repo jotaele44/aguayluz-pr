@@ -8,7 +8,7 @@
 
 Local-only React dashboard for the AguaYLuz water & power continuity module.
 Same federation process — Vite + React (JSX) + Tailwind + shadcn/ui + react-query,
-Base44 auth stripped, **MapLibre GL** map, shared design system via
+auth stripped, **MapLibre GL** map, shared design system via
 `@pr-federation/react`. This module carries **real** data (`federation.json` gate
 `federation_readiness_gate.ready_for_hub_live_execution` is `true`), so nothing
 here is synthetic.
@@ -59,14 +59,14 @@ the backend, so they track the data rather than this file.
   email, AI, Sentry), the freshness of every canonical output and corpus, and the
   operator actions (run federation export, send status alert, open status report).
   Each tool states its precondition instead of failing at click time.
-- Header KPIs from `/health` + `outputs/base44_export.json` (coverage %, readiness).
+- Header KPIs from `/health` + `outputs/hub_export.json` (coverage %, readiness).
 
 ## Backend (`server/backend/main.py`)
 
 Reads `data/*.jsonl` (`utility_assets`, `service_events` + `aee_incidents`,
 `alert_events` + its dependency/gap sidecars, and the reservoir / groundwater /
 coastal reading series), `data/geo/pr_municipios.geojson`, and
-`outputs/{base44_export,review_queue}.json` — stdlib only, no DB. CORS allows
+`outputs/{hub_export,review_queue}.json` — stdlib only, no DB. CORS allows
 `:5173`.
 
 Endpoints the dashboard consumes: `/health`, `/assets*`, `/events*`, `/alerts*`

@@ -74,7 +74,7 @@ _ENTITY_SCHEMAS = {
     "service_events.json":   "service_event",            # list of service_event
     "monitoring_readings.json": "monitoring_reading",    # list of monitoring_reading
     "bridge_summary.json":   "aguayluz_bridge_summary",
-    "base44_export.json":    "base44_export",
+    "hub_export.json":    "hub_export",
     "source_manifest.json":  "source_manifest",
     "review_queue.json":     "review_queue",
     "integration_report.json": "integration_report",
@@ -200,23 +200,23 @@ def gate_g05_coverage_ledger() -> GateResult:
 
 
 # ---------------------------------------------------------------------------
-# G06 — Base44 export sanitization
+# G06 — Hub export sanitization
 # ---------------------------------------------------------------------------
 
-def gate_g06_base44_export() -> GateResult:
-    p = OUTPUTS_DIR / "base44_export.json"
+def gate_g06_hub_export() -> GateResult:
+    p = OUTPUTS_DIR / "hub_export.json"
     if not p.exists():
-        return GateResult("G06_BASE44_EXPORT", "SKIP", "base44_export.json missing")
+        return GateResult("G06_HUB_EXPORT", "SKIP", "hub_export.json missing")
     try:
         data = json.loads(p.read_text(encoding="utf-8"))
-        validate_against_schema("base44_export", data)
+        validate_against_schema("hub_export", data)
     except Exception as exc:  # noqa: BLE001
-        return GateResult("G06_BASE44_EXPORT", "FAIL", str(exc))
+        return GateResult("G06_HUB_EXPORT", "FAIL", str(exc))
     text = p.read_text(encoding="utf-8")
     for pat in _SECRET_PATTERNS:
         if pat.search(text):
-            return GateResult("G06_BASE44_EXPORT", "FAIL", f"secret-like pattern detected: {pat.pattern[:40]}…")
-    return GateResult("G06_BASE44_EXPORT", "PASS")
+            return GateResult("G06_HUB_EXPORT", "FAIL", f"secret-like pattern detected: {pat.pattern[:40]}…")
+    return GateResult("G06_HUB_EXPORT", "PASS")
 
 
 # ---------------------------------------------------------------------------
@@ -274,7 +274,7 @@ GATE_FUNCS: dict[str, Callable[[], GateResult]] = {
     "G03_CONFIDENCE":       gate_g03_confidence,
     "G04_REVIEW_QUEUE":     gate_g04_review_queue,
     "G05_COVERAGE_LEDGER":  gate_g05_coverage_ledger,
-    "G06_BASE44_EXPORT":    gate_g06_base44_export,
+    "G06_HUB_EXPORT":    gate_g06_hub_export,
     "G07_NO_SECRETS":       gate_g07_no_secrets,
     "G08_TESTS":            gate_g08_tests,
 }
