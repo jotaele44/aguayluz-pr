@@ -8,10 +8,7 @@
 
 Local-only React dashboard for the AguaYLuz water & power continuity module.
 Same federation process — Vite + React (JSX) + Tailwind + shadcn/ui + react-query,
-Auth stripped, **MapLibre GL** map. This module carries **real** data
-(`federation.json` gate `federation_readiness_gate.ready_for_hub_live_execution`
-is `true`), so nothing here is synthetic.
-Base44 auth stripped, **MapLibre GL** map, shared design system via
+auth stripped, **MapLibre GL** map, shared design system via
 `@pr-federation/react`. This module carries **real** data (`federation.json` gate
 `federation_readiness_gate.ready_for_hub_live_execution` is `true`), so nothing
 here is synthetic.
@@ -53,16 +50,6 @@ the backend, so they track the data rather than this file.
   assets, and dependency edges.
 - **Outages** — service events (outages, interruptions) with affected area,
   municipio/zone, and customer counts.
-- **Monitoring** — recharts time-series: reservoir levels (USGS), generation
-  MWh (EIA, summed by month), and grid reliability (SAIDI/SAIFI/CAIDI).
-- **Review** — the 303 records pending human adjudication, with severity/tier.
-- Header KPIs from `outputs/hub_export.json` (coverage %, readiness).
-
-## Backend (`server/backend/main.py`)
-Reads `data/*.jsonl` (utility_assets 408, service_events+aee_incidents 8,
-reservoir/generation/reliability readings), `data/geo/pr_municipios.geojson`,
-and `outputs/{hub_export,review_queue}.json` — stdlib only, no DB. CORS
-allows `:5173`.
 - **Monitoring** — recharts time series over the three ingested reading kinds:
   reservoir levels and groundwater levels (USGS NWIS) and coastal water levels
   (NOAA CO-OPS). Collection gaps are shaded rather than interpolated, and >2σ
@@ -72,14 +59,14 @@ allows `:5173`.
   email, AI, Sentry), the freshness of every canonical output and corpus, and the
   operator actions (run federation export, send status alert, open status report).
   Each tool states its precondition instead of failing at click time.
-- Header KPIs from `/health` + `outputs/base44_export.json` (coverage %, readiness).
+- Header KPIs from `/health` + `outputs/hub_export.json` (coverage %, readiness).
 
 ## Backend (`server/backend/main.py`)
 
 Reads `data/*.jsonl` (`utility_assets`, `service_events` + `aee_incidents`,
 `alert_events` + its dependency/gap sidecars, and the reservoir / groundwater /
 coastal reading series), `data/geo/pr_municipios.geojson`, and
-`outputs/{base44_export,review_queue}.json` — stdlib only, no DB. CORS allows
+`outputs/{hub_export,review_queue}.json` — stdlib only, no DB. CORS allows
 `:5173`.
 
 Endpoints the dashboard consumes: `/health`, `/assets*`, `/events*`, `/alerts*`

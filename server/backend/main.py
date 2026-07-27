@@ -507,7 +507,7 @@ def system_status() -> JSONResponse:
     return JSONResponse({
         **auth_status_payload(),
         "artifacts": {
-            "base44_export": _artifact_status(OUTPUTS / "base44_export.json"),
+            "hub_export": _artifact_status(OUTPUTS / "hub_export.json"),
             "review_queue": _artifact_status(OUTPUTS / "review_queue.json"),
             "integration_report": _artifact_status(OUTPUTS / "integration_report.json"),
             "source_manifest": _artifact_status(OUTPUTS / "source_manifest.json"),
