@@ -1,13 +1,15 @@
+import { FederationPanel } from '@pr-federation/react'
 import { cn } from '@/lib/utils'
 
-// Standard card surface used throughout the dashboard. Optional uppercase title.
+// Standard card surface, on the shared federation `.fd-panel` primitive so every
+// producer's panels share one surface/border/elevation. Optional uppercase title.
 export default function Panel({ title, className, children }) {
   return (
-    <div className={cn('bg-slate-900 border border-slate-800 rounded-lg p-5', className)}>
+    <FederationPanel className={cn('p-5', className)}>
       {title && (
-        <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">{title}</h3>
+        <h3 className="mb-4 text-xs font-semibold uppercase tracking-widest text-slate-400">{title}</h3>
       )}
       {children}
-    </div>
+    </FederationPanel>
   )
 }

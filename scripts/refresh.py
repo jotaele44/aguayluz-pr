@@ -20,11 +20,19 @@ sandbox, whose proxy may block waterservices.usgs.gov / data.epa.gov):
              EPA SDWIS violations          -> service_events.jsonl
              EPA ECHO CWA enforcement      -> service_events.jsonl   (optional)
              FEMA disaster declarations    -> service_events.jsonl   (optional, + export)
+             EPA WATERS/NHDPlus enrichment -> utility_assets.jsonl (optional)
              Sites + violations change slowly; refresh weekly. ECHO and FEMA are
              best-effort: their public REST endpoints (echo.epa.gov CWA services,
              fema.gov open/v2) currently return HTTP 404 upstream, so the run
              warns-and-continues past them (like the WAF-gated MiLUMA step) rather
              than aborting before USGS/SDWIS land and the federation export runs.
+             The WATERS enricher is optional for the same reason: it needs
+             EPA_WATERS_API_KEY, which most runs do not carry.
+
+Every cadence then runs the derived layers before export: the water<->power
+crosswalk, alert promotion (build_alerts.py), and the alert-system build
+(build_alert_system.py — JSON-Schema load, VAL-001..010 acceptance rules, and
+outputs/alert_events.geojson for the dashboard's alert map layer).
 
   --all      everything above, plus MiLUMA live outages (optional — WAF may block;
              warns and continues rather than failing). Requires a permissioned
@@ -133,16 +141,33 @@ STEP_WATER_POWER = (
     ["scripts/build_water_power_crosswalk.py"],
     False,
 )
+STEP_ALERT_SYSTEM = (
+    "alert system build + VAL-001..010 validation → outputs/alert_events.geojson",
+    ["scripts/build_alert_system.py"],
+    False,   # a schema-invalid alert must fail here, not at federation export
+)
+STEP_WATERS_ENRICH = (
+    "EPA WATERS/NHDPlus asset enrichment",
+    ["scripts/enrich_waters_nhd.py"],
+    True,    # optional — needs EPA_WATERS_API_KEY, absent in most runs
+)
 STEP_EXPORT = (
     "federation + outputs rebuild",
     ["scripts/federation_export.py"],
     False,
 )
 
-# The derived-layer steps every cadence runs before export. build_alerts.py promotes
-# the freshly-ingested service_events/readings across every domain (water, seismic,
-# weather) into the alert layer the exporter projects.
-_DERIVE = [STEP_WATER_POWER, STEP_ALERTS]
+# The derived-layer steps every cadence runs before export, in dependency order:
+# crosswalk (water↔power edges) → build_alerts.py (promotes the freshly-ingested
+# service_events/readings across every domain — water, seismic, weather — into the
+# alert layer the exporter projects) → build_alert_system.py (loads that layer against
+# its JSON Schemas, runs the VAL-001..010 acceptance pipeline, and emits
+# outputs/alert_events.geojson, the dashboard's alert map layer).
+#
+# NOTE: scripts/build_water_alerts.py is NOT in any cadence — build_alerts.py
+# generalises it by running the full aguayluz.alert_promotion registry (which includes
+# the water promoters). The older script stays for direct water-only invocation.
+_DERIVE = [STEP_WATER_POWER, STEP_ALERTS, STEP_ALERT_SYSTEM]
 
 PLANS: dict[str, list[tuple]] = {
     # fast: the near-real-time hazard feeds only (seismic + NWS) + alert promotion +
@@ -151,10 +176,11 @@ PLANS: dict[str, list[tuple]] = {
     "fast": [STEP_NWS, STEP_USGS_QUAKES, STEP_NOAA_TIDES, *_DERIVE],
     "daily": [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_LEVELS, STEP_USGS_GW, STEP_NOAA_TIDES, *_DERIVE],
     "weekly": [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_ASSETS, STEP_USGS_LEVELS, STEP_USGS_GW,
-               STEP_NOAA_TIDES, STEP_SDWIS, STEP_ECHO, STEP_FEMA, STEP_OSHA, *_DERIVE],
+               STEP_NOAA_TIDES, STEP_SDWIS, STEP_ECHO, STEP_FEMA, STEP_OSHA,
+               STEP_WATERS_ENRICH, *_DERIVE],
     "all":   [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_ASSETS, STEP_USGS_LEVELS, STEP_USGS_GW,
               STEP_NOAA_TIDES, STEP_SDWIS, STEP_ECHO, STEP_FEMA, STEP_OSHA,
-              STEP_AEE_FETCH, STEP_AEE_INGEST, *_DERIVE],
+              STEP_AEE_FETCH, STEP_AEE_INGEST, STEP_WATERS_ENRICH, *_DERIVE],
 }
 
 

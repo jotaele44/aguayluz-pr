@@ -167,7 +167,11 @@ export default function EventDetailPage() {
             {linkedAssets.map((a) => (
               <Link
                 key={a.asset_id}
-                to={`/assets/${a.asset_id}`}
+                // There is no /assets/:id route — a geolocated asset opens on the map,
+                // and the rest are reachable through the (URL-synced) assets filter.
+                to={typeof a.lat === 'number' && typeof a.lon === 'number'
+                  ? `/map?flyTo=${encodeURIComponent(a.asset_id)}&lat=${a.lat}&lon=${a.lon}`
+                  : `/assets?q=${encodeURIComponent(a.asset_id)}`}
                 className="flex items-center justify-between p-3 rounded-lg border border-slate-800 bg-slate-950/50 hover:bg-slate-800/50 transition"
               >
                 <div>

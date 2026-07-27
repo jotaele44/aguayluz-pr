@@ -31,10 +31,14 @@ DATA = REPO_ROOT / "data"
 OUTPUTS = REPO_ROOT / "outputs"
 SCRIPTS = REPO_ROOT / "scripts"
 
+# Monitoring reading kinds -> their canonical JSONL. Every kind here has a producer
+# in scripts/ that scripts/refresh.py runs, so an empty series means "no data yet",
+# never "no such feed". All three share one record shape (site_no / metric / value /
+# observed_date), so the dashboard renders them with a single time-series path.
 READINGS_FILES: dict[str, Path] = {
-    "reservoir": DATA / "reservoir_levels.jsonl",
-    "generation": DATA / "generation_readings.jsonl",
-    "reliability": DATA / "reliability_readings.jsonl",
+    "reservoir": DATA / "reservoir_levels.jsonl",       # scripts/ingest_usgs_levels.py
+    "groundwater": DATA / "groundwater_levels.jsonl",   # scripts/ingest_usgs_groundwater.py
+    "coastal": DATA / "coastal_levels.jsonl",           # scripts/ingest_noaa_tides.py
 }
 
 # Default page size for GET /events. The service_events corpus includes the full
@@ -98,8 +102,16 @@ def _load_json(path: Path, default: Any = None) -> Any:
 def _parse_dt(s: str | None) -> datetime | None:
     if not s:
         return None
+    # datetime.fromisoformat only accepts a trailing "Z" from Python 3.11 on. The repo
+    # still supports 3.10, where a Z-suffixed value raised ValueError and this returned
+    # None — which callers read as "no bound", so `?since=` was silently ignored and the
+    # dashboard's 7d/30d/90d ranges returned the entire series. The dashboard sends
+    # exactly this shape (`new Date().toISOString()`), as do the canonical corpora.
+    text = s.strip()
+    if text.endswith(("Z", "z")):
+        text = f"{text[:-1]}+00:00"
     try:
-        dt = datetime.fromisoformat(s)
+        dt = datetime.fromisoformat(text)
         return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
     except ValueError:
         return None
@@ -114,6 +126,21 @@ _municipios_geojson: dict[str, Any] = _load_json(
     DATA / "geo" / "pr_municipios.geojson",
     {"type": "FeatureCollection", "features": []},
 )
+# The operational alert layer (docs/ALERT_SYSTEM.md) — built by scripts/build_alerts.py
+# and validated by scripts/build_alert_system.py. Loaded once at startup like the other
+# corpora: it is several MB, so re-parsing per request would dominate every alert call.
+_alerts: list[dict[str, Any]] = _load_jsonl(DATA / "alert_events.jsonl")
+_alert_edges: list[dict[str, Any]] = _load_jsonl(DATA / "alert_dependency_edges.jsonl")
+_alert_gaps: list[dict[str, Any]] = _load_jsonl(DATA / "alert_gaps.jsonl")
+
+# Operational severity at or above which an alert is life-safety critical while still
+# actionable. Mirrors aguayluz.alert_promotion.CRITICAL_SEVERITY and, deliberately,
+# scripts/federation_export.py `_alert_is_critical` — which defines "actionable" as a
+# blocklist (anything not closed/rejected, so a `draft` still counts) rather than an
+# allowlist. Matching it exactly is the point: these counts must equal what the Hub
+# receives, and an allowlist here silently under-reported drafts by comparison.
+CRITICAL_SEVERITY = 4
+INACTIVE_ALERT_STATUS = {"closed", "rejected"}
 
 # In-memory store for review decisions (survives only until server restart).
 _decisions: dict[str, str] = {}
@@ -139,6 +166,9 @@ def health() -> JSONResponse:
             "assets": len(_assets),
             "events": len(_events),
             "readings": readings_counts,
+            "alerts": len(_alerts),
+            "alerts_active": sum(1 for a in _alerts if _alert_is_actionable(a)),
+            "alerts_critical": sum(1 for a in _alerts if _alert_is_critical(a)),
         },
         "readiness": readiness,
     })
@@ -174,17 +204,22 @@ def asset_events(asset_id: str) -> JSONResponse:
     return JSONResponse(related)
 
 
-@app.get("/auth/status")
-def auth_status() -> JSONResponse:
-    """Returns whether API key auth is enabled and which channels are configured."""
-    return JSONResponse({
+def auth_status_payload() -> dict[str, Any]:
+    """Whether API key auth is enabled and which notification channels are configured."""
+    return {
         "auth_enabled": bool(_API_KEY),
         "slack_configured": bool(_os.getenv("SLACK_WEBHOOK_URL")),
         "ntfy_configured": bool(_os.getenv("NTFY_TOPIC")),
         "email_configured": bool(_os.getenv("NOTIFY_EMAIL_FROM") and _os.getenv("NOTIFY_EMAIL_TO")),
         "sentry_dsn_set": bool(_os.getenv("SENTRY_DSN")),
         "ai_enabled": bool(_os.getenv("ANTHROPIC_API_KEY")),
-    })
+    }
+
+
+@app.get("/auth/status")
+def auth_status() -> JSONResponse:
+    """Channel configuration only. /system/status is the superset the UI reads."""
+    return JSONResponse(auth_status_payload())
 
 
 @app.patch("/assets/{asset_id}")
@@ -333,7 +368,12 @@ def readings(
         if since_dt:
             filtered = []
             for r in data:
-                dt = _parse_dt(r.get("timestamp") or r.get("date") or r.get("time"))
+                # `observed_date` is what every reading producer actually writes
+                # (ingest_usgs_levels / _groundwater / noaa_tides); without it the
+                # 7d/30d/90d ranges parsed nothing and returned an empty series.
+                dt = _parse_dt(
+                    r.get("observed_date") or r.get("timestamp") or r.get("date") or r.get("time")
+                )
                 if dt and dt >= since_dt:
                     filtered.append(r)
             data = filtered
@@ -391,6 +431,247 @@ def summary_sectors() -> JSONResponse:
             "pct_active": round(active / len(sector_assets) * 100, 1) if sector_assets else 0,
         }
     return JSONResponse(sectors)
+
+
+# Municipality placeholders written by ingests that could not resolve a real municipio.
+# They are not a municipality — counting them as "joined" would overstate geo coverage.
+UNJOINED_MUNICIPALITY = {"puerto rico", "unknown", "", "n/a"}
+
+
+@app.get("/summary/coverage")
+def summary_coverage() -> JSONResponse:
+    """Corpus coverage: what the map and the municipio joins actually reach.
+
+    A large share of the asset corpus is geometry-less (canal segments, historic
+    aqueduct alignments) or carries an unresolved municipality. Both are invisible in
+    a map-first UI, which reads as "this is everything" — so report them as first-class
+    numbers, alongside the subtype facet the assets table filters on.
+    """
+    total = len(_assets)
+    mapped = sum(1 for a in _assets
+                 if isinstance(a.get("lat"), (int, float))
+                 and isinstance(a.get("lon"), (int, float)))
+    joined = sum(1 for a in _assets
+                 if (a.get("municipality") or "").strip().lower() not in UNJOINED_MUNICIPALITY)
+    pct = lambda n: round(n / total * 100, 1) if total else 0.0  # noqa: E731
+
+    return JSONResponse({
+        "assets": {
+            "total": total,
+            "mapped": mapped,
+            "unmapped": total - mapped,
+            "pct_mapped": pct(mapped),
+            "municipio_joined": joined,
+            "municipio_unjoined": total - joined,
+            "pct_municipio_joined": pct(joined),
+        },
+        "review_status": dict(Counter(a.get("review_status") or "unknown" for a in _assets)),
+        "evidence_tier": dict(Counter(a.get("evidence_tier") or "unknown" for a in _assets)),
+        "asset_type": dict(Counter(a.get("asset_type") or "unknown" for a in _assets)),
+        # Facet options for the assets table — derived, so a new ingest's subtypes are
+        # filterable without a frontend change.
+        "asset_subtype": dict(
+            Counter(a.get("asset_subtype") for a in _assets if a.get("asset_subtype")).most_common()
+        ),
+        # Which subtypes are the map-invisible ones, so the UI can explain the gap
+        # instead of only reporting its size.
+        "unmapped_by_subtype": dict(
+            Counter(a.get("asset_subtype") or "unknown" for a in _assets
+                    if not isinstance(a.get("lat"), (int, float))).most_common(10)
+        ),
+    })
+
+
+def _artifact_status(path: Path) -> dict[str, Any]:
+    """Presence + last-write time of a canonical output, for the System page."""
+    if not path.exists():
+        return {"present": False, "path": str(path.relative_to(REPO_ROOT))}
+    stat = path.stat()
+    return {
+        "present": True,
+        "path": str(path.relative_to(REPO_ROOT)),
+        "bytes": stat.st_size,
+        "modified_at": datetime.fromtimestamp(stat.st_mtime, timezone.utc).isoformat(),
+    }
+
+
+@app.get("/system/status")
+def system_status() -> JSONResponse:
+    """Which operator tools are wired, and how fresh the canonical outputs are.
+
+    Superset of /auth/status: the dashboard's tools (export, notify, AI recap, report)
+    each depend on backend configuration the browser cannot see, so they were failing
+    at click time. This lets the UI disable a tool with a reason instead.
+    """
+    exports = REPO_ROOT / "exports" / "federation"
+    return JSONResponse({
+        **auth_status_payload(),
+        "artifacts": {
+            "base44_export": _artifact_status(OUTPUTS / "base44_export.json"),
+            "review_queue": _artifact_status(OUTPUTS / "review_queue.json"),
+            "integration_report": _artifact_status(OUTPUTS / "integration_report.json"),
+            "source_manifest": _artifact_status(OUTPUTS / "source_manifest.json"),
+            "alert_events_geojson": _artifact_status(OUTPUTS / "alert_events.geojson"),
+            "federation_manifest": _artifact_status(exports / "manifest.json"),
+        },
+        "corpora": {
+            "utility_assets": _artifact_status(DATA / "utility_assets.jsonl"),
+            "service_events": _artifact_status(DATA / "service_events.jsonl"),
+            "alert_events": _artifact_status(DATA / "alert_events.jsonl"),
+            **{f"readings_{k}": _artifact_status(p) for k, p in READINGS_FILES.items()},
+        },
+    })
+
+
+# ── Operational alert layer (docs/ALERT_SYSTEM.md) ───────────────────────────
+# Read-only projections of data/alert_events.jsonl and its dependency/gap sidecars.
+# The exporter already projects these into the canonical `alerts` stream for the Hub;
+# these endpoints give this producer's own dashboard the same view.
+
+
+def _alert_is_actionable(alert: dict[str, Any]) -> bool:
+    """Still in a live lifecycle state — anything the exporter has not retired."""
+    return str(alert.get("status")) not in INACTIVE_ALERT_STATUS
+
+
+def _alert_is_critical(alert: dict[str, Any]) -> bool:
+    """Life-safety threshold cleared AND the alert is still actionable."""
+    severity = alert.get("severity")
+    return (
+        isinstance(severity, int)
+        and severity >= CRITICAL_SEVERITY
+        and _alert_is_actionable(alert)
+    )
+
+
+def _alert_municipios(alert: dict[str, Any]) -> list[str]:
+    munis = alert.get("municipalities")
+    return [str(m) for m in munis] if isinstance(munis, list) else []
+
+
+@app.get("/alerts")
+def alerts(
+    module_id: str | None = Query(default=None),
+    status: str | None = Query(default=None),
+    review_status: str | None = Query(default=None),
+    tier: str | None = Query(default=None),
+    severity_min: int | None = Query(default=None),
+    critical_only: bool = Query(default=False),
+    municipio: str | None = Query(default=None),
+    q: str | None = Query(default=None),
+    limit: int | None = Query(default=None),
+    offset: int = Query(default=0),
+) -> JSONResponse:
+    """Paged alert list, newest first.
+
+    Bounded by DEFAULT_EVENTS_LIMIT for the same reason /events is: the alert corpus
+    carries the full SDWIS-derived contamination history. Callers get the true
+    `total`; pass an explicit `limit` (negative for "all") to page past the default.
+    """
+    result = _alerts
+    if module_id:
+        result = [a for a in result if a.get("module_id") == module_id]
+    if status:
+        result = [a for a in result if a.get("status") == status]
+    if review_status:
+        result = [a for a in result if a.get("review_status") == review_status]
+    if tier:
+        result = [a for a in result if a.get("evidence_tier") == tier]
+    if severity_min is not None:
+        result = [a for a in result
+                  if isinstance(a.get("severity"), int) and a["severity"] >= severity_min]
+    if critical_only:
+        result = [a for a in result if _alert_is_critical(a)]
+    if municipio:
+        needle = municipio.lower()
+        result = [a for a in result
+                  if any(needle in m.lower() for m in _alert_municipios(a))]
+    if q:
+        needle = q.lower()
+        result = [
+            a for a in result
+            if needle in (a.get("source_title") or "").lower()
+            or needle in (a.get("asset_name") or "").lower()
+            or needle in (a.get("alert_id") or "").lower()
+        ]
+    result = sorted(result, key=lambda a: a.get("start_at") or "", reverse=True)
+    total = len(result)
+    result = result[offset:]
+    effective_limit = DEFAULT_EVENTS_LIMIT if limit is None else limit
+    if effective_limit is not None and effective_limit >= 0:
+        result = result[:effective_limit]
+    return JSONResponse({"total": total, "offset": offset, "items": result})
+
+
+@app.get("/alerts/facets")
+def alert_facets() -> JSONResponse:
+    """Filter options + counts, derived from the corpus rather than hardcoded in the UI."""
+    return JSONResponse({
+        "total": len(_alerts),
+        "active": sum(1 for a in _alerts if _alert_is_actionable(a)),
+        "critical": sum(1 for a in _alerts if _alert_is_critical(a)),
+        "mapped": sum(1 for a in _alerts
+                      if isinstance(a.get("latitude"), (int, float))
+                      and isinstance(a.get("longitude"), (int, float))),
+        "module_id": dict(Counter(a.get("module_id") for a in _alerts if a.get("module_id"))),
+        "status": dict(Counter(a.get("status") for a in _alerts if a.get("status"))),
+        "review_status": dict(Counter(a.get("review_status") for a in _alerts
+                                      if a.get("review_status"))),
+        "evidence_tier": dict(Counter(a.get("evidence_tier") for a in _alerts
+                                      if a.get("evidence_tier"))),
+        "severity": dict(Counter(str(a.get("severity")) for a in _alerts
+                                 if isinstance(a.get("severity"), int))),
+        "gap_status": dict(Counter(a.get("gap_status") for a in _alerts if a.get("gap_status"))),
+    })
+
+
+@app.get("/alerts.geojson")
+def alerts_geojson(critical_only: bool = Query(default=False)) -> JSONResponse:
+    """Point features for the map layer. Same lat/lon guard as /assets.geojson."""
+    features = []
+    for a in _alerts:
+        if critical_only and not _alert_is_critical(a):
+            continue
+        lat, lon = a.get("latitude"), a.get("longitude")
+        if not isinstance(lat, (int, float)) or not isinstance(lon, (int, float)):
+            continue
+        features.append({
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [lon, lat]},
+            "properties": {**a, "is_critical": _alert_is_critical(a)},
+        })
+    return JSONResponse({"type": "FeatureCollection", "features": features})
+
+
+@app.get("/alerts/dependencies")
+def alert_dependencies(
+    alert_id: str | None = Query(default=None),
+    asset_id: str | None = Query(default=None),
+) -> JSONResponse:
+    """Dependency edges (data/alert_dependency_edges.jsonl), optionally scoped."""
+    rows = _alert_edges
+    if alert_id:
+        rows = [e for e in rows if alert_id in (e.get("alert_id"), e.get("source_alert_id"))]
+    if asset_id:
+        rows = [
+            e for e in rows
+            if asset_id in (e.get("from_asset_id"), e.get("to_asset_id"), e.get("asset_id"))
+        ]
+    return JSONResponse(rows)
+
+
+@app.get("/alerts/gaps")
+def alert_gaps() -> JSONResponse:
+    """The gap log (data/alert_gaps.jsonl) — few rows, returned whole."""
+    return JSONResponse(_alert_gaps)
+
+
+@app.get("/alerts/{alert_id}")
+def alert_detail(alert_id: str) -> JSONResponse:
+    for a in _alerts:
+        if str(a.get("alert_id", "")) == alert_id:
+            return JSONResponse({**a, "is_critical": _alert_is_critical(a)})
+    raise HTTPException(status_code=404, detail="Alert not found")
 
 
 @app.post("/admin/run-export")

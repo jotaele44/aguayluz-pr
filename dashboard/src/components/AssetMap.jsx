@@ -65,6 +65,26 @@ const TYPE_COLOR = [
   TYPE_HEX.other,
 ]
 
+// Operational alert severity (0-5) -> marker color. Matches alertSeverityMeta() in
+// lib/format.js so the map legend and the alerts list read the same.
+const SEVERITY_COLOR = [
+  'match', ['to-string', ['get', 'severity']],
+  '5', '#dc2626',
+  '4', '#ef4444',
+  '3', '#fb923c',
+  '2', '#f59e0b',
+  '1', '#94a3b8',
+  '#64748b',
+]
+
+// MapLibre's setHTML parses its argument as HTML, and popup content comes from
+// ingested records — an alert's source_title originates in a third-party feed
+// (Centinelas/news/regulatory), so an `<img onerror=...>` in a headline would
+// execute in the dashboard's origin. Escape every interpolated value.
+const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => (
+  { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
+))
+
 function featureId(feature) {
   return feature?.properties?.asset_id ?? feature?.properties?.id
 }
@@ -131,13 +151,16 @@ function ControlButton({ active, children, onClick, tone }) {
   )
 }
 
-export default function AssetMap({ assets, assetRows = [], municipios, events = [], selectedAssetId, selectedMunicipio, onSelect, onMunicipioSelect, flyTo }) {
+export default function AssetMap({ assets, assetRows = [], municipios, events = [], alerts, selectedAssetId, selectedMunicipio, onSelect, onMunicipioSelect, onAlertSelect, flyTo }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const readyRef = useRef(false)
   const onSelectRef = useRef(onSelect); onSelectRef.current = onSelect
   const onMunicipioSelectRef = useRef(onMunicipioSelect); onMunicipioSelectRef.current = onMunicipioSelect
-  const [layers, setLayers] = useState({ power: true, water: true, wastewater: true, other: true, municipios: true, events: true, review: false })
+  const onAlertSelectRef = useRef(onAlertSelect); onAlertSelectRef.current = onAlertSelect
+  // Alerts start off: they are the densest layer (the SDWIS-derived contamination
+  // history dominates), so they are opt-in rather than burying the asset dots.
+  const [layers, setLayers] = useState({ power: true, water: true, wastewater: true, other: true, municipios: true, events: true, review: false, alerts: false, criticalAlertsOnly: false })
   const [basemap, setBasemap] = useState('osm')
 
   const assetFeatures = assets?.features ?? []
@@ -165,6 +188,18 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
 
   const eventGeo = useMemo(() => eventFeatureCollection(events, assetRows, assetFeatures), [events, assetRows, assetFeatures])
 
+  // Alerts carry their own coordinates from the promoter, so unlike events they need
+  // no asset/municipio approximation — only the critical filter.
+  const alertGeo = useMemo(() => {
+    const features = alerts?.features ?? []
+    return {
+      type: 'FeatureCollection',
+      features: layers.criticalAlertsOnly
+        ? features.filter((f) => f.properties?.is_critical)
+        : features,
+    }
+  }, [alerts, layers.criticalAlertsOnly])
+
   const counts = useMemo(() => {
     const base = { power: 0, water: 0, wastewater: 0, other: 0 }
     for (const f of assetFeatures) {
@@ -187,6 +222,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
       map.addSource('assets', { type: 'geojson', data: visibleAssets || EMPTY, cluster: true, clusterMaxZoom: 10, clusterRadius: 36 })
       map.addSource('selected-asset', { type: 'geojson', data: selectedAsset })
       map.addSource('service-events', { type: 'geojson', data: eventGeo })
+      map.addSource('alert-events', { type: 'geojson', data: alertGeo })
 
       map.addLayer({
         id: 'muni-fill', type: 'fill', source: 'municipios',
@@ -231,6 +267,19 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
           'circle-stroke-width': 1.2,
         },
       })
+      // Hollow diamonds-by-stroke so alerts stay distinguishable from the filled
+      // asset dots and the red/amber event dots at every zoom.
+      map.addLayer({
+        id: 'alerts-dot', type: 'circle', source: 'alert-events',
+        layout: { visibility: 'none' },
+        paint: {
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 7, 4, 10, 6, 13, 9],
+          'circle-color': SEVERITY_COLOR,
+          'circle-opacity': 0.28,
+          'circle-stroke-color': SEVERITY_COLOR,
+          'circle-stroke-width': ['case', ['get', 'is_critical'], 2.2, 1.2],
+        },
+      })
       map.addLayer({
         id: 'selected-ring', type: 'circle', source: 'selected-asset',
         paint: {
@@ -247,13 +296,25 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
         map.getCanvas().style.cursor = 'pointer'
         const p = e.features[0]?.properties || {}
         popup.setLngLat(e.features[0].geometry.coordinates)
-          .setHTML(`<div style="font:12px/1.5 system-ui,sans-serif;color:#e2e8f0;background:#0f172a;padding:6px 8px;border-radius:6px;max-width:200px"><strong>${p.asset_name || 'Asset'}</strong><br/><span style="color:#94a3b8;font-size:11px">${(p.asset_type || 'unknown').replace(/_/g,' ')} · ${p.municipality || ''}</span></div>`)
+          .setHTML(`<div style="font:12px/1.5 system-ui,sans-serif;color:#e2e8f0;background:#0f172a;padding:6px 8px;border-radius:6px;max-width:200px"><strong>${esc(p.asset_name || 'Asset')}</strong><br/><span style="color:#94a3b8;font-size:11px">${esc((p.asset_type || 'unknown').replace(/_/g,' '))} · ${esc(p.municipality || '')}</span></div>`)
           .addTo(map)
       })
       map.on('mouseleave', 'assets-dot', () => {
         map.getCanvas().style.cursor = ''
         popup.remove()
       })
+      map.on('mouseenter', 'alerts-dot', (e) => {
+        map.getCanvas().style.cursor = 'pointer'
+        const p = e.features[0]?.properties || {}
+        popup.setLngLat(e.features[0].geometry.coordinates)
+          .setHTML(`<div style="font:12px/1.5 system-ui,sans-serif;color:#e2e8f0;background:#0f172a;padding:6px 8px;border-radius:6px;max-width:220px"><strong>${esc(p.source_title || p.alert_id || 'Alert')}</strong><br/><span style="color:#94a3b8;font-size:11px">${esc(p.module_id || 'alert')} · severity ${esc(p.severity ?? '—')} · ${esc(p.status || '')}</span></div>`)
+          .addTo(map)
+      })
+      map.on('mouseleave', 'alerts-dot', () => {
+        map.getCanvas().style.cursor = ''
+        popup.remove()
+      })
+      map.on('click', 'alerts-dot', (e) => onAlertSelectRef.current?.(e.features[0].properties))
       map.on('click', 'assets-dot', (e) => onSelectRef.current?.(e.features[0].properties))
       map.on('click', 'clusters', async (e) => {
         const features = map.queryRenderedFeatures(e.point, { layers: ['clusters'] })
@@ -299,10 +360,16 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
 
   useEffect(() => {
     if (!readyRef.current || !mapRef.current) return
+    mapRef.current.getSource('alert-events')?.setData(alertGeo)
+  }, [alertGeo])
+
+  useEffect(() => {
+    if (!readyRef.current || !mapRef.current) return
     const visibility = layers.municipios ? 'visible' : 'none'
     for (const id of ['muni-fill', 'muni-line']) mapRef.current.setLayoutProperty(id, 'visibility', visibility)
     mapRef.current.setLayoutProperty('events-dot', 'visibility', layers.events ? 'visible' : 'none')
-  }, [layers.municipios, layers.events])
+    mapRef.current.setLayoutProperty('alerts-dot', 'visibility', layers.alerts ? 'visible' : 'none')
+  }, [layers.municipios, layers.events, layers.alerts])
 
   useEffect(() => {
     if (!readyRef.current || !mapRef.current) return
@@ -328,9 +395,21 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
           <ControlButton active={layers.other} tone="border-slate-500/40 text-slate-300" onClick={() => setLayers((s) => ({ ...s, other: !s.other }))}>Other {counts.other}</ControlButton>
           <ControlButton active={layers.municipios} tone="border-cyan-500/40 text-cyan-300" onClick={() => setLayers((s) => ({ ...s, municipios: !s.municipios }))}>Municipios</ControlButton>
           <ControlButton active={layers.events} tone="border-red-500/40 text-red-300" onClick={() => setLayers((s) => ({ ...s, events: !s.events }))}>Events {eventGeo.features.length}</ControlButton>
+          <ControlButton active={layers.alerts} tone="border-orange-500/40 text-orange-300" onClick={() => setLayers((s) => ({ ...s, alerts: !s.alerts }))}>Alerts {alertGeo.features.length}</ControlButton>
         </div>
+        {layers.alerts && (
+          <button
+            type="button"
+            aria-pressed={layers.criticalAlertsOnly}
+            onClick={() => setLayers((s) => ({ ...s, criticalAlertsOnly: !s.criticalAlertsOnly }))}
+            className={`mt-1.5 w-full rounded border px-2 py-1.5 text-[11px] transition ${layers.criticalAlertsOnly ? 'border-red-500/40 bg-red-500/10 text-red-300' : 'border-slate-800 bg-slate-950/70 text-slate-500 hover:text-slate-300'}`}
+          >
+            Life-safety critical alerts only
+          </button>
+        )}
         <button
           type="button"
+          aria-pressed={layers.review}
           onClick={() => setLayers((s) => ({ ...s, review: !s.review }))}
           className={`mt-2 w-full rounded border px-2 py-1.5 text-[11px] transition ${layers.review ? 'border-amber-500/40 bg-amber-500/10 text-amber-300' : 'border-slate-800 bg-slate-950/70 text-slate-500 hover:text-slate-300'}`}
         >
@@ -368,6 +447,22 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
             {label}
           </div>
         ))}
+        {layers.alerts && (
+          <>
+            <div className="mb-1.5 mt-2 border-t border-slate-800 pt-2 text-[10px] uppercase tracking-wide text-slate-500">Alert severity</div>
+            {[
+              { sev: '4–5', label: 'Severe / extreme', color: '#ef4444' },
+              { sev: '3', label: 'Elevated', color: '#fb923c' },
+              { sev: '2', label: 'Moderate', color: '#f59e0b' },
+              { sev: '0–1', label: 'Low / informational', color: '#94a3b8' },
+            ].map(({ sev, label, color }) => (
+              <div key={sev} className="mb-0.5 flex items-center gap-1.5 text-[11px] text-slate-300 last:mb-0">
+                <span style={{ borderColor: color }} className="inline-block h-2 w-2 shrink-0 rounded-full border-2" />
+                {label}
+              </div>
+            ))}
+          </>
+        )}
       </div>
 
       <div className="absolute right-3 bottom-3 max-w-[280px] rounded-xl border border-slate-700/70 bg-slate-950/85 p-3 shadow-xl backdrop-blur">

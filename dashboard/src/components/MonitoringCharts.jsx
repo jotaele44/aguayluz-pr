@@ -4,21 +4,22 @@ import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select'
 import {
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceArea,
+  LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceArea,
 } from 'recharts'
 import { READING_KINDS, CHART_TOOLTIP_STYLE } from '@/lib/format'
 import { Activity, AlertCircle, Database } from 'lucide-react'
 
 const axis = { fill: '#94a3b8', fontSize: 11 }
 const SOURCE_NOTE = {
-  reservoir: 'Reservoir readings are source-derived time series. Missing records are left blank rather than interpolated.',
-  generation: 'Generation is summed by observed month from available records.',
-  reliability: 'Reliability metrics are shown as reported values; compare labels before drawing operational conclusions.',
+  reservoir: 'USGS NWIS daily values (scripts/ingest_usgs_levels.py). Missing records are left blank rather than interpolated.',
+  groundwater: 'USGS NWIS groundwater daily values (scripts/ingest_usgs_groundwater.py). Well levels are depth-referenced per site — compare a site against itself, not across sites.',
+  coastal: 'NOAA CO-OPS tide-gauge daily values (scripts/ingest_noaa_tides.py). Near-real-time coastal surge signal.',
 }
 
 export default function MonitoringCharts() {
   const [kind, setKind] = useState('reservoir')
   const [range, setRange] = useState('all')
+  const [site, setSite] = useState(null)   // null = "not chosen yet"; resolved below
 
   const sinceParam = range === 'all' ? undefined : (() => {
     const d = new Date()
@@ -29,29 +30,35 @@ export default function MonitoringCharts() {
 
   const { data: readings = [], isLoading } = useReadings({ kind, since: sinceParam })
 
-  const chart = useMemo(() => {
-    if (kind === 'reliability') {
-      return readings.map((r) => ({ name: `${r.metric}`.toUpperCase(), value: r.value, site: r.site_no }))
+  // Every kind spans many independent monitoring sites (5 tide stations, 36
+  // groundwater wells, 1000+ stream gages), and their baselines are not comparable —
+  // a well's level is only meaningful against its own history. Plotting them as one
+  // date-sorted line joined unrelated stations and made ordinary baseline differences
+  // register as >2σ anomalies, so the chart is always scoped to a single site.
+  const sites = useMemo(() => {
+    const counts = new Map()
+    for (const r of readings) {
+      const id = r.site_no ?? 'unknown'
+      counts.set(id, (counts.get(id) ?? 0) + 1)
     }
-    if (kind === 'generation') {
-      const byMonth = {}
-      for (const r of readings) {
-        const month = (r.observed_date || '').slice(0, 7)
-        if (!month) continue
-        byMonth[month] = (byMonth[month] || 0) + (Number(r.value) || 0)
-      }
-      return Object.entries(byMonth).sort().map(([name, value]) => ({ name, value: Math.round(value) }))
-    }
-    return [...readings]
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([id, count]) => ({ id, count }))
+  }, [readings])
+
+  // Default to the best-covered site, and re-resolve when the kind (or the data)
+  // changes so the selection never points at a site absent from the new series.
+  const activeSite = sites.some((s) => s.id === site) ? site : sites[0]?.id
+
+  const chart = useMemo(() => (
+    readings
+      .filter((r) => (r.site_no ?? 'unknown') === activeSite)
       .sort((a, b) => (a.observed_date || '').localeCompare(b.observed_date || ''))
       .map((r) => ({ name: (r.observed_date || '').slice(5), fullDate: r.observed_date || '', value: r.value, site: r.site_no }))
-  }, [readings, kind])
+  ), [readings, activeSite])
 
   const meta = READING_KINDS.find((k) => k.key === kind)
-  const isBar = kind === 'reliability'
 
   const { anomalySet, anomalies, gapBands } = useMemo(() => {
-    if (isBar || chart.length < 5) return { anomalySet: new Set(), anomalies: [], gapBands: [] }
+    if (chart.length < 5) return { anomalySet: new Set(), anomalies: [], gapBands: [] }
     const vals = chart.map((d) => Number(d.value)).filter((v) => !Number.isNaN(v))
     if (vals.length < 5) return { anomalySet: new Set(), anomalies: [], gapBands: [] }
     const mean = vals.reduce((s, v) => s + v, 0) / vals.length
@@ -62,27 +69,27 @@ export default function MonitoringCharts() {
       .map((d) => ({ ...d, sigma: ((Number(d.value) - mean) / (std || 1)).toFixed(1) }))
       .slice(0, 6)
     const aSet = new Set(anomalyList.map((a) => a.name))
+    // Shade collection gaps so a flat interpolated-looking line is never mistaken
+    // for continuous observation. Applies to every kind — all are daily series.
     const gaps = []
-    if (kind === 'reservoir' && chart.length > 1) {
-      for (let i = 1; i < chart.length; i++) {
-        const prev = chart[i - 1].fullDate
-        const curr = chart[i].fullDate
-        if (!prev || !curr) continue
-        const days = (new Date(curr) - new Date(prev)) / 86400000
-        if (days > 30) {
-          gaps.push({ x1: chart[i - 1].name, x2: chart[i].name, days: Math.round(days) })
-        }
+    for (let i = 1; i < chart.length; i++) {
+      const prev = chart[i - 1].fullDate
+      const curr = chart[i].fullDate
+      if (!prev || !curr) continue
+      const days = (new Date(curr) - new Date(prev)) / 86400000
+      if (days > 30) {
+        gaps.push({ x1: chart[i - 1].name, x2: chart[i].name, days: Math.round(days) })
       }
     }
     return { anomalySet: aSet, anomalies: anomalyList, gapBands: gaps }
-  }, [chart, isBar, kind])
+  }, [chart])
 
   return (
     <div className="h-full overflow-auto p-3 space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h4 className="flex items-center gap-2 text-sm font-medium text-slate-200"><Activity className="h-4 w-4 text-sky-300" /> Monitoring</h4>
-          <p className="mt-1 text-[11px] leading-relaxed text-slate-500">Reservoir, generation, and grid-reliability observations from the repo backend.</p>
+          <p className="mt-1 text-[11px] leading-relaxed text-slate-500">Reservoir, groundwater, and coastal water-level observations from the repo backend.</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1 rounded-md border border-slate-800 bg-slate-950 p-0.5">
@@ -97,9 +104,23 @@ export default function MonitoringCharts() {
             ))}
           </div>
           <Select value={kind} onValueChange={setKind}>
-            <SelectTrigger className="h-8 w-[160px] border-slate-800 bg-slate-950 text-xs"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-8 w-[160px] border-slate-800 bg-slate-950 text-xs" aria-label="Reading kind"><SelectValue /></SelectTrigger>
             <SelectContent>{READING_KINDS.map((k) => <SelectItem key={k.key} value={k.key} className="text-xs">{k.label}</SelectItem>)}</SelectContent>
           </Select>
+          {sites.length > 1 && (
+            <Select value={activeSite ?? ''} onValueChange={setSite}>
+              <SelectTrigger className="h-8 w-[150px] border-slate-800 bg-slate-950 text-xs" aria-label="Monitoring site">
+                <SelectValue placeholder="Site" />
+              </SelectTrigger>
+              <SelectContent>
+                {sites.map((s) => (
+                  <SelectItem key={s.id} value={s.id} className="text-xs">
+                    {s.id} · {s.count}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </div>
 
@@ -107,7 +128,10 @@ export default function MonitoringCharts() {
         <div className="mb-3 flex items-start justify-between gap-3">
           <div>
             <div className="text-xs uppercase tracking-wide text-slate-400">
-              {meta?.label} · {readings.length} readings{meta?.unit ? ` (${meta.unit})` : ''}
+              {meta?.label}
+              {activeSite ? ` · site ${activeSite}` : ''}
+              {' · '}{readings.length} readings across {sites.length} site(s)
+              {meta?.unit ? ` (${meta.unit})` : ''}
             </div>
             <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{SOURCE_NOTE[kind]}</p>
           </div>
@@ -123,38 +147,28 @@ export default function MonitoringCharts() {
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              {isBar ? (
-                <BarChart data={chart} margin={{ top: 4, right: 8, bottom: 4, left: -12 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                  <XAxis dataKey="name" tick={axis} />
-                  <YAxis tick={axis} />
-                  <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
-                  <Bar dataKey="value" fill="#38bdf8" radius={[3, 3, 0, 0]} />
-                </BarChart>
-              ) : (
-                <LineChart data={chart} margin={{ top: 4, right: 8, bottom: 4, left: -12 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                  <XAxis dataKey="name" tick={axis} />
-                  <YAxis tick={axis} domain={['auto', 'auto']} />
-                  <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
-                  {gapBands.map((gap, i) => (
-                    <ReferenceArea key={i} x1={gap.x1} x2={gap.x2} fill="#0f172a" fillOpacity={0.85} stroke="#334155" strokeOpacity={0.4} />
-                  ))}
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke="#38bdf8"
-                    strokeWidth={2}
-                    dot={(props) => {
-                      if (props.payload && anomalySet.has(props.payload.name)) {
-                        return <circle key={props.index} cx={props.cx} cy={props.cy} r={5} fill="#ef4444" stroke="#7f1d1d" strokeWidth={1} />
-                      }
-                      return null
-                    }}
-                    activeDot={{ r: 4, fill: '#38bdf8' }}
-                  />
-                </LineChart>
-              )}
+              <LineChart data={chart} margin={{ top: 4, right: 8, bottom: 4, left: -12 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                <XAxis dataKey="name" tick={axis} />
+                <YAxis tick={axis} domain={['auto', 'auto']} />
+                <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
+                {gapBands.map((gap, i) => (
+                  <ReferenceArea key={i} x1={gap.x1} x2={gap.x2} fill="#0f172a" fillOpacity={0.85} stroke="#334155" strokeOpacity={0.4} />
+                ))}
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#38bdf8"
+                  strokeWidth={2}
+                  dot={(props) => {
+                    if (props.payload && anomalySet.has(props.payload.name)) {
+                      return <circle key={props.index} cx={props.cx} cy={props.cy} r={5} fill="#ef4444" stroke="#7f1d1d" strokeWidth={1} />
+                    }
+                    return null
+                  }}
+                  activeDot={{ r: 4, fill: '#38bdf8' }}
+                />
+              </LineChart>
             </ResponsiveContainer>
           )}
         </div>
