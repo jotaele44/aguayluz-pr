@@ -51,7 +51,7 @@ dramatically out of proportion. The gaps are ordinary polish items, not structur
 | Item | Why |
 |---|---|
 | `dashboard/src/lib/snapshot.json` | empty `{}`, and unlike `moneysweep-pr` this repo's `build:export` does **not** run a snapshot generator first — so an offline export bundle really does ship with no data |
-| Write-auth wiring | `_require_key` guards five of the six mutating routes — `POST /ai/query` (`:413`) is unguarded — and no client sends the header, so with `API_SECRET_KEY` set the five guarded actions 401 from the UI while the unguarded one keeps working |
+| ~~Write-auth wiring~~ | **Resolved.** All six mutating routes are guarded and the dashboard supplies the key from System & Tools. Kept so the row is not re-raised. |
 
 **DEAD** — none found. This repo ships **no auth UI at all**, which is the honest posture
 given its backend model. Three sibling repos ship login screens that cannot authenticate;
@@ -90,11 +90,14 @@ The federation-wide fixes in this audit round do not apply here:
 - **Dead auth routes** — this repo has no auth UI to gate.
 - **Unauthenticated entity writes** — this repo implements a domain REST API, not the generic
   `/api/entities` store. It also already has the guard: `_require_key` (`server/backend/main.py:78`)
-  implements optional `API_SECRET_KEY` bearer auth, and it is attached to **five of the six**
-  mutating routes — `patch_asset` (`:190`), `patch_event` (`:263`), `review_decision` (`:364`),
-  `run_export` (`:396`) and `notify` (`:593`). This repo got there first. Two gaps remain:
-  `POST /ai/query` (`:413`) is **not** guarded (see backlog item 1), and no client sends the
-  header (see backlog item 4).
+  implements optional `API_SECRET_KEY` bearer auth, and it is attached to **six of the six**
+  mutating routes. There are **0** unguarded mutating routes.
+
+  **History.** An earlier revision claimed it covered "every mutating route" while naming
+  only five; parsing each decorator against its handler signature showed six routes with
+  `POST /ai/query` unguarded. That route is now guarded and the dashboard can supply the
+  key, so claim and code agree. `scripts/verify_audit.py` in `thehub-pr` re-derives both
+  numbers on every CI run, in both directions.
 
   **Correction (2026-07-27).** An earlier revision of this document claimed `_require_key`
   was attached to "every mutating route" while naming only five. Re-verified by parsing each
@@ -112,10 +115,10 @@ clean (1.8 MB JS).
 
 | # | Item | Effort | Why it matters |
 |---|---|---|---|
-| 1 | Guard `POST /ai/query` with `_require_key` | **S** | The one mutating route without the guard (`server/backend/main.py:413`), and the one where an open door costs money: it forwards the caller's prompt to `api.anthropic.com` on the operator's `ANTHROPIC_API_KEY`. Anyone who can reach the port can spend that key. It is a one-line change — but it must land **with** item 4, or turning on `API_SECRET_KEY` breaks the dashboard's AI panel, which today works precisely because the route is open. |
+| ~~1~~ | ~~Guard `POST /ai/query` with `_require_key`~~ | — | **Done.** | The one mutating route without the guard (`server/backend/main.py:413`), and the one where an open door costs money: it forwards the caller's prompt to `api.anthropic.com` on the operator's `ANTHROPIC_API_KEY`. Anyone who can reach the port can spend that key. It is a one-line change — but it must land **with** item 4, or turning on `API_SECRET_KEY` breaks the dashboard's AI panel, which today works precisely because the route is open. |
 | 2 | Add a frontend test runner and smoke tests | **M** | 4.4k LOC of UI across 11 pages, zero tests. Copy the vitest + Testing Library setup from `thehub-pr/server/frontend`. |
 | 3 | Populate `dashboard/src/lib/snapshot.json` | **S** | Currently `{}`, and `build:export` has no snapshot-generation step, so offline bundles ship empty. `moneysweep-pr` solves this with a `snapshot` script chained into `build:export`; `ovnis-pr` ships a populated 1.5 MB file. |
-| 4 | Send the `API_SECRET_KEY` bearer header from the dashboard | **M** | `_require_key` protects five of the six mutating routes, but `dashboard/src/` sends no `Authorization` header — so enabling `API_SECRET_KEY` silently breaks asset edits, review decisions, exports and notifications in the UI. This is the same client-credential gap that `thehub-pr` and `skywatcher-pr` hit with `PRII_WRITE_TOKEN` in this audit round, so it wants **one federation-wide answer**, not three local patches. |
+| ~~4~~ | ~~Send the `API_SECRET_KEY` bearer header from the dashboard~~ | — | **Done**, with item 1. All six write paths in `dashboard/src/lib/api.js` share `authHeaders()`, the key is entered in System & Tools and held in `sessionStorage`, and a 401 names its cause — no key set vs. key rejected. |
 | 5 | Raise `aria-*` coverage and add an a11y test | **M** | 11 `aria-*` and 1 `role=` across 11 pages is thin for a monitoring UI with maps and live logs. `thehub-pr` has a working `vitest-axe` gate to copy. |
 | 6 | Resolve the MiLUMA data-sharing gap for outage granularity | **L** | Named in `federation.json`; external dependency, tracked honestly. |
 | 7 | Decide whether `GET /auth/status` should exist | **S** | Unused by the UI and a third auth shape in one federation. Either wire it or drop it. |
