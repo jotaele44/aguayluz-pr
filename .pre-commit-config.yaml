@@ -1,0 +1,41 @@
+# Rendered from thehub-pr/federation-templates/baseline/pre-commit-config.yaml.
+# Edit the template there and re-render (tools/render_federation_templates.py);
+# do not hand-edit this file — template-drift.yml fails the build if you do.
+#
+# Install once:  pip install pre-commit && pre-commit install
+# Run manually:  pre-commit run --all-files
+#
+# Deliberately minimal and fast — this is the commit path, not the release gate.
+# Heavier checks (full pytest, schema validation, release smoke) belong in CI.
+#
+# Note on the ruff hook: it lints only the files in the commit, not the whole
+# repo. That matters because the repos in this federation carry different-sized
+# lint backlogs — a repo-wide gate here would block unrelated commits, so the
+# rule is "clean what you touch" instead. Each repo's own pyproject.toml supplies
+# the rule set, so this one file is correct everywhere.
+
+repos:
+  # File hygiene. All of these finish in well under a second.
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-yaml
+        # Actions expressions (${{ ... }}) are valid YAML, but multi-document
+        # workflow files are not; keep the check on the default single-document
+        # assumption and let CI's own parse be the authority for workflows.
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=5120]
+      - id: detect-private-key
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.18
+    hooks:
+      - id: ruff
+        name: ruff (lint, changed files only)
+        # No --fix: surface the finding and let the author decide. Matches the
+        # convention already set in moneysweep-pr.
+        args: [--no-fix]

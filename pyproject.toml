@@ -88,3 +88,35 @@ ignore = ["E501"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["B011"]
+
+# ── mypy ─────────────────────────────────────────────────────────────────────
+# Gradually-typed baseline, matching spiderweb-pr and moneysweep-pr. Scoped to
+# the src/aguayluz package. follow_imports = "silent" means modules reached by
+# import but outside the scope are followed for symbols without reporting their
+# own errors, so the check stays focused as typing coverage widens. Non-gating
+# in CI to start (see .github/workflows/validate.yml); the 15 findings today are
+# mostly Literal narrowing that pydantic already validates at runtime.
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+no_implicit_optional = true
+warn_redundant_casts = true
+follow_imports = "silent"
+files = ["src/aguayluz"]
+
+[tool.coverage.run]
+branch = true
+source = ["src/aguayluz"]
+omit = ["tests/*", "*/__init__.py"]
+
+[tool.coverage.report]
+# Ratchet, not a target: 84% measured when this landed, floor set at
+# 80% so normal variation across the CI Python matrix does not cause false
+# failures. Raise it as coverage improves; never lower it to make a build pass.
+fail_under = 80
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+]
