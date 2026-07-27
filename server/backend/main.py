@@ -692,10 +692,15 @@ async def run_export(request: Request, _=_Depends(_require_key)) -> JSONResponse
 
 
 @app.post("/ai/query")
-async def ai_query(request: Request) -> JSONResponse:
+async def ai_query(request: Request, _=_Depends(_require_key)) -> JSONResponse:  # noqa: B008
     """Send a plain-language question about the data to Claude.
 
     Requires ANTHROPIC_API_KEY env var. Gracefully returns 503 if not set.
+
+    Key-guarded like the other mutating routes, and for a sharper reason: this one
+    spends money. It forwards the caller's prompt to api.anthropic.com on the
+    operator's ANTHROPIC_API_KEY, so an unguarded route on a reachable port is a
+    spendable credential rather than just a write surface.
     """
     import os
     import urllib.request as _urllib
