@@ -112,3 +112,24 @@ clean (1.8 MB JS).
 | 4 | Raise `aria-*` coverage and add an a11y test | **M** | 11 `aria-*` and 1 `role=` across 11 pages is thin for a monitoring UI with maps and live logs. `thehub-pr` has a working `vitest-axe` gate to copy. |
 | 5 | Resolve the MiLUMA data-sharing gap for outage granularity | **L** | Named in `federation.json`; external dependency, tracked honestly. |
 | 6 | Decide whether `GET /auth/status` should exist | **S** | Unused by the UI and a third auth shape in one federation. Either wire it or drop it. |
+
+---
+
+## Maturity score — 70%
+
+Measured 2026-07-27 against 20 explicit criteria (5 points each, 100 total). Every
+lost point is a specific, verifiable work item, so this doubles as the roadmap.
+
+| Dimension | Score | Criteria (5 pts each) |
+|---|---|---|
+| Functional completeness | **20/20** | backend serves domain · no dead UI · entrypoints work · modules wired, no duplicate mass |
+| Data reality | **15/20** | real non-synthetic dataset · refresh automated · offline bundle populated · live-exec gate open |
+| UI craft | **15/20** | pages proportionate to backend · loading+empty+error everywhere · a11y markup **and** automated gate · single consolidated frontend |
+| Tests | **5/15** | suite green · coverage gate enforced · frontend tests run in CI |
+| Hygiene | **4.5/15** | linters gated in CI · type checking gated in CI · write surface secured *and* client can use it |
+| Docs | **10/10** | docs match code · declared status matches observed maturity |
+| **Total** | **70/100** | |
+
+The earlier 0–4 per-dimension scorecard above is retained for cross-repo comparison,
+but it saturates — `aguayluz-pr` scored 24/24 on it while still having no frontend
+tests. This finer model is the one to plan against.
