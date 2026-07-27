@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useHealth, useAssets, useEvents, useReadings, useSummarySectors } from '@/lib/hooks'
+import { useHealth, useAssets, useEvents, useReadings, useSummarySectors, useCoverage } from '@/lib/hooks'
 import { postAiQuery, postNotify } from '@/lib/api'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/use-toast'
-import { Activity, AlertTriangle, Bell, Bot, CheckCircle2, Clock, Loader2 } from 'lucide-react'
+import {
+  AlertTriangle, Bell, Bot, Building2, Loader2, MapPinned, MapPinOff, ShieldAlert,
+} from 'lucide-react'
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts'
@@ -18,6 +20,7 @@ export default function OverviewPage() {
   const { data: assets = [], isLoading: assetsLoading } = useAssets()
   const { data: events = [], isLoading: eventsLoading } = useEvents()
   const { data: sectors } = useSummarySectors()
+  const { data: coverage } = useCoverage()
   const { data: readings = [] } = useReadings({ kind: 'reservoir' })
   const [aiSummary, setAiSummary] = useState(null)
   const [aiLoading, setAiLoading] = useState(false)
@@ -28,6 +31,11 @@ export default function OverviewPage() {
 
   const c = health?.counts ?? {}
   const r = health?.readiness ?? {}
+  const cov = coverage?.assets
+  const topUnmappedSubtype = useMemo(() => {
+    const entries = Object.entries(coverage?.unmapped_by_subtype ?? {})
+    return entries.length ? entries[0][0].replace(/_/g, ' ') : 'geometry-less records'
+  }, [coverage])
 
   const handleSummarize = async () => {
     setAiLoading(true)
@@ -92,13 +100,49 @@ export default function OverviewPage() {
 
   return (
     <div className="p-6 space-y-6 max-w-[1400px]">
-      {/* KPI row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatTile icon={Activity} label="Total Assets" value={c.assets ?? assets.length} />
-        <StatTile icon={AlertTriangle} label="Active Outages" value={activeOutages.length} valueClass="text-red-400" />
-        <StatTile icon={CheckCircle2} label="Grid Coverage" value={r.coverage_pct != null ? `${r.coverage_pct}%` : '–'} valueClass="text-emerald-400" />
-        <StatTile icon={Clock} label="Pending Review" value={r.records_review ?? '–'} valueClass="text-amber-400" />
+      {/* Corpus coverage. The global StatsBar already carries assets/coverage/review,
+          so repeating them here was pure duplication; what it did not say is how much
+          of the corpus the map and the municipio joins actually reach. */}
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <StatTile
+          icon={MapPinned}
+          label="Mapped assets"
+          value={cov ? `${cov.mapped.toLocaleString()} / ${cov.total.toLocaleString()}` : '–'}
+          valueClass={cov && cov.pct_mapped < 80 ? 'text-amber-300' : 'text-slate-100'}
+        />
+        <StatTile
+          icon={MapPinOff}
+          label="No geometry"
+          value={cov ? cov.unmapped.toLocaleString() : '–'}
+          valueClass="text-violet-300"
+        />
+        <StatTile
+          icon={Building2}
+          label="Municipio joined"
+          value={cov ? `${cov.pct_municipio_joined}%` : '–'}
+          valueClass={cov && cov.pct_municipio_joined < 50 ? 'text-amber-300' : 'text-emerald-400'}
+        />
+        <StatTile
+          icon={ShieldAlert}
+          label="Active alerts"
+          value={c.alerts_active ?? '–'}
+          valueClass={c.alerts_critical > 0 ? 'text-red-400' : 'text-slate-100'}
+        />
       </div>
+      {cov && (
+        <p className="-mt-3 text-[11px] text-slate-500">
+          {cov.unmapped.toLocaleString()} asset(s) carry no coordinates and never appear on the
+          map — mostly <span className="text-slate-400">{topUnmappedSubtype}</span> records.{' '}
+          <Link to="/assets?unmapped=1" className="text-sky-400 hover:text-sky-300">Review them in the assets table</Link>.
+          {c.alerts_critical > 0 && (
+            <>
+              {' '}<Link to="/alerts?critical=1" className="text-red-300 hover:text-red-200">
+                {c.alerts_critical} life-safety critical alert(s) open
+              </Link>.
+            </>
+          )}
+        </p>
+      )}
 
       {/* AI status recap + notifications */}
       <div className="flex items-start gap-3 flex-wrap">
@@ -132,16 +176,28 @@ export default function OverviewPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {Object.entries(SECTOR_META).map(([key, meta]) => {
             const s = sectors?.[key] ?? {}
+            // A sector with no assets is not a sector at 0% health — say so, rather
+            // than rendering a bare 0 that reads like a total outage.
+            const untracked = sectors != null && (s.total ?? 0) === 0
             return (
-              <Link key={key} to={`/sector/${key}`} className={`block rounded-lg border ${meta.border} ${meta.bg} p-4 hover:brightness-110 transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-500/50`}>
+              <Link key={key} to={`/sector/${key}`} className={`block rounded-lg border ${meta.border} ${meta.bg} p-4 hover:brightness-110 transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-500/50 ${untracked ? 'opacity-60' : ''}`}>
                 <div className="flex items-center gap-2 mb-3">
                   <meta.icon className={`h-4 w-4 ${meta.color}`} />
                   <span className={`text-xs font-semibold uppercase tracking-wider ${meta.color}`}>{meta.label}</span>
                 </div>
-                <p className="text-2xl font-semibold font-mono text-slate-100">{s.total ?? '–'}</p>
-                <p className="text-[11px] text-slate-500 font-mono mt-1">
-                  {s.active ?? '–'} active · {s.pct_active ?? 0}% nominal
-                </p>
+                {untracked ? (
+                  <>
+                    <p className="font-mono text-2xl font-semibold text-slate-500">—</p>
+                    <p className="mt-1 text-[11px] text-slate-500">No assets tracked in this sector</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-2xl font-semibold font-mono text-slate-100">{s.total ?? '–'}</p>
+                    <p className="text-[11px] text-slate-500 font-mono mt-1">
+                      {s.active ?? '–'} active · {s.pct_active ?? 0}% nominal
+                    </p>
+                  </>
+                )}
               </Link>
             )
           })}

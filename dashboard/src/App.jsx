@@ -16,6 +16,9 @@ const Router = OFFLINE ? HashRouter : BrowserRouter
 const OverviewPage = lazy(() => import('./pages/OverviewPage'))
 const MapPage = lazy(() => import('./pages/MapPage'))
 const AssetsPage = lazy(() => import('./pages/AssetsPage'))
+const AlertsPage = lazy(() => import('./pages/AlertsPage'))
+const AlertDetailPage = lazy(() => import('./pages/AlertDetailPage'))
+const SystemPage = lazy(() => import('./pages/SystemPage'))
 const OutagesPage = lazy(() => import('./pages/OutagesPage'))
 const MonitoringPage = lazy(() => import('./pages/MonitoringPage'))
 const ReviewPage = lazy(() => import('./pages/ReviewPage'))
@@ -48,11 +51,14 @@ function App() {
               <Route path="/" element={<OverviewPage />} />
               <Route path="/map" element={<MapPage />} />
               <Route path="/assets" element={<AssetsPage />} />
+              <Route path="/alerts" element={<AlertsPage />} />
+              <Route path="/alerts/:id" element={<AlertDetailPage />} />
               <Route path="/outages" element={<OutagesPage />} />
               <Route path="/monitoring" element={<MonitoringPage />} />
               <Route path="/review" element={<ReviewPage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/logs" element={<LiveLogsPage />} />
+              <Route path="/system" element={<SystemPage />} />
               <Route path="/sector/:sector" element={<SectorDetailPage />} />
               <Route path="/events/:id" element={<EventDetailPage />} />
               <Route path="/municipios/:name" element={<MunicipioDetailPage />} />

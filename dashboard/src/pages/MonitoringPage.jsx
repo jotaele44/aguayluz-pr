@@ -5,7 +5,7 @@ import PageHeader from '@/components/common/PageHeader'
 export default function MonitoringPage() {
   return (
     <div className="flex flex-col h-full">
-      <PageHeader title="Monitoring" subtitle="Reservoir levels, generation output, and reliability metrics" />
+      <PageHeader title="Monitoring" subtitle="Reservoir, groundwater, and coastal water levels — USGS NWIS and NOAA CO-OPS daily series" />
       <div className="flex-1 min-h-0">
         <ErrorBoundary label="Monitoring">
           <MonitoringCharts />

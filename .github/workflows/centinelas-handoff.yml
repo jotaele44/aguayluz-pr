@@ -14,11 +14,13 @@ jobs:
           CENTINELAS_CLIENT_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
           EXPECTED_TARGET: aguayluz-pr
         run: python3 scripts/ingest_centinelas_handoff.py
-      - name: Persist receipt
+      - name: Persist receipt + promoted event
         run: |
           git config user.name centinelas-handoff-bot
           git config user.email actions@users.noreply.github.com
-          git add data/centinelas_handoffs
+          # The ingest step writes the receipt AND promotes the envelope's signal into
+          # service_events.jsonl, so both paths are committed together.
+          git add data/centinelas_handoffs data/service_events.jsonl
           git diff --cached --quiet || git commit -m "data: ingest Centinelas handoff [skip ci]"
           git push
       - name: Acknowledge

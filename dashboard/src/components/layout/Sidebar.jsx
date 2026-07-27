@@ -1,7 +1,8 @@
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, Map, Database, Zap, Activity, ClipboardList,
-  BarChart3, ScrollText, Droplets, ChevronLeft, ChevronRight, X,
+  BarChart3, ScrollText, Droplets, ShieldAlert, SlidersHorizontal,
+  ChevronLeft, ChevronRight, X,
 } from 'lucide-react'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useIsMobile } from '@/hooks/use-mobile'
@@ -11,11 +12,13 @@ const NAV = [
   { to: '/', icon: LayoutDashboard, label: 'Overview', end: true },
   { to: '/map', icon: Map, label: 'Map' },
   { to: '/assets', icon: Database, label: 'Assets' },
+  { to: '/alerts', icon: ShieldAlert, label: 'Alerts' },
   { to: '/outages', icon: Zap, label: 'Outages' },
   { to: '/monitoring', icon: Activity, label: 'Monitoring' },
   { to: '/review', icon: ClipboardList, label: 'Review Queue' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
   { to: '/logs', icon: ScrollText, label: 'Live Logs' },
+  { to: '/system', icon: SlidersHorizontal, label: 'System & Tools' },
 ]
 
 export default function Sidebar() {

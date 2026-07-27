@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { useAssets, useAssetsGeojson, useMunicipiosGeojson, useEvents } from '@/lib/hooks'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useAssets, useAssetsGeojson, useMunicipiosGeojson, useEvents, useAlertsGeojson, useCoverage } from '@/lib/hooks'
 import AssetMap from '@/components/AssetMap'
 import AssetsTable from '@/components/AssetsTable'
 import AssetDetail from '@/components/AssetDetail'
@@ -11,9 +11,12 @@ export default function MapPage() {
   const { data: assetsGeo } = useAssetsGeojson()
   const { data: municipios } = useMunicipiosGeojson()
   const { data: events = [] } = useEvents()
+  const { data: alertsGeo } = useAlertsGeojson()
+  const { data: coverage } = useCoverage()
   const [selected, setSelected] = useState(null)
   const [selectedMunicipio, setSelectedMunicipio] = useState(null)
   const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
 
   // fly-to from ?flyTo=ASSET_ID&lat=...&lon=... (set by AssetDetail "Show on map")
   const flyToLat = parseFloat(searchParams.get('lat'))
@@ -24,6 +27,9 @@ export default function MapPage() {
     setSelected(assets.find((a) => a.asset_id === props.asset_id) ?? props)
   }, [assets])
 
+  const mapped = assetsGeo?.features?.length ?? 0
+  const unmapped = coverage?.assets?.unmapped ?? 0
+
   return (
     <div className="flex h-full">
       <div className="relative flex-1 min-w-0">
@@ -32,14 +38,20 @@ export default function MapPage() {
           assetRows={assets}
           municipios={municipios}
           events={events}
+          alerts={alertsGeo}
           selectedAssetId={selected?.asset_id}
           selectedMunicipio={selectedMunicipio}
           onSelect={selectByProps}
           onMunicipioSelect={setSelectedMunicipio}
+          onAlertSelect={(props) => navigate(`/alerts/${encodeURIComponent(props.alert_id)}`)}
           flyTo={flyToId && !isNaN(flyToLat) && !isNaN(flyToLon) ? { id: flyToId, lat: flyToLat, lon: flyToLon } : null}
         />
+        {/* State the denominator: 43% of the corpus (canal segments, historic aqueduct
+            alignments) has no geometry, so a bare "N mapped assets" reads as "N assets". */}
         <div className="pointer-events-none absolute bottom-2 left-2 rounded bg-slate-900/80 px-2 py-1 text-[11px] text-slate-400">
-          {assetsGeo?.features?.length ?? 0} mapped assets · {selectedMunicipio?.name ? `${selectedMunicipio.name} selected` : 'colored by type'}
+          {mapped} of {coverage?.assets?.total ?? assets.length} assets mapped
+          {unmapped > 0 && <span className="text-slate-500"> · {unmapped} without geometry</span>}
+          {' · '}{selectedMunicipio?.name ? `${selectedMunicipio.name} selected` : 'colored by type'}
         </div>
       </div>
 
