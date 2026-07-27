@@ -1,0 +1,72 @@
+name: pip-audit
+
+# Rendered from thehub-pr/federation-templates/baseline/pip-audit.yml.
+# Edit the template there and re-render (tools/render_federation_templates.py);
+# do not hand-edit this file — template-drift.yml fails the build if you do.
+#
+# Audits the *locked* dependency set against the PyPI advisory database, so what
+# gets scanned is what actually installs. The federation settled on two lock
+# shapes — `uv.lock` where the repo has a real `[project]` table, and a
+# uv-compiled `requirements.lock` where the pyproject is config-only — so this
+# detects rather than assumes. Weekly matters more than per-push here: an
+# advisory is usually published long after the code stops changing.
+#
+# Report-only to start (continue-on-error), matching the convention already set
+# by moneysweep-pr: a newly disclosed CVE should surface as a visible signal,
+# not block unrelated work. Promote to gating once the baseline is clean.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+  pull_request:
+    paths: # only when the dependency set itself moves
+      - "uv.lock"
+      - "requirements.lock"
+      - "constraints.txt"
+      - "pyproject.toml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pip-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+
+      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.1
+
+      - name: Materialize the locked set as requirements
+        run: |
+          set -euo pipefail
+          if [ -f uv.lock ]; then
+            uv export --frozen --no-emit-project \
+              --format requirements-txt -o /tmp/locked.txt
+          elif [ -f requirements.lock ]; then
+            cp requirements.lock /tmp/locked.txt
+          elif [ -f constraints.txt ]; then
+            cp constraints.txt /tmp/locked.txt
+          else
+            echo "::error::no lock artifact (uv.lock / requirements.lock / constraints.txt)"
+            exit 1
+          fi
+          # Drop editable and local-path entries: these are sibling federation
+          # packages (e.g. -e ../thehub-pr/packages/prii_maintenance) that have
+          # no PyPI advisories and would fail resolution without the sibling
+          # checkout. Their own repo's audit covers them.
+          grep -vE '^\s*(-e |\.\./|/)' /tmp/locked.txt > /tmp/audit.txt
+          echo "auditing $(grep -cE '^[A-Za-z0-9]' /tmp/audit.txt || echo 0) pinned packages"
+
+      - name: Audit
+        continue-on-error: true
+        run: |
+          pipx run pip-audit --requirement /tmp/audit.txt --desc
