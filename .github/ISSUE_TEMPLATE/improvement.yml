@@ -1,0 +1,41 @@
+# Rendered from thehub-pr/federation-templates/baseline/ISSUE_TEMPLATE/improvement.yml.
+# Edit the template there and re-render; do not hand-edit — template-drift.yml
+# fails the build if you do.
+name: Improvement
+description: Refactor, cleanup, performance, or developer-experience work on something that already exists.
+title: "[Improvement]: "
+labels: ["improvement"]
+body:
+  - type: textarea
+    id: current
+    attributes:
+      label: Current state
+      description: What exists today, and what makes it awkward, slow, or fragile?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options:
+        - refactor / structure
+        - performance
+        - test coverage
+        - lint / type backlog
+        - developer experience
+        - documentation
+        - other
+    validations:
+      required: true
+  - type: checkboxes
+    id: risk
+    attributes:
+      label: Risk
+      options:
+        - label: This is behavior-preserving (no functional change intended).

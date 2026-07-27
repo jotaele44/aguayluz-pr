@@ -1,0 +1,25 @@
+# Rendered from thehub-pr/federation-templates/baseline/ISSUE_TEMPLATE/question.yml.
+# Edit the template there and re-render; do not hand-edit — template-drift.yml
+# fails the build if you do.
+name: Question
+description: Ask about behavior, data provenance, or how something is meant to work.
+title: "[Question]: "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check the [README](https://github.com/jotaele44/aguayluz-pr/blob/main/README.md), `docs/`, and
+        [CONTRIBUTING](https://github.com/jotaele44/aguayluz-pr/blob/main/CONTRIBUTING.md) first — the quality
+        gates and the generated-file rules are documented there.
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What are you trying to do, and what have you already checked?

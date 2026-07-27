@@ -1,0 +1,48 @@
+# Rendered from thehub-pr/federation-templates/baseline/ISSUE_TEMPLATE/feature_request.yml.
+# Edit the template there and re-render; do not hand-edit — template-drift.yml
+# fails the build if you do.
+name: Feature request
+description: A new capability that does not exist yet.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What can't you do today? Describe the need, not the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed capability
+      description: What should exist? Rough shape is fine.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - ingest / acquisition
+        - processing / pipeline
+        - export / federation contract
+        - server / API
+        - frontend / dashboard
+        - desktop launcher
+        - CI / repo governance
+        - docs
+        - other / unsure
+    validations:
+      required: true
+  - type: checkboxes
+    id: contract
+    attributes:
+      label: Federation impact
+      options:
+        - label: This would change an exported schema or `federation.json`, so sibling repos are affected.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
