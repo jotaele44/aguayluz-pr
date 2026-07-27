@@ -90,7 +90,7 @@ def test_outputs_deliverable_against_real_corpus(real_corpus, tmp_path, monkeypa
     outputs = tmp_path / "outputs"
 
     # build_outputs invokes `aguayluz.validation.run_gates()` for the
-    # bootstrap dance (delete stale base44+integration_report, sweep gates,
+    # bootstrap dance (delete stale hub_export+integration_report, sweep gates,
     # record real statuses). The gate sweep reads the OUTPUTS_DIR module
     # constant — repoint it at our tmp dir so the inspection matches the
     # writes; otherwise the assertions on G05/G06 below test the wrong place.
@@ -106,7 +106,7 @@ def test_outputs_deliverable_against_real_corpus(real_corpus, tmp_path, monkeypa
     expected_files = {
         "utility_assets.json", "service_events.json", "monitoring_readings.json",
         "source_manifest.json", "review_queue.json", "bridge_summary.json",
-        "base44_export.json", "integration_report.json",
+        "hub_export.json", "integration_report.json",
     }
     assert {p.name for p in outputs.iterdir()} == expected_files
     assert counts["monitoring_readings"] == len(readings)
@@ -136,24 +136,24 @@ def test_outputs_deliverable_against_real_corpus(real_corpus, tmp_path, monkeypa
     unknown = queue_refs - known_ids
     assert not unknown, f"review_queue refs not found in corpus: {sorted(unknown)[:5]}"
 
-    # Base44 envelope: status + coverage_pct must be DERIVED from real gate
+    # Hub export envelope: status + coverage_pct must be DERIVED from real gate
     # state + located/total ratio, not hardcoded. Asserting the formula match
     # rather than a literal proves the derivation path runs (a regression that
     # reverted to constants would change one without the other).
-    base44 = json.loads((outputs / "base44_export.json").read_text())
-    assert base44["module_id"] == "aguayluz-pr"
-    assert base44["status"] in {"PASS", "WARN", "FAIL", "BLOCKED"}
-    assert base44["coverage_pct"] == _coverage_pct(aggregates["located"], aggregates["records_total"])
+    envelope = json.loads((outputs / "hub_export.json").read_text())
+    assert envelope["module_id"] == "aguayluz-pr"
+    assert envelope["status"] in {"PASS", "WARN", "FAIL", "BLOCKED"}
+    assert envelope["coverage_pct"] == _coverage_pct(aggregates["located"], aggregates["records_total"])
     # On this corpus the 273 assets all carry lat/lon but the 8 events don't,
     # so coverage_pct is strictly less than 100 — not the hardcoded 100.0.
-    assert base44["coverage_pct"] < 100.0, (
+    assert envelope["coverage_pct"] < 100.0, (
         "coverage_pct should reflect the events-without-coords gap, "
         "not be a constant"
     )
-    assert base44["records_total"] == aggregates["records_total"]
-    assert base44["records_review"] == aggregates["records_review"]
-    assert base44["source_manifest_path"] == "outputs/source_manifest.json"
-    assert base44["integration_report_path"] == "outputs/integration_report.json"
+    assert envelope["records_total"] == aggregates["records_total"]
+    assert envelope["records_review"] == aggregates["records_review"]
+    assert envelope["source_manifest_path"] == "outputs/source_manifest.json"
+    assert envelope["integration_report_path"] == "outputs/integration_report.json"
 
     # Bridge summary: municipalities_covered is sorted+dedup and review_status
     # reflects the presence of needs_review records.
@@ -164,13 +164,13 @@ def test_outputs_deliverable_against_real_corpus(real_corpus, tmp_path, monkeypa
 
     # Integration report: gate ledger covers all 8 gates with measured statuses.
     # G05/G06 must report SKIP because integration_report.json and
-    # base44_export.json were deleted before the gate sweep ran (the bootstrap
+    # hub_export.json were deleted before the gate sweep ran (the bootstrap
     # dance that keeps the deliverable honest); the rest reflect real state.
     report = json.loads((outputs / "integration_report.json").read_text())
     assert {g["id"] for g in report["gates"]} == {
         f"G0{i}_" + name for i, name in enumerate(
             ["SCHEMA", "SOURCE_MANIFEST", "CONFIDENCE", "REVIEW_QUEUE",
-             "COVERAGE_LEDGER", "BASE44_EXPORT", "NO_SECRETS", "TESTS"], start=1)
+             "COVERAGE_LEDGER", "HUB_EXPORT", "NO_SECRETS", "TESTS"], start=1)
     }
     statuses = {g["id"]: g["status"] for g in report["gates"]}
     assert all(s in {"PASS", "WARN", "FAIL", "SKIP"} for s in statuses.values())
@@ -178,8 +178,8 @@ def test_outputs_deliverable_against_real_corpus(real_corpus, tmp_path, monkeypa
         "G05 must report SKIP at build time (the integration_report we are "
         "writing isn't on disk yet during the gate sweep)"
     )
-    assert statuses["G06_BASE44_EXPORT"] == "SKIP", (
-        "G06 must report SKIP at build time (base44_export isn't on disk yet)"
+    assert statuses["G06_HUB_EXPORT"] == "SKIP", (
+        "G06 must report SKIP at build time (hub_export isn't on disk yet)"
     )
     assert report["coverage"]["coverage_pct"] == _coverage_pct(
         aggregates["located"], aggregates["records_total"]
@@ -216,7 +216,7 @@ def test_coverage_pct_formula():
     assert _coverage_pct(7, 10) == 70.0
 
 
-def test_base44_status_reflects_g03_warning(tmp_path, monkeypatch):
+def test_hub_export_status_reflects_g03_warning(tmp_path, monkeypatch):
     """Synthetic-anomaly test — proves `build_outputs` actually CONSULTS the
     helper instead of hardcoding `"PASS"`.
 
@@ -252,10 +252,10 @@ def test_base44_status_reflects_g03_warning(tmp_path, monkeypatch):
 
     build_outputs(assets, events, aggregates, "2026-06-08T13:45:24Z", outputs)
 
-    base44 = json.loads((outputs / "base44_export.json").read_text())
-    assert base44["status"] == "WARN", (
+    envelope = json.loads((outputs / "hub_export.json").read_text())
+    assert envelope["status"] == "WARN", (
         f"expected WARN from G03 on accepted+confidence<50; got "
-        f"{base44['status']}. If this regresses to PASS, build_outputs "
+        f"{envelope['status']}. If this regresses to PASS, build_outputs "
         "may have reverted to a hardcoded status literal."
     )
     # Cross-check the integration_report ledger surfaced the right gate row.

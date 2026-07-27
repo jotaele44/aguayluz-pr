@@ -62,12 +62,12 @@ OUTPUT_FILES = (
     "source_manifest.json",     # SourceManifest envelope
     "review_queue.json",        # ReviewQueue envelope
     "bridge_summary.json",      # AguayluzBridgeSummary envelope
-    "base44_export.json",       # Base44 envelope (Hub-conformant)
+    "hub_export.json",       # Hub export envelope (Hub-conformant)
     "integration_report.json",  # IntegrationReport (coverage + gates ledger); WRITTEN LAST
 )
 GATE_IDS = (
     "G01_SCHEMA", "G02_SOURCE_MANIFEST", "G03_CONFIDENCE", "G04_REVIEW_QUEUE",
-    "G05_COVERAGE_LEDGER", "G06_BASE44_EXPORT", "G07_NO_SECRETS", "G08_TESTS",
+    "G05_COVERAGE_LEDGER", "G06_HUB_EXPORT", "G07_NO_SECRETS", "G08_TESTS",
 )
 WELL_KNOWN_GAPS = [
     "StreamCat NLCD attributes unavailable for VPU 21",
@@ -405,7 +405,7 @@ def _summary_id(now: str) -> str:
 
 
 def _compute_aggregates(assets: list[dict[str, Any]], events: list[dict[str, Any]]) -> dict[str, Any]:
-    """Aggregate counts + averages for the base44/bridge_summary envelopes."""
+    """Aggregate counts + averages for the hub_export/bridge_summary envelopes."""
     all_records = list(assets) + list(events)
     review = sum(1 for r in all_records if r.get("review_status") == "needs_review")
     blocked = sum(1 for r in all_records if r.get("review_status") == "blocked")
@@ -447,7 +447,7 @@ def _validate_record_list(records: list[dict[str, Any]], schema_name: str) -> No
 
 
 def _derive_aggregate_status(gate_results: list[Any]) -> str:
-    """Roll an iterable of GateResult into a base44 envelope status.
+    """Roll an iterable of GateResult into a hub_export envelope status.
 
     Precedence: any FAIL → FAIL; else any WARN → WARN; else PASS.
     SKIP is treated as benign (the gate had nothing to check). This mirrors
@@ -573,23 +573,23 @@ def build_outputs(
     }
     _validate_and_write(outputs_dir / "bridge_summary.json", "aguayluz_bridge_summary", bridge)
 
-    # 6 + 7. The health-signal pair (base44_export + integration_report) must
+    # 6 + 7. The health-signal pair (hub_export + integration_report) must
     # report REAL gate state, not constants. Otherwise the deliverable's
     # headline is a green light wired to "on": a future failure (a leaked
     # secret → G07 FAIL; a blocked record arriving) would still emit
     # status=PASS, defeating the point of the gate system.
     #
     # Bootstrap dance:
-    #   - delete any stale base44_export.json and integration_report.json so
+    #   - delete any stale hub_export.json and integration_report.json so
     #     gates G05/G06 honestly report SKIP on this pass (rather than
     #     re-validating last run's file)
     #   - run validate_repo gates against the 5 files we just wrote
     #   - derive the aggregate status (any FAIL → FAIL; any WARN → WARN;
     #     else PASS); record each gate's real result in the ledger
-    #   - write base44_export and integration_report with those measured
+    #   - write hub_export and integration_report with those measured
     #     values. Subsequent validate_repo runs will inspect these files
     #     for G05/G06 and PASS/FAIL them on their own merits.
-    for stale in ("integration_report.json", "base44_export.json"):
+    for stale in ("integration_report.json", "hub_export.json"):
         (outputs_dir / stale).unlink(missing_ok=True)
 
     from aguayluz.validation import run_gates  # local import; same reason as _validate_and_write
@@ -602,7 +602,7 @@ def build_outputs(
 
     n_power = sum(1 for a in assets if a.get("asset_type") == "power")
     n_water = sum(1 for a in assets if a.get("asset_type") in ("water", "wastewater"))
-    base44 = {
+    envelope = {
         "module_id": "aguayluz-pr",
         "run_id": run_id,
         "vector": VECTOR,
@@ -629,7 +629,7 @@ def build_outputs(
         "gaps": list(WELL_KNOWN_GAPS),
         "next_actions": list(NEXT_ACTIONS_DEFAULT),
     }
-    _validate_and_write(outputs_dir / "base44_export.json", "base44_export", base44)
+    _validate_and_write(outputs_dir / "hub_export.json", "hub_export", envelope)
 
     # Coverage ledger: `unresolved` and `gaps` must reflect REAL state, not
     # constants. Without coords means the record can't participate in spatial
@@ -668,7 +668,7 @@ def build_outputs(
         "source_manifest_entries": len(manifest["entries"]),
         "review_queue_items": len(items),
         "bridge_summary": 1,
-        "base44_export": 1,
+        "hub_export": 1,
         "integration_report": 1,
     }
 

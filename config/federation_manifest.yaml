@@ -11,7 +11,7 @@ owns:
   - outages_restoration_service_interruptions
   - utility_recovery_projects_and_status
   - utility_service_geospatial_summaries
-  - sanitized_utility_exports_to_base44
+  - sanitized_utility_exports_to_hub
 
 does_not_own:
   funding_vendor_chain_joins: moneysweep-pr
@@ -28,4 +28,4 @@ linked_modules:
   - thehub-pr
 
 export_target: thehub-pr
-export_envelope: schemas/base44_export.schema.json
+export_envelope: schemas/hub_export.schema.json

@@ -125,13 +125,13 @@ _asset_patches: dict[str, dict[str, Any]] = {}
 @app.get("/health")
 def health() -> JSONResponse:
     readings_counts = {k: len(_load_jsonl(p)) for k, p in READINGS_FILES.items()}
-    base44 = _load_json(OUTPUTS / "base44_export.json")
+    hub_export = _load_json(OUTPUTS / "hub_export.json")
     readiness: dict[str, Any] = {}
-    if base44:
+    if hub_export:
         readiness = {
-            "coverage_pct": base44.get("coverage_pct"),
-            "module_status": base44.get("status"),
-            "records_review": base44.get("records_review"),
+            "coverage_pct": hub_export.get("coverage_pct"),
+            "module_status": hub_export.get("status"),
+            "records_review": hub_export.get("records_review"),
         }
     return JSONResponse({
         "status": "ok",
@@ -373,7 +373,7 @@ async def review_decision(ref: str, request: Request, _=_Depends(_require_key)) 
 
 @app.get("/summary")
 def summary() -> JSONResponse:
-    return JSONResponse(_load_json(OUTPUTS / "base44_export.json", {}))
+    return JSONResponse(_load_json(OUTPUTS / "hub_export.json", {}))
 
 
 @app.get("/summary/sectors")

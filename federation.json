@@ -15,7 +15,7 @@
   "source_truth": {
     "primary_source": "U.S. EPA Office of Water — WATERS Services REST API",
     "geofabric": "NHDPlus V2.1 (Puerto Rico = VPU 21; Vogel/VPUAttribute extensions unavailable -> attribute_coverage stamped partial)",
-    "export_envelope": "schemas/base44_export.schema.json",
+    "export_envelope": "schemas/hub_export.schema.json",
     "runtime_required_keys": [
       "EPA_WATERS_API_KEY"
     ],
@@ -50,7 +50,7 @@
     "build_geo_boundaries": "python3 scripts/build_pr_geo_boundaries.py --counties <cb_us_county_500k.shp> --barrios <cb_72_cousub_500k.shp>"
   },
   "canonical_outputs": {
-    "base44_export": "outputs/base44_export.json",
+    "hub_export": "outputs/hub_export.json",
     "integration_report": "outputs/integration_report.json",
     "source_manifest": "outputs/source_manifest.json",
     "review_queue": "outputs/review_queue.json",

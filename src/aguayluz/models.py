@@ -124,8 +124,8 @@ class AguayluzBridgeSummary(_SchemaValidated):
     review_status: ReviewStatus
 
 
-class Base44Export(_SchemaValidated):
-    _schema_name: str = "base44_export"
+class HubExport(_SchemaValidated):
+    _schema_name: str = "hub_export"
 
     module_id: Literal["aguayluz-pr"] = "aguayluz-pr"
     run_id: str
