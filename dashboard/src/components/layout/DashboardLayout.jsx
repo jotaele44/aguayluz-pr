@@ -38,6 +38,7 @@ function Inner() {
             >
               <Menu className="h-5 w-5" />
             </button>
+            <img src={`${import.meta.env.BASE_URL}icon-64.png`} alt="" aria-hidden="true" className="h-6 w-6 rounded-md" />
             <span className="text-sm font-semibold text-slate-100">AguaYLuz-PR</span>
           </div>
         )}
