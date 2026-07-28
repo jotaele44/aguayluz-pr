@@ -1,77 +1,45 @@
-# Run AGUAYLUZ as a desktop app
+# AguaYLuz desktop
 
-Double-click the launcher for your system in the repo root:
+## Install on macOS — no Terminal
 
-| System | File |
-|---|---|
-| macOS | `PRII-AGUAYLUZ.command` |
-| Windows | `PRII-AGUAYLUZ.bat` |
-| Linux | `PRII-AGUAYLUZ.sh` |
+1. Open this repository's **Releases** page and download the latest
+   `PRII-AGUAYLUZ-macOS.dmg`.
+2. Open the disk image and drag **AguaYLuz** to **Applications**.
+3. Open AguaYLuz from Applications.
 
-The **first run** needs an internet connection once: it creates a private
-`.venv`, installs the Python dependencies, and builds the dashboard
-(requires [Python 3.10+](https://www.python.org/downloads/) and
-[Node.js](https://nodejs.org) to be installed). Every later run starts
-instantly and **works offline** — the app serves the data committed in this
-repository from a local server and shows it in a native window.
+The release contains its own Python runtime, backend, compiled interface,
+committed infrastructure data, and baseline outputs. Python, Node.js, Git,
+Homebrew, and Terminal are not required.
 
-Offline caveat: map basemap tiles are fetched from the internet
-(OpenStreetMap), so without a connection the map background is blank while
-all data, tables, and charts keep working.
+On first launch, the native **Setup & Repair** screen asks for a writable data
+location, copies baseline mutable outputs there without overwriting later work,
+runs diagnostics, and starts the app. **Setup & Diagnostics** remains available
+in the lower-right corner. The dashboard's export action runs in-process and
+writes only to the selected application-data location.
 
-## How it works
+Map basemap tiles and optional live/AI services may require an internet
+connection; packaged data, tables, charts, and local exports remain available
+without those optional integrations.
 
-- `desktop/config.py` — the only per-repo file (title, paths, requirements).
-- `desktop/app_server.py` — reuses the existing FastAPI backend and also
-  serves the built dashboard from the same port (no CORS, one process).
-- `desktop/launch.py` — picks a free port, starts uvicorn, opens a native
-  [pywebview](https://pywebview.flowrl.com/) window (falls back to the
-  default browser). Flags: `--no-window`, `--browser`, `--smoke`.
-- `desktop/setup.py` — idempotent one-time setup (`--force` to redo).
+## If macOS blocks the first open
 
-## Command line
+Open **System Settings → Privacy & Security**, find the message naming
+AguaYLuz, and choose **Open Anyway**. No quarantine command is required.
+Release CI applies an ad-hoc integrity signature, but public downloads are not
+Apple-notarized unless a release is signed with project Developer ID
+credentials.
 
-```bash
-python desktop/setup.py          # one-time setup
-.venv/bin/python desktop/launch.py            # native window
-.venv/bin/python desktop/launch.py --browser  # browser tab instead
-.venv/bin/python desktop/launch.py --no-window  # server only
-```
+The `PRII-AGUAYLUZ.app` committed in a source checkout is a Finder-only
+download helper. The self-contained product is the app inside the release disk
+image.
 
-## macOS app icon
+## Release contract
 
-`PRII-AGUAYLUZ.app` is a double-click macOS app (Apple-silicon and Intel). Double-click
-it in Finder and the dashboard opens in its own window — no Terminal. The first
-launch runs the one-time setup (needs internet once, plus Node.js for the
-dashboard build); after that it starts straight away and works offline.
+The `desktop-build` workflow builds on clean Linux, macOS, and Windows runners,
+then tests both the fresh-machine setup contract and backend health on the
+frozen executable. macOS CI verifies the bundle signature before producing the
+`.dmg`.
 
-Because the app is a small self-locating wrapper around `desktop/launch.py`, it
-must stay at the repo root (it finds the repo from its own location). If macOS
-blocks the first open, see **If macOS won't open the app** below.
-No-Python-required standalone builds are still produced separately by the
-`desktop-build` workflow.
-
-## If macOS won't open the app
-
-The app is safe — it's an open-source launcher script you can read in
-`Contents/MacOS/`. macOS blocks it only because it isn't signed with a paid
-Apple Developer ID or notarized by Apple, so the first open may show *"cannot be
-opened because Apple cannot check it for malicious software"* or an
-*"unidentified developer"* notice. That's macOS quarantining files downloaded
-from the internet (it happens especially with GitHub's **Download ZIP**). Any
-one of the following clears it — you only do this once per download:
-
-- **Easiest — run the helper.** Double-click **`Fix-Gatekeeper.command`** in the
-  repo root, then open the app normally. If the helper is itself blocked,
-  right-click it → **Open** to run it once.
-- **Terminal (always works).** Paste this into Terminal (pasting a command is
-  never blocked), then press Return:
-  ```bash
-  xattr -dr com.apple.quarantine "/path/to/aguayluz-pr/PRII-AGUAYLUZ.app"
-  ```
-  Tip: type `xattr -dr com.apple.quarantine ` (with a trailing space) and drag
-  the app onto the Terminal window to fill in its path.
-- **System Settings.** Double-click the app, let macOS block it, then open
-  **System Settings → Privacy & Security**, scroll to the message naming the app,
-  and click **Open Anyway**. On macOS Sequoia 15 and later this replaces the old
-  right-click → **Open** trick.
+`desktop/launch.py` and `desktop/config.py` are thin adapters over TheHub's
+shared `prii_desktop` runtime. Source-checkout setup scripts remain developer
+conveniences and are not part of end-user installation.
