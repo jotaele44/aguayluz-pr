@@ -65,9 +65,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r server/backend/requirements.txt -r requirements-desktop.txt -r ../thehub-pr/tools/requirements-icons.txt pyinstaller
 
+      - name: Verify canonical icon derivatives
+        if: runner.os == 'Linux'
+        run: python ../thehub-pr/tools/build_program_icons.py --repo . --check
+
       - name: Verify visual branding and accessibility contract
         run: |
-          python ../thehub-pr/tools/build_program_icons.py --repo . --check
           python ../thehub-pr/tools/verify_desktop_branding.py --repo .
 
       - name: Freeze console build (for smoke test)
