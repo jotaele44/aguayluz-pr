@@ -7,6 +7,7 @@ import {
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
+import brandMark from "@/assets/icon-64.png?inline";
 
 const NAV = [
   { to: '/', icon: LayoutDashboard, label: 'Overview', end: true },
@@ -35,7 +36,7 @@ export default function Sidebar() {
       hiddenOnMobile && '-translate-x-full',
     )}>
       <div className="h-14 flex items-center gap-2.5 px-3 border-b border-slate-800 shrink-0">
-        <img src={`${import.meta.env.BASE_URL}icon-64.png`} alt="" aria-hidden="true" className="h-6 w-6 shrink-0 rounded-md" />
+        <img src={brandMark} alt="" aria-hidden="true" className="h-6 w-6 shrink-0 rounded-md" />
         {!collapsed && (
           <div className="min-w-0">
             <span className="block text-sm font-semibold text-slate-100 truncate">AguaYLuz-PR</span>
