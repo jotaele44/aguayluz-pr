@@ -26,6 +26,7 @@ EXE_ICON = str(BRANDING / "icon.ico") if sys.platform == "win32" else None
 CONSOLE = os.environ.get("PRII_CONSOLE") == "1"
 
 datas = [
+    (str(BRANDING), "assets/branding"),
     (str(REPO_ROOT / "dashboard" / "dist"), "dashboard/dist"),
     (str(REPO_ROOT / "data"), "data"),
 ]
@@ -44,12 +45,17 @@ a = Analysis(
         "uvicorn.lifespan.on",
         "desktop.app_server",
         "server.backend.main",
+        "scripts.federation_export",
+        "prii_export_utils",
+        "aguayluz.models",
+        "aguayluz.validation",
         # Shared desktop-wrapper runtime (thehub-pr/packages/prii_desktop),
         # imported by the desktop/ shims — bundle it into the frozen build.
         "prii_desktop",
         "prii_desktop.launcher",
         "prii_desktop.appserver",
         "prii_desktop.config",
+        "prii_desktop.setup_ui",
     ],
     noarchive=False,
 )
@@ -77,4 +83,9 @@ if sys.platform == "darwin":
         name=f"{APP_NAME}.app",
         icon=str(BRANDING / "AppIcon.icns"),
         bundle_identifier="pr.prii.aguayluz",
+        info_plist={
+            "CFBundleDisplayName": "AguaYLuz",
+            "CFBundleName": "AguaYLuz",
+            "NSHighResolutionCapable": True,
+        },
     )

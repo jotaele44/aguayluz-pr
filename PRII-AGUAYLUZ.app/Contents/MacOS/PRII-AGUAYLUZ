@@ -1,25 +1,10 @@
 #!/bin/bash
-# macOS .app launcher for the PRII desktop wrapper. Self-locating: resolves the
-# repo root from this bundle's own path, runs one-time setup, then opens the app.
+# Source-checkout bundle: launch an embedded release runtime when present, or
+# guide the user to the self-contained release using macOS UI only.
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
-REPO="$(cd "$HERE/../../.." && pwd)"
-cd "$REPO"
-
-# Finder launches .app bundles with a minimal PATH that omits python.org
-# (/usr/local/bin) and Homebrew (/opt/homebrew/bin, Apple silicon). Restore
-# them so python3 and npm resolve the same way they do in a normal shell.
-export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
-
-notify() { osascript -e "display dialog \"$1\" buttons {\"OK\"} with title \"AguaYLuz — PRII\"" >/dev/null 2>&1 || true; }
-
-PY="$(command -v python3 || true)"
-if [ -z "$PY" ]; then
-  notify "Python 3 is required. Install it from https://www.python.org/downloads/ and open this app again."
-  exit 1
-fi
-if ! "$PY" desktop/setup.py --ensure; then
-  notify "First-run setup could not finish. It needs internet the first time (and Node.js for the dashboard build). Open Terminal in $REPO and run: python3 desktop/setup.py"
-  exit 1
-fi
-exec .venv/bin/python desktop/launch.py 
+BUNDLED="$HERE/PRII-AGUAYLUZ.bin"
+RELEASES="https://github.com/jotaele44/aguayluz-pr/releases"
+if [ -x "$BUNDLED" ]; then exec "$BUNDLED"; fi
+CHOICE="$(osascript -e 'button returned of (display dialog "This source-checkout bundle does not contain the signed application runtime. Download the self-contained AguaYLuz disk image; it includes everything required." buttons {"Cancel", "Open Releases"} default button "Open Releases" with title "AguaYLuz")' 2>/dev/null || true)"
+if [ "$CHOICE" = "Open Releases" ]; then open "$RELEASES"; fi

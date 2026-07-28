@@ -12,6 +12,10 @@ on:
     branches: [main]
     paths:
       - "desktop/**"
+      - "assets/branding/**"
+      - "dashboard/**"
+      - "server/backend/**"
+      - "scripts/federation_export.py"
       - "requirements-desktop.txt"
       - ".github/workflows/desktop-build.yml"
 
@@ -59,7 +63,15 @@ jobs:
           # sibling ../thehub-pr (editable path); clone it if absent.
           if [ ! -d ../thehub-pr ]; then git clone --depth 1 --branch "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" https://github.com/jotaele44/thehub-pr.git ../thehub-pr || git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr; fi
           python -m pip install --upgrade pip
-          pip install -r server/backend/requirements.txt -r requirements-desktop.txt pyinstaller
+          pip install -r server/backend/requirements.txt -r requirements-desktop.txt -r ../thehub-pr/tools/requirements-icons.txt pyinstaller
+
+      - name: Verify canonical icon derivatives
+        if: runner.os == 'Linux'
+        run: python ../thehub-pr/tools/build_program_icons.py --repo . --check
+
+      - name: Verify visual branding and accessibility contract
+        run: |
+          python ../thehub-pr/tools/verify_desktop_branding.py --repo .
 
       - name: Freeze console build (for smoke test)
         env:
@@ -72,11 +84,19 @@ jobs:
           import pathlib, subprocess, sys
           name = "PRII-AGUAYLUZ"
           exe = pathlib.Path("dist-smoke") / name / (name + (".exe" if sys.platform == "win32" else ""))
-          result = subprocess.run([str(exe), "--smoke"], timeout=120)
-          sys.exit(result.returncode)
+          for mode in ("--setup-smoke", "--smoke"):
+              result = subprocess.run([str(exe), mode], timeout=120)
+              if result.returncode:
+                  sys.exit(result.returncode)
 
       - name: Freeze desktop app (windowed release)
         run: pyinstaller desktop/pyinstaller.spec --distpath dist-desktop --noconfirm
+
+      - name: Sign and verify macOS app integrity
+        if: runner.os == 'macOS'
+        run: |
+          codesign --force --deep --sign - "dist-desktop/PRII-AGUAYLUZ.app"
+          codesign --verify --deep --strict "dist-desktop/PRII-AGUAYLUZ.app"
 
       - name: Package bundle
         shell: bash

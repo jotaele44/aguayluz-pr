@@ -673,7 +673,7 @@ def build_outputs(
     }
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Export AguaYLuz assets/events as PRII canonical streams.")
     ap.add_argument("--assets", default=str(REPO_ROOT / "data/utility_assets.jsonl"))
     ap.add_argument("--events", default=str(REPO_ROOT / "data/service_events.jsonl"))
@@ -696,7 +696,7 @@ def main() -> int:
     ap.add_argument("--no-outputs", action="store_true",
                     help="skip the outputs/* deliverable; emit canonical streams only")
     ap.add_argument("--mode", default="test", choices=["test", "production"])
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
 
     raw_events = _load_jsonl(Path(args.events))
     raw_incidents = _load_jsonl(Path(args.incidents))

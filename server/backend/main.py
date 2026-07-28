@@ -9,11 +9,12 @@ Run from repo root:
 from __future__ import annotations
 
 import asyncio
+import contextlib
+import io
 import json
 import os as _os
+import shutil
 import smtplib as _smtplib
-import subprocess
-import sys
 import urllib.request as _notify_urllib
 from collections import Counter
 from datetime import datetime, timezone
@@ -28,8 +29,22 @@ from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 DATA = REPO_ROOT / "data"
-OUTPUTS = REPO_ROOT / "outputs"
-SCRIPTS = REPO_ROOT / "scripts"
+BUNDLED_OUTPUTS = REPO_ROOT / "outputs"
+_MUTABLE_HOME = _os.getenv("PRII_AGUAYLUZ_DATA_HOME")
+MUTABLE_HOME = Path(_MUTABLE_HOME) if _MUTABLE_HOME else REPO_ROOT
+OUTPUTS = MUTABLE_HOME / "outputs"
+EXPORTS = MUTABLE_HOME / "exports"
+
+if OUTPUTS != BUNDLED_OUTPUTS and BUNDLED_OUTPUTS.is_dir():
+    OUTPUTS.mkdir(parents=True, exist_ok=True)
+    for _source in BUNDLED_OUTPUTS.iterdir():
+        _destination = OUTPUTS / _source.name
+        if _destination.exists():
+            continue
+        if _source.is_dir():
+            shutil.copytree(_source, _destination)
+        else:
+            shutil.copy2(_source, _destination)
 
 # Monitoring reading kinds -> their canonical JSONL. Every kind here has a producer
 # in scripts/ that scripts/refresh.py runs, so an empty series means "no data yet",
@@ -484,12 +499,19 @@ def summary_coverage() -> JSONResponse:
 
 def _artifact_status(path: Path) -> dict[str, Any]:
     """Presence + last-write time of a canonical output, for the System page."""
+    try:
+        display_path = path.relative_to(REPO_ROOT)
+    except ValueError:
+        try:
+            display_path = Path("application-data") / path.relative_to(MUTABLE_HOME)
+        except ValueError:
+            display_path = Path("application-data") / path.name
     if not path.exists():
-        return {"present": False, "path": str(path.relative_to(REPO_ROOT))}
+        return {"present": False, "path": str(display_path)}
     stat = path.stat()
     return {
         "present": True,
-        "path": str(path.relative_to(REPO_ROOT)),
+        "path": str(display_path),
         "bytes": stat.st_size,
         "modified_at": datetime.fromtimestamp(stat.st_mtime, timezone.utc).isoformat(),
     }
@@ -503,7 +525,7 @@ def system_status() -> JSONResponse:
     each depend on backend configuration the browser cannot see, so they were failing
     at click time. This lets the UI disable a tool with a reason instead.
     """
-    exports = REPO_ROOT / "exports" / "federation"
+    exports = EXPORTS / "federation"
     return JSONResponse({
         **auth_status_payload(),
         "artifacts": {
@@ -676,19 +698,27 @@ def alert_detail(alert_id: str) -> JSONResponse:
 
 @app.post("/admin/run-export")
 async def run_export(request: Request, _=_Depends(_require_key)) -> JSONResponse:  # noqa: B008
-    script = SCRIPTS / "federation_export.py"
-    if not script.exists():
-        raise HTTPException(status_code=404, detail="federation_export.py not found")
-    result = subprocess.run(
-        [sys.executable, str(script)],
-        capture_output=True,
-        text=True,
-        cwd=str(REPO_ROOT),
-        timeout=120,
-    )
-    if result.returncode != 0:
-        raise HTTPException(status_code=500, detail=result.stderr[-2000:] or "Export failed")
-    return JSONResponse({"ok": True, "stdout": result.stdout[-2000:]})
+    from scripts import federation_export
+
+    capture = io.StringIO()
+    try:
+        with contextlib.redirect_stdout(capture):
+            code = federation_export.main(
+                [
+                    "--out",
+                    str(EXPORTS / "federation"),
+                    "--outputs",
+                    str(OUTPUTS),
+                ]
+            )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    if code:
+        raise HTTPException(
+            status_code=500,
+            detail=capture.getvalue()[-2000:] or "Export failed",
+        )
+    return JSONResponse({"ok": True, "stdout": capture.getvalue()[-2000:]})
 
 
 @app.post("/ai/query")

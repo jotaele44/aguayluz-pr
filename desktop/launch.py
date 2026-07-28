@@ -1,12 +1,7 @@
-"""Launch the app as a local desktop window.
+"""Launch AguaYLuz through the shared self-contained desktop runtime.
 
-Thin shim: the launcher runtime (uvicorn + native window + single-instance lock
-+ --smoke CI mode) now lives in the shared ``prii_desktop`` package
-(thehub-pr/packages/prii_desktop), consumed as a local path dep so the code is
-edited once for the whole federation. Only ``desktop/config.py`` is per-repo.
-
-Flags (--no-window / --browser / --route PATH / --smoke) are handled by
-``prii_desktop.launch``. See the package for details.
+Only ``desktop/config.py`` is product-specific. Native setup, repair,
+diagnostics, lifecycle, and CI smoke modes live in ``prii_desktop``.
 """
 
 from __future__ import annotations

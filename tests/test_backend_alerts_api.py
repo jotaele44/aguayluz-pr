@@ -225,6 +225,53 @@ def test_system_status_reports_missing_artifacts_without_failing(client):
             assert entry["modified_at"]
 
 
+def test_system_status_labels_setup_selected_storage_without_exposing_it(
+    client, monkeypatch, tmp_path
+):
+    monkeypatch.setattr(backend, "MUTABLE_HOME", tmp_path)
+    monkeypatch.setattr(backend, "OUTPUTS", tmp_path / "outputs")
+    monkeypatch.setattr(backend, "EXPORTS", tmp_path / "exports")
+
+    artifacts = client.get("/system/status").json()["artifacts"]
+
+    assert all(not Path(entry["path"]).is_absolute() for entry in artifacts.values())
+    assert artifacts["hub_export"]["path"] == "application-data/outputs/hub_export.json"
+    assert (
+        artifacts["federation_manifest"]["path"]
+        == "application-data/exports/federation/manifest.json"
+    )
+
+
+def test_run_export_uses_setup_selected_storage_in_process(
+    client, monkeypatch, tmp_path
+):
+    from scripts import federation_export
+
+    outputs = tmp_path / "outputs"
+    exports = tmp_path / "exports"
+    monkeypatch.setattr(backend, "OUTPUTS", outputs)
+    monkeypatch.setattr(backend, "EXPORTS", exports)
+    received = {}
+
+    def fake_main(argv):
+        received["argv"] = argv
+        print("export complete")
+        return 0
+
+    monkeypatch.setattr(federation_export, "main", fake_main)
+
+    response = client.post("/admin/run-export")
+
+    assert response.status_code == 200
+    assert response.json() == {"ok": True, "stdout": "export complete\n"}
+    assert received["argv"] == [
+        "--out",
+        str(exports / "federation"),
+        "--outputs",
+        str(outputs),
+    ]
+
+
 def test_readings_kinds_match_registered_producers(client):
     """A kind with no file yields an empty series; an unregistered kind yields []."""
     assert set(backend.READINGS_FILES) == {"reservoir", "groundwater", "coastal"}

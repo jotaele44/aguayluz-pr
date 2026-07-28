@@ -11,7 +11,12 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 # Window title of the desktop app.
-APP_TITLE = "AguaYLuz — PRII Water & Grid Monitor"
+APP_TITLE = "AguaYLuz"
+APP_ID = "aguayluz"
+APP_ACCENT = "#12E0D6"
+APP_ICON = REPO_ROOT / "assets" / "branding" / "icon-256.png"
+RELEASES_URL = "https://github.com/jotaele44/aguayluz-pr/releases"
+SETUP_VERSION = 1
 
 # Dotted import path of the FastAPI application object.
 APP_IMPORT = "server.backend.main:app"
