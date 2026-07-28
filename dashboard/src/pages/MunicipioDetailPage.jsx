@@ -4,16 +4,14 @@ import { useMunicipioSummary, useAssets, useEventsPaged } from '@/lib/hooks'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { ArrowLeft, AlertTriangle, Database, MapPin } from 'lucide-react'
+import { FederationStatCard } from '@pr-federation/react'
 import { fmtDate } from '@/lib/format'
 
-function StatCard({ label, value, sub, tone = 'text-slate-100' }) {
-  return (
-    <div className="rounded-lg border border-slate-800 bg-slate-900 p-4">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">{label}</p>
-      <p className={`text-2xl font-semibold font-mono ${tone}`}>{value ?? '–'}</p>
-      {sub && <p className="text-[11px] text-slate-500 mt-1 font-mono">{sub}</p>}
-    </div>
-  )
+// Thin wrapper over the shared metric tile so the call sites below keep reading
+// the same. `tone` is now a canonical federation status role rather than a
+// Tailwind class, so the tint is theme-aware and comes from --fd-tone-* tokens.
+function StatCard({ label, value, sub, tone }) {
+  return <FederationStatCard label={label} value={value ?? '–'} sub={sub} tone={tone} />
 }
 
 export default function MunicipioDetailPage() {
@@ -59,12 +57,12 @@ export default function MunicipioDetailPage() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <StatCard label="Total Assets" value={summary?.asset_count ?? assets.length} />
-        <StatCard label="Active Assets" value={activeAssets.length} tone="text-emerald-400"
+        <StatCard label="Active Assets" value={activeAssets.length} tone="success"
           sub={pctActive != null ? `${pctActive}% nominal` : undefined} />
-        <StatCard label="Total Events" value={summary?.event_count ?? totalEvents} tone="text-amber-400" />
+        <StatCard label="Total Events" value={summary?.event_count ?? totalEvents} tone="warning" />
         <StatCard label="Active Outages"
           value={events.filter((e) => e.event_type === 'outage' && !e.end_time).length}
-          tone="text-red-400" />
+          tone="danger" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">

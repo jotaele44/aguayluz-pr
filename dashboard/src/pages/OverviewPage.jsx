@@ -108,25 +108,25 @@ export default function OverviewPage() {
           icon={MapPinned}
           label="Mapped assets"
           value={cov ? `${cov.mapped.toLocaleString()} / ${cov.total.toLocaleString()}` : '–'}
-          valueClass={cov && cov.pct_mapped < 80 ? 'text-amber-300' : 'text-slate-100'}
+          tone={cov && cov.pct_mapped < 80 ? 'warning' : undefined}
         />
         <StatTile
           icon={MapPinOff}
           label="No geometry"
           value={cov ? cov.unmapped.toLocaleString() : '–'}
-          valueClass="text-violet-300"
+          tone="process"
         />
         <StatTile
           icon={Building2}
           label="Municipio joined"
           value={cov ? `${cov.pct_municipio_joined}%` : '–'}
-          valueClass={cov && cov.pct_municipio_joined < 50 ? 'text-amber-300' : 'text-emerald-400'}
+          tone={cov && cov.pct_municipio_joined < 50 ? 'warning' : 'success'}
         />
         <StatTile
           icon={ShieldAlert}
           label="Active alerts"
           value={c.alerts_active ?? '–'}
-          valueClass={c.alerts_critical > 0 ? 'text-red-400' : 'text-slate-100'}
+          tone={c.alerts_critical > 0 ? 'danger' : undefined}
         />
       </div>
       {cov && (
