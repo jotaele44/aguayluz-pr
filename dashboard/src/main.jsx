@@ -7,7 +7,6 @@ import '@fontsource/jetbrains-mono'
 import App from '@/App.jsx'
 import '@/index.css'
 import '@pr-federation/react/styles.css'
-import '@/styles/federation.css'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
 // This app commits to a dark slate/sky design. Stamp the shared federation.css
