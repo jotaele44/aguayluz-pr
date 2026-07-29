@@ -12,6 +12,13 @@ on:
     branches: [main]
     paths:
       - "desktop/**"
+      - "assets/branding/**"
+      - "dashboard/**"
+      - "server/backend/**"
+      - "scripts/federation_export.py"
+      - "src/aguayluz/**"
+      - "schemas/**"
+      - "config/**"
       - "requirements-desktop.txt"
       - ".github/workflows/desktop-build.yml"
 
@@ -59,7 +66,37 @@ jobs:
           # sibling ../thehub-pr (editable path); clone it if absent.
           if [ ! -d ../thehub-pr ]; then git clone --depth 1 --branch "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" https://github.com/jotaele44/thehub-pr.git ../thehub-pr || git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr; fi
           python -m pip install --upgrade pip
-          pip install -r server/backend/requirements.txt -r requirements-desktop.txt pyinstaller
+          pip install -r server/backend/requirements.txt -r requirements-desktop.txt -r ../thehub-pr/tools/requirements-icons.txt pyinstaller pytest httpx
+
+      - name: Verify supplied artwork, AA palette, and fresh-machine setup
+        run: |
+          python ../thehub-pr/tools/build_program_icons.py --repo . --check
+          python ../thehub-pr/tools/validate_desktop_branding.py --repo .
+          python -m pytest ../thehub-pr/packages/prii_desktop/tests -q
+
+      - name: Visual and accessibility smoke for native setup
+        if: runner.os == 'Linux'
+        env:
+          PRII_REPO_SLUG: aguayluz-pr
+          PRII_SETUP_FIXTURE: ${{ github.workspace }}/desktop-ui-artifacts/setup.html
+          PRII_VISUAL_DIR: ${{ github.workspace }}/desktop-ui-artifacts
+        run: |
+          python ../thehub-pr/tools/render_desktop_setup.py \
+            --repo . --output desktop-ui-artifacts/setup.html
+          cd ../thehub-pr/federation-design/test-harness
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+          npx playwright test tests/desktop-setup.spec.js \
+            --project=tablet-768 --project=desktop-1280
+
+      - name: Upload native setup visual evidence
+        if: runner.os == 'Linux' && always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: aguayluz-pr-native-setup-visuals
+          path: desktop-ui-artifacts/*.png
+          if-no-files-found: warn
+          retention-days: 30
 
       - name: Freeze console build (for smoke test)
         env:
