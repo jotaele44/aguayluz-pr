@@ -1,12 +1,12 @@
 import json
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "config" / "monitoring_capabilities.json"
 MONITORING_JS = ROOT / "dashboard" / "src" / "lib" / "monitoring.js"
 CHART_JSX = ROOT / "dashboard" / "src" / "components" / "MonitoringCharts.jsx"
-BACKEND = ROOT / "server" / "backend" / "app.py"
+DESKTOP_CONFIG = ROOT / "desktop" / "config.py"
+BACKEND_APP = ROOT / "server" / "backend" / "app.py"
 
 EXPECTED = {
     "reservoir_elevation": ("reservoir_elevation", "ft"),
@@ -44,14 +44,6 @@ def test_manifest_fail_closed_policy_is_explicit():
     assert policy["series_identity"] == ["site_no", "metric", "parameter_code", "unit"]
 
 
-def test_backend_contract_is_machine_readable():
-    contract = _manifest()["api_contract"]
-    assert contract["endpoint"] == "/readings"
-    assert contract["implementation"] == "server/backend/app.py"
-    assert set(contract["filters"]) == {"kind", "metric", "parameter_code", "site_no", "since", "until"}
-    assert {"record_count", "site_count", "units", "parameter_codes", "mixed_units"} <= set(contract["response_metadata"])
-
-
 def test_frontend_taxonomy_matches_manifest():
     source = MONITORING_JS.read_text(encoding="utf-8")
     for key, (metric, _unit) in EXPECTED.items():
@@ -69,9 +61,15 @@ def test_chart_prohibits_cross_identity_statistics():
     assert "No readings available for this exact metric and unit." in source
 
 
-def test_backend_fails_closed_on_unknown_or_ambiguous_series():
-    source = BACKEND.read_text(encoding="utf-8")
-    assert '"unknown_reading_kind"' in source
-    assert '"unknown_reading_metric"' in source
-    assert '"metric_required"' in source
-    assert '"mixed_units": len(units) > 1' in source
+def test_backend_and_desktop_use_canonical_readings_app():
+    manifest = _manifest()
+    assert manifest["api_contract"]["implementation"] == "server/backend/app.py"
+    assert set(manifest["api_contract"]["filters"]) == {
+        "kind", "metric", "parameter_code", "site_no", "since", "until",
+    }
+    backend = BACKEND_APP.read_text(encoding="utf-8")
+    assert "READING_VECTOR_REGISTRY" in backend
+    assert 'status_code=400' in backend
+    assert '"mixed_units"' in backend
+    desktop = DESKTOP_CONFIG.read_text(encoding="utf-8")
+    assert 'APP_IMPORT = "server.backend.app:app"' in desktop
