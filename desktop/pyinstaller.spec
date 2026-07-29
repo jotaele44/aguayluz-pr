@@ -28,6 +28,11 @@ CONSOLE = os.environ.get("PRII_CONSOLE") == "1"
 datas = [
     (str(REPO_ROOT / "dashboard" / "dist"), "dashboard/dist"),
     (str(REPO_ROOT / "data"), "data"),
+    (str(REPO_ROOT / "scripts"), "scripts"),
+    (str(REPO_ROOT / "src"), "src"),
+    (str(REPO_ROOT / "schemas"), "schemas"),
+    (str(REPO_ROOT / "config"), "config"),
+    (str(BRANDING / "icon-256.png"), "assets/branding"),
 ]
 if (REPO_ROOT / "outputs").exists():
     datas.append((str(REPO_ROOT / "outputs"), "outputs"))
@@ -50,6 +55,12 @@ a = Analysis(
         "prii_desktop.launcher",
         "prii_desktop.appserver",
         "prii_desktop.config",
+        "prii_desktop.setup_center",
+        "desktop.setup_actions",
+        # Loaded by the in-app federation export action from bundled source.
+        "prii_export_utils",
+        "jsonschema",
+        "yaml",
     ],
     noarchive=False,
 )
@@ -77,4 +88,8 @@ if sys.platform == "darwin":
         name=f"{APP_NAME}.app",
         icon=str(BRANDING / "AppIcon.icns"),
         bundle_identifier="pr.prii.aguayluz",
+        info_plist={
+            "CFBundleDisplayName": "AguaYLuz",
+            "CFBundleName": "AguaYLuz",
+        },
     )

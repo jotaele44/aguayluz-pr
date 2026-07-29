@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import sys
 import unicodedata
 from datetime import datetime, timezone
@@ -40,6 +41,10 @@ if _SRC.exists() and str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+_WORKSPACE = os.getenv("AGUAYLUZ_DATA_HOME", "").strip()
+DATA_ROOT = Path(_WORKSPACE) / "data" if _WORKSPACE else REPO_ROOT / "data"
+OUTPUTS_ROOT = Path(_WORKSPACE) / "exports" if _WORKSPACE else REPO_ROOT / "outputs"
+FEDERATION_ROOT = OUTPUTS_ROOT / "federation"
 PRODUCER = "aguayluz-pr"
 CONTRACT_VERSION = "1.0.0"
 PRODUCER_SCRIPT = "scripts/federation_export.py"
@@ -673,30 +678,30 @@ def build_outputs(
     }
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Export AguaYLuz assets/events as PRII canonical streams.")
-    ap.add_argument("--assets", default=str(REPO_ROOT / "data/utility_assets.jsonl"))
-    ap.add_argument("--events", default=str(REPO_ROOT / "data/service_events.jsonl"))
-    ap.add_argument("--incidents", default=str(REPO_ROOT / "data/aee_incidents.jsonl"),
+    ap.add_argument("--assets", default=str(DATA_ROOT / "utility_assets.jsonl"))
+    ap.add_argument("--events", default=str(DATA_ROOT / "service_events.jsonl"))
+    ap.add_argument("--incidents", default=str(DATA_ROOT / "aee_incidents.jsonl"),
                     help="per-municipality outage events (AEE/LUMA model); merged into events")
     ap.add_argument("--readings", nargs="*", default=None,
                     help="monitoring_reading time-series files. Default: data/reservoir_levels.jsonl "
                          "+ every data/*_readings.jsonl (reliability, generation, …) — new sources "
                          "flow in automatically. Concatenated into outputs/monitoring_readings.json")
-    ap.add_argument("--alerts", default=str(REPO_ROOT / "data/alert_events.jsonl"),
+    ap.add_argument("--alerts", default=str(DATA_ROOT / "alert_events.jsonl"),
                     help="operational alert events; projected into the canonical alerts stream")
-    ap.add_argument("--geo", default=str(REPO_ROOT / "data/geo/pr_municipios.json"))
-    ap.add_argument("--crosswalk", default=str(REPO_ROOT / "data/asset_crosswalk.jsonl"),
+    ap.add_argument("--geo", default=str(DATA_ROOT / "geo/pr_municipios.json"))
+    ap.add_argument("--crosswalk", default=str(DATA_ROOT / "asset_crosswalk.jsonl"),
                     help="cross-source dedup clusters; emits member -[duplicate_of]-> canonical edges")
-    ap.add_argument("--dep-edges", default=str(REPO_ROOT / "data/alert_dependency_edges.jsonl"),
+    ap.add_argument("--dep-edges", default=str(DATA_ROOT / "alert_dependency_edges.jsonl"),
                     help="alert dependency edges; `energizes` edges emit water -[energized_by]-> power relationships")
-    ap.add_argument("--out", default=str(REPO_ROOT / "exports/federation"))
-    ap.add_argument("--outputs", default=str(REPO_ROOT / "outputs"),
+    ap.add_argument("--out", default=str(FEDERATION_ROOT))
+    ap.add_argument("--outputs", default=str(OUTPUTS_ROOT),
                     help="operator-facing snapshot directory (7-file deliverable). Pass empty string to skip.")
     ap.add_argument("--no-outputs", action="store_true",
                     help="skip the outputs/* deliverable; emit canonical streams only")
     ap.add_argument("--mode", default="test", choices=["test", "production"])
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
 
     raw_events = _load_jsonl(Path(args.events))
     raw_incidents = _load_jsonl(Path(args.incidents))
@@ -718,11 +723,11 @@ def main() -> int:
     if not args.no_outputs and args.outputs:
         reading_paths = args.readings if args.readings is not None else (
             [
-                str(REPO_ROOT / "data/reservoir_levels.jsonl"),
-                str(REPO_ROOT / "data/groundwater_levels.jsonl"),
-                str(REPO_ROOT / "data/coastal_levels.jsonl"),
+                str(DATA_ROOT / "reservoir_levels.jsonl"),
+                str(DATA_ROOT / "groundwater_levels.jsonl"),
+                str(DATA_ROOT / "coastal_levels.jsonl"),
             ]
-            + sorted(str(p) for p in (REPO_ROOT / "data").glob("*_readings.jsonl"))
+            + sorted(str(p) for p in DATA_ROOT.glob("*_readings.jsonl"))
         )
         readings = [r for p in reading_paths for r in _load_jsonl(Path(p))]
         aggregates = _compute_aggregates(assets, events)
