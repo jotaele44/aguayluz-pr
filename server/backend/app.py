@@ -1,8 +1,8 @@
 """Canonical AguaYLuz ASGI application.
 
-Imports the legacy backend intact, then replaces only ``GET /readings`` with a
-metric-safe contract.  Keeping the override isolated avoids a high-risk rewrite of
-unrelated operator, alert, export, and notification routes.
+Copies the established backend's routes and middleware without mutating it, omits
+only the legacy ``GET /readings`` route, and installs the metric-safe contract.
+This keeps unrelated backend tests and direct legacy imports deterministic.
 """
 from __future__ import annotations
 
@@ -11,12 +11,22 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from fastapi import HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import JSONResponse
 
 from server.backend import main as legacy
 
-app = legacy.app
+
+def _is_legacy_readings(route: Any) -> bool:
+    return getattr(route, "path", None) == "/readings" and "GET" in getattr(route, "methods", set())
+
+
+app = FastAPI(title=legacy.app.title)
+app.router.routes.extend(route for route in legacy.app.router.routes if not _is_legacy_readings(route))
+app.exception_handlers.update(legacy.app.exception_handlers)
+app.dependency_overrides.update(legacy.app.dependency_overrides)
+for middleware in reversed(legacy.app.user_middleware):
+    app.add_middleware(middleware.cls, *middleware.args, **middleware.kwargs)
 
 READING_VECTOR_REGISTRY: dict[str, dict[str, Any]] = {
     "reservoir": {
@@ -48,17 +58,6 @@ def _reading_dt(row: dict[str, Any]) -> datetime | None:
     )
 
 
-def _remove_legacy_readings_route() -> None:
-    app.router.routes[:] = [
-        route
-        for route in app.router.routes
-        if not (getattr(route, "path", None) == "/readings" and "GET" in getattr(route, "methods", set()))
-    ]
-
-
-_remove_legacy_readings_route()
-
-
 @app.get("/readings")
 def readings(
     kind: str = Query(default="reservoir"),
@@ -68,12 +67,7 @@ def readings(
     since: str | None = Query(default=None),
     until: str | None = Query(default=None),
 ) -> JSONResponse:
-    """Return one analytically coherent monitoring series plus response metadata.
-
-    Unknown kinds/metrics fail with HTTP 400.  The multi-metric reservoir corpus
-    requires an explicit metric so feet, percent, and discharge can never be
-    returned as one implicit series.
-    """
+    """Return one analytically coherent monitoring series plus response metadata."""
     vector = READING_VECTOR_REGISTRY.get(kind)
     if vector is None:
         raise HTTPException(
@@ -123,9 +117,20 @@ def readings(
             bounded.append(row)
         rows = bounded
 
-    rows = sorted(rows, key=lambda row: (str(row.get("site_no") or ""), str(row.get("observed_date") or ""), str(row.get("parameter_code") or "")))
+    rows = sorted(
+        rows,
+        key=lambda row: (
+            str(row.get("site_no") or ""),
+            str(row.get("observed_date") or ""),
+            str(row.get("parameter_code") or ""),
+        ),
+    )
     units = sorted({str(row.get("unit")) for row in rows if row.get("unit") not in (None, "")})
-    parameter_codes = sorted({str(row.get("parameter_code")) for row in rows if row.get("parameter_code") not in (None, "")})
+    parameter_codes = sorted({
+        str(row.get("parameter_code"))
+        for row in rows
+        if row.get("parameter_code") not in (None, "")
+    })
     sites = Counter(str(row.get("site_no") or "unknown") for row in rows)
 
     return JSONResponse({
