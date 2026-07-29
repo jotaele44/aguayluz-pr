@@ -30,9 +30,9 @@ Pure functions only (no I/O, no wall-clock). Real T1 NEON metadata in, real aler
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
-from ..alerts import AlertEvent
+from ..alerts import AlertEvent, CoordConfidence, ModuleId
 from ..impact import (
     MODULE_RADIUS_KM,
     AssetIndex,
@@ -120,20 +120,29 @@ def neon_alert(
 
     spec = _CHANGE_SPEC[change_type]
     habitat = str(record.get("habitat") or "aquatic")
-    module = (
+    # Both branches yield a value from the alert_event module enum; the mapping tables
+    # are typed as plain str, so narrow here rather than leaking `str` into AlertEvent.
+    module: ModuleId = cast(
+        "ModuleId",
         FEED_HEALTH_MODULE
         if change_type == "publication_gap"
-        else alert_module_for(product_code, habitat)
+        else alert_module_for(product_code, habitat),
     )
 
     lat_raw, lon_raw = record.get("lat"), record.get("lon")
-    if in_alert_bounds(lat_raw, lon_raw):
-        lat: float | None = round(float(lat_raw), 6)
-        lon: float | None = round(float(lon_raw), 6)
+    lat: float | None = None
+    lon: float | None = None
+    coord_confidence: CoordConfidence = "unknown"
+    # isinstance first: change records come from JSON, so a missing coordinate is None
+    # and in_alert_bounds alone does not narrow the type for the float() calls.
+    if (
+        isinstance(lat_raw, (int, float))
+        and isinstance(lon_raw, (int, float))
+        and in_alert_bounds(lat_raw, lon_raw)
+    ):
+        lat = round(float(lat_raw), 6)
+        lon = round(float(lon_raw), 6)
         coord_confidence = "exact"
-    else:
-        lat, lon = None, None
-        coord_confidence = "unknown"
 
     muni = _SITE_MUNICIPALITY.get(site)
     munis = [muni] if muni else ["(unscoped)"]
