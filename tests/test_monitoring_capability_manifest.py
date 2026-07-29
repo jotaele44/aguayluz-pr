@@ -6,6 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "config" / "monitoring_capabilities.json"
 MONITORING_JS = ROOT / "dashboard" / "src" / "lib" / "monitoring.js"
 CHART_JSX = ROOT / "dashboard" / "src" / "components" / "MonitoringCharts.jsx"
+BACKEND = ROOT / "server" / "backend" / "app.py"
 
 EXPECTED = {
     "reservoir_elevation": ("reservoir_elevation", "ft"),
@@ -37,7 +38,18 @@ def test_manifest_fail_closed_policy_is_explicit():
     assert policy["mixed_metric_charts"] == "prohibited"
     assert policy["mixed_unit_statistics"] == "prohibited"
     assert policy["unknown_series"] == "reject"
+    assert policy["unknown_kind"] == "http_400"
+    assert policy["unknown_metric"] == "http_400"
+    assert policy["multi_metric_kind_requires_metric"] is True
     assert policy["series_identity"] == ["site_no", "metric", "parameter_code", "unit"]
+
+
+def test_backend_contract_is_machine_readable():
+    contract = _manifest()["api_contract"]
+    assert contract["endpoint"] == "/readings"
+    assert contract["implementation"] == "server/backend/app.py"
+    assert set(contract["filters"]) == {"kind", "metric", "parameter_code", "site_no", "since", "until"}
+    assert {"record_count", "site_count", "units", "parameter_codes", "mixed_units"} <= set(contract["response_metadata"])
 
 
 def test_frontend_taxonomy_matches_manifest():
@@ -55,3 +67,11 @@ def test_chart_prohibits_cross_identity_statistics():
     assert "seriesIdentity" in source
     assert "if (mixedIdentity || chart.length < 5)" in source
     assert "No readings available for this exact metric and unit." in source
+
+
+def test_backend_fails_closed_on_unknown_or_ambiguous_series():
+    source = BACKEND.read_text(encoding="utf-8")
+    assert '"unknown_reading_kind"' in source
+    assert '"unknown_reading_metric"' in source
+    assert '"metric_required"' in source
+    assert '"mixed_units": len(units) > 1' in source
