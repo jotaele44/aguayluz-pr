@@ -161,6 +161,48 @@ Real materializations of the corpus from the keyless public federal APIs. Each r
 is what the producer **actually fetched** on the stated date (no fabricated data);
 counts are post-merge file totals where noted.
 
+### 2026-07-29 — new vector: NEON Domain D04 (Puerto Rico)
+
+Added `scripts/ingest_neon.py` (keyless) and `scripts/ingest_neon_products.py`
+(token-gated), plus the `aguayluz.neon` client package, and ran the keyless half live
+against the NSF NEON API v0. NEON's four Puerto Rico sites are the producer's first
+research-grade stream-chemistry vector, independent of USGS NWIS.
+
+| Source | Host | Result | Rows |
+|--------|------|--------|------|
+| NEON D04 sites → `utility_assets` | `data.neonscience.org` | OK (anonymous) | **4** assets (CUPE/GUAN/GUIL/LAJA), municipalities resolved by point-in-polygon |
+| NEON availability → `neon_availability` | `data.neonscience.org` | OK (anonymous) | **328** site × product rows, 14 of them ingestible against the closed `metric` enum |
+| NEON products → `neon_readings` | `data.neonscience.org` | **BLOCKED — 403** | 0; `/api/v0/data/` is token-gated |
+
+The `availableMonths[]` array on `/sites/{code}` is the whole publication-change signal,
+so new releases, new products and corrected historical months are detected with nothing
+downloaded and no credential. `data/neon_availability.jsonl` and
+`data/neon_publication_events.jsonl` are **committed** (unlike the `*_levels` /
+`*_readings` time-series files) because the snapshot *is* the previous state the delta
+is computed against; a bootstrap run with no prior state deliberately emits zero changes
+rather than 328 spurious `new_product` events.
+
+Publication events promote to alerts via `src/aguayluz/alert_promotion/neon.py`
+(marker `_neonpub_`), routed onto existing modules by what the product measures. A
+publication gap on a continuous-sensor product activates the previously dormant
+`TELECOM_SCADA` module — the same "enabled by relevance once a real feed backs it"
+mechanism that activated `SEISMIC_GEO`. No NEON alert reaches the severity-4 push
+threshold.
+
+**Not verified:** `/api/v0/data/{product}/{site}/{month}` returns HTTP 403 `Access
+Denied` to anonymous callers (NEON's own gateway — sibling paths on the same host
+answer 200), and no `NEON_API_TOKEN` was available, so the download + CSV-parse path
+has never seen a real response. Its fixtures are labelled **SYNTHETIC** in-file and the
+gating is recorded in `federation.json#waf_blocked_sources`. Offline tests
+(`tests/test_neon_client.py`, `test_neon_health.py`, `test_ingest_neon.py`,
+`test_ingest_neon_products.py`, `test_alert_promotion_neon.py` — 80 tests) cover the
+403 split, retry, secret hygiene, every change type, schema conformance and merge
+idempotency — no network.
+
+Deferred: precipitation, soil moisture/temperature and evapotranspiration products are
+tracked for availability but need new `metric` enum values before they can be stored.
+See `docs/NEON_INTEGRATION.md`.
+
 ### 2026-07-18 — new vector: USGS PR-region earthquakes
 
 Added `scripts/ingest_usgs_quakes.py` (keyless USGS FDSN event service) and ran it
