@@ -103,8 +103,14 @@ jobs:
       - name: Import-check geo boundary builder
         run: python scripts/build_pr_geo_boundaries.py --help
 
+  # The dashboard has had a `lint` script and an eslint config all along, but
+  # nothing ran them, so a lint regression could merge unnoticed. Lint now gates
+  # alongside the build, matching skywatcher-pr and thehub-pr.
   dashboard-build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dashboard
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -114,10 +120,10 @@ jobs:
           cache-dependency-path: dashboard/package-lock.json
       - name: Install
         run: npm ci
-        working-directory: dashboard
+      - name: Lint
+        run: npm run lint
       - name: Build
         run: npm run build
-        working-directory: dashboard
 
   live-smoke:
     if: github.event_name == 'workflow_dispatch'
