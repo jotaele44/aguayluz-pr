@@ -48,6 +48,7 @@ a = Analysis(
         "uvicorn.protocols.websockets.auto",
         "uvicorn.lifespan.on",
         "desktop.app_server",
+        "server.backend.app",
         "server.backend.main",
         # Shared desktop-wrapper runtime (thehub-pr/packages/prii_desktop),
         # imported by the desktop/ shims — bundle it into the frozen build.
