@@ -11,9 +11,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 pytest.importorskip("fastapi")
 pytest.importorskip("httpx")
 
-from starlette.testclient import TestClient  # noqa: E402
-
 import server.backend.app as backend  # noqa: E402
+from starlette.testclient import TestClient  # noqa: E402
 
 ROWS = [
     {"site_no": "R1", "metric": "reservoir_elevation", "parameter_code": "62615", "unit": "ft", "value": 40.0, "observed_date": "2026-01-01"},
