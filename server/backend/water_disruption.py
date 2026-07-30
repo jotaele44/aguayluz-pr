@@ -20,6 +20,7 @@ ALLOWED_TRANSITIONS: dict[str, set[str]] = {
     "retracted": set(),
     "cancelled": set(),
 }
+TRUTH_STRENGTH = {"unverified": 1, "corroborated": 2, "confirmed": 3}
 
 
 def canonical_json(value: Any) -> str:
@@ -82,7 +83,7 @@ class WaterIncidentService:
         existing = self.store.latest("intake_receipts", "candidate_id", candidate_id)
         if existing and existing["envelope_hash"] != envelope_hash:
             raise ValueError("candidate_payload_changed")
-        receipt = {
+        return self.store.append("intake_receipts", {
             "receipt_id": stable_id("WDR", {"candidate_id": candidate_id, "envelope_hash": envelope_hash}),
             "candidate_id": candidate_id,
             "idempotency_key": idempotency_key,
@@ -91,20 +92,10 @@ class WaterIncidentService:
             "queue_state": "validation_pending",
             "replayed": False,
             "shadow_mode": True,
-        }
-        return self.store.append("intake_receipts", receipt)
+        })
 
     @staticmethod
-    def validation_policy(
-        candidate: dict[str, Any],
-        *,
-        authoritative_scope_match: bool = False,
-        independent_source_count: int = 0,
-        reviewer_approved: bool = False,
-        public_infrastructure: bool = True,
-        location_resolved: bool = True,
-        stale: bool = False,
-    ) -> dict[str, Any]:
+    def validation_policy(candidate: dict[str, Any], *, authoritative_scope_match: bool = False, independent_source_count: int = 0, reviewer_approved: bool = False, public_infrastructure: bool = True, location_resolved: bool = True, stale: bool = False) -> dict[str, Any]:
         blockers = []
         if not public_infrastructure:
             blockers.append("not_public_infrastructure")
@@ -112,9 +103,7 @@ class WaterIncidentService:
             blockers.append("location_unresolved")
         if stale:
             blockers.append("stale_report")
-        confirmed = not blockers and (
-            authoritative_scope_match or (independent_source_count >= 2 and reviewer_approved)
-        )
+        confirmed = not blockers and (authoritative_scope_match or (independent_source_count >= 2 and reviewer_approved))
         if confirmed:
             decision = "confirmed"
         elif blockers:
@@ -134,61 +123,99 @@ class WaterIncidentService:
 
     def validate(self, candidate: dict[str, Any], decision: dict[str, Any], reviewer: str, idempotency_key: str) -> dict[str, Any]:
         candidate_id = candidate["candidate_id"]
+        validation_hash = digest({"candidate": candidate, "decision": decision, "reviewer": reviewer})
         prior = self.store.latest("validation_events", "idempotency_key", idempotency_key)
         if prior:
+            if prior.get("validation_hash") != validation_hash:
+                raise ValueError("validation_idempotency_conflict")
             return prior
         event = {
             "validation_id": stable_id("WDV", {"candidate_id": candidate_id, "idempotency_key": idempotency_key}),
             "candidate_id": candidate_id,
             "idempotency_key": idempotency_key,
+            "validation_hash": validation_hash,
             "reviewer": reviewer,
             **decision,
         }
         persisted = self.store.append("validation_events", event)
-        if decision["decision"] in {"confirmed", "corroborated", "unverified"}:
-            self.resolve_incident(candidate, decision)
+        if decision["decision"] in TRUTH_STRENGTH:
+            self.resolve_incident(candidate, decision, persisted["validation_id"])
         return persisted
 
-    def resolve_incident(self, candidate: dict[str, Any], decision: dict[str, Any]) -> dict[str, Any]:
+    def resolve_incident(self, candidate: dict[str, Any], decision: dict[str, Any], validation_id: str | None = None) -> dict[str, Any]:
         incident_id = stable_id("WDI", candidate["dedup_key"])
         existing = self.store.latest("incidents", "incident_id", incident_id)
-        if existing:
+        if not existing:
+            truth_state = decision["decision"]
+            lifecycle_state = "confirmed" if truth_state == "confirmed" else "reported"
+            existing = self.store.append("incidents", {
+                "schema_version": "aguayluz.water-incident/v0.1",
+                "incident_id": incident_id,
+                "dedup_key": candidate["dedup_key"],
+                "event_type": candidate["event_type"],
+                "municipalities": candidate.get("municipalities", []),
+                "asset_hint": candidate.get("asset_hint"),
+                "truth_state": truth_state,
+                "lifecycle_state": lifecycle_state,
+                "candidate_ids": [candidate["candidate_id"]],
+                "evidence_ids": list(candidate["evidence_ids"]),
+                "shadow_mode": True,
+                "notifications_enabled": False,
+                "production_export_eligible": False,
+            })
+            self.store.append("incident_truth_events", {
+                "truth_event_id": stable_id("WDT", {"incident_id": incident_id, "truth_state": truth_state, "validation_id": validation_id}),
+                "incident_id": incident_id,
+                "from_truth_state": None,
+                "to_truth_state": truth_state,
+                "validation_id": validation_id,
+                "reason": "incident_created",
+            })
+            self.store.append("lifecycle_events", {"incident_id": incident_id, "from_state": None, "to_state": lifecycle_state, "reason": "incident_created"})
             return existing
-        truth_state = decision["decision"]
-        lifecycle_state = "confirmed" if truth_state == "confirmed" else "reported"
-        incident = {
-            "schema_version": "aguayluz.water-incident/v0.1",
-            "incident_id": incident_id,
-            "dedup_key": candidate["dedup_key"],
-            "event_type": candidate["event_type"],
-            "municipalities": candidate.get("municipalities", []),
-            "asset_hint": candidate.get("asset_hint"),
-            "truth_state": truth_state,
-            "lifecycle_state": lifecycle_state,
-            "candidate_ids": [candidate["candidate_id"]],
-            "evidence_ids": list(candidate["evidence_ids"]),
-            "shadow_mode": True,
-            "notifications_enabled": False,
-            "production_export_eligible": False,
-        }
-        persisted = self.store.append("incidents", incident)
-        self.store.append("lifecycle_events", {
-            "incident_id": incident_id,
-            "from_state": None,
-            "to_state": lifecycle_state,
-            "reason": "incident_created",
+        self._reconcile_truth(existing, decision["decision"], validation_id)
+        return self.current_incident(incident_id)
+
+    def _reconcile_truth(self, incident: dict[str, Any], proposed: str, validation_id: str | None) -> None:
+        current = self.current_incident(incident["incident_id"])
+        current_truth = current["truth_state"]
+        if TRUTH_STRENGTH[proposed] <= TRUTH_STRENGTH[current_truth]:
+            return
+        event_key = {"incident_id": incident["incident_id"], "to": proposed, "validation_id": validation_id}
+        event_id = stable_id("WDT", event_key)
+        if self.store.latest("incident_truth_events", "truth_event_id", event_id):
+            return
+        self.store.append("incident_truth_events", {
+            "truth_event_id": event_id,
+            "incident_id": incident["incident_id"],
+            "from_truth_state": current_truth,
+            "to_truth_state": proposed,
+            "validation_id": validation_id,
+            "reason": "stronger_validation",
         })
-        return persisted
+        if proposed == "confirmed" and current["lifecycle_state"] in {"reported", "acknowledged", "disputed"}:
+            self.store.append("lifecycle_events", {
+                "event_id": stable_id("WDL", {"incident_id": incident["incident_id"], "validation_id": validation_id, "to": "confirmed"}),
+                "incident_id": incident["incident_id"],
+                "from_state": current["lifecycle_state"],
+                "to_state": "confirmed",
+                "reason": "validation_promotion",
+                "validation_id": validation_id,
+            })
 
     def current_incident(self, incident_id: str) -> dict[str, Any]:
         base = self.store.latest("incidents", "incident_id", incident_id)
         if not base:
             raise KeyError(incident_id)
-        events = [row for row in self.store.read("lifecycle_events") if row["incident_id"] == incident_id]
         current = dict(base)
-        if events:
-            current["lifecycle_state"] = events[-1]["to_state"]
-        current["lifecycle_events"] = events
+        truth_events = [row for row in self.store.read("incident_truth_events") if row["incident_id"] == incident_id]
+        lifecycle_events = [row for row in self.store.read("lifecycle_events") if row["incident_id"] == incident_id]
+        if truth_events:
+            current["truth_state"] = truth_events[-1]["to_truth_state"]
+        if lifecycle_events:
+            current["lifecycle_state"] = lifecycle_events[-1]["to_state"]
+        current["truth_events"] = truth_events
+        current["lifecycle_events"] = lifecycle_events
         return current
 
     def transition(self, incident_id: str, to_state: str, reason: str, idempotency_key: str) -> dict[str, Any]:
@@ -198,15 +225,14 @@ class WaterIncidentService:
         current = self.current_incident(incident_id)["lifecycle_state"]
         if to_state not in ALLOWED_TRANSITIONS.get(current, set()):
             raise ValueError(f"invalid_transition:{current}:{to_state}")
-        event = {
+        return self.store.append("lifecycle_events", {
             "event_id": stable_id("WDL", {"incident_id": incident_id, "idempotency_key": idempotency_key}),
             "incident_id": incident_id,
             "idempotency_key": idempotency_key,
             "from_state": current,
             "to_state": to_state,
             "reason": reason,
-        }
-        return self.store.append("lifecycle_events", event)
+        })
 
     def merge(self, target_id: str, source_ids: list[str], reason: str, idempotency_key: str) -> dict[str, Any]:
         prior = self.store.latest("merge_split_events", "idempotency_key", idempotency_key)
@@ -214,14 +240,7 @@ class WaterIncidentService:
             return prior
         for incident_id in [target_id, *source_ids]:
             self.current_incident(incident_id)
-        return self.store.append("merge_split_events", {
-            "operation_id": stable_id("WDM", {"target": target_id, "sources": sorted(source_ids), "key": idempotency_key}),
-            "operation": "merge",
-            "target_incident_id": target_id,
-            "source_incident_ids": sorted(source_ids),
-            "reason": reason,
-            "idempotency_key": idempotency_key,
-        })
+        return self.store.append("merge_split_events", {"operation_id": stable_id("WDM", {"target": target_id, "sources": sorted(source_ids), "key": idempotency_key}), "operation": "merge", "target_incident_id": target_id, "source_incident_ids": sorted(source_ids), "reason": reason, "idempotency_key": idempotency_key})
 
     def split(self, source_id: str, child_dedup_keys: list[str], reason: str, idempotency_key: str) -> dict[str, Any]:
         self.current_incident(source_id)
@@ -229,31 +248,24 @@ class WaterIncidentService:
         if prior:
             return prior
         child_ids = [stable_id("WDI", key) for key in sorted(child_dedup_keys)]
-        return self.store.append("merge_split_events", {
-            "operation_id": stable_id("WDS", {"source": source_id, "children": child_ids, "key": idempotency_key}),
-            "operation": "split",
-            "source_incident_id": source_id,
-            "child_incident_ids": child_ids,
-            "reason": reason,
-            "idempotency_key": idempotency_key,
-        })
+        return self.store.append("merge_split_events", {"operation_id": stable_id("WDS", {"source": source_id, "children": child_ids, "key": idempotency_key}), "operation": "split", "source_incident_id": source_id, "child_incident_ids": child_ids, "reason": reason, "idempotency_key": idempotency_key})
 
     def retract(self, candidate_id: str, reason: str, idempotency_key: str) -> dict[str, Any]:
         prior = self.store.latest("retraction_events", "idempotency_key", idempotency_key)
         if prior:
             return prior
         affected = [row["incident_id"] for row in self.store.read("incidents") if candidate_id in row.get("candidate_ids", [])]
-        event = self.store.append("retraction_events", {
-            "retraction_id": stable_id("WDRT", {"candidate_id": candidate_id, "key": idempotency_key}),
-            "candidate_id": candidate_id,
-            "affected_incident_ids": affected,
-            "reason": reason,
-            "idempotency_key": idempotency_key,
-            "destructive": False,
-            "correction_notifications_queued": False,
-        })
+        event = self.store.append("retraction_events", {"retraction_id": stable_id("WDRT", {"candidate_id": candidate_id, "key": idempotency_key}), "candidate_id": candidate_id, "affected_incident_ids": affected, "reason": reason, "idempotency_key": idempotency_key, "destructive": False, "correction_notifications_queued": False})
         for incident_id in affected:
-            current = self.current_incident(incident_id)["lifecycle_state"]
-            if "retracted" in ALLOWED_TRANSITIONS.get(current, set()):
+            current = self.current_incident(incident_id)
+            self.store.append("incident_truth_events", {
+                "truth_event_id": stable_id("WDT", {"incident_id": incident_id, "to": "retracted", "key": idempotency_key}),
+                "incident_id": incident_id,
+                "from_truth_state": current["truth_state"],
+                "to_truth_state": "retracted",
+                "retraction_id": event["retraction_id"],
+                "reason": reason,
+            })
+            if "retracted" in ALLOWED_TRANSITIONS.get(current["lifecycle_state"], set()):
                 self.transition(incident_id, "retracted", reason, f"{idempotency_key}:{incident_id}")
         return event
