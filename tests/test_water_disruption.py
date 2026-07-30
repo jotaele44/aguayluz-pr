@@ -1,5 +1,4 @@
 import pytest
-
 from server.backend.water_disruption import WaterIncidentService
 
 
