@@ -35,7 +35,12 @@
     "navigation_files": [
       "dashboard/src/components/layout/Sidebar.jsx"
     ],
-    "implicit_routes": [],
+    "implicit_routes": [
+      {
+        "path": "/water-disruption/console",
+        "file": "server/backend/water_disruption_api.py"
+      }
+    ],
     "exclude": [
       "**/tests/**",
       "**/*.test.*",
@@ -174,14 +179,38 @@
       "requires_terminal": false,
       "backend": {
         "files": [
-          "server/backend/main.py"
+          "server/backend/main.py",
+          "server/backend/app.py",
+          "server/backend/monitoring_alert_operations.py",
+          "server/backend/monitoring_quality.py"
         ],
         "endpoints": [
           "GET /readings",
           "GET /summary",
           "GET /summary/sectors",
           "GET /summary/coverage",
-          "GET /system/status"
+          "GET /system/status",
+          "GET /monitoring/health",
+          "GET /monitoring/alerts",
+          "GET /monitoring/alert-operations",
+          "GET /export/monitoring.json",
+          "GET /export/federation/monitoring-alerts.json"
+        ],
+        "symbols": [
+          "server/backend/app.py:readings",
+          "server/backend/app.py:monitoring_health",
+          "server/backend/app.py:monitoring_alerts",
+          "server/backend/app.py:monitoring_alert_operations",
+          "server/backend/app.py:export_monitoring",
+          "server/backend/app.py:export_federation_monitoring_alerts",
+          "server/backend/monitoring_alert_operations.py:load_site_thresholds",
+          "server/backend/monitoring_alert_operations.py:resolve_threshold",
+          "server/backend/monitoring_alert_operations.py:threshold_tripped",
+          "server/backend/monitoring_alert_operations.py:lifecycle_alerts",
+          "server/backend/monitoring_alert_operations.py:federation_alert_export",
+          "server/backend/monitoring_quality.py:observation_time",
+          "server/backend/monitoring_quality.py:series_quality",
+          "server/backend/monitoring_quality.py:native_alerts"
         ]
       },
       "frontend": {
@@ -303,6 +332,106 @@
         ],
         "e2e": [
           "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "water-disruption-shadow-consumer",
+      "classification": "operator",
+      "status": "active",
+      "requires_terminal": false,
+      "backend": {
+        "files": [
+          "server/backend/generated/water_disruption_client.py",
+          "server/backend/water_disruption.py",
+          "server/backend/water_disruption_api.py"
+        ],
+        "endpoints": [
+          "GET /console",
+          "POST /intake",
+          "GET /intake/{candidate_id}",
+          "GET /validation-queue",
+          "POST /validation/{candidate_id}",
+          "GET /incidents",
+          "GET /incidents/{incident_id}",
+          "POST /incidents/{incident_id}/transition",
+          "POST /incidents/{incident_id}/merge",
+          "POST /incidents/{incident_id}/split",
+          "POST /retractions"
+        ],
+        "symbols": [
+          "server/backend/generated/water_disruption_client.py:WaterIncidentClient",
+          "server/backend/water_disruption.py:AppendOnlyJsonl",
+          "server/backend/water_disruption.py:WaterIncidentService",
+          "server/backend/water_disruption.py:canonical_json",
+          "server/backend/water_disruption.py:digest",
+          "server/backend/water_disruption.py:stable_id",
+          "server/backend/water_disruption_api.py:ValidationRequest",
+          "server/backend/water_disruption_api.py:TransitionRequest",
+          "server/backend/water_disruption_api.py:RetractionRequest",
+          "server/backend/water_disruption_api.py:MergeRequest",
+          "server/backend/water_disruption_api.py:SplitRequest",
+          "server/backend/water_disruption_api.py:console",
+          "server/backend/water_disruption_api.py:intake",
+          "server/backend/water_disruption_api.py:intake_status",
+          "server/backend/water_disruption_api.py:validation_queue",
+          "server/backend/water_disruption_api.py:validate",
+          "server/backend/water_disruption_api.py:incidents",
+          "server/backend/water_disruption_api.py:incident",
+          "server/backend/water_disruption_api.py:transition",
+          "server/backend/water_disruption_api.py:merge",
+          "server/backend/water_disruption_api.py:split",
+          "server/backend/water_disruption_api.py:retract"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/water-disruption",
+          "/water-disruption/console"
+        ],
+        "e2e_routes": [
+          "/water-disruption"
+        ],
+        "components": [
+          "dashboard/src/components/layout/Sidebar.jsx",
+          "dashboard/src/pages/WaterDisruption.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_water_disruption.py",
+          "tests/test_water_disruption_api.py"
+        ],
+        "contract": [
+          "tests/test_gui_parity.py"
+        ],
+        "e2e": [
+          "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "water-disruption-shadow-certification",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Fail-closed certification is a CI and release-integrity control; operators use the discoverable shadow console rather than invoking the script directly.",
+      "analysis": {
+        "files": [
+          "scripts/certify_water_disruption_shadow.py"
+        ],
+        "symbols": [
+          "scripts/certify_water_disruption_shadow.py:main",
+          "scripts/certify_water_disruption_shadow.py:require"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_water_disruption.py",
+          "tests/test_water_disruption_api.py"
         ]
       }
     },
