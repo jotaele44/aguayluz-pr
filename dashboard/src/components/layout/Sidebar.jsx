@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, Map, Database, Zap, Activity, ClipboardList,
-  BarChart3, ScrollText, ShieldAlert, SlidersHorizontal,
+  BarChart3, ScrollText, ShieldAlert, SlidersHorizontal, Droplets,
   ChevronLeft, ChevronRight, X,
 } from 'lucide-react'
 import { useSidebar } from '@/contexts/SidebarContext'
@@ -15,6 +15,7 @@ const NAV = [
   { to: '/assets', icon: Database, label: 'Assets' },
   { to: '/alerts', icon: ShieldAlert, label: 'Alerts' },
   { to: '/outages', icon: Zap, label: 'Outages' },
+  { to: '/water-disruption', icon: Droplets, label: 'Water Validation' },
   { to: '/monitoring', icon: Activity, label: 'Monitoring' },
   { to: '/review', icon: ClipboardList, label: 'Review Queue' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
