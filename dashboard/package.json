@@ -9,6 +9,7 @@
     "build:export": "VITE_OFFLINE=1 vite build",
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
+    "test:gui-parity": "playwright test -c gui-parity.playwright.config.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -39,6 +40,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",
+    "@playwright/test": "1.56.1",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
     "@vitejs/plugin-react": "^4.3.4",
