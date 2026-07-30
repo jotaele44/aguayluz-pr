@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Header, HTTPException
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
 from server.backend.water_disruption import WaterIncidentService
@@ -45,10 +46,18 @@ class SplitRequest(BaseModel):
     reason: str
 
 
+@router.get("/console", response_class=HTMLResponse)
+def console() -> str:
+    return """<!doctype html><html><head><meta charset='utf-8'><title>Agua y Luz Water Incidents</title><style>body{font-family:system-ui;margin:2rem;max-width:1100px}nav a{margin-right:1rem}.badge{padding:.2rem .5rem;border:1px solid #999;border-radius:99px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}.card{border:1px solid #ccc;border-radius:.6rem;padding:1rem}</style></head><body><h1>Water Incident Validation</h1><p><span class='badge'>Shadow mode</span> Notifications and production exports are disabled.</p><nav><a href='/water-disruption/validation-queue'>Validation queue</a><a href='/water-disruption/incidents'>Incidents</a></nav><div class='grid'><section class='card'><h2>Evidence view</h2><p>Each intake receipt preserves candidate ID, envelope hash, provenance, schema decision, and replay state.</p></section><section class='card'><h2>Map view</h2><p>Municipality and asset hints are shown when present. Missing or approximate geometry remains unresolved; the application does not fabricate coordinates.</p></section></div></body></html>"""
+
+
 @router.post("/intake")
-def intake(envelope: dict[str, Any], idempotency_key: str = Header(alias="Idempotency-Key")) -> dict[str, Any]:
+def intake(envelope: dict[str, Any], idempotency_key: str = Header(alias="Idempotency-Key"), shadow_mode: str = Header(default="true", alias="X-Shadow-Mode")) -> dict[str, Any]:
+    if shadow_mode.lower() != "true":
+        raise HTTPException(status_code=409, detail="shadow_mode_required")
     try:
-        return service.intake(envelope, idempotency_key)
+        result = service.intake(envelope, idempotency_key)
+        return {**result, "shadow_mode": True, "notifications_enabled": False, "production_promotion_enabled": False}
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
@@ -73,15 +82,7 @@ def validation_queue() -> dict[str, Any]:
 def validate(candidate_id: str, request: ValidationRequest, idempotency_key: str = Header(alias="Idempotency-Key")) -> dict[str, Any]:
     if request.candidate.get("candidate_id") != candidate_id:
         raise HTTPException(status_code=422, detail="candidate_id_mismatch")
-    decision = service.validation_policy(
-        request.candidate,
-        authoritative_scope_match=request.authoritative_scope_match,
-        independent_source_count=request.independent_source_count,
-        reviewer_approved=request.reviewer_approved,
-        public_infrastructure=request.public_infrastructure,
-        location_resolved=request.location_resolved,
-        stale=request.stale,
-    )
+    decision = service.validation_policy(request.candidate, authoritative_scope_match=request.authoritative_scope_match, independent_source_count=request.independent_source_count, reviewer_approved=request.reviewer_approved, public_infrastructure=request.public_infrastructure, location_resolved=request.location_resolved, stale=request.stale)
     return service.validate(request.candidate, decision, request.reviewer, idempotency_key)
 
 
