@@ -24,6 +24,7 @@ const MonitoringPage = lazy(() => import('./pages/MonitoringPage'))
 const ReviewPage = lazy(() => import('./pages/ReviewPage'))
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'))
 const LiveLogsPage = lazy(() => import('./pages/LiveLogsPage'))
+const WaterDisruption = lazy(() => import('./pages/WaterDisruption'))
 const SectorDetailPage = lazy(() => import('./pages/SectorDetailPage'))
 const EventDetailPage = lazy(() => import('./pages/EventDetailPage'))
 const MunicipioDetailPage = lazy(() => import('./pages/MunicipioDetailPage'))
@@ -59,6 +60,7 @@ function App() {
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/logs" element={<LiveLogsPage />} />
               <Route path="/system" element={<SystemPage />} />
+              <Route path="/water-disruption" element={<WaterDisruption />} />
               <Route path="/sector/:sector" element={<SectorDetailPage />} />
               <Route path="/events/:id" element={<EventDetailPage />} />
               <Route path="/municipios/:name" element={<MunicipioDetailPage />} />
