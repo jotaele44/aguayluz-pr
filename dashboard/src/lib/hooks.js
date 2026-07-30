@@ -32,7 +32,15 @@ export const useEventsPaged = (f = {}) => {
 export const useAssetEvents = (id) => useQuery({ queryKey: ['asset-events', id], queryFn: () => getAssetEvents(id), enabled: !!id })
 export const useEvent = (id) => useQuery({ queryKey: ['event', id], queryFn: () => getEvent(id), enabled: !!id })
 export const useMunicipioSummary = (name) => useQuery({ queryKey: ['municipio', name], queryFn: () => getMunicipioSummary(name), enabled: !!name })
-export const useReadings = (f = {}) => useQuery({ queryKey: ['readings', f], queryFn: () => getReadings(f) })
+// The canonical backend returns metadata + items. Keep component callers array-based
+// while preserving getReadings() for clients that need the response metadata.
+export const useReadings = (f = {}) => useQuery({
+  queryKey: ['readings', f],
+  queryFn: async () => {
+    const result = await getReadings(f)
+    return Array.isArray(result) ? result : (result?.items ?? [])
+  },
+})
 export const useReviewQueue = (f = {}) => useQuery({ queryKey: ['review', f], queryFn: () => getReviewQueue(f) })
 export const useReviewQueuePaged = (f = {}) => useQuery({ queryKey: ['review/paged', f], queryFn: () => getReviewQueuePaged(f) })
 export const useCoverage = () => useQuery({ queryKey: ['summary/coverage'], queryFn: getCoverage })
