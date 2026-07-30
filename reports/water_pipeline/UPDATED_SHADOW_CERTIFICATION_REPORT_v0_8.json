@@ -1,0 +1,30 @@
+{
+  "schema_version": "aguayluz.water-shadow-certification/v0.8",
+  "base_commit": "7a5ab8859c51382eab03077558c49e33f857be1d",
+  "status": "repair_implemented_pending_ci",
+  "root_cause": "existing canonical incidents were returned without reconciling stronger validation decisions",
+  "repair": {
+    "append_only_truth_events": true,
+    "validation_strength_order": ["unverified", "corroborated", "confirmed"],
+    "validation_id_provenance": true,
+    "immutable_base_incident": true,
+    "idempotency_payload_binding": true,
+    "weaker_validation_downgrade_blocked": true
+  },
+  "required_regressions": [
+    "unverified_then_authoritative_confirmation",
+    "corroborated_then_reviewer_confirmation",
+    "duplicate_confirmation_replay",
+    "conflicting_validation_key",
+    "weaker_validation_no_downgrade",
+    "retraction_after_promotion",
+    "original_incident_preserved"
+  ],
+  "safety": {
+    "shadow_mode": true,
+    "notifications_enabled": false,
+    "production_promotion_enabled": false,
+    "live_alerts": false
+  },
+  "production_promotion": "blocked_pending_ci_and_recertification"
+}
