@@ -10,11 +10,8 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import JSONResponse
 
 from server.backend import main as legacy
-from server.backend.monitoring_quality import (
-    SERIES_METADATA_REGISTRY,
-    native_alerts,
-    series_quality,
-)
+from server.backend.monitoring_alert_operations import federation_alert_export, lifecycle_alerts
+from server.backend.monitoring_quality import SERIES_METADATA_REGISTRY, series_quality
 
 
 def _is_legacy_readings(route: Any) -> bool:
@@ -85,9 +82,20 @@ def _series_rows(kind: str, metric: str) -> list[dict[str, Any]]:
     vector = READING_VECTOR_REGISTRY[kind]
     allowed_units = vector["metrics"][metric]["units"]
     return [
-        row for row in legacy._load_jsonl(Path(vector["path"]))
+        row
+        for row in legacy._load_jsonl(Path(vector["path"]))
         if row.get("metric") == metric and row.get("unit") in allowed_units
     ]
+
+
+def _all_incidents(metrics: list[str]) -> list[dict[str, Any]]:
+    incidents: list[dict[str, Any]] = []
+    for metric in metrics:
+        metadata = SERIES_METADATA_REGISTRY[metric]
+        incidents.extend(
+            lifecycle_alerts(metric, _series_rows(metadata["kind"], metric), legacy._parse_dt)
+        )
+    return incidents
 
 
 @app.get("/readings")
@@ -128,15 +136,18 @@ def readings(
             bounded.append(row)
         rows = bounded
 
-    rows = sorted(rows, key=lambda row: (
-        str(row.get("site_no") or ""),
-        str(row.get("observed_date") or ""),
-        str(row.get("parameter_code") or ""),
-    ))
+    rows = sorted(
+        rows,
+        key=lambda row: (
+            str(row.get("site_no") or ""),
+            str(row.get("observed_date") or ""),
+            str(row.get("parameter_code") or ""),
+        ),
+    )
     units = sorted({str(row.get("unit")) for row in rows if row.get("unit") not in (None, "")})
-    parameter_codes = sorted({
-        str(row.get("parameter_code")) for row in rows if row.get("parameter_code") not in (None, "")
-    })
+    parameter_codes = sorted(
+        {str(row.get("parameter_code")) for row in rows if row.get("parameter_code") not in (None, "")}
+    )
     sites = Counter(str(row.get("site_no") or "unknown") for row in rows)
     quality = series_quality(metric, rows, legacy._parse_dt)
 
@@ -173,16 +184,36 @@ def monitoring_health() -> JSONResponse:
 
 
 @app.get("/monitoring/alerts")
-def monitoring_alerts(metric: str | None = Query(default=None)) -> JSONResponse:
+def monitoring_alerts(
+    metric: str | None = Query(default=None),
+    state: str = Query(default="active"),
+) -> JSONResponse:
     metrics = [metric] if metric else list(SERIES_METADATA_REGISTRY)
     unknown = [name for name in metrics if name not in SERIES_METADATA_REGISTRY]
     if unknown:
         raise HTTPException(status_code=400, detail={"error": "unknown_reading_metric", "metric": unknown[0]})
-    alerts = []
-    for name in metrics:
-        metadata = SERIES_METADATA_REGISTRY[name]
-        alerts.extend(native_alerts(name, _series_rows(metadata["kind"], name), legacy._parse_dt))
-    return JSONResponse({"total": len(alerts), "items": alerts})
+    if state not in {"active", "resolved", "all"}:
+        raise HTTPException(status_code=400, detail={"error": "unknown_alert_state", "state": state})
+    incidents = _all_incidents(metrics)
+    if state != "all":
+        incidents = [item for item in incidents if item["state"] == state]
+    return JSONResponse({
+        "total": len(incidents),
+        "state": state,
+        "items": incidents,
+    })
+
+
+@app.get("/monitoring/alert-operations")
+def monitoring_alert_operations() -> JSONResponse:
+    incidents = _all_incidents(list(SERIES_METADATA_REGISTRY))
+    return JSONResponse({
+        "incident_count": len(incidents),
+        "active_count": sum(item["state"] == "active" for item in incidents),
+        "resolved_count": sum(item["state"] == "resolved" for item in incidents),
+        "deduplicated": True,
+        "items": incidents,
+    })
 
 
 @app.get("/export/monitoring.json")
@@ -201,3 +232,9 @@ def export_monitoring() -> JSONResponse:
             "items": certified,
         })
     return JSONResponse({"schema_version": "1.0.0", "series": series})
+
+
+@app.get("/export/federation/monitoring-alerts.json")
+def export_federation_monitoring_alerts() -> JSONResponse:
+    incidents = _all_incidents(list(SERIES_METADATA_REGISTRY))
+    return JSONResponse(federation_alert_export(incidents))
