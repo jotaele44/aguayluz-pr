@@ -182,7 +182,8 @@
           "server/backend/main.py",
           "server/backend/app.py",
           "server/backend/monitoring_alert_operations.py",
-          "server/backend/monitoring_quality.py"
+          "server/backend/monitoring_quality.py",
+          "server/backend/monitoring_incident_ledger.py"
         ],
         "endpoints": [
           "GET /readings",
@@ -194,7 +195,14 @@
           "GET /monitoring/alerts",
           "GET /monitoring/alert-operations",
           "GET /export/monitoring.json",
-          "GET /export/federation/monitoring-alerts.json"
+          "GET /export/federation/monitoring-alerts.json",
+          "POST /monitoring/incidents/bootstrap",
+          "GET /monitoring/incidents",
+          "GET /monitoring/incidents/{incident_id}/timeline",
+          "POST /monitoring/incidents/{incident_id}/transitions",
+          "GET /monitoring/incidents/escalations/candidates",
+          "GET /monitoring/incidents/notification-outbox",
+          "GET /export/federation/monitoring-incident-events.json"
         ],
         "symbols": [
           "server/backend/app.py:readings",
@@ -203,6 +211,15 @@
           "server/backend/app.py:monitoring_alert_operations",
           "server/backend/app.py:export_monitoring",
           "server/backend/app.py:export_federation_monitoring_alerts",
+          "server/backend/app.py:IncidentTransition",
+          "server/backend/app.py:BootstrapRequest",
+          "server/backend/app.py:bootstrap_incident_ledger",
+          "server/backend/app.py:monitoring_incidents",
+          "server/backend/app.py:monitoring_incident_timeline",
+          "server/backend/app.py:monitoring_incident_transition",
+          "server/backend/app.py:monitoring_escalation_candidates",
+          "server/backend/app.py:monitoring_notification_outbox",
+          "server/backend/app.py:export_federation_monitoring_incident_events",
           "server/backend/monitoring_alert_operations.py:load_site_thresholds",
           "server/backend/monitoring_alert_operations.py:resolve_threshold",
           "server/backend/monitoring_alert_operations.py:threshold_tripped",
@@ -210,7 +227,19 @@
           "server/backend/monitoring_alert_operations.py:federation_alert_export",
           "server/backend/monitoring_quality.py:observation_time",
           "server/backend/monitoring_quality.py:series_quality",
-          "server/backend/monitoring_quality.py:native_alerts"
+          "server/backend/monitoring_quality.py:native_alerts",
+          "server/backend/monitoring_incident_ledger.py:read_events",
+          "server/backend/monitoring_incident_ledger.py:validate_event",
+          "server/backend/monitoring_incident_ledger.py:append_event",
+          "server/backend/monitoring_incident_ledger.py:verify_chain",
+          "server/backend/monitoring_incident_ledger.py:replay",
+          "server/backend/monitoring_incident_ledger.py:materialized_state",
+          "server/backend/monitoring_incident_ledger.py:timeline",
+          "server/backend/monitoring_incident_ledger.py:load_json",
+          "server/backend/monitoring_incident_ledger.py:maintenance_active",
+          "server/backend/monitoring_incident_ledger.py:escalation_candidates",
+          "server/backend/monitoring_incident_ledger.py:notification_outbox",
+          "server/backend/monitoring_incident_ledger.py:federation_delta"
         ]
       },
       "frontend": {
@@ -232,19 +261,23 @@
           "dashboard/src/pages/AnalyticsPage.jsx",
           "dashboard/src/pages/LiveLogsPage.jsx",
           "dashboard/src/pages/SystemPage.jsx",
-          "dashboard/src/components/MonitoringCharts.jsx"
+          "dashboard/src/components/MonitoringCharts.jsx",
+          "dashboard/src/components/IncidentOperationsConsole.jsx"
         ],
         "discoverability": [
-          "dashboard/src/components/layout/Sidebar.jsx"
+          "dashboard/src/components/layout/Sidebar.jsx",
+          "dashboard/src/pages/MonitoringPage.jsx"
         ]
       },
       "tests": {
         "backend": [
           "tests/test_alert_impact.py",
-          "tests/test_refresh_plans.py"
+          "tests/test_refresh_plans.py",
+          "tests/test_monitoring_phase3.py"
         ],
         "contract": [
-          "tests/test_gui_parity.py"
+          "tests/test_gui_parity.py",
+          "tests/test_monitoring_phase3.py"
         ],
         "e2e": [
           "dashboard/tests/gui-parity.spec.mjs"
