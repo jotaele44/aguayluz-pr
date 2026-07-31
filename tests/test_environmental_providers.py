@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from fastapi.testclient import TestClient
-
 from server.backend.app import app
 from server.backend.environmental_providers import (
     NEON_PR_SITES,
