@@ -6,11 +6,24 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
 
 from server.backend import main as legacy
 from server.backend.monitoring_alert_operations import federation_alert_export, lifecycle_alerts
+from server.backend.monitoring_incident_ledger import (
+    ALLOWED_EVENTS,
+    append_event,
+    escalation_candidates,
+    federation_delta,
+    materialized_state,
+    notification_outbox,
+    read_events,
+    replay,
+    timeline,
+    verify_chain,
+)
 from server.backend.monitoring_quality import SERIES_METADATA_REGISTRY, series_quality
 from server.backend.water_disruption_api import router as water_disruption_router
 
@@ -32,6 +45,18 @@ READING_VECTOR_REGISTRY: dict[str, dict[str, Any]] = {
     "groundwater": {"path": legacy.DATA / "groundwater_levels.jsonl", "metrics": {"groundwater_level": {"units": {"ft"}}}, "metric_required": False},
     "coastal": {"path": legacy.DATA / "coastal_levels.jsonl", "metrics": {"coastal_water_level": {"units": {"ft"}}}, "metric_required": False},
 }
+
+
+class IncidentTransition(BaseModel):
+    event_type: str
+    actor: str = Field(min_length=1)
+    reason: str = Field(min_length=1)
+    payload: dict[str, Any] = Field(default_factory=dict)
+
+
+class BootstrapRequest(BaseModel):
+    actor: str = Field(min_length=1)
+    reason: str = Field(min_length=1)
 
 
 def _reading_dt(row: dict[str, Any]) -> datetime | None:
@@ -96,7 +121,13 @@ def monitoring_health() -> JSONResponse:
     for metric, metadata in SERIES_METADATA_REGISTRY.items():
         rows = _series_rows(metadata["kind"], metric)
         vectors[metric] = {"kind": metadata["kind"], "record_count": len(rows), "quality": series_quality(metric, rows, legacy._parse_dt), "threshold_provenance": metadata["threshold"]["provenance"]}
-    return JSONResponse({"series_count": len(vectors), "vectors": vectors, "shadow_water_pipeline": True})
+    events = read_events()
+    chain_valid = True
+    try:
+        verify_chain(events)
+    except ValueError:
+        chain_valid = False
+    return JSONResponse({"series_count": len(vectors), "vectors": vectors, "shadow_water_pipeline": True, "incident_ledger": {"event_count": len(events), "chain_valid": chain_valid, "notification_delivery_enabled": False}})
 
 
 @app.get("/monitoring/alerts")
@@ -119,6 +150,60 @@ def monitoring_alert_operations() -> JSONResponse:
     return JSONResponse({"incident_count": len(incidents), "active_count": sum(item["state"] == "active" for item in incidents), "resolved_count": sum(item["state"] == "resolved" for item in incidents), "deduplicated": True, "items": incidents})
 
 
+@app.post("/monitoring/incidents/bootstrap", dependencies=[Depends(legacy._require_key)])
+def bootstrap_incident_ledger(body: BootstrapRequest) -> JSONResponse:
+    existing = materialized_state()
+    created = []
+    for incident in _all_incidents(list(SERIES_METADATA_REGISTRY)):
+        if incident["incident_id"] in existing:
+            continue
+        created.append(append_event(incident["incident_id"], "opened", body.actor, body.reason, {
+            "source": "phase2_materialization", "threshold_version": incident["dedup_key"], "evidence": incident,
+        }))
+    return JSONResponse({"created": len(created), "events": created})
+
+
+@app.get("/monitoring/incidents")
+def monitoring_incidents() -> JSONResponse:
+    events = read_events()
+    states = replay(events)
+    return JSONResponse({
+        "incident_count": len(states), "event_count": len(events), "append_only": True,
+        "replay_equals_materialized_state": states == materialized_state(),
+        "items": sorted(states.values(), key=lambda item: item["incident_id"]),
+    })
+
+
+@app.get("/monitoring/incidents/{incident_id}/timeline")
+def monitoring_incident_timeline(incident_id: str) -> JSONResponse:
+    items = timeline(incident_id)
+    if not items:
+        raise HTTPException(status_code=404, detail={"error": "incident_not_found", "incident_id": incident_id})
+    return JSONResponse({"incident_id": incident_id, "event_count": len(items), "items": items})
+
+
+@app.post("/monitoring/incidents/{incident_id}/transitions", dependencies=[Depends(legacy._require_key)])
+def monitoring_incident_transition(incident_id: str, body: IncidentTransition) -> JSONResponse:
+    if body.event_type not in ALLOWED_EVENTS - {"opened", "escalated"}:
+        raise HTTPException(status_code=400, detail={"error": "unauthorized_transition_type", "event_type": body.event_type})
+    states = materialized_state()
+    if incident_id not in states:
+        raise HTTPException(status_code=404, detail={"error": "incident_not_found", "incident_id": incident_id})
+    event = append_event(incident_id, body.event_type, body.actor, body.reason, body.payload)
+    return JSONResponse({"event": event, "state": materialized_state()[incident_id]})
+
+
+@app.get("/monitoring/incidents/escalations/candidates")
+def monitoring_escalation_candidates() -> JSONResponse:
+    items = escalation_candidates(materialized_state())
+    return JSONResponse({"total": len(items), "maintenance_aware": True, "items": items})
+
+
+@app.get("/monitoring/incidents/notification-outbox")
+def monitoring_notification_outbox() -> JSONResponse:
+    return JSONResponse(notification_outbox(materialized_state()))
+
+
 @app.get("/export/monitoring.json")
 def export_monitoring() -> JSONResponse:
     series = []
@@ -132,3 +217,11 @@ def export_monitoring() -> JSONResponse:
 @app.get("/export/federation/monitoring-alerts.json")
 def export_federation_monitoring_alerts() -> JSONResponse:
     return JSONResponse(federation_alert_export(_all_incidents(list(SERIES_METADATA_REGISTRY))))
+
+
+@app.get("/export/federation/monitoring-incident-events.json")
+def export_federation_monitoring_incident_events(cursor: str | None = Query(default=None)) -> JSONResponse:
+    try:
+        return JSONResponse(federation_delta(read_events(), cursor))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail={"error": str(exc), "cursor": cursor}) from exc
