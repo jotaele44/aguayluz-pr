@@ -3,9 +3,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Iterable
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 LEDGER_PATH = Path(__file__).resolve().parents[2] / "data" / "monitoring_incident_ledger.jsonl"
 MAINTENANCE_PATH = Path(__file__).resolve().parents[2] / "config" / "monitoring_maintenance_windows.json"
