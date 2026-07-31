@@ -3,8 +3,12 @@ from __future__ import annotations
 from fastapi.testclient import TestClient
 
 from server.backend.app import app
-from server.backend.environmental_providers import NEON_PR_SITES, PROVIDERS, poll_provider, provider_registry
-
+from server.backend.environmental_providers import (
+    NEON_PR_SITES,
+    PROVIDERS,
+    poll_provider,
+    provider_registry,
+)
 
 client = TestClient(app)
 
@@ -12,13 +16,26 @@ client = TestClient(app)
 def test_registry_covers_authoritative_environmental_sources(monkeypatch):
     monkeypatch.delenv("NEON_API_TOKEN", raising=False)
     rows = provider_registry()
-    assert {row["code"] for row in rows} == {"neon", "usgs", "nws", "nasa", "lter", "wqp", "drna"}
+    assert {row["code"] for row in rows} == {
+        "neon",
+        "usgs",
+        "nws",
+        "nasa",
+        "lter",
+        "wqp",
+        "drna",
+    }
     assert all(row["tier"] == "T1" for row in rows)
     assert next(row for row in rows if row["code"] == "neon")["configured"] is False
 
 
 def test_neon_registry_contains_four_puerto_rico_sites():
-    assert {row["site_code"] for row in NEON_PR_SITES} == {"GUAN", "LAJA", "CUPE", "GUIL"}
+    assert {row["site_code"] for row in NEON_PR_SITES} == {
+        "GUAN",
+        "LAJA",
+        "CUPE",
+        "GUIL",
+    }
 
 
 def test_polling_is_disabled_by_default(monkeypatch):
