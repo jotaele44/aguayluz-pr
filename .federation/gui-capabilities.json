@@ -9,32 +9,14 @@
     "terminal_free_user_path": true
   },
   "discovery": {
-    "backend_roots": [
-      "server/backend"
-    ],
-    "production_roots": [
-      "src/aguayluz",
-      "desktop",
-      "maintenance"
-    ],
-    "analysis_roots": [
-      "scripts"
-    ],
-    "frontend_roots": [
-      "dashboard/src"
-    ],
-    "frontend_capability_roots": [
-      "dashboard/src/pages"
-    ],
-    "frontend_api_roots": [
-      "dashboard/src/lib/api.js"
-    ],
-    "route_files": [
-      "dashboard/src/App.jsx"
-    ],
-    "navigation_files": [
-      "dashboard/src/components/layout/Sidebar.jsx"
-    ],
+    "backend_roots": ["server/backend"],
+    "production_roots": ["src/aguayluz", "desktop", "maintenance"],
+    "analysis_roots": ["scripts"],
+    "frontend_roots": ["dashboard/src"],
+    "frontend_capability_roots": ["dashboard/src/pages"],
+    "frontend_api_roots": ["dashboard/src/lib/api.js"],
+    "route_files": ["dashboard/src/App.jsx"],
+    "navigation_files": ["dashboard/src/components/layout/Sidebar.jsx"],
     "implicit_routes": [
       {
         "path": "/water-disruption/console",
@@ -56,9 +38,7 @@
       "status": "active",
       "requires_terminal": false,
       "backend": {
-        "files": [
-          "server/backend/main.py"
-        ],
+        "files": ["server/backend/main.py"],
         "endpoints": [
           "GET /assets",
           "GET /assets/{asset_id}/events",
@@ -69,18 +49,8 @@
         ]
       },
       "frontend": {
-        "routes": [
-          "/",
-          "/map",
-          "/assets",
-          "/sector/:sector",
-          "/municipios/:name"
-        ],
-        "e2e_routes": [
-          "/",
-          "/map",
-          "/assets"
-        ],
+        "routes": ["/", "/map", "/assets", "/sector/:sector", "/municipios/:name"],
+        "e2e_routes": ["/", "/map", "/assets"],
         "components": [
           "dashboard/src/lib/api.js",
           "dashboard/src/pages/OverviewPage.jsx",
@@ -98,17 +68,9 @@
         ]
       },
       "tests": {
-        "backend": [
-          "tests/test_backend_events_api.py",
-          "tests/test_pr_geo_boundaries.py"
-        ],
-        "contract": [
-          "tests/test_navigation.py",
-          "tests/test_gui_parity.py"
-        ],
-        "e2e": [
-          "dashboard/tests/gui-parity.spec.mjs"
-        ]
+        "backend": ["tests/test_backend_events_api.py", "tests/test_pr_geo_boundaries.py"],
+        "contract": ["tests/test_navigation.py", "tests/test_gui_parity.py"],
+        "e2e": ["dashboard/tests/gui-parity.spec.mjs"]
       }
     },
     {
@@ -117,9 +79,7 @@
       "status": "active",
       "requires_terminal": false,
       "backend": {
-        "files": [
-          "server/backend/main.py"
-        ],
+        "files": ["server/backend/main.py"],
         "endpoints": [
           "GET /events/stream",
           "GET /events/{event_id}",
@@ -134,16 +94,8 @@
         ]
       },
       "frontend": {
-        "routes": [
-          "/alerts",
-          "/alerts/:id",
-          "/outages",
-          "/events/:id"
-        ],
-        "e2e_routes": [
-          "/alerts",
-          "/outages"
-        ],
+        "routes": ["/alerts", "/alerts/:id", "/outages", "/events/:id"],
+        "e2e_routes": ["/alerts", "/outages"],
         "components": [
           "dashboard/src/lib/api.js",
           "dashboard/src/pages/AlertsPage.jsx",
@@ -164,12 +116,8 @@
           "tests/test_backend_events_api.py",
           "tests/test_alerts.py"
         ],
-        "contract": [
-          "tests/test_gui_parity.py"
-        ],
-        "e2e": [
-          "dashboard/tests/gui-parity.spec.mjs"
-        ]
+        "contract": ["tests/test_gui_parity.py"],
+        "e2e": ["dashboard/tests/gui-parity.spec.mjs"]
       }
     },
     {
@@ -214,18 +162,8 @@
         ]
       },
       "frontend": {
-        "routes": [
-          "/monitoring",
-          "/analytics",
-          "/logs",
-          "/system"
-        ],
-        "e2e_routes": [
-          "/monitoring",
-          "/analytics",
-          "/logs",
-          "/system"
-        ],
+        "routes": ["/monitoring", "/analytics", "/logs", "/system"],
+        "e2e_routes": ["/monitoring", "/analytics", "/logs", "/system"],
         "components": [
           "dashboard/src/lib/api.js",
           "dashboard/src/pages/MonitoringPage.jsx",
@@ -234,21 +172,12 @@
           "dashboard/src/pages/SystemPage.jsx",
           "dashboard/src/components/MonitoringCharts.jsx"
         ],
-        "discoverability": [
-          "dashboard/src/components/layout/Sidebar.jsx"
-        ]
+        "discoverability": ["dashboard/src/components/layout/Sidebar.jsx"]
       },
       "tests": {
-        "backend": [
-          "tests/test_alert_impact.py",
-          "tests/test_refresh_plans.py"
-        ],
-        "contract": [
-          "tests/test_gui_parity.py"
-        ],
-        "e2e": [
-          "dashboard/tests/gui-parity.spec.mjs"
-        ]
+        "backend": ["tests/test_alert_impact.py", "tests/test_refresh_plans.py"],
+        "contract": ["tests/test_gui_parity.py"],
+        "e2e": ["dashboard/tests/gui-parity.spec.mjs"]
       }
     },
     {
@@ -257,41 +186,24 @@
       "status": "active",
       "requires_terminal": false,
       "backend": {
-        "files": [
-          "server/backend/main.py"
-        ],
-        "endpoints": [
-          "GET /review-queue",
-          "POST /review-queue/{ref}/decision"
-        ]
+        "files": ["server/backend/main.py"],
+        "endpoints": ["GET /review-queue", "POST /review-queue/{ref}/decision"]
       },
       "frontend": {
-        "routes": [
-          "/review"
-        ],
-        "e2e_routes": [
-          "/review"
-        ],
+        "routes": ["/review"],
+        "e2e_routes": ["/review"],
         "components": [
           "dashboard/src/lib/api.js",
           "dashboard/src/pages/ReviewPage.jsx",
           "dashboard/src/components/ReviewQueue.jsx",
           "dashboard/src/components/ReviewRecordCard.jsx"
         ],
-        "discoverability": [
-          "dashboard/src/components/layout/Sidebar.jsx"
-        ]
+        "discoverability": ["dashboard/src/components/layout/Sidebar.jsx"]
       },
       "tests": {
-        "backend": [
-          "tests/test_backend_events_api.py"
-        ],
-        "contract": [
-          "tests/test_gui_parity.py"
-        ],
-        "e2e": [
-          "dashboard/tests/gui-parity.spec.mjs"
-        ]
+        "backend": ["tests/test_backend_events_api.py"],
+        "contract": ["tests/test_gui_parity.py"],
+        "e2e": ["dashboard/tests/gui-parity.spec.mjs"]
       }
     },
     {
@@ -300,9 +212,7 @@
       "status": "active",
       "requires_terminal": false,
       "backend": {
-        "files": [
-          "server/backend/main.py"
-        ],
+        "files": ["server/backend/main.py"],
         "endpoints": [
           "POST /admin/run-export",
           "POST /ai/query",
@@ -311,28 +221,17 @@
         ]
       },
       "frontend": {
-        "routes": [
-          "/system"
-        ],
-        "e2e_routes": [
-          "/system"
-        ],
+        "routes": ["/system"],
+        "e2e_routes": ["/system"],
         "components": [
           "dashboard/src/pages/SystemPage.jsx",
           "dashboard/src/components/AiQueryPanel.jsx"
         ],
-        "discoverability": [
-          "dashboard/src/components/layout/Sidebar.jsx"
-        ]
+        "discoverability": ["dashboard/src/components/layout/Sidebar.jsx"]
       },
       "tests": {
-        "contract": [
-          "tests/test_validate_repo.py",
-          "tests/test_gui_parity.py"
-        ],
-        "e2e": [
-          "dashboard/tests/gui-parity.spec.mjs"
-        ]
+        "contract": ["tests/test_validate_repo.py", "tests/test_gui_parity.py"],
+        "e2e": ["dashboard/tests/gui-parity.spec.mjs"]
       }
     },
     {
@@ -385,32 +284,18 @@
         ]
       },
       "frontend": {
-        "routes": [
-          "/water-disruption",
-          "/water-disruption/console"
-        ],
-        "e2e_routes": [
-          "/water-disruption"
-        ],
+        "routes": ["/water-disruption", "/water-disruption/console"],
+        "e2e_routes": ["/water-disruption"],
         "components": [
           "dashboard/src/components/layout/Sidebar.jsx",
           "dashboard/src/pages/WaterDisruption.jsx"
         ],
-        "discoverability": [
-          "dashboard/src/components/layout/Sidebar.jsx"
-        ]
+        "discoverability": ["dashboard/src/components/layout/Sidebar.jsx"]
       },
       "tests": {
-        "backend": [
-          "tests/test_water_disruption.py",
-          "tests/test_water_disruption_api.py"
-        ],
-        "contract": [
-          "tests/test_gui_parity.py"
-        ],
-        "e2e": [
-          "dashboard/tests/gui-parity.spec.mjs"
-        ]
+        "backend": ["tests/test_water_disruption.py", "tests/test_water_disruption_api.py"],
+        "contract": ["tests/test_gui_parity.py"],
+        "e2e": ["dashboard/tests/gui-parity.spec.mjs"]
       }
     },
     {
@@ -420,19 +305,41 @@
       "requires_terminal": false,
       "rationale": "Fail-closed certification is a CI and release-integrity control; operators use the discoverable shadow console rather than invoking the script directly.",
       "analysis": {
-        "files": [
-          "scripts/certify_water_disruption_shadow.py"
-        ],
+        "files": ["scripts/certify_water_disruption_shadow.py"],
         "symbols": [
           "scripts/certify_water_disruption_shadow.py:main",
           "scripts/certify_water_disruption_shadow.py:require"
         ]
       },
       "tests": {
-        "contract": [
-          "tests/test_water_disruption.py",
-          "tests/test_water_disruption_api.py"
+        "contract": ["tests/test_water_disruption.py", "tests/test_water_disruption_api.py"]
+      }
+    },
+    {
+      "id": "environmental-provider-monitoring",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "This phase exposes a fail-closed provider registry and metadata health boundary only. Human-facing provider visualization and certified observation promotion are explicitly deferred to a later capability phase.",
+      "backend": {
+        "files": [
+          "server/backend/environmental_provider_api.py",
+          "server/backend/environmental_providers.py"
+        ],
+        "endpoints": ["GET /health", "POST /poll"],
+        "symbols": [
+          "server/backend/environmental_provider_api.py:list_environmental_providers",
+          "server/backend/environmental_provider_api.py:environmental_provider_health",
+          "server/backend/environmental_provider_api.py:environmental_provider_poll",
+          "server/backend/environmental_providers.py:Provider",
+          "server/backend/environmental_providers.py:provider_registry",
+          "server/backend/environmental_providers.py:poll_provider",
+          "server/backend/environmental_providers.py:poll_all"
         ]
+      },
+      "tests": {
+        "backend": ["tests/test_environmental_providers.py"],
+        "contract": ["tests/test_gui_parity.py"]
       }
     },
     {
@@ -442,18 +349,11 @@
       "requires_terminal": false,
       "rationale": "Health and authentication-status probes support supervision and readiness rather than a separate user workflow.",
       "backend": {
-        "files": [
-          "server/backend/main.py"
-        ],
-        "endpoints": [
-          "GET /health",
-          "GET /auth/status"
-        ]
+        "files": ["server/backend/main.py"],
+        "endpoints": ["GET /health", "GET /auth/status"]
       },
       "tests": {
-        "backend": [
-          "tests/test_server_smoke.py"
-        ]
+        "backend": ["tests/test_server_smoke.py"]
       }
     }
   ],
