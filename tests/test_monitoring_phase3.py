@@ -6,7 +6,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
-
 from server.backend.monitoring_incident_ledger import (
     append_event,
     escalation_candidates,
@@ -83,9 +82,13 @@ def test_notification_delivery_is_disabled_by_default(tmp_path: Path):
 
 def test_escalation_is_maintenance_aware(tmp_path: Path, monkeypatch):
     from server.backend import monitoring_incident_ledger as ledger_module
+
     policy = tmp_path / "policy.json"
     policy.write_text(json.dumps({"escalation": {"unacknowledged_hours": 2, "level": 1}}), encoding="utf-8")
-    monkeypatch.setattr(ledger_module, "maintenance_active", lambda incident, now=None: {"window": "active"})
+    maintenance = tmp_path / "maintenance.json"
+    maintenance.write_text(json.dumps({"windows": [{"incident_id": "MON-1", "start": "2026-07-30T00:00:00Z", "end": "2026-07-31T00:00:00Z"}]}), encoding="utf-8")
+    monkeypatch.setattr(ledger_module, "MAINTENANCE_PATH", maintenance)
+    monkeypatch.setattr(ledger_module, "maintenance_active", lambda incident, current: ledger_module.maintenance_active.__wrapped__(incident, current, maintenance) if hasattr(ledger_module.maintenance_active, "__wrapped__") else next((window for window in json.loads(maintenance.read_text())["windows"] if window["incident_id"] == incident["incident_id"]), None))
     states = {"MON-1": {"incident_id": "MON-1", "status": "active", "last_event_at": "2026-07-30T10:00:00+00:00"}}
     now = datetime(2026, 7, 30, 20, 0, tzinfo=timezone.utc)
     assert escalation_candidates(states, now, policy) == []
