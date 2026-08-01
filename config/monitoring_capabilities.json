@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.1.0",
+  "policy": {
+    "mixed_metric_charts": "prohibited",
+    "mixed_unit_statistics": "prohibited",
+    "unknown_series": "reject",
+    "unknown_kind": "http_400",
+    "unknown_metric": "http_400",
+    "multi_metric_kind_requires_metric": true,
+    "series_identity": ["site_no", "metric", "parameter_code", "unit"]
+  },
+  "api_contract": {
+    "endpoint": "/readings",
+    "implementation": "server/backend/app.py",
+    "filters": ["kind", "metric", "parameter_code", "site_no", "since", "until"],
+    "response_metadata": ["record_count", "site_count", "units", "parameter_codes", "mixed_units"]
+  },
+  "series": [
+    {"key":"reservoir_elevation","source_kind":"reservoir","metric":"reservoir_elevation","unit":"ft","source":"USGS NWIS Daily Values","storage":"data/reservoir_levels.jsonl","api":"/readings?kind=reservoir&metric=reservoir_elevation","gui":"Monitoring","alert":"HYDRO_OPS reservoir-low proxy"},
+    {"key":"reservoir_storage_pct","source_kind":"reservoir","metric":"reservoir_storage_pct","unit":"%","source":"USGS NWIS Daily Values parameter 00054","storage":"data/reservoir_levels.jsonl","api":"/readings?kind=reservoir&metric=reservoir_storage_pct","gui":"Monitoring","alert":"HYDRO_OPS reservoir-low proxy"},
+    {"key":"streamflow","source_kind":"reservoir","metric":"streamflow","unit":"ft3/s","source":"USGS NWIS Daily Values parameter 00060","storage":"data/reservoir_levels.jsonl","api":"/readings?kind=reservoir&metric=streamflow","gui":"Monitoring","alert":null},
+    {"key":"gage_height","source_kind":"reservoir","metric":"gage_height","unit":"ft","source":"USGS NWIS Daily Values parameter 00065","storage":"data/reservoir_levels.jsonl","api":"/readings?kind=reservoir&metric=gage_height","gui":"Monitoring","alert":null},
+    {"key":"groundwater_level","source_kind":"groundwater","metric":"groundwater_level","unit":"ft","source":"USGS NWIS Daily Values parameter 72019","storage":"data/groundwater_levels.jsonl","api":"/readings?kind=groundwater&metric=groundwater_level","gui":"Monitoring","alert":"HYDRO_OPS aquifer-drawdown proxy"},
+    {"key":"coastal_water_level","source_kind":"coastal","metric":"coastal_water_level","unit":"ft","source":"NOAA CO-OPS","storage":"data/coastal_levels.jsonl","api":"/readings?kind=coastal&metric=coastal_water_level","gui":"Monitoring","alert":"HYDRO_OPS coastal high-water proxy"}
+  ]
+}

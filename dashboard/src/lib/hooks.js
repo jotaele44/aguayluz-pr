@@ -16,10 +16,6 @@ export const useSummarySectors = () => useQuery({ queryKey: ['summary/sectors'],
 export const useAssets = (f = {}) => useQuery({ queryKey: ['assets', f], queryFn: () => getAssets(f) })
 export const useAssetsGeojson = () => useQuery({ queryKey: ['assets.geojson'], queryFn: getAssetsGeojson })
 export const useMunicipiosGeojson = () => useQuery({ queryKey: ['municipios.geojson'], queryFn: getMunicipiosGeojson })
-// Default page size so a normal load doesn't pull the entire service-events
-// corpus (the full SDWIS violation history is ~25k rows / ~13 MB). The backend
-// returns the most-recent events first; callers can override `limit` (or pass a
-// negative limit) to fetch more.
 export const DEFAULT_EVENT_LIMIT = 500
 export const useEvents = (f = {}) => {
   const params = { limit: DEFAULT_EVENT_LIMIT, ...f }
@@ -32,14 +28,25 @@ export const useEventsPaged = (f = {}) => {
 export const useAssetEvents = (id) => useQuery({ queryKey: ['asset-events', id], queryFn: () => getAssetEvents(id), enabled: !!id })
 export const useEvent = (id) => useQuery({ queryKey: ['event', id], queryFn: () => getEvent(id), enabled: !!id })
 export const useMunicipioSummary = (name) => useQuery({ queryKey: ['municipio', name], queryFn: () => getMunicipioSummary(name), enabled: !!name })
-export const useReadings = (f = {}) => useQuery({ queryKey: ['readings', f], queryFn: () => getReadings(f) })
+export const useReadingsEnvelope = (f = {}) => useQuery({
+  queryKey: ['readings-envelope', f],
+  queryFn: async () => {
+    const result = await getReadings(f)
+    return Array.isArray(result) ? { items: result, quality: null, provenance: null } : result
+  },
+})
+export const useReadings = (f = {}) => useQuery({
+  queryKey: ['readings', f],
+  queryFn: async () => {
+    const result = await getReadings(f)
+    return Array.isArray(result) ? result : (result?.items ?? [])
+  },
+})
 export const useReviewQueue = (f = {}) => useQuery({ queryKey: ['review', f], queryFn: () => getReviewQueue(f) })
 export const useReviewQueuePaged = (f = {}) => useQuery({ queryKey: ['review/paged', f], queryFn: () => getReviewQueuePaged(f) })
 export const useCoverage = () => useQuery({ queryKey: ['summary/coverage'], queryFn: getCoverage })
 export const useSystemStatus = () => useQuery({ queryKey: ['system/status'], queryFn: getSystemStatus, refetchInterval: 30_000 })
 
-// Alerts share the events bound: the corpus carries the full SDWIS-derived
-// contamination history, so a bare list must not pull all of it.
 export const DEFAULT_ALERT_LIMIT = 500
 export const useAlerts = (f = {}) => {
   const params = { limit: DEFAULT_ALERT_LIMIT, ...f }
@@ -55,8 +62,6 @@ export const useAlertsGeojson = (f = {}) => useQuery({ queryKey: ['alerts.geojso
 export const useAlertDependencies = (f = {}) => useQuery({ queryKey: ['alerts/dependencies', f], queryFn: () => getAlertDependencies(f) })
 export const useAlertGaps = () => useQuery({ queryKey: ['alerts/gaps'], queryFn: getAlertGaps })
 
-// Adjudicating a record optimistically drops it from every cached review list
-// so the queue advances instantly; a failed POST rolls the snapshots back.
 const dropRef = (data, ref) => {
   if (Array.isArray(data)) return data.filter((r) => r.record_ref !== ref)
   if (data?.items) {

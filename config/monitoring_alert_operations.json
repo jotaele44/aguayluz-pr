@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0.0",
+  "phase": 2,
+  "policies": {
+    "site_threshold_override_requires_provenance": true,
+    "site_threshold_override_requires_effective_date": true,
+    "one_incident_per_metric_site_threshold_version": true,
+    "provisional_observations_affect_incidents": false,
+    "resolved_incidents_remain_exportable": true,
+    "federation_export_is_certified_only": true
+  },
+  "api": {
+    "active_alerts": "/monitoring/alerts?state=active",
+    "resolved_alerts": "/monitoring/alerts?state=resolved",
+    "operations": "/monitoring/alert-operations",
+    "federation_export": "/export/federation/monitoring-alerts.json"
+  },
+  "lifecycle_states": ["active", "resolved"],
+  "threshold_scopes": ["default", "site"]
+}

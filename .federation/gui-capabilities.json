@@ -1,0 +1,498 @@
+{
+  "schema_version": "prii.gui-capability/v1",
+  "repository": "jotaele44/aguayluz-pr",
+  "policy": {
+    "mode": "ratchet",
+    "baseline": ".federation/gui-parity-baseline.json",
+    "require_discoverable_gui": true,
+    "require_e2e": true,
+    "terminal_free_user_path": true
+  },
+  "discovery": {
+    "backend_roots": [
+      "server/backend"
+    ],
+    "production_roots": [
+      "src/aguayluz",
+      "desktop",
+      "maintenance"
+    ],
+    "analysis_roots": [
+      "scripts"
+    ],
+    "frontend_roots": [
+      "dashboard/src"
+    ],
+    "frontend_capability_roots": [
+      "dashboard/src/pages"
+    ],
+    "frontend_api_roots": [
+      "dashboard/src/lib/api.js"
+    ],
+    "route_files": [
+      "dashboard/src/App.jsx"
+    ],
+    "navigation_files": [
+      "dashboard/src/components/layout/Sidebar.jsx"
+    ],
+    "implicit_routes": [
+      {
+        "path": "/water-disruption/console",
+        "file": "server/backend/water_disruption_api.py"
+      }
+    ],
+    "exclude": [
+      "**/tests/**",
+      "**/*.test.*",
+      "**/*.spec.*",
+      "**/components/ui/**",
+      "scripts/check_gui_parity.py"
+    ]
+  },
+  "capabilities": [
+    {
+      "id": "infrastructure-assets-and-map",
+      "classification": "analysis",
+      "status": "active",
+      "requires_terminal": false,
+      "backend": {
+        "files": [
+          "server/backend/main.py"
+        ],
+        "endpoints": [
+          "GET /assets",
+          "GET /assets/{asset_id}/events",
+          "PATCH /assets/{asset_id}",
+          "GET /assets.geojson",
+          "GET /municipios.geojson",
+          "GET /municipios/{name}/summary"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/",
+          "/map",
+          "/assets",
+          "/sector/:sector",
+          "/municipios/:name"
+        ],
+        "e2e_routes": [
+          "/",
+          "/map",
+          "/assets"
+        ],
+        "components": [
+          "dashboard/src/lib/api.js",
+          "dashboard/src/pages/OverviewPage.jsx",
+          "dashboard/src/pages/MapPage.jsx",
+          "dashboard/src/pages/AssetsPage.jsx",
+          "dashboard/src/pages/SectorDetailPage.jsx",
+          "dashboard/src/pages/MunicipioDetailPage.jsx",
+          "dashboard/src/components/AssetMap.jsx",
+          "dashboard/src/components/AssetsTable.jsx",
+          "dashboard/src/components/AssetDetail.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx",
+          "dashboard/src/pages/OverviewPage.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_backend_events_api.py",
+          "tests/test_pr_geo_boundaries.py"
+        ],
+        "contract": [
+          "tests/test_navigation.py",
+          "tests/test_gui_parity.py"
+        ],
+        "e2e": [
+          "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "alerts-outages-and-events",
+      "classification": "operator",
+      "status": "active",
+      "requires_terminal": false,
+      "backend": {
+        "files": [
+          "server/backend/main.py"
+        ],
+        "endpoints": [
+          "GET /events/stream",
+          "GET /events/{event_id}",
+          "PATCH /events/{event_id}",
+          "GET /events",
+          "GET /alerts",
+          "GET /alerts/facets",
+          "GET /alerts.geojson",
+          "GET /alerts/dependencies",
+          "GET /alerts/gaps",
+          "GET /alerts/{alert_id}"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/alerts",
+          "/alerts/:id",
+          "/outages",
+          "/events/:id"
+        ],
+        "e2e_routes": [
+          "/alerts",
+          "/outages"
+        ],
+        "components": [
+          "dashboard/src/lib/api.js",
+          "dashboard/src/pages/AlertsPage.jsx",
+          "dashboard/src/pages/AlertDetailPage.jsx",
+          "dashboard/src/pages/OutagesPage.jsx",
+          "dashboard/src/pages/EventDetailPage.jsx",
+          "dashboard/src/components/OutagesPanel.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx",
+          "dashboard/src/pages/AlertsPage.jsx",
+          "dashboard/src/components/OutagesPanel.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_backend_alerts_api.py",
+          "tests/test_backend_events_api.py",
+          "tests/test_alerts.py"
+        ],
+        "contract": [
+          "tests/test_gui_parity.py"
+        ],
+        "e2e": [
+          "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "monitoring-analytics-and-system-state",
+      "classification": "analysis",
+      "status": "active",
+      "requires_terminal": false,
+      "backend": {
+        "files": [
+          "server/backend/main.py",
+          "server/backend/app.py",
+          "server/backend/monitoring_alert_operations.py",
+          "server/backend/monitoring_quality.py",
+          "server/backend/monitoring_incident_ledger.py"
+        ],
+        "endpoints": [
+          "GET /readings",
+          "GET /summary",
+          "GET /summary/sectors",
+          "GET /summary/coverage",
+          "GET /system/status",
+          "GET /monitoring/health",
+          "GET /monitoring/alerts",
+          "GET /monitoring/alert-operations",
+          "GET /export/monitoring.json",
+          "GET /export/federation/monitoring-alerts.json",
+          "POST /monitoring/incidents/bootstrap",
+          "GET /monitoring/incidents",
+          "GET /monitoring/incidents/{incident_id}/timeline",
+          "POST /monitoring/incidents/{incident_id}/transitions",
+          "GET /monitoring/incidents/escalations/candidates",
+          "GET /monitoring/incidents/notification-outbox",
+          "GET /export/federation/monitoring-incident-events.json"
+        ],
+        "symbols": [
+          "server/backend/app.py:readings",
+          "server/backend/app.py:monitoring_health",
+          "server/backend/app.py:monitoring_alerts",
+          "server/backend/app.py:monitoring_alert_operations",
+          "server/backend/app.py:export_monitoring",
+          "server/backend/app.py:export_federation_monitoring_alerts",
+          "server/backend/app.py:IncidentTransition",
+          "server/backend/app.py:BootstrapRequest",
+          "server/backend/app.py:bootstrap_incident_ledger",
+          "server/backend/app.py:monitoring_incidents",
+          "server/backend/app.py:monitoring_incident_timeline",
+          "server/backend/app.py:monitoring_incident_transition",
+          "server/backend/app.py:monitoring_escalation_candidates",
+          "server/backend/app.py:monitoring_notification_outbox",
+          "server/backend/app.py:export_federation_monitoring_incident_events",
+          "server/backend/monitoring_alert_operations.py:load_site_thresholds",
+          "server/backend/monitoring_alert_operations.py:resolve_threshold",
+          "server/backend/monitoring_alert_operations.py:threshold_tripped",
+          "server/backend/monitoring_alert_operations.py:lifecycle_alerts",
+          "server/backend/monitoring_alert_operations.py:federation_alert_export",
+          "server/backend/monitoring_quality.py:observation_time",
+          "server/backend/monitoring_quality.py:series_quality",
+          "server/backend/monitoring_quality.py:native_alerts",
+          "server/backend/monitoring_incident_ledger.py:read_events",
+          "server/backend/monitoring_incident_ledger.py:validate_event",
+          "server/backend/monitoring_incident_ledger.py:append_event",
+          "server/backend/monitoring_incident_ledger.py:verify_chain",
+          "server/backend/monitoring_incident_ledger.py:replay",
+          "server/backend/monitoring_incident_ledger.py:materialized_state",
+          "server/backend/monitoring_incident_ledger.py:timeline",
+          "server/backend/monitoring_incident_ledger.py:load_json",
+          "server/backend/monitoring_incident_ledger.py:maintenance_active",
+          "server/backend/monitoring_incident_ledger.py:escalation_candidates",
+          "server/backend/monitoring_incident_ledger.py:notification_outbox",
+          "server/backend/monitoring_incident_ledger.py:federation_delta"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/monitoring",
+          "/analytics",
+          "/logs",
+          "/system"
+        ],
+        "e2e_routes": [
+          "/monitoring",
+          "/analytics",
+          "/logs",
+          "/system"
+        ],
+        "components": [
+          "dashboard/src/lib/api.js",
+          "dashboard/src/pages/MonitoringPage.jsx",
+          "dashboard/src/pages/AnalyticsPage.jsx",
+          "dashboard/src/pages/LiveLogsPage.jsx",
+          "dashboard/src/pages/SystemPage.jsx",
+          "dashboard/src/components/MonitoringCharts.jsx",
+          "dashboard/src/components/IncidentOperationsConsole.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx",
+          "dashboard/src/pages/MonitoringPage.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_alert_impact.py",
+          "tests/test_refresh_plans.py",
+          "tests/test_monitoring_phase3.py"
+        ],
+        "contract": [
+          "tests/test_gui_parity.py",
+          "tests/test_monitoring_phase3.py"
+        ],
+        "e2e": [
+          "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "review-queue",
+      "classification": "operator",
+      "status": "active",
+      "requires_terminal": false,
+      "backend": {
+        "files": [
+          "server/backend/main.py"
+        ],
+        "endpoints": [
+          "GET /review-queue",
+          "POST /review-queue/{ref}/decision"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/review"
+        ],
+        "e2e_routes": [
+          "/review"
+        ],
+        "components": [
+          "dashboard/src/lib/api.js",
+          "dashboard/src/pages/ReviewPage.jsx",
+          "dashboard/src/components/ReviewQueue.jsx",
+          "dashboard/src/components/ReviewRecordCard.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_backend_events_api.py"
+        ],
+        "contract": [
+          "tests/test_gui_parity.py"
+        ],
+        "e2e": [
+          "dashboard/tests/gui-parity.spec.mjs"
+        ],
+        "unit": [
+          "dashboard/src/lib/format.test.js",
+          "dashboard/src/components/ReviewRecordCard.test.jsx"
+        ]
+      }
+    },
+    {
+      "id": "system-tools",
+      "classification": "operator",
+      "status": "active",
+      "requires_terminal": false,
+      "backend": {
+        "files": [
+          "server/backend/main.py"
+        ],
+        "endpoints": [
+          "POST /admin/run-export",
+          "POST /ai/query",
+          "GET /export/report.html",
+          "POST /notify"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/system"
+        ],
+        "e2e_routes": [
+          "/system"
+        ],
+        "components": [
+          "dashboard/src/pages/SystemPage.jsx",
+          "dashboard/src/components/AiQueryPanel.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_validate_repo.py",
+          "tests/test_gui_parity.py"
+        ],
+        "e2e": [
+          "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "water-disruption-shadow-consumer",
+      "classification": "operator",
+      "status": "active",
+      "requires_terminal": false,
+      "backend": {
+        "files": [
+          "server/backend/generated/water_disruption_client.py",
+          "server/backend/water_disruption.py",
+          "server/backend/water_disruption_api.py"
+        ],
+        "endpoints": [
+          "GET /console",
+          "POST /intake",
+          "GET /intake/{candidate_id}",
+          "GET /validation-queue",
+          "POST /validation/{candidate_id}",
+          "GET /incidents",
+          "GET /incidents/{incident_id}",
+          "POST /incidents/{incident_id}/transition",
+          "POST /incidents/{incident_id}/merge",
+          "POST /incidents/{incident_id}/split",
+          "POST /retractions"
+        ],
+        "symbols": [
+          "server/backend/generated/water_disruption_client.py:WaterIncidentClient",
+          "server/backend/water_disruption.py:AppendOnlyJsonl",
+          "server/backend/water_disruption.py:WaterIncidentService",
+          "server/backend/water_disruption.py:canonical_json",
+          "server/backend/water_disruption.py:digest",
+          "server/backend/water_disruption.py:stable_id",
+          "server/backend/water_disruption_api.py:ValidationRequest",
+          "server/backend/water_disruption_api.py:TransitionRequest",
+          "server/backend/water_disruption_api.py:RetractionRequest",
+          "server/backend/water_disruption_api.py:MergeRequest",
+          "server/backend/water_disruption_api.py:SplitRequest",
+          "server/backend/water_disruption_api.py:console",
+          "server/backend/water_disruption_api.py:intake",
+          "server/backend/water_disruption_api.py:intake_status",
+          "server/backend/water_disruption_api.py:validation_queue",
+          "server/backend/water_disruption_api.py:validate",
+          "server/backend/water_disruption_api.py:incidents",
+          "server/backend/water_disruption_api.py:incident",
+          "server/backend/water_disruption_api.py:transition",
+          "server/backend/water_disruption_api.py:merge",
+          "server/backend/water_disruption_api.py:split",
+          "server/backend/water_disruption_api.py:retract"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/water-disruption",
+          "/water-disruption/console"
+        ],
+        "e2e_routes": [
+          "/water-disruption"
+        ],
+        "components": [
+          "dashboard/src/components/layout/Sidebar.jsx",
+          "dashboard/src/pages/WaterDisruption.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_water_disruption.py",
+          "tests/test_water_disruption_api.py"
+        ],
+        "contract": [
+          "tests/test_gui_parity.py"
+        ],
+        "e2e": [
+          "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "water-disruption-shadow-certification",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Fail-closed certification is a CI and release-integrity control; operators use the discoverable shadow console rather than invoking the script directly.",
+      "analysis": {
+        "files": [
+          "scripts/certify_water_disruption_shadow.py"
+        ],
+        "symbols": [
+          "scripts/certify_water_disruption_shadow.py:main",
+          "scripts/certify_water_disruption_shadow.py:require"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_water_disruption.py",
+          "tests/test_water_disruption_api.py"
+        ]
+      }
+    },
+    {
+      "id": "service-health",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Health and authentication-status probes support supervision and readiness rather than a separate user workflow.",
+      "backend": {
+        "files": [
+          "server/backend/main.py"
+        ],
+        "endpoints": [
+          "GET /health",
+          "GET /auth/status"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_server_smoke.py"
+        ]
+      }
+    }
+  ],
+  "exceptions": []
+}
