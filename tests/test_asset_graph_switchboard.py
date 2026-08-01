@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
-import server.backend.app as target
 from fastapi.testclient import TestClient
 from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT))
+
+import server.backend.app as target  # noqa: E402
 
 
 def _fixture_assets():
@@ -165,7 +168,11 @@ def test_linked_asset_confidence_does_not_confirm(monkeypatch):
         ],
     )
     monkeypatch.setattr(target.legacy, "_alert_edges", [])
-    monkeypatch.setattr(target.legacy, "_municipios_geojson", {"type": "FeatureCollection", "features": []})
+    monkeypatch.setattr(
+        target.legacy,
+        "_municipios_geojson",
+        {"type": "FeatureCollection", "features": []},
+    )
     monkeypatch.setattr(target, "read_events", lambda: [])
     monkeypatch.setattr(target, "_crosswalk_aliases", lambda: ({}, {}))
 
