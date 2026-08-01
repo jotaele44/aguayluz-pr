@@ -107,3 +107,11 @@ for (const route of routes) {
     expect(runtimeFailures, runtimeFailures.join("\n")).toEqual([]);
   });
 }
+
+test("assets route exposes the impact switchboard safety boundary", async ({ page }) => {
+  await page.goto("/assets", { waitUntil: "domcontentloaded" });
+  await expect(page.getByText("Asset Impact Switchboard", { exact: true })).toBeVisible();
+  await expect(page.getByText(/no automatic control actions/i)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Switchboard" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Inventory" })).toBeVisible();
+});
