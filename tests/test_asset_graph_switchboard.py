@@ -13,6 +13,8 @@ sys.path.insert(0, str(REPO_ROOT))
 
 import server.backend.app as target  # noqa: E402
 
+SCHEMA_DIR = REPO_ROOT / "schemas" / "water-asset-graph" / "v0.1"
+
 
 def _fixture_assets():
     return [
@@ -71,9 +73,9 @@ def _fixture_assets():
 
 
 def _validate_switchboard_schema(payload):
-    graph_schema = json.loads((REPO_ROOT / "schemas" / "water_asset_graph.schema.json").read_text())
+    graph_schema = json.loads((SCHEMA_DIR / "water_asset_graph.schema.json").read_text())
     relationship_schema = json.loads(
-        (REPO_ROOT / "schemas" / "water_asset_relationship.schema.json").read_text()
+        (SCHEMA_DIR / "water_asset_relationship.schema.json").read_text()
     )
     registry = Registry().with_resource(
         relationship_schema["$id"], Resource.from_contents(relationship_schema)
