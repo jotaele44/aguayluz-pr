@@ -109,7 +109,18 @@ for (const route of routes) {
 }
 
 test("assets route exposes the impact switchboard safety boundary", async ({ page }) => {
+  const responsePromise = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return url.pathname === "/assets" && url.searchParams.get("impact") === "true";
+  });
   await page.goto("/assets", { waitUntil: "domcontentloaded" });
+  const response = await responsePromise;
+  expect(response.ok()).toBe(true);
+  const envelope = await response.json();
+  expect(envelope.schema_version).toBe("aguayluz.water-asset-impact/v0.1");
+  expect(Array.isArray(envelope.assets)).toBe(true);
+  expect(envelope.safety?.confidence_only_confirmation_forbidden).toBe(true);
+
   await expect(page.getByText("Asset Impact Switchboard", { exact: true })).toBeVisible();
   await expect(page.getByText(/no automatic control actions/i)).toBeVisible();
   await expect(page.getByRole("button", { name: "Switchboard" })).toBeVisible();
