@@ -120,15 +120,37 @@ perfectly healthy feed.
 `schemas/monitoring_reading.schema.json` has a **closed `metric` enum**, so only
 products that map onto an existing value are promoted to readings:
 
-| NEON product | Title | `metric` | Unit stored |
-|---|---|---|---|
-| `DP4.00130.001` | Continuous discharge | `streamflow` | m3/s (NEON publishes L/s) |
-| `DP1.20193.001` | Salt-based stream discharge | `streamflow` | m3/s |
-| `DP1.20048.001` | Discharge field collection | `streamflow` | m3/s |
-| `DP1.20016.001` | Elevation of surface water | `gage_height` | m |
-| `DP1.20093.001` | Chemical properties of surface water | `water_quality` | uS/cm |
-| `DP1.20033.001` | Nitrate in surface water | `water_quality` | uM |
-| `DP1.20097.001` | Dissolved gases in surface water | `water_quality` | mol/mol |
+| NEON product | Title | `metric` | CSV column(s) read | Unit stored |
+|---|---|---|---|---|
+| `DP4.00130.001` | Continuous discharge | `streamflow` | `maxpostDischarge`, `continuousDischarge` | m3/s (NEON publishes L/s) |
+| `DP1.20193.001` | Salt-based stream discharge | `streamflow` | `finalDischarge`, `streamDischarge` | m3/s |
+| `DP1.20048.001` | Discharge field collection | `streamflow` | `finalDischarge`, `totalDischarge` | m3/s |
+| `DP1.20016.001` | Elevation of surface water | `gage_height` | `surfacewaterElevMean`, `surfacewaterElev` | m |
+| `DP1.20093.001` | Chemical properties of surface water | `water_quality` | `specificConductance` | uS/cm |
+| `DP1.20033.001` | Nitrate in surface water | `water_quality` | `surfWaterNitrateMean`, `surfWaterNitrate` | uM |
+| `DP1.20097.001` | Dissolved gases in surface water | `water_quality` | `dissolvedCO2` | mol/mol |
+
+### Units bind to the column, not the product
+
+Where a product lists several CSV columns they are **naming variants of one
+measurement**, and each candidate in `CSV_COLUMNS` carries its own `unit` and
+`scale`. That is deliberate. An earlier version put a single unit on the product,
+so a fallback to the second column inherited the first column's unit — with
+`["specificConductance", "waterTemp"]` under one `uS/cm`, a file carrying only
+`waterTemp` would have stored a temperature labelled as conductance. A
+plausible-looking wrong number is worse than no number, and the parser's
+"skip the file" fail-safe did not catch it, because a column *was* matched.
+
+Two rules follow, both enforced by `tests/test_ingest_neon_products.py`:
+
+1. Every candidate for a product measures the same physical quantity. A different
+   analyte (CH4 vs CO2) or quantity (temperature vs conductance) gets its own
+   product entry or none — never a fallback, since `metric` + `parameter_code`
+   would otherwise stop identifying what was measured.
+2. Therefore every candidate for a product shares one unit.
+
+`waterTemp` and `dissolvedCH4` were removed as fallbacks under this rule. A file
+without the documented column is skipped with a warning.
 
 Sub-daily sensor records are reduced to a **daily mean per site/metric**, matching the
 schema's `AYL_RDG_<YYYYMMDD>_<site>_<metric>` "stable per asset/metric/day" contract.

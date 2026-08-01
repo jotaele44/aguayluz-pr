@@ -25,6 +25,7 @@ REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "scripts"))
 
 from ingest_neon_products import (  # noqa: E402
+    CSV_COLUMNS,
     build_readings,
     merge_readings,
     select_files,
@@ -67,6 +68,71 @@ def test_units_are_converted_not_relabelled():
     rows = {r["observed_date"]: r for r in build_readings(CSV_TEXT, "DP4.00130.001", "CUPE")}
     assert rows["2026-06-02"]["unit"] == "m3/s"
     assert rows["2026-06-02"]["value"] == pytest.approx((980 + 1020) / 2 / 1000)
+
+
+# ── unit/column binding — the "matched the wrong column" class of bug ──────────
+def test_every_value_candidate_for_a_product_shares_one_unit():
+    """Structural guard against reintroducing a mislabelling fallback.
+
+    Falling back to a column that measures a DIFFERENT quantity would emit a
+    plausible-looking wrong number (a temperature labelled as conductance) instead
+    of failing. Candidates must be naming variants of one measurement, so they must
+    agree on the unit; a genuinely different analyte gets its own product entry.
+    """
+    for product_code, spec in CSV_COLUMNS.items():
+        units = {c["unit"] for c in spec["value"]}
+        assert len(units) == 1, f"{product_code}: candidates disagree on unit: {units}"
+
+
+def test_every_value_candidate_carries_its_own_unit_and_scale():
+    """Unit and scale must bind to the column, never to the product."""
+    for product_code, spec in CSV_COLUMNS.items():
+        assert "unit" not in spec and "scale" not in spec, (
+            f"{product_code}: unit/scale at product level lets a fallback inherit the wrong one"
+        )
+        for cand in spec["value"]:
+            assert set(cand) == {"column", "unit", "scale"}, f"{product_code}: {cand}"
+
+
+def test_fallback_column_uses_its_own_unit_not_the_first_candidates():
+    """The regression this fix exists for.
+
+    A file carrying only the SECOND candidate must be read with that candidate's
+    unit and scale. Previously unit/scale lived on the product, so the fallback
+    silently inherited the first candidate's.
+    """
+    csv_text = (
+        "siteID,endDate,surfacewaterElev,finalQF\n"
+        "CUPE,2026-06-01T00:00:00Z,3.5,0\n"
+    )
+    rows = build_readings(csv_text, "DP1.20016.001", "CUPE")
+    assert len(rows) == 1
+    second = next(c for c in CSV_COLUMNS["DP1.20016.001"]["value"] if c["column"] == "surfacewaterElev")
+    assert rows[0]["unit"] == second["unit"]
+    assert rows[0]["value"] == pytest.approx(3.5 * second["scale"])
+
+
+def test_different_quantity_is_skipped_not_mislabelled():
+    """`waterTemp` is no longer a fallback for surface-water chemistry.
+
+    A file with only waterTemp must yield nothing — not a temperature stored under
+    `water_quality` with a conductance unit.
+    """
+    csv_text = "siteID,collectDate,waterTemp,finalQF\nCUPE,2026-06-01T00:00:00Z,24.8,0\n"
+    assert build_readings(csv_text, "DP1.20093.001", "CUPE") == []
+
+
+def test_different_analyte_is_skipped_not_mislabelled():
+    """Same rule for dissolved gases: CH4 is not a naming variant of CO2."""
+    csv_text = "siteID,collectDate,dissolvedCH4,finalQF\nCUPE,2026-06-01T00:00:00Z,0.0004,0\n"
+    assert build_readings(csv_text, "DP1.20097.001", "CUPE") == []
+
+
+def test_product_metrics_does_not_carry_a_unit():
+    """Single source of truth: unit lives on the column, not the product."""
+    from aguayluz.neon.mapping import PRODUCT_METRICS as PM
+    for code, meta in PM.items():
+        assert "unit" not in meta, f"{code}: a product-level unit is a second source of truth"
 
 
 def test_blank_values_skipped_not_zeroed():

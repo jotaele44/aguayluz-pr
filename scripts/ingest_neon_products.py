@@ -67,48 +67,84 @@ from aguayluz.neon import (  # noqa: E402
 
 #: Per-product CSV column candidates, from the NEON data-product documentation.
 #:
-#: ``date`` lists observation-timestamp columns and ``value`` the measurement, both
-#: in preference order; the first column actually present in the file wins. ``scale``
-#: converts NEON's published unit to the unit recorded on the reading (NEON reports
-#: discharge in litres/second; this repo stores m3/s).
+#: ``date`` lists observation-timestamp columns in preference order; the first one
+#: present in the file wins.
+#:
+#: ``value`` is a list of **fully specified** candidates — each carries its own
+#: ``unit`` and ``scale``. That binding is deliberate and is the whole point of this
+#: structure: an earlier version attached a single unit/scale to the *product*, so a
+#: fallback to a second column silently inherited the first column's unit. With
+#: ``["specificConductance", "waterTemp"]`` under one ``uS/cm``, a file carrying only
+#: ``waterTemp`` would have produced a temperature labelled as conductance — a
+#: plausible-looking wrong number rather than a clean skip. Units now travel with the
+#: column they describe, so that failure is unrepresentable.
+#:
+#: Two rules follow from this, enforced by ``tests/test_ingest_neon_products.py``:
+#:   1. Every candidate for a product must measure the SAME physical quantity. A
+#:      different analyte (CH4 vs CO2) or a different quantity (temperature vs
+#:      conductance) gets its own product entry or none at all — never a fallback,
+#:      because ``metric`` + ``parameter_code`` would no longer identify what was
+#:      measured.
+#:   2. Therefore every candidate for a product shares one unit.
+#:
+#: ``scale`` converts NEON's published unit to the unit recorded on the reading
+#: (NEON reports discharge in litres/second; this repo stores m3/s).
 #:
 #: A product whose file matches none of its candidates is SKIPPED with a warning —
 #: never silently mapped onto some other column.
 CSV_COLUMNS: dict[str, dict[str, Any]] = {
     "DP4.00130.001": {
         "date": ["endDate", "date", "startDate"],
-        "value": ["maxpostDischarge", "continuousDischarge", "meanQ"],
-        "scale": 0.001,  # L/s -> m3/s
+        # Naming variants of the same continuous-discharge series.
+        "value": [
+            {"column": "maxpostDischarge", "unit": "m3/s", "scale": 0.001},
+            {"column": "continuousDischarge", "unit": "m3/s", "scale": 0.001},
+        ],
     },
     "DP1.20193.001": {
         "date": ["collectDate", "startDate", "endDate"],
-        "value": ["finalDischarge", "streamDischarge"],
-        "scale": 0.001,  # L/s -> m3/s
+        "value": [
+            {"column": "finalDischarge", "unit": "m3/s", "scale": 0.001},
+            {"column": "streamDischarge", "unit": "m3/s", "scale": 0.001},
+        ],
     },
     "DP1.20048.001": {
         "date": ["collectDate", "startDate", "endDate"],
-        "value": ["finalDischarge", "totalDischarge"],
-        "scale": 0.001,  # L/s -> m3/s
+        "value": [
+            {"column": "finalDischarge", "unit": "m3/s", "scale": 0.001},
+            {"column": "totalDischarge", "unit": "m3/s", "scale": 0.001},
+        ],
     },
     "DP1.20016.001": {
         "date": ["endDate", "date", "startDate"],
-        "value": ["surfacewaterElevMean", "surfacewaterElev"],
-        "scale": 1.0,
+        "value": [
+            {"column": "surfacewaterElevMean", "unit": "m", "scale": 1.0},
+            {"column": "surfacewaterElev", "unit": "m", "scale": 1.0},
+        ],
     },
     "DP1.20093.001": {
         "date": ["collectDate", "startDate", "endDate"],
-        "value": ["specificConductance", "waterTemp"],
-        "scale": 1.0,
+        # `waterTemp` was removed as a fallback: it is a different quantity, and
+        # storing it under this product code would make metric+parameter_code
+        # ambiguous. A file without specificConductance is skipped instead.
+        "value": [
+            {"column": "specificConductance", "unit": "uS/cm", "scale": 1.0},
+        ],
     },
     "DP1.20033.001": {
         "date": ["startDateTime", "collectDate", "startDate"],
-        "value": ["surfWaterNitrateMean", "surfWaterNitrate"],
-        "scale": 1.0,
+        "value": [
+            {"column": "surfWaterNitrateMean", "unit": "uM", "scale": 1.0},
+            {"column": "surfWaterNitrate", "unit": "uM", "scale": 1.0},
+        ],
     },
     "DP1.20097.001": {
         "date": ["collectDate", "startDate"],
-        "value": ["dissolvedCO2", "dissolvedCH4"],
-        "scale": 1.0,
+        # `dissolvedCH4` was removed for the same reason as waterTemp above: a
+        # different analyte, not a naming variant of dissolvedCO2.
+        "value": [
+            {"column": "dissolvedCO2", "unit": "mol/mol", "scale": 1.0},
+        ],
     },
 }
 
@@ -259,11 +295,28 @@ def download_file(client: NeonClient, entry: dict) -> bytes | None:
 
 # ── parse CSV -> readings ─────────────────────────────────────────────────────
 def _pick_column(fieldnames: list[str], candidates: list[str]) -> str | None:
+    """First candidate date column present in the file, or ``None``."""
     lookup = {f.lower(): f for f in fieldnames}
     for cand in candidates:
         hit = lookup.get(cand.lower())
         if hit:
             return hit
+    return None
+
+
+def _pick_value_column(
+    fieldnames: list[str], candidates: list[dict[str, Any]]
+) -> tuple[str, dict[str, Any]] | None:
+    """First candidate value column present, returned WITH its own unit and scale.
+
+    Returning the spec alongside the column name is what prevents a fallback from
+    inheriting the previous candidate's unit — see the note on :data:`CSV_COLUMNS`.
+    """
+    lookup = {f.lower(): f for f in fieldnames}
+    for cand in candidates:
+        hit = lookup.get(str(cand["column"]).lower())
+        if hit:
+            return hit, cand
     return None
 
 
@@ -309,16 +362,21 @@ def build_readings(
         return []
 
     date_col = _pick_column(fields, spec["date"])
-    value_col = _pick_column(fields, spec["value"])
-    if not date_col or not value_col:
+    picked = _pick_value_column(fields, spec["value"])
+    if not date_col or picked is None:
+        wanted = [c["column"] for c in spec["value"]]
         print(
             f"  {product_code}/{site}: no known date/value column "
-            f"(looked for {spec['date']} / {spec['value']}); skipping file",
+            f"(looked for {spec['date']} / {wanted}); skipping file",
             file=sys.stderr,
         )
         return []
 
-    scale = float(spec.get("scale", 1.0))
+    value_col, value_spec = picked
+    # Unit and scale come from the CHOSEN column, never from the product, so a
+    # fallback cannot mislabel a different quantity with the first candidate's unit.
+    scale = float(value_spec["scale"])
+    unit = str(value_spec["unit"])
     daily: dict[str, list[float]] = {}
     for row in reader:
         if _flagged(row):
@@ -336,7 +394,6 @@ def build_readings(
         daily.setdefault(day, []).append(val)
 
     metric = meta["metric"]
-    unit = meta["unit"]
     src = (
         f"NEON API {endpoints.API_VERSION} "
         f"{endpoints.data_manifest(product_code, site, '{month}')} "

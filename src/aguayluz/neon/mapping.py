@@ -73,47 +73,45 @@ def site_by_code(code: str) -> dict[str, Any] | None:
 
 
 # ── product -> reading metric ─────────────────────────────────────────────────
-#: NEON product code -> (metric, unit, human title).
+#: NEON product code -> (metric, human title).
 #:
 #: Only products whose measurement maps onto the CLOSED ``metric`` enum in
 #: ``schemas/monitoring_reading.schema.json`` appear here. Adding a NEON product
 #: that measures something else requires extending that enum first — mapping it
 #: to ``other`` instead would make ``metric`` useless for downstream filtering,
 #: and inventing a value fails schema validation at ingest.
+#:
+#: **Units deliberately live elsewhere** — on the individual CSV column, in
+#: ``scripts/ingest_neon_products.py::CSV_COLUMNS``. A product can be read from one
+#: of several column names, and pinning the unit to the product let a fallback
+#: column inherit the wrong one. One unit per product here would reintroduce that.
 PRODUCT_METRICS: dict[str, dict[str, str]] = {
     "DP4.00130.001": {
         "metric": "streamflow",
-        "unit": "m3/s",
         "title": "Continuous discharge",
     },
     "DP1.20193.001": {
         "metric": "streamflow",
-        "unit": "m3/s",
         "title": "Salt-based stream discharge",
     },
     "DP1.20048.001": {
         "metric": "streamflow",
-        "unit": "m3/s",
         "title": "Discharge field collection",
     },
     "DP1.20016.001": {
         "metric": "gage_height",
-        "unit": "m",
         "title": "Elevation of surface water",
     },
     "DP1.20093.001": {
         "metric": "water_quality",
-        "unit": "uS/cm",
         "title": "Chemical properties of surface water",
     },
     "DP1.20033.001": {
         "metric": "water_quality",
-        "unit": "uM",
         "title": "Nitrate in surface water",
     },
     "DP1.20097.001": {
         "metric": "water_quality",
-        "unit": "mol/mol",
         "title": "Dissolved gases in surface water",
     },
 }
