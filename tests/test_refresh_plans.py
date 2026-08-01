@@ -53,8 +53,26 @@ def test_alert_system_build_is_blocking():
 
 def test_keyed_and_waf_gated_steps_are_optional():
     """Steps that need a credential or a permissioned network path warn and continue."""
-    for step in (refresh.STEP_WATERS_ENRICH, refresh.STEP_AEE_FETCH, refresh.STEP_OSHA):
+    for step in (refresh.STEP_WATERS_ENRICH, refresh.STEP_AEE_FETCH, refresh.STEP_OSHA,
+                 refresh.STEP_NEON_PRODUCTS):
         assert step[2] is True, f"{_script_of(step)} must be optional"
+
+
+def test_neon_availability_runs_before_alert_promotion():
+    """build_alerts.py reads data/neon_publication_events.jsonl — the NEON ingest that
+    writes it has to have run first, or a fresh publication silently misses a cadence."""
+    for cadence, plan in refresh.PLANS.items():
+        scripts = [_script_of(s) for s in plan]
+        if "scripts/ingest_neon.py" not in scripts:
+            continue
+        assert scripts.index("scripts/ingest_neon.py") < scripts.index("scripts/build_alerts.py"), (
+            f"{cadence}: NEON ingest must precede alert promotion"
+        )
+
+
+def test_neon_availability_is_scheduled_daily():
+    """The keyless half needs no credential, so there is no reason to run it rarely."""
+    assert "scripts/ingest_neon.py" in {_script_of(s) for s in refresh.PLANS["daily"]}
 
 
 def test_readings_producers_are_scheduled():
@@ -65,6 +83,7 @@ def test_readings_producers_are_scheduled():
         "reservoir": "scripts/ingest_usgs_levels.py",
         "groundwater": "scripts/ingest_usgs_groundwater.py",
         "coastal": "scripts/ingest_noaa_tides.py",
+        "neon": "scripts/ingest_neon_products.py",
     }
     assert set(READINGS_FILES) == set(producers), (
         "a reading kind with no producer script is a phantom feed in the UI"

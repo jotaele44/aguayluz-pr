@@ -52,12 +52,15 @@ modules:
   - module_id: TELECOM_SCADA
     module_name: Telecom / SCADA Alerts
     sector: Telecom
-    activation_status: dormant
+    activation_status: active
     priority: high
     hydro_dependency_relevance: direct
     default_severity_floor: 2
-    primary_sources: carrier notices, operator reports
-    notes: Telemetry and control loss at remote infrastructure.
+    primary_sources: carrier notices, operator reports, NEON publication gaps (scripts/ingest_neon.py)
+    notes: Telemetry and control loss at remote infrastructure. Activated by the NEON
+      D04 ingest — a monitoring station that stops publishing for months is telemetry
+      loss at remote infrastructure, the same way SEISMIC_GEO was activated by the
+      USGS earthquake feed.
   - module_id: DAM_SAFETY
     module_name: Dam Safety / Structural Alerts
     sector: Water infrastructure
