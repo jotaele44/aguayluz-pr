@@ -1,6 +1,13 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import server.backend.app as target
+from jsonschema import Draft202012Validator
+from referencing import Registry, Resource
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def _fixture_assets():
@@ -59,6 +66,17 @@ def _fixture_assets():
     ]
 
 
+def _validate_switchboard_schema(payload):
+    graph_schema = json.loads((REPO_ROOT / "schemas" / "water_asset_graph.schema.json").read_text())
+    relationship_schema = json.loads(
+        (REPO_ROOT / "schemas" / "water_asset_relationship.schema.json").read_text()
+    )
+    registry = Registry().with_resource(
+        relationship_schema["$id"], Resource.from_contents(relationship_schema)
+    )
+    Draft202012Validator(graph_schema, registry=registry).validate(payload)
+
+
 def test_switchboard_is_deterministic_and_propagates_only_declared_edges(monkeypatch):
     monkeypatch.setattr(target.legacy, "_assets", _fixture_assets())
     monkeypatch.setattr(
@@ -111,6 +129,7 @@ def test_switchboard_is_deterministic_and_propagates_only_declared_edges(monkeyp
 
     first = target._asset_switchboard("public")
     second = target._asset_switchboard("public")
+    _validate_switchboard_schema(first)
     assert first["baseline_id"] == second["baseline_id"]
     assert first["inventory"]["duplicate_canonical_id_count"] == 0
 
