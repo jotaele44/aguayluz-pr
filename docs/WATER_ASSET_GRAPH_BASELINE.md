@@ -15,6 +15,15 @@ The existing `GET /assets` route remains backward compatible.
 
 The response binds the current `utility_assets.jsonl` corpus, the non-destructive `asset_crosswalk.jsonl` clusters, alert dependency edges, operational alerts, and the append-only monitoring incident ledger.
 
+## Versioned schemas
+
+The frozen v0.1 contracts are isolated from the repository's unversioned top-level schema set:
+
+- `schemas/water-asset-graph/v0.1/water_asset_graph.schema.json`
+- `schemas/water-asset-graph/v0.1/water_asset_relationship.schema.json`
+
+The graph schema uses a local relative reference to the relationship schema so the pair remains portable and validates without network access.
+
 ## Canonicalization
 
 1. Preserve every source record in `data/utility_assets.jsonl`.
