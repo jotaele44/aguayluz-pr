@@ -169,12 +169,19 @@ PRODUCT_ALERT_MODULES: dict[str, str] = {
     "DP1.00038.001": "WEATHER_HAZARD",
 }
 
-#: Module for a product with no explicit routing. HYDRO_OPS at an aquatic site,
-#: WEATHER_HAZARD at a terrestrial one — the closest honest default in each case.
-DEFAULT_ALERT_MODULE_BY_HABITAT: dict[str, str] = {
-    "aquatic": "HYDRO_OPS",
-    "terrestrial": "WEATHER_HAZARD",
-}
+#: Deliberately NO default module for an unrouted product.
+#:
+#: NEON publishes ~80 products per site, most of them ecological research unrelated to
+#: this producer's water/power mission — plant phenology, mosquito trapping, beetle and
+#: small-mammal sampling. An earlier version fell back by habitat (aquatic -> HYDRO_OPS,
+#: terrestrial -> WEATHER_HAZARD), which meant a routine monthly release of *mosquito
+#: trap data* raised a WEATHER_HAZARD alert. Real upstream publications caught that
+#: during verification: GUAN DP1.10055.001 (plant phenology) and LAJA DP1.10043.001
+#: (mosquitoes) both went 2026-06 -> 2026-07.
+#:
+#: Only products explicitly listed in PRODUCT_ALERT_MODULES alert. Everything else is
+#: still tracked in data/neon_availability.jsonl -- the registry stays complete, and
+#: adding a product to the table above is all it takes to start alerting on it.
 
 #: Feed-health events (missing publication, sensor gap, checksum mismatch, API
 #: failure) route here. TELECOM_SCADA's charter is "telemetry and control loss at
@@ -182,12 +189,17 @@ DEFAULT_ALERT_MODULE_BY_HABITAT: dict[str, str] = {
 FEED_HEALTH_MODULE = "TELECOM_SCADA"
 
 
-def alert_module_for(product_code: str, habitat: str = "aquatic") -> str:
-    """Alert module for a NEON product publication event."""
-    explicit = PRODUCT_ALERT_MODULES.get(product_code)
-    if explicit:
-        return explicit
-    return DEFAULT_ALERT_MODULE_BY_HABITAT.get(habitat, "HYDRO_OPS")
+def alert_module_for(product_code: str, habitat: str = "aquatic") -> str | None:
+    """Alert module for a NEON product publication event, or ``None``.
+
+    ``None`` means "this product is out of scope for alerting" — see the note on
+    :data:`PRODUCT_ALERT_MODULES`. The ``habitat`` argument is retained for call
+    compatibility and to keep the door open for a habitat-scoped rule later; it is
+    deliberately unused, because guessing a module from habitat is what produced
+    mosquito-trap weather alerts.
+    """
+    del habitat  # intentionally unused — see docstring
+    return PRODUCT_ALERT_MODULES.get(product_code)
 
 
 def sanitize_code(value: str) -> str:

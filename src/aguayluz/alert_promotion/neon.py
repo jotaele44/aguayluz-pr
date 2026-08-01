@@ -120,14 +120,19 @@ def neon_alert(
 
     spec = _CHANGE_SPEC[change_type]
     habitat = str(record.get("habitat") or "aquatic")
-    # Both branches yield a value from the alert_event module enum; the mapping tables
-    # are typed as plain str, so narrow here rather than leaking `str` into AlertEvent.
-    module: ModuleId = cast(
-        "ModuleId",
-        FEED_HEALTH_MODULE
-        if change_type == "publication_gap"
-        else alert_module_for(product_code, habitat),
-    )
+    if change_type == "publication_gap":
+        resolved: str | None = FEED_HEALTH_MODULE
+    else:
+        resolved = alert_module_for(product_code, habitat)
+    # No module means the product is out of scope for this producer — NEON publishes
+    # ~80 products per site, most of them ecological research (phenology, mosquito
+    # trapping) with no water/power bearing. Those stay in the availability registry
+    # but must not reach the alert layer.
+    if resolved is None:
+        return None
+    # Every routed value comes from the alert_event module enum; the mapping table is
+    # typed as plain str, so narrow here rather than leaking `str` into AlertEvent.
+    module: ModuleId = cast("ModuleId", resolved)
 
     lat_raw, lon_raw = record.get("lat"), record.get("lon")
     lat: float | None = None

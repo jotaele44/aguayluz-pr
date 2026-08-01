@@ -193,6 +193,17 @@ remote infrastructure". A monitoring station that stops publishing for months is
 exactly that, so this feed activates it — the same mechanism by which the USGS
 earthquake ingest activated `SEISMIC_GEO`.
 
+**A product with no explicit routing raises no alert.** NEON publishes ~80 products per
+site and most are ecological research with no water/power bearing. An earlier version
+fell back by habitat (aquatic → `HYDRO_OPS`, terrestrial → `WEATHER_HAZARD`), which meant
+a routine release of *mosquito trap data* would raise a weather alert. Real upstream
+publications caught it during verification: GUAN `DP1.10055.001` (plant phenology) and
+LAJA `DP1.10043.001` (mosquitoes) both advanced 2026-06 → 2026-07. Only products in the
+routing table alert; the rest stay tracked in `data/neon_availability.jsonl`, and adding
+one to the table is all it takes to start alerting on it. A `publication_gap` is the
+exception — feed health is about the pipeline, not the product's subject matter — so it
+routes to `TELECOM_SCADA` for any monthly-cadence product.
+
 No NEON alert reaches `CRITICAL_SEVERITY` (4). A publication event is an operator
 signal, not a life-safety one, and must not trigger push/SMS fan-out.
 

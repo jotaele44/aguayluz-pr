@@ -96,11 +96,28 @@ def test_publication_gap_routes_to_telecom_scada():
     assert "6" in alert.validation_notes
 
 
-def test_unmapped_product_falls_back_by_habitat():
-    assert neon_alert(_record(product_code="DP1.10058.001")).module_id == "HYDRO_OPS"
-    assert neon_alert(
-        _record(product_code="DP1.10058.001", habitat="terrestrial", neon_site="GUAN")
-    ).module_id == "WEATHER_HAZARD"
+def test_unrouted_product_yields_no_alert():
+    """Off-mission NEON products must not reach the alert layer.
+
+    NEON publishes ~80 products per site, mostly ecological research. Real upstream
+    publications during verification — GUAN plant phenology (DP1.10055.001) and LAJA
+    mosquito trapping (DP1.10043.001) — would have raised WEATHER_HAZARD alerts under
+    the old habitat-default routing. They are tracked in the availability registry but
+    are not water/power signals.
+    """
+    assert neon_alert(_record(product_code="DP1.10055.001", neon_site="GUAN",
+                              habitat="terrestrial")) is None
+    assert neon_alert(_record(product_code="DP1.10043.001", neon_site="LAJA",
+                              habitat="terrestrial")) is None
+    assert neon_alert(_record(product_code="DP1.10058.001")) is None
+
+
+def test_publication_gap_still_alerts_for_an_unrouted_product():
+    """Feed health is about the pipeline, not the product's subject matter."""
+    alert = neon_alert(_record(product_code="DP1.10055.001", change_type="publication_gap",
+                               months_behind=7))
+    assert alert is not None
+    assert alert.module_id == "TELECOM_SCADA"
 
 
 # ── severity ──────────────────────────────────────────────────────────────────
