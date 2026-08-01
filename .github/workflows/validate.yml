@@ -79,11 +79,6 @@ jobs:
         run: python scripts/validate_repo.py
 
   geo-import-check:
-    # build_pr_geo_boundaries.py imports geopandas, which is not in the default
-    # install. Install the `geo` extra and import-check the script (its --help
-    # loads geopandas at module level, then exits 0 without needing the Census
-    # shapefiles) so a missing/broken geo dependency fails CI instead of only
-    # surfacing when someone runs the script.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -103,9 +98,6 @@ jobs:
       - name: Import-check geo boundary builder
         run: python scripts/build_pr_geo_boundaries.py --help
 
-  # The dashboard has had a `lint` script and an eslint config all along, but
-  # nothing ran them, so a lint regression could merge unnoticed. Lint now gates
-  # alongside the build, matching skywatcher-pr and thehub-pr.
   dashboard-build:
     runs-on: ubuntu-latest
     defaults:
@@ -143,14 +135,11 @@ jobs:
       - name: Install uv
         run: python -m pip install uv
       - run: uv pip install --system -e .[dev]
-      - name: Live smoke
+      - name: Bounded NEON-only live health smoke
         env:
-          EPA_WATERS_API_KEY: ${{ secrets.EPA_WATERS_API_KEY }}
-        run: python scripts/smoke_test.py
+          NEON_API_TOKEN: ${{ secrets.NEON_API_TOKEN }}
+        run: python scripts/smoke_neon_provider.py
 
-  # Reproducible installs: fails when uv.lock no longer satisfies pyproject.toml,
-  # so a dependency edit cannot merge without its lockfile update. Mirrors the
-  # `lock` job in thehub-pr/.github/workflows/ci.yml.
   lock:
     runs-on: ubuntu-latest
     steps:
@@ -164,9 +153,6 @@ jobs:
       - name: Lock file is up to date
         run: uv lock --check
 
-  # Type gate, REPORT-ONLY to start. [tool.mypy] `files` scopes it to
-  # src/aguayluz; today's findings are Literal narrowing that pydantic already
-  # validates at runtime. Drop continue-on-error to make it gating once cleared.
   typecheck:
     runs-on: ubuntu-latest
     steps:
