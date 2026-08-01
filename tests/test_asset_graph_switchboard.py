@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import server.backend.app as target
+from fastapi.testclient import TestClient
 from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
 
@@ -171,3 +172,33 @@ def test_linked_asset_confidence_does_not_confirm(monkeypatch):
     payload = target._asset_switchboard("public")
     assert payload["assets"][0]["impact_status"] == "derived"
     assert payload["safety"]["confidence_only_confirmation_forbidden"] is True
+
+
+def test_assets_api_preserves_array_contract_and_gates_operator_view(monkeypatch):
+    monkeypatch.setattr(target.legacy, "_assets", _fixture_assets()[:1])
+    monkeypatch.setattr(target.legacy, "_alerts", [])
+    monkeypatch.setattr(target.legacy, "_alert_edges", [])
+    monkeypatch.setattr(
+        target.legacy,
+        "_municipios_geojson",
+        {
+            "type": "FeatureCollection",
+            "features": [{"type": "Feature", "properties": {"NAME": "Arecibo"}}],
+        },
+    )
+    monkeypatch.setattr(target, "read_events", lambda: [])
+    monkeypatch.setattr(target, "_crosswalk_aliases", lambda: ({}, {}))
+    monkeypatch.delenv("AGUAYLUZ_OPERATOR_ASSET_VIEW_ENABLED", raising=False)
+
+    client = TestClient(target.app)
+    legacy_response = client.get("/assets")
+    assert legacy_response.status_code == 200
+    assert isinstance(legacy_response.json(), list)
+
+    impact_response = client.get("/assets?impact=true&view=public")
+    assert impact_response.status_code == 200
+    assert impact_response.json()["schema_version"] == "aguayluz.water-asset-impact/v0.1"
+
+    operator_response = client.get("/assets?impact=true&view=operator")
+    assert operator_response.status_code == 403
+    assert operator_response.json()["detail"]["error"] == "operator_asset_view_disabled"
