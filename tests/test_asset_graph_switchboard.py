@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from server.backend import app as target
+import server.backend.app as target
 
 
 def _fixture_assets():
