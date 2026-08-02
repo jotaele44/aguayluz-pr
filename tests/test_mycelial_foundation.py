@@ -109,6 +109,15 @@ def test_temporal_format_must_match_precision(
         )
 
 
+def test_exact_timestamp_is_accepted(tmp_path):
+    conn = seeded_db(tmp_path)
+    item = record(
+        observed_at="2026-08-01T12:30:00Z",
+        temporal_precision="exact",
+    )
+    assert append_fungal_occurrence(conn, item).status == "inserted"
+
+
 def test_coordinates_require_quantitative_uncertainty(tmp_path):
     conn = seeded_db(tmp_path)
     with pytest.raises(ValueError, match="invalid_fungal_occurrence"):
@@ -498,29 +507,31 @@ def test_every_ledger_table_denies_update_and_delete(tmp_path, table):
     conn.rollback()
 
 
+def _route_signature(route):
+    return (
+        type(route).__qualname__,
+        getattr(route, "path", None),
+        tuple(sorted(getattr(route, "methods", ()) or ())),
+    )
+
+
 def test_research_app_does_not_mutate_canonical_app():
     from server.backend.app import app as canonical_app
 
-    before = tuple(
-        (route.path, tuple(route.methods or ()))
-        for route in canonical_app.routes
-    )
+    before = tuple(_route_signature(route) for route in canonical_app.routes)
 
     from research.mycelial.app import create_app
 
     research_app = create_app()
-    after = tuple(
-        (route.path, tuple(route.methods or ()))
-        for route in canonical_app.routes
-    )
+    after = tuple(_route_signature(route) for route in canonical_app.routes)
     assert after == before
     assert research_app is not canonical_app
     assert any(
-        route.path == "/research/mycelial/status"
+        getattr(route, "path", None) == "/research/mycelial/status"
         for route in research_app.routes
     )
     assert not any(
-        route.path == "/research/mycelial/status"
+        getattr(route, "path", None) == "/research/mycelial/status"
         for route in canonical_app.routes
     )
 
