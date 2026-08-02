@@ -218,11 +218,13 @@ def test_integration_report_minimal_valid():
         "coverage": {
             "expected": 1,
             "located": 1,
+            "located_any": 1,
             "ingested": 1,
             "deduped": 1,
             "unresolved": 0,
             "gaps": [],
             "coverage_pct": 100.0,
+            "coverage_pct_any_location": 100.0,
         },
         "gates": [
             {"id": "G01_SCHEMA", "status": "PASS", "details": None},
