@@ -3,9 +3,8 @@ from __future__ import annotations
 import json
 
 from fastapi.testclient import TestClient
-from server.backend.app_mycelial import app
-
-from aguayluz.mycelial_foundation import (
+from research.mycelial.app import app
+from research.mycelial.foundation import (
     OccurrenceRecord,
     analytics_unavailable,
     append_occurrence,
