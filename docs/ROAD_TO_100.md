@@ -161,6 +161,41 @@ Real materializations of the corpus from the keyless public federal APIs. Each r
 is what the producer **actually fetched** on the stated date (no fabricated data);
 counts are post-merge file totals where noted.
 
+### 2026-08-02 — three new vectors, and a correction to the entry below
+
+`docs/LAGUNA_CARTAGENA_GAP.md` claimed the Laguna Cartagena well's 1985 water levels were
+"not retrievable through the new API." They are. samples-data is one of ~36 collections on
+`api.waterdata.usgs.gov`, and the one that actually replaced the decommissioned
+`nwis/gwlevels/` is the OGC API's `field-measurements`. Both 1985 records came back
+keyless on the first request. The doc is corrected in place.
+
+| Source | Host | Result | Rows |
+|--------|------|--------|------|
+| USGS OGC `field-measurements` → `usgs_field_measurements_readings` | `api.waterdata.usgs.gov` | OK (keyless) | **6,915** readings, 89 wells, 2016→2026 + the 1985 well pair |
+| USGS OGC `monitoring-locations` → `utility_assets` | `api.waterdata.usgs.gov` | OK | **89** wells (`USGSFM_`), 48 new to the corpus |
+| USGS OGC `peaks` → `usgs_peaks_readings` | `api.waterdata.usgs.gov` | OK (keyless) | **8,317** annual peaks, 244 sites, water years **1899–2025** |
+| NHC active cyclones → `service_events` | `nhc.noaa.gov` | OK (keyless) | 0 — the one active storm was eastern Pacific, correctly filtered |
+
+Three things the live data settled that documentation alone would not have:
+
+1. **The groundwater ingest sees 36 of 82 PR wells.** It reads Daily Values, so a well
+   measured four times a year by a hydrographer is invisible to it. The new vector adds
+   the other 48 without touching that script's scoping rule.
+2. **The well's aquifer assignment is published and null** — not withheld. `aquifer_code`,
+   `national_aquifer_code`, `aquifer_type_code` and `well_constructed_depth` are all
+   empty, while `altitude` and `hydrologic_unit_code` are populated. The letter's question
+   is answered: there is nothing to release.
+3. **The flood baseline reaches back to 1899**, and its maximum is 284,000 ft³/s at Río
+   Grande de Arecibo on 2017-09-20 — Hurricane María. Every other hydrology vector here
+   runs a 14-day or 1-year window, so nothing in the corpus could previously rank a
+   reading against the historical record.
+
+Two API behaviours worth recording for whoever touches this next: a whole-bbox decade-wide
+`field-measurements` query is **cancelled server-side** (`InvalidQuery: "Long running query
+has been cancelled."`), so the fetch slices by calendar year; and `monitoring-locations`
+silently honours only the **last** repeated `id` parameter, returning one feature instead
+of the eight requested.
+
 ### 2026-08-02 — new vector: USGS discrete samples (Laguna Cartagena basin)
 
 Added `scripts/ingest_usgs_samples.py` (keyless) and NEON groundwater chemistry
