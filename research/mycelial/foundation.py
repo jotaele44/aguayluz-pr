@@ -11,7 +11,7 @@ import json
 import sqlite3
 from collections.abc import Iterable
 from dataclasses import asdict, dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal
 
@@ -156,7 +156,7 @@ CREATE TABLE IF NOT EXISTS import_receipts (
 
 
 def utc_now() -> str:
-    return datetime.now(UTC).isoformat().replace("+00:00", "Z")
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def initialize_database(path: str | Path) -> sqlite3.Connection:
