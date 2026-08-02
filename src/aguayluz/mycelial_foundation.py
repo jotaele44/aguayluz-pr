@@ -9,10 +9,11 @@ from __future__ import annotations
 import hashlib
 import json
 import sqlite3
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Iterable, Literal
+from typing import Any, Literal
 
 EvidenceTier = Literal["T1", "T2", "T3", "T4"]
 ReviewStatus = Literal["unreviewed", "needs_review", "accepted", "rejected"]
