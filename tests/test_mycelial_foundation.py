@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 
 from fastapi.testclient import TestClient
+from server.backend.app_mycelial import app
 
 from aguayluz.mycelial_foundation import (
     OccurrenceRecord,
@@ -13,7 +14,6 @@ from aguayluz.mycelial_foundation import (
     initialize_database,
     safe_occurrence_view,
 )
-from server.backend.app_mycelial import app
 
 
 def record(**overrides):
