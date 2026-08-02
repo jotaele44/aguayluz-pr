@@ -21,7 +21,7 @@
     "reading_id":  { "type": "string", "pattern": "^AYL_RDG_[0-9]{8}_[A-Za-z0-9_.-]+$", "description": "AYL_RDG_<YYYYMMDD>_<site>_<metric> — stable per asset/metric/day." },
     "asset_id":    { "type": "string", "minLength": 1, "description": "FK to a utility_asset.asset_id (e.g. USGS_50059000)." },
     "site_no":     { "type": ["string", "null"], "description": "Upstream station id for provenance (USGS site, PWSID, EIA plant)." },
-    "metric":      { "enum": ["reservoir_elevation", "reservoir_storage_pct", "streamflow", "gage_height", "water_quality", "generation", "other"] },
+    "metric":      { "enum": ["reservoir_elevation", "reservoir_storage_pct", "streamflow", "gage_height", "water_quality", "generation", "reliability", "emissions", "other"] },
     "parameter_code": { "type": ["string", "null"], "description": "Source parameter code (USGS parm_cd, EPA contaminant code, EIA series)." },
     "value":       { "type": "number" },
     "unit":        { "type": "string", "minLength": 1 },

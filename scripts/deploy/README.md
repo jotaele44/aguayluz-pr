@@ -44,6 +44,12 @@ python scripts/refresh.py --weekly          # full: assets + levels + SDWIS + ex
 - Daily job: every day 06:15 local. Weekly job: Mondays 06:30 local.
 - Each ingest MERGES (idempotent); the exporter validates against the schema gates
   and exits non-zero on failure, so a bad pull surfaces in `logs/*.err`.
+- Reservoir low-level alerts (`derive_reservoir_alerts.py`) run automatically after
+  the level pull in both cadences — no extra config.
+- Live LUMA electric outages are **opt-in** (`--with-luma`): `api.miluma.lumapr.com`
+  is WAF-gated and LUMA asks third parties not to republish, so it is excluded from
+  the default schedule. Add `--with-luma` only for sparing/internal use, ideally
+  under an official data-sharing arrangement.
 
 ## cron alternative
 
