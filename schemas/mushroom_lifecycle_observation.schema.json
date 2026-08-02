@@ -1,0 +1,15 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://aguayluz.local/schemas/mushroom_lifecycle_observation.schema.json",
+  "title":"LifecycleObservation","type":"object","additionalProperties":false,
+  "required":["observation_id","survey_id","site_id","observed_at","lifecycle_state","confidence"],
+  "properties":{
+    "observation_id":{"type":"string","minLength":1},"survey_id":{"type":"string","minLength":1},"site_id":{"type":"string","minLength":1},
+    "observed_at":{"type":"string","format":"date-time"},
+    "lifecycle_state":{"enum":["dormant_or_unknown","environmental_priming","emergence_suspected","fruiting_confirmed","expansion","peak","senescence","decomposition","post_fruiting"]},
+    "confidence":{"enum":["low","medium","high","verified"]},"taxon_name":{"type":["string","null"]},
+    "count":{"type":["integer","null"],"minimum":0},"occupied_area_m2":{"type":["number","null"],"minimum":0},
+    "development_stage":{"type":["string","null"]},"condition":{"type":["string","null"]},"substrate":{"type":["string","null"]},
+    "host_taxon":{"type":["string","null"]},"media_ids":{"type":"array","items":{"type":"string"},"uniqueItems":true},"notes":{"type":["string","null"]}
+  }
+}
