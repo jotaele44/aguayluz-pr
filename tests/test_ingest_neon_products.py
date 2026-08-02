@@ -164,6 +164,24 @@ def test_unknown_columns_skip_the_file_rather_than_guess(capsys):
     assert "no known date/value column" in capsys.readouterr().err
 
 
+def test_groundwater_chemistry_is_mapped_and_single_candidate():
+    """DP1.20092.001 reads specificConductance only — no guessed fallback, per the
+    rule that a wrong column which happens to exist is worse than no reading."""
+    spec = CSV_COLUMNS["DP1.20092.001"]
+    assert [c["column"] for c in spec["value"]] == ["specificConductance"]
+    assert spec["value"][0]["unit"] == "uS/cm"
+    csv_text = (
+        "siteID,collectDate,specificConductance,finalQF\n"
+        "GUIL,2026-05-01T00:00:00Z,412.5,0\n"
+    )
+    rows = build_readings(csv_text, "DP1.20092.001", "GUIL")
+    assert len(rows) == 1
+    jsonschema.validate(rows[0], READING_SCHEMA)
+    assert rows[0]["metric"] == "water_quality"
+    assert rows[0]["unit"] == "uS/cm"
+    assert rows[0]["asset_id"] == "NEON_GUIL"
+
+
 def test_unmapped_product_yields_nothing():
     """Precipitation has no metric enum value — it must not be silently stored."""
     assert build_readings(CSV_TEXT, "DP1.00045.001", "CUPE") == []

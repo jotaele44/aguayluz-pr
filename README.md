@@ -51,6 +51,11 @@ corpus is real public data, with some sources external or point-in-time.
   (`scripts/ingest_neon_products.py`) need `NEON_API_TOKEN` — NEON's `/api/v0/data`
   endpoint returns 403 anonymously, so that step skips and exits 0 without one.
   See [`docs/NEON_INTEGRATION.md`](docs/NEON_INTEGRATION.md).
+- USGS discrete water-quality samples for the Laguna Cartagena basin
+  (`scripts/ingest_usgs_samples.py`, keyless) — 120 results across the lake, its outflow
+  and the Lajas well, recovered from the `samples-data` API that replaced the
+  decommissioned `nwis/gwlevels` service. The basin has no daily-values record at all;
+  see [`docs/LAGUNA_CARTAGENA_GAP.md`](docs/LAGUNA_CARTAGENA_GAP.md).
 - Operational alert events (`docs/ALERT_SYSTEM.md`) and the 78-municipio /
   901-barrio geo layer under `data/geo/` (U.S. Census cartographic boundaries).
 

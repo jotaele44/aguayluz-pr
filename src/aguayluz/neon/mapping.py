@@ -114,6 +114,10 @@ PRODUCT_METRICS: dict[str, dict[str, str]] = {
         "metric": "water_quality",
         "title": "Dissolved gases in surface water",
     },
+    "DP1.20092.001": {
+        "metric": "water_quality",
+        "title": "Chemical properties of groundwater",
+    },
 }
 
 #: Products sampled by field campaign rather than by a continuous sensor. Their
@@ -124,6 +128,10 @@ PRODUCT_METRICS: dict[str, dict[str, str]] = {
 IRREGULAR_CADENCE_PRODUCTS: frozenset[str] = frozenset({
     "DP1.20193.001",  # Salt-based stream discharge — manual salt-injection campaigns
     "DP1.20048.001",  # Discharge field collection — manual gauging visits
+    # Groundwater chemistry is the most sporadic of the lot: measured at GUIL, it has 20
+    # available months across a 109-month record (18%), against 96% for the surface-water
+    # chemistry equivalent. A gap detector would fire on it permanently.
+    "DP1.20092.001",  # Chemical properties of groundwater — well sampling visits
 })
 
 #: Products whose absence for several months is a real signal (continuous AIS
@@ -156,6 +164,7 @@ PRODUCT_ALERT_MODULES: dict[str, str] = {
     "DP1.20093.001": "CONTAMINATION",
     "DP1.20033.001": "CONTAMINATION",
     "DP1.20097.001": "CONTAMINATION",
+    "DP1.20092.001": "CONTAMINATION",
     "DP1.20163.001": "CONTAMINATION",
     "DP1.20194.001": "CONTAMINATION",
     "DP4.00130.001": "HYDRO_OPS",

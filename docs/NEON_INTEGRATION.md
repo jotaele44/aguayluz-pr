@@ -111,9 +111,19 @@ Emitted by `diff_availability()` in `scripts/ingest_neon.py` (pure; `today` inje
 
 `publication_gap` is checked **only** for `MONTHLY_CADENCE_PRODUCTS` (continuous AIS
 sensors and regular monthly sampling). Campaign-sampled products —
-`DP1.20193.001` salt-based discharge, `DP1.20048.001` field gauging — are irregular by
-design (48 months across an 8-year record) and would otherwise fire constantly on a
-perfectly healthy feed.
+`DP1.20193.001` salt-based discharge, `DP1.20048.001` field gauging, `DP1.20092.001`
+groundwater chemistry — are irregular by design and would otherwise fire constantly on a
+perfectly healthy feed. Measured coverage, from the availability registry:
+
+| Product | Site | Available / span | Coverage |
+|---|---|---|---|
+| `DP1.20093.001` surface-water chemistry | CUPE | 134 / 140 | 96% |
+| `DP1.20048.001` discharge field collection | CUPE | 106 / 126 | 84% |
+| `DP1.20193.001` salt-based discharge | GUIL | 53 / 137 | 39% |
+| `DP1.20092.001` groundwater chemistry | GUIL | 20 / 109 | **18%** |
+
+Groundwater chemistry is the most sporadic of the lot — a gap detector would flag it
+permanently.
 
 ## Product → metric
 
@@ -129,6 +139,7 @@ products that map onto an existing value are promoted to readings:
 | `DP1.20093.001` | Chemical properties of surface water | `water_quality` | `specificConductance` | uS/cm |
 | `DP1.20033.001` | Nitrate in surface water | `water_quality` | `surfWaterNitrateMean`, `surfWaterNitrate` | uM |
 | `DP1.20097.001` | Dissolved gases in surface water | `water_quality` | `dissolvedCO2` | mol/mol |
+| `DP1.20092.001` | Chemical properties of groundwater | `water_quality` | `specificConductance` | uS/cm |
 
 ### Units bind to the column, not the product
 
@@ -229,6 +240,23 @@ python scripts/ingest_neon_products.py              # exits 0 with a notice if u
 Cadence in `scripts/refresh.py`: `ingest_neon.py` runs `daily`/`weekly`/`all` (NEON
 publishes monthly, so a daily poll is ample at 4 requests against a 200/hour quota);
 `ingest_neon_products.py` runs `weekly`/`all`. Both are `optional=True`.
+
+## Independent cross-check against NEON's product catalog
+
+A NEON product-catalog export (198 products, snapshot 2025-06) was checked against this
+mapping. **All products in `PRODUCT_METRICS` match on exact title with `Available`
+status** — independent corroboration that the codes and titles here are right.
+
+One apparent mismatch resolves as a snapshot artefact rather than an error:
+`DP1.00045.001` (Precipitation - tipping bucket) is absent from the catalog but returns
+HTTP 200 from `/products/DP1.00045.001` and is present at all four PR sites with data
+through 2026-06. The catalog predates it.
+
+Two products from the same source were considered and deliberately left out: 
+`DP4.00131.001` Stream morphology map and `DP1.20066.001` Aquatic plant, bryophyte and
+macroalgae clip harvest. Both are live at CUPE and GUIL, but neither maps onto a value in
+the closed `metric` enum, and under the routing rule above they are tracked in the
+availability registry while raising no alerts.
 
 ## Known limitations
 

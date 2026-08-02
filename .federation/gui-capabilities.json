@@ -581,6 +581,33 @@
           "tests/test_refresh_plans.py"
         ]
       }
+    },
+    {
+      "id": "usgs-discrete-samples-ingest",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Scheduled archival producer, not an operator workflow. Invoked by the cron cadences in .github/workflows/refresh.yml via scripts/refresh.py, never by a person, so no normal user path requires a terminal. The sampled well is rendered as a utility_asset row on the existing assets and map views. The 120 water-quality results reach the PRII hub through the canonical federation export (scripts/federation_export.py globs data/*_readings.jsonl; verified as monitoring_readings=120), which per docs/adr/0001 is this producer's supported product surface -- this repo's own dashboard is diagnostic-only. They are NOT currently selectable on that diagnostic dashboard: server/backend/app.py's READING_VECTOR_REGISTRY has no usgs_samples vector and monitoring_quality.py's SERIES_METADATA_REGISTRY has no water_quality entry, so GET /readings would reject the kind. Adding that vector is a tracked follow-up, not a claim made here.",
+      "analysis": {
+        "files": [
+          "scripts/ingest_usgs_samples.py"
+        ],
+        "symbols": [
+          "scripts/ingest_usgs_samples.py:asset_id_for",
+          "scripts/ingest_usgs_samples.py:build_assets",
+          "scripts/ingest_usgs_samples.py:build_readings",
+          "scripts/ingest_usgs_samples.py:fetch_samples_live",
+          "scripts/ingest_usgs_samples.py:main",
+          "scripts/ingest_usgs_samples.py:merge_assets",
+          "scripts/ingest_usgs_samples.py:merge_readings"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_ingest_usgs_samples.py",
+          "tests/test_refresh_plans.py"
+        ]
+      }
     }
   ],
   "exceptions": []
