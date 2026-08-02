@@ -138,6 +138,15 @@ CSV_COLUMNS: dict[str, dict[str, Any]] = {
             {"column": "surfWaterNitrate", "unit": "uM", "scale": 1.0},
         ],
     },
+    "DP1.20092.001": {
+        "date": ["collectDate", "startDate", "endDate"],
+        # Single candidate on purpose. The surface-water equivalent (DP1.20093.001) reads
+        # specificConductance; no fallback is guessed here, because a wrong column that
+        # happens to exist is worse than no reading at all.
+        "value": [
+            {"column": "specificConductance", "unit": "uS/cm", "scale": 1.0},
+        ],
+    },
     "DP1.20097.001": {
         "date": ["collectDate", "startDate"],
         # `dissolvedCH4` was removed for the same reason as waterTemp above: a

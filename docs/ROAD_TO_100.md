@@ -161,6 +161,46 @@ Real materializations of the corpus from the keyless public federal APIs. Each r
 is what the producer **actually fetched** on the stated date (no fabricated data);
 counts are post-merge file totals where noted.
 
+### 2026-08-02 — new vector: USGS discrete samples (Laguna Cartagena basin)
+
+Added `scripts/ingest_usgs_samples.py` (keyless) and NEON groundwater chemistry
+(`DP1.20092.001`). Prompted by a USGS data-request letter about the Laguna Cartagena
+sites in Lajas/Boquerón; the investigation is written up in
+[`docs/LAGUNA_CARTAGENA_GAP.md`](LAGUNA_CARTAGENA_GAP.md).
+
+| Source | Host | Result | Rows |
+|--------|------|--------|------|
+| USGS samples-data → `usgs_samples_readings` | `api.waterdata.usgs.gov` | OK (keyless) | **120** stored of 187 parsed — 59 lake, 60 outflow, 1 well |
+| USGS well → `utility_assets` | `api.waterdata.usgs.gov` | OK | **1** asset (`USGSGW_180046067053700`, `needs_review`) |
+| NEON `DP1.20092.001` groundwater chemistry | `data.neonscience.org` | mapped | live at GUIL, 20 months |
+
+The letter asked whether records were being withheld. They are not: the basin's records
+are published, but the monitoring lapsed. The outflow gauge ran 518 days of discharge in
+1984-85 and stopped; the lake was sampled once in 2011-12; the well was measured twice,
+in 1985 and 1986. `waterservices.usgs.gov/nwis/gwlevels/` now returns HTTP 301 to a
+decommissioning notice, making the caution already in `ingest_usgs_groundwater.py`'s
+docstring current fact — `api.waterdata.usgs.gov/samples-data` is the replacement.
+
+The well was invisible to this producer for a legitimate reason, not an oversight:
+`ingest_usgs_groundwater.py` keeps only wells carrying a daily-values time series, which
+takes 5,437 PR groundwater sites down to 36 assets. Rather than special-case past that
+rule, the new ingest gives the well real readings from the discrete-sample API, so it
+satisfies the existing invariant unchanged.
+
+67 results were deliberately not stored and the run reports the count: 41 non-detects (a
+non-detect is not a zero) and results with a blank unit (`monitoring_reading.unit`
+requires one; inventing it would mislabel the value).
+
+NEON groundwater chemistry is in `IRREGULAR_CADENCE_PRODUCTS` — at 20 available months
+across a 109-month record (18%, against 96% for the surface-water equivalent) the
+publication-gap detector would flag it permanently. A NEON product-catalog export also
+independently confirmed all products in `PRODUCT_METRICS` on exact title and status.
+
+Offline tests: `tests/test_ingest_usgs_samples.py` (15 tests, real trimmed capture in
+`tests/fixtures/usgs_samples_laguna_cartagena.csv`) covering schema conformance, the
+non-detect and unitless drops, reading-id collision across same-day characteristics, and
+merge idempotency — no network.
+
 ### 2026-07-29 — new vector: NEON Domain D04 (Puerto Rico)
 
 Added `scripts/ingest_neon.py` (keyless) and `scripts/ingest_neon_products.py`

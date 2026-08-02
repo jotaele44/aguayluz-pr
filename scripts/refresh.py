@@ -24,6 +24,9 @@ sandbox, whose proxy may block waterservices.usgs.gov / data.epa.gov):
              EPA ECHO CWA enforcement      -> service_events.jsonl   (optional)
              FEMA disaster declarations    -> service_events.jsonl   (optional, + export)
              NEON water products           -> neon_readings.jsonl (optional, token)
+             USGS discrete samples         -> usgs_samples_readings.jsonl (optional)
+                 Archival water chemistry for the Laguna Cartagena basin, which has no
+                 daily-values record at all; see docs/LAGUNA_CARTAGENA_GAP.md.
              EPA WATERS/NHDPlus enrichment -> utility_assets.jsonl (optional)
              Sites + violations change slowly; refresh weekly. ECHO and FEMA are
              best-effort: their public REST endpoints (echo.epa.gov CWA services,
@@ -100,6 +103,11 @@ STEP_NOAA_TIDES = (
 STEP_NEON = (
     "NEON D04 availability → neon_availability + utility_assets",
     ["scripts/ingest_neon.py"],
+    True,   # optional — network feed; keyless, but must not abort the refresh
+)
+STEP_USGS_SAMPLES = (
+    "USGS discrete samples (Laguna Cartagena basin) → usgs_samples_readings",
+    ["scripts/ingest_usgs_samples.py"],
     True,   # optional — network feed; keyless, but must not abort the refresh
 )
 STEP_NEON_PRODUCTS = (
@@ -195,12 +203,12 @@ PLANS: dict[str, list[tuple]] = {
     "daily": [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_LEVELS, STEP_USGS_GW, STEP_NOAA_TIDES,
               STEP_NEON, *_DERIVE],
     "weekly": [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_ASSETS, STEP_USGS_LEVELS, STEP_USGS_GW,
-               STEP_NOAA_TIDES, STEP_NEON, STEP_NEON_PRODUCTS, STEP_SDWIS, STEP_ECHO,
-               STEP_FEMA, STEP_OSHA, STEP_WATERS_ENRICH, *_DERIVE],
+               STEP_NOAA_TIDES, STEP_NEON, STEP_NEON_PRODUCTS, STEP_USGS_SAMPLES,
+               STEP_SDWIS, STEP_ECHO, STEP_FEMA, STEP_OSHA, STEP_WATERS_ENRICH, *_DERIVE],
     "all":   [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_ASSETS, STEP_USGS_LEVELS, STEP_USGS_GW,
-              STEP_NOAA_TIDES, STEP_NEON, STEP_NEON_PRODUCTS, STEP_SDWIS, STEP_ECHO,
-              STEP_FEMA, STEP_OSHA, STEP_AEE_FETCH, STEP_AEE_INGEST, STEP_WATERS_ENRICH,
-              *_DERIVE],
+              STEP_NOAA_TIDES, STEP_NEON, STEP_NEON_PRODUCTS, STEP_USGS_SAMPLES,
+              STEP_SDWIS, STEP_ECHO, STEP_FEMA, STEP_OSHA, STEP_AEE_FETCH,
+              STEP_AEE_INGEST, STEP_WATERS_ENRICH, *_DERIVE],
 }
 
 

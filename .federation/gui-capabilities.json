@@ -581,6 +581,33 @@
           "tests/test_refresh_plans.py"
         ]
       }
+    },
+    {
+      "id": "usgs-discrete-samples-ingest",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Scheduled archival producer, not an operator workflow. Invoked by the weekly cron cadence in .github/workflows/refresh.yml via scripts/refresh.py, never by a person, so no normal user path requires a terminal. Its output is rendered through existing surfaces: the sampled well appears as a utility_asset row on the assets and map views, and the 120 water-quality results are served as monitoring_reading rows and projected into the canonical federation export by the exporter's existing data/*_readings.jsonl glob. The script exists because the daily-values ingests structurally cannot see a site whose entire record is discrete field samples -- see docs/LAGUNA_CARTAGENA_GAP.md.",
+      "analysis": {
+        "files": [
+          "scripts/ingest_usgs_samples.py"
+        ],
+        "symbols": [
+          "scripts/ingest_usgs_samples.py:asset_id_for",
+          "scripts/ingest_usgs_samples.py:build_assets",
+          "scripts/ingest_usgs_samples.py:build_readings",
+          "scripts/ingest_usgs_samples.py:fetch_samples_live",
+          "scripts/ingest_usgs_samples.py:main",
+          "scripts/ingest_usgs_samples.py:merge_assets",
+          "scripts/ingest_usgs_samples.py:merge_readings"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_ingest_usgs_samples.py",
+          "tests/test_refresh_plans.py"
+        ]
+      }
     }
   ],
   "exceptions": []
