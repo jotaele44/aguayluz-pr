@@ -6,10 +6,16 @@ Phase 0 can ingest, normalize, deduplicate, adjudicate, and register fungal occu
 
 ## Runtime boundary
 
+The implementation is intentionally located outside the production and backend discovery roots under:
+
+```text
+research/mycelial/
+```
+
 The bounded ASGI entrypoint is:
 
 ```text
-server.backend.app_mycelial:app
+research.mycelial.app:app
 ```
 
 It adds:
@@ -17,7 +23,7 @@ It adds:
 - `GET /research/mycelial/status`
 - `GET /research/mycelial/analytics/{capability}` — always HTTP 503 with `model_not_calibrated`
 
-The standard application is not silently altered while the feature is under draft review.
+The standard application is not altered while the feature is under draft review. Relocation to the `research/` boundary prevents Phase 0 from making an implicit production or GUI-availability claim before a later admission decision.
 
 ## Persistence contract
 
