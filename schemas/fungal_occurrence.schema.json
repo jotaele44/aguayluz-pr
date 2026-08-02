@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aguayluz.pr/schemas/fungal_occurrence.schema.json",
+  "title": "Fungal occurrence evidence record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "occurrence_id",
+    "source_id",
+    "source_record_id",
+    "observed_at",
+    "taxon_name",
+    "latitude",
+    "longitude",
+    "evidence_tier",
+    "review_status",
+    "coordinate_confidence",
+    "coordinate_uncertainty_m",
+    "coordinate_datum",
+    "coordinate_method",
+    "taxonomic_confidence",
+    "temporal_precision",
+    "sensitive",
+    "municipality",
+    "substrate",
+    "observer",
+    "evidence_refs",
+    "notes",
+    "schema_version"
+  ],
+  "properties": {
+    "occurrence_id": {"type": "string", "minLength": 1},
+    "source_id": {"type": "string", "minLength": 1},
+    "source_record_id": {"type": ["string", "null"]},
+    "observed_at": {"type": ["string", "null"]},
+    "taxon_name": {"type": ["string", "null"]},
+    "latitude": {"type": ["number", "null"], "minimum": -90, "maximum": 90},
+    "longitude": {"type": ["number", "null"], "minimum": -180, "maximum": 180},
+    "municipality": {"type": ["string", "null"]},
+    "substrate": {"type": ["string", "null"]},
+    "observer": {"type": ["string", "null"]},
+    "evidence_refs": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "notes": {"type": ["string", "null"]},
+    "evidence_tier": {"enum": ["T1", "T2", "T3", "T4"]},
+    "review_status": {"enum": ["accepted", "needs_review", "rejected", "blocked"]},
+    "coordinate_confidence": {"enum": ["exact", "approximate", "centroid", "unknown"]},
+    "coordinate_uncertainty_m": {"type": ["number", "null"], "minimum": 0},
+    "coordinate_datum": {"enum": ["WGS84", "NAD83", "unknown"]},
+    "coordinate_method": {"enum": ["gps", "map", "centroid", "geocoded", "reported", "unknown"]},
+    "taxonomic_confidence": {
+      "enum": ["specimen_verified", "expert_verified", "photo_supported", "reported", "unknown"]
+    },
+    "temporal_precision": {"enum": ["exact", "day", "month", "year", "historical", "unknown"]},
+    "sensitive": {"type": "boolean"},
+    "schema_version": {"const": "1.1.0"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"temporal_precision": {"const": "exact"}}},
+      "then": {"properties": {"observed_at": {"type": "string", "format": "date-time"}}}
+    },
+    {
+      "if": {"properties": {"temporal_precision": {"const": "day"}}},
+      "then": {"properties": {"observed_at": {"type": "string", "format": "date"}}}
+    },
+    {
+      "if": {"properties": {"temporal_precision": {"const": "month"}}},
+      "then": {"properties": {"observed_at": {"type": "string", "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"}}}
+    },
+    {
+      "if": {"properties": {"temporal_precision": {"const": "year"}}},
+      "then": {"properties": {"observed_at": {"type": "string", "pattern": "^[0-9]{4}$"}}}
+    },
+    {
+      "if": {"properties": {"temporal_precision": {"enum": ["historical", "unknown"]}}},
+      "then": {"properties": {"observed_at": {"type": "null"}}}
+    },
+    {
+      "if": {"properties": {"latitude": {"type": "null"}}},
+      "then": {
+        "properties": {
+          "longitude": {"type": "null"},
+          "coordinate_uncertainty_m": {"type": "null"},
+          "coordinate_confidence": {"const": "unknown"},
+          "coordinate_datum": {"const": "unknown"},
+          "coordinate_method": {"const": "unknown"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"latitude": {"type": "number"}}},
+      "then": {
+        "properties": {
+          "longitude": {"type": "number"},
+          "coordinate_uncertainty_m": {"type": "number"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"coordinate_confidence": {"const": "exact"}}},
+      "then": {
+        "properties": {
+          "latitude": {"type": "number"},
+          "longitude": {"type": "number"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"taxonomic_confidence": {"const": "specimen_verified"}}},
+      "then": {"properties": {"evidence_refs": {"type": "array", "minItems": 1}}}
+    }
+  ]
+}

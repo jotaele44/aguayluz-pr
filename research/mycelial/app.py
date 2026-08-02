@@ -1,10 +1,21 @@
-"""Bounded ASGI entrypoint for the Phase 0 research-only mycelial surface.
+"""Independent ASGI application for the Phase 0 research surface.
 
-Deployment remains opt-in: use ``research.mycelial.app:app``. The canonical
-AguaYLuz application is not modified while this module is under review.
+Importing this module must never mutate ``server.backend.app:app``.
 """
-from server.backend.app import app
+from fastapi import FastAPI
 
 from .api import router
 
-app.include_router(router)
+
+def create_app() -> FastAPI:
+    application = FastAPI(
+        title="AguaYLuz fungal occurrence research foundation",
+        docs_url=None,
+        redoc_url=None,
+        openapi_url=None,
+    )
+    application.include_router(router)
+    return application
+
+
+app = create_app()

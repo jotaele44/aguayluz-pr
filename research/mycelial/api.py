@@ -1,7 +1,7 @@
-"""Research-only mycelial evidence API.
+"""Research-only fungal occurrence evidence API.
 
-All ecological analytics are intentionally unavailable until a separately
-reviewed calibration phase is installed.
+All ecological analytics remain unavailable until a separately reviewed
+calibration phase is installed.
 """
 from __future__ import annotations
 
@@ -23,17 +23,20 @@ router = APIRouter(prefix="/research/mycelial", tags=["research-mycelial"])
 def status() -> JSONResponse:
     return JSONResponse(
         {
-            "module": "mycelial_foundation",
+            "module": "fungal_occurrence_foundation",
+            "project_umbrella": "mycelial_research",
             "phase": 0,
             "schema_version": SCHEMA_VERSION,
             "research_only": RESEARCH_ONLY,
             "analytics_status": ANALYTICS_STATUS,
             "enabled_capabilities": [
-                "occurrence_ingest",
+                "fungal_occurrence_ingest",
                 "provenance_ledger",
                 "dataset_registry",
-                "deduplication",
+                "exact_replay_idempotency",
+                "duplicate_candidate_linking",
                 "adjudication",
+                "supersession",
                 "sensitive_coordinate_controls",
                 "run_receipts",
             ],
