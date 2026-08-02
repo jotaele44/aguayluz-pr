@@ -22,7 +22,7 @@ This is not an access problem to escalate. It is a coverage gap to document.
 |---|---|---|---|
 | `50129899` Laguna Cartagena | lake | 33 discrete water-quality series. One sampling campaign, 2011-11 → 2012-08. **No daily values.** | `USGS_50129899` (reservoir) |
 | `50129900` Outflow | stream | Discharge daily values **1984-06-05 → 1985-11-12, 518 points**, then nothing for 40 years. Plus 36 discrete WQ series from the same 2011-12 campaign. | `USGS_50129900` (stream_gage) |
-| `180046067053700` Laguna Cartagena Well | well | 4 series, all one-off: water level (`62610`, `72019`) 1985-08-19; specific conductance (`00095`) 1986-03-25. **Zero daily values.** | `USGSGW_180046067053700` (added by this work, `needs_review`) |
+| `180046067053700` Laguna Cartagena Well | well | 4 series, all one-off: water level (`62610`, `72019`) 1985-08-19; specific conductance (`00095`) 1986-03-25. **Zero daily values.** | `USGSWQ_180046067053700` (added by this work, `needs_review`) |
 
 Sources: `waterservices.usgs.gov/nwis/site/?seriesCatalogOutput=true` for the series
 inventory; `waterservices.usgs.gov/nwis/dv/` for the discharge record;
@@ -52,6 +52,23 @@ afterwards, because it has no daily values.
 So the fix was not to special-case the well past the rule. It was to give it real
 readings, via the discrete-sample API the rule never looked at. The well now satisfies
 the existing invariant without weakening it.
+
+### …and why it needed its own id prefix
+
+`ingest_usgs_groundwater.merge_assets` replaces **every** `USGSGW_*` row on each run and
+regenerates only wells with a daily-values series. Parking a discrete-sample well under
+that prefix meant the next daily refresh silently deleted it — that ingest runs daily,
+this one did not. Caught in review before it shipped.
+
+The repo had already solved this exact class of bug once, with a prefix. From
+`ingest_usgs_groundwater.py`'s own docstring:
+
+> Groundwater `asset_id` uses the `USGSGW_` prefix (NOT `USGS_`) so the surface-water
+> `ingest_usgs_water` merge — which replaces every `USGS_*` row — never wipes these wells.
+
+Same fix, one layer out: sample-derived assets use **`USGSWQ_`**, so the namespaces are
+disjoint and no ordering between cadences can clobber either. A regression test asserts
+the well survives a groundwater run.
 
 ## The retrieval path moved
 
@@ -89,6 +106,20 @@ swallowing it:
   and inventing one would mislabel the value.
 
 The remainder are rows without a usable date.
+
+## Where these readings surface
+
+They reach the PRII hub through the canonical federation export —
+`scripts/federation_export.py` globs `data/*_readings.jsonl`, so no exporter change was
+needed, and `monitoring_readings` went from 0 to 120. Per ADR 0001 that export is this
+producer's supported product surface; the dashboard in this repo is diagnostic-only.
+
+They are **not** selectable on that diagnostic dashboard. `server/backend/app.py`'s
+`READING_VECTOR_REGISTRY` has no `usgs_samples` vector and `monitoring_quality.py`'s
+`SERIES_METADATA_REGISTRY` has no `water_quality` entry, so `GET /readings?kind=usgs_samples`
+would be rejected. Wiring that up means touching the vector registry, the series-metadata
+registry and `dashboard/src/lib/monitoring.js`, which is frontend work deliberately out of
+scope here — tracked as a follow-up rather than claimed as done.
 
 ## What this does not tell you
 

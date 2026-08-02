@@ -75,12 +75,14 @@ def test_neon_availability_is_scheduled_daily():
     assert "scripts/ingest_neon.py" in {_script_of(s) for s in refresh.PLANS["daily"]}
 
 
-def test_usgs_samples_runs_weekly_not_daily():
-    """Archival sample data does not change; a daily poll would be pure noise."""
-    scripts_of = lambda c: {_script_of(s) for s in refresh.PLANS[c]}  # noqa: E731
-    assert "scripts/ingest_usgs_samples.py" not in scripts_of("daily")
-    assert "scripts/ingest_usgs_samples.py" in scripts_of("weekly")
-    assert "scripts/ingest_usgs_samples.py" in scripts_of("all")
+def test_usgs_samples_runs_in_every_cadence():
+    """The readings file is gitignored, so it exists only for the life of the job that
+    wrote it. Every sibling reading vector is refreshed daily; a weekly-only producer
+    would leave this one absent six days in seven."""
+    for cadence in ("daily", "weekly", "all"):
+        assert "scripts/ingest_usgs_samples.py" in {
+            _script_of(s) for s in refresh.PLANS[cadence]
+        }, cadence
 
 
 def test_readings_producers_are_scheduled():

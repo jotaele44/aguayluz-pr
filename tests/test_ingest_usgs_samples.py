@@ -40,13 +40,47 @@ def _rows() -> list[dict]:
 
 # ── asset id routing ──────────────────────────────────────────────────────────
 def test_site_number_length_picks_the_owning_prefix():
-    """A 15-digit site is groundwater (USGSGW_), an 8-digit one surface water (USGS_).
-
-    Getting this wrong either orphans the reading from its asset or collides with
-    another ingest's prefix-wide merge.
-    """
+    """For sites this script does NOT own, ids match whichever ingest maintains them:
+    a 15-digit site is groundwater (USGSGW_), an 8-digit one surface water (USGS_)."""
     assert asset_id_for("180046067053700") == "USGSGW_180046067053700"
     assert asset_id_for("50129899") == "USGS_50129899"
+
+
+def test_owned_assets_use_a_dedicated_prefix():
+    assert asset_id_for("180046067053700", owned=True) == "USGSWQ_180046067053700"
+
+
+def test_daily_groundwater_run_does_not_delete_the_sampled_well():
+    """Regression: the discrete-sample well was being wiped by the next daily refresh.
+
+    ingest_usgs_groundwater.merge_assets replaces EVERY USGSGW_* row and regenerates
+    only wells carrying a daily-values series. A discrete-sample well has none, so under
+    the USGSGW_ prefix it survived exactly until the next daily run — and that ingest
+    runs daily while this one used to run weekly. The dedicated USGSWQ_ prefix makes the
+    namespaces disjoint, so neither cadence's ordering matters.
+    """
+    from ingest_usgs_groundwater import merge_assets as gw_merge
+
+    well = build_assets(_rows())[0]
+    existing = [well, {"asset_id": "USGSGW_500001", "asset_name": "a monitored well"}]
+    # The groundwater ingest's own fetch yields only wells WITH daily values.
+    survivors = {r["asset_id"] for r in gw_merge(existing, [{"asset_id": "USGSGW_500001"}])}
+    assert well["asset_id"] in survivors
+
+
+def test_well_readings_point_at_the_owned_asset():
+    """The foreign key must follow the prefix, or the reading orphans."""
+    readings, _ = build_readings(_rows())
+    well_reading = next(r for r in readings if r["site_no"] == "180046067053700")
+    assert well_reading["asset_id"] == "USGSWQ_180046067053700"
+    assert well_reading["asset_id"] == build_assets(_rows())[0]["asset_id"]
+
+
+def test_surface_readings_reference_the_assets_another_ingest_maintains():
+    """Not owned here — ingest_usgs_water.py keeps those USGS_* rows current."""
+    readings, _ = build_readings(_rows())
+    surface = {r["asset_id"] for r in readings if r["site_no"].startswith("5012")}
+    assert surface == {"USGS_50129899", "USGS_50129900"}
 
 
 # ── assets ────────────────────────────────────────────────────────────────────
@@ -59,7 +93,7 @@ def test_only_wells_become_assets():
     """Surface-water sites are owned by ingest_usgs_water.py; re-emitting them here
     would fight that script's merge, which replaces the whole USGS_* slice."""
     assets = build_assets(_rows())
-    assert [a["asset_id"] for a in assets] == ["USGSGW_180046067053700"]
+    assert [a["asset_id"] for a in assets] == ["USGSWQ_180046067053700"]
 
 
 def test_well_is_flagged_needs_review_with_a_provenance_note():
@@ -151,12 +185,12 @@ def test_merge_assets_preserves_other_groundwater_wells():
     existing = [
         {"asset_id": "USGSGW_500001"},
         {"asset_id": "USGS_50129899"},
-        {"asset_id": "USGSGW_180046067053700", "asset_name": "stale"},
+        {"asset_id": "USGSWQ_180046067053700", "asset_name": "stale"},
     ]
     merged = merge_assets(existing, build_assets(_rows()))
     by_id = {r["asset_id"]: r for r in merged}
-    assert set(by_id) == {"USGSGW_500001", "USGS_50129899", "USGSGW_180046067053700"}
-    assert by_id["USGSGW_180046067053700"]["asset_name"] != "stale"
+    assert set(by_id) == {"USGSGW_500001", "USGS_50129899", "USGSWQ_180046067053700"}
+    assert by_id["USGSWQ_180046067053700"]["asset_name"] != "stale"
 
 
 def test_merges_are_idempotent():

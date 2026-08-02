@@ -87,11 +87,26 @@ DEFAULT_SITES: tuple[str, ...] = (
     "180046067053700",    # LAGUNA CARTAGENA WELL, LAJAS, PR (well)
 )
 
-#: NWIS site-number prefix -> asset_id prefix, matching what each existing ingest owns.
-#: A 15-digit site number is a groundwater site (USGSGW_, ingest_usgs_groundwater.py);
-#: an 8-digit one is surface water (USGS_, ingest_usgs_water.py). Getting this wrong
-#: would either orphan the reading or collide with another ingest's merge.
-def asset_id_for(site_no: str) -> str:
+#: Assets this script creates get their OWN ``USGSWQ_`` prefix, and that is load-bearing.
+#:
+#: ``ingest_usgs_groundwater.merge_assets`` replaces *every* ``USGSGW_*`` row on each run
+#: and regenerates only wells that carry a daily-values series. A discrete-sample well has
+#: none, so parking it under ``USGSGW_`` meant the next daily refresh silently deleted it —
+#: this script runs weekly, that one runs daily.
+#:
+#: The repo already solved this exact class of bug once, with a prefix. From
+#: ``ingest_usgs_groundwater.py``'s own docstring: "Groundwater ``asset_id`` uses the
+#: ``USGSGW_`` prefix (NOT ``USGS_``) so the surface-water ``ingest_usgs_water`` merge —
+#: which replaces every ``USGS_*`` row — never wipes these wells." Same fix, one layer out:
+#: disjoint namespaces mean no ordering dependency between cadences.
+#:
+#: Surface-water sites keep pointing at the ``USGS_*`` assets ``ingest_usgs_water.py``
+#: already maintains — a reading referencing another script's asset is a plain foreign
+#: key, and asset merges never touch readings.
+def asset_id_for(site_no: str, *, owned: bool = False) -> str:
+    """Asset id for a site. ``owned=True`` for assets this script creates."""
+    if owned:
+        return f"USGSWQ_{site_no}"
     return f"USGSGW_{site_no}" if len(site_no) > 10 else f"USGS_{site_no}"
 
 
@@ -167,7 +182,7 @@ def build_assets(
         muni = municipality_for(lat, lon, munis) if (lat is not None and munis) else "unknown"
         name = (row.get("Location_Name") or f"USGS {site_no}").strip()
         asset = {
-            "asset_id": asset_id_for(site_no),
+            "asset_id": asset_id_for(site_no, owned=True),
             "asset_name": name.title(),
             "asset_type": "water",
             "asset_subtype": "groundwater_well",
@@ -201,6 +216,12 @@ def build_readings(rows: list[dict[str, str]]) -> tuple[list[dict], dict[str, in
     readings: list[dict] = []
     skipped = {"no_value": 0, "no_unit": 0, "no_date": 0}
     seen: set[str] = set()
+    # Sites this script owns an asset for (wells); their readings must use the owned id.
+    owned_sites = {
+        _site_no(r.get("Location_Identifier", ""))
+        for r in rows
+        if (r.get("Location_Type") or "").strip().lower() == "well"
+    }
 
     for row in rows:
         site_no = _site_no(row.get("Location_Identifier", ""))
@@ -245,7 +266,7 @@ def build_readings(rows: list[dict[str, str]]) -> tuple[list[dict], dict[str, in
 
         readings.append({
             "reading_id": reading_id,
-            "asset_id": asset_id_for(site_no),
+            "asset_id": asset_id_for(site_no, owned=site_no in owned_sites),
             "site_no": site_no,
             "metric": SAMPLE_METRIC,
             "parameter_code": pcode,
@@ -277,8 +298,9 @@ def merge_assets(existing: list[dict], new: list[dict]) -> list[dict]:
     """Replace only the specific asset ids this script owns.
 
     Deliberately narrower than the sibling ingests' prefix-wide replacement: this script
-    covers a handful of sampled sites, so wiping every ``USGSGW_*`` row would delete the
-    36 monitored wells that ``ingest_usgs_groundwater.py`` owns.
+    covers a handful of sampled sites, so wiping a whole prefix would delete assets other
+    ingests maintain. Combined with the dedicated ``USGSWQ_`` prefix, neither script can
+    clobber the other regardless of which cadence runs first.
     """
     owned = {r["asset_id"] for r in new}
     kept = [r for r in existing if r.get("asset_id") not in owned]

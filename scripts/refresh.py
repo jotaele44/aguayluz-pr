@@ -26,7 +26,8 @@ sandbox, whose proxy may block waterservices.usgs.gov / data.epa.gov):
              NEON water products           -> neon_readings.jsonl (optional, token)
              USGS discrete samples         -> usgs_samples_readings.jsonl (optional)
                  Archival water chemistry for the Laguna Cartagena basin, which has no
-                 daily-values record at all; see docs/LAGUNA_CARTAGENA_GAP.md.
+                 daily-values record at all; see docs/LAGUNA_CARTAGENA_GAP.md. Runs on
+                 every cadence so the reading artifact is present as often as the others.
              EPA WATERS/NHDPlus enrichment -> utility_assets.jsonl (optional)
              Sites + violations change slowly; refresh weekly. ECHO and FEMA are
              best-effort: their public REST endpoints (echo.epa.gov CWA services,
@@ -110,6 +111,12 @@ STEP_USGS_SAMPLES = (
     ["scripts/ingest_usgs_samples.py"],
     True,   # optional — network feed; keyless, but must not abort the refresh
 )
+# Runs in EVERY cadence, not just weekly, despite being archival data that does not
+# change. data/usgs_samples_readings.jsonl is gitignored like every other reading file,
+# so it exists only for the life of the job that produced it. The sibling reading
+# vectors (reservoir, groundwater, coastal) are all refreshed daily, so their artifacts
+# are always present; a weekly-only producer would leave this one absent on six days in
+# seven. One small request is cheaper than that inconsistency.
 STEP_NEON_PRODUCTS = (
     "NEON water products → neon_readings (needs NEON_API_TOKEN)",
     ["scripts/ingest_neon_products.py"],
@@ -201,7 +208,7 @@ PLANS: dict[str, list[tuple]] = {
     # pushed alert in minutes, not the next daily batch.
     "fast": [STEP_NWS, STEP_USGS_QUAKES, STEP_NOAA_TIDES, *_DERIVE],
     "daily": [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_LEVELS, STEP_USGS_GW, STEP_NOAA_TIDES,
-              STEP_NEON, *_DERIVE],
+              STEP_NEON, STEP_USGS_SAMPLES, *_DERIVE],
     "weekly": [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_ASSETS, STEP_USGS_LEVELS, STEP_USGS_GW,
                STEP_NOAA_TIDES, STEP_NEON, STEP_NEON_PRODUCTS, STEP_USGS_SAMPLES,
                STEP_SDWIS, STEP_ECHO, STEP_FEMA, STEP_OSHA, STEP_WATERS_ENRICH, *_DERIVE],

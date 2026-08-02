@@ -171,7 +171,7 @@ sites in Lajas/Boquerón; the investigation is written up in
 | Source | Host | Result | Rows |
 |--------|------|--------|------|
 | USGS samples-data → `usgs_samples_readings` | `api.waterdata.usgs.gov` | OK (keyless) | **120** stored of 187 parsed — 59 lake, 60 outflow, 1 well |
-| USGS well → `utility_assets` | `api.waterdata.usgs.gov` | OK | **1** asset (`USGSGW_180046067053700`, `needs_review`) |
+| USGS well → `utility_assets` | `api.waterdata.usgs.gov` | OK | **1** asset (`USGSWQ_180046067053700`, `needs_review`) |
 | NEON `DP1.20092.001` groundwater chemistry | `data.neonscience.org` | mapped | live at GUIL, 20 months |
 
 The letter asked whether records were being withheld. They are not: the basin's records
