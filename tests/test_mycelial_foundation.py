@@ -526,10 +526,7 @@ def test_research_app_does_not_mutate_canonical_app():
     after = tuple(_route_signature(route) for route in canonical_app.routes)
     assert after == before
     assert research_app is not canonical_app
-    assert any(
-        getattr(route, "path", None) == "/research/mycelial/status"
-        for route in research_app.routes
-    )
+    assert TestClient(research_app).get("/research/mycelial/status").status_code == 200
     assert not any(
         getattr(route, "path", None) == "/research/mycelial/status"
         for route in canonical_app.routes
