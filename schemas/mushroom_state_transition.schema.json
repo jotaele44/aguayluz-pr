@@ -1,0 +1,13 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://aguayluz.local/schemas/mushroom_state_transition.schema.json",
+  "title":"StateTransition","type":"object","additionalProperties":false,
+  "required":["transition_id","site_id","from_state","to_state","effective_at","evidence_observation_id","confidence","reason"],
+  "properties":{
+    "transition_id":{"type":"string","minLength":1},"site_id":{"type":"string","minLength":1},
+    "from_state":{"enum":["dormant_or_unknown","environmental_priming","emergence_suspected","fruiting_confirmed","expansion","peak","senescence","decomposition","post_fruiting"]},
+    "to_state":{"enum":["dormant_or_unknown","environmental_priming","emergence_suspected","fruiting_confirmed","expansion","peak","senescence","decomposition","post_fruiting"]},
+    "effective_at":{"type":"string","format":"date-time"},"evidence_observation_id":{"type":"string","minLength":1},
+    "confidence":{"enum":["low","medium","high","verified"]},"reason":{"type":"string","minLength":1}
+  }
+}
