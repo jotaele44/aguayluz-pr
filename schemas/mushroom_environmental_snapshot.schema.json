@@ -1,0 +1,13 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://aguayluz.local/schemas/mushroom_environmental_snapshot.schema.json",
+  "title":"EnvironmentalSnapshot","type":"object","additionalProperties":false,
+  "required":["snapshot_id","site_id","observed_at","source_id"],
+  "properties":{
+    "snapshot_id":{"type":"string","minLength":1},"site_id":{"type":"string","minLength":1},"observed_at":{"type":"string","format":"date-time"},"source_id":{"type":"string","minLength":1},
+    "rainfall_24h_mm":{"type":["number","null"],"minimum":0},"rainfall_72h_mm":{"type":["number","null"],"minimum":0},
+    "temperature_c":{"type":["number","null"]},"relative_humidity_pct":{"type":["number","null"],"minimum":0,"maximum":100},
+    "soil_moisture_pct":{"type":["number","null"],"minimum":0,"maximum":100},"canopy_pct":{"type":["number","null"],"minimum":0,"maximum":100},
+    "wind_kph":{"type":["number","null"],"minimum":0},"raw_payload_sha256":{"type":["string","null"],"pattern":"^[a-fA-F0-9]{64}$"}
+  }
+}
