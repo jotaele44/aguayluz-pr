@@ -1,10 +1,8 @@
-"""Bounded ASGI entrypoint for the Phase 0 research-only mycelial surface.
-
-Deployment remains opt-in: use ``research.mycelial.app:app``. The canonical
-AguaYLuz application is not modified while this module is under review.
-"""
+"""Bounded ASGI entrypoint for research-only mycelial Phase 0 and Phase 1."""
 from server.backend.app import app
 
-from .api import router
+from .api import router as foundation_router
+from .lifecycle_api import router as lifecycle_router
 
-app.include_router(router)
+app.include_router(foundation_router)
+app.include_router(lifecycle_router)
