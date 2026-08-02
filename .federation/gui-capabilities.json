@@ -645,10 +645,11 @@
       "classification": "internal",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Scheduled hazard producer, not an operator workflow. Invoked by every cron cadence in .github/workflows/refresh.yml via scripts/refresh.py, never by a person, so no normal user path requires a terminal. config/alert_modules.yaml has named NHC a primary source for WEATHER_HAZARD since the module registry was written, alongside NWS San Juan and USGS gauges; those were wired up and NHC never was. It emits service_event rows, which already surface on the existing events and map views and reach the PRII hub through the canonical federation export, so no new GUI surface is introduced. Its value over scripts/ingest_nws_alerts.py is lead time: api.weather.gov publishes a watch once PR is inside the forecast envelope (~48h), while NHC publishes position and intensity from genesis, days earlier. Known limitation recorded rather than hidden: service_event.event_type is a closed enum with no member for an approaching hazard, so rows are emitted as service_interruption with the real classification and intensity preserved in status_text and source_ref. Adding a hazard_advisory member is a schema change requiring hub coordination and is out of scope; the same precedent already exists in scripts/ingest_osha.py, which emits event_type=unknown.",
+      "rationale": "Scheduled hazard producer, not an operator workflow. Invoked by every cron cadence in .github/workflows/refresh.yml via scripts/refresh.py, never by a person, so no normal user path requires a terminal. config/alert_modules.yaml has named NHC a primary source for WEATHER_HAZARD since the module registry was written, alongside NWS San Juan and USGS gauges; those were wired up and NHC never was. It emits service_event rows, which reach the PRII hub through the canonical federation export, AND promotes them to WEATHER_HAZARD AlertEvents via src/aguayluz/alert_promotion/nhc.py -- so a storm surfaces on the existing alerts list, alert map and critical push/SMS path with no new GUI surface. The promoter is separate from alert_promotion/weather.py because severity here must scale by distance as well as classification: NWS issues a watch only once PR is inside the forecast envelope, while NHC publishes every storm from genesis, so a Category 4 off Cabo Verde and one six hours out carry the same classification string and must not carry the same severity. Only a storm that is both strong and within ~500 km clears CRITICAL_SEVERITY. Note the dashboard renders ALERT coordinates directly (AssetMap.jsx reads alert geometry from the promoter) while event geometry is derived only from a linked asset or municipality; a cyclone has neither, so the alert layer is what puts it on the map. A storm still at sea reports coord_confidence=unknown because alert_event bounds lat/lon to Puerto Rico -- the same treatment the seismic promoter gives an offshore epicentre. Its value over scripts/ingest_nws_alerts.py is lead time: api.weather.gov publishes a watch once PR is inside the forecast envelope (~48h), while NHC publishes position and intensity from genesis, days earlier. Known limitation recorded rather than hidden: service_event.event_type is a closed enum with no member for an approaching hazard, so rows are emitted as service_interruption with the real classification and intensity preserved in status_text and source_ref. Adding a hazard_advisory member is a schema change requiring hub coordination and is out of scope; the same precedent already exists in scripts/ingest_osha.py, which emits event_type=unknown.",
       "analysis": {
         "files": [
-          "scripts/ingest_nhc_storms.py"
+          "scripts/ingest_nhc_storms.py",
+          "src/aguayluz/alert_promotion/nhc.py"
         ],
         "symbols": [
           "scripts/ingest_nhc_storms.py:build_events",
@@ -656,13 +657,17 @@
           "scripts/ingest_nhc_storms.py:is_atlantic",
           "scripts/ingest_nhc_storms.py:main",
           "scripts/ingest_nhc_storms.py:merge",
-          "scripts/ingest_nhc_storms.py:threatens_pr"
+          "scripts/ingest_nhc_storms.py:threatens_pr",
+          "src/aguayluz/alert_promotion/nhc.py:nhc_alert",
+          "src/aguayluz/alert_promotion/nhc.py:nhc_alerts",
+          "src/aguayluz/alert_promotion/nhc.py:storm_severity"
         ]
       },
       "tests": {
         "contract": [
           "tests/test_ingest_nhc_storms.py",
-          "tests/test_refresh_plans.py"
+          "tests/test_refresh_plans.py",
+          "tests/test_alert_promotion_nhc.py"
         ]
       }
     },

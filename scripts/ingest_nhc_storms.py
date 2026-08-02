@@ -28,6 +28,15 @@ Two filters, both deliberate:
     actionable for PR. WATCH_BOX spans the corridor a system actually traverses to reach
     the island; anything outside it is tracked upstream by NHC, not here.
 
+These rows do **not** stop at service events. ``aguayluz.alert_promotion.nhc`` promotes
+each one into a ``WEATHER_HAZARD`` AlertEvent, scaling severity by classification *and*
+distance to the island, so a strong storm close in clears the push/SMS threshold while the
+same storm 1,300 km out does not. That promoter is deliberately separate from
+``alert_promotion/weather.py``, which keys on the ``event='…'`` marker only
+``ingest_nws_alerts.py`` writes — see its module docstring for why the two must not be
+merged. If you change ``status_text`` here, that promoter is unaffected; it reads
+``source_ref``.
+
 KNOWN LIMITATION, stated rather than papered over: ``service_event.event_type`` is a
 closed enum with no member for an approaching hazard — the closest is
 ``service_interruption``, which is what this emits, with the classification and intensity
