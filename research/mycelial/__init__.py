@@ -1,6 +1,11 @@
 """Puerto Rico fungal occurrence evidence foundation, Phase 0."""
 
-from .foundation import (
+from .formats import register_finite_format
+
+register_finite_format()
+del register_finite_format
+
+from .foundation import (  # noqa: E402
     ANALYTICS_STATUS,
     PROHIBITED_ANALYTICS,
     RESEARCH_ONLY,
