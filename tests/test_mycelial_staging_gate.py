@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 from datetime import date
+from types import ModuleType
 
 from fastapi.testclient import TestClient
 
@@ -14,11 +15,13 @@ from research.mycelial.staging import (
 )
 
 
+def _app_module() -> ModuleType:
+    return importlib.import_module("research.mycelial.app")
+
+
 def test_exported_asgi_app_is_disabled_without_feature_flag(monkeypatch):
     monkeypatch.delenv(FEATURE_FLAG_ENV, raising=False)
-    import research.mycelial.app as app_module
-
-    app_module = importlib.reload(app_module)
+    app_module = importlib.reload(_app_module())
     response = TestClient(app_module.app).get("/research/mycelial/status")
     assert response.status_code == 404
     assert app_module.app.state.research_routes_enabled is False
@@ -36,8 +39,7 @@ def test_feature_flag_requires_exact_opt_in_value():
 
 
 def test_factory_gate_and_staging_expiry_fail_closed():
-    from research.mycelial.app import create_app
-
+    create_app = _app_module().create_app
     disabled = create_app(
         enable_research_routes=False,
         today=date(2026, 8, 3),
@@ -53,8 +55,7 @@ def test_factory_gate_and_staging_expiry_fail_closed():
 
 
 def test_explicit_unexpired_factory_exposes_only_staged_research_routes():
-    from research.mycelial.app import create_app
-
+    create_app = _app_module().create_app
     application = create_app(
         enable_research_routes=True,
         today=date(2026, 8, 3),
