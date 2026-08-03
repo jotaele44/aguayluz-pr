@@ -15,6 +15,12 @@ from .foundation import (
     SCHEMA_VERSION,
     analytics_unavailable,
 )
+from .staging import (
+    CAPABILITY_CLASSIFICATION,
+    FEATURE_FLAG_ENV,
+    STAGING_EXPIRES_ON,
+    TRACKING_REFERENCE,
+)
 
 router = APIRouter(prefix="/research/mycelial", tags=["research-mycelial"])
 
@@ -29,6 +35,10 @@ def status() -> JSONResponse:
             "schema_version": SCHEMA_VERSION,
             "research_only": RESEARCH_ONLY,
             "analytics_status": ANALYTICS_STATUS,
+            "capability_classification": CAPABILITY_CLASSIFICATION,
+            "tracking_reference": TRACKING_REFERENCE,
+            "staging_expires_on": STAGING_EXPIRES_ON.isoformat(),
+            "feature_flag": FEATURE_FLAG_ENV,
             "enabled_capabilities": [
                 "fungal_occurrence_ingest",
                 "provenance_ledger",
