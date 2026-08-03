@@ -324,6 +324,10 @@
         ],
         "e2e": [
           "dashboard/tests/gui-parity.spec.mjs"
+        ],
+        "unit": [
+          "dashboard/src/lib/format.test.js",
+          "dashboard/src/components/ReviewRecordCard.test.jsx"
         ]
       }
     },
@@ -486,6 +490,122 @@
       "tests": {
         "backend": [
           "tests/test_server_smoke.py"
+        ]
+      }
+    },
+    {
+      "id": "neon-api-client",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "HTTP client library for the NSF NEON API (data.neonscience.org/api/v0) with no user-facing capability of its own: it exposes no endpoint, no route and no control, and is only ever called by the NEON ingest producers. Its results reach operators through the GUI surfaces its callers populate -- NEON sites on the assets and map views, NEON readings through GET /readings, and NEON publication events on the alerts view. The package exists as a separate module rather than inline in the scripts because NEON needs real auth handling: the API returns HTTP 403 both for a credential-gated endpoint and for a rejected token, and those two cases require different operator action.",
+      "backend": {
+        "files": [
+          "src/aguayluz/neon/__init__.py",
+          "src/aguayluz/neon/client.py",
+          "src/aguayluz/neon/endpoints.py",
+          "src/aguayluz/neon/errors.py",
+          "src/aguayluz/neon/health.py",
+          "src/aguayluz/neon/mapping.py"
+        ],
+        "symbols": [
+          "src/aguayluz/neon/client.py:NeonClient",
+          "src/aguayluz/neon/client.py:resolve_token",
+          "src/aguayluz/neon/endpoints.py:data_manifest",
+          "src/aguayluz/neon/endpoints.py:is_gated",
+          "src/aguayluz/neon/endpoints.py:location",
+          "src/aguayluz/neon/endpoints.py:product",
+          "src/aguayluz/neon/endpoints.py:release",
+          "src/aguayluz/neon/endpoints.py:site",
+          "src/aguayluz/neon/errors.py:NeonAccessDenied",
+          "src/aguayluz/neon/errors.py:NeonAuthError",
+          "src/aguayluz/neon/errors.py:NeonError",
+          "src/aguayluz/neon/errors.py:NeonRateLimitExceeded",
+          "src/aguayluz/neon/errors.py:NeonServerError",
+          "src/aguayluz/neon/health.py:check_health",
+          "src/aguayluz/neon/mapping.py:alert_module_for",
+          "src/aguayluz/neon/mapping.py:sanitize_code",
+          "src/aguayluz/neon/mapping.py:site_by_code"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_neon_client.py",
+          "tests/test_neon_health.py"
+        ]
+      }
+    },
+    {
+      "id": "neon-publication-ingest",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Scheduled data producers, not an operator workflow. Both scripts are invoked by the cron cadences in .github/workflows/refresh.yml via scripts/refresh.py, never by a person, so no normal user path requires a terminal. Everything they produce is already rendered in the GUI through existing surfaces: the four NEON D04 sites become utility_asset rows on the assets and map views, NEON readings are served by the 'neon' kind on GET /readings, and publication changes are promoted to AlertEvent rows by src/aguayluz/alert_promotion/neon.py and rendered on the alerts view and outputs/alert_events.geojson. Adding a NEON-specific console would duplicate those views rather than surface anything new. Note that scripts/ingest_neon_products.py additionally requires NEON_API_TOKEN and exits 0 with a skip notice when it is absent.",
+      "analysis": {
+        "files": [
+          "scripts/ingest_neon.py",
+          "scripts/ingest_neon_products.py"
+        ],
+        "symbols": [
+          "scripts/ingest_neon.py:build_asset",
+          "scripts/ingest_neon.py:build_availability",
+          "scripts/ingest_neon.py:diff_availability",
+          "scripts/ingest_neon.py:fetch_sites_live",
+          "scripts/ingest_neon.py:main",
+          "scripts/ingest_neon.py:merge_assets",
+          "scripts/ingest_neon.py:merge_availability",
+          "scripts/ingest_neon.py:merge_events",
+          "scripts/ingest_neon_products.py:build_readings",
+          "scripts/ingest_neon_products.py:download_file",
+          "scripts/ingest_neon_products.py:fetch_manifest",
+          "scripts/ingest_neon_products.py:main",
+          "scripts/ingest_neon_products.py:merge_readings",
+          "scripts/ingest_neon_products.py:select_files",
+          "scripts/ingest_neon_products.py:select_targets"
+        ]
+      },
+      "backend": {
+        "files": [
+          "src/aguayluz/alert_promotion/neon.py"
+        ],
+        "symbols": [
+          "src/aguayluz/alert_promotion/neon.py:neon_alert",
+          "src/aguayluz/alert_promotion/neon.py:neon_alerts"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_ingest_neon.py",
+          "tests/test_ingest_neon_products.py",
+          "tests/test_alert_promotion_neon.py",
+          "tests/test_refresh_plans.py"
+        ]
+      }
+    },
+    {
+      "id": "usgs-discrete-samples-ingest",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Scheduled archival producer, not an operator workflow. Invoked by the cron cadences in .github/workflows/refresh.yml via scripts/refresh.py, never by a person, so no normal user path requires a terminal. The sampled well is rendered as a utility_asset row on the existing assets and map views. The 120 water-quality results reach the PRII hub through the canonical federation export (scripts/federation_export.py globs data/*_readings.jsonl; verified as monitoring_readings=120), which per docs/adr/0001 is this producer's supported product surface -- this repo's own dashboard is diagnostic-only. They are NOT currently selectable on that diagnostic dashboard: server/backend/app.py's READING_VECTOR_REGISTRY has no usgs_samples vector and monitoring_quality.py's SERIES_METADATA_REGISTRY has no water_quality entry, so GET /readings would reject the kind. Adding that vector is a tracked follow-up, not a claim made here.",
+      "analysis": {
+        "files": [
+          "scripts/ingest_usgs_samples.py"
+        ],
+        "symbols": [
+          "scripts/ingest_usgs_samples.py:asset_id_for",
+          "scripts/ingest_usgs_samples.py:build_assets",
+          "scripts/ingest_usgs_samples.py:build_readings",
+          "scripts/ingest_usgs_samples.py:fetch_samples_live",
+          "scripts/ingest_usgs_samples.py:main",
+          "scripts/ingest_usgs_samples.py:merge_assets",
+          "scripts/ingest_usgs_samples.py:merge_readings"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_ingest_usgs_samples.py",
+          "tests/test_refresh_plans.py"
         ]
       }
     }

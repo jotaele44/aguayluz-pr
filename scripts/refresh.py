@@ -11,7 +11,10 @@ sandbox, whose proxy may block waterservices.usgs.gov / data.epa.gov):
   --daily    NWS active alerts             -> service_events.jsonl
              USGS earthquakes (PR region)  -> service_events.jsonl
              USGS daily reservoir levels   -> reservoir_levels.jsonl     (+ export)
+             NEON D04 availability delta   -> neon_availability.jsonl    (optional)
              The fast-moving signals (weather hazards, seismic, drought/supply). Seconds.
+             NEON publishes monthly, so a daily poll is ample and costs 4 keyless
+             requests against a 200/hour quota.
 
   --weekly   NWS active alerts             -> service_events.jsonl
              USGS earthquakes (PR region)  -> service_events.jsonl
@@ -20,6 +23,11 @@ sandbox, whose proxy may block waterservices.usgs.gov / data.epa.gov):
              EPA SDWIS violations          -> service_events.jsonl
              EPA ECHO CWA enforcement      -> service_events.jsonl   (optional)
              FEMA disaster declarations    -> service_events.jsonl   (optional, + export)
+             NEON water products           -> neon_readings.jsonl (optional, token)
+             USGS discrete samples         -> usgs_samples_readings.jsonl (optional)
+                 Archival water chemistry for the Laguna Cartagena basin, which has no
+                 daily-values record at all; see docs/LAGUNA_CARTAGENA_GAP.md. Runs on
+                 every cadence so the reading artifact is present as often as the others.
              EPA WATERS/NHDPlus enrichment -> utility_assets.jsonl (optional)
              Sites + violations change slowly; refresh weekly. ECHO and FEMA are
              best-effort: their public REST endpoints (echo.epa.gov CWA services,
@@ -27,7 +35,11 @@ sandbox, whose proxy may block waterservices.usgs.gov / data.epa.gov):
              warns-and-continues past them (like the WAF-gated MiLUMA step) rather
              than aborting before USGS/SDWIS land and the federation export runs.
              The WATERS enricher is optional for the same reason: it needs
-             EPA_WATERS_API_KEY, which most runs do not carry.
+             EPA_WATERS_API_KEY, which most runs do not carry. The NEON product
+             download is optional on the same grounds: NEON's /api/v0/data endpoint
+             returns 403 without NEON_API_TOKEN, so the step prints a skip notice and
+             exits 0 rather than failing the run. NEON *availability* tracking needs
+             no credential and runs daily.
 
 Every cadence then runs the derived layers before export: the water<->power
 crosswalk, alert promotion (build_alerts.py), and the alert-system build
@@ -88,6 +100,27 @@ STEP_NOAA_TIDES = (
     "NOAA CO-OPS tides → coastal_levels",
     ["scripts/ingest_noaa_tides.py", "--days", "90"],
     True,   # optional — near-real-time coastal surge signal
+)
+STEP_NEON = (
+    "NEON D04 availability → neon_availability + utility_assets",
+    ["scripts/ingest_neon.py"],
+    True,   # optional — network feed; keyless, but must not abort the refresh
+)
+STEP_USGS_SAMPLES = (
+    "USGS discrete samples (Laguna Cartagena basin) → usgs_samples_readings",
+    ["scripts/ingest_usgs_samples.py"],
+    True,   # optional — network feed; keyless, but must not abort the refresh
+)
+# Runs in EVERY cadence, not just weekly, despite being archival data that does not
+# change. data/usgs_samples_readings.jsonl is gitignored like every other reading file,
+# so it exists only for the life of the job that produced it. The sibling reading
+# vectors (reservoir, groundwater, coastal) are all refreshed daily, so their artifacts
+# are always present; a weekly-only producer would leave this one absent on six days in
+# seven. One small request is cheaper than that inconsistency.
+STEP_NEON_PRODUCTS = (
+    "NEON water products → neon_readings (needs NEON_API_TOKEN)",
+    ["scripts/ingest_neon_products.py"],
+    True,   # optional — /api/v0/data is token-gated; exits 0 and skips when unset
 )
 STEP_USGS_QUAKES = (
     "USGS earthquakes → service_events",
@@ -174,13 +207,15 @@ PLANS: dict[str, list[tuple]] = {
     # export. Meant for a ~15-minute cron so a quake / hurricane warning becomes a
     # pushed alert in minutes, not the next daily batch.
     "fast": [STEP_NWS, STEP_USGS_QUAKES, STEP_NOAA_TIDES, *_DERIVE],
-    "daily": [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_LEVELS, STEP_USGS_GW, STEP_NOAA_TIDES, *_DERIVE],
+    "daily": [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_LEVELS, STEP_USGS_GW, STEP_NOAA_TIDES,
+              STEP_NEON, STEP_USGS_SAMPLES, *_DERIVE],
     "weekly": [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_ASSETS, STEP_USGS_LEVELS, STEP_USGS_GW,
-               STEP_NOAA_TIDES, STEP_SDWIS, STEP_ECHO, STEP_FEMA, STEP_OSHA,
-               STEP_WATERS_ENRICH, *_DERIVE],
+               STEP_NOAA_TIDES, STEP_NEON, STEP_NEON_PRODUCTS, STEP_USGS_SAMPLES,
+               STEP_SDWIS, STEP_ECHO, STEP_FEMA, STEP_OSHA, STEP_WATERS_ENRICH, *_DERIVE],
     "all":   [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_ASSETS, STEP_USGS_LEVELS, STEP_USGS_GW,
-              STEP_NOAA_TIDES, STEP_SDWIS, STEP_ECHO, STEP_FEMA, STEP_OSHA,
-              STEP_AEE_FETCH, STEP_AEE_INGEST, STEP_WATERS_ENRICH, *_DERIVE],
+              STEP_NOAA_TIDES, STEP_NEON, STEP_NEON_PRODUCTS, STEP_USGS_SAMPLES,
+              STEP_SDWIS, STEP_ECHO, STEP_FEMA, STEP_OSHA, STEP_AEE_FETCH,
+              STEP_AEE_INGEST, STEP_WATERS_ENRICH, *_DERIVE],
 }
 
 

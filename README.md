@@ -42,6 +42,20 @@ corpus is real public data, with some sources external or point-in-time.
 - PR-region seismic events (`scripts/ingest_usgs_quakes.py`, keyless USGS FDSN
   earthquake feed) into `data/service_events.jsonl`, backing the `SEISMIC_GEO`
   alert module.
+- NSF NEON Domain D04 — the four Puerto Rico sites (`CUPE` Río Cupeyes, `GUAN`
+  Guánica Forest, `GUIL` Río Yahuecas, `LAJA` Lajas Experimental Station) as
+  `NEON_*` assets, plus 328 site×product publication-state rows in
+  `data/neon_availability.jsonl` (`scripts/ingest_neon.py`, keyless). Publication
+  changes promote to alerts and activate the `TELECOM_SCADA` module. Stream
+  discharge / surface-water chemistry readings
+  (`scripts/ingest_neon_products.py`) need `NEON_API_TOKEN` — NEON's `/api/v0/data`
+  endpoint returns 403 anonymously, so that step skips and exits 0 without one.
+  See [`docs/NEON_INTEGRATION.md`](docs/NEON_INTEGRATION.md).
+- USGS discrete water-quality samples for the Laguna Cartagena basin
+  (`scripts/ingest_usgs_samples.py`, keyless) — 120 results across the lake, its outflow
+  and the Lajas well, recovered from the `samples-data` API that replaced the
+  decommissioned `nwis/gwlevels` service. The basin has no daily-values record at all;
+  see [`docs/LAGUNA_CARTAGENA_GAP.md`](docs/LAGUNA_CARTAGENA_GAP.md).
 - Operational alert events (`docs/ALERT_SYSTEM.md`) and the 78-municipio /
   901-barrio geo layer under `data/geo/` (U.S. Census cartographic boundaries).
 

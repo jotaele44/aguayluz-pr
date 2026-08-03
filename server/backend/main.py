@@ -42,6 +42,7 @@ READINGS_FILES: dict[str, Path] = {
     "reservoir": DATA / "reservoir_levels.jsonl",       # scripts/ingest_usgs_levels.py
     "groundwater": DATA / "groundwater_levels.jsonl",   # scripts/ingest_usgs_groundwater.py
     "coastal": DATA / "coastal_levels.jsonl",           # scripts/ingest_noaa_tides.py
+    "neon": DATA / "neon_readings.jsonl",               # scripts/ingest_neon_products.py
 }
 
 # Default page size for GET /events. The service_events corpus includes the full

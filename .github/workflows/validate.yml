@@ -105,7 +105,9 @@ jobs:
 
   # The dashboard has had a `lint` script and an eslint config all along, but
   # nothing ran them, so a lint regression could merge unnoticed. Lint now gates
-  # alongside the build, matching skywatcher-pr and thehub-pr.
+  # alongside the build, matching skywatcher-pr and thehub-pr. `test` gates here
+  # too — it runs the vitest suite (src/**/*.test.{js,jsx}), not the Playwright
+  # gui-parity spec, which has its own config and needs both servers up.
   dashboard-build:
     runs-on: ubuntu-latest
     defaults:
@@ -122,6 +124,8 @@ jobs:
         run: npm ci
       - name: Lint
         run: npm run lint
+      - name: Tests
+        run: npm run test
       - name: Build
         run: npm run build
 

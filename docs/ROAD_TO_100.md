@@ -161,6 +161,88 @@ Real materializations of the corpus from the keyless public federal APIs. Each r
 is what the producer **actually fetched** on the stated date (no fabricated data);
 counts are post-merge file totals where noted.
 
+### 2026-08-02 — new vector: USGS discrete samples (Laguna Cartagena basin)
+
+Added `scripts/ingest_usgs_samples.py` (keyless) and NEON groundwater chemistry
+(`DP1.20092.001`). Prompted by a USGS data-request letter about the Laguna Cartagena
+sites in Lajas/Boquerón; the investigation is written up in
+[`docs/LAGUNA_CARTAGENA_GAP.md`](LAGUNA_CARTAGENA_GAP.md).
+
+| Source | Host | Result | Rows |
+|--------|------|--------|------|
+| USGS samples-data → `usgs_samples_readings` | `api.waterdata.usgs.gov` | OK (keyless) | **120** stored of 187 parsed — 59 lake, 60 outflow, 1 well |
+| USGS well → `utility_assets` | `api.waterdata.usgs.gov` | OK | **1** asset (`USGSWQ_180046067053700`, `needs_review`) |
+| NEON `DP1.20092.001` groundwater chemistry | `data.neonscience.org` | mapped | live at GUIL, 20 months |
+
+The letter asked whether records were being withheld. They are not: the basin's records
+are published, but the monitoring lapsed. The outflow gauge ran 518 days of discharge in
+1984-85 and stopped; the lake was sampled once in 2011-12; the well was measured twice,
+in 1985 and 1986. `waterservices.usgs.gov/nwis/gwlevels/` now returns HTTP 301 to a
+decommissioning notice, making the caution already in `ingest_usgs_groundwater.py`'s
+docstring current fact — `api.waterdata.usgs.gov/samples-data` is the replacement.
+
+The well was invisible to this producer for a legitimate reason, not an oversight:
+`ingest_usgs_groundwater.py` keeps only wells carrying a daily-values time series, which
+takes 5,437 PR groundwater sites down to 36 assets. Rather than special-case past that
+rule, the new ingest gives the well real readings from the discrete-sample API, so it
+satisfies the existing invariant unchanged.
+
+67 results were deliberately not stored and the run reports the count: 41 non-detects (a
+non-detect is not a zero) and results with a blank unit (`monitoring_reading.unit`
+requires one; inventing it would mislabel the value).
+
+NEON groundwater chemistry is in `IRREGULAR_CADENCE_PRODUCTS` — at 20 available months
+across a 109-month record (18%, against 96% for the surface-water equivalent) the
+publication-gap detector would flag it permanently. A NEON product-catalog export also
+independently confirmed all products in `PRODUCT_METRICS` on exact title and status.
+
+Offline tests: `tests/test_ingest_usgs_samples.py` (15 tests, real trimmed capture in
+`tests/fixtures/usgs_samples_laguna_cartagena.csv`) covering schema conformance, the
+non-detect and unitless drops, reading-id collision across same-day characteristics, and
+merge idempotency — no network.
+
+### 2026-07-29 — new vector: NEON Domain D04 (Puerto Rico)
+
+Added `scripts/ingest_neon.py` (keyless) and `scripts/ingest_neon_products.py`
+(token-gated), plus the `aguayluz.neon` client package, and ran the keyless half live
+against the NSF NEON API v0. NEON's four Puerto Rico sites are the producer's first
+research-grade stream-chemistry vector, independent of USGS NWIS.
+
+| Source | Host | Result | Rows |
+|--------|------|--------|------|
+| NEON D04 sites → `utility_assets` | `data.neonscience.org` | OK (anonymous) | **4** assets (CUPE/GUAN/GUIL/LAJA), municipalities resolved by point-in-polygon |
+| NEON availability → `neon_availability` | `data.neonscience.org` | OK (anonymous) | **328** site × product rows, 14 of them ingestible against the closed `metric` enum |
+| NEON products → `neon_readings` | `data.neonscience.org` | **BLOCKED — 403** | 0; `/api/v0/data/` is token-gated |
+
+The `availableMonths[]` array on `/sites/{code}` is the whole publication-change signal,
+so new releases, new products and corrected historical months are detected with nothing
+downloaded and no credential. `data/neon_availability.jsonl` and
+`data/neon_publication_events.jsonl` are **committed** (unlike the `*_levels` /
+`*_readings` time-series files) because the snapshot *is* the previous state the delta
+is computed against; a bootstrap run with no prior state deliberately emits zero changes
+rather than 328 spurious `new_product` events.
+
+Publication events promote to alerts via `src/aguayluz/alert_promotion/neon.py`
+(marker `_neonpub_`), routed onto existing modules by what the product measures. A
+publication gap on a continuous-sensor product activates the previously dormant
+`TELECOM_SCADA` module — the same "enabled by relevance once a real feed backs it"
+mechanism that activated `SEISMIC_GEO`. No NEON alert reaches the severity-4 push
+threshold.
+
+**Not verified:** `/api/v0/data/{product}/{site}/{month}` returns HTTP 403 `Access
+Denied` to anonymous callers (NEON's own gateway — sibling paths on the same host
+answer 200), and no `NEON_API_TOKEN` was available, so the download + CSV-parse path
+has never seen a real response. Its fixtures are labelled **SYNTHETIC** in-file and the
+gating is recorded in `federation.json#waf_blocked_sources`. Offline tests
+(`tests/test_neon_client.py`, `test_neon_health.py`, `test_ingest_neon.py`,
+`test_ingest_neon_products.py`, `test_alert_promotion_neon.py` — 80 tests) cover the
+403 split, retry, secret hygiene, every change type, schema conformance and merge
+idempotency — no network.
+
+Deferred: precipitation, soil moisture/temperature and evapotranspiration products are
+tracked for availability but need new `metric` enum values before they can be stored.
+See `docs/NEON_INTEGRATION.md`.
+
 ### 2026-07-18 — new vector: USGS PR-region earthquakes
 
 Added `scripts/ingest_usgs_quakes.py` (keyless USGS FDSN event service) and ran it

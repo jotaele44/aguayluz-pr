@@ -22,7 +22,8 @@
     "geofabric": "NHDPlus V2.1 (Puerto Rico = VPU 21; Vogel/VPUAttribute extensions unavailable -> attribute_coverage stamped partial)",
     "export_envelope": "schemas/hub_export.schema.json",
     "runtime_required_keys": [
-      "EPA_WATERS_API_KEY"
+      "EPA_WATERS_API_KEY",
+      "NEON_API_TOKEN"
     ],
     "owns": [
       "water_and_wastewater_assets",
@@ -37,7 +38,9 @@
       "utility_assets": "Energy_Sector/Geospatial/GeoJSON/Spiderweb_Power_Infrastructure_Layer.geojson (EIA-860 + OSM derived)",
       "service_events": "preps_*.json (PR emergency portal: emergencias.pr.gov / preps.pr.gov)",
       "aee_incidents": "SuperSonicHub1/luma-energy-outages outages_by_town.json (CC0; modern per-municipio realization of the legacy AEEIncidents town/area model after PREPA->LUMA 2021). NOTE: that mirror is itself inactive since 2025-03-03; committed data is a reproducible point-in-time snapshot at tier T2/needs_review. Wire a LIVE source (PR Energy Bureau regulatory outage reports / MiLUMA with permission) for ongoing attribution — the adapter (scripts/ingest_aee.py) is source-agnostic.",
-      "pr_municipios_geo": "data/geo/pr_municipios.json (Census Gazetteer centroids: normalization + spatial joins) + data/geo/pr_municipios.geojson (78 municipio polygons) + data/geo/pr_barrios.geojson (901 barrios, each linked to its municipio) for the map layer; U.S. Census cartographic boundaries (public domain), WGS84"
+      "pr_municipios_geo": "data/geo/pr_municipios.json (Census Gazetteer centroids: normalization + spatial joins) + data/geo/pr_municipios.geojson (78 municipio polygons) + data/geo/pr_barrios.geojson (901 barrios, each linked to its municipio) for the map layer; U.S. Census cartographic boundaries (public domain), WGS84",
+      "neon_availability": "data/neon_availability.jsonl + data/neon_publication_events.jsonl (NSF NEON API v0, data.neonscience.org/api/v0/sites; Domain D04 'Atlantic Neotropical' = the 4 Puerto Rico sites CUPE/GUAN/GUIL/LAJA). Keyless T1 federal feed: per-site/product availableMonths state and the publication-change delta derived from it (scripts/ingest_neon.py). Licence CC BY 4.0 per NEON's data policy (neonscience.org/data-samples/data-policies-citation-guidelines).",
+      "neon_readings": "data/neon_readings.jsonl (NSF NEON API v0 /data/{product}/{site}/{month}; scripts/ingest_neon_products.py). Stream discharge, surface-water elevation and surface-water chemistry at CUPE/GUIL as monitoring_reading rows, daily-aggregated with NEON QA-flagged records dropped. NOTE: this endpoint is token-gated (see waf_blocked_sources) and the live download path is UNVERIFIED — built and tested against synthetic fixtures only, pending a NEON_API_TOKEN. Runtime-only file, not committed, like every other time-series reading source."
     }
   },
   "hub_callable_commands": {
@@ -79,6 +82,7 @@
     "AAA/PRASA boil-water notices: the AAA portal is a Webflow marketing site with no public API — SDWIS T1 microbial violations (ingest_sdwis_violations.py) are the authoritative regulatory boil-water signal; individual AAA press-release notices route through centinelas-pr -> ingest_news_event.py at T3"
   ],
   "waf_blocked_sources": [
-    "MiLUMA / api.miluma.lumapr.com: Incapsula WAF returns HTTP 403 to plain clients; fetch_luma_live.py attempts a browser User-Agent workaround but success is not guaranteed; activate via refresh.py --all (optional step, warns and continues on WAF failure); a formal PREB/LUMA data-sharing arrangement is the recommended path to T1 electric outage attribution"
+    "MiLUMA / api.miluma.lumapr.com: Incapsula WAF returns HTTP 403 to plain clients; fetch_luma_live.py attempts a browser User-Agent workaround but success is not guaranteed; activate via refresh.py --all (optional step, warns and continues on WAF failure); a formal PREB/LUMA data-sharing arrangement is the recommended path to T1 electric outage attribution",
+    "NEON /api/v0/data/{product}/{site}/{month} (data.neonscience.org): returns HTTP 403 {'error':{'status':403,'detail':'Access Denied'}} to anonymous callers — NEON's own gateway, verified against sibling paths on the same host that answer 200. Requires a free NEON API token (data.neonscience.org/myaccount) sent as the X-API-Token header; note that an INVALID token also yields 403, even on endpoints that are open anonymously. Activate via refresh.py --weekly/--all (optional step: scripts/ingest_neon_products.py prints a skip notice and exits 0 when the token is absent). NEON *metadata* — sites, products, releases, and the availableMonths publication signal this producer's alerts are built on — needs no credential and is unaffected."
   ]
 }

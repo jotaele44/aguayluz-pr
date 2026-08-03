@@ -8,10 +8,12 @@ events into operational alerts —
   * CONTAMINATION / HYDRO_OPS  — water (EPA SDWIS + USGS reservoir levels)
   * SEISMIC_GEO                — USGS FDSN earthquakes (data/service_events.jsonl)
   * WEATHER_HAZARD             — NWS active hazard alerts (data/service_events.jsonl)
+  * CONTAMINATION / HYDRO_OPS / WEATHER_HAZARD / TELECOM_SCADA
+                               — NEON publication events (data/neon_publication_events.jsonl)
 
 Idempotent merge: hand-authored seed alerts and any non-generated rows are kept;
 previously-generated rows (alert_id containing any GENERATED_MARKERS substring —
-_sdwis_ / _resvlow_ / _seismic_ / _weather_) are replaced on every run. Output is
+_sdwis_ / _resvlow_ / _seismic_ / _weather_ / _osha_ / _neonpub_) are replaced on every run. Output is
 sorted by alert_id for a stable diff.
 
 The exporter (scripts/federation_export.py) projects data/alert_events.jsonl into the
@@ -70,6 +72,8 @@ def main() -> int:
                     help="USGS groundwater readings (HYDRO_OPS aquifer-drawdown proxy); optional")
     ap.add_argument("--coastal", default="data/coastal_levels.jsonl",
                     help="NOAA tide-gauge readings (HYDRO_OPS coastal high-water proxy); optional")
+    ap.add_argument("--neon-events", default="data/neon_publication_events.jsonl",
+                    help="NEON publication events (scripts/ingest_neon.py); optional")
     ap.add_argument("--geo", default="data/geo/pr_municipios.json",
                     help="municipio centroids for alert coordinates")
     ap.add_argument("--assets", default="data/utility_assets.jsonl",
@@ -88,11 +92,16 @@ def main() -> int:
         + _read_jsonl(REPO_ROOT / args.coastal)
     )
     assets = _read_jsonl(REPO_ROOT / args.assets)
+    neon_events = _read_jsonl(REPO_ROOT / args.neon_events)
     geo_path = REPO_ROOT / args.geo
     geo_doc = json.loads(geo_path.read_text()) if geo_path.is_file() else {}
     geo = load_geo(geo_doc.get("municipios", []) if isinstance(geo_doc, dict) else geo_doc)
 
-    alerts = build_all_alerts(events, readings, geo, assets, reservoir_percentile=args.percentile)
+    alerts = build_all_alerts(
+        events, readings, geo, assets,
+        reservoir_percentile=args.percentile,
+        neon_events=neon_events,
+    )
     generated = [a.model_dump() for a in alerts]
 
     out = REPO_ROOT / args.out

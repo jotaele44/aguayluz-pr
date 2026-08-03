@@ -66,8 +66,15 @@ export const READING_KINDS = [
   { key: 'coastal', label: 'Coastal water levels', unit: 'ft', metricField: 'coastal_water_level' },
 ]
 
+// Two vocabularies land here. `high`/`critical`/`medium`/`low` is the descriptive
+// scale; `block`/`warn`/`info` is what scripts/federation_export.py actually writes
+// into review_queue.json ("warn" if review_status == needs_review, else "block")
+// and what SEVERITIES below offers as filter options. Only the first set used to be
+// mapped, so every real review record fell through to the slate fallback and a
+// blocking record was indistinguishable from a warning one.
 const SEVERITY = {
-  high: 'text-red-300', critical: 'text-red-400', medium: 'text-amber-300', low: 'text-slate-400',
+  critical: 'text-red-400', high: 'text-red-300', medium: 'text-amber-300', low: 'text-slate-400',
+  block: 'text-red-300', warn: 'text-amber-300', info: 'text-sky-300',
 }
 export const severityTone = (s) => SEVERITY[s] ?? 'text-slate-400'
 

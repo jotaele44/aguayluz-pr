@@ -267,6 +267,12 @@ exports/federation/
 !data/alert_events.jsonl
 !data/alert_dependency_edges.jsonl
 !data/alert_gaps.jsonl
+# NEON publication state. Committed on purpose, unlike the *_levels/*_readings
+# time-series files: the availability snapshot IS the previous state the delta is
+# computed against, so gitignoring it would make every CI runner start empty and
+# report all ~328 site/product pairs as new on every run.
+!data/neon_availability.jsonl
+!data/neon_publication_events.jsonl
 # Census-derived PR geodata: centroids (normalization/spatial joins) + boundary polygons (map layer)
 !data/geo/
 !data/geo/pr_municipios.json
