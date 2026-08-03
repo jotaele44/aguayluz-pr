@@ -1,6 +1,6 @@
 # ADR-0002: Freeze the mycelial Phase 0 baseline and require separate Phase 1 admission ballots
 
-- Status: Proposed
+- Status: Accepted
 - Decision class: Research governance and capability admission
 - Baseline repository: `jotaele44/aguayluz-pr`
 - Baseline default-branch commit: `a37bf8524524723aea9dedb364e36c5c36643d00`
