@@ -1,7 +1,9 @@
 # Road to 100 — normalized federation score
 
 **Audit date:** 2026-08-04
-**Reconciled main:** `b14e96dd9b274200599daa313c46884aa4ad301c`
+**Required audit baseline:** `17c843595b5cdfbcef4e5f7b1ac6c662092e335d`
+**Current PR base:** `b14e96dd9b274200599daa313c46884aa4ad301c`
+**Post-baseline drift adjudication:** subsequent main changes do not alter the PR #118 score movement or unfinished-work classification; PR #120 is recorded below as design authority with no score change.
 **Scoring model:** code completeness 20%; main-branch availability 15%; CI enforcement 15%; data materialization 15%; operator verification 15%; GUI completeness 10%; federation readiness 10%.
 
 ## Current normalized score: 81.55 / 100
