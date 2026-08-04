@@ -91,9 +91,12 @@ def validate_document(document: dict, repo: Path = REPO) -> list[str]:
                         errors.append(
                             f"{category_id}: no producer scheduled in cadence {cadence}"
                         )
-        if status.startswith("implemented") and item.get("live_verified") is True:
-            if not any(str(path).endswith("_receipt.json") for path in artifacts or []):
-                errors.append(f"{category_id}: live_verified requires a receipt artifact")
+        if (
+            status.startswith("implemented")
+            and item.get("live_verified") is True
+            and not any(str(path).endswith("_receipt.json") for path in artifacts or [])
+        ):
+            errors.append(f"{category_id}: live_verified requires a receipt artifact")
     return errors
 
 
