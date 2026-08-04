@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/regulatory_observation.schema.json",
+  "title": "RegulatoryObservation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "observation_id",
+    "record_family",
+    "provider",
+    "provider_record_id",
+    "observed_at",
+    "retrieved_at",
+    "source_receipt_id",
+    "normalization_version",
+    "evidence_tier",
+    "freshness_state",
+    "payload"
+  ],
+  "properties": {
+    "observation_id": {"type": "string", "pattern": "^AYL_REGOBS_[A-Za-z0-9._:-]+$"},
+    "record_family": {"enum": ["entity", "permit", "inspection", "enforcement"]},
+    "provider": {"enum": ["EPA", "FDA", "USGS", "DRNA", "PRASA_AAA", "PREQB"]},
+    "provider_record_id": {"type": "string", "minLength": 1},
+    "provider_parent_record_id": {"type": ["string", "null"]},
+    "observed_at": {"type": "string", "format": "date-time"},
+    "valid_from": {"type": ["string", "null"], "format": "date-time"},
+    "valid_until": {"type": ["string", "null"], "format": "date-time"},
+    "retrieved_at": {"type": "string", "format": "date-time"},
+    "source_receipt_id": {"type": "string", "pattern": "^AYL_REGRCPT_[A-Za-z0-9._:-]+$"},
+    "normalization_version": {"type": "string", "minLength": 1},
+    "evidence_tier": {"enum": ["T1", "T2", "T3", "T4"]},
+    "freshness_state": {"enum": ["current", "historical", "stale", "unknown", "conflicting"]},
+    "supersedes_observation_id": {"type": ["string", "null"]},
+    "source_asserted_status": {"type": ["string", "null"]},
+    "identifiers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["scheme", "value"],
+        "properties": {
+          "scheme": {"type": "string", "minLength": 1},
+          "value": {"type": "string", "minLength": 1},
+          "issuer": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "payload": {"type": "object"}
+  }
+}
