@@ -55,8 +55,19 @@
   },
   "allOf": [
     {
-      "if": {"properties": {"decision_state": {"const": "approved"}}},
-      "then": {"required": ["decided_at", "decided_by", "decision_rationale"]}
+      "if": {
+        "required": ["decision_state"],
+        "properties": {"decision_state": {"const": "approved"}}
+      },
+      "then": {
+        "required": ["decided_at", "decided_by", "decision_rationale"],
+        "properties": {
+          "contradictions": {"maxItems": 0},
+          "decided_at": {"type": "string", "format": "date-time"},
+          "decided_by": {"type": "string", "minLength": 1},
+          "decision_rationale": {"type": "string", "minLength": 1}
+        }
+      }
     }
   ]
 }
