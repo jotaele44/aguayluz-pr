@@ -9,8 +9,9 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass, field
-from typing import Any, Literal, Mapping, Sequence
+from typing import Any, Literal
 
 ContractVersion = Literal["resource-balance/v0.1"]
 ResourceDomain = Literal["water", "electricity", "wastewater", "fuel", "unknown"]
