@@ -141,4 +141,4 @@ A later activation ballot must require all of the following:
 
 ## Rollback
 
-Rollback deletes only the six additive adapter, schema, fixture, test, documentation, and overlap files. The PR #128 core and all current runtime, data, API, GUI, scheduler, alert, incident, notification, and federation paths remain unchanged.
+Rollback deletes only the ten additive adapter-module, schema, fixture, test, documentation, and overlap files. The PR #128 core and all current runtime, data, API, GUI, scheduler, alert, incident, notification, and federation paths remain unchanged.
