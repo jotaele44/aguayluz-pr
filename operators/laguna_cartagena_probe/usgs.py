@@ -8,9 +8,9 @@ import re
 from typing import Any
 
 from .model import (
-    FetchReceipt,
     SITE_METADATA,
     WQ_CHARACTERISTIC_MAP,
+    FetchReceipt,
     build_observation,
     parse_datetime,
 )
@@ -239,8 +239,8 @@ def parse_wqx3_csv(
         if not metric:
             continue
         date = _first_present(row, "ActivityStartDate", "Activity Start Date")
-        time = _first_present(row, "ActivityStartTime/Time", "ActivityStartTime")
-        observed = parse_datetime(f"{date}T{time}" if date and time else date)
+        time_value = _first_present(row, "ActivityStartTime/Time", "ActivityStartTime")
+        observed = parse_datetime(f"{date}T{time_value}" if date and time_value else date)
         raw_value = _first_present(row, "ResultMeasureValue", "Result Measure Value")
         try:
             value: float | str = float(raw_value)
