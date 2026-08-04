@@ -1,4 +1,4 @@
-name: One-time Patillas ScienceBase inventory
+name: One-time Patillas stage-volume acquisition
 
 on:
   pull_request:
@@ -10,67 +10,102 @@ permissions:
   contents: read
 
 jobs:
-  inventory:
+  acquire:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - name: Fetch authoritative ScienceBase item and child inventory
+      - name: Install FileGDB inspection tools
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p acquisition
-          base='https://www.sciencebase.gov/catalog'
-          item='5f45726282ce4c3d12251b6e'
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends gdal-bin
+          ogrinfo --version
+      - name: Download and verify authoritative ScienceBase files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p acquisition/raw acquisition/extracted acquisition/inspection acquisition/tables
+          zip_url='https://www.sciencebase.gov/catalog/file/get/5f45726282ce4c3d12251b6e?f=__disk__98%2F44%2Fc9%2F9844c9122749700de25ae4f702abd098c3a3308b'
+          xml_url='https://www.sciencebase.gov/catalog/file/get/5f45726282ce4c3d12251b6e?f=__disk__5a%2Fec%2Ff0%2F5aecf0ef78b085d23b7f2c924cc0e4284e666779'
           curl --fail-with-body --location --retry 4 --retry-all-errors \
-            --dump-header acquisition/item.headers \
-            --output acquisition/item.json \
-            "$base/item/$item?format=json"
+            --dump-header acquisition/raw/Patillas_Terrain_2019.gdb.zip.headers \
+            --output acquisition/raw/Patillas_Terrain_2019.gdb.zip "$zip_url"
           curl --fail-with-body --location --retry 4 --retry-all-errors \
-            --dump-header acquisition/children.headers \
-            --output acquisition/children.json \
-            "$base/items?q=&filter=parentId=$item&format=json&max=1000"
+            --dump-header acquisition/raw/geodatabase_Patillas_2019.xml.headers \
+            --output acquisition/raw/geodatabase_Patillas_2019.xml "$xml_url"
+          test "$(stat -c %s acquisition/raw/Patillas_Terrain_2019.gdb.zip)" = '27171688'
+          test "$(stat -c %s acquisition/raw/geodatabase_Patillas_2019.xml)" = '29951'
+          echo '562ed7f0458a5c84b379963a90b9c8d1  acquisition/raw/Patillas_Terrain_2019.gdb.zip' | md5sum -c -
+          echo 'b2f0ab711efabca8684c2a4e8018f4a8  acquisition/raw/geodatabase_Patillas_2019.xml' | md5sum -c -
+          sha256sum acquisition/raw/* > acquisition/raw_sha256sums.txt
+          unzip -q acquisition/raw/Patillas_Terrain_2019.gdb.zip -d acquisition/extracted
+          unzip -l acquisition/raw/Patillas_Terrain_2019.gdb.zip > acquisition/inspection/archive_listing.txt
+          gdb="$(find acquisition/extracted -type d -name '*.gdb' -print -quit)"
+          test -n "$gdb"
+          printf '%s\n' "$gdb" > acquisition/inspection/geodatabase_path.txt
+          ogrinfo -ro "$gdb" > acquisition/inspection/layer_inventory.txt
           python - <<'PY'
           import json
+          import re
+          import subprocess
           from pathlib import Path
 
           root = Path('acquisition')
-          item = json.loads((root / 'item.json').read_text())
-          children_payload = json.loads((root / 'children.json').read_text())
-          children = children_payload.get('items', [])
-          rows = []
-          for owner in [item, *children]:
-              for f in owner.get('files', []) or []:
-                  rows.append({
-                      'item_id': owner.get('id'),
-                      'item_title': owner.get('title'),
-                      'name': f.get('name'),
-                      'title': f.get('title'),
-                      'contentType': f.get('contentType'),
-                      'size': f.get('size'),
-                      'checksum': f.get('checksum'),
-                      'dateUploaded': f.get('dateUploaded'),
-                      'url': f.get('url'),
-                  })
-          summary = {
-              'parent_id': item.get('id'),
-              'parent_title': item.get('title'),
-              'parent_file_count': len(item.get('files', []) or []),
-              'child_count': len(children),
-              'files': rows,
+          gdb = Path((root / 'inspection/geodatabase_path.txt').read_text().strip())
+          inventory = (root / 'inspection/layer_inventory.txt').read_text()
+          layers = []
+          for line in inventory.splitlines():
+              match = re.match(r'^\s*\d+:\s+(.+?)(?:\s+\([^)]*\))?$', line)
+              if match:
+                  layers.append(match.group(1).strip())
+          candidates = []
+          for index, layer in enumerate(layers):
+              schema_path = root / 'inspection' / f'layer_{index:03d}_schema.txt'
+              result = subprocess.run(
+                  ['ogrinfo', '-ro', '-so', str(gdb), layer],
+                  check=True,
+                  capture_output=True,
+                  text=True,
+              )
+              schema_path.write_text(result.stdout)
+              searchable = f'{layer}\n{result.stdout}'.lower()
+              if any(token in searchable for token in ('stage', 'volume', 'storage', 'capacity')):
+                  safe = re.sub(r'[^A-Za-z0-9_.-]+', '_', layer).strip('_') or f'layer_{index:03d}'
+                  out_dir = root / 'tables' / safe
+                  out_dir.mkdir(parents=True, exist_ok=True)
+                  subprocess.run(
+                      ['ogr2ogr', '-f', 'CSV', str(out_dir), str(gdb), layer, '-lco', 'GEOMETRY=AS_WKT'],
+                      check=True,
+                  )
+                  full = subprocess.run(
+                      ['ogrinfo', '-ro', '-al', '-geom=NO', str(gdb), layer],
+                      check=True,
+                      capture_output=True,
+                      text=True,
+                  )
+                  (out_dir / 'ogrinfo_full.txt').write_text(full.stdout)
+                  candidates.append({'index': index, 'layer': layer, 'safe_name': safe})
+          report = {
+              'gdb': str(gdb),
+              'layer_count': len(layers),
+              'layers': layers,
+              'candidate_layers': candidates,
           }
-          (root / 'inventory.json').write_text(json.dumps(summary, indent=2, sort_keys=True) + '\n')
-          for child in children:
-              cid = child.get('id')
-              if cid:
-                  (root / f'child_{cid}.json').write_text(json.dumps(child, indent=2, sort_keys=True) + '\n')
-          print(json.dumps(summary, indent=2))
+          (root / 'inspection/candidate_report.json').write_text(
+              json.dumps(report, indent=2, sort_keys=True) + '\n'
+          )
+          print(json.dumps(report, indent=2))
+          if not candidates:
+              raise SystemExit('No stage/volume/storage/capacity candidate layer found')
           PY
-          sha256sum acquisition/* > acquisition/sha256sums.txt
-      - name: Upload inventory receipt
+          find acquisition/tables -type f -print0 | sort -z | xargs -0 sha256sum > acquisition/table_sha256sums.txt
+          sha256sum acquisition/inspection/* > acquisition/inspection_sha256sums.txt
+      - name: Upload raw and extracted evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: patillas-sciencebase-inventory
+          name: patillas-stage-volume-authoritative-source
           path: acquisition
           if-no-files-found: error
           retention-days: 7
