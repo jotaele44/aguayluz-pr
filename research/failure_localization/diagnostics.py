@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import math
 from collections import defaultdict, deque
+from functools import partial
 from typing import Any
 
 from .contracts import HYDRAULIC_EDGE_TYPES, number, stable_id, state, unique
@@ -144,6 +145,28 @@ def make_candidate(hypothesis, asset, score, support, contradictions, missing, t
     }
 
 
+def _find_matching(assertions, values):
+    return next(
+        (
+            row
+            for row in assertions
+            if state(row.get("value")) in values
+            or state(row.get("assertion")) in values
+        ),
+        None,
+    )
+
+
+def _append_candidate(
+    candidates, asset, index, hypothesis, score, support, contradictions, missing, tests
+):
+    item = make_candidate(
+        hypothesis, asset, score, support, contradictions, missing, tests, index
+    )
+    if item:
+        candidates.append(item)
+
+
 def build_candidates(assets, index, latest, series, balances, discontinuities):
     balance_by_asset = {row["asset_id"]: row for row in balances}
     discontinuity_by_asset = defaultdict(list)
@@ -164,112 +187,184 @@ def build_candidates(assets, index, latest, series, balances, discontinuities):
         asset_type, outages = asset["asset_type"], downstream_outages[asset_id]
         assertions = [latest_value(latest, "asset", asset_id, metric) for metric in ("failure_assertion", "work_order", "field_confirmation", "acoustic_confirmation")]
         assertions = [row for row in assertions if row]
-        matching = lambda values: next((row for row in assertions if state(row.get("value")) in values or state(row.get("assertion")) in values), None)
-        def add(hypothesis, score, support, contradictions, missing, tests):
-            item = make_candidate(hypothesis, asset, score, support, contradictions, missing, tests, index)
-            if item:
-                candidates.append(item)
+        matching = partial(_find_matching, assertions)
+        add = partial(_append_candidate, candidates, asset, index)
 
         if asset_type in {"transmission", "distribution"}:
             score, support, contradictions, missing = 0, [], [], []
             balance = balance_by_asset.get(asset_id)
             if balance and balance["status"] == "positive_unaccounted_residual":
-                score += 30; support += balance["evidence_observation_ids"]
+                score += 30
+                support += balance["evidence_observation_ids"]
             elif balance and balance["status"] == "insufficient_data":
                 missing += [f"flow:{item}" for item in balance["missing_flow_edge_ids"]]
-            else: missing.append("complete_mass_balance")
+            else:
+                missing.append("complete_mass_balance")
             if discontinuity_by_asset[asset_id]:
                 score += 25
-                for row in discontinuity_by_asset[asset_id]: support += row["evidence_observation_ids"]
-            else: missing.append("upstream_downstream_pressure")
-            if outages: score += min(25, 10 + 5 * len(outages)); support += outages
-            else: missing.append("downstream_outage_confirmation")
+                for row in discontinuity_by_asset[asset_id]:
+                    support += row["evidence_observation_ids"]
+            else:
+                missing.append("upstream_downstream_pressure")
+            if outages:
+                score += min(25, 10 + 5 * len(outages))
+                support += outages
+            else:
+                missing.append("downstream_outage_confirmation")
             direct = matching({"main_break", "confirmed_main_break", "rupture"})
             hypothesis = "transmission_main_break" if direct else "hidden_leak_or_main_break"
-            if direct: score += 35; support.append(direct["observation_id"])
+            if direct:
+                score += 35
+                support.append(direct["observation_id"])
             restored = latest_value(latest, "asset", asset_id, "restoration")
             if restored and state(restored.get("value")) in {"restored", "complete"}:
-                score -= 25; contradictions.append("asset_or_downstream_service_reported_restored"); support.append(restored["observation_id"])
+                score -= 25
+                contradictions.append("asset_or_downstream_service_reported_restored")
+                support.append(restored["observation_id"])
             add(hypothesis, score, support, contradictions, missing, ["acoustic_leak_survey", "field_pressure_test", "visual_excavation_check"])
 
         if asset_type == "pump":
             pump, power = latest_value(latest, "asset", asset_id, "pump_state"), latest_value(latest, "asset", asset_id, "power_state")
             pressure = discontinuity_by_asset[asset_id]
             score, support, contradictions, missing = 0, [], [], []
-            if pump and state(pump.get("value")) in {"off", "fault", "failed", "tripped"}: score += 35; support.append(pump["observation_id"])
-            else: missing.append("pump_state")
-            if power and state(power.get("value")) in {"on", "available", "normal"}: score += 15; support.append(power["observation_id"])
-            elif power and state(power.get("value")) in {"off", "failed", "unavailable"}: score -= 15; support.append(power["observation_id"]); contradictions.append("power_unavailable_can_explain_pump_state")
-            else: missing.append("power_state")
+            if pump and state(pump.get("value")) in {"off", "fault", "failed", "tripped"}:
+                score += 35
+                support.append(pump["observation_id"])
+            else:
+                missing.append("pump_state")
+            if power and state(power.get("value")) in {"on", "available", "normal"}:
+                score += 15
+                support.append(power["observation_id"])
+            elif power and state(power.get("value")) in {"off", "failed", "unavailable"}:
+                score -= 15
+                support.append(power["observation_id"])
+                contradictions.append("power_unavailable_can_explain_pump_state")
+            else:
+                missing.append("power_state")
             if pressure:
                 score += 20
-                for row in pressure: support += row["evidence_observation_ids"]
-            else: missing.append("downstream_pressure")
-            if outages: score += 15; support += outages
+                for row in pressure:
+                    support += row["evidence_observation_ids"]
+            else:
+                missing.append("downstream_pressure")
+            if outages:
+                score += 15
+                support += outages
             direct = matching({"pump_failure", "confirmed_pump_failure"})
-            if direct: score += 30; support.append(direct["observation_id"])
+            if direct:
+                score += 30
+                support.append(direct["observation_id"])
             add("pump_failure", score, support, contradictions, missing, ["motor_current_test", "discharge_pressure_test", "mechanical_inspection"])
             pscore, psupport, pcontra, pmissing = 0, [], [], []
-            if power and state(power.get("value")) in {"off", "failed", "unavailable"}: pscore += 45; psupport.append(power["observation_id"])
-            elif power and state(power.get("value")) in {"on", "available", "normal"}: pscore -= 40; psupport.append(power["observation_id"]); pcontra.append("power_reported_available")
-            else: pmissing.append("power_state")
-            if pump and state(pump.get("value")) in {"off", "fault", "failed", "tripped"}: pscore += 20; psupport.append(pump["observation_id"])
+            if power and state(power.get("value")) in {"off", "failed", "unavailable"}:
+                pscore += 45
+                psupport.append(power["observation_id"])
+            elif power and state(power.get("value")) in {"on", "available", "normal"}:
+                pscore -= 40
+                psupport.append(power["observation_id"])
+                pcontra.append("power_reported_available")
+            else:
+                pmissing.append("power_state")
+            if pump and state(pump.get("value")) in {"off", "fault", "failed", "tripped"}:
+                pscore += 20
+                psupport.append(pump["observation_id"])
             if pressure:
                 pscore += 15
-                for row in pressure: psupport += row["evidence_observation_ids"]
-            if outages: pscore += 15; psupport += outages
+                for row in pressure:
+                    psupport += row["evidence_observation_ids"]
+            if outages:
+                pscore += 15
+                psupport += outages
             direct = matching({"power_loss", "confirmed_power_loss"})
-            if direct: pscore += 30; psupport.append(direct["observation_id"])
+            if direct:
+                pscore += 30
+                psupport.append(direct["observation_id"])
             add("power_loss_at_pumping_asset", pscore, psupport, pcontra, pmissing, ["feeder_status_check", "generator_runtime_check", "voltage_test"])
 
         if asset_type == "valve":
             valve = latest_value(latest, "asset", asset_id, "valve_state")
             score, support, missing = 0, [], []
-            if valve and state(valve.get("value")) in {"closed", "partially_closed"}: score += 35 if asset["attributes"].get("normally_open") else 20; support.append(valve["observation_id"])
-            else: missing.append("valve_state")
+            if valve and state(valve.get("value")) in {"closed", "partially_closed"}:
+                score += 35 if asset["attributes"].get("normally_open") else 20
+                support.append(valve["observation_id"])
+            else:
+                missing.append("valve_state")
             if discontinuity_by_asset[asset_id]:
                 score += 20
-                for row in discontinuity_by_asset[asset_id]: support += row["evidence_observation_ids"]
-            if outages: score += 20; support += outages
+                for row in discontinuity_by_asset[asset_id]:
+                    support += row["evidence_observation_ids"]
+            if outages:
+                score += 20
+                support += outages
             direct = matching({"valve_misconfiguration", "confirmed_valve_error", "unexpected_valve_closure"})
-            if direct: score += 30; support.append(direct["observation_id"])
+            if direct:
+                score += 30
+                support.append(direct["observation_id"])
             add("valve_misconfiguration_or_closure", score, support, [], missing, ["physical_valve_position_check", "control_log_review"])
 
         if asset_type == "tank":
             tank, history = latest_value(latest, "asset", asset_id, "tank_level"), series.get(("asset", asset_id, "tank_level"), [])
             score, support, missing = 0, [], []
-            if direction(tank) == "low": score += 35; support.append(tank["observation_id"])
-            else: missing.append("low_tank_level")
+            if direction(tank) == "low":
+                score += 35
+                support.append(tank["observation_id"])
+            else:
+                missing.append("low_tank_level")
             if len(history) >= 2 and number(history[-1].get("value")) < number(history[-2].get("value")):
-                score += 15; support += [history[-2]["observation_id"], history[-1]["observation_id"]]
-            else: missing.append("tank_level_trend")
-            if outages: score += 20; support += outages
+                score += 15
+                support += [history[-2]["observation_id"], history[-1]["observation_id"]]
+            else:
+                missing.append("tank_level_trend")
+            if outages:
+                score += 20
+                support += outages
             direct = matching({"tank_depletion", "confirmed_tank_depletion"})
-            if direct: score += 30; support.append(direct["observation_id"])
+            if direct:
+                score += 30
+                support.append(direct["observation_id"])
             add("tank_depletion", score, support, [], missing, ["tank_level_gauge_check", "inlet_outlet_flow_check"])
 
         if asset_type == "treatment":
             production, treatment = latest_value(latest, "asset", asset_id, "production"), latest_value(latest, "asset", asset_id, "treatment_state")
             score, support, missing = 0, [], []
-            if direction(production) == "low": score += 35; support.append(production["observation_id"])
-            elif treatment and state(treatment.get("value")) in {"off", "failed", "limited"}: score += 35; support.append(treatment["observation_id"])
-            else: missing.append("treatment_production_or_state")
-            if outages: score += 20; support += outages
+            if direction(production) == "low":
+                score += 35
+                support.append(production["observation_id"])
+            elif treatment and state(treatment.get("value")) in {"off", "failed", "limited"}:
+                score += 35
+                support.append(treatment["observation_id"])
+            else:
+                missing.append("treatment_production_or_state")
+            if outages:
+                score += 20
+                support += outages
             direct = matching({"treatment_failure", "confirmed_treatment_failure"})
-            if direct: score += 30; support.append(direct["observation_id"])
+            if direct:
+                score += 30
+                support.append(direct["observation_id"])
             add("treatment_failure", score, support, [], missing, ["raw_water_inflow_check", "plant_process_alarm_review", "production_meter_check"])
 
         if asset_type in {"source", "intake"}:
             availability = latest_value(latest, "asset", asset_id, "source_availability")
             flows = [latest_value(latest, "edge", edge["edge_id"], "flow") for edge in index["outgoing"].get(asset_id, [])]
             score, support, contradictions, missing = 0, [], [], []
-            if direction(availability) == "low": score += 40; support.append(availability["observation_id"])
-            elif availability: contradictions.append("source_availability_not_low"); support.append(availability["observation_id"])
-            else: missing.append("source_availability")
+            if direction(availability) == "low":
+                score += 40
+                support.append(availability["observation_id"])
+            elif availability:
+                contradictions.append("source_availability_not_low")
+                support.append(availability["observation_id"])
+            else:
+                missing.append("source_availability")
             low = [row for row in flows if direction(row) == "low"]
-            if low: score += 25; support += [row["observation_id"] for row in low]
-            elif not flows: missing.append("outgoing_source_flow")
-            if outages: score += min(25, 10 + 5 * len(outages)); support += outages
+            if low:
+                score += 25
+                support += [row["observation_id"] for row in low]
+            elif not flows:
+                missing.append("outgoing_source_flow")
+            if outages:
+                score += min(25, 10 + 5 * len(outages))
+                support += outages
             add("source_water_shortage", score, support, contradictions, missing, ["source_yield_check", "intake_obstruction_check", "operator_withdrawal_review"])
 
         if asset_type in {"pressure_zone", "service_area"}:
@@ -283,5 +378,6 @@ def build_candidates(assets, index, latest, series, balances, discontinuities):
         if key not in deduped or item["confidence"] > deduped[key]["confidence"]:
             deduped[key] = item
     ranked = sorted(deduped.values(), key=lambda item: (-item["confidence"], item["candidate_id"]))
-    for rank, item in enumerate(ranked, 1): item["rank"] = rank
+    for rank, item in enumerate(ranked, 1):
+        item["rank"] = rank
     return ranked
