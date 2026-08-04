@@ -1,0 +1,76 @@
+name: One-time Patillas ScienceBase inventory
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/acquire-patillas-stage-volume-once.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Fetch authoritative ScienceBase item and child inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p acquisition
+          base='https://www.sciencebase.gov/catalog'
+          item='5f45726282ce4c3d12251b6e'
+          curl --fail-with-body --location --retry 4 --retry-all-errors \
+            --dump-header acquisition/item.headers \
+            --output acquisition/item.json \
+            "$base/item/$item?format=json"
+          curl --fail-with-body --location --retry 4 --retry-all-errors \
+            --dump-header acquisition/children.headers \
+            --output acquisition/children.json \
+            "$base/items?q=&filter=parentId=$item&format=json&max=1000"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path('acquisition')
+          item = json.loads((root / 'item.json').read_text())
+          children_payload = json.loads((root / 'children.json').read_text())
+          children = children_payload.get('items', [])
+          rows = []
+          for owner in [item, *children]:
+              for f in owner.get('files', []) or []:
+                  rows.append({
+                      'item_id': owner.get('id'),
+                      'item_title': owner.get('title'),
+                      'name': f.get('name'),
+                      'title': f.get('title'),
+                      'contentType': f.get('contentType'),
+                      'size': f.get('size'),
+                      'checksum': f.get('checksum'),
+                      'dateUploaded': f.get('dateUploaded'),
+                      'url': f.get('url'),
+                  })
+          summary = {
+              'parent_id': item.get('id'),
+              'parent_title': item.get('title'),
+              'parent_file_count': len(item.get('files', []) or []),
+              'child_count': len(children),
+              'files': rows,
+          }
+          (root / 'inventory.json').write_text(json.dumps(summary, indent=2, sort_keys=True) + '\n')
+          for child in children:
+              cid = child.get('id')
+              if cid:
+                  (root / f'child_{cid}.json').write_text(json.dumps(child, indent=2, sort_keys=True) + '\n')
+          print(json.dumps(summary, indent=2))
+          PY
+          sha256sum acquisition/* > acquisition/sha256sums.txt
+      - name: Upload inventory receipt
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: patillas-sciencebase-inventory
+          path: acquisition
+          if-no-files-found: error
+          retention-days: 7
