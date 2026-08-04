@@ -1,0 +1,186 @@
+{
+  "adjudication": "real_provisional_context_only",
+  "frozen_at": "2026-08-04T21:32:00Z",
+  "missing_observations": [
+    {
+      "metric": "reservoir_storage_change",
+      "required_for": "reservoir_balance",
+      "state": "missing"
+    },
+    {
+      "metric": "direct_treatment_withdrawal",
+      "required_for": "treatment_balance",
+      "state": "missing"
+    },
+    {
+      "metric": "terminal_flow",
+      "required_for": "system_balance",
+      "state": "missing"
+    },
+    {
+      "metric": "validated_expected_loss",
+      "required_for": "loss_adjusted_balance",
+      "state": "missing"
+    }
+  ],
+  "observations": [
+    {
+      "asset_id": "USGS_50092000",
+      "confidence": 75,
+      "eligible_for_balance": false,
+      "evidence_tier": "T1",
+      "exclusion_reasons": [
+        "not_complete_reservoir_inflow_census",
+        "missing_storage_change"
+      ],
+      "metric": "upstream_discharge",
+      "observation_id": "obs:50092000:00060:20260728T0700",
+      "observed_at": "2026-07-28T07:00:00-04:00",
+      "review_status": "accepted",
+      "role": "context",
+      "source_hash": "c6d05bcba0886633b6c23a1b4d67aa768a393916e9172a3695b571d460732651",
+      "source_ref": "source_snapshots/usgs_50092000_upstream_inflow.json",
+      "unit": "ft3/s",
+      "value": 9.5
+    },
+    {
+      "asset_id": "USGS_50093045",
+      "confidence": 75,
+      "eligible_for_balance": false,
+      "evidence_tier": "T1",
+      "exclusion_reasons": [
+        "not_a_volume",
+        "missing_stage_storage_relation",
+        "missing_prior_storage_state"
+      ],
+      "metric": "reservoir_elevation",
+      "observation_id": "obs:50093045:72379:20260728T0445",
+      "observed_at": "2026-07-28T04:45:00-04:00",
+      "review_status": "accepted",
+      "role": "context",
+      "source_hash": "7c41641ad5b6afdfe409240075207e31957f5efa4ffa578ce64452345cc4759d",
+      "source_ref": "source_snapshots/usgs_50093045_reservoir.json",
+      "unit": "ft_PRVD02",
+      "value": 209.7
+    },
+    {
+      "asset_id": "USGS_50093045",
+      "confidence": 70,
+      "eligible_for_balance": false,
+      "evidence_tier": "T1",
+      "exclusion_reasons": [
+        "not_converted_to_catchment_volume",
+        "asynchronous"
+      ],
+      "metric": "precipitation_total",
+      "observation_id": "obs:50093045:00045:20260724T1745",
+      "observed_at": "2026-07-24T17:45:00-04:00",
+      "review_status": "accepted",
+      "role": "context",
+      "source_hash": "7c41641ad5b6afdfe409240075207e31957f5efa4ffa578ce64452345cc4759d",
+      "source_ref": "source_snapshots/usgs_50093045_reservoir.json",
+      "unit": "in",
+      "value": 0.0
+    },
+    {
+      "asset_id": "USGS_50093045",
+      "confidence": 50,
+      "eligible_for_balance": false,
+      "evidence_tier": "T1",
+      "exclusion_reasons": [
+        "temporary_operational_data",
+        "not_a_discharge_measurement",
+        "asynchronous"
+      ],
+      "metric": "gate_opening_state",
+      "observation_id": "obs:50093045:gates:20260724T1745",
+      "observed_at": "2026-07-24T17:45:00-04:00",
+      "review_status": "needs_review",
+      "role": "context",
+      "source_hash": "7c41641ad5b6afdfe409240075207e31957f5efa4ffa578ce64452345cc4759d",
+      "source_ref": "source_snapshots/usgs_50093045_reservoir.json",
+      "unit": "ft_sum",
+      "value": 0.06
+    },
+    {
+      "asset_id": "USGS_50093053",
+      "confidence": 70,
+      "eligible_for_balance": false,
+      "evidence_tier": "T1",
+      "exclusion_reasons": [
+        "stale",
+        "asynchronous"
+      ],
+      "metric": "canal_forebay_discharge",
+      "observation_id": "obs:50093053:00060:20260705T1615",
+      "observed_at": "2026-07-05T16:15:00-04:00",
+      "review_status": "accepted",
+      "role": "context",
+      "source_hash": "dfc4fabd5351c24f873cf87ae48b9fb80f167edee5f042bd0390a7f65e222e1a",
+      "source_ref": "source_snapshots/usgs_50093053_forebay.json",
+      "unit": "ft3/s",
+      "value": 21.7
+    },
+    {
+      "asset_id": "USGS_50093075",
+      "confidence": 75,
+      "eligible_for_balance": false,
+      "evidence_tier": "T1",
+      "exclusion_reasons": [
+        "below_treatment_reading_not_synchronized",
+        "withdrawal_not_directly_metered"
+      ],
+      "metric": "canal_above_treatment_discharge",
+      "observation_id": "obs:50093075:00060:20260728T0630",
+      "observed_at": "2026-07-28T06:30:00-04:00",
+      "review_status": "accepted",
+      "role": "context",
+      "source_hash": "1ab34e4211770b5caab5b52c8e5a59e68929b449df5be98c024709b295fc3e33",
+      "source_ref": "source_snapshots/usgs_50093075_above_filtration.json",
+      "unit": "ft3/s",
+      "value": 19.1
+    },
+    {
+      "asset_id": "USGS_50093078",
+      "confidence": 70,
+      "eligible_for_balance": false,
+      "evidence_tier": "T1",
+      "exclusion_reasons": [
+        "above_treatment_reading_not_synchronized",
+        "withdrawal_not_directly_metered"
+      ],
+      "metric": "canal_below_treatment_discharge",
+      "observation_id": "obs:50093078:00060:20260718T1430",
+      "observed_at": "2026-07-18T14:30:00-04:00",
+      "review_status": "accepted",
+      "role": "context",
+      "source_hash": "5d286f270e5a1e25c3c73063269ed65e378e227f09a54cd1990d7d46ea87d02e",
+      "source_ref": "source_snapshots/usgs_50093078_below_filtration.json",
+      "unit": "ft3/s",
+      "value": 15.4
+    },
+    {
+      "asset_id": "USGS_50093083",
+      "confidence": 70,
+      "eligible_for_balance": false,
+      "evidence_tier": "T1",
+      "exclusion_reasons": [
+        "intake_and_terminal_flow_not_synchronized",
+        "asynchronous"
+      ],
+      "metric": "canal_above_aes_intake_discharge",
+      "observation_id": "obs:50093083:00060:20260716T1300",
+      "observed_at": "2026-07-16T13:00:00-04:00",
+      "review_status": "accepted",
+      "role": "context",
+      "source_hash": "73b14f7308fb41f903828d5a282819fdd111ed8158211bfd9a51d3adde5cd2c9",
+      "source_ref": "source_snapshots/usgs_50093083_above_aes_intake.json",
+      "unit": "ft3/s",
+      "value": 6.47
+    }
+  ],
+  "pilot_id": "patillas-guayama-water-balance-v0.2",
+  "schema_version": "aguayluz.frozen-water-observations/v0.2",
+  "window_end": "2026-07-28T07:00:00-04:00",
+  "window_start": "2026-07-05T16:15:00-04:00"
+}
