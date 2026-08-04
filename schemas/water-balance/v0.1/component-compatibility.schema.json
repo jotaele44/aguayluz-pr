@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/water-balance/v0.1/component-compatibility.schema.json",
+  "title": "AguaYLuz Water-Balance Component Compatibility v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "source_main_sha", "generated_at", "design_only", "components", "contradictions", "gaps"],
+  "properties": {
+    "schema_version": {"const": "aguayluz.water-balance-compatibility/v0.1"},
+    "source_main_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "design_only": {"const": true},
+    "components": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/Component"}
+    },
+    "contradictions": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/Contradiction"}
+    },
+    "gaps": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/Gap"}
+    }
+  },
+  "$defs": {
+    "Component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["component_id", "source_state", "path_or_reference", "concept", "disposition", "canonical_target", "runtime_changed", "data_migration_authorized", "notes"],
+      "properties": {
+        "component_id": {"type": "string"},
+        "source_state": {"enum": ["main_current", "open_pr_candidate", "rescued_wip", "external_gap"]},
+        "path_or_reference": {"type": "string"},
+        "concept": {"type": "string"},
+        "disposition": {"enum": ["PRESERVE", "ADAPT", "MERGE", "DEPRECATE", "REVIEW"]},
+        "canonical_target": {"enum": ["Asset", "FlowEdge", "WaterObservation", "StorageState", "Withdrawal", "Transfer", "Release", "Consumption", "Loss", "Uncertainty", "Freshness", "Quality", "Lineage", "NestedBalance", "IncidentLink", "Coverage", "ContextOnly", "None"]},
+        "runtime_changed": {"const": false},
+        "data_migration_authorized": {"const": false},
+        "overlaps": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "notes": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "Contradiction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contradiction_id", "class", "component_ids", "risk", "required_resolution"],
+      "properties": {
+        "contradiction_id": {"type": "string"},
+        "class": {"enum": ["asset_identity", "metric_semantics", "unit_or_datum", "temporal_precision", "topology", "coverage_state", "event_vs_quantity", "residual_vs_proof", "open_pr_overlap", "other"]},
+        "component_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
+        "risk": {"enum": ["low", "moderate", "high", "blocking"]},
+        "required_resolution": {"type": "string"}
+      }
+    },
+    "Gap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gap_id", "category", "description", "blocking_for", "status"],
+      "properties": {
+        "gap_id": {"type": "string"},
+        "category": {"enum": ["identity", "topology", "telemetry", "hydrology", "uncertainty", "freshness", "quality", "provenance", "privacy", "federation", "operator_records", "other"]},
+        "description": {"type": "string"},
+        "blocking_for": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "status": {"enum": ["open", "partially_covered", "external_dependency", "review_required"]}
+      }
+    }
+  }
+}
