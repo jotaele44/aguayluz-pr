@@ -1,0 +1,59 @@
+{
+  "schema_version": "aguayluz.crim-ingest-receipt/v0.3",
+  "recorded_at": "2026-08-04T02:48:00-04:00",
+  "vector": "INGEST_CRIM_ADJUDICATION_OUTPUTS_v0_3",
+  "repository": "jotaele44/aguayluz-pr",
+  "branch": "data/pr-pharma-geometry-v3-20260803",
+  "status": "BLOCKED_MISSING_OPERATOR_OUTPUTS",
+  "workspace_inventory": {
+    "adjudication_script_present": true,
+    "preexecution_status_present": true,
+    "output_directory_present": false,
+    "raw_json_present": 0,
+    "raw_json_required": 6,
+    "raw_sha256_present": false,
+    "candidate_summary_present": false,
+    "adjudication_receipt_present": false,
+    "starlink_geometry_present": false
+  },
+  "required_raw_files": [
+    "current_exact.json",
+    "legacy_exact.json",
+    "current_prefix.json",
+    "legacy_prefix.json",
+    "current_point.json",
+    "legacy_point.json"
+  ],
+  "adjudication": {
+    "starlink_record": "UNRESOLVED",
+    "boehringer_record": "UNRESOLVED",
+    "canonical_starlink_geometry": null,
+    "canonical_boehringer_geometry": null,
+    "raw_hash_verification": "NOT_POSSIBLE",
+    "candidate_classification": "NOT_POSSIBLE",
+    "polygon_validation": "NOT_POSSIBLE",
+    "non_overlap_validation": "NOT_POSSIBLE"
+  },
+  "gates": {
+    "exactly_one_current_starlink_candidate": false,
+    "exact_normalized_identifier": false,
+    "globalid_present": false,
+    "parcel_type_verified": false,
+    "area_delta_le_5_percent": false,
+    "boehringer_registry_or_survey_reconciled": false
+  },
+  "promotion": {
+    "parcel_geometries_changed": false,
+    "starlink_promoted": false,
+    "boehringer_promoted": false,
+    "production_assets_changed": false,
+    "flow_paths_changed": false
+  },
+  "next_required_action": "Run adjudicate_crim_diagnostic_05504463104000_v0_2.sh on the operator host and provide the complete crim_adjudication_05504463104000 directory or archive.",
+  "preserve": [
+    "NO_PR",
+    "NO_MERGE",
+    "NO_DEPLOYMENT",
+    "KEEP_BOTH_PARCELS_NULL"
+  ]
+}
