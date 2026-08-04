@@ -16,8 +16,9 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from operators.laguna_cartagena_probe.model import build_observation  # noqa: E402
 from server.backend.water_disruption import WaterIncidentService  # noqa: E402
+
+from operators.laguna_cartagena_probe.model import build_observation  # noqa: E402
 
 CONFIG_PATH = REPO_ROOT / "config" / "laguna_cartagena_field_operator_packet.v0.4.json"
 LAB_METRICS = {"nitrate", "ammonia", "phosphorus", "fecal_indicator"}
