@@ -144,7 +144,7 @@ class OperationalGraphMixin:
         asset_id = str(canonical) if canonical else stable_id(
             "AYL_OPASSET",
             [record["source_id"], source_asset_id],
-        )
+        ).upper()
         asset_type = _required_text(payload, "asset_type")
         return {
             "asset_id": asset_id,
@@ -196,7 +196,7 @@ class OperationalGraphMixin:
         edge_id = str(canonical) if canonical else stable_id(
             "AYL_EDGE_OP",
             [record["source_id"], source_edge_id, from_asset_id, to_asset_id, edge_type],
-        )
+        ).upper()
         return {
             "edge_id": edge_id,
             "from_asset_id": from_asset_id,
