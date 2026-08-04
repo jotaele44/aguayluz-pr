@@ -15,8 +15,8 @@ from research.failure_localization import FailureLocalizationControlPlane  # noq
 from research.failure_localization.contracts import digest  # noqa: E402
 from research.failure_localization.operational_adapters import (  # noqa: E402
     BUNDLE_SCHEMA,
-    FailureLocalizationOperationalAdapters,
     INPUT_SCHEMA,
+    FailureLocalizationOperationalAdapters,
     OperationalAdapterError,
 )
 
