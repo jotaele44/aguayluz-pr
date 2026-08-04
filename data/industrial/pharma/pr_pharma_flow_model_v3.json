@@ -1,0 +1,52 @@
+{
+  "model_id": "PRPHARMA_FLOW_V3",
+  "facility_key": "PR-PHARMA-MSDQ-BCN",
+  "status": "BLOCKED",
+  "reason_code": "INSUFFICIENT_CONTEMPORANEOUS_AQUIFER_MATCHED_HEADS",
+  "as_of": "2026-08-03",
+  "minimum_gate": {
+    "required_contemporaneous_numeric_heads": 3,
+    "required_aquifer_harmonization": true,
+    "required_vertical_datum_harmonization": true,
+    "required_current_pumping_context": true
+  },
+  "available_controls": [
+    {
+      "site_no": "182544066341500",
+      "role": "nearby lower-confined-aquifer geometry/reference",
+      "numeric_current_head": false
+    },
+    {
+      "site_no": "182601066340800",
+      "role": "nearby inventory geometry/reference",
+      "numeric_current_head": false
+    },
+    {
+      "site_no": "182626066345100",
+      "role": "historical well series ending 2014",
+      "numeric_current_head": false
+    },
+    {
+      "site_no": "182308066260400",
+      "role": "regional current depth-to-water control in Vega Baja",
+      "latest_value_ft_bls": 48.77,
+      "latest_date": "2026-03-13",
+      "numeric_current_head": true,
+      "accepted_for_site_surface": false,
+      "rejection_reason": "single regional depth-to-water value without harmonized site aquifer/elevation network"
+    },
+    {
+      "site_no": "182549066304300",
+      "role": "regional Manati observation well",
+      "latest_status": "Eqp",
+      "latest_date": "2026-07-01",
+      "numeric_current_head": false
+    }
+  ],
+  "hypotheses_retained_not_promoted": [
+    "northward regional flow",
+    "southward local reversal",
+    "southwestward local reversal"
+  ],
+  "promoted_flow_paths": []
+}
