@@ -15,7 +15,7 @@ from aguayluz.cave_karst import (
     validate_registry,
 )
 
-router = APIRouter(prefix="/cave-karst", tags=["cave-karst"])
+router = APIRouter(tags=["cave-karst"])
 
 _SCOPE_STATEMENT = (
     "Río Camuy pilot registry only. This surface does not represent a complete "
@@ -160,7 +160,7 @@ def _related_sources(
     )
 
 
-@router.get("/summary")
+@router.get("/cave-karst/summary")
 def cave_karst_summary() -> JSONResponse:
     registry = _load_registry()
     assets = _materialized_assets(registry)
@@ -215,7 +215,7 @@ def cave_karst_summary() -> JSONResponse:
     )
 
 
-@router.get("/assets")
+@router.get("/cave-karst/assets")
 def cave_karst_assets(
     status: str | None = Query(default=None),
     asset_kind: str | None = Query(default=None),
@@ -232,7 +232,7 @@ def cave_karst_assets(
     return JSONResponse({"total": len(items), "items": items})
 
 
-@router.get("/assets/{asset_id}")
+@router.get("/cave-karst/assets/{asset_id}")
 def cave_karst_asset(asset_id: str) -> JSONResponse:
     registry = _load_registry()
     _asset_or_404(registry, asset_id)
@@ -262,7 +262,7 @@ def cave_karst_asset(asset_id: str) -> JSONResponse:
     return JSONResponse(asset)
 
 
-@router.get("/assets/{asset_id}/status-history")
+@router.get("/cave-karst/assets/{asset_id}/status-history")
 def cave_karst_status_history(asset_id: str) -> JSONResponse:
     registry = _load_registry()
     _asset_or_404(registry, asset_id)
@@ -278,7 +278,7 @@ def cave_karst_status_history(asset_id: str) -> JSONResponse:
     return JSONResponse({"asset_id": asset_id, "total": len(items), "items": items})
 
 
-@router.get("/assets/{asset_id}/provenance")
+@router.get("/cave-karst/assets/{asset_id}/provenance")
 def cave_karst_provenance(asset_id: str) -> JSONResponse:
     registry = _load_registry()
     sources = _related_sources(registry, asset_id)
@@ -295,7 +295,7 @@ def cave_karst_provenance(asset_id: str) -> JSONResponse:
     )
 
 
-@router.get("/assets/{asset_id}/edges")
+@router.get("/cave-karst/assets/{asset_id}/edges")
 def cave_karst_edges(asset_id: str) -> JSONResponse:
     registry = _load_registry()
     _asset_or_404(registry, asset_id)
@@ -303,7 +303,7 @@ def cave_karst_edges(asset_id: str) -> JSONResponse:
     return JSONResponse({"asset_id": asset_id, "total": len(items), "items": items})
 
 
-@router.get("/alerts")
+@router.get("/cave-karst/alerts")
 def cave_karst_alerts(
     severity_min: int = Query(default=1, ge=1, le=5),
     alert_type: str | None = Query(default=None),
