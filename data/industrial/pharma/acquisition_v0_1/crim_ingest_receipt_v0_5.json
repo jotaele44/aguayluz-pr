@@ -1,0 +1,75 @@
+{
+  "schema_version": "aguayluz.crim-ingest-receipt/v0.5",
+  "vector": "INGEST_UPLOADED_CRIM_RESULTS_v0_5",
+  "archive": {
+    "name": "CRIM_Adjudication_Results_05504463104000.zip",
+    "sha256": "f34e6f3f6fb503b60a3ca939d2b039fe0aa47f6d93219f7b72b7b4e227ebf466",
+    "safe_paths": true,
+    "entries": 14,
+    "required_inventory_complete": true
+  },
+  "raw_integrity": {
+    "required_files": 6,
+    "present_files": 6,
+    "json_parse_success": true,
+    "raw_sha256_manifest_match": true,
+    "hashes": {
+      "current_exact.json": "98c996bf1471cbe2f9df53cd6a36479bd85232607c45c2a449fdf780c3110c52",
+      "current_point.json": "51273170a8dd45756e7eb18e1d72af07921835916db05e823be8db159596cc18",
+      "current_prefix.json": "66d87e29da94ace0084c0126e1630f154e6085562d00d345efafe7bd8cfcb875",
+      "legacy_exact.json": "4902f5db63802c4f6df4f3f9ae895a0debb616503ff20ca1593bdfb26c2c85fe",
+      "legacy_point.json": "cb7066357c80850f7ae6e4f31bb49549a4ae258ce4d7db89717ddac459212d37",
+      "legacy_prefix.json": "746efabb39674a63c3ab66ebc8fcdec8cd5a7ff00dd4b6b4087dde8802ea7fde"
+    }
+  },
+  "independent_rebuild": {
+    "candidate_count": 10,
+    "operator_candidate_count": 10,
+    "candidate_summary_exact_match": true,
+    "route_feature_counts": {
+      "current_exact.json": 0,
+      "current_point.json": 1,
+      "current_prefix.json": 4,
+      "legacy_exact.json": 0,
+      "legacy_point.json": 1,
+      "legacy_prefix.json": 4
+    }
+  },
+  "adjudication": {
+    "exact_current_starlink_candidates": 0,
+    "promotable_starlink_candidates": 0,
+    "current_prefix_starlink_sized_candidate": {
+      "objectid": 1094625,
+      "globalid": "{99DFF9A0-F44B-4153-AD48-D9771A8DC3F3}",
+      "num_catastro": "055-044-631-04",
+      "oldpid": "055-000-002-36",
+      "area_m2": 166456.563266,
+      "deed_area_delta_pct": 0.5153079665669876,
+      "classification": "PREFIX_ONLY",
+      "promotion": "REJECTED_WITHOUT_EXACT_ID_OR_REGISTRY_RECONCILIATION"
+    },
+    "current_point_boehringer_sized_candidate": {
+      "objectid": 1095803,
+      "globalid": "{43F9EB17-0C8C-41E6-9350-5D65DF3B4B1F}",
+      "num_catastro": "055-000-002-20",
+      "oldpid": "055-000-002-20",
+      "area_m2": 626589.73053691,
+      "deed_area_delta_pct": 0.9588810237419859,
+      "classification": "POINT_INTERSECTION",
+      "promotion": "REJECTED_WITHOUT_REGISTRY_OR_SURVEY_RECONCILIATION"
+    },
+    "starlink_geometry_file_present": false,
+    "starlink_polygon_validation": "NOT_APPLICABLE_NO_ELIGIBLE_CANDIDATE",
+    "boehringer_polygon_validation": "NOT_APPLICABLE_NOT_PROMOTABLE",
+    "canonical_starlink_geometry": null,
+    "canonical_boehringer_geometry": null,
+    "decision": "NO_PROMOTION_ESCALATE_TO_CRIM_KARIBE_REGISTRO_AND_SURVEY"
+  },
+  "preserve": [
+    "NO_PREFIX_ONLY_PROMOTION",
+    "NO_POINT_ONLY_PROMOTION",
+    "NO_PR",
+    "NO_MERGE",
+    "NO_DEPLOYMENT"
+  ]
+}
