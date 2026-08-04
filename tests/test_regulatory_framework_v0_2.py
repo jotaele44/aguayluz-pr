@@ -63,9 +63,8 @@ def test_retraction_requires_supersession_reference() -> None:
         for case in cases["invalid_observations"]
         if case["case"] == "retracted_without_supersession"
     )
-    validator("regulatory_observation.schema.json").validate(record)
-    assert record["source_asserted_status"] == "retracted"
-    assert not record.get("supersedes_observation_id")
+    with pytest.raises(ValidationError):
+        validator("regulatory_observation.schema.json").validate(record)
 
 
 def test_duplicate_hard_identifier_is_detected_not_collapsed() -> None:
