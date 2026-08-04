@@ -2,7 +2,14 @@
   "schema_version": "1.1.0",
   "repository": "jotaele44/aguayluz-pr",
   "audit_date": "2026-08-04",
-  "reconciled_main_sha": "17c843595b5cdfbcef4e5f7b1ac6c662092e335d",
+  "required_audit_baseline_sha": "17c843595b5cdfbcef4e5f7b1ac6c662092e335d",
+  "current_pr_base_sha": "282c61106556278d190e387cc9f140431f6f2295",
+  "post_baseline_drift": {
+    "commits": 1,
+    "changed_paths": ["data/alert_events.jsonl"],
+    "classification": "data_only_refresh",
+    "score_effect": "none"
+  },
   "supersedes_pr": 117,
   "normalized_score": 81.55,
   "prior_normalized_score": 81.10,
