@@ -145,12 +145,12 @@ def test_usgs_ogc_parser_accepts_exact_fresh_feature() -> None:
 
 def test_wqx3_exact_site_and_characteristic_mapping() -> None:
     body = (
-        "MonitoringLocationIdentifier,CharacteristicName,ActivityStartDate,"
-        "ActivityStartTime/Time,ResultMeasureValue,ResultMeasure/MeasureUnitCode,"
-        "ResultIdentifier\n"
-        "USGS-50129899,Specific conductance,2026-08-04,12:00:00,500,uS/cm,R1\n"
-        "USGS-OTHER,pH,2026-08-04,12:00:00,7.1,std units,R2\n"
-    ).encode()
+        b"MonitoringLocationIdentifier,CharacteristicName,ActivityStartDate,"
+        b"ActivityStartTime/Time,ResultMeasureValue,ResultMeasure/MeasureUnitCode,"
+        b"ResultIdentifier\n"
+        b"USGS-50129899,Specific conductance,2026-08-04,12:00:00,500,uS/cm,R1\n"
+        b"USGS-OTHER,pH,2026-08-04,12:00:00,7.1,std units,R2\n"
+    )
     rows = parse_wqx3_csv(body, receipt("wqx", "b" * 64), "50129899")
     assert len(rows) == 1
     assert rows[0]["metric"] == "specific_conductance"
