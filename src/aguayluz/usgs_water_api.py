@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 from collections.abc import Iterable, Iterator, Mapping
 from datetime import date, datetime, timezone
@@ -70,7 +71,7 @@ def safe_float(value: Any) -> float | None:
         parsed = float(value)
     except (TypeError, ValueError):
         return None
-    if parsed != parsed or parsed in (float("inf"), float("-inf")):
+    if not math.isfinite(parsed):
         return None
     return parsed
 
