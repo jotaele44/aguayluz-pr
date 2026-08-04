@@ -10,4 +10,4 @@ HELPERS = runpy.run_path(
 
 def test_operational_adapter_shared_failure_diagnostic(tmp_path):
     _, _, run = HELPERS["replay"](tmp_path, "known_break")
-    assert run["status"] != "fail_closed", run
+    assert run["status"] != "fail_closed", " | ".join(run["blockers"])
