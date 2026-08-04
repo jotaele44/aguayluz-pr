@@ -57,7 +57,8 @@
       "requires_terminal": false,
       "backend": {
         "files": [
-          "server/backend/main.py"
+          "server/backend/main.py",
+          "server/backend/app.py"
         ],
         "endpoints": [
           "GET /assets",
@@ -66,6 +67,9 @@
           "GET /assets.geojson",
           "GET /municipios.geojson",
           "GET /municipios/{name}/summary"
+        ],
+        "symbols": [
+          "server/backend/app.py:assets"
         ]
       },
       "frontend": {
@@ -100,7 +104,8 @@
       "tests": {
         "backend": [
           "tests/test_backend_events_api.py",
-          "tests/test_pr_geo_boundaries.py"
+          "tests/test_pr_geo_boundaries.py",
+          "tests/test_asset_graph_switchboard.py"
         ],
         "contract": [
           "tests/test_navigation.py",
