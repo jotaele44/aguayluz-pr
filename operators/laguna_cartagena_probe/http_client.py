@@ -11,9 +11,9 @@ from pathlib import Path
 from typing import Any
 
 from .model import (
-    FetchReceipt,
     NEON_SITE,
     USER_AGENT,
+    FetchReceipt,
     safe_slug,
     sha256_bytes,
     utcnow,
