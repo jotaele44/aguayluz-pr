@@ -1,0 +1,50 @@
+{
+  "service": "https://sigejp.pr.gov/server/rest/services/crim/crim_feb_2025/MapServer/0",
+  "service_item_id": "cb0f3da3de93455b9515e6a3392d795b",
+  "layer_name": "Parcelas_feb_2025",
+  "geometry_type": "esriGeometryPolygon",
+  "source_spatial_reference": 32161,
+  "supported_query_formats": [
+    "JSON",
+    "geoJSON",
+    "PBF"
+  ],
+  "query": {
+    "where": "NUM_CATASTRO='05504463104000' OR OLDPID='05504463104000'",
+    "out_fields": [
+      "OBJECTID",
+      "NUM_CATASTRO",
+      "OLDPID",
+      "GlobalID",
+      "X_COORD",
+      "Y_COORD",
+      "INSIDE_X",
+      "INSIDE_Y",
+      "TIPO",
+      "Shape.STArea()",
+      "Shape.STLength()"
+    ],
+    "return_geometry": true,
+    "out_sr": 4326,
+    "format": "geojson"
+  },
+  "execution": {
+    "attempted_at": "2026-08-03T22:13:00-04:00",
+    "status": "BLOCKED_RUNTIME_INTERFACE",
+    "web_result": "Service and query operation verified; tool cannot populate or submit ArcGIS REST form fields.",
+    "container_result": "Direct network request failed because the execution container had no DNS resolution.",
+    "feature_count": null
+  },
+  "acceptance_gate": {
+    "required_feature_count": 1,
+    "num_catastro_or_oldpid_exact_match": "05504463104000",
+    "require_global_id": true,
+    "require_valid_polygon": true,
+    "require_epsg_4326_bounds": true,
+    "deed_area_m2": 165603.1968,
+    "area_tolerance_pct": 5.0,
+    "reject_zero_matches": true,
+    "reject_multiple_unreconciled_matches": true
+  },
+  "result": "NO_GEOMETRY_PROMOTED"
+}

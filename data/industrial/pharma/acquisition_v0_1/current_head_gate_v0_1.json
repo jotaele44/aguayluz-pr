@@ -1,0 +1,78 @@
+{
+  "model_id": "PRPHARMA_CURRENT_HEAD_GATE_v0_1",
+  "as_of": "2026-08-03",
+  "status": "BLOCKED",
+  "minimum_requirements": {
+    "contemporaneous_numeric_heads": 3,
+    "aquifer_matched": true,
+    "vertical_datum_harmonized": true,
+    "current_pumping_states": true,
+    "seasonal_coverage": true
+  },
+  "controls": [
+    {
+      "site_no": "182544066341500",
+      "name": "Cruce Davila NC-5 Well",
+      "municipality": "Barceloneta",
+      "lat": 18.4263357094696,
+      "lon": -66.570644823651,
+      "aquifer": "North Coast Limestone Aquifer, Lower",
+      "aquifer_type": "confined",
+      "land_surface_altitude_ft": 318.3,
+      "vertical_datum": "NGVD29",
+      "hole_depth_ft": 2564,
+      "current_numeric_head": null,
+      "accepted_for_surface": false,
+      "reason": "No continuous, daily or field water-level series."
+    },
+    {
+      "site_no": "182601066340800",
+      "name": "Anes Well",
+      "municipality": "Barceloneta",
+      "lat": 18.4316133144811,
+      "lon": -66.568505917135,
+      "land_surface_altitude_ft": 272.31,
+      "vertical_datum": "NGVD29",
+      "hole_depth_ft": 350,
+      "current_numeric_head": null,
+      "accepted_for_surface": false,
+      "reason": "No continuous, daily or field measurements; aquifer completion not normalized."
+    },
+    {
+      "site_no": "182626066345100",
+      "name": "Tiburones Well",
+      "municipality": "Barceloneta",
+      "latest_data_date": "2014-02-19",
+      "current_numeric_head": null,
+      "accepted_for_surface": false,
+      "reason": "Series is stale for 2026 calibration."
+    },
+    {
+      "site_no": "182308066260400",
+      "name": "GMAR Well",
+      "municipality": "Vega Baja",
+      "latest_measurement_date": "2026-03-13",
+      "depth_to_water_ft_bls": 48.77,
+      "current_numeric_head": null,
+      "accepted_for_surface": false,
+      "reason": "Depth-to-water value cannot be converted to a harmonized site head without suitable elevation, aquifer and network controls."
+    },
+    {
+      "site_no": "182549066304300",
+      "name": "USGS 166 Observation Well",
+      "municipality": "Manati",
+      "latest_status_date": "2026-07-01",
+      "latest_status": "Eqp",
+      "current_numeric_head": null,
+      "accepted_for_surface": false,
+      "reason": "Equipment/status code is not a numeric head."
+    }
+  ],
+  "numeric_heads_accepted": 0,
+  "retained_hypotheses": [
+    "northward regional flow",
+    "southward local reversal",
+    "southwestward local reversal"
+  ],
+  "promoted_flow_paths": []
+}

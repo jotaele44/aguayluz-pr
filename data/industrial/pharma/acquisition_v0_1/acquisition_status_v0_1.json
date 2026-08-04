@@ -1,0 +1,89 @@
+{
+  "schema_version": "aguayluz.pr-pharma-authoritative-acquisition/v0.1",
+  "generated_at": "2026-08-03T22:13:00-04:00",
+  "repository": "jotaele44/aguayluz-pr",
+  "branch": "data/pr-pharma-geometry-v3-20260803",
+  "repository_state": {
+    "current_main": "9bfaf9963fd18b382a9ff780d5cc49eed4501eb1",
+    "branch_merge_base": "464b838d12e5fc71d0576c9657129a5f11cc9ac6",
+    "ahead_by_before_update": 6,
+    "behind_by_before_update": 1,
+    "pr_opened": false,
+    "merge_performed": false,
+    "deployment_performed": false
+  },
+  "mission": "Replace null geometries and the blocked flow model only with authoritative parcel, survey, well, permit and contemporaneous head records.",
+  "step_status": [
+    {
+      "step": 1,
+      "status": "ATTEMPTED_BLOCKED_RUNTIME",
+      "result": "Official CRIM February 2025 parcel layer verified. Exact query endpoint and validation contract prepared. Feature payload could not be submitted/retrieved through the available runtime.",
+      "promotion": "BLOCKED"
+    },
+    {
+      "step": 2,
+      "status": "OPEN",
+      "result": "No authoritative Boehringer remnant cadastral ID, folio, segregation plat or survey vertices recovered.",
+      "promotion": "BLOCKED"
+    },
+    {
+      "step": 3,
+      "status": "SUBMITTED",
+      "result": "Targeted DRNA request sent to ayudaciudadano@drna.pr.gov for Well #3 and Well #5 geometry, construction, withdrawal, pumping and current-status records.",
+      "promotion": "PENDING_AGENCY_RESPONSE"
+    },
+    {
+      "step": 4,
+      "status": "SUBMITTED",
+      "result": "Targeted AAA request sent to leydetransparencia@acueductospr.com for the current pretreatment, sewer-connection, monitoring and flow file.",
+      "promotion": "PENDING_AGENCY_RESPONSE"
+    },
+    {
+      "step": 5,
+      "status": "OPEN",
+      "result": "Recovered EPA permit map contains relative layout but no surveyed control table adequate for georeferencing. No rubber-sheet geometry was created.",
+      "promotion": "BLOCKED"
+    },
+    {
+      "step": 6,
+      "status": "FAILED_MINIMUM_GATE",
+      "result": "Fewer than three contemporaneous, aquifer-matched, datum-harmonized numeric heads were recovered around the facility.",
+      "promotion": "BLOCKED"
+    },
+    {
+      "step": 7,
+      "status": "NOT_EXECUTED",
+      "result": "Seasonal potentiometric surfaces and cross-validation were not run because Step 6 failed.",
+      "promotion": "BLOCKED"
+    },
+    {
+      "step": 8,
+      "status": "CLOSED_NO_PROMOTION",
+      "result": "Zero flow paths promoted. Existing northward, southward and southwestward directions remain historical/conceptual hypotheses only.",
+      "promotion": "NONE"
+    }
+  ],
+  "canonical_invariants": {
+    "null_geometries_preserved": 12,
+    "inferred_geometries_created": 0,
+    "promoted_flow_paths": 0,
+    "ftz_172_acres_merged_with_cadastral_parcels": false,
+    "uncontrolled_permit_image_rubber_sheeted": false
+  },
+  "agency_submissions": {
+    "sent_at_ast": "2026-08-03T22:20:55-04:00",
+    "drna": {
+      "recipient": "ayudaciudadano@drna.pr.gov",
+      "gmail_message_id": "19fca9270cf017eb",
+      "status": "SENT"
+    },
+    "aaa": {
+      "recipient": "leydetransparencia@acueductospr.com",
+      "gmail_message_id": "19fca929ae630426",
+      "status": "SENT"
+    },
+    "operator": {
+      "status": "NOT_SENT_NO_VERIFIED_RECORDS_CONTACT"
+    }
+  }
+}
