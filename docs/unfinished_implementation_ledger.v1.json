@@ -1,0 +1,124 @@
+{
+  "schema_version": "1.1.0",
+  "repository": "jotaele44/aguayluz-pr",
+  "audit_date": "2026-08-04",
+  "required_audit_baseline_sha": "17c843595b5cdfbcef4e5f7b1ac6c662092e335d",
+  "current_pr_base_sha": "282c61106556278d190e387cc9f140431f6f2295",
+  "post_baseline_drift": {
+    "commits": 1,
+    "changed_paths": ["data/alert_events.jsonl"],
+    "classification": "data_only_refresh",
+    "score_effect": "none"
+  },
+  "supersedes_pr": 117,
+  "normalized_score": 81.55,
+  "prior_normalized_score": 81.10,
+  "score_adjudication": {
+    "code_completeness": "unchanged: PR #118 remains an open draft candidate and is not on main",
+    "main_branch_availability": "unchanged: PR #118 remains unmerged",
+    "data_materialization": "unchanged: context_only; direct_current_observations=0; current_condition.status=unknown",
+    "operator_verification": "65 to 68: exact-head live probe, provenance receipt, replay matrix and secret-safe acquisition evidence succeeded",
+    "claim_boundaries": [
+      "no automatic leakage finding",
+      "no root-cause claim",
+      "canal context is not a direct Laguna Cartagena current-condition observation"
+    ]
+  },
+  "weights": {
+    "code_completeness": 20,
+    "main_branch_availability": 15,
+    "ci_enforcement": 15,
+    "data_materialization": 15,
+    "operator_verification": 15,
+    "gui_completeness": 10,
+    "federation_readiness": 10
+  },
+  "dimensions": {
+    "code_completeness": 94,
+    "main_branch_availability": 75,
+    "ci_enforcement": 88,
+    "data_materialization": 78,
+    "operator_verification": 68,
+    "gui_completeness": 82,
+    "federation_readiness": 82
+  },
+  "items": [
+    {
+      "id": "AYL-001",
+      "title": "Reconcile overlapping USGS implementations",
+      "state": "open_pr_conflict",
+      "owner": "aguayluz-pr",
+      "blocker": "concept_overlap_and_main_drift",
+      "dependency": ["PR-109", "PR-116"],
+      "evidence": ["pull/109", "pull/116"],
+      "exit_criteria": "One current-main implementation exists for each USGS category with no duplicate producer or contradictory status."
+    },
+    {
+      "id": "AYL-002",
+      "title": "Verify ten USGS categories live",
+      "state": "operator_run",
+      "owner": "aguayluz_operator",
+      "blocker": "network_and_api_key",
+      "dependency": ["AYL-001"],
+      "evidence": ["pull/116"],
+      "exit_criteria": "Secret-safe receipts preserve headers, pagination, counts and hashes; every promoted category is live_verified."
+    },
+    {
+      "id": "AYL-003",
+      "title": "Land cave and karst registry core",
+      "state": "open_pr",
+      "owner": "aguayluz-pr",
+      "blocker": "current_main_reconciliation",
+      "dependency": ["PR-114"],
+      "evidence": ["pull/114"],
+      "exit_criteria": "Core pilot is merged with terminal CI, pilot-only scope and coordinate disclosure preserved."
+    },
+    {
+      "id": "AYL-004",
+      "title": "Land cave and karst read-only surface",
+      "state": "stacked_open_pr",
+      "owner": "aguayluz-pr",
+      "blocker": "parent_pr_and_retarget",
+      "dependency": ["AYL-003", "PR-115"],
+      "evidence": ["pull/115"],
+      "exit_criteria": "Read-only API and discoverable GUI are retargeted to main and pass full repository workflows."
+    },
+    {
+      "id": "AYL-005",
+      "title": "Decompose mycelial Phase 1",
+      "state": "governance_blocked",
+      "owner": "aguayluz-pr",
+      "blocker": "independent_ballots",
+      "dependency": ["ADR-0002"],
+      "evidence": ["pull/111", "pull/112", "pull/113"],
+      "exit_criteria": "Any Phase 1 PR is atomic to one approved ballot and preserves research-only fail-closed boundaries."
+    },
+    {
+      "id": "AYL-006",
+      "title": "Acquire authorized live outage provenance",
+      "state": "external_data",
+      "owner": "utility_data_authority",
+      "blocker": "permissioned_feed_or_data_sharing",
+      "dependency": [],
+      "evidence": ["docs/ROAD_TO_100.md"],
+      "exit_criteria": "A reproducible authorized per-municipio feed supports attributed snapshot and lifecycle records."
+    },
+    {
+      "id": "AYL-007",
+      "title": "Adjudicate Laguna Cartagena current-condition control plane",
+      "state": "open_pr_operator_verified_context_only",
+      "owner": "aguayluz-pr",
+      "blocker": "direct_current_measurements_absent",
+      "dependency": ["PR-118"],
+      "evidence": ["pull/118", "workflow/30954860434", "artifact/8910623990"],
+      "exit_criteria": "The implementation is reconciled to current main and any current-condition promotion remains fail-closed until direct eligible lagoon, outflow, groundwater or water-quality observations exist.",
+      "preserved_findings": {
+        "receipt_outcome": "context_only",
+        "direct_current_observations": 0,
+        "current_condition_status": "unknown",
+        "automatic_leakage_finding": null,
+        "root_cause_claim": null
+      }
+    }
+  ]
+}
