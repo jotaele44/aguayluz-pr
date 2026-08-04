@@ -39,7 +39,7 @@
       "prohibitions": [
         "dependency_or_proximity_edges_are_not_hydraulic_topology",
         "impact_state_does_not_confirm_failure_location",
-        "operator-restricted_identifiers_are_not_public"
+        "operator-restricted identifiers_are_not_public"
       ],
       "direct_path_overlap": []
     },
@@ -51,7 +51,7 @@
       "adapter_disposition": "preserve_semantics_without_importing_or_copying_unmerged_contracts",
       "prohibitions": [
         "model_residual_is_not_failure_proof",
-        "date-only_records_are_not_promoted_to_precise_telemetry",
+        "date_only_records_are_not_promoted_to_precise_telemetry",
         "unresolved_topology_is_not_balance_eligible"
       ],
       "direct_path_overlap": []
@@ -61,7 +61,7 @@
       "head_sha": "87c012841d09492ca94a9f8fbbe58b3e5aa4153f",
       "state": "open_draft_unmerged",
       "ownership": "shared balance calculations, deterministic conversions, uncertainty, and Patillas admission contracts",
-      "adapter_disposition": "emit_provenance-bound_flow_and_production_observations_only; retain_core_non-proof_boundary",
+      "adapter_disposition": "emit_provenance_bound_flow_and_production_observations_only; retain_core_non_proof_boundary",
       "prohibitions": [
         "no_reservoir_or_distribution_residual_becomes_an_exact_defect",
         "no_unsynchronized_or_unverified_input_is_admitted_as_current",
@@ -74,10 +74,10 @@
       "head_sha": "22f9166b798740eeaf085dd4171cdbbb14de7784",
       "state": "open_draft_unmerged",
       "ownership": "disabled water-crisis assessment-to-GUI candidate bridge",
-      "adapter_disposition": "no_GUI_or_alert_wiring; operational_adapter_runs_remain_research_only",
+      "adapter_disposition": "no_gui_or_alert_wiring; operational_adapter_runs_remain_research_only",
       "prohibitions": [
-        "no_alert_auto-promotion",
-        "no_GUI_polling_or_SSE",
+        "no_alert_auto_promotion",
+        "no_gui_polling_or_sse",
         "no_external_assessment_bypasses_localization_gates"
       ],
       "direct_path_overlap": []
@@ -99,6 +99,10 @@
   "adapter_paths": [
     "docs/FAILURE_LOCALIZATION_OPERATIONAL_ADAPTERS_v0_1.md",
     "docs/failure_localization_operational_adapter_overlap_matrix_v0_1.json",
+    "research/failure_localization/operational_adapter_contracts.py",
+    "research/failure_localization/operational_admission.py",
+    "research/failure_localization/operational_graph.py",
+    "research/failure_localization/operational_observations.py",
     "research/failure_localization/operational_adapters.py",
     "schemas/failure-localization/v0.2/failure_localization_operational_adapters.schema.json",
     "tests/fixtures/failure_localization_operational_adapter_scenarios_v0_1.json",
@@ -118,8 +122,8 @@
     "automatic_control_actions": false
   },
   "certification_strategy": {
-    "implementation_pr": "stacked_on_exact_PR_128_head",
-    "main_target_certification": "separate_PR_from_same_exact_adapter_head_to_current_main",
+    "implementation_pr": "stacked_on_exact_pr_128_head",
+    "main_target_certification": "separate_pr_from_same_exact_adapter_head_to_current_main",
     "merge_authorization": false
   }
 }
