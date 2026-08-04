@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import sys
 from datetime import date
@@ -74,10 +75,8 @@ def metadata_rows(documents: list[dict], stale_days: int) -> list[dict]:
         end_day = end_raw[:10] if len(end_raw) >= 10 else None
         age_days = None
         if end_day:
-            try:
+            with contextlib.suppress(ValueError):
                 age_days = (today - date.fromisoformat(end_day)).days
-            except ValueError:
-                pass
         gap_interval = props.get("data_gap_interval")
         status = "unknown"
         if age_days is not None:
