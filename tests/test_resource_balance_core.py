@@ -1,26 +1,26 @@
 from __future__ import annotations
 
 import json
+import runpy
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 from jsonschema import Draft202012Validator
 
-from research.resource_balance.core import (
-    CONTRACT_TYPES,
-    BalanceBoundary,
-    BalanceWindow,
-    ExpectedLossModel,
-    ResourceObservation,
-    compute_balance,
-    resource_asset_from_utility_asset,
-    resource_observation_from_monitoring_reading,
-    to_canonical_dict,
-)
-
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = ROOT / "schemas/resource-balance/v0.1/resource_balance_contracts.schema.json"
+CORE = runpy.run_path(str(ROOT / "research/resource_balance/core.py"))
+
+BalanceBoundary = CORE["BalanceBoundary"]
+BalanceWindow = CORE["BalanceWindow"]
+CONTRACT_TYPES = CORE["CONTRACT_TYPES"]
+ExpectedLossModel = CORE["ExpectedLossModel"]
+ResourceObservation = CORE["ResourceObservation"]
+compute_balance = CORE["compute_balance"]
+resource_asset_from_utility_asset = CORE["resource_asset_from_utility_asset"]
+resource_observation_from_monitoring_reading = CORE["resource_observation_from_monitoring_reading"]
+to_canonical_dict = CORE["to_canonical_dict"]
 
 
 def observation(identifier: str, role: str, amount: float, *, domain: str = "water", unit: str = "MG", uncertainty: float = 0.0, eligible: bool = True) -> ResourceObservation:
