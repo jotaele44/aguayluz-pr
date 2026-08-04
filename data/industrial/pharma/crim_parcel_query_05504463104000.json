@@ -1,0 +1,20 @@
+{
+  "service": "https://sigejp.pr.gov/server/rest/services/crim/crim_feb_2025/MapServer/0",
+  "service_title": "Parcelas_feb_2025",
+  "normalized_cadastral_id": "05504463104000",
+  "where": "NUM_CATASTRO='05504463104000' OR OLDPID='05504463104000'",
+  "out_fields": [
+    "OBJECTID",
+    "NUM_CATASTRO",
+    "OLDPID",
+    "GlobalID",
+    "X_COORD",
+    "Y_COORD",
+    "TIPO"
+  ],
+  "return_geometry": true,
+  "out_sr": 4326,
+  "format": "geojson",
+  "execution_status": "NOT_EXECUTED_IN_CURRENT_RUNTIME",
+  "promotion_rule": "No parcel polygon enters canonical data until service output is retrieved and area reconciles with deed attributes."
+}
