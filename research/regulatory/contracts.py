@@ -6,10 +6,11 @@ registered by this module. Runtime implementation requires a separate review.
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
-from typing import Any, Mapping, Protocol, Sequence
+from typing import Any, Protocol
 
 
 class Provider(StrEnum):
