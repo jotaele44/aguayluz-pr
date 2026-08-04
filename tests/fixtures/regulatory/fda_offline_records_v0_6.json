@@ -1,0 +1,13 @@
+{
+  "fixture_revision": "fda-fixtures/v0.6",
+  "records": [
+    {"record_type":"establishment","provider_record_id":"FEI-1001","observed_at":"2026-07-01T00:00:00Z","fei":"1001","name":"Dorado Medical Device Site","address":"Road 1, Dorado, PR","status":"active"},
+    {"record_type":"registration","provider_record_id":"REG-1001-2026","observed_at":"2026-01-01T00:00:00Z","fei":"1001","registration_number":"REG-1001-2026","valid_until":"2026-12-31T23:59:59Z","status":"registered"},
+    {"record_type":"device_listing","provider_record_id":"LIST-2001","observed_at":"2026-02-01T00:00:00Z","fei":"1001","listing_number":"LIST-2001","status":"listed"},
+    {"record_type":"inspection","provider_record_id":"INS-3001","observed_at":"2025-06-01T00:00:00Z","fei":"1001","inspection_id":"INS-3001","status":"closed"},
+    {"record_type":"recall","provider_record_id":"REC-4001","observed_at":"2024-03-01T00:00:00Z","fei":"1001","recall_number":"REC-4001","status":"terminated"},
+    {"record_type":"warning_letter","provider_record_id":"WL-5001","observed_at":"2023-01-01T00:00:00Z","fei":"1001","warning_letter_id":"WL-5001","status":"historical"},
+    {"record_type":"establishment","provider_record_id":"FEI-1001-DUP","observed_at":"2026-07-02T00:00:00Z","fei":"1001","name":"Different Facility","address":"Arecibo, PR","status":"active"},
+    {"record_type":"registration","provider_record_id":"REG-RETRACTED","observed_at":"2025-01-01T00:00:00Z","fei":"2002","registration_number":"REG-RETRACTED","status":"retracted","supersedes_provider_record_id":"REG-OLD"}
+  ]
+}
