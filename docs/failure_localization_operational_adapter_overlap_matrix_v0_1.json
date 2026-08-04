@@ -1,0 +1,125 @@
+{
+  "schema_version": "aguayluz.failure-localization-operational-adapter-overlap/v0.1",
+  "generated_at_utc": "2026-08-04T23:14:00Z",
+  "repository": "jotaele44/aguayluz-pr",
+  "current_main": {
+    "sha": "282c61106556278d190e387cc9f140431f6f2295",
+    "drift_from_core_base": {
+      "base_sha": "17c843595b5cdfbcef4e5f7b1ac6c662092e335d",
+      "commits": 1,
+      "files": [
+        "data/alert_events.jsonl"
+      ],
+      "overlaps_adapter_paths": false,
+      "disposition": "preserve_in_main_target_certification"
+    }
+  },
+  "certified_core": {
+    "pull_request": 128,
+    "head_sha": "fa5f9d7e4b81155634e9f10fcca233fb5d0fb850",
+    "branch": "agent/exact-failure-localization-control-plane-v0-1",
+    "state": "open_draft_unmerged",
+    "ownership": [
+      "L0-L5 localization grades",
+      "shadow graph and observation contracts",
+      "diagnostics and candidate generation",
+      "append-only localization ledger",
+      "L4 and L5 promotion gates",
+      "public/operator disclosure controls"
+    ],
+    "disposition": "stack_exactly_without_modifying_core_paths"
+  },
+  "reviewed_pull_requests": [
+    {
+      "pull_request": 101,
+      "head_sha": "c50855876c57c0d10cd3bcea81a6998814863a09",
+      "state": "open_draft_unmerged",
+      "ownership": "canonical utility-asset identity, aliases, disclosure, and dependency impact projection",
+      "adapter_disposition": "adapt_identity_fields_only_after_explicit_record_envelope_validation",
+      "prohibitions": [
+        "dependency_or_proximity_edges_are_not_hydraulic_topology",
+        "impact_state_does_not_confirm_failure_location",
+        "operator-restricted_identifiers_are_not_public"
+      ],
+      "direct_path_overlap": []
+    },
+    {
+      "pull_request": 119,
+      "head_sha": "5c3fcb3a5803773ad388b91afc5bc288d4fd4c80",
+      "state": "open_draft_unmerged",
+      "ownership": "integrated water-balance architecture, lineage, freshness, quality, uncertainty, and non-proof policy",
+      "adapter_disposition": "preserve_semantics_without_importing_or_copying_unmerged_contracts",
+      "prohibitions": [
+        "model_residual_is_not_failure_proof",
+        "date-only_records_are_not_promoted_to_precise_telemetry",
+        "unresolved_topology_is_not_balance_eligible"
+      ],
+      "direct_path_overlap": []
+    },
+    {
+      "pull_request": 121,
+      "head_sha": "87c012841d09492ca94a9f8fbbe58b3e5aa4153f",
+      "state": "open_draft_unmerged",
+      "ownership": "shared balance calculations, deterministic conversions, uncertainty, and Patillas admission contracts",
+      "adapter_disposition": "emit_provenance-bound_flow_and_production_observations_only; retain_core_non-proof_boundary",
+      "prohibitions": [
+        "no_reservoir_or_distribution_residual_becomes_an_exact_defect",
+        "no_unsynchronized_or_unverified_input_is_admitted_as_current",
+        "no_stage_level_is_converted_to_storage_without_authoritative_curve_lineage"
+      ],
+      "direct_path_overlap": []
+    },
+    {
+      "pull_request": 124,
+      "head_sha": "22f9166b798740eeaf085dd4171cdbbb14de7784",
+      "state": "open_draft_unmerged",
+      "ownership": "disabled water-crisis assessment-to-GUI candidate bridge",
+      "adapter_disposition": "no_GUI_or_alert_wiring; operational_adapter_runs_remain_research_only",
+      "prohibitions": [
+        "no_alert_auto-promotion",
+        "no_GUI_polling_or_SSE",
+        "no_external_assessment_bypasses_localization_gates"
+      ],
+      "direct_path_overlap": []
+    },
+    {
+      "pull_request": 125,
+      "head_sha": "b5fc199d1afa04a28aede9da2ef8c8de4cb18a4c",
+      "state": "open_draft_stacked_unmerged",
+      "ownership": "reservoir-specific water-balance entry-gate packets",
+      "adapter_disposition": "no_reservoir_readiness_inheritance_and_no_distribution_localization_claim",
+      "prohibitions": [
+        "entry_gate_status_does_not_localize_distribution_failure",
+        "restricted_operator_data_remains_restricted",
+        "no_reservoir_is_assumed_entry_ready"
+      ],
+      "direct_path_overlap": []
+    }
+  ],
+  "adapter_paths": [
+    "docs/FAILURE_LOCALIZATION_OPERATIONAL_ADAPTERS_v0_1.md",
+    "docs/failure_localization_operational_adapter_overlap_matrix_v0_1.json",
+    "research/failure_localization/operational_adapters.py",
+    "schemas/failure-localization/v0.2/failure_localization_operational_adapters.schema.json",
+    "tests/fixtures/failure_localization_operational_adapter_scenarios_v0_1.json",
+    "tests/test_failure_localization_operational_adapters.py"
+  ],
+  "direct_path_overlap_with_reviewed_prs": false,
+  "runtime_activation": {
+    "network_client": false,
+    "live_polling": false,
+    "credential_handling": false,
+    "api": false,
+    "gui": false,
+    "scheduler": false,
+    "alerts": false,
+    "notifications": false,
+    "production_promotion": false,
+    "automatic_control_actions": false
+  },
+  "certification_strategy": {
+    "implementation_pr": "stacked_on_exact_PR_128_head",
+    "main_target_certification": "separate_PR_from_same_exact_adapter_head_to_current_main",
+    "merge_authorization": false
+  }
+}
