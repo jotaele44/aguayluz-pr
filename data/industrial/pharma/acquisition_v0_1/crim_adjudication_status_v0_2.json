@@ -1,0 +1,51 @@
+{
+  "schema_version": "aguayluz.crim-adjudication-status/v0.2",
+  "as_of": "2026-08-04T01:08:00-04:00",
+  "target": "05504463104000",
+  "supplied_results": {
+    "current_exact": {
+      "classification": "NO_MATCH",
+      "feature_count": 0,
+      "source": "operator terminal output"
+    },
+    "legacy_exact": {
+      "classification": "NOT_EXECUTED_OR_NOT_SUPPLIED"
+    },
+    "current_prefix": {
+      "classification": "NOT_EXECUTED_OR_NOT_SUPPLIED"
+    },
+    "legacy_prefix": {
+      "classification": "NOT_EXECUTED_OR_NOT_SUPPLIED"
+    },
+    "current_point": {
+      "classification": "NOT_EXECUTED_OR_NOT_SUPPLIED"
+    },
+    "legacy_point": {
+      "classification": "NOT_EXECUTED_OR_NOT_SUPPLIED"
+    }
+  },
+  "adjudication": {
+    "starlink_record": "UNRESOLVED",
+    "boehringer_record": "UNRESOLVED",
+    "canonical_starlink_geometry": null,
+    "canonical_boehringer_geometry": null,
+    "null_geometries_preserved": true,
+    "reason": "Five of six diagnostic routes lack results; exact current ID returned zero."
+  },
+  "service_metadata": {
+    "current_layer": {
+      "name": "Parcelas_feb_2025",
+      "num_catastro_length": 255,
+      "oldpid_length": 14,
+      "geometry_type": "esriGeometryPolygon",
+      "spatial_reference": 32161
+    },
+    "legacy_layer": {
+      "name": "Parcelario",
+      "num_catastro_length": 14,
+      "oldpid_length": 14,
+      "geometry_type": "esriGeometryPolygon",
+      "spatial_reference": 32161
+    }
+  }
+}
