@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/laguna-cartagena/v0.2/laguna_cartagena_control_plane.schema.json",
+  "title": "Laguna Cartagena current-condition control plane",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "generated_at",
+    "target",
+    "shadow_mode",
+    "alerts_enabled",
+    "notifications_enabled",
+    "automatic_control_actions_enabled",
+    "coverage",
+    "coverage_summary",
+    "current_condition",
+    "rejected_current_observations",
+    "synchronization",
+    "water_balance",
+    "historical_ranges",
+    "hypotheses",
+    "contradictions",
+    "mitigation_priority",
+    "preserve"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "aguayluz.laguna-cartagena-control-plane/v0.2"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "target": {
+      "type": "object"
+    },
+    "shadow_mode": {
+      "const": true
+    },
+    "alerts_enabled": {
+      "const": false
+    },
+    "notifications_enabled": {
+      "const": false
+    },
+    "automatic_control_actions_enabled": {
+      "const": false
+    },
+    "coverage": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "coverage_summary": {
+      "type": "object",
+      "required": [
+        "source_count",
+        "direct_current_source_count",
+        "historical_only_source_count",
+        "gap_source_count"
+      ],
+      "properties": {
+        "source_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "direct_current_source_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "historical_only_source_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "gap_source_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "current_condition": {
+      "type": "object",
+      "required": [
+        "status",
+        "eligible_observation_count",
+        "direct_observation_count",
+        "items",
+        "missing_required_metrics"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "unknown",
+            "observed"
+          ]
+        },
+        "eligible_observation_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "direct_observation_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "missing_required_metrics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "rejected_current_observations": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "synchronization": {
+      "type": "object"
+    },
+    "water_balance": {
+      "type": "object"
+    },
+    "historical_ranges": {
+      "type": "object"
+    },
+    "hypotheses": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "contradictions": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "mitigation_priority": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "preserve": {
+      "type": "object",
+      "required": [
+        "no_stale_to_current_promotion",
+        "no_guil_to_lajas_groundwater_substitution",
+        "no_unsynchronized_mass_balance_claims",
+        "no_contamination_or_low_lake_alert_without_current_direct_measurement",
+        "no_automatic_control_actions"
+      ],
+      "properties": {
+        "no_stale_to_current_promotion": {
+          "const": true
+        },
+        "no_guil_to_lajas_groundwater_substitution": {
+          "const": true
+        },
+        "no_unsynchronized_mass_balance_claims": {
+          "const": true
+        },
+        "no_contamination_or_low_lake_alert_without_current_direct_measurement": {
+          "const": true
+        },
+        "no_automatic_control_actions": {
+          "const": true
+        }
+      }
+    }
+  }
+}
