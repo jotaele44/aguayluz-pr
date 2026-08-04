@@ -143,14 +143,14 @@ describe('CaveKarstPage', () => {
 
     expect(await screen.findByRole('heading', { name: 'Cave & Karst Monitor' })).toBeInTheDocument()
     expect(screen.getByRole('note', { name: 'Registry scope limitation' })).toHaveTextContent(/pilot/i)
-    expect(screen.getByText(/not a complete puerto rico cave census/i)).toBeInTheDocument()
-    expect(await screen.findByText(ASSET.canonical_name)).toBeInTheDocument()
-    expect(screen.getAllByText('Closed').length).toBeGreaterThan(0)
-    expect(screen.getByText('85%')).toBeInTheDocument()
-    expect(screen.getAllByText('T2').length).toBeGreaterThan(0)
-    expect(screen.getByText(/Recharge, Underground Channel/i)).toBeInTheDocument()
-    expect(screen.getByText(/Infrastructure Condition Unknown/i)).toBeInTheDocument()
-    expect(screen.getByText(/precise coordinates are withheld/i)).toBeInTheDocument()
+    expect(await screen.findByText(/not a complete puerto rico cave census/i)).toBeInTheDocument()
+    expect((await screen.findAllByText(ASSET.canonical_name)).length).toBeGreaterThan(0)
+    expect((await screen.findAllByText('Closed')).length).toBeGreaterThan(0)
+    expect(await screen.findByText('85%')).toBeInTheDocument()
+    expect((await screen.findAllByText('T2')).length).toBeGreaterThan(0)
+    expect(await screen.findByText(/Recharge, Underground Channel/i)).toBeInTheDocument()
+    expect(await screen.findByText(/Infrastructure Condition Unknown/i)).toBeInTheDocument()
+    expect(await screen.findByText(/precise coordinates are withheld/i)).toBeInTheDocument()
   })
 
   it('selects assets through accessible pressed buttons', async () => {
@@ -165,17 +165,17 @@ describe('CaveKarstPage', () => {
     renderPage()
 
     expect(await screen.findByRole('heading', { name: 'Provenance' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /open source/i })).toHaveAttribute(
+    expect(await screen.findByRole('link', { name: /open source/i })).toHaveAttribute(
       'href',
       'https://example.test/source',
     )
-    expect(screen.getByText('Contains')).toBeInTheDocument()
-    expect(screen.getByText(/severity 3/i)).toBeInTheDocument()
+    expect(await screen.findByText('Contains')).toBeInTheDocument()
+    expect(await screen.findByText(/severity 3/i)).toBeInTheDocument()
   })
 
   it('has no detectable accessibility violations', async () => {
     const { container } = renderPage()
-    await screen.findByText(ASSET.canonical_name)
+    expect((await screen.findAllByText(ASSET.canonical_name)).length).toBeGreaterThan(0)
     await screen.findByRole('heading', { name: 'Provenance' })
 
     expect(await axe(container)).toHaveNoViolations()
