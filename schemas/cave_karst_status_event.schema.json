@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/cave_karst_status_event.schema.json",
+  "title": "CaveKarstStatusEvent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "asset_id",
+    "event_type",
+    "observed_at",
+    "effective_from",
+    "effective_to",
+    "from_status",
+    "to_status",
+    "reason",
+    "source_ref",
+    "evidence_tier",
+    "confidence",
+    "review_status",
+    "recorded_at",
+    "previous_hash",
+    "record_hash"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "pattern": "^AYL_KEVT_[A-Z0-9_]+$"
+    },
+    "asset_id": {
+      "type": "string",
+      "pattern": "^AYL_KARST_[A-Z0-9_]+$"
+    },
+    "event_type": {
+      "enum": [
+        "status_transition",
+        "status_observation",
+        "closure_notice",
+        "reopening_notice",
+        "restriction_notice",
+        "maintenance_update",
+        "infrastructure_update",
+        "hydrologic_update",
+        "correction"
+      ]
+    },
+    "observed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "effective_from": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "effective_to": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "from_status": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "open",
+        "closed",
+        "partially_open",
+        "restricted",
+        "maintenance",
+        "unknown",
+        null
+      ]
+    },
+    "to_status": {
+      "enum": [
+        "open",
+        "closed",
+        "partially_open",
+        "restricted",
+        "maintenance",
+        "unknown"
+      ]
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_ref": {
+      "type": "string",
+      "pattern": "^SRC_KARST_[A-Z0-9_]+$"
+    },
+    "evidence_tier": {
+      "enum": [
+        "T1",
+        "T2",
+        "T3",
+        "T4"
+      ]
+    },
+    "confidence": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "review_status": {
+      "enum": [
+        "accepted",
+        "needs_review",
+        "rejected",
+        "blocked"
+      ]
+    },
+    "supersedes_event_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^AYL_KEVT_[A-Z0-9_]+$"
+    },
+    "recorded_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "previous_hash": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "record_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
+}
