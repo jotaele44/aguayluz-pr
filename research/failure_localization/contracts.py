@@ -5,8 +5,9 @@ import hashlib
 import json
 import math
 import re
+from collections.abc import Iterable
 from datetime import datetime, timezone
-from typing import Any, Iterable
+from typing import Any
 
 SCHEMA_GRAPH = "aguayluz.failure-graph/v0.1"
 SCHEMA_OBSERVATION = "aguayluz.failure-observation/v0.1"
