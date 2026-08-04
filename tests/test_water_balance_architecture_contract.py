@@ -2,16 +2,28 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_ROOT = ROOT / "schemas" / "water-balance" / "v0.1"
-FIXTURE_PATH = ROOT / "tests" / "fixtures" / "water_balance_architecture_v0_1" / "fixture_suite.json"
-INVENTORY_PATH = ROOT / "docs" / "architecture" / "water_balance_component_inventory_v0.1.json"
+FIXTURE_PATH = (
+    ROOT
+    / "tests"
+    / "fixtures"
+    / "water_balance_architecture_v0_1"
+    / "fixture_suite.json"
+)
+INVENTORY_PATH = (
+    ROOT
+    / "docs"
+    / "architecture"
+    / "water_balance_component_inventory_v0.1.json"
+)
 
 
-def _load(path: Path) -> dict:
+def _load(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
@@ -25,9 +37,13 @@ def test_design_schemas_and_positive_fixtures_validate() -> None:
     fixtures = _load(FIXTURE_PATH)
     inventory = _load(INVENTORY_PATH)
 
-    _validator("water-balance-contract.schema.json").validate(fixtures["positive_contract"])
-    _validator("nested-balance-assessment.schema.json").validate(fixtures["positive_assessment"])
-    _validator("component-compatibility.schema.json").validate(inventory)
+    contract_validator = _validator("water-balance-contract.schema.json")
+    assessment_validator = _validator("nested-balance-assessment.schema.json")
+    compatibility_validator = _validator("component-compatibility.schema.json")
+
+    contract_validator.validate(fixtures["positive_contract"])
+    assessment_validator.validate(fixtures["positive_assessment"])
+    compatibility_validator.validate(inventory)
 
 
 def test_fixture_taxonomy_is_complete_and_fail_closed() -> None:
@@ -45,28 +61,36 @@ def test_fixture_taxonomy_is_complete_and_fail_closed() -> None:
         "underdetermined",
     }
     cases = fixtures["cases"]
-
-    assert {case["scenario"] for case in cases} == expected
-    assert len(cases) == len(expected)
-    assert all(case["incident_promotion_eligible"] is False for case in cases)
-    assert all(case["expected_closure_status"] in {
+    allowed_closure_states = {
         "closed",
         "within_uncertainty",
         "open",
         "underdetermined",
         "contradictory",
         "not_evaluated",
-    } for case in cases)
+    }
+
+    assert {case["scenario"] for case in cases} == expected
+    assert len(cases) == len(expected)
+    assert all(case["incident_promotion_eligible"] is False for case in cases)
+    assert all(
+        case["expected_closure_status"] in allowed_closure_states for case in cases
+    )
 
 
 def test_inventory_authorizes_no_runtime_or_data_migration() -> None:
     inventory = _load(INVENTORY_PATH)
+    components = inventory["components"]
 
     assert inventory["design_only"] is True
-    assert inventory["source_main_sha"] == "17c843595b5cdfbcef4e5f7b1ac6c662092e335d"
-    assert inventory["components"]
-    assert all(component["runtime_changed"] is False for component in inventory["components"])
-    assert all(component["data_migration_authorized"] is False for component in inventory["components"])
+    assert inventory["source_main_sha"] == (
+        "17c843595b5cdfbcef4e5f7b1ac6c662092e335d"
+    )
+    assert components
+    assert all(component["runtime_changed"] is False for component in components)
+    assert all(
+        component["data_migration_authorized"] is False for component in components
+    )
 
 
 def test_assessment_residual_cannot_be_promoted_or_exported() -> None:
