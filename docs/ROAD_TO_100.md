@@ -1,7 +1,9 @@
 # Road to 100 — normalized federation score
 
 **Audit date:** 2026-08-04  
-**Reconciled main:** `17c843595b5cdfbcef4e5f7b1ac6c662092e335d`  
+**Required audit baseline:** `17c843595b5cdfbcef4e5f7b1ac6c662092e335d`  
+**Current PR base:** `282c61106556278d190e387cc9f140431f6f2295`  
+**Post-baseline drift adjudication:** one commit modifying only `data/alert_events.jsonl`; no roadmap dimension or unfinished-work classification changed.  
 **Scoring model:** code completeness 20%; main-branch availability 15%; CI enforcement 15%; data materialization 15%; operator verification 15%; GUI completeness 10%; federation readiness 10%.
 
 ## Current normalized score: 81.55 / 100
