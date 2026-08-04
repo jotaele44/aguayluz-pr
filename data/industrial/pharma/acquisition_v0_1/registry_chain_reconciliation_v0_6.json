@@ -1,0 +1,115 @@
+{
+  "schema_version": "aguayluz.pr-pharma-registry-reconciliation/v0.6",
+  "generated_at_ast": "2026-08-04T18:10:15-04:00",
+  "vector": "RECONCILE_STARLINK_AND_BOEHRINGER_REGISTRY_CHAIN_v0_6",
+  "repository": "jotaele44/aguayluz-pr",
+  "branch": "data/pr-pharma-geometry-v3-20260803",
+  "status": "CANDIDATES_NARROWED_REGISTRY_BINDING_PENDING",
+  "public_source_findings": [
+    {
+      "evidence_tier": "T1",
+      "source": "US EPA",
+      "finding": "EPA states that in 2016 the easternmost parcel containing the Old and Secure Landfills was segregated and assumed by StarLink Logistics, while Merial retained the western remainder.",
+      "binding_limit": "EPA does not identify CRIM ObjectID, current cadastral identifier, Registro finca number, deed number, folio, survey vertices, or plat.",
+      "url": "https://www.epa.gov/hwcorrectiveactioncleanups/hazardous-waste-cleanup-starlink-logistics-inc-barceloneta-puerto-rico"
+    },
+    {
+      "evidence_tier": "T1",
+      "source": "Puerto Rico Department of Justice",
+      "finding": "Barceloneta is within the Manati Registry Section; KARIBE provides public access to property-registry services and certifications.",
+      "binding_limit": "KARIBE requires an interactive account/session and applicable fees.",
+      "url": "https://www.justicia.pr.gov/secretarias-y-oficinas/registro-de-la-propiedad/"
+    },
+    {
+      "evidence_tier": "T1",
+      "source": "Federal Trade Commission / SEC-hosted company release",
+      "finding": "The Sanofi-Boehringer asset swap was contracted in June 2016, cleared in December 2016, and generally closed on January 1, 2017; Merial was the animal-health business acquired by Boehringer.",
+      "binding_limit": "Corporate transaction evidence does not establish parcel title.",
+      "urls": [
+        "https://www.ftc.gov/news-events/news/press-releases/2016/12/ftc-requires-divestitures-condition-proposed-1353-billion-deal-between-german-pharmaceutical",
+        "https://www.sec.gov/Archives/edgar/data/1121404/000119312517000281/d320883dex991.htm"
+      ]
+    },
+    {
+      "evidence_tier": "T3",
+      "source": "Dateas mirror of historical OGPE permit data",
+      "finding": "Historical permit entries associate cadastral identifier 055-000-002-20 with the Merck site at PR-2 Km 56.7 before the 2016 transaction.",
+      "binding_limit": "This is a secondary mirror rather than an authenticated current OGPE or Registro record; it supports lineage but cannot bind current title.",
+      "urls": [
+        "https://www.dateas.com/es/explore/permisos-construccion-ogpe/merck-barceloneta-11093",
+        "https://www.dateas.com/es/explore/permisos-construccion-ogpe/cambio-infraestructura-calderas-y-tanques-para-uso-6203"
+      ]
+    }
+  ],
+  "candidate_bindings": {
+    "starlink_eastern_candidate": {
+      "crim_objectid": 1094625,
+      "globalid": "{99DFF9A0-F44B-4153-AD48-D9771A8DC3F3}",
+      "num_catastro": "055-044-631-04",
+      "oldpid": "055-000-002-36",
+      "crim_area_m2": 166456.563266,
+      "deed_area_reference_m2": 165603.1968,
+      "area_delta_pct": 0.5153079665669876,
+      "discovery_route": "PREFIX_ONLY",
+      "legal_binding": "PENDING_REGISTRY_OR_SURVEY",
+      "canonical_geometry": null,
+      "promotion": "REJECTED_PENDING_LEGAL_BINDING"
+    },
+    "boehringer_western_candidate": {
+      "crim_objectid": 1095803,
+      "globalid": "{43F9EB17-0C8C-41E6-9350-5D65DF3B4B1F}",
+      "num_catastro": "055-000-002-20",
+      "oldpid": "055-000-002-20",
+      "crim_area_m2": 626589.73053691,
+      "deed_area_reference_m2": 620638.5453,
+      "area_delta_pct": 0.9588810237419859,
+      "discovery_route": "POINT_INTERSECTION",
+      "historical_site_identifier_support": "T3_HISTORICAL_PERMIT_MIRROR",
+      "legal_binding": "PENDING_REGISTRY_OR_SURVEY",
+      "canonical_geometry": null,
+      "promotion": "REJECTED_PENDING_LEGAL_BINDING"
+    }
+  },
+  "registry_outreach": {
+    "recipient": "javier.vazquez@justicia.pr.gov",
+    "cc": [
+      "nzayas@justicia.pr.gov",
+      "helpdesk-karibe@justicia.pr.gov"
+    ],
+    "gmail_message_id": "19fced1ba1e0aee1",
+    "status": "SENT",
+    "purpose": "Identify finca numbers, 2016 asiento/diario/deed, ownership chain, survey or plat attachments, and paid certification procedure."
+  },
+  "promotion_gates": {
+    "starlink": {
+      "registry_finca_identified": false,
+      "2016_instrument_identified": false,
+      "title_holder_bound_to_starlink": false,
+      "objectid_bound_to_registry_record": false,
+      "survey_or_legal_description_reconciled": false,
+      "polygon_validated": false,
+      "promotion_eligible": false
+    },
+    "boehringer": {
+      "registry_finca_identified": false,
+      "2016_instrument_identified": false,
+      "title_holder_bound_to_merial_or_boehringer": false,
+      "objectid_bound_to_registry_record": false,
+      "survey_or_legal_description_reconciled": false,
+      "polygon_validated": false,
+      "promotion_eligible": false
+    }
+  },
+  "decision": {
+    "canonical_starlink_geometry": null,
+    "canonical_boehringer_geometry": null,
+    "flow_or_receptor_model_changed": false,
+    "reason": "Public evidence supports the transaction narrative and candidate areas but does not bind the current CRIM records to Registro finca numbers or the 2016 conveyance instrument."
+  },
+  "preserve": [
+    "NO_PR",
+    "NO_MERGE",
+    "NO_DEPLOYMENT",
+    "CANDIDATES_ONLY"
+  ]
+}
