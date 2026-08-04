@@ -107,23 +107,28 @@ class RegulatoryObservation:
 
 
 class RegulatoryProviderAdapter(Protocol):
-    def capabilities(self) -> ProviderCapabilities: ...
+    def capabilities(self) -> ProviderCapabilities:
+        raise NotImplementedError
 
     def discover(
         self,
         query: Mapping[str, Any],
         checkpoint: DiscoveryCheckpoint | None = None,
-    ) -> tuple[Sequence[RecordLocator], DiscoveryCheckpoint]: ...
+    ) -> tuple[Sequence[RecordLocator], DiscoveryCheckpoint]:
+        raise NotImplementedError
 
-    def fetch(self, locator: RecordLocator) -> tuple[RawRegulatoryRecord, SourceReceipt]: ...
+    def fetch(self, locator: RecordLocator) -> tuple[RawRegulatoryRecord, SourceReceipt]:
+        raise NotImplementedError
 
     def normalize(
         self,
         raw_record: RawRegulatoryRecord,
         receipt: SourceReceipt,
-    ) -> Sequence[RegulatoryObservation]: ...
+    ) -> Sequence[RegulatoryObservation]:
+        raise NotImplementedError
 
-    def checkpoint(self) -> DiscoveryCheckpoint: ...
+    def checkpoint(self) -> DiscoveryCheckpoint:
+        raise NotImplementedError
 
 
 PROVIDER_BASELINE_CAPABILITIES: dict[Provider, ProviderCapabilities] = {
