@@ -1,0 +1,298 @@
+{
+  "type": "FeatureCollection",
+  "name": "PR_Pharma_Hydrogeologic_Model_v3",
+  "metadata": {
+    "generated_at": "2026-08-03T21:52:00-04:00",
+    "crs": "EPSG:4326",
+    "model_status": "conceptual_and_attribute_ready",
+    "warning": "Null geometries indicate verified attributes without recovered coordinates or polygon geometry. No inferred parcel polygons are included.",
+    "version": "3.0.0",
+    "aguayluz_ingestion_class": "internal_staging",
+    "source_geojson_sha256": "1a286d6f62b536158a944082965e497fc5bd05870a384c1eb1e8291ab5d2e5d9",
+    "source_ledger_sha256": "d0b53c06868ffb9e463e2a5581b4fe9370c0f953d189030f306a99bb8eb6ae29",
+    "null_geometry_policy": "preserve_and_block_spatial_promotion",
+    "retired_aliases": [
+      {
+        "alias": "Viatris Pharmaceuticals LLC — Ceiba",
+        "canonical_facility_key": "PR-PHARMA-VTR-VBA",
+        "canonical_location": "Road 689 Km 1.9, Vega Baja, PR 00693",
+        "reason": "Official FDA FY2025 establishment record places FEI 2623619 in Vega Baja.",
+        "status": "retired"
+      }
+    ],
+    "flow_model_status": "BLOCKED_INSUFFICIENT_CONTEMPORANEOUS_AQUIFER_MATCHED_HEADS",
+    "flow_hypotheses": [
+      "northward",
+      "southward",
+      "southwestward"
+    ],
+    "flow_path_promotion_rule": "No receptor pathway may be promoted without a calibrated current potentiometric surface."
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "GIS-MSDQ-FRS-POINT",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -66.549388,
+          18.426041
+        ]
+      },
+      "properties": {
+        "facility_key": "PR-PHARMA-MSDQ-BCN",
+        "feature_type": "facility_point",
+        "operator": "Boehringer Ingelheim Animal Health Puerto Rico LLC",
+        "address": "Road #2 Km 56.7, Barceloneta, PR 00617",
+        "frsid": "110067716662",
+        "tri_facility_id": "00617MRCKSSTATE",
+        "source_year": 2021,
+        "geometry_status": "verified_facility_point_not_parcel_centroid",
+        "source_url": "https://www.epa.gov/system/files/other-files/2023-02/facility_data_rsei_v2311.csv"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "GIS-STARLINK-EAST",
+      "geometry": null,
+      "properties": {
+        "facility_key": "PR-PHARMA-MSDQ-BCN",
+        "feature_type": "parcel_attribute",
+        "owner": "StarLink Logistics, Inc.",
+        "area_m2": 165603.1968,
+        "area_cuerdas": 42.134,
+        "cadastral_id": "055-044-631-04-000",
+        "contains": [
+          "Old Landfill",
+          "Secure Landfill"
+        ],
+        "geometry_status": "not_recovered",
+        "source_url": "https://www.epa.gov/sites/default/files/2019-10/documents/starlink_logistics_draft_permit_package_10-17-2019.pdf"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "GIS-BI-WEST",
+      "geometry": null,
+      "properties": {
+        "facility_key": "PR-PHARMA-MSDQ-BCN",
+        "feature_type": "parcel_attribute",
+        "owner_operator": "Boehringer Ingelheim Animal Health Puerto Rico LLC",
+        "area_m2": 620638.5453,
+        "area_cuerdas": 157.9074,
+        "land_use": "pharmaceutical_animal_health_manufacturing",
+        "geometry_status": "not_recovered",
+        "source_url": "https://www.epa.gov/sites/default/files/2019-10/documents/starlink_logistics_draft_permit_package_10-17-2019.pdf"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "GIS-FTZ-61-0AC-001",
+      "geometry": null,
+      "properties": {
+        "facility_key": "PR-PHARMA-MSDQ-BCN",
+        "feature_type": "regulatory_area_attribute",
+        "status": "Active",
+        "status_effective_date": "2023-08-14",
+        "total_acres": 172,
+        "activated_acres": 3.6,
+        "warning": "FTZ acreage is not cadastral parcel geometry",
+        "source_url": "https://ofis.trade.gov/Site/Details/4928"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "GIS-WELL-3",
+      "geometry": null,
+      "properties": {
+        "facility_key": "PR-PHARMA-MSDQ-BCN",
+        "feature_type": "well_attribute",
+        "well_id": "Well #3",
+        "total_depth_ft": 550,
+        "historical_capacity_gpm": 25,
+        "current_status": "unresolved",
+        "screen_interval": null,
+        "geometry_status": "coordinates_not_recovered",
+        "source_url": "https://www.epa.gov/sites/default/files/2017-08/documents/msdq725.pdf"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "GIS-WELL-5",
+      "geometry": null,
+      "properties": {
+        "facility_key": "PR-PHARMA-MSDQ-BCN",
+        "feature_type": "well_attribute",
+        "well_id": "Well #5",
+        "total_depth_ft": 1200,
+        "historical_capacity_gpm": 390,
+        "current_status": "unresolved",
+        "screen_interval": null,
+        "geometry_status": "coordinates_not_recovered",
+        "source_url": "https://www.epa.gov/sites/default/files/2017-08/documents/msdq725.pdf"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "GIS-AURO-CAGUAS",
+      "geometry": null,
+      "properties": {
+        "facility_key": "PR-PHARMA-MYL-AUR-CAG",
+        "feature_type": "industrial_parcel_attribute",
+        "operator": "Auro PR Inc.",
+        "address": "RD 156, Caguas West Industrial Park, Lot 24, Caguas, PR 00725",
+        "plant_area_ft2": 240000,
+        "parcel_area_acres": 33,
+        "geometry_status": "not_recovered",
+        "source_url": "https://www.investpr.org/es/news/aurobindo-pharma-puerto-rico-auro-pr-inc/"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "GIS-VIATRIS-VBA",
+      "geometry": null,
+      "properties": {
+        "facility_key": "PR-PHARMA-VTR-VBA",
+        "feature_type": "facility_address",
+        "operator": "Viatris Pharmaceuticals LLC",
+        "address": "Road 689 Km 1.9, Vega Baja, PR 00693",
+        "fei": "2623619",
+        "identity_status": "verified_FY2025",
+        "retired_alias": "Ceiba",
+        "geometry_status": "geocode_required",
+        "source_url": "https://www.fda.gov/media/178556/download"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "USGS-182544066341500",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -66.570644823651,
+          18.4263357094696
+        ]
+      },
+      "properties": {
+        "facility_key": "PR-PHARMA-MSDQ-BCN",
+        "feature_type": "groundwater_monitoring_reference",
+        "name": "Cruce Davila NC-5 Well, Barceloneta, PR",
+        "site_no": "182544066341500",
+        "national_aquifer": "N400NCSTLM",
+        "local_aquifer": "122NRCSL",
+        "local_aquifer_name": "North Coast Limestone Aquifer, Lower",
+        "aquifer_type": "confined single aquifer",
+        "hole_depth_ft": 2564,
+        "land_surface_altitude_ft_ngvd29": 318.3,
+        "geometry_method": "mapping-grade GPS",
+        "current_head_role": "REFERENCE_ONLY_NO_CONTINUOUS_SERIES",
+        "temporal_validity": {
+          "location_metadata_accessed": "2026-08-03",
+          "continuous_data_available": false
+        },
+        "source_url": "https://waterdata.usgs.gov/monitoring-location/USGS-182544066341500/",
+        "evidence_tier": "T1"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "USGS-182601066340800",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -66.568505917135,
+          18.4316133144811
+        ]
+      },
+      "properties": {
+        "facility_key": "PR-PHARMA-MSDQ-BCN",
+        "feature_type": "groundwater_inventory_reference",
+        "name": "Anes Well, Barceloneta, PR",
+        "site_no": "182601066340800",
+        "hole_depth_ft": 350,
+        "geometry_method": "interpolated from map",
+        "current_head_role": "LOCATION_ONLY_NO_MEASUREMENTS",
+        "temporal_validity": {
+          "location_metadata_accessed": "2026-08-03",
+          "continuous_data_available": false,
+          "field_measurements_available": false
+        },
+        "source_url": "https://waterdata.usgs.gov/monitoring-location/USGS-182601066340800/",
+        "evidence_tier": "T1"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "SWMU-OLD-LANDFILL",
+      "geometry": null,
+      "properties": {
+        "facility_key": "PR-PHARMA-MSDQ-BCN",
+        "feature_type": "swmu",
+        "name": "Old Landfill",
+        "geometry_status": "permit_map_relationship_only_no_control_points",
+        "spatial_promotion": "blocked",
+        "source_url": "https://www.epa.gov/sites/default/files/2019-10/documents/starlink_logistics_draft_permit_package_10-17-2019.pdf",
+        "evidence_tier": "T1"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "SWMU-SECURE-LANDFILL",
+      "geometry": null,
+      "properties": {
+        "facility_key": "PR-PHARMA-MSDQ-BCN",
+        "feature_type": "swmu",
+        "name": "Former Secure Landfill",
+        "geometry_status": "permit_map_relationship_only_no_control_points",
+        "spatial_promotion": "blocked",
+        "source_url": "https://www.epa.gov/sites/default/files/2019-10/documents/starlink_logistics_draft_permit_package_10-17-2019.pdf",
+        "evidence_tier": "T1"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "SWMU-EQUALIZATION-BASIN",
+      "geometry": null,
+      "properties": {
+        "facility_key": "PR-PHARMA-MSDQ-BCN",
+        "feature_type": "historical_wastewater_asset",
+        "name": "Equalization Basin",
+        "geometry_status": "not_recovered",
+        "temporal_validity": "historical_route_verified_current_route_unresolved",
+        "spatial_promotion": "blocked",
+        "source_url": "https://www.epa.gov/sites/default/files/2017-08/documents/msdq725.pdf",
+        "evidence_tier": "T1"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "SWMU-DEGRITTER",
+      "geometry": null,
+      "properties": {
+        "facility_key": "PR-PHARMA-MSDQ-BCN",
+        "feature_type": "historical_wastewater_asset",
+        "name": "Degritter",
+        "geometry_status": "not_recovered",
+        "temporal_validity": "historical",
+        "spatial_promotion": "blocked",
+        "source_url": "https://www.epa.gov/sites/default/files/2017-08/documents/msdq725.pdf",
+        "evidence_tier": "T1"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "SWMU-SOLVENT-SKIMMER",
+      "geometry": null,
+      "properties": {
+        "facility_key": "PR-PHARMA-MSDQ-BCN",
+        "feature_type": "historical_wastewater_asset",
+        "name": "Solvent Skimmer",
+        "geometry_status": "not_recovered",
+        "temporal_validity": "historical",
+        "spatial_promotion": "blocked",
+        "source_url": "https://www.epa.gov/sites/default/files/2017-08/documents/msdq725.pdf",
+        "evidence_tier": "T1"
+      }
+    }
+  ]
+}
