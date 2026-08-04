@@ -1,0 +1,120 @@
+{
+  "assets": [
+    {"asset_id": "USGS_50092000", "kind": "upstream_stream_gage"},
+    {"asset_id": "USGS_50093045", "kind": "reservoir_damsite"},
+    {"asset_id": "USGS_50093053", "kind": "canal_forebay"},
+    {"asset_id": "USGS_50093075", "kind": "canal_above_treatment"},
+    {"asset_id": "USGS_50093078", "kind": "canal_below_treatment"},
+    {"asset_id": "USGS_50093083", "kind": "canal_above_industrial_intake"},
+    {"asset_id": "USGS_50093084", "kind": "industrial_intake"},
+    {"asset_id": "USGS_50093085", "kind": "canal_below_industrial_intake"}
+  ],
+  "boundaries": [
+    {
+      "asset_ids": ["USGS_50092000", "USGS_50093045", "USGS_50093053", "USGS_50093075", "USGS_50093078", "USGS_50093083", "USGS_50093084", "USGS_50093085"],
+      "boundary_id": "boundary:patillas-guayama:system",
+      "boundary_kind": "system",
+      "parent_boundary_id": null,
+      "upstream_boundary_id": null
+    },
+    {
+      "asset_ids": ["USGS_50092000"],
+      "boundary_id": "boundary:patillas:watershed",
+      "boundary_kind": "watershed",
+      "parent_boundary_id": "boundary:patillas-guayama:system",
+      "upstream_boundary_id": null
+    },
+    {
+      "asset_ids": ["USGS_50093045", "USGS_50093053"],
+      "boundary_id": "boundary:patillas:reservoir",
+      "boundary_kind": "reservoir",
+      "parent_boundary_id": "boundary:patillas-guayama:system",
+      "upstream_boundary_id": "boundary:patillas:watershed"
+    },
+    {
+      "asset_ids": ["USGS_50093075", "USGS_50093078"],
+      "boundary_id": "boundary:guayama:treatment",
+      "boundary_kind": "treatment",
+      "parent_boundary_id": "boundary:patillas-guayama:system",
+      "upstream_boundary_id": "boundary:patillas:reservoir"
+    },
+    {
+      "asset_ids": ["USGS_50093083", "USGS_50093084", "USGS_50093085"],
+      "boundary_id": "boundary:guayama:distribution-and-intakes",
+      "boundary_kind": "distribution",
+      "parent_boundary_id": "boundary:patillas-guayama:system",
+      "upstream_boundary_id": "boundary:guayama:treatment"
+    }
+  ],
+  "edges": [
+    {
+      "claim_status": "inference",
+      "confidence": 70,
+      "edge_id": "edge:50092000:50093045",
+      "from_asset_id": "USGS_50092000",
+      "relationship": "contributes_flow_to",
+      "to_asset_id": "USGS_50093045"
+    },
+    {
+      "claim_status": "inference",
+      "confidence": 70,
+      "edge_id": "edge:50093045:50093053",
+      "from_asset_id": "USGS_50093045",
+      "relationship": "releases_to",
+      "to_asset_id": "USGS_50093053"
+    },
+    {
+      "claim_status": "inference",
+      "confidence": 80,
+      "edge_id": "edge:50093053:50093075",
+      "from_asset_id": "USGS_50093053",
+      "relationship": "upstream_of",
+      "to_asset_id": "USGS_50093075"
+    },
+    {
+      "claim_status": "fact_from_station_names",
+      "confidence": 90,
+      "edge_id": "edge:50093075:50093078",
+      "from_asset_id": "USGS_50093075",
+      "relationship": "brackets_treatment_process",
+      "to_asset_id": "USGS_50093078"
+    },
+    {
+      "claim_status": "inference",
+      "confidence": 75,
+      "edge_id": "edge:50093078:50093083",
+      "from_asset_id": "USGS_50093078",
+      "relationship": "upstream_of",
+      "to_asset_id": "USGS_50093083"
+    },
+    {
+      "claim_status": "fact_from_station_names",
+      "confidence": 90,
+      "edge_id": "edge:50093083:50093084",
+      "from_asset_id": "USGS_50093083",
+      "relationship": "supplies_intake",
+      "to_asset_id": "USGS_50093084"
+    },
+    {
+      "claim_status": "inference",
+      "confidence": 70,
+      "edge_id": "edge:50093083:50093085",
+      "from_asset_id": "USGS_50093083",
+      "relationship": "continues_downstream_of_intake",
+      "to_asset_id": "USGS_50093085"
+    }
+  ],
+  "evidence_tier": "T2",
+  "limitations": [
+    "The order is derived from source-declared station names and must not be treated as authoritative hydraulic topology.",
+    "Valve states, pipe connectivity, plant operations, and intake meter telemetry are absent."
+  ],
+  "pilot_id": "patillas-guayama-water-balance-v0.2",
+  "review_status": "needs_review",
+  "schema_version": "aguayluz.resource-balance-topology/v0.2",
+  "source_ref": "repository_asset_slice.json plus station-name sequence review",
+  "state": "design_only_frozen",
+  "topology_state_id": "topology:patillas-guayama:20260804:v0.2",
+  "valid_from": "2026-08-04T21:32:00Z",
+  "valid_until": null
+}
