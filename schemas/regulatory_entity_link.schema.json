@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/regulatory_entity_link.schema.json",
+  "title": "RegulatoryEntityLink",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "candidate_id",
+    "observation_id",
+    "candidate_asset_id",
+    "decision_state",
+    "match_features",
+    "contradictions",
+    "created_at"
+  ],
+  "properties": {
+    "candidate_id": {"type": "string", "pattern": "^AYL_REGLINK_[A-Za-z0-9._:-]+$"},
+    "observation_id": {"type": "string", "pattern": "^AYL_REGOBS_[A-Za-z0-9._:-]+$"},
+    "candidate_asset_id": {"type": "string", "minLength": 1},
+    "decision_state": {"enum": ["proposed", "needs_review", "approved", "rejected", "superseded", "conflicted"]},
+    "match_strength": {"enum": ["hard_identifier", "strong_composite", "spatial_composite", "weak_lexical"]},
+    "score": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "match_features": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["feature", "value", "source_observation_id"],
+        "properties": {
+          "feature": {"enum": ["provider_identifier", "permit_identifier", "parcel_identifier", "normalized_name", "address", "municipality", "coordinate", "owner_operator", "operating_date"]},
+          "value": {"type": "string", "minLength": 1},
+          "source_observation_id": {"type": "string", "pattern": "^AYL_REGOBS_[A-Za-z0-9._:-]+$"}
+        }
+      }
+    },
+    "contradictions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "detail"],
+        "properties": {
+          "kind": {"enum": ["municipality", "distance", "parcel", "operating_date", "legal_entity", "duplicate_identifier", "explicit_separation", "other"]},
+          "detail": {"type": "string", "minLength": 1},
+          "evidence_observation_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+        }
+      }
+    },
+    "created_at": {"type": "string", "format": "date-time"},
+    "decided_at": {"type": ["string", "null"], "format": "date-time"},
+    "decided_by": {"type": ["string", "null"]},
+    "decision_rationale": {"type": ["string", "null"]},
+    "supersedes_candidate_id": {"type": ["string", "null"]}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"decision_state": {"const": "approved"}}},
+      "then": {"required": ["decided_at", "decided_by", "decision_rationale"]}
+    }
+  ]
+}
