@@ -1,0 +1,49 @@
+{
+  "schema_version": "aguayluz.internal-ingest-manifest/v1",
+  "package": "pr-pharma-hydrogeologic-model-v3",
+  "generated_at": "2026-08-03T21:52:00-04:00",
+  "classification": "internal_staging",
+  "repository": "jotaele44/aguayluz-pr",
+  "base_commit": "464b838d12e5fc71d0576c9657129a5f11cc9ac6",
+  "branch": "data/pr-pharma-geometry-v3-20260803",
+  "records": 9,
+  "source_files": [
+    {
+      "name": "PR_Pharma_Subsurface_Evidence_Ledger_v2.xlsx",
+      "sha256": "d0b53c06868ffb9e463e2a5581b4fe9370c0f953d189030f306a99bb8eb6ae29"
+    },
+    {
+      "name": "PR_Pharma_Hydrogeologic_Model_v2.geojson",
+      "sha256": "1a286d6f62b536158a944082965e497fc5bd05870a384c1eb1e8291ab5d2e5d9"
+    }
+  ],
+  "outputs": {
+    "pr_pharma_hydrogeologic_model_v3.geojson": {
+      "sha256": "e8443f95223f4f22c49e2c70ab0cb13de75cbc5f4ea1f6d31b1e1f38a6676b79",
+      "bytes": 10674
+    },
+    "pr_pharma_assets_v3.jsonl": {
+      "sha256": "e74af5e29534970378ec01ce0078c44c26d1199cee44132f12d738f9c9152060",
+      "bytes": 5757
+    },
+    "pr_pharma_flow_model_v3.json": {
+      "sha256": "b2cca73faf2bd1b67d1398906389287995a9d3000a78173080b35410c800fd0d",
+      "bytes": 1621
+    },
+    "crim_parcel_query_05504463104000.json": {
+      "sha256": "04c2378d49d58fc644f8e8ee7770e3d44e5d0d475dbc859965df225d7f0827cb",
+      "bytes": 645
+    }
+  },
+  "validation": {
+    "utility_asset_schema": "PASS",
+    "geojson_geometry": "PASS",
+    "null_geometry_count": 12,
+    "spatial_promotion_blocked_count": 12,
+    "retired_alias_count": 1,
+    "flow_model_status": "BLOCKED",
+    "production_utility_assets_mutated": false,
+    "default_branch_mutated": false,
+    "pull_request_opened": false
+  }
+}
