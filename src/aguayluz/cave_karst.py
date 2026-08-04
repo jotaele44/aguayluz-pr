@@ -331,7 +331,7 @@ def build_alerts(
                     f"Conflicting accepted status events: {conflict['left_status']} "
                     f"versus {conflict['right_status']}."
                 ),
-                "status_as_of": null,
+                "status_as_of": None,
                 "evidence_tier": "T2",
                 "confidence": 50,
             }
