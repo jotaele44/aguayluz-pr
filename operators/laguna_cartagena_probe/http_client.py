@@ -1,6 +1,7 @@
 """Read-only HTTP acquisition with raw-byte receipts."""
 from __future__ import annotations
 
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -27,6 +28,7 @@ def request_url(
     output_dir: Path,
     extra_headers: dict[str, str] | None = None,
     timeout_s: float = 45.0,
+    max_attempts: int = 3,
 ) -> tuple[FetchReceipt, bytes]:
     headers = {"Accept": "*/*", "User-Agent": USER_AGENT}
     headers.update(extra_headers or {})
@@ -35,24 +37,40 @@ def request_url(
     response_headers: Any = {}
     error: str | None = None
     body = b""
-    try:
-        with urllib.request.urlopen(request, timeout=timeout_s) as response:  # noqa: S310
-            status = int(response.status)
-            response_headers = response.headers
-            body = response.read()
-    except urllib.error.HTTPError as exc:
-        status = int(exc.code)
-        response_headers = exc.headers or {}
-        body = exc.read()
-        error = f"HTTPError:{exc.code}"
-    except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        error = f"{type(exc).__name__}:{str(exc)[:240]}"
+    attempts = 0
+    for attempt in range(1, max_attempts + 1):
+        attempts = attempt
+        try:
+            with urllib.request.urlopen(request, timeout=timeout_s) as response:  # noqa: S310
+                status = int(response.status)
+                response_headers = response.headers
+                body = response.read()
+                error = None
+                break
+        except urllib.error.HTTPError as exc:
+            status = int(exc.code)
+            response_headers = exc.headers or {}
+            body = exc.read()
+            error = f"HTTPError:{exc.code}:attempts={attempt}"
+            retryable = exc.code == 429 or 500 <= exc.code < 600
+            if retryable and attempt < max_attempts:
+                time.sleep(float(attempt))
+                continue
+            break
+        except (urllib.error.URLError, TimeoutError, OSError) as exc:
+            error = f"{type(exc).__name__}:{str(exc)[:240]}:attempts={attempt}"
+            if attempt < max_attempts:
+                time.sleep(float(attempt))
+                continue
+            break
 
     raw_dir = output_dir / "raw"
     raw_dir.mkdir(parents=True, exist_ok=True)
     raw_name = f"{safe_slug(source_id)}_{sha256_bytes(url.encode('utf-8'))[:12]}.bin"
     raw_path = raw_dir / raw_name
     raw_path.write_bytes(body)
+    if error and f"attempts={attempts}" not in error:
+        error = f"{error}:attempts={attempts}"
     return (
         FetchReceipt(
             source_id=source_id,
@@ -97,11 +115,14 @@ def usgs_ogc_url(collection: str, site_id: str, *, limit: int = 1000) -> str:
 
 def wqx3_url(site_id: str, now: datetime) -> str:
     query = urllib.parse.urlencode(
-        {
-            "siteid": f"USGS-{site_id}",
-            "startDateLo": (now - timedelta(days=45)).strftime("%m-%d-%Y"),
-            "mimeType": "csv",
-        }
+        [
+            ("siteid", f"USGS-{site_id}"),
+            ("startDateLo", (now - timedelta(days=45)).strftime("%m-%d-%Y")),
+            ("mimeType", "csv"),
+            ("dataProfile", "narrow"),
+            ("providers", "NWIS"),
+            ("sorted", "no"),
+        ]
     )
     return f"https://www.waterqualitydata.us/wqx3/Result/search?{query}"
 
