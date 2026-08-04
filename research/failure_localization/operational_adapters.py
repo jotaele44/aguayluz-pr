@@ -5,17 +5,17 @@ import copy
 from datetime import datetime
 from typing import Any
 
+from . import operational_adapter_contracts as _adapter_contracts
 from .contracts import HYDRAULIC_EDGE_TYPES, parse_timestamp, stable_id, unique
 from .control_plane import FailureLocalizationControlPlane
-from .operational_adapter_contracts import (  # noqa: F401
-    BUNDLE_SCHEMA,
-    INPUT_SCHEMA,
-    RUN_SCHEMA,
-    OperationalAdapterError,
-)
 from .operational_admission import OperationalAdmissionMixin
 from .operational_graph import OperationalGraphMixin
 from .operational_observations import OperationalObservationMixin
+
+BUNDLE_SCHEMA = _adapter_contracts.BUNDLE_SCHEMA
+INPUT_SCHEMA = _adapter_contracts.INPUT_SCHEMA
+RUN_SCHEMA = _adapter_contracts.RUN_SCHEMA
+OperationalAdapterError = _adapter_contracts.OperationalAdapterError
 
 
 class FailureLocalizationOperationalAdapters(
