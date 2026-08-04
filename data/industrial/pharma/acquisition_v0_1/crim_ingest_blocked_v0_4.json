@@ -1,0 +1,56 @@
+{
+  "schema_version": "aguayluz.crim-ingest-receipt/v0.4",
+  "recorded_at": "2026-08-04T02:51:00-04:00",
+  "vector": "INGEST_COMPLETE_CRIM_OPERATOR_ARCHIVE_v0_4",
+  "repository": "jotaele44/aguayluz-pr",
+  "branch": "data/pr-pharma-geometry-v3-20260803",
+  "status": "BLOCKED_ARCHIVE_NOT_SUPPLIED",
+  "required_input": [
+    "CRIM_Adjudication_Results_05504463104000.zip",
+    "or complete crim_adjudication_05504463104000 directory"
+  ],
+  "search_results": {
+    "files_uploaded_in_conversation": "NO_MATCH",
+    "file_library": "SCRIPT_ONLY_NO_OPERATOR_OUTPUT_ARCHIVE",
+    "adjudication_script_present": true,
+    "operator_archive_present": false,
+    "operator_output_directory_present": false
+  },
+  "required_operator_artifacts": {
+    "raw_json_required": 6,
+    "raw_json_present": 0,
+    "raw_sha256_present": false,
+    "candidate_summary_present": false,
+    "adjudication_receipt_present": false,
+    "starlink_geometry_present": false
+  },
+  "verification": {
+    "raw_hashes": "NOT_POSSIBLE",
+    "raw_json_parse": "NOT_POSSIBLE",
+    "candidate_rebuild": "NOT_POSSIBLE",
+    "operator_candidate_comparison": "NOT_POSSIBLE",
+    "starlink_gate": "NOT_POSSIBLE",
+    "polygon_validation": "NOT_POSSIBLE"
+  },
+  "adjudication": {
+    "starlink_record": "UNRESOLVED",
+    "boehringer_record": "UNRESOLVED",
+    "canonical_starlink_geometry": null,
+    "canonical_boehringer_geometry": null,
+    "prefix_or_point_only_promotion": false
+  },
+  "promotion": {
+    "starlink_promoted": false,
+    "boehringer_promoted": false,
+    "parcel_geometries_changed": false,
+    "production_assets_changed": false,
+    "flow_paths_changed": false
+  },
+  "next_required_action": "Upload CRIM_Adjudication_Results_05504463104000.zip or the complete operator output directory after running adjudicate_crim_diagnostic_05504463104000_v0_2.sh.",
+  "preserve": [
+    "NO_PR",
+    "NO_MERGE",
+    "NO_DEPLOYMENT",
+    "KEEP_BOTH_PARCELS_NULL"
+  ]
+}
