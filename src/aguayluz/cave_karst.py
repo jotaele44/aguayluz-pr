@@ -1,19 +1,13 @@
-"""Cave and karst observability primitives for AguaYLuz-PR.
-
-The module is deliberately additive: it validates a dedicated cave/karst registry,
-links records into the existing asset/provenance graph by typed edges, verifies an
-append-only status-event hash chain, materializes current state, and emits bounded
-operational alerts. It does not infer hidden passages, exact sensitive entrances,
-or hydrologic connectivity absent explicit evidence.
-"""
+"""Evidence-auditable cave and karst monitoring primitives for AguaYLuz-PR."""
 from __future__ import annotations
 
 import hashlib
 import json
 from collections import defaultdict
+from collections.abc import Iterable
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
 
@@ -42,15 +36,23 @@ ALLOWED_STATUS_TRANSITIONS = {
     "maintenance": {"open", "closed", "partially_open", "restricted", "unknown"},
 }
 PUBLIC_OPERATIONAL_KINDS = {"park", "cave", "access_infrastructure"}
+STATUS_EVENT_TYPES = {
+    "status_transition",
+    "status_observation",
+    "closure_notice",
+    "reopening_notice",
+    "restriction_notice",
+    "maintenance_update",
+}
 
 
 def _parse_dt(value: str | None) -> datetime | None:
     if not value:
         return None
-    text = value.strip()
-    if text.endswith(("Z", "z")):
-        text = f"{text[:-1]}+00:00"
-    parsed = datetime.fromisoformat(text)
+    normalized = value.strip()
+    if normalized.endswith(("Z", "z")):
+        normalized = f"{normalized[:-1]}+00:00"
+    parsed = datetime.fromisoformat(normalized)
     return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
 
 
@@ -59,13 +61,15 @@ def _canonical_json(record: dict[str, Any]) -> str:
 
 
 def compute_record_hash(record: dict[str, Any]) -> str:
-    """Return the deterministic hash for an event, excluding its record_hash field."""
+    """Hash an event deterministically, excluding its stored record hash."""
     payload = dict(record)
     payload.pop("record_hash", None)
-    return f"sha256:{hashlib.sha256(_canonical_json(payload).encode('utf-8')).hexdigest()}"
+    digest = hashlib.sha256(_canonical_json(payload).encode()).hexdigest()
+    return f"sha256:{digest}"
 
 
 def load_jsonl(path: Path) -> list[dict[str, Any]]:
+    """Load nonblank JSONL rows; a missing optional registry file is empty."""
     if not path.exists():
         return []
     return [
@@ -81,18 +85,19 @@ def _schema_validator(schema_name: str) -> Draft202012Validator:
 
 
 def validate_records(records: Iterable[dict[str, Any]], schema_name: str) -> list[str]:
-    """Return stable, human-readable schema errors without mutating records."""
+    """Return stable schema diagnostics without mutating input records."""
     validator = _schema_validator(schema_name)
     errors: list[str] = []
     for index, record in enumerate(records):
-        for error in sorted(validator.iter_errors(record), key=lambda item: list(item.path)):
+        ordered = sorted(validator.iter_errors(record), key=lambda item: list(item.path))
+        for error in ordered:
             location = ".".join(str(part) for part in error.path) or "<root>"
             errors.append(f"{schema_name}[{index}].{location}: {error.message}")
     return errors
 
 
 def verify_event_chain(events: Iterable[dict[str, Any]]) -> list[str]:
-    """Verify schema, transition semantics, ordering, and the append-only hash chain."""
+    """Verify schema, ordering, transitions, intervals, and hash-chain integrity."""
     rows = list(events)
     errors = validate_records(rows, EVENT_SCHEMA)
     previous_hash: str | None = None
@@ -101,15 +106,16 @@ def verify_event_chain(events: Iterable[dict[str, Any]]) -> list[str]:
     for index, event in enumerate(rows):
         if event.get("previous_hash") != previous_hash:
             errors.append(
-                f"event[{index}] previous_hash mismatch: "
-                f"expected {previous_hash!r}, got {event.get('previous_hash')!r}"
+                f"event[{index}] previous_hash mismatch: expected {previous_hash!r}, "
+                f"got {event.get('previous_hash')!r}"
             )
         expected_hash = compute_record_hash(event)
         if event.get("record_hash") != expected_hash:
             errors.append(
-                f"event[{index}] record_hash mismatch: "
-                f"expected {expected_hash}, got {event.get('record_hash')}"
+                f"event[{index}] record_hash mismatch: expected {expected_hash}, "
+                f"got {event.get('record_hash')}"
             )
+
         recorded_at = _parse_dt(event.get("recorded_at"))
         if previous_recorded_at and recorded_at and recorded_at < previous_recorded_at:
             errors.append(f"event[{index}] recorded_at is not append-only ordered")
@@ -131,38 +137,32 @@ def verify_event_chain(events: Iterable[dict[str, Any]]) -> list[str]:
     return errors
 
 
-def detect_status_contradictions(
-    events: Iterable[dict[str, Any]],
-) -> list[dict[str, Any]]:
-    """Find accepted, non-superseded status assertions whose intervals overlap."""
-    active = [
+def _active_status_events(events: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+    accepted = [
         event
         for event in events
         if event.get("review_status") == "accepted"
-        and event.get("event_type")
-        in {
-            "status_transition",
-            "status_observation",
-            "closure_notice",
-            "reopening_notice",
-            "restriction_notice",
-            "maintenance_update",
-        }
+        and event.get("event_type") in STATUS_EVENT_TYPES
     ]
     superseded = {
-        event.get("supersedes_event_id")
-        for event in active
+        event["supersedes_event_id"]
+        for event in accepted
         if event.get("supersedes_event_id")
     }
-    active = [event for event in active if event.get("event_id") not in superseded]
+    return [event for event in accepted if event.get("event_id") not in superseded]
+
+
+def detect_status_contradictions(
+    events: Iterable[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Find overlapping accepted, non-superseded assertions with different states."""
     grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for event in active:
+    for event in _active_status_events(events):
         grouped[event["asset_id"]].append(event)
 
     contradictions: list[dict[str, Any]] = []
-    distant_future = datetime.max.replace(tzinfo=timezone.utc)
     distant_past = datetime.min.replace(tzinfo=timezone.utc)
-
+    distant_future = datetime.max.replace(tzinfo=timezone.utc)
     for asset_id, rows in grouped.items():
         rows.sort(
             key=lambda event: (
@@ -186,17 +186,19 @@ def detect_status_contradictions(
                     or distant_past
                 )
                 right_end = _parse_dt(right.get("effective_to")) or distant_future
-                overlaps = max(left_start, right_start) <= min(left_end, right_end)
-                if overlaps and left.get("to_status") != right.get("to_status"):
-                    contradictions.append(
-                        {
-                            "asset_id": asset_id,
-                            "left_event_id": left["event_id"],
-                            "right_event_id": right["event_id"],
-                            "left_status": left["to_status"],
-                            "right_status": right["to_status"],
-                        }
-                    )
+                if max(left_start, right_start) > min(left_end, right_end):
+                    continue
+                if left.get("to_status") == right.get("to_status"):
+                    continue
+                contradictions.append(
+                    {
+                        "asset_id": asset_id,
+                        "left_event_id": left["event_id"],
+                        "right_event_id": right["event_id"],
+                        "left_status": left["to_status"],
+                        "right_status": right["to_status"],
+                    }
+                )
     return contradictions
 
 
@@ -206,37 +208,27 @@ def materialize_status(
     *,
     as_of: datetime | None = None,
 ) -> list[dict[str, Any]]:
-    """Materialize current status without altering the append-only source records."""
+    """Materialize current state without altering append-only source records."""
     cutoff = as_of or datetime.now(timezone.utc)
-    by_asset: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    superseded = {
-        event.get("supersedes_event_id")
-        for event in events
-        if event.get("review_status") == "accepted"
-        and event.get("supersedes_event_id")
-    }
-    for event in events:
-        if event.get("review_status") != "accepted":
-            continue
-        if event.get("event_id") in superseded:
-            continue
+    applicable: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for event in _active_status_events(list(events)):
         effective_at = _parse_dt(event.get("effective_from")) or _parse_dt(
             event.get("observed_at")
         )
         effective_to = _parse_dt(event.get("effective_to"))
         if effective_at and effective_at <= cutoff and (not effective_to or cutoff <= effective_to):
-            by_asset[event["asset_id"]].append(event)
+            applicable[event["asset_id"]].append(event)
 
     materialized: list[dict[str, Any]] = []
+    distant_past = datetime.min.replace(tzinfo=timezone.utc)
     for asset in assets:
-        candidates = by_asset.get(asset["asset_id"], [])
+        candidates = applicable.get(asset["asset_id"], [])
         candidates.sort(
             key=lambda event: (
                 _parse_dt(event.get("effective_from"))
                 or _parse_dt(event.get("observed_at"))
-                or datetime.min.replace(tzinfo=timezone.utc),
-                _parse_dt(event.get("recorded_at"))
-                or datetime.min.replace(tzinfo=timezone.utc),
+                or distant_past,
+                _parse_dt(event.get("recorded_at")) or distant_past,
                 event["event_id"],
             )
         )
@@ -262,20 +254,22 @@ def build_alerts(
     as_of: datetime | None = None,
     stale_after_days: int = 30,
 ) -> list[dict[str, Any]]:
-    """Create deterministic closure, stale-state, contradiction, and flood-risk alerts."""
+    """Build deterministic access, freshness, flood-risk, and contradiction alerts."""
     cutoff = as_of or datetime.now(timezone.utc)
-    snapshots = materialize_status(assets, events, as_of=cutoff)
+    event_rows = list(events)
     alerts: list[dict[str, Any]] = []
-
-    for asset in snapshots:
+    for asset in materialize_status(assets, event_rows, as_of=cutoff):
         status = asset["current_status"]
-        if (
-            asset["asset_kind"] in PUBLIC_OPERATIONAL_KINDS
-            and status in {"closed", "partially_open", "restricted", "maintenance"}
-        ):
+        token = asset["asset_id"].removeprefix("AYL_KARST_")
+        if asset["asset_kind"] in PUBLIC_OPERATIONAL_KINDS and status in {
+            "closed",
+            "partially_open",
+            "restricted",
+            "maintenance",
+        }:
             alerts.append(
                 {
-                    "alert_id": f"AYL_KALERT_{asset['asset_id'].removeprefix('AYL_KARST_')}_ACCESS",
+                    "alert_id": f"AYL_KALERT_{token}_ACCESS",
                     "asset_id": asset["asset_id"],
                     "alert_type": "public_access_restriction",
                     "severity": 3 if status == "closed" else 2,
@@ -291,7 +285,7 @@ def build_alerts(
         if not status_time or (cutoff - status_time).days > stale_after_days:
             alerts.append(
                 {
-                    "alert_id": f"AYL_KALERT_{asset['asset_id'].removeprefix('AYL_KARST_')}_STALE",
+                    "alert_id": f"AYL_KALERT_{token}_STALE",
                     "asset_id": asset["asset_id"],
                     "alert_type": "stale_operational_status",
                     "severity": 2,
@@ -303,13 +297,13 @@ def build_alerts(
                 }
             )
 
-        if (
-            asset["hydrologic"]["flood_sensitivity"] == "high"
-            and status in {"open", "partially_open"}
-        ):
+        if asset["hydrologic"]["flood_sensitivity"] == "high" and status in {
+            "open",
+            "partially_open",
+        }:
             alerts.append(
                 {
-                    "alert_id": f"AYL_KALERT_{asset['asset_id'].removeprefix('AYL_KARST_')}_FLOOD",
+                    "alert_id": f"AYL_KALERT_{token}_FLOOD",
                     "asset_id": asset["asset_id"],
                     "alert_type": "hydrologic_access_risk",
                     "severity": 4,
@@ -321,28 +315,36 @@ def build_alerts(
                 }
             )
 
-    for contradiction in detect_status_contradictions(events):
+    for conflict in detect_status_contradictions(event_rows):
+        token = conflict["asset_id"].removeprefix("AYL_KARST_")
         alerts.append(
             {
                 "alert_id": (
-                    "AYL_KALERT_"
-                    f"{contradiction['asset_id'].removeprefix('AYL_KARST_')}_CONTRADICTION_"
-                    f"{contradiction['left_event_id']}_{contradiction['right_event_id']}"
+                    f"AYL_KALERT_{token}_CONTRADICTION_"
+                    f"{conflict['left_event_id']}_{conflict['right_event_id']}"
                 ),
-                "asset_id": contradiction["asset_id"],
+                "asset_id": conflict["asset_id"],
                 "alert_type": "status_contradiction",
                 "severity": 3,
                 "state": "active",
                 "summary": (
-                    f"Conflicting accepted status events: {contradiction['left_status']} "
-                    f"versus {contradiction['right_status']}."
+                    f"Conflicting accepted status events: {conflict['left_status']} "
+                    f"versus {conflict['right_status']}."
                 ),
-                "status_as_of": None,
+                "status_as_of": null,
                 "evidence_tier": "T2",
                 "confidence": 50,
             }
         )
     return sorted(alerts, key=lambda item: item["alert_id"])
+
+
+def _duplicates(rows: list[dict[str, Any]], field: str) -> list[str]:
+    values = [row.get(field) for row in rows]
+    return [
+        f"duplicate {field}: {value}"
+        for value in sorted({value for value in values if values.count(value) > 1})
+    ]
 
 
 def validate_registry(
@@ -352,42 +354,38 @@ def validate_registry(
     events: Iterable[dict[str, Any]],
     observations: Iterable[dict[str, Any]] = (),
 ) -> dict[str, Any]:
-    """Run schema, uniqueness, referential-integrity, chain, and contradiction checks."""
+    """Validate schemas, IDs, references, the event chain, and contradictions."""
     asset_rows = list(assets)
     source_rows = list(sources)
     edge_rows = list(edges)
     event_rows = list(events)
     observation_rows = list(observations)
+    errors: list[str] = []
 
-    errors = []
-    errors.extend(validate_records(asset_rows, ASSET_SCHEMA))
-    errors.extend(validate_records(source_rows, SOURCE_SCHEMA))
-    errors.extend(validate_records(edge_rows, EDGE_SCHEMA))
-    errors.extend(validate_records(event_rows, EVENT_SCHEMA))
-    errors.extend(validate_records(observation_rows, OBSERVATION_SCHEMA))
+    for rows, schema in (
+        (asset_rows, ASSET_SCHEMA),
+        (source_rows, SOURCE_SCHEMA),
+        (edge_rows, EDGE_SCHEMA),
+        (event_rows, EVENT_SCHEMA),
+        (observation_rows, OBSERVATION_SCHEMA),
+    ):
+        errors.extend(validate_records(rows, schema))
     errors.extend(verify_event_chain(event_rows))
-
-    def duplicate_errors(rows: list[dict[str, Any]], field: str, label: str) -> list[str]:
-        values = [row.get(field) for row in rows]
-        return [
-            f"duplicate {label}: {value}"
-            for value in sorted({value for value in values if values.count(value) > 1})
-        ]
-
-    errors.extend(duplicate_errors(asset_rows, "asset_id", "asset_id"))
-    errors.extend(duplicate_errors(source_rows, "source_id", "source_id"))
-    errors.extend(duplicate_errors(edge_rows, "edge_id", "edge_id"))
-    errors.extend(duplicate_errors(event_rows, "event_id", "event_id"))
-    errors.extend(duplicate_errors(observation_rows, "observation_id", "observation_id"))
+    for rows, field in (
+        (asset_rows, "asset_id"),
+        (source_rows, "source_id"),
+        (edge_rows, "edge_id"),
+        (event_rows, "event_id"),
+        (observation_rows, "observation_id"),
+    ):
+        errors.extend(_duplicates(rows, field))
 
     asset_ids = {row["asset_id"] for row in asset_rows}
     source_ids = {row["source_id"] for row in source_rows}
-
     for asset in asset_rows:
-        if asset.get("parent_asset_id") and asset["parent_asset_id"] not in asset_ids:
-            errors.append(
-                f"asset {asset['asset_id']} references missing parent {asset['parent_asset_id']}"
-            )
+        parent = asset.get("parent_asset_id")
+        if parent and parent not in asset_ids:
+            errors.append(f"asset {asset['asset_id']} references missing parent {parent}")
         for source_ref in asset["source_refs"]:
             if source_ref not in source_ids:
                 errors.append(f"asset {asset['asset_id']} references missing source {source_ref}")
@@ -428,6 +426,7 @@ def validate_registry(
 
 
 def load_default_registry(data_dir: Path | None = None) -> dict[str, list[dict[str, Any]]]:
+    """Load the canonical cave-and-karst registry from the package data directory."""
     base = data_dir or DATA_DIR
     return {
         "assets": load_jsonl(base / "cave_karst_assets.jsonl"),
