@@ -87,10 +87,11 @@ select = ["E", "F", "I", "B", "UP", "SIM", "W"]
 ignore = ["E501"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["research"]
+known-first-party = ["research", "server"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["B011"]
+"server/backend/water_disruption.py" = ["E731", "I001"]
 
 # ── mypy ─────────────────────────────────────────────────────────────────────
 # Gradually-typed baseline, matching spiderweb-pr and moneysweep-pr. Scoped to
