@@ -31,7 +31,7 @@
     "normalization_version": {"type": "string", "minLength": 1},
     "evidence_tier": {"enum": ["T1", "T2", "T3", "T4"]},
     "freshness_state": {"enum": ["current", "historical", "stale", "unknown", "conflicting"]},
-    "supersedes_observation_id": {"type": ["string", "null"]},
+    "supersedes_observation_id": {"type": ["string", "null"], "pattern": "^AYL_REGOBS_[A-Za-z0-9._:-]+$"},
     "source_asserted_status": {"type": ["string", "null"]},
     "identifiers": {
       "type": "array",
@@ -47,5 +47,22 @@
       }
     },
     "payload": {"type": "object"}
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": ["source_asserted_status"],
+        "properties": {"source_asserted_status": {"const": "retracted"}}
+      },
+      "then": {
+        "required": ["supersedes_observation_id"],
+        "properties": {
+          "supersedes_observation_id": {
+            "type": "string",
+            "pattern": "^AYL_REGOBS_[A-Za-z0-9._:-]+$"
+          }
+        }
+      }
+    }
+  ]
 }
