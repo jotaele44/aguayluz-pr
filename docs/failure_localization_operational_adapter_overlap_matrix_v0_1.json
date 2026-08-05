@@ -1,17 +1,32 @@
 {
   "schema_version": "aguayluz.failure-localization-operational-adapter-overlap/v0.1",
-  "generated_at_utc": "2026-08-04T23:14:00Z",
+  "generated_at_utc": "2026-08-05T00:03:30Z",
   "repository": "jotaele44/aguayluz-pr",
   "current_main": {
-    "sha": "282c61106556278d190e387cc9f140431f6f2295",
+    "sha": "a6b1bc591ef23d0558865d437ab2806319119bbb",
     "drift_from_core_base": {
       "base_sha": "17c843595b5cdfbcef4e5f7b1ac6c662092e335d",
-      "commits": 1,
+      "commits": 27,
       "files": [
-        "data/alert_events.jsonl"
+        "data/alert_events.jsonl",
+        "docs/ROAD_TO_100.md",
+        "docs/regulatory_ingestion_framework_v0_1.md",
+        "docs/unfinished_implementation_ledger.v1.json",
+        "research/regulatory/contracts.py",
+        "research/regulatory/fda_offline_adapter.py",
+        "research/regulatory/fda_source_profile_v0_6.json",
+        "schemas/regulatory_entity_link.schema.json",
+        "schemas/regulatory_observation.schema.json",
+        "schemas/regulatory_source_receipt.schema.json",
+        "tests/fixtures/regulatory/fda_offline_records_v0_6.json",
+        "tests/fixtures/regulatory/framework_cases_v0_2.json",
+        "tests/test_fda_offline_adapter_v0_6.py",
+        "tests/test_regulatory_framework_v0_2.py",
+        "tests/test_schemas.py"
       ],
       "overlaps_adapter_paths": false,
-      "disposition": "preserve_in_main_target_certification"
+      "overlap_classification": "documentation_alert_data_and_regulatory_framework_only",
+      "disposition": "preserve_in_exact_main_target_certification"
     }
   },
   "certified_core": {
@@ -39,7 +54,7 @@
       "prohibitions": [
         "dependency_or_proximity_edges_are_not_hydraulic_topology",
         "impact_state_does_not_confirm_failure_location",
-        "operator-restricted identifiers_are_not_public"
+        "operator-restricted_identifiers_are_not_public"
       ],
       "direct_path_overlap": []
     },
