@@ -161,10 +161,10 @@ def test_cave_karst_surface_is_read_only(client):
     assert client.patch("/cave-karst/assets/AYL_KARST_CAMUY_PARK").status_code == 405
     assert client.delete("/cave-karst/alerts").status_code == 405
 
-    route_methods = {
-        method
-        for route in app.router.routes
-        if str(getattr(route, "path", "")).startswith("/cave-karst")
-        for method in getattr(route, "methods", set())
+    cave_paths = {
+        path: methods
+        for path, methods in app.openapi()["paths"].items()
+        if path.startswith("/cave-karst")
     }
-    assert route_methods == {"GET"}
+    assert cave_paths
+    assert {method for methods in cave_paths.values() for method in methods} == {"get"}
