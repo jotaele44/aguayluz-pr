@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/cave_karst_asset.schema.json",
+  "title": "CaveKarstAsset",
+  "description": "Canonical Puerto Rico cave, karst, subterranean-water, access, or monitoring asset.",
+  "type": "object",
+  "required": [
+    "asset_id",
+    "canonical_name",
+    "asset_kind",
+    "municipalities",
+    "geometry_type",
+    "location_disclosure",
+    "operational",
+    "hydrologic",
+    "environmental",
+    "infrastructure",
+    "source_refs",
+    "evidence_tier",
+    "confidence",
+    "review_status"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "asset_id": {"type": "string", "pattern": "^AYL_KARST_[A-Z0-9_]+$"},
+    "canonical_name": {"type": "string", "minLength": 1},
+    "aliases": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "asset_kind": {"enum": ["cave_system", "cave", "sinkhole", "karst_window", "underground_river", "spring", "park", "access_infrastructure", "monitoring_station", "other"]},
+    "parent_asset_id": {"type": ["string", "null"], "pattern": "^AYL_KARST_[A-Z0-9_]+$"},
+    "municipalities": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "geometry_type": {"enum": ["point", "line", "polygon", "unknown"]},
+    "lat": {"type": ["number", "null"], "minimum": 17.7, "maximum": 18.7},
+    "lon": {"type": ["number", "null"], "minimum": -68.1, "maximum": -65.1},
+    "location_disclosure": {"enum": ["public_exact", "public_generalized", "restricted", "unknown"]},
+    "operational": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "public_access", "status_as_of", "operator", "reservation_required"],
+      "properties": {
+        "status": {"enum": ["open", "closed", "partially_open", "restricted", "maintenance", "unknown"]},
+        "public_access": {"enum": ["yes", "no", "limited", "unknown"]},
+        "status_as_of": {"type": ["string", "null"], "format": "date-time"},
+        "operator": {"type": ["string", "null"]},
+        "reservation_required": {"enum": ["yes", "no", "unknown"]},
+        "closure_reason": {"type": ["string", "null"]},
+        "expected_reopen": {"type": ["string", "null"], "format": "date-time"},
+        "operating_notes": {"type": ["string", "null"]}
+      }
+    },
+    "hydrologic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["roles", "flood_sensitivity", "surface_water_connection", "monitoring_status"],
+      "properties": {
+        "roles": {"type": "array", "uniqueItems": true, "items": {"enum": ["conduit", "recharge", "discharge", "storage", "underground_channel", "spring_outlet", "unknown"]}},
+        "waterbody_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "watershed_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "flood_sensitivity": {"enum": ["low", "moderate", "high", "unknown"]},
+        "surface_water_connection": {"enum": ["confirmed", "suspected", "none", "unknown"]},
+        "monitoring_status": {"enum": ["active", "intermittent", "historical", "none", "unknown"]},
+        "last_observation_at": {"type": ["string", "null"], "format": "date-time"}
+      }
+    },
+    "environmental": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protected_designations", "habitat_sensitivity", "water_quality_monitoring", "hazards"],
+      "properties": {
+        "protected_designations": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "habitat_sensitivity": {"enum": ["low", "moderate", "high", "restricted", "unknown"]},
+        "water_quality_monitoring": {"enum": ["active", "intermittent", "historical", "none", "unknown"]},
+        "hazards": {"type": "array", "uniqueItems": true, "items": {"enum": ["flash_flood", "rockfall", "air_quality", "biological_sensitivity", "contamination", "structural_failure", "access_failure", "unknown"]}}
+      }
+    },
+    "infrastructure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["components", "linked_utility_asset_ids", "power_dependency", "communications_dependency", "emergency_access"],
+      "properties": {
+        "components": {"type": "array", "uniqueItems": true, "items": {"enum": ["visitor_center", "road", "trail", "stairs", "railings", "lighting", "tram", "bridge", "gate", "signage", "sensor", "other"]}},
+        "linked_utility_asset_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "power_dependency": {"enum": ["critical", "supporting", "none", "unknown"]},
+        "communications_dependency": {"enum": ["critical", "supporting", "none", "unknown"]},
+        "emergency_access": {"enum": ["available", "limited", "unavailable", "unknown"]},
+        "condition": {"enum": ["serviceable", "degraded", "damaged", "under_repair", "unknown"]}
+      }
+    },
+    "source_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^SRC_KARST_[A-Z0-9_]+$"}},
+    "evidence_tier": {"enum": ["T1", "T2", "T3", "T4"]},
+    "confidence": {"type": "integer", "minimum": 0, "maximum": 100},
+    "review_status": {"enum": ["accepted", "needs_review", "rejected", "blocked"]},
+    "registry_scope": {"enum": ["pilot", "statewide_candidate", "statewide_validated"]}
+  }
+}

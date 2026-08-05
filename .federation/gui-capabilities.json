@@ -608,6 +608,43 @@
           "tests/test_refresh_plans.py"
         ]
       }
+    },
+    {
+      "id": "cave-karst-monitor-internal-core",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Internal schema validation, deterministic status materialization, contradiction detection, alert derivation, and CI registry certification. PR #114 introduces no API endpoint, GUI route, or interactive control; user-facing promotion is intentionally deferred to a separate read-only API, dashboard, discoverability, provenance, and end-to-end change.",
+      "backend": {
+        "files": [
+          "src/aguayluz/cave_karst.py"
+        ],
+        "symbols": [
+          "src/aguayluz/cave_karst.py:build_alerts",
+          "src/aguayluz/cave_karst.py:compute_record_hash",
+          "src/aguayluz/cave_karst.py:detect_status_contradictions",
+          "src/aguayluz/cave_karst.py:load_default_registry",
+          "src/aguayluz/cave_karst.py:load_jsonl",
+          "src/aguayluz/cave_karst.py:materialize_status",
+          "src/aguayluz/cave_karst.py:validate_records",
+          "src/aguayluz/cave_karst.py:validate_registry",
+          "src/aguayluz/cave_karst.py:verify_event_chain"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/validate_cave_karst_registry.py"
+        ],
+        "symbols": [
+          "scripts/validate_cave_karst_registry.py:main"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_cave_karst_monitor.py",
+          "tests/test_gui_parity.py"
+        ]
+      }
     }
   ],
   "exceptions": []
