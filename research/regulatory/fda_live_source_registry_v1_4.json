@@ -1,0 +1,122 @@
+{
+  "registry_version": "fda-live-source-registry/v1.4",
+  "status": "design_only_disabled",
+  "authority_reviewed_at": "2026-08-04",
+  "activation": {
+    "network_implementation_allowed": false,
+    "scheduler_registration_allowed": false,
+    "production_persistence_allowed": false,
+    "credentials_allowed": false,
+    "requires_separate_explicit_authorization": true
+  },
+  "sources": [
+    {
+      "source_id": "FDA_DEVICE_REGISTRATION_LISTING_OPENFDA",
+      "record_families": ["establishment", "registration", "device_listing"],
+      "authority": "official_fda_openfda",
+      "access_modes": ["public_api", "bulk_download"],
+      "authentication": "optional_api_key",
+      "license": "public_domain_cc0",
+      "documented_freshness": "monthly",
+      "canonical_limit": "source_asserted_registration_and_listing_only",
+      "prohibitions": [
+        "do_not_treat_registration_as_fda_approval",
+        "do_not_infer_environmental_permit_status",
+        "do_not_auto_merge_facilities"
+      ]
+    },
+    {
+      "source_id": "FDA_DEVICE_REGISTRATION_LISTING_ACCESSDATA",
+      "record_families": ["establishment", "registration", "device_listing"],
+      "authority": "official_fda_accessdata",
+      "access_modes": ["html_search", "download_files"],
+      "authentication": "none_for_public_search",
+      "license": "federal_public_information_terms_review_required",
+      "documented_freshness": "weekly_usually_monday",
+      "query_limit": "maximum_100_establishments_per_search",
+      "canonical_limit": "public_releasable_search_and_download_information",
+      "prohibitions": [
+        "no_screen_scraping_until_terms_and_robots_review",
+        "do_not_treat_registration_as_fda_approval"
+      ]
+    },
+    {
+      "source_id": "FDA_DEVICE_ENFORCEMENT_OPENFDA",
+      "record_families": ["recall", "enforcement_report"],
+      "authority": "official_fda_openfda",
+      "access_modes": ["public_api", "bulk_download"],
+      "authentication": "optional_api_key",
+      "license": "federal_public_information_terms_review_required",
+      "documented_freshness": "weekly",
+      "coverage_start": "2004",
+      "canonical_limit": "publicly_releasable_recall_enterprise_system_records",
+      "prohibitions": [
+        "do_not_use_as_public_alert_lifecycle_tracker",
+        "preserve_corrections_and_source_status",
+        "do_not_infer_current_recall_status_beyond_source_statement"
+      ]
+    },
+    {
+      "source_id": "FDA_INSPECTION_CLASSIFICATION_DASHBOARD",
+      "record_families": ["inspection", "inspection_classification"],
+      "authority": "official_fda_data_dashboard",
+      "access_modes": ["dashboard", "download_if_official_export_available"],
+      "authentication": "none_for_public_access",
+      "license": "terms_review_required",
+      "documented_freshness": "weekly",
+      "canonical_limit": "non_comprehensive_public_segment_of_final_classifications",
+      "prohibitions": [
+        "never_claim_complete_inspection_universe",
+        "do_not_treat_absence_as_no_inspection",
+        "do_not_treat_posting_delay_as_current_compliance",
+        "preserve_project_area_specific_classifications"
+      ]
+    },
+    {
+      "source_id": "FDA_WARNING_LETTERS",
+      "record_families": ["warning_letter", "response_letter", "closeout_letter"],
+      "authority": "official_fda_gov",
+      "access_modes": ["html_search", "xlsx_download", "document_fetch"],
+      "authentication": "none_for_public_access",
+      "license": "terms_review_required",
+      "documented_freshness": "posting_based_no_fixed_sla_asserted",
+      "canonical_limit": "posted_letters_and_linked_public_documents",
+      "prohibitions": [
+        "do_not_treat_warning_letter_as_final_adjudication",
+        "preserve_response_and_closeout_links",
+        "do_not_infer_current_regulatory_status_without_later_records"
+      ]
+    },
+    {
+      "source_id": "FDA_WEEKLY_ENFORCEMENT_REPORT",
+      "record_families": ["enforcement_report", "recall"],
+      "authority": "official_fda_gov",
+      "access_modes": ["html_search", "official_download_if_available"],
+      "authentication": "none_for_public_access",
+      "license": "terms_review_required",
+      "documented_freshness": "weekly",
+      "canonical_limit": "classified_recalls_published_in_weekly_report",
+      "prohibitions": [
+        "do_not_replace_openfda_raw_lineage",
+        "preserve_correction_history",
+        "do_not_issue_public_alerts_from_ingest_alone"
+      ]
+    }
+  ],
+  "global_controls": {
+    "allowed_hosts": [
+      "api.fda.gov",
+      "open.fda.gov",
+      "www.fda.gov",
+      "www.accessdata.fda.gov",
+      "datadashboard.fda.gov"
+    ],
+    "deny_redirect_to_unlisted_host": true,
+    "raw_bytes_required": true,
+    "sha256_required": true,
+    "retrieved_at_required": true,
+    "source_url_required": true,
+    "normalizer_version_required": true,
+    "terms_snapshot_required_before_activation": true
+  }
+}
