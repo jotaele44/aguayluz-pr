@@ -1,0 +1,67 @@
+{
+  "schema_version": "aguayluz.registry-monitor-polygon-validation/v0.7",
+  "recorded_at": "2026-08-04T22:28:00-04:00",
+  "vector": "MONITOR_REGISTRY_REPLY_AND_VALIDATE_CRIM_POLYGONS_v0_7",
+  "repository": "jotaele44/aguayluz-pr",
+  "branch": "data/pr-pharma-geometry-v3-20260803",
+  "status": "BLOCKED_PENDING_REGISTRY_REPLY_AND_OPERATOR_POLYGONS",
+  "gmail_thread": {
+    "thread_id": "19fced1ba1e0aee1",
+    "message_count": 1,
+    "reply_present": false,
+    "attachments_present": false,
+    "referrals_present": false,
+    "fees_present": false,
+    "deadlines_present": false,
+    "authoritative_registry_identifiers_present": false,
+    "last_message": {
+      "id": "19fced1ba1e0aee1",
+      "direction": "SENT",
+      "sent_at_local": "2026-08-04T22:07:59-04:00"
+    }
+  },
+  "polygon_execution": {
+    "operator_output_present": false,
+    "starlink_geojson_present": false,
+    "boehringer_geojson_present": false,
+    "objectid_1094625_verified": false,
+    "objectid_1095803_verified": false,
+    "globalids_verified": false,
+    "cadastral_identifiers_verified": false,
+    "areas_verified": false,
+    "epsg_4326_bounds_verified": false,
+    "topology_verified": false,
+    "non_overlap_verified": false,
+    "direct_runtime_fetch": "FAILED_TOOL_URL_RESTRICTION"
+  },
+  "registry_binding": {
+    "registry_finca_numbers": null,
+    "asiento": null,
+    "diario": null,
+    "instrument_2016": null,
+    "title_chain": null,
+    "legal_descriptions": null,
+    "surveys_or_plats": null,
+    "registry_binding_json_created": false,
+    "reason": "No authoritative registry response or hashed legal/survey record is available."
+  },
+  "promotion": {
+    "starlink_geometry": null,
+    "boehringer_geometry": null,
+    "starlink_promoted": false,
+    "boehringer_promoted": false,
+    "canonical_geojson_changed": false,
+    "flow_model_changed": false
+  },
+  "next_required_inputs": [
+    "Reply or certification from the Manati Registry/KARIBE thread",
+    "Complete crim_candidate_polygons_v0_6 operator output directory or archive",
+    "Hashed deed, registry certification, survey, plat, or legal description for any promotion"
+  ],
+  "preserve": [
+    "NO_PR",
+    "NO_MERGE",
+    "NO_DEPLOYMENT",
+    "KEEP_BOTH_GEOMETRIES_NULL"
+  ]
+}
