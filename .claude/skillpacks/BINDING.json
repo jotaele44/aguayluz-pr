@@ -1,0 +1,55 @@
+{
+  "activation": {
+    "automatic_dispatch": false,
+    "live_polling": false,
+    "notifications": false,
+    "runtime_enabled": false
+  },
+  "authority": {
+    "control_actions": false,
+    "external_writes": false,
+    "merge_release": false,
+    "production_promotion": false
+  },
+  "branch_name": "chore/unified-skillpacks-v1.0.0-a6b1bc59",
+  "capability_count": 7,
+  "capability_ids": [
+    "aguayluz-alert-builder",
+    "aguayluz-federation-export",
+    "aguayluz-hydro-register-import",
+    "aguayluz-operator",
+    "aguayluz-outage-event-ingest",
+    "aguayluz-utility-asset-ingest",
+    "aguayluz-utility-geo-normalizer"
+  ],
+  "conformance_required": [
+    "manifest",
+    "module_hashes",
+    "activation",
+    "non_activation",
+    "alias",
+    "fail_closed",
+    "legacy_parity",
+    "receipt"
+  ],
+  "full_binding_path_inside_bundle": ".claude/skillpacks/BINDING.json",
+  "implementation_roots": [
+    "src/aguayluz",
+    "scripts",
+    ".federation",
+    "config/federation_manifest.yaml"
+  ],
+  "legacy_surfaces": [
+    "AGUAYLUZ_PR_SKILL.md"
+  ],
+  "pinned_base_branch": "main",
+  "pinned_base_commit": "a6b1bc591ef23d0558865d437ab2806319119bbb",
+  "pinned_base_tree": "f15ff4d618b03575d0302c475afa355b3ef53e29",
+  "repository": "aguayluz-pr",
+  "schema_version": "1.0",
+  "skillpack_version": "1.0.0",
+  "test_roots": [
+    "tests",
+    ".github/workflows/validate.yml"
+  ]
+}
