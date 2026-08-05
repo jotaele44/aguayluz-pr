@@ -1,0 +1,21 @@
+{
+  "schema_version": "aguayluz.infrastructure-ontology-source-universe/v0.1",
+  "repository": "jotaele44/aguayluz-pr",
+  "pinned_main_sha": "4a1c400c3f6288c97a7226c4fa4adaffabcc4388",
+  "completion_definition": "100 percent means every distinct vocabulary token in the frozen manifest has a disposition and receipt; it does not mean every term ever used by every utility.",
+  "authorities": [
+    {"id":"AAA","scope":["potable_water","wastewater","facility_labels","project_records"],"status":"manifested_not_ingested"},
+    {"id":"EPA","scope":["drinking_water","wastewater","stormwater","quality_codes"],"status":"manifested_not_ingested"},
+    {"id":"USGS","scope":["hydrology","hydrogeology","site_types","parameters","qualifiers","units"],"status":"manifested_not_ingested"},
+    {"id":"AWWA","scope":["waterworks_engineering","asset_classes","operations"],"status":"manifested_not_ingested"},
+    {"id":"DRNA","scope":["water_resources","groundwater","wells","permits"],"status":"manifested_not_ingested"},
+    {"id":"FEMA","scope":["mitigation","critical_facilities","lifelines"],"status":"manifested_not_ingested"},
+    {"id":"NOAA","scope":["hydrometeorology","coastal_water","quality_flags","units"],"status":"manifested_not_ingested"},
+    {"id":"PREPA_LUMA","scope":["electrical_supply","substations","feeders","backup_power"],"status":"manifested_not_ingested"},
+    {"id":"AGUAYLUZ_CURRENT_MAIN","scope":["enums","literals","aliases","display_labels","relationship_types","units","quality_codes","operational_states"],"status":"bounded_to_pinned_commit"},
+    {"id":"AGUAYLUZ_OPEN_PRS","scope":["PR101","PR119","PR128","PR132"],"status":"ownership_reviewed"}
+  ],
+  "required_accounting": ["source_count","document_count","token_count","mapped_count","ambiguous_count","unmapped_count","deprecated_count","duplicate_count","receipt_count","manifest_sha256"],
+  "runtime_activation": false,
+  "data_rewrite": false
+}
