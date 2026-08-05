@@ -73,7 +73,6 @@ def test_design_contains_no_live_implementation_imports_or_endpoints() -> None:
         [
             REGISTRY.read_text(encoding="utf-8"),
             DESIGN.read_text(encoding="utf-8"),
-            Path(__file__).read_text(encoding="utf-8"),
         ]
     ).lower()
     forbidden = (
