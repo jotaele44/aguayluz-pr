@@ -1,8 +1,11 @@
 {
-  "schema_version": "aguayluz.infrastructure-ontology-source-universe/v0.1",
+  "schema_version": "aguayluz.infrastructure-ontology-source-universe/v0.2",
   "repository": "jotaele44/aguayluz-pr",
   "pinned_main_sha": "4a1c400c3f6288c97a7226c4fa4adaffabcc4388",
+  "certification_main_sha": "d42a7611c2f6fbdd55c37b2d460d5cadbe764618",
   "completion_definition": "100 percent means every distinct vocabulary token in the frozen manifest has a disposition and receipt; it does not mean every term ever used by every utility.",
+  "completion_claim": false,
+  "token_accounting_manifest": "docs/infrastructure_ontology_token_accounting_v0_2.json",
   "authorities": [
     {"id":"AAA","scope":["potable_water","wastewater","facility_labels","project_records"],"status":"manifested_not_ingested"},
     {"id":"EPA","scope":["drinking_water","wastewater","stormwater","quality_codes"],"status":"manifested_not_ingested"},
@@ -12,10 +15,21 @@
     {"id":"FEMA","scope":["mitigation","critical_facilities","lifelines"],"status":"manifested_not_ingested"},
     {"id":"NOAA","scope":["hydrometeorology","coastal_water","quality_flags","units"],"status":"manifested_not_ingested"},
     {"id":"PREPA_LUMA","scope":["electrical_supply","substations","feeders","backup_power"],"status":"manifested_not_ingested"},
-    {"id":"AGUAYLUZ_CURRENT_MAIN","scope":["enums","literals","aliases","display_labels","relationship_types","units","quality_codes","operational_states"],"status":"bounded_to_pinned_commit"},
-    {"id":"AGUAYLUZ_OPEN_PRS","scope":["PR101","PR119","PR128","PR132"],"status":"ownership_reviewed"}
+    {"id":"AGUAYLUZ_CURRENT_MAIN","scope":["enums","literals","aliases","display_labels","relationship_types","units","quality_codes","operational_states"],"status":"repository_wide_extraction_pending","certification_drift_paths":["data/alert_events.jsonl","data/service_events.jsonl"]},
+    {"id":"AGUAYLUZ_OPEN_PRS","scope":["PR101","PR119","PR128","PR132"],"status":"ownership_reviewed_heads_unchanged"}
   ],
-  "required_accounting": ["source_count","document_count","token_count","mapped_count","ambiguous_count","unmapped_count","deprecated_count","duplicate_count","receipt_count","manifest_sha256"],
+  "required_accounting": ["source_count","document_count","token_count","mapped_count","ambiguous_count","unmapped_count","deprecated_count","duplicate_count","receipt_count","token_records_sha256"],
+  "certified_seed_accounting": {
+    "token_count": 12,
+    "mapped_count": 9,
+    "ambiguous_count": 3,
+    "unmapped_count": 0,
+    "deprecated_count": 0,
+    "duplicate_count": 0,
+    "receipt_count": 12,
+    "token_records_sha256": "2ca6ef9d2326c51fe79c959769a6989ba78d49edb6a08af73922d252e1839f41"
+  },
   "runtime_activation": false,
-  "data_rewrite": false
+  "data_rewrite": false,
+  "migration": false
 }
