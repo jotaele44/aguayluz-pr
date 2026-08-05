@@ -41,7 +41,15 @@ def test_receipts_are_frozen_without_provider_acquisition_or_activation() -> Non
     assert receipts["requires_separate_explicit_authorization"] is True
 
     contract = receipts["source_profile_contract"]
-    assert "api.fda.gov" in contract["allowed_hosts"]
+    assert sorted(contract["allowed_hosts"]) == sorted(
+        [
+            "api.fda.gov",
+            "datadashboard.fda.gov",
+            "open.fda.gov",
+            "www.accessdata.fda.gov",
+            "www.fda.gov",
+        ]
+    )
     assert contract["redirects_to_unlisted_hosts_allowed"] is False
     assert contract["credentials_allowed"] is False
     assert contract["raw_bytes_required"] is True
