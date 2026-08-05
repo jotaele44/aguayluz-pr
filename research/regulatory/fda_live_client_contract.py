@@ -15,12 +15,12 @@ import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from enum import StrEnum
+from enum import Enum
 from typing import Protocol
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 
-class FDAClientErrorCode(StrEnum):
+class FDAClientErrorCode(str, Enum):
     CLIENT_DISABLED = "CLIENT_DISABLED"
     TRANSPORT_REQUIRED = "TRANSPORT_REQUIRED"
     HTTPS_REQUIRED = "HTTPS_REQUIRED"
