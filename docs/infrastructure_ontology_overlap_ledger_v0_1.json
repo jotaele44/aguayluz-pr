@@ -1,0 +1,19 @@
+{
+  "schema_version": "aguayluz.infrastructure-ontology-overlap-ledger/v0.1",
+  "pinned_main_sha": "4a1c400c3f6288c97a7226c4fa4adaffabcc4388",
+  "reviewed_pull_requests": [
+    {"pr":101,"head":"c50855876c57c0d10cd3bcea81a6998814863a09","ownership":["canonical_asset_identity","aliases","disclosure","dependency_relationships","impact_projection"],"disposition":"PRESERVE_AND_CROSSWALK","prohibitions":["no_alias_only_asset_merge","no_dependency_edge_promoted_to_hydraulic_truth"]},
+    {"pr":119,"head":"5c3fcb3a5803773ad388b91afc5bc288d4fd4c80","ownership":["water_balance_asset_types","flow_edge_types","lineage","freshness","quality","uncertainty"],"disposition":"CROSSWALK","prohibitions":["no_copy_of_unmerged_contracts","no_residual_as_failure_proof"]},
+    {"pr":128,"head":"fa5f9d7e4b81155634e9f10fcca233fb5d0fb850","ownership":["failure_localization_asset_types","operational_edge_types","localization_grades","promotion_gates"],"disposition":"CROSSWALK","prohibitions":["no_vocabulary_mapping_creates_localization_claim","no_model_only_L4_or_L5"]},
+    {"pr":132,"head":"6b9bf8f170beeb9974abfa6960f67c9b2d21e5a5","ownership":["operational_input_kinds","authority","freshness","quality","disclosure","adapter_receipts"],"disposition":"ADAPT_RECEIPT_SEMANTICS","prohibitions":["no_runtime_adapter_wiring","no_live_polling","no_control_action"]}
+  ],
+  "new_owner": {
+    "namespace": "schemas/infrastructure-ontology/v0.1",
+    "owns": ["concept_registry","source_terms","semantic_mappings","context_rules","deprecations","normalization_receipts"],
+    "does_not_own": ["physical_asset_identity","hydraulic_topology","water_balance_entries","failure_localization","operational_admission"]
+  },
+  "direct_path_overlap": false,
+  "runtime_activation": false,
+  "migration": false,
+  "data_rewrite": false
+}
