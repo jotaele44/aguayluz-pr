@@ -1,0 +1,28 @@
+{
+  "raw_payloads": {
+    "EPA": "{\"facility\":\"EPA Puerto Rico example\",\"status\":\"active\"}",
+    "FDA": "{\"establishment\":\"FDA Dorado example\",\"status\":\"registered\"}",
+    "USGS": "{\"site\":\"USGS 50000000\",\"status\":\"active\"}",
+    "DRNA": "{\"permit\":\"DRNA-WELL-001\",\"status\":\"historical\"}",
+    "PRASA_AAA": "{\"asset\":\"AAA-PLANT-001\",\"status\":\"stale\"}",
+    "PREQB": "{\"permit\":\"PREQB-LEGACY-001\",\"status\":\"superseded\"}"
+  },
+  "observations": [
+    {"observation_id":"AYL_REGOBS_EPA_001","record_family":"permit","provider":"EPA","provider_record_id":"PRR000001","observed_at":"2026-08-01T00:00:00Z","retrieved_at":"2026-08-04T19:00:00Z","source_receipt_id":"AYL_REGRCPT_EPA_001","normalization_version":"epa/v1","evidence_tier":"T1","freshness_state":"current","identifiers":[{"scheme":"epa_id","value":"PRR000001"}],"payload":{"status":"active"}},
+    {"observation_id":"AYL_REGOBS_FDA_001","record_family":"entity","provider":"FDA","provider_record_id":"FEI-1001","observed_at":"2026-07-01T00:00:00Z","retrieved_at":"2026-08-04T19:00:00Z","source_receipt_id":"AYL_REGRCPT_FDA_001","normalization_version":"fda/v1","evidence_tier":"T1","freshness_state":"current","identifiers":[{"scheme":"fei","value":"1001"}],"payload":{"status":"registered"}},
+    {"observation_id":"AYL_REGOBS_USGS_001","record_family":"entity","provider":"USGS","provider_record_id":"50000000","observed_at":"2026-08-03T00:00:00Z","retrieved_at":"2026-08-04T19:00:00Z","source_receipt_id":"AYL_REGRCPT_USGS_001","normalization_version":"usgs/v1","evidence_tier":"T1","freshness_state":"current","identifiers":[{"scheme":"usgs_site_no","value":"50000000"}],"payload":{"site_type":"stream"}},
+    {"observation_id":"AYL_REGOBS_DRNA_001","record_family":"permit","provider":"DRNA","provider_record_id":"DRNA-WELL-001","observed_at":"1998-01-01T00:00:00Z","retrieved_at":"2026-08-04T19:00:00Z","source_receipt_id":"AYL_REGRCPT_DRNA_001","normalization_version":"drna/v1","evidence_tier":"T1","freshness_state":"historical","identifiers":[{"scheme":"drna_permit","value":"DRNA-WELL-001"}],"payload":{"status":"closed"}},
+    {"observation_id":"AYL_REGOBS_AAA_001","record_family":"entity","provider":"PRASA_AAA","provider_record_id":"AAA-PLANT-001","observed_at":"2024-01-01T00:00:00Z","retrieved_at":"2026-08-04T19:00:00Z","source_receipt_id":"AYL_REGRCPT_AAA_001","normalization_version":"aaa/v1","evidence_tier":"T2","freshness_state":"stale","identifiers":[{"scheme":"aaa_asset","value":"AAA-PLANT-001"}],"payload":{"status":"unconfirmed"}},
+    {"observation_id":"AYL_REGOBS_PREQB_001","record_family":"enforcement","provider":"PREQB","provider_record_id":"PREQB-LEGACY-001","observed_at":"2005-01-01T00:00:00Z","retrieved_at":"2026-08-04T19:00:00Z","source_receipt_id":"AYL_REGRCPT_PREQB_001","normalization_version":"preqb/v1","evidence_tier":"T1","freshness_state":"historical","identifiers":[{"scheme":"preqb_case","value":"PREQB-LEGACY-001"}],"payload":{"status":"superseded"}},
+    {"observation_id":"AYL_REGOBS_FDA_DUPLICATE","record_family":"entity","provider":"FDA","provider_record_id":"FEI-1001-B","observed_at":"2026-07-01T00:00:00Z","retrieved_at":"2026-08-04T19:00:00Z","source_receipt_id":"AYL_REGRCPT_FDA_001","normalization_version":"fda/v1","evidence_tier":"T1","freshness_state":"conflicting","identifiers":[{"scheme":"fei","value":"1001"}],"payload":{"municipality":"Arecibo"}}
+  ],
+  "invalid_observations": [
+    {"case":"malformed_provider","record":{"observation_id":"AYL_REGOBS_BAD_001","record_family":"entity","provider":"UNKNOWN","provider_record_id":"x","observed_at":"2026-08-01T00:00:00Z","retrieved_at":"2026-08-04T19:00:00Z","source_receipt_id":"AYL_REGRCPT_BAD_001","normalization_version":"bad/v1","evidence_tier":"T1","freshness_state":"unknown","payload":{}}},
+    {"case":"retracted_without_supersession","record":{"observation_id":"AYL_REGOBS_BAD_002","record_family":"enforcement","provider":"FDA","provider_record_id":"WL-1","observed_at":"2026-08-01T00:00:00Z","retrieved_at":"2026-08-04T19:00:00Z","source_receipt_id":"AYL_REGRCPT_BAD_002","normalization_version":"fda/v1","evidence_tier":"T1","freshness_state":"historical","source_asserted_status":"retracted","payload":{}}}
+  ],
+  "links": {
+    "approved":{"candidate_id":"AYL_REGLINK_FDA_001","observation_id":"AYL_REGOBS_FDA_001","candidate_asset_id":"LOCAL_DORADO_001","decision_state":"approved","match_strength":"hard_identifier","match_features":[{"feature":"provider_identifier","value":"FEI:1001","source_observation_id":"AYL_REGOBS_FDA_001"}],"contradictions":[],"created_at":"2026-08-04T19:00:00Z","decided_at":"2026-08-04T19:05:00Z","decided_by":"governance-test","decision_rationale":"Exact FEI plus compatible address."},
+    "unverified":{"candidate_id":"AYL_REGLINK_FDA_002","observation_id":"AYL_REGOBS_FDA_001","candidate_asset_id":"LOCAL_DORADO_002","decision_state":"needs_review","match_strength":"weak_lexical","match_features":[{"feature":"normalized_name","value":"Boston Scientific","source_observation_id":"AYL_REGOBS_FDA_001"}],"contradictions":[],"created_at":"2026-08-04T19:00:00Z"},
+    "conflicting_approval":{"candidate_id":"AYL_REGLINK_FDA_003","observation_id":"AYL_REGOBS_FDA_DUPLICATE","candidate_asset_id":"LOCAL_DORADO_001","decision_state":"approved","match_strength":"hard_identifier","match_features":[{"feature":"provider_identifier","value":"FEI:1001","source_observation_id":"AYL_REGOBS_FDA_DUPLICATE"}],"contradictions":[{"kind":"municipality","detail":"Source says Arecibo while asset is in Dorado."}],"created_at":"2026-08-04T19:00:00Z","decided_at":"2026-08-04T19:05:00Z","decided_by":"governance-test","decision_rationale":"Must fail because contradiction remains."}
+  }
+}
