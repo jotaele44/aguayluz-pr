@@ -1,0 +1,21 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://aguayluz.local/schemas/infrastructure-ontology/v0.1/mapping.schema.json",
+  "title":"AguaYLuz Ontology Mapping v0.1",
+  "type":"object","additionalProperties":false,
+  "required":["schema_version","mapping_id","source_term_id","concept_ids","mapping_relation","confidence","method","review_status","creates_asset_identity","creates_hydraulic_edge","promotes_evidence"],
+  "properties":{
+    "schema_version":{"const":"aguayluz.infrastructure-ontology-mapping/v0.1"},
+    "mapping_id":{"type":"string","minLength":1},
+    "source_term_id":{"type":"string","minLength":1},
+    "concept_ids":{"type":"array","minItems":1,"uniqueItems":true,"items":{"type":"string","pattern":"^AYL\\."}},
+    "mapping_relation":{"enum":["exact","narrower","broader","related","composite","ambiguous","unmapped","deprecated"]},
+    "confidence":{"type":"number","minimum":0,"maximum":1},
+    "method":{"enum":["authoritative_crosswalk","curated_rule","source_declared","manual_review","unresolved"]},
+    "review_status":{"enum":["accepted","needs_review","rejected","blocked"]},
+    "creates_asset_identity":{"const":false},
+    "creates_hydraulic_edge":{"const":false},
+    "promotes_evidence":{"const":false},
+    "provenance":{"type":"array","minItems":1,"items":{"type":"object"}}
+  }
+}
