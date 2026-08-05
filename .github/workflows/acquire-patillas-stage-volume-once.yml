@@ -1,0 +1,877 @@
+name: Recover permanent Patillas stage-volume package
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/acquire-patillas-stage-volume-once.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: recover-pr121-patillas-v0-4-1
+  cancel-in-progress: false
+
+jobs:
+  recover:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      BRANCH: agent/shared-resource-balance-core-v0-1
+      ORIGINAL_BASE: 17c843595b5cdfbcef4e5f7b1ac6c662092e335d
+      REQUIRED_PARENT: cbc53e18c06acfe78adde5209555cca8fb171f44
+      ARTIFACT_ID: '8912513566'
+      EXPECTED_ARTIFACT_DIGEST: sha256:881537c057a54ca38eb23822487fe84bacfdb601cfe64c16c2c3614bf7f597b2
+      EXPECTED_GDB_SIZE: '27171688'
+      EXPECTED_GDB_MD5: 562ed7f0458a5c84b379963a90b9c8d1
+      EXPECTED_XML_SIZE: '29951'
+      CATALOG_XML_MD5: b2f0ab711efabca8684c2a4e8018f4a8
+      PACKAGE: research/resource_balance/pilots/patillas_guayama_v0_4_1
+    steps:
+      - name: Check out exact PR branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: agent/shared-resource-balance-core-v0-1
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Verify parent, adjudicate drift, and rebase
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_head="$(git rev-parse HEAD)"
+          parent="$(git rev-parse HEAD^)"
+          test "$parent" = "$REQUIRED_PARENT"
+          changed="$(git diff --name-only HEAD^ HEAD)"
+          test "$changed" = '.github/workflows/acquire-patillas-stage-volume-once.yml'
+          git merge-base --is-ancestor "$ORIGINAL_BASE" "$REQUIRED_PARENT"
+          git fetch --no-tags origin main
+          current_main="$(git rev-parse origin/main)"
+          git merge-base --is-ancestor "$ORIGINAL_BASE" "$current_main"
+          test -z "$(git rev-list --merges "$ORIGINAL_BASE..$REQUIRED_PARENT")"
+          python3 - "$ORIGINAL_BASE" "$current_main" "$REQUIRED_PARENT" <<'PY'
+          import json
+          import subprocess
+          import sys
+          from pathlib import Path
+
+          original, current_main, pr_head = sys.argv[1:]
+          def paths(a: str, b: str) -> set[str]:
+              out = subprocess.check_output(
+                  ['git', 'diff', '--name-only', a, b], text=True
+              )
+              return {line for line in out.splitlines() if line}
+
+          main_paths = paths(original, current_main)
+          pr_paths = paths(original, pr_head)
+          resource_paths = {
+              path
+              for path in pr_paths
+              if path.startswith('research/resource_balance/')
+              or path.startswith('schemas/resource-balance/')
+              or path.startswith('docs/PATILLAS_')
+              or path.startswith('docs/RESOURCE_BALANCE_')
+              or path.startswith('docs/resource_balance_')
+              or path == 'docs/adr/ADR-0003-shared-resource-balance-core.md'
+              or path.startswith('tests/test_patillas_')
+              or path == 'tests/test_resource_balance_core.py'
+          }
+          overlap = sorted(main_paths & resource_paths)
+          report = {
+              'schema_version': 'aguayluz.pr121-main-drift-adjudication/v0.4.1',
+              'original_base': original,
+              'current_main': current_main,
+              'pre_recovery_head': pr_head,
+              'main_changed_path_count': len(main_paths),
+              'pr_resource_balance_path_count': len(resource_paths),
+              'exact_overlap': overlap,
+              'decision': 'rebase_permitted' if not overlap else 'abort_overlap',
+          }
+          Path('/tmp/pr121_drift_adjudication.json').write_text(
+              json.dumps(report, indent=2, sort_keys=True) + '\n'
+          )
+          if overlap:
+              raise SystemExit(f'Current-main overlap with PR #121 paths: {overlap}')
+          PY
+          git config user.name 'aguayluz-pr-recovery'
+          git config user.email 'noreply@github.com'
+          git rebase --onto "$current_main" "$ORIGINAL_BASE"
+          printf 'RUN_HEAD=%s\nINITIAL_MAIN=%s\n' "$run_head" "$current_main" >> "$GITHUB_ENV"
+
+      - name: Install source inspection and test tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends gdal-bin python3-gdal unzip jq
+          python3 -m pip install --disable-pip-version-check pytest ruff
+          ogrinfo --version
+
+      - name: Recover artifact and generate permanent package
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/patillas-artifact /tmp/patillas-gdb "$PACKAGE"
+          mkdir -p /tmp/patillas-artifact /tmp/patillas-gdb "$PACKAGE/source/components"
+          api="https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID"
+          curl --fail-with-body --location --retry 4 --retry-all-errors \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            "$api" > /tmp/artifact_metadata.json
+          test "$(jq -r '.digest' /tmp/artifact_metadata.json)" = "$EXPECTED_ARTIFACT_DIGEST"
+          curl --fail-with-body --location --retry 4 --retry-all-errors \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            "$api/zip" > /tmp/patillas-artifact.zip
+          artifact_sha="$(sha256sum /tmp/patillas-artifact.zip | cut -d' ' -f1)"
+          test "sha256:$artifact_sha" = "$EXPECTED_ARTIFACT_DIGEST"
+          unzip -q /tmp/patillas-artifact.zip -d /tmp/patillas-artifact
+          raw_zip="$(find /tmp/patillas-artifact -type f -name 'Patillas_Terrain_2019.gdb.zip' -print -quit)"
+          raw_xml="$(find /tmp/patillas-artifact -type f -name 'geodatabase_Patillas_2019.xml' -print -quit)"
+          raw_headers="$(find /tmp/patillas-artifact -type f -name 'Patillas_Terrain_2019.gdb.zip.headers' -print -quit)"
+          test -n "$raw_zip"; test -n "$raw_xml"; test -n "$raw_headers"
+          test "$(stat -c %s "$raw_zip")" = "$EXPECTED_GDB_SIZE"
+          test "$(md5sum "$raw_zip" | cut -d' ' -f1)" = "$EXPECTED_GDB_MD5"
+          test "$(stat -c %s "$raw_xml")" = "$EXPECTED_XML_SIZE"
+          unzip -q "$raw_zip" -d /tmp/patillas-gdb
+          gdb="$(find /tmp/patillas-gdb -type d -name '*.gdb' -print -quit)"
+          test -n "$gdb"
+          /usr/bin/python3 - "$gdb" "$raw_zip" "$raw_xml" "$raw_headers" "$PACKAGE" <<'PY'
+          from __future__ import annotations
+
+          import csv
+          import hashlib
+          import json
+          import re
+          import shutil
+          import sys
+          from datetime import datetime, timezone
+          from decimal import Decimal
+          from pathlib import Path
+          from typing import Any
+
+          from osgeo import gdal
+
+          gdb = Path(sys.argv[1])
+          raw_zip = Path(sys.argv[2])
+          raw_xml = Path(sys.argv[3])
+          raw_headers = Path(sys.argv[4])
+          package = Path(sys.argv[5])
+          source = package / 'source'
+          components_dir = source / 'components'
+
+          def sha(path: Path) -> str:
+              return hashlib.sha256(path.read_bytes()).hexdigest()
+
+          def md5(path: Path) -> str:
+              return hashlib.md5(path.read_bytes()).hexdigest()  # noqa: S324
+
+          def canonical_bytes(value: Any) -> bytes:
+              return (json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n').encode()
+
+          def payload_id(prefix: str, value: Any) -> str:
+              digest = hashlib.sha256(canonical_bytes(value)).hexdigest()
+              return f'{prefix}_{digest[:24]}'
+
+          artifact_meta = json.loads(Path('/tmp/artifact_metadata.json').read_text())
+          ds = gdal.OpenEx(
+              str(gdb),
+              gdal.OF_VECTOR,
+              open_options=['LIST_ALL_TABLES=YES'],
+          )
+          if ds is None:
+              raise SystemExit('Unable to open authoritative FileGDB')
+          layer = ds.GetLayerByName('Patillas2019_volume')
+          if layer is None:
+              raise SystemExit('Patillas2019_volume layer absent')
+          definition = layer.GetLayerDefn()
+          fields = [definition.GetFieldDefn(i).GetName() for i in range(definition.GetFieldCount())]
+          required = {'Pool_Elevation_m', 'Storage_capacity_mcm'}
+          if not required.issubset(fields):
+              raise SystemExit(f'Published fields missing: {sorted(required - set(fields))}')
+
+          rows: list[dict[str, Any]] = []
+          layer.ResetReading()
+          for source_order, feature in enumerate(layer):
+              stage = Decimal(str(feature.GetField('Pool_Elevation_m'))).quantize(Decimal('0.01'))
+              storage = Decimal(str(feature.GetField('Storage_capacity_mcm'))).quantize(Decimal('0.01'))
+              rows.append(
+                  {
+                      'source_order': source_order,
+                      'source_fid': int(feature.GetFID()),
+                      'pool_elevation_m_prvd02': format(stage, '.2f'),
+                      'storage_capacity_mcm': format(storage, '.2f'),
+                      'storage_capacity_m3': int(storage * Decimal('1000000')),
+                  }
+              )
+          if len(rows) != 24:
+              raise SystemExit(f'Expected 24 published rows, found {len(rows)}')
+          stages = [Decimal(row['pool_elevation_m_prvd02']) for row in rows]
+          storage = [Decimal(row['storage_capacity_mcm']) for row in rows]
+          if any(right <= left for left, right in zip(stages, stages[1:])):
+              raise SystemExit('Published stage is not strictly increasing')
+          if any(right < left for left, right in zip(storage, storage[1:])):
+              raise SystemExit('Published storage decreases')
+          plateaus = [
+              [format(stages[i], '.2f'), format(stages[i + 1], '.2f'), format(storage[i], '.2f')]
+              for i in range(len(rows) - 1)
+              if storage[i + 1] == storage[i]
+          ]
+          if plateaus != [['44.55', '45.55', '0.00']]:
+              raise SystemExit(f'Unexpected published-precision plateau set: {plateaus}')
+          if rows[-1]['pool_elevation_m_prvd02'] != '67.55' or rows[-1]['storage_capacity_mcm'] != '12.96':
+              raise SystemExit('Published 67.55 m / 12.96 million m3 anchor mismatch')
+
+          physical_name = None
+          items = ds.GetLayerByName('GDB_Items')
+          if items is not None:
+              item_def = items.GetLayerDefn()
+              item_fields = [item_def.GetFieldDefn(i).GetName() for i in range(item_def.GetFieldCount())]
+              items.ResetReading()
+              for feature in items:
+                  values = {name: feature.GetField(name) for name in item_fields}
+                  searchable = '\n'.join(str(value) for value in values.values() if value is not None)
+                  if 'Patillas2019_volume' not in searchable:
+                      continue
+                  if 'PhysicalName' in values and values['PhysicalName']:
+                      physical_name = str(values['PhysicalName'])
+                  if not physical_name:
+                      match = re.search(r'<PhysicalName>([^<]+)</PhysicalName>', searchable)
+                      if match:
+                          physical_name = match.group(1)
+                  if physical_name:
+                      break
+          if not physical_name:
+              raise SystemExit('Unable to resolve Patillas2019_volume physical FileGDB name')
+          physical_leaf = physical_name.rsplit('\\', 1)[-1].rsplit('/', 1)[-1]
+          components = [
+              path for path in gdb.iterdir()
+              if path.is_file() and path.name.casefold().startswith(physical_leaf.casefold())
+          ]
+          if not components:
+              raise SystemExit(f'No FileGDB components found for {physical_leaf}')
+          component_manifest = []
+          for path in sorted(components, key=lambda value: value.name):
+              destination = components_dir / path.name
+              shutil.copyfile(path, destination)
+              component_manifest.append(
+                  {'name': path.name, 'size_bytes': destination.stat().st_size, 'sha256': sha(destination)}
+              )
+
+          csv_path = source / 'Patillas2019_volume.source_order.csv'
+          with csv_path.open('w', encoding='utf-8', newline='') as handle:
+              writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+              writer.writeheader()
+              writer.writerows(rows)
+
+          raw_header_sha = sha(raw_headers)
+          blocks = re.split(r'\r?\n\r?\n', raw_headers.read_text(encoding='utf-8', errors='replace').strip())
+          parsed_blocks = []
+          sensitive = {'authorization', 'cookie', 'set-cookie', 'proxy-authorization'}
+          for block in blocks:
+              lines = [line for line in block.splitlines() if line.strip()]
+              if not lines:
+                  continue
+              entry = {'status_line': lines[0], 'headers': {}}
+              for line in lines[1:]:
+                  if ':' not in line:
+                      continue
+                  name, value = line.split(':', 1)
+                  key = name.strip().lower()
+                  if key in sensitive:
+                      entry['headers'][key] = '[redacted]'
+                  else:
+                      entry['headers'][key] = value.strip()
+              parsed_blocks.append(entry)
+          headers_payload = {
+              'schema_version': 'aguayluz.http-header-receipt/v0.4.1',
+              'raw_header_sha256': raw_header_sha,
+              'redacted_sensitive_header_names': sorted(sensitive),
+              'response_chain': parsed_blocks,
+          }
+          headers_path = source / 'http_headers.json'
+          headers_path.write_bytes(canonical_bytes(headers_payload))
+
+          parsed_payload = {
+              'schema_version': 'aguayluz.patillas-stage-volume-table/v0.4.1',
+              'table_name': 'Patillas2019_volume',
+              'datum': 'PRVD02',
+              'source_order_preserved': True,
+              'ocr_used': False,
+              'inserted_rows': 0,
+              'corrected_values': 0,
+              'row_count': len(rows),
+              'source_fields': ['Pool_Elevation_m', 'Storage_capacity_mcm'],
+              'points': rows,
+              'published_precision_contradictions': [
+                  {
+                      'kind': 'equal_storage_at_adjacent_increasing_stages',
+                      'lower_stage_m_prvd02': '44.55',
+                      'upper_stage_m_prvd02': '45.55',
+                      'published_storage_mcm': '0.00',
+                      'disposition': 'preserve_values_and_prohibit_interpolation_across_interval',
+                  }
+              ],
+          }
+          parsed_path = package / 'parsed_stage_volume_table.json'
+          parsed_path.write_bytes(canonical_bytes(parsed_payload))
+
+          receipt_seed = {
+              'schema_version': 'aguayluz.authoritative-stage-volume-source-receipt/v0.4.1',
+              'publisher': 'U.S. Geological Survey',
+              'sciencebase_item_id': '5f45726282ce4c3d12251b6e',
+              'report_doi': '10.3133/sim3471',
+              'data_release_doi': '10.5066/P9Y2SCY1',
+              'source_url': 'https://www.sciencebase.gov/catalog/file/get/5f45726282ce4c3d12251b6e?f=__disk__98%2F44%2Fc9%2F9844c9122749700de25ae4f702abd098c3a3308b',
+              'actions_artifact': {
+                  'id': int(artifact_meta['id']),
+                  'name': artifact_meta['name'],
+                  'created_at': artifact_meta['created_at'],
+                  'expires_at': artifact_meta['expires_at'],
+                  'digest': artifact_meta['digest'],
+              },
+              'retrieval_time': next(
+                  (
+                      block['headers'].get('date')
+                      for block in reversed(parsed_blocks)
+                      if block['headers'].get('date')
+                  ),
+                  artifact_meta['created_at'],
+              ),
+              'filegdb_archive': {
+                  'name': raw_zip.name,
+                  'size_bytes': raw_zip.stat().st_size,
+                  'published_md5': '562ed7f0458a5c84b379963a90b9c8d1',
+                  'observed_md5': md5(raw_zip),
+                  'sha256': sha(raw_zip),
+              },
+              'metadata_xml': {
+                  'name': raw_xml.name,
+                  'size_bytes': raw_xml.stat().st_size,
+                  'catalog_md5': 'b2f0ab711efabca8684c2a4e8018f4a8',
+                  'observed_md5': md5(raw_xml),
+                  'sha256': sha(raw_xml),
+                  'checksum_state': 'catalog_md5_contradiction_preserved',
+              },
+              'http_headers': {'path': 'source/http_headers.json', 'sha256': sha(headers_path)},
+              'table': {
+                  'name': 'Patillas2019_volume',
+                  'physical_name': physical_leaf,
+                  'row_count': 24,
+                  'source_order_csv': {'path': 'source/Patillas2019_volume.source_order.csv', 'sha256': sha(csv_path)},
+                  'components': component_manifest,
+              },
+              'parsed_table': {'path': 'parsed_stage_volume_table.json', 'sha256': sha(parsed_path)},
+              'evidence_tier': 'T1',
+              'claim_boundary': 'The receipt preserves source bytes and published values; it does not establish operational loss, cause, or current reservoir condition.',
+          }
+          receipt_id = payload_id('AYL_PATILLAS_RCPT', receipt_seed)
+
+          model_payload = {
+              'schema_version': 'aguayluz.stage-storage-model/v0.4.1',
+              'model_id': 'lago-patillas-stage-storage-2019-prvd02-v0.4.1',
+              'model_version': 'usgs-2019-published-table-v0.4.1',
+              'reservoir_asset_id': 'USGS_50093045',
+              'status': 'materialized_authoritative_with_published_precision_plateau',
+              'source_receipt_id': receipt_id,
+              'datum': 'PRVD02',
+              'stage_unit': 'm',
+              'storage_unit': 'm3',
+              'valid_from': '2019-08-16T00:00:00Z',
+              'valid_until': None,
+              'points': [
+                  {
+                      'source_order': row['source_order'],
+                      'stage_m_prvd02': row['pool_elevation_m_prvd02'],
+                      'storage_m3': row['storage_capacity_m3'],
+                  }
+                  for row in rows
+              ],
+              'interpolation_policy': 'piecewise_linear_between_adjacent_published_points_except_explicit_plateau_intervals',
+              'prohibited_intervals': [
+                  {
+                      'lower_stage_m_prvd02': '44.55',
+                      'upper_stage_m_prvd02': '45.55',
+                      'reason': 'published_storage_rounds_to_0.00_mcm_at_both_endpoints',
+                  }
+              ],
+              'extrapolation_policy': 'prohibited',
+              'published_numeric_resolution': {
+                  'stage_m': '0.01',
+                  'storage_mcm': '0.01',
+                  'storage_m3': 10000,
+                  'representation_half_resolution_storage_m3': 5000,
+              },
+              'physical_uncertainty_status': 'not_published_in_stage_volume_table',
+              'operational_balance_eligible': False,
+              'strict_storage_monotonicity_claim': False,
+              'nondecreasing_storage_verified': True,
+              'spillway_anchor': {'stage_m_prvd02': '67.55', 'storage_m3': 12960000},
+          }
+          model_path = package / 'lago_patillas_stage_storage_model.json'
+          model_path.write_bytes(canonical_bytes(model_payload))
+
+          receipt_payload = {
+              **receipt_seed,
+              'receipt_id': receipt_id,
+              'model': {'path': 'lago_patillas_stage_storage_model.json', 'sha256': sha(model_path)},
+          }
+          receipt_payload['receipt_payload_sha256'] = hashlib.sha256(
+              canonical_bytes(receipt_payload)
+          ).hexdigest()
+          receipt_path = package / 'source_receipt.json'
+          receipt_path.write_bytes(canonical_bytes(receipt_payload))
+
+          readiness = {
+              'schema_version': 'aguayluz.real-window-readiness/v0.4.1',
+              'pilot_id': 'patillas-guayama-synchronized-admission-v0.4.1',
+              'stage_volume_table_materialized': True,
+              'stage_volume_model_operational_balance_eligible': False,
+              'status': 'blocked',
+              'blockers': [
+                  'physical_stage_storage_uncertainty_not_adjudicated',
+                  'missing_synchronized_T1_direct_treatment_withdrawal',
+                  'missing_synchronized_T1_downstream_terminal_flow',
+                  'missing_full_window_gate_or_canal_release',
+                  'missing_area_weighted_precipitation_volume',
+                  'missing_evaporation_volume',
+                  'missing_documented_operational_loss_volume',
+                  'missing_verified_current_calibration_and_revision_state',
+              ],
+              'real_balance_executed': False,
+              'root_cause_claim': None,
+          }
+          (package / 'real_window_readiness.json').write_bytes(canonical_bytes(readiness))
+          shutil.copyfile('/tmp/pr121_drift_adjudication.json', package / 'main_drift_adjudication.json')
+          PY
+
+          cat > "$PACKAGE/model.py" <<'PY'
+          """Authoritative Lago Patillas stage-storage table contract v0.4.1."""
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          from copy import deepcopy
+          from decimal import Decimal
+          from pathlib import Path
+          from typing import Any, Mapping
+
+          PLATEAU = (Decimal("44.55"), Decimal("45.55"), 0)
+
+
+          def canonical_bytes(value: Any) -> bytes:
+              return (json.dumps(value, sort_keys=True, separators=(",", ":")) + "\n").encode()
+
+
+          def sha256_path(path: Path) -> str:
+              return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+          def load_json(path: Path) -> Any:
+              return json.loads(path.read_text(encoding="utf-8"))
+
+
+          def validate_model(model: Mapping[str, Any]) -> list[str]:
+              errors: list[str] = []
+              if model.get("datum") != "PRVD02":
+                  errors.append("datum_mismatch")
+              points = list(model.get("points", []))
+              if len(points) != 24:
+                  errors.append("truncated_table")
+                  return sorted(set(errors))
+              stages = [Decimal(str(point["stage_m_prvd02"])) for point in points]
+              storage = [int(point["storage_m3"]) for point in points]
+              if any(right <= left for left, right in zip(stages, stages[1:])):
+                  errors.append("duplicate_or_nonincreasing_stage")
+              if any(right < left for left, right in zip(storage, storage[1:])):
+                  errors.append("decreasing_storage")
+              plateaus = [
+                  (stages[index], stages[index + 1], storage[index])
+                  for index in range(len(points) - 1)
+                  if storage[index + 1] == storage[index]
+              ]
+              if plateaus != [PLATEAU]:
+                  errors.append("published_plateau_mismatch")
+              if stages[-1] != Decimal("67.55") or storage[-1] != 12_960_000:
+                  errors.append("spillway_anchor_mismatch")
+              if model.get("extrapolation_policy") != "prohibited":
+                  errors.append("extrapolation_not_prohibited")
+              if model.get("operational_balance_eligible") is not False:
+                  errors.append("unexpected_operational_eligibility")
+              return sorted(set(errors))
+
+
+          def stage_to_storage(stage: str | float | Decimal, model: Mapping[str, Any]) -> dict[str, Any]:
+              errors = validate_model(model)
+              if errors:
+                  raise ValueError(";".join(errors))
+              target = Decimal(str(stage))
+              points = list(model["points"])
+              stages = [Decimal(str(point["stage_m_prvd02"])) for point in points]
+              if target < stages[0] or target > stages[-1]:
+                  raise ValueError("stage_out_of_range")
+              for point, point_stage in zip(points, stages, strict=True):
+                  if target == point_stage:
+                      return {
+                          "stage_m_prvd02": format(target, "f"),
+                          "storage_m3": int(point["storage_m3"]),
+                          "interpolated": False,
+                          "operational_balance_eligible": False,
+                      }
+              for left, right in zip(points, points[1:], strict=True):
+                  low = Decimal(str(left["stage_m_prvd02"]))
+                  high = Decimal(str(right["stage_m_prvd02"]))
+                  if low < target < high:
+                      if (low, high) == PLATEAU[:2]:
+                          raise ValueError("published_precision_plateau_interval")
+                      fraction = (target - low) / (high - low)
+                      value = Decimal(int(left["storage_m3"])) + fraction * Decimal(
+                          int(right["storage_m3"]) - int(left["storage_m3"])
+                      )
+                      return {
+                          "stage_m_prvd02": format(target, "f"),
+                          "storage_m3": int(value.quantize(Decimal("1"))),
+                          "interpolated": True,
+                          "bracket": [format(low, "f"), format(high, "f")],
+                          "operational_balance_eligible": False,
+                      }
+              raise ValueError("stage_bracket_not_found")
+
+
+          def mutated(model: Mapping[str, Any]) -> dict[str, Any]:
+              return deepcopy(dict(model))
+          PY
+
+          cat > tests/test_patillas_stage_volume_v0_4_1.py <<'PY'
+          from __future__ import annotations
+
+          import csv
+          import hashlib
+          import json
+          from copy import deepcopy
+          from pathlib import Path
+
+          import pytest
+
+          from research.resource_balance.pilots.patillas_guayama_v0_4_1.model import (
+              load_json,
+              stage_to_storage,
+              validate_model,
+          )
+
+          ROOT = Path(__file__).resolve().parents[1]
+          PACKAGE = ROOT / "research/resource_balance/pilots/patillas_guayama_v0_4_1"
+
+
+          def model() -> dict:
+              return load_json(PACKAGE / "lago_patillas_stage_storage_model.json")
+
+
+          def test_source_order_table_is_complete_and_unmodified() -> None:
+              parsed = load_json(PACKAGE / "parsed_stage_volume_table.json")
+              assert parsed["row_count"] == 24
+              assert parsed["ocr_used"] is False
+              assert parsed["inserted_rows"] == 0
+              assert parsed["corrected_values"] == 0
+              assert [point["source_order"] for point in parsed["points"]] == list(range(24))
+              assert parsed["points"][0]["pool_elevation_m_prvd02"] == "44.55"
+              assert parsed["points"][1]["pool_elevation_m_prvd02"] == "45.55"
+              assert parsed["points"][0]["storage_capacity_mcm"] == "0.00"
+              assert parsed["points"][1]["storage_capacity_mcm"] == "0.00"
+              assert parsed["points"][-1]["pool_elevation_m_prvd02"] == "67.55"
+              assert parsed["points"][-1]["storage_capacity_mcm"] == "12.96"
+              with (PACKAGE / "source/Patillas2019_volume.source_order.csv").open(newline="") as handle:
+                  assert list(csv.DictReader(handle)) == [
+                      {key: str(value) for key, value in point.items()} for point in parsed["points"]
+                  ]
+
+
+          def test_model_accepts_only_the_published_plateau() -> None:
+              payload = model()
+              assert validate_model(payload) == []
+              assert payload["strict_storage_monotonicity_claim"] is False
+              assert payload["nondecreasing_storage_verified"] is True
+              assert payload["operational_balance_eligible"] is False
+
+
+          @pytest.mark.parametrize(
+              ("mutation", "error"),
+              [
+                  (lambda value: value.update({"datum": "mean_sea_level"}), "datum_mismatch"),
+                  (lambda value: value["points"].pop(), "truncated_table"),
+                  (
+                      lambda value: value["points"][1].update(
+                          {"stage_m_prvd02": value["points"][0]["stage_m_prvd02"]}
+                      ),
+                      "duplicate_or_nonincreasing_stage",
+                  ),
+                  (
+                      lambda value: value["points"][5].update(
+                          {"storage_m3": value["points"][4]["storage_m3"] - 1}
+                      ),
+                      "decreasing_storage",
+                  ),
+                  (
+                      lambda value: value["points"][-1].update({"storage_m3": 12_950_000}),
+                      "spillway_anchor_mismatch",
+                  ),
+              ],
+          )
+          def test_invalid_models_fail_closed(mutation, error: str) -> None:
+              payload = deepcopy(model())
+              mutation(payload)
+              assert error in validate_model(payload)
+
+
+          def test_plateau_interval_is_preserved_and_not_interpolated() -> None:
+              payload = model()
+              assert stage_to_storage("44.55", payload)["storage_m3"] == 0
+              assert stage_to_storage("45.55", payload)["storage_m3"] == 0
+              with pytest.raises(ValueError, match="published_precision_plateau_interval"):
+                  stage_to_storage("45.00", payload)
+
+
+          def test_safe_interpolation_is_replayable() -> None:
+              first = stage_to_storage("66.05", model())
+              second = stage_to_storage("66.05", model())
+              assert first == second
+              assert first["interpolated"] is True
+              assert first["operational_balance_eligible"] is False
+
+
+          @pytest.mark.parametrize("stage", ["44.54", "67.56"])
+          def test_out_of_range_stage_is_rejected(stage: str) -> None:
+              with pytest.raises(ValueError, match="stage_out_of_range"):
+                  stage_to_storage(stage, model())
+
+
+          def test_receipt_and_freeze_manifest_cross_bind_every_permanent_byte() -> None:
+              receipt = load_json(PACKAGE / "source_receipt.json")
+              payload_hash = receipt.pop("receipt_payload_sha256")
+              canonical = (json.dumps(receipt, sort_keys=True, separators=(",", ":")) + "\n").encode()
+              assert hashlib.sha256(canonical).hexdigest() == payload_hash
+              manifest = load_json(PACKAGE / "freeze_manifest.json")
+              for entry in manifest["entries"]:
+                  path = ROOT / entry["path"]
+                  raw = path.read_bytes()
+                  assert len(raw) == entry["size_bytes"]
+                  assert hashlib.sha256(raw).hexdigest() == entry["sha256"]
+              assert receipt["table"]["row_count"] == 24
+              assert receipt["filegdb_archive"]["published_md5"] == receipt["filegdb_archive"]["observed_md5"]
+              assert receipt["metadata_xml"]["checksum_state"] == "catalog_md5_contradiction_preserved"
+
+
+          def test_real_window_remains_blocked() -> None:
+              readiness = load_json(PACKAGE / "real_window_readiness.json")
+              assert readiness["stage_volume_table_materialized"] is True
+              assert readiness["status"] == "blocked"
+              assert readiness["real_balance_executed"] is False
+              assert readiness["root_cause_claim"] is None
+          PY
+
+          /usr/bin/python3 - "$PACKAGE" <<'PY'
+          import hashlib
+          import json
+          import sys
+          from pathlib import Path
+
+          package = Path(sys.argv[1])
+          root = Path.cwd()
+          permanent = sorted(
+              [path for path in package.rglob('*') if path.is_file()]
+              + [root / 'tests/test_patillas_stage_volume_v0_4_1.py']
+          )
+          entries = []
+          for path in permanent:
+              raw = path.read_bytes()
+              entries.append(
+                  {
+                      'path': path.relative_to(root).as_posix(),
+                      'size_bytes': len(raw),
+                      'sha256': hashlib.sha256(raw).hexdigest(),
+                  }
+              )
+          manifest = {
+              'schema_version': 'aguayluz.patillas-stage-volume-freeze/v0.4.1',
+              'entries': entries,
+              'temporary_acquisition_workflow_present_in_final_tree': False,
+          }
+          (package / 'freeze_manifest.json').write_text(
+              json.dumps(manifest, indent=2, sort_keys=True) + '\n'
+          )
+          rollback = {
+              'schema_version': 'aguayluz.rollback-manifest/v0.4.1',
+              'rollback_kind': 'delete_additive_v0_4_1_paths',
+              'paths': sorted(
+                  entry['path'] for entry in entries
+                  if '/source/' in entry['path']
+                  or entry['path'].endswith('/model.py')
+                  or 'v0_4_1' in entry['path']
+              )
+              + [
+                  'research/resource_balance/pilots/patillas_guayama_v0_4_1/freeze_manifest.json',
+                  'research/resource_balance/pilots/patillas_guayama_v0_4_1/rollback_manifest.json',
+              ],
+              'removed_temporary_path': '.github/workflows/acquire-patillas-stage-volume-once.yml',
+              'runtime_activation': False,
+              'data_migration': False,
+              'real_balance_execution': False,
+          }
+          (package / 'rollback_manifest.json').write_text(
+              json.dumps(rollback, indent=2, sort_keys=True) + '\n'
+          )
+          # Rebind manifest after rollback creation, excluding manifest itself.
+          permanent = sorted(
+              [path for path in package.rglob('*') if path.is_file() and path.name != 'freeze_manifest.json']
+              + [root / 'tests/test_patillas_stage_volume_v0_4_1.py']
+          )
+          manifest['entries'] = []
+          for path in permanent:
+              raw = path.read_bytes()
+              manifest['entries'].append(
+                  {
+                      'path': path.relative_to(root).as_posix(),
+                      'size_bytes': len(raw),
+                      'sha256': hashlib.sha256(raw).hexdigest(),
+                  }
+              )
+          (package / 'freeze_manifest.json').write_text(
+              json.dumps(manifest, indent=2, sort_keys=True) + '\n'
+          )
+          PY
+
+      - name: Focused recovery verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m compileall -q "$PACKAGE/model.py" tests/test_patillas_stage_volume_v0_4_1.py
+          ruff check "$PACKAGE/model.py" tests/test_patillas_stage_volume_v0_4_1.py
+          pytest -q \
+            tests/test_resource_balance_core.py \
+            tests/test_patillas_guayama_frozen_pilot.py \
+            tests/test_patillas_guayama_admission_v0_3.py \
+            tests/test_patillas_stage_volume_v0_4_1.py
+          test ! -e .github/workflows/acquire-patillas-stage-volume-once.yml || rm .github/workflows/acquire-patillas-stage-volume-once.yml
+          test ! -e .github/workflows/acquire-patillas-stage-volume-once.yml
+          git diff --check
+
+      - name: Commit, reconcile final main movement, and push
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -A
+          git commit -m 'Materialize permanent Lago Patillas stage-volume table v0.4.1'
+          git fetch --no-tags origin main
+          latest_main="$(git rev-parse origin/main)"
+          if test "$latest_main" != "$INITIAL_MAIN"; then
+            python3 - "$INITIAL_MAIN" "$latest_main" <<'PY'
+            import subprocess
+            import sys
+            old, new = sys.argv[1:]
+            main_paths = set(subprocess.check_output(['git', 'diff', '--name-only', old, new], text=True).splitlines())
+            pr_paths = set(subprocess.check_output(['git', 'diff', '--name-only', old, 'HEAD'], text=True).splitlines())
+            overlap = sorted(main_paths & pr_paths)
+            if overlap:
+                raise SystemExit(f'Late main movement overlaps recovered PR: {overlap}')
+            PY
+            git rebase "$latest_main"
+          fi
+          final_sha="$(git rev-parse HEAD)"
+          test "$(git merge-base HEAD origin/main)" = "$(git rev-parse origin/main)"
+          test ! -e .github/workflows/acquire-patillas-stage-volume-once.yml
+          allowed="$(git diff --name-only origin/main HEAD | grep -Ev '^(docs/(PATILLAS_|RESOURCE_BALANCE_|resource_balance_|adr/ADR-0003)|research/resource_balance/|schemas/resource-balance/|tests/test_(resource_balance|patillas_))' || true)"
+          test -z "$allowed"
+          git push --force-with-lease="refs/heads/$BRANCH:$RUN_HEAD" origin "HEAD:refs/heads/$BRANCH"
+          printf 'FINAL_SHA=%s\nFINAL_MAIN=%s\n' "$final_sha" "$(git rev-parse origin/main)" >> "$GITHUB_ENV"
+
+      - name: Wait for exact-head standard CI
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          required=(validate 'GUI capability parity' desktop-build CodeQL Semgrep 'Secret scan' 'Federation template drift')
+          for attempt in $(seq 1 160); do
+            response="$(curl --fail-with-body --silent --show-error \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H 'Accept: application/vnd.github+json' \
+              -H 'X-GitHub-Api-Version: 2022-11-28' \
+              "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$FINAL_SHA&event=pull_request&per_page=100")"
+            all_present=true
+            all_green=true
+            for name in "${required[@]}"; do
+              count="$(jq --arg name "$name" '[.workflow_runs[] | select(.name == $name)] | length' <<<"$response")"
+              if test "$count" -eq 0; then all_present=false; all_green=false; continue; fi
+              status="$(jq -r --arg name "$name" '[.workflow_runs[] | select(.name == $name)] | sort_by(.created_at) | last | .status' <<<"$response")"
+              conclusion="$(jq -r --arg name "$name" '[.workflow_runs[] | select(.name == $name)] | sort_by(.created_at) | last | .conclusion // ""' <<<"$response")"
+              if test "$status" = completed && test "$conclusion" != success; then
+                echo "$name failed with $conclusion" >&2
+                exit 1
+              fi
+              if test "$status" != completed || test "$conclusion" != success; then all_green=false; fi
+            done
+            if $all_present && $all_green; then exit 0; fi
+            sleep 15
+          done
+          echo 'Timed out waiting for exact-head CI' >&2
+          exit 1
+
+      - name: Verify PR controls and publish certification
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          pr="$(curl --fail-with-body --silent --show-error \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/121")"
+          test "$(jq -r .state <<<"$pr")" = open
+          test "$(jq -r .draft <<<"$pr")" = true
+          test "$(jq -r '.merged_at // ""' <<<"$pr")" = ''
+          test "$(jq -r .head.sha <<<"$pr")" = "$FINAL_SHA"
+          query='query($owner:String!,$name:String!,$number:Int!){repository(owner:$owner,name:$name){pullRequest(number:$number){autoMergeRequest{enabledAt}reviewThreads(first:100){nodes{isResolved}}}}}'
+          graph="$(curl --fail-with-body --silent --show-error \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'Content-Type: application/json' \
+            https://api.github.com/graphql \
+            -d "$(jq -n --arg query "$query" --arg owner "${GITHUB_REPOSITORY%/*}" --arg name "${GITHUB_REPOSITORY#*/}" '{query:$query,variables:{owner:$owner,name:$name,number:121}}')")"
+          test "$(jq -r '.data.repository.pullRequest.autoMergeRequest // ""' <<<"$graph")" = ''
+          unresolved="$(jq '[.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false)] | length' <<<"$graph")"
+          test "$unresolved" -eq 0
+          comment="$(cat <<EOF
+          ## Exact-head permanent Patillas stage-volume v0.4.1 certification
+
+          Certified head: \`$FINAL_SHA\`
+          Rebased current main: \`$FINAL_MAIN\`
+
+          - recovered Actions artifact \`$ARTIFACT_ID\` and verified digest \`$EXPECTED_ARTIFACT_DIGEST\`;
+          - verified the authoritative FileGDB archive at $EXPECTED_GDB_SIZE bytes and MD5 \`$EXPECTED_GDB_MD5\`;
+          - preserved the metadata XML catalog-MD5 contradiction rather than rewriting it;
+          - froze all 24 \`Patillas2019_volume\` rows in source order without OCR, insertion, or correction;
+          - preserved the 44.55–45.55 m PRVD02 / 0.00 million m³ published-precision plateau and prohibited interpolation across it;
+          - removed \`.github/workflows/acquire-patillas-stage-volume-once.yml\` from the final tree;
+          - exact current-main drift had zero overlap with PR #121 resource-balance paths;
+          - focused resource-balance and v0.4.1 tests passed;
+          - Validate, GUI parity/E2E, desktop matrix, CodeQL, Semgrep, Secret scan, and Federation drift are terminal success on the exact head;
+          - PR remains open, draft, unmerged, with zero unresolved review threads and no auto-merge;
+          - no real balance, runtime, API, GUI, export, alert, notification, scheduler, migration, deprecation, or control action was activated.
+          EOF
+          )"
+          curl --fail-with-body --silent --show-error \
+            -X POST \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/issues/121/comments" \
+            -d "$(jq -n --arg body "$comment" '{body:$body}')" >/dev/null
