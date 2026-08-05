@@ -1,0 +1,110 @@
+{
+  "fixture_revision": "fda-live-client-transport/v1.8",
+  "synthetic": true,
+  "provider_acquisition_executed": false,
+  "responses": [
+    {
+      "method": "GET",
+      "url": "https://api.fda.gov/device/registrationlisting.json?limit=1",
+      "sequence": [
+        {
+          "status_code": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"registration-fixture-v1\"",
+            "last-modified": "Wed, 05 Aug 2026 00:00:00 GMT"
+          },
+          "body_text": "{\"results\":[{\"registration_number\":\"123\",\"fei\":\"1001\"}]}"
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "https://api.fda.gov/device/registrationlisting.json?redirect=escape",
+      "sequence": [
+        {
+          "status_code": 302,
+          "headers": {
+            "location": "https://example.invalid/device/registrationlisting.json"
+          },
+          "body_text": ""
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "https://api.fda.gov/device/enforcement.json?rate_limit=1",
+      "sequence": [
+        {
+          "status_code": 429,
+          "headers": {
+            "retry-after": "2",
+            "content-type": "application/json"
+          },
+          "body_text": "{\"error\":\"rate limited\"}"
+        },
+        {
+          "status_code": 200,
+          "headers": {
+            "content-type": "application/json"
+          },
+          "body_text": "{\"results\":[{\"recall_number\":\"Z-0001-2026\"}]}"
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "https://api.fda.gov/device/enforcement.json?transient=1",
+      "sequence": [
+        {
+          "status_code": 500,
+          "headers": {
+            "content-type": "application/json"
+          },
+          "body_text": "{\"error\":\"first transient failure\"}"
+        },
+        {
+          "status_code": 502,
+          "headers": {
+            "content-type": "application/json"
+          },
+          "body_text": "{\"error\":\"second transient failure\"}"
+        },
+        {
+          "status_code": 200,
+          "headers": {
+            "content-type": "application/json"
+          },
+          "body_text": "{\"results\":[{\"recall_number\":\"Z-0002-2026\"}]}"
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "https://api.fda.gov/device/enforcement.json?missing=1",
+      "sequence": [
+        {
+          "status_code": 404,
+          "headers": {
+            "content-type": "application/json"
+          },
+          "body_text": "{\"error\":\"not found\"}"
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "https://api.fda.gov/device/enforcement.json?api_key=SENTINEL_OPENFDA_KEY&limit=1",
+      "sequence": [
+        {
+          "status_code": 200,
+          "headers": {
+            "content-type": "application/json",
+            "etag": "\"sentinel-fixture-v1\""
+          },
+          "body_text": "{\"results\":[{\"recall_number\":\"Z-0003-2026\"}]}"
+        }
+      ]
+    }
+  ]
+}
