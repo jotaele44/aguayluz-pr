@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from jsonschema import Draft202012Validator
 
-from aguayluz.drought_federation import (
+from research.drought.federation import (
     DroughtRecord,
     build_nidis_source_document,
     classify_date_text,
