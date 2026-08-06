@@ -39,9 +39,7 @@ if (REPO_ROOT / "outputs").exists():
 
 a = Analysis(
     [str(REPO_ROOT / "desktop" / "launch.py")],
-    # The project uses a src/ package layout. Adding src as data preserves
-    # bundled resources but does not make aguayluz importable during analysis.
-    pathex=[str(REPO_ROOT), str(REPO_ROOT / "src")],
+    pathex=[str(REPO_ROOT)],
     datas=datas,
     hiddenimports=[
         "uvicorn.logging",
