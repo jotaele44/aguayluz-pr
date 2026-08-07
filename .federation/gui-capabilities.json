@@ -27,7 +27,8 @@
       "dashboard/src/pages"
     ],
     "frontend_api_roots": [
-      "dashboard/src/lib/api.js"
+      "dashboard/src/lib/api.js",
+      "dashboard/src/lib/cave-karst-api.js"
     ],
     "route_files": [
       "dashboard/src/App.jsx"
@@ -611,6 +612,85 @@
         "contract": [
           "tests/test_ingest_usgs_samples.py",
           "tests/test_refresh_plans.py"
+        ]
+      }
+    },
+    {
+      "id": "cave-karst-monitor",
+      "classification": "analysis",
+      "status": "active",
+      "requires_terminal": false,
+      "backend": {
+        "files": [
+          "src/aguayluz/cave_karst.py",
+          "server/backend/cave_karst_api.py",
+          "server/backend/app.py"
+        ],
+        "endpoints": [
+          "GET /cave-karst/summary",
+          "GET /cave-karst/assets",
+          "GET /cave-karst/assets/{asset_id}",
+          "GET /cave-karst/assets/{asset_id}/status-history",
+          "GET /cave-karst/assets/{asset_id}/provenance",
+          "GET /cave-karst/assets/{asset_id}/edges",
+          "GET /cave-karst/alerts"
+        ],
+        "symbols": [
+          "src/aguayluz/cave_karst.py:build_alerts",
+          "src/aguayluz/cave_karst.py:compute_record_hash",
+          "src/aguayluz/cave_karst.py:detect_status_contradictions",
+          "src/aguayluz/cave_karst.py:load_default_registry",
+          "src/aguayluz/cave_karst.py:load_jsonl",
+          "src/aguayluz/cave_karst.py:materialize_status",
+          "src/aguayluz/cave_karst.py:validate_records",
+          "src/aguayluz/cave_karst.py:validate_registry",
+          "src/aguayluz/cave_karst.py:verify_event_chain",
+          "server/backend/cave_karst_api.py:cave_karst_summary",
+          "server/backend/cave_karst_api.py:cave_karst_assets",
+          "server/backend/cave_karst_api.py:cave_karst_asset",
+          "server/backend/cave_karst_api.py:cave_karst_status_history",
+          "server/backend/cave_karst_api.py:cave_karst_provenance",
+          "server/backend/cave_karst_api.py:cave_karst_edges",
+          "server/backend/cave_karst_api.py:cave_karst_alerts"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/validate_cave_karst_registry.py"
+        ],
+        "symbols": [
+          "scripts/validate_cave_karst_registry.py:main"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/cave-karst"
+        ],
+        "e2e_routes": [
+          "/cave-karst"
+        ],
+        "components": [
+          "dashboard/src/lib/cave-karst-api.js",
+          "dashboard/src/pages/CaveKarstPage.jsx",
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_cave_karst_api.py"
+        ],
+        "contract": [
+          "tests/test_cave_karst_monitor.py",
+          "tests/test_gui_parity.py"
+        ],
+        "unit": [
+          "dashboard/src/pages/CaveKarstPage.test.jsx"
+        ],
+        "e2e": [
+          "dashboard/tests/gui-parity.spec.mjs"
         ]
       }
     },

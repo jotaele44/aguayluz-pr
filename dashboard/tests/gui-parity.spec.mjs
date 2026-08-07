@@ -16,6 +16,7 @@ function findRepositoryRoot(start) {
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = findRepositoryRoot(here);
+const backendUrl = "http://127.0.0.1:8000";
 const manifest = JSON.parse(
   fs.readFileSync(
     path.join(repositoryRoot, ".federation", "gui-capabilities.json"),
@@ -39,7 +40,7 @@ test("manifest exposes at least one active GUI route", () => {
 });
 
 for (const route of routes) {
-  test(`GUI route ${route} is rendered and discoverable`, async ({ page }) => {
+  test(`GUI route ${route} is rendered and discoverable`, async ({ page, request }) => {
     const runtimeFailures = [];
     page.on("pageerror", (error) => {
       runtimeFailures.push(`page error: ${error.message}`);
@@ -68,6 +69,41 @@ for (const route of routes) {
     await expect(page.locator("body")).not.toContainText(
       /(?:something broke while rendering|page\s+not\s+found|route\s+not\s+found|404\s*—?\s*not\s+found)/i,
     );
+
+    if (route === "/cave-karst") {
+      await expect(page.getByRole("heading", { name: "Cave & Karst Monitor" })).toBeVisible();
+      await expect(page.getByRole("note", { name: "Registry scope limitation" })).toContainText(/pilot/i);
+      await expect(page.locator("body")).toContainText(/not a statewide cave census/i);
+      await expect(page.locator("body")).toContainText(/precise coordinates are withheld/i);
+
+      const summaryResponse = await request.get(`${backendUrl}/cave-karst/summary`);
+      expect(summaryResponse.status()).toBe(200);
+      const summary = await summaryResponse.json();
+      expect(summary.scope.statewide_complete).toBe(false);
+      expect(summary.scope.registry_scope).toEqual({ pilot: 4 });
+      expect(summary.validation.ok).toBe(true);
+
+      const assetsResponse = await request.get(`${backendUrl}/cave-karst/assets`);
+      expect(assetsResponse.status()).toBe(200);
+      const assets = await assetsResponse.json();
+      expect(assets.total).toBe(4);
+      expect(
+        assets.items.every(
+          (asset) => asset.coordinates_redacted && asset.lat === null && asset.lon === null,
+        ),
+      ).toBe(true);
+
+      expect((await request.post(`${backendUrl}/cave-karst/summary`)).status()).toBe(405);
+      expect(
+        (
+          await request.patch(
+            `${backendUrl}/cave-karst/assets/AYL_KARST_CAMUY_PARK`,
+            { data: { status: "open" } },
+          )
+        ).status(),
+      ).toBe(405);
+    }
+
     expect(runtimeFailures, runtimeFailures.join("\n")).toEqual([]);
   });
 }

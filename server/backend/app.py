@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from server.backend import main as legacy
+from server.backend.cave_karst_api import router as cave_karst_router
 from server.backend.monitoring_alert_operations import federation_alert_export, lifecycle_alerts
 from server.backend.monitoring_incident_ledger import (
     ALLOWED_EVENTS,
@@ -44,6 +45,7 @@ app.dependency_overrides.update(legacy.app.dependency_overrides)
 for middleware in reversed(legacy.app.user_middleware):
     app.add_middleware(middleware.cls, *middleware.args, **middleware.kwargs)
 app.include_router(water_disruption_router)
+app.include_router(cave_karst_router)
 
 READING_VECTOR_REGISTRY: dict[str, dict[str, Any]] = {
     "reservoir": {"path": legacy.DATA / "reservoir_levels.jsonl", "metrics": {"reservoir_elevation": {"units": {"ft"}}, "reservoir_storage_pct": {"units": {"%"}}, "streamflow": {"units": {"ft3/s", "ft³/s"}}, "gage_height": {"units": {"ft"}}}, "metric_required": True},
