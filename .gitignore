@@ -302,3 +302,9 @@ build/
 dashboard/export-standalone/
 desktop/.running
 dist-smoke/
+
+# Playwright output from `npm run test:gui-parity`. Generated, and the CI job uploads both
+# as build artifacts (.github/workflows/gui-capability-parity.yml), so they must never be
+# committed — test-results/ holds screenshots and traces.
+dashboard/test-results/
+dashboard/playwright-report/
