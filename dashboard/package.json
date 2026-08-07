@@ -11,7 +11,7 @@
     "lint:fix": "eslint . --fix",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:gui-parity": "playwright test -c gui-parity.playwright.config.mjs",
+    "test:gui-parity": "vitest run src/pages/CaveKarstPage.test.jsx && playwright test -c gui-parity.playwright.config.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

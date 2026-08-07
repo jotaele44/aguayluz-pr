@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/cave_karst_observation.schema.json",
+  "title": "CaveKarstObservation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "observation_id",
+    "asset_id",
+    "dimension",
+    "metric",
+    "value",
+    "unit",
+    "observed_at",
+    "source_ref",
+    "evidence_tier",
+    "confidence",
+    "review_status"
+  ],
+  "properties": {
+    "observation_id": {
+      "type": "string",
+      "pattern": "^AYL_KOBS_[A-Z0-9_]+$"
+    },
+    "asset_id": {
+      "type": "string",
+      "pattern": "^AYL_KARST_[A-Z0-9_]+$"
+    },
+    "dimension": {
+      "enum": [
+        "operational",
+        "hydrologic",
+        "environmental",
+        "infrastructure"
+      ]
+    },
+    "metric": {
+      "type": "string",
+      "minLength": 1
+    },
+    "value": {},
+    "unit": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "observed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "valid_until": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "source_ref": {
+      "type": "string",
+      "pattern": "^SRC_KARST_[A-Z0-9_]+$"
+    },
+    "evidence_tier": {
+      "enum": [
+        "T1",
+        "T2",
+        "T3",
+        "T4"
+      ]
+    },
+    "confidence": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "review_status": {
+      "enum": [
+        "accepted",
+        "needs_review",
+        "rejected",
+        "blocked"
+      ]
+    },
+    "notes": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}
