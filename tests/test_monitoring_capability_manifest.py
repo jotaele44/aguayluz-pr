@@ -15,6 +15,9 @@ EXPECTED = {
     "gage_height": ("gage_height", "ft"),
     "groundwater_level": ("groundwater_level", "ft"),
     "coastal_water_level": ("coastal_water_level", "ft"),
+    "field_groundwater_level": ("groundwater_level", "ft"),
+    "peak_streamflow": ("streamflow", "ft^3/s"),
+    "peak_gage_height": ("gage_height", "ft"),
 }
 
 

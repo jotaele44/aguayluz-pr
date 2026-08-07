@@ -36,6 +36,7 @@ from ..alerts import AlertEvent
 from ..impact import AssetIndex, build_asset_index
 from ..water_alerts import build_water_alerts, load_geo
 from .neon import NEON_MARKER, neon_alerts
+from .nhc import NHC_MARKER, nhc_alerts
 from .osha import OSHA_MARKER, osha_alerts
 from .seismic import SEISMIC_MARKER, seismic_alerts
 from .weather import WEATHER_MARKER, weather_alerts
@@ -43,7 +44,7 @@ from .weather import WEATHER_MARKER, weather_alerts
 #: Every alert_id substring that marks a row as machine-generated (safe to replace).
 GENERATED_MARKERS: tuple[str, ...] = (
     "_sdwis_", "_resvlow_", "_gwlow_", "_coasthi_",
-    SEISMIC_MARKER, WEATHER_MARKER, OSHA_MARKER, NEON_MARKER,
+    SEISMIC_MARKER, WEATHER_MARKER, OSHA_MARKER, NEON_MARKER, NHC_MARKER,
 )
 
 #: Operational-severity floor (0-5 scale) at or above which an alert is life-safety
@@ -96,6 +97,7 @@ def build_all_alerts(
     )
     alerts.extend(seismic_alerts(events, geo, index))
     alerts.extend(weather_alerts(events, geo, index))
+    alerts.extend(nhc_alerts(events, geo, index))
     alerts.extend(osha_alerts(events, geo, index))
     alerts.extend(neon_alerts(neon_events or [], geo, index))
     return alerts
@@ -111,6 +113,8 @@ __all__ = [
     "weather_alerts",
     "osha_alerts",
     "neon_alerts",
+    "nhc_alerts",
+    "NHC_MARKER",
     "load_geo",
     "AssetIndex",
     "build_asset_index",

@@ -273,6 +273,13 @@ exports/federation/
 # report all ~328 site/product pairs as new on every run.
 !data/neon_availability.jsonl
 !data/neon_publication_events.jsonl
+# NEON column receipt. Committed for the same reason: it is the ONLY durable evidence a
+# token-gated download ever ran. data/* and outputs/* are both ignored, so the readings
+# and the export are consumed in-job and discarded, leaving nothing in the tree to say
+# whether the CSV column names in ingest_neon_products.CSV_COLUMNS — written from NEON's
+# documentation, never from a response — actually matched. Column names and counts only;
+# no token, no URL, no row values.
+!data/neon_ingest_receipt.json
 # Census-derived PR geodata: centroids (normalization/spatial joins) + boundary polygons (map layer)
 !data/geo/
 !data/geo/pr_municipios.json
@@ -295,3 +302,9 @@ build/
 dashboard/export-standalone/
 desktop/.running
 dist-smoke/
+
+# Playwright output from `npm run test:gui-parity`. Generated, and the CI job uploads both
+# as build artifacts (.github/workflows/gui-capability-parity.yml), so they must never be
+# committed — test-results/ holds screenshots and traces.
+dashboard/test-results/
+dashboard/playwright-report/

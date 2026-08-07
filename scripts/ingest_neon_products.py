@@ -342,6 +342,33 @@ def _flagged(row: dict[str, str]) -> bool:
     return False
 
 
+def inspect_columns(payload: str | bytes, product_code: str) -> dict[str, Any]:
+    """Report which documented columns a real NEON CSV actually carried.
+
+    The whole point of ``data/neon_ingest_receipt.json``. ``CSV_COLUMNS`` was written
+    from NEON's published product documentation, never from a response — the endpoint is
+    token-gated and no token was available when it was written. This is what turns "have
+    the column names ever been verified?" into a fact rather than a hope, and it has to
+    be a *pure* function of the payload so the answer is reproducible.
+
+    Carries no credential, no URL and no row values — only column names and counts.
+    """
+    spec = CSV_COLUMNS.get(product_code) or {}
+    text = payload.decode("utf-8", errors="replace") if isinstance(payload, bytes) else payload
+    fields = list(csv.DictReader(io.StringIO(text)).fieldnames or [])
+    picked = _pick_value_column(fields, spec.get("value") or []) if fields else None
+    return {
+        "product_code": product_code,
+        "header_columns": fields,
+        "expected_date_columns": list(spec.get("date") or []),
+        "expected_value_columns": [c["column"] for c in (spec.get("value") or [])],
+        "matched_date_column": _pick_column(fields, spec.get("date") or []) if fields else None,
+        "matched_value_column": picked[0] if picked else None,
+        "matched_unit": picked[1].get("unit") if picked else None,
+        "qa_flag_columns_present": [c for c in QF_COLUMNS if c in fields],
+    }
+
+
 def build_readings(
     payload: str | bytes,
     product_code: str,
@@ -454,6 +481,8 @@ def main() -> int:
     ap.add_argument("--changes", default="outputs/neon_changes.jsonl",
                     help="Publication-change records from scripts/ingest_neon.py.")
     ap.add_argument("--readings-out", default="data/neon_readings.jsonl")
+    ap.add_argument("--receipt-out", default="data/neon_ingest_receipt.json",
+                    help="Committed record of which CSV columns a real download carried.")
     ap.add_argument("--months", type=int, default=DEFAULT_MONTHS_BACK,
                     help="How many months back to pull for a new/backfilled product.")
     ap.add_argument("--src-manifest", type=Path, help="Offline NEON data-manifest JSON.")
@@ -463,6 +492,7 @@ def main() -> int:
     args = ap.parse_args()
 
     readings: list[dict] = []
+    receipt: list[dict] = []
     skipped = 0
 
     # ── offline path ─────────────────────────────────────────────────────────
@@ -536,6 +566,14 @@ def main() -> int:
                     )
                     if not rows:
                         skipped += 1
+                    receipt.append({
+                        **inspect_columns(payload, t["product_code"]),
+                        "neon_site": t["neon_site"],
+                        "month": t["month"],
+                        "release": release,
+                        "file_name": entry.get("name"),
+                        "rows_stored": len(rows),
+                    })
                     readings.extend(rows)
         origin = f"live NEON API ({len(targets)} targets)"
 
@@ -543,6 +581,23 @@ def main() -> int:
     combined = merge_readings(_read_jsonl(rpath), readings)
     rpath.parent.mkdir(parents=True, exist_ok=True)
     rpath.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in combined))
+
+    if receipt:
+        # Committed on purpose, unlike the readings themselves. .gitignore drops data/*
+        # and outputs/*, so a CI run that downloads NEON product data leaves NOTHING in
+        # the tree to say whether it succeeded, was skipped, or matched any column — the
+        # readings are consumed in-job and discarded. This receipt is the durable answer,
+        # and it is what the first real-token run should be reviewed against
+        # (docs/NEON_INTEGRATION.md's product table).
+        cpath = REPO / args.receipt_out
+        cpath.parent.mkdir(parents=True, exist_ok=True)
+        cpath.write_text(json.dumps({
+            "checked_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "files": receipt,
+        }, indent=2, ensure_ascii=False, sort_keys=True) + "\n")
+        matched = sum(1 for r in receipt if r["matched_value_column"])
+        print(f"wrote column receipt for {len(receipt)} file(s) "
+              f"({matched} matched a documented value column) -> {cpath}")
 
     print(f"source: {origin}")
     print(f"wrote {len(readings)} NEON readings ({len(combined)} total) -> {rpath}")

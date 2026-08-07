@@ -9,17 +9,27 @@ Cadence (each ingest hits a live federal API — run on a networked host, NOT th
 sandbox, whose proxy may block waterservices.usgs.gov / data.epa.gov):
 
   --daily    NWS active alerts             -> service_events.jsonl
+             NHC Atlantic cyclones         -> service_events.jsonl       (optional)
              USGS earthquakes (PR region)  -> service_events.jsonl
              USGS daily reservoir levels   -> reservoir_levels.jsonl     (+ export)
+             USGS groundwater daily values -> groundwater_levels.jsonl   (optional)
+             USGS field measurements       -> usgs_field_measurements_readings.jsonl
+                 Discrete well levels the daily-values ingest structurally cannot see —
+                 it keeps only the 36 PR wells with a continuous series. (optional)
+             NOAA CO-OPS tides             -> coastal_levels.jsonl       (optional)
              NEON D04 availability delta   -> neon_availability.jsonl    (optional)
              The fast-moving signals (weather hazards, seismic, drought/supply). Seconds.
              NEON publishes monthly, so a daily poll is ample and costs 4 keyless
              requests against a 200/hour quota.
 
   --weekly   NWS active alerts             -> service_events.jsonl
+             NHC Atlantic cyclones         -> service_events.jsonl   (optional)
              USGS earthquakes (PR region)  -> service_events.jsonl
              USGS site network             -> utility_assets.jsonl
              USGS daily levels             -> reservoir_levels.jsonl
+             USGS annual peak flow         -> usgs_peaks_readings.jsonl (optional)
+                 The flood baseline: 244 PR sites, 1899->, one maximum per water year.
+                 Weekly is the right cadence — a peak is published once a year.
              EPA SDWIS violations          -> service_events.jsonl
              EPA ECHO CWA enforcement      -> service_events.jsonl   (optional)
              FEMA disaster declarations    -> service_events.jsonl   (optional, + export)
@@ -117,6 +127,36 @@ STEP_USGS_SAMPLES = (
 # vectors (reservoir, groundwater, coastal) are all refreshed daily, so their artifacts
 # are always present; a weekly-only producer would leave this one absent on six days in
 # seven. One small request is cheaper than that inconsistency.
+STEP_USGS_FIELD_MEAS = (
+    "USGS discrete groundwater field measurements → usgs_field_measurements_readings",
+    ["scripts/ingest_usgs_field_measurements.py", "--days", "3650"],
+    True,   # optional — network feed; keyless, but must not abort the refresh
+)
+# Daily/weekly/all, not fast — a hydrographer visits a well a few times a year, so this
+# is not a near-real-time hazard feed. It is in every non-fast cadence for the same
+# reason STEP_USGS_SAMPLES is: the output file is gitignored and rebuilt from empty on
+# each run, so a weekly-only producer leaves it absent six days in seven. The full
+# --days window runs in every cadence for the same reason — a short daily window would
+# leave the file thin rather than absent, which is barely better.
+#
+# Its cadence is deliberately INDEPENDENT of STEP_USGS_GW's. The two share only
+# data/utility_assets.jsonl, this script's merge is id-scoped, and the USGSFM_/USGSGW_
+# namespaces are disjoint, so neither ordering can clobber the other.
+STEP_USGS_PEAKS = (
+    "USGS annual peak flow (flood baseline, 1899→) → usgs_peaks_readings",
+    ["scripts/ingest_usgs_peaks.py"],
+    True,   # optional — network feed; keyless, but must not abort the refresh
+)
+# Weekly/all only, and unlike the two above that is the right cadence: an annual peak is
+# published once per water year, so there is nothing for a daily run to pick up.
+STEP_NHC = (
+    "NHC Atlantic tropical cyclones → service_events",
+    ["scripts/ingest_nhc_storms.py"],
+    True,   # optional — network feed; keyless, but must not abort the refresh
+)
+# Fast cadence, alongside NWS and quakes: this is the earliest warning in the corpus.
+# NWS publishes a watch once PR is inside the forecast envelope, ~48h out; NHC publishes
+# position and intensity from genesis, days earlier.
 STEP_NEON_PRODUCTS = (
     "NEON water products → neon_readings (needs NEON_API_TOKEN)",
     ["scripts/ingest_neon_products.py"],
@@ -206,14 +246,17 @@ PLANS: dict[str, list[tuple]] = {
     # fast: the near-real-time hazard feeds only (seismic + NWS) + alert promotion +
     # export. Meant for a ~15-minute cron so a quake / hurricane warning becomes a
     # pushed alert in minutes, not the next daily batch.
-    "fast": [STEP_NWS, STEP_USGS_QUAKES, STEP_NOAA_TIDES, *_DERIVE],
-    "daily": [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_LEVELS, STEP_USGS_GW, STEP_NOAA_TIDES,
-              STEP_NEON, STEP_USGS_SAMPLES, *_DERIVE],
-    "weekly": [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_ASSETS, STEP_USGS_LEVELS, STEP_USGS_GW,
-               STEP_NOAA_TIDES, STEP_NEON, STEP_NEON_PRODUCTS, STEP_USGS_SAMPLES,
+    "fast": [STEP_NWS, STEP_NHC, STEP_USGS_QUAKES, STEP_NOAA_TIDES, *_DERIVE],
+    "daily": [STEP_NWS, STEP_NHC, STEP_USGS_QUAKES, STEP_USGS_LEVELS, STEP_USGS_GW,
+              STEP_NOAA_TIDES, STEP_NEON, STEP_USGS_SAMPLES, STEP_USGS_FIELD_MEAS,
+              *_DERIVE],
+    "weekly": [STEP_NWS, STEP_NHC, STEP_USGS_QUAKES, STEP_USGS_ASSETS, STEP_USGS_LEVELS,
+               STEP_USGS_GW, STEP_NOAA_TIDES, STEP_NEON, STEP_NEON_PRODUCTS,
+               STEP_USGS_SAMPLES, STEP_USGS_FIELD_MEAS, STEP_USGS_PEAKS,
                STEP_SDWIS, STEP_ECHO, STEP_FEMA, STEP_OSHA, STEP_WATERS_ENRICH, *_DERIVE],
-    "all":   [STEP_NWS, STEP_USGS_QUAKES, STEP_USGS_ASSETS, STEP_USGS_LEVELS, STEP_USGS_GW,
-              STEP_NOAA_TIDES, STEP_NEON, STEP_NEON_PRODUCTS, STEP_USGS_SAMPLES,
+    "all":   [STEP_NWS, STEP_NHC, STEP_USGS_QUAKES, STEP_USGS_ASSETS, STEP_USGS_LEVELS,
+              STEP_USGS_GW, STEP_NOAA_TIDES, STEP_NEON, STEP_NEON_PRODUCTS,
+              STEP_USGS_SAMPLES, STEP_USGS_FIELD_MEAS, STEP_USGS_PEAKS,
               STEP_SDWIS, STEP_ECHO, STEP_FEMA, STEP_OSHA, STEP_AEE_FETCH,
               STEP_AEE_INGEST, STEP_WATERS_ENRICH, *_DERIVE],
 }
