@@ -227,7 +227,10 @@ def test_system_status_reports_missing_artifacts_without_failing(client):
 
 def test_readings_kinds_match_registered_producers(client):
     """A kind with no file yields an empty series; an unregistered kind yields []."""
-    assert set(backend.READINGS_FILES) == {"reservoir", "groundwater", "coastal", "neon"}
+    assert set(backend.READINGS_FILES) == {
+        "reservoir", "groundwater", "coastal", "neon",
+        "usgs_field_measurements", "usgs_peaks",
+    }
     assert client.get("/readings?kind=coastal").json() == []
     assert client.get("/readings?kind=generation").json() == []
 

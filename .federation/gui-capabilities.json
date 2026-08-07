@@ -206,41 +206,43 @@
           "GET /export/federation/monitoring-incident-events.json"
         ],
         "symbols": [
-          "server/backend/app.py:readings",
-          "server/backend/app.py:monitoring_health",
-          "server/backend/app.py:monitoring_alerts",
-          "server/backend/app.py:monitoring_alert_operations",
-          "server/backend/app.py:export_monitoring",
-          "server/backend/app.py:export_federation_monitoring_alerts",
-          "server/backend/app.py:IncidentTransition",
           "server/backend/app.py:BootstrapRequest",
+          "server/backend/app.py:IncidentTransition",
           "server/backend/app.py:bootstrap_incident_ledger",
-          "server/backend/app.py:monitoring_incidents",
+          "server/backend/app.py:export_federation_monitoring_alerts",
+          "server/backend/app.py:export_federation_monitoring_incident_events",
+          "server/backend/app.py:export_monitoring",
+          "server/backend/app.py:monitoring_alert_operations",
+          "server/backend/app.py:monitoring_alerts",
+          "server/backend/app.py:monitoring_escalation_candidates",
+          "server/backend/app.py:monitoring_health",
           "server/backend/app.py:monitoring_incident_timeline",
           "server/backend/app.py:monitoring_incident_transition",
-          "server/backend/app.py:monitoring_escalation_candidates",
+          "server/backend/app.py:monitoring_incidents",
           "server/backend/app.py:monitoring_notification_outbox",
-          "server/backend/app.py:export_federation_monitoring_incident_events",
+          "server/backend/app.py:readings",
+          "server/backend/monitoring_alert_operations.py:federation_alert_export",
+          "server/backend/monitoring_alert_operations.py:lifecycle_alerts",
           "server/backend/monitoring_alert_operations.py:load_site_thresholds",
           "server/backend/monitoring_alert_operations.py:resolve_threshold",
           "server/backend/monitoring_alert_operations.py:threshold_tripped",
-          "server/backend/monitoring_alert_operations.py:lifecycle_alerts",
-          "server/backend/monitoring_alert_operations.py:federation_alert_export",
-          "server/backend/monitoring_quality.py:observation_time",
-          "server/backend/monitoring_quality.py:series_quality",
-          "server/backend/monitoring_quality.py:native_alerts",
-          "server/backend/monitoring_incident_ledger.py:read_events",
-          "server/backend/monitoring_incident_ledger.py:validate_event",
           "server/backend/monitoring_incident_ledger.py:append_event",
-          "server/backend/monitoring_incident_ledger.py:verify_chain",
-          "server/backend/monitoring_incident_ledger.py:replay",
-          "server/backend/monitoring_incident_ledger.py:materialized_state",
-          "server/backend/monitoring_incident_ledger.py:timeline",
+          "server/backend/monitoring_incident_ledger.py:escalation_candidates",
+          "server/backend/monitoring_incident_ledger.py:federation_delta",
           "server/backend/monitoring_incident_ledger.py:load_json",
           "server/backend/monitoring_incident_ledger.py:maintenance_active",
-          "server/backend/monitoring_incident_ledger.py:escalation_candidates",
+          "server/backend/monitoring_incident_ledger.py:materialized_state",
           "server/backend/monitoring_incident_ledger.py:notification_outbox",
-          "server/backend/monitoring_incident_ledger.py:federation_delta"
+          "server/backend/monitoring_incident_ledger.py:read_events",
+          "server/backend/monitoring_incident_ledger.py:replay",
+          "server/backend/monitoring_incident_ledger.py:timeline",
+          "server/backend/monitoring_incident_ledger.py:validate_event",
+          "server/backend/monitoring_incident_ledger.py:verify_chain",
+          "server/backend/monitoring_quality.py:native_alerts",
+          "server/backend/monitoring_quality.py:observation_time",
+          "server/backend/monitoring_quality.py:series_keys_for_metric",
+          "server/backend/monitoring_quality.py:series_policy",
+          "server/backend/monitoring_quality.py:series_quality"
         ]
       },
       "frontend": {
@@ -274,7 +276,9 @@
         "backend": [
           "tests/test_alert_impact.py",
           "tests/test_refresh_plans.py",
-          "tests/test_monitoring_phase3.py"
+          "tests/test_monitoring_phase3.py",
+          "tests/test_backend_readings_api.py",
+          "tests/test_monitoring_phase1.py"
         ],
         "contract": [
           "tests/test_gui_parity.py",
@@ -724,7 +728,7 @@
       "classification": "internal",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Scheduled producer, not an operator workflow. Invoked by the daily/weekly/all cron cadences in .github/workflows/refresh.yml via scripts/refresh.py, never by a person, so no normal user path requires a terminal. It complements scripts/ingest_usgs_groundwater.py, which reads the NWIS Daily Values service and therefore keeps only the 36 PR wells carrying a continuous series; the OGC API field-measurements collection (api.waterdata.usgs.gov/ogcapi/v0, keyless, the successor to the decommissioned waterservices.usgs.gov/nwis/gwlevels/) adds the discrete-measurement wells that service structurally cannot see -- 82 wells and 4,392 measurements over ten years, against 36 wells today. The wells are rendered as utility_asset rows on the existing assets and map views. The groundwater_level readings reach the PRII hub through the canonical federation export (scripts/federation_export.py globs data/*_readings.jsonl), which per docs/adr/0001 is this producer's supported product surface -- this repo's own dashboard is diagnostic-only. They are deliberately NOT wired into scripts/build_alerts.py, which names its three reading files explicitly and does not glob: parameter 62610 (level above NGVD29) has the opposite concerning direction from 72019 (depth below land surface), and src/aguayluz/water_alerts.py drives _AQUIFER_METRICS with direction='high', so routing this file into that proxy would invert the aquifer-drawdown signal. They are also not selectable on the diagnostic dashboard: server/backend/app.py's READING_VECTOR_REGISTRY has no field-measurements vector, and monitoring_quality.py's SERIES_METADATA_REGISTRY declares groundwater_level with parameter_codes=['72019'] only. Both are tracked follow-ups, not claims made here.",
+      "rationale": "Scheduled producer, not an operator workflow. Invoked by the daily/weekly/all cron cadences in .github/workflows/refresh.yml via scripts/refresh.py, never by a person, so no normal user path requires a terminal. It complements scripts/ingest_usgs_groundwater.py, which reads the NWIS Daily Values service and therefore keeps only the 36 PR wells carrying a continuous series; the OGC API field-measurements collection (api.waterdata.usgs.gov/ogcapi/v0, keyless, the successor to the decommissioned waterservices.usgs.gov/nwis/gwlevels/) adds the discrete-measurement wells that service structurally cannot see -- 82 wells and 4,392 measurements over ten years, against 36 wells today. The wells are rendered as utility_asset rows on the existing assets and map views. The groundwater_level readings reach the PRII hub through the canonical federation export (scripts/federation_export.py globs data/*_readings.jsonl), which per docs/adr/0001 is this producer's supported product surface -- this repo's own dashboard is diagnostic-only. They are deliberately NOT wired into scripts/build_alerts.py, which names its three reading files explicitly and does not glob: parameter 62610 (level above NGVD29) has the opposite concerning direction from 72019 (depth below land surface), and src/aguayluz/water_alerts.py drives _AQUIFER_METRICS with direction='high', so routing this file into that proxy would invert the aquifer-drawdown signal. They are ALSO now selectable on the diagnostic dashboard at /monitoring as 'Groundwater depth (discrete)': server/backend/app.py registers a usgs_field_measurements vector and monitoring_quality.py a ('usgs_field_measurements', 'groundwater_level') policy covering parameter codes 72019 and 62610, with a 90-day freshness limit because a hydrographer visits a well a few times a year. It is declared a REFERENCE series (threshold null): 89 wells have no per-site baselines, and 62610 runs opposite to 72019, so no single number means drawdown for both. That GUI surface belongs to the monitoring-analytics-and-system-state capability; this entry stays internal because the PRODUCER is cron-only.",
       "analysis": {
         "files": [
           "scripts/ingest_usgs_field_measurements.py"
@@ -785,7 +789,7 @@
       "classification": "internal",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Scheduled archival producer, not an operator workflow. Invoked by the weekly/all cron cadences in .github/workflows/refresh.yml via scripts/refresh.py, never by a person, so no normal user path requires a terminal. It adds the flood baseline the corpus otherwise lacks: every existing hydrology vector is recent (ingest_usgs_levels runs a 14-day window, ingest_usgs_groundwater a year), which can say a river is high against its own recent tail but not against the historical record. The OGC API peaks collection supplies 244 PR sites from 1899 to 2025, one instantaneous maximum per water year -- including the 284,000 ft3/s Hurricane Maria peak of 2017-09-20. It emits NO assets and therefore adds no map or asset surface: the peaks belong to stream sites scripts/ingest_usgs_water.py already owns as USGS_* rows, so the readings are plain foreign keys into them. The streamflow and gage_height readings reach the PRII hub through the canonical federation export (scripts/federation_export.py globs data/*_readings.jsonl), which per docs/adr/0001 is this producer's supported product surface -- this repo's own dashboard is diagnostic-only, and no peaks vector is registered in server/backend/app.py's READING_VECTOR_REGISTRY. That is a tracked follow-up, not a claim made here.",
+      "rationale": "Scheduled archival producer, not an operator workflow. Invoked by the weekly/all cron cadences in .github/workflows/refresh.yml via scripts/refresh.py, never by a person, so no normal user path requires a terminal. It adds the flood baseline the corpus otherwise lacks: every existing hydrology vector is recent (ingest_usgs_levels runs a 14-day window, ingest_usgs_groundwater a year), which can say a river is high against its own recent tail but not against the historical record. The OGC API peaks collection supplies 244 PR sites from 1899 to 2025, one instantaneous maximum per water year -- including the 284,000 ft3/s Hurricane Maria peak of 2017-09-20. It emits NO assets and therefore adds no map or asset surface: the peaks belong to stream sites scripts/ingest_usgs_water.py already owns as USGS_* rows, so the readings are plain foreign keys into them. The streamflow and gage_height readings reach the PRII hub through the canonical federation export (scripts/federation_export.py globs data/*_readings.jsonl), which per docs/adr/0001 is this producer's supported product surface -- The readings are ALSO now inspectable on the diagnostic dashboard: server/backend/app.py registers a usgs_peaks vector and monitoring_quality.py a ('usgs_peaks', streamflow|gage_height) policy, so GET /readings?kind=usgs_peaks&metric=... serves them and they are selectable at /monitoring as 'Annual peak streamflow' and 'Annual peak stage' (covered by dashboard/tests/gui-parity.spec.mjs). They are declared REFERENCE series -- threshold null, freshness_hours null -- because an annual maximum is the historical record rather than a live signal: the reservoir streamflow threshold of 5,000 ft3/s is exceeded by 46% of the 1899-2025 record, so reusing it would manufacture 1,898 incidents. That GUI surface belongs to the monitoring-analytics-and-system-state capability; this entry stays internal because the PRODUCER is cron-only.",
       "analysis": {
         "files": [
           "scripts/ingest_usgs_peaks.py"
