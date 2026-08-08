@@ -1,0 +1,61 @@
+{
+  "schema_version": "aguayluz.failure-localization-overlap/v0.1",
+  "frozen_base": "17c843595b5cdfbcef4e5f7b1ac6c662092e335d",
+  "generated_for_vector": "BUILD_AGUAYLUZ_EXACT_FAILURE_LOCALIZATION_CONTROL_PLANE_v0_1",
+  "no_files_copied_from_open_prs": true,
+  "canonical_owner_decisions": [
+    {
+      "surface": "asset_identity_and_impact_projection",
+      "owner": "PR #101",
+      "disposition": "ADAPT_AFTER_MERGE",
+      "boundary": "Asset identity may be projected into localization, but dependency/proximity edges are not hydraulic truth."
+    },
+    {
+      "surface": "resource_balance_and_uncertainty",
+      "owner": "PRs #119/#121",
+      "disposition": "ADAPT_AFTER_ADJUDICATION",
+      "boundary": "Reuse compatible balance terms and uncertainty only; residuals cannot prove an exact failure."
+    },
+    {
+      "surface": "water_crisis_gui_bridge",
+      "owner": "PR #124",
+      "disposition": "PRESERVE_DISABLED",
+      "boundary": "GUI bridge remains unwired and cannot bypass localization promotion gates."
+    },
+    {
+      "surface": "reservoir_specific_balance_entry_gates",
+      "owner": "PR #125",
+      "disposition": "PRESERVE_STACKED",
+      "boundary": "Reservoir readiness packets can later constrain source and storage inputs; they do not localize distribution defects."
+    },
+    {
+      "surface": "incident_truth_and_lifecycle",
+      "owner": "current-main water disruption subsystem",
+      "disposition": "PRESERVE",
+      "boundary": "Localization output is not automatically promoted into incident truth or lifecycle state."
+    },
+    {
+      "surface": "exact_failure_localization_reference_core",
+      "owner": "this vector",
+      "disposition": "NEW_ISOLATED_RESEARCH_CORE",
+      "boundary": "Owns L0-L5 grading, diagnostic candidates, promotion events, and synthetic verification only."
+    },
+    {
+      "surface": "regulatory_fda_offline_adapter",
+      "owner": "PR #126",
+      "disposition": "NO_OVERLAP",
+      "boundary": "Separate regulatory research path; no shared files or localization semantics."
+    }
+  ],
+  "path_overlap": [],
+  "activation_state": {
+    "shadow_mode": true,
+    "live_ingestion": false,
+    "api": false,
+    "gui": false,
+    "scheduler": false,
+    "notifications": false,
+    "automatic_control_actions": false,
+    "production_promotion": false
+  }
+}
