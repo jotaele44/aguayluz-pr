@@ -1,0 +1,32 @@
+{
+  "@context": {
+    "ayl": "https://data.aguayluz.pr/vocab/",
+    "geo": "http://www.opengis.net/ont/geosparql#",
+    "prov": "http://www.w3.org/ns/prov#",
+    "sosa": "http://www.w3.org/ns/sosa/",
+    "schema": "https://schema.org/",
+    "qudt": "http://qudt.org/schema/qudt/",
+    "unit": "http://qudt.org/vocab/unit/",
+    "id": "@id",
+    "type": "@type",
+    "name": "schema:name",
+    "assetId": "ayl:assetId",
+    "assetKind": "ayl:assetKind",
+    "privacyClass": "ayl:privacyClass",
+    "locationDisclosure": "ayl:locationDisclosure",
+    "operationalStatus": "ayl:operationalStatus",
+    "statusQuality": "ayl:statusQuality",
+    "conflictHold": "ayl:conflictHold",
+    "statusAsOf": {"@id": "ayl:statusAsOf", "@type": "http://www.w3.org/2001/XMLSchema#dateTime"},
+    "evidenceTier": "ayl:evidenceTier",
+    "confidence": "ayl:confidence",
+    "source": {"@id": "prov:wasDerivedFrom", "@type": "@id"},
+    "featureOfInterest": {"@id": "sosa:hasFeatureOfInterest", "@type": "@id"},
+    "madeBySensor": {"@id": "sosa:madeBySensor", "@type": "@id"},
+    "observedProperty": {"@id": "sosa:observedProperty", "@type": "@id"},
+    "resultTime": {"@id": "sosa:resultTime", "@type": "http://www.w3.org/2001/XMLSchema#dateTime"},
+    "simpleResult": "sosa:hasSimpleResult",
+    "unitRef": {"@id": "qudt:unit", "@type": "@id"},
+    "qualityFlag": "ayl:qualityFlag"
+  }
+}
