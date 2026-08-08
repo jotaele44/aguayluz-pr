@@ -63,7 +63,19 @@ def test_public_source_matrix_keeps_real_window_blocked() -> None:
     assert "downstream_river_release_rate" in readiness["blocking_metrics"]
     assert "direct_treatment_withdrawal_rate" in readiness["blocking_metrics"]
     assert "evaporation_volume" in readiness["blocking_metrics"]
-    assert "documented_operational_losses" in readiness["blocking_metrics"]
+    assert "documented_operational_loss_volume" in readiness["blocking_metrics"]
+
+
+def test_expanded_public_sweep_sources_are_preserved() -> None:
+    receipts = load_json(PILOT / "public_source_receipts.json")
+    source_ids = {row["source_id"] for row in receipts["sources"]}
+    assert "USGS-50093000" in source_ids
+    assert "USGS-50093120" in source_ids
+    assert "USGS-50093115" in source_ids
+    assert "NOAA-STAGE-IV-PR" in source_ids
+    assert "DRNA-CANAL-PATILLAS" in source_ids
+    assert receipts["operator_requests_sent"] is False
+    assert receipts["real_balance_executed"] is False
 
 
 def test_activation_flags_are_all_disabled() -> None:
