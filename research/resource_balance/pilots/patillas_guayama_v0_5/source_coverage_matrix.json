@@ -4,7 +4,7 @@
   "origin_main_sha": "debbef3e901c7edeb5e6d91c9dfc888383b2024c",
   "latest_main_reviewed_sha": "01a991d6b7ecaf36458d6faf1acd1012b84da897",
   "real_balance_executed": false,
-  "public_osint_status": "bounded_sweep_complete_for_v0.5_after_two_tributary_and_below_dam_outlet_correction",
+  "public_osint_status": "bounded_sweep_complete_for_v0.5_after_two_tributary_below_dam_downstream_chain_and_precipitation_source_corrections",
   "classification_vocabulary": ["public_machine_readable","public_document_only","operator_record_required","field_measurement_required","proxy_only","unavailable"],
   "inputs": [
     {
@@ -44,7 +44,7 @@
       "evidence_tier": "T1",
       "coverage_status": "forebay_discharge_public_but_not_proven_identical_to_dam_outlet_release",
       "admission_status": "blocked",
-      "blockers": ["forebay gauge is downstream of the outlet works","gate-opening height is not discharge without an authoritative rating/operation relation","intervening canal gain/loss cannot be silently absorbed"]
+      "blockers": ["forebay gauge is downstream of the outlet works","gate-opening height is not discharge without an authoritative rating or operation relation","intervening canal gain/loss cannot be silently absorbed"]
     },
     {
       "metric": "downstream_river_release_rate",
@@ -73,21 +73,21 @@
       "metric": "downstream_terminal_flow_rate",
       "required_role": "canal_boundary_terminal_outflow",
       "primary_classification": "proxy_only",
-      "source": "USGS 50093078 below Guayama Filtration Plant and USGS 50093083 above AES intake",
+      "source": "USGS 50093078 below Guayama Filtration Plant, USGS 50093083 above AES intake, and USGS 50093115 at Intake 123 in Salinas",
       "evidence_tier": "T1",
-      "coverage_status": "intermediate_downstream_gauges_not_proven_terminal_boundary",
+      "coverage_status": "downstream_public_gauge_chain_extended_to_Salinas_but_terminal_boundary_not_proven",
       "admission_status": "blocked",
-      "blockers": ["neither station is proven to be the terminal canal boundary","all downstream diversions must be enumerated or the boundary moved to a measured point","instantaneous records must pass revision/calibration/uncertainty gates"]
+      "blockers": ["USGS 50093115 extends the measured canal chain farther downstream but is named for Intake 123 rather than a demonstrated terminal boundary","all intervening and downstream diversions must be enumerated or the balance boundary moved to a proven measured endpoint","instantaneous records must pass revision/calibration/uncertainty gates"]
     },
     {
       "metric": "area_weighted_precipitation_volume",
       "required_role": "direct_reservoir_precipitation",
       "primary_classification": "public_machine_readable",
-      "source": "NOAA/NWS MRMS Caribbean precipitation products plus USGS 50093045 point precipitation",
+      "source": "NOAA/NWS Stage IV Puerto Rico QPE plus USGS 50093045 point precipitation",
       "evidence_tier": "T1",
-      "coverage_status": "precipitation_precursor_available_volume_transform_incomplete",
+      "coverage_status": "Puerto_Rico_hourly_QPE_precursor_available_but_15_minute_volume_transform_incomplete",
       "admission_status": "blocked",
-      "blockers": ["freeze water-surface geometry applicable to each stage or an authoritative stage-area relation","clip and area-weight MRMS cells for the exact interval","quantify QPE and geometry uncertainty; retain point gauge as cross-check"]
+      "blockers": ["freeze water-surface geometry applicable to each stage or an authoritative stage-area relation","clip and area-weight Puerto Rico Stage IV QPE cells to the reservoir surface","Stage IV is hourly, so a 15-minute balance requires an independently justified temporal-allocation model or a coarser synchronized window","quantify QPE and geometry uncertainty; retain the USGS point gauge as an independent cross-check"]
     },
     {
       "metric": "evaporation_volume",
@@ -100,10 +100,10 @@
       "blockers": ["historical pan evaporation is not a synchronized open-water measurement","modeled interval evaporation requires meteorological inputs, model version, water-surface area and uncertainty","no current direct public Lago Patillas interval evaporation stream was found"]
     },
     {
-      "metric": "documented_operational_losses",
+      "metric": "documented_operational_loss_volume",
       "required_role": "reservoir_and_canal_documented_loss",
       "primary_classification": "operator_record_required",
-      "source": "AEE/PREPA public transition and historical operational documents",
+      "source": "DRNA Canal de Patillas topology context plus AEE/PREPA public transition and historical operational documents",
       "evidence_tier": "T1",
       "coverage_status": "no_public_synchronized_loss_ledger_found",
       "admission_status": "blocked",
@@ -114,7 +114,10 @@
     "USGS reports Lago Patillas at the confluence of Rio Grande de Patillas and Rio Marin and irrigation releases through outlet works into the Patillas Irrigation Canal.",
     "USGS 50093000 supplies a public Rio Marin discharge record, closing a previously identified tributary-source gap at the source-discovery level.",
     "USGS 50093120 supplies public discharge below Lago Patillas and is retained as a separate reservoir river-outlet/spill term rather than silently assuming canal-only outflow.",
+    "USGS 50093115 extends the public Canal de Patillas gauge chain to Intake 123 in Salinas but does not by itself prove the terminal balance boundary.",
+    "NOAA publishes hourly Stage IV QPE specifically for Puerto Rico in machine-readable NetCDF/GeoTIFF formats; its hourly cadence is not silently disaggregated to 15-minute slices.",
     "AAA public statistics provide monthly-average plant extraction/production, not synchronized interval plant-meter data.",
+    "DRNA identifies Canal de Patillas as originating at Embalse Patillas, operated by AEE, and supplying irrigation and public water including the Guayama filtration plant.",
     "AEE/PREPA public material confirms multiple canal consumers but no synchronized operational-loss ledger was found."
   ],
   "operator_requests_sent": false,
