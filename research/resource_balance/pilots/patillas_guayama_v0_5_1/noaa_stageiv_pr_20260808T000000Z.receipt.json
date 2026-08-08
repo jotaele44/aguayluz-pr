@@ -1,0 +1,28 @@
+{
+  "schema_version": "aguayluz.patillas-noaa-stageiv-receipt/v0.5.1",
+  "source_id": "NOAA-STAGE-IV-PR-20260808T000000Z",
+  "source_url": "https://water.noaa.gov/resources/downloads/precip/stageIV/current/nws_precip_1hour_pr.tif",
+  "retrieved_at": "2026-08-08T01:54:22Z",
+  "http": {"status": 200, "content_type": "image/tiff", "content_length": 5882, "last_modified": "Sat, 08 Aug 2026 01:03:24 GMT", "etag": "\"16fa-6587eb01ee7f8\"", "server": "Apache/2.4.68 (Unix)", "redacted_headers": ["set-cookie"]},
+  "bytes": {"size": 5882, "sha256": "56aaa69d6d1e4ef33aac4e4c4c5ec4a2e24a7d2d9cd5f30b22805caa243d06f1", "encoding_in_repository": "base64_of_exact_tiff_bytes"},
+  "artifact": {"id": 9014693941, "digest": "sha256:6e1e5e457874cdff022c385d2e2b37ba8ceeb891647c68aa9667c245ee109966", "workflow_run_id": 31233735677},
+  "raster": {
+    "driver": "GTiff", "width": 205, "height": 205, "band_count": 4, "dtype": "float32",
+    "crs_name": "NOAA_HRAP_Grid", "projection": "polar_stereographic", "earth_radius_m": 6367470.0,
+    "central_meridian_deg": -105.0, "latitude_of_origin_deg": 60.0,
+    "pixel_size_projected_m": [4762.5, 4762.5], "nodata": -3.4028234663852886e38,
+    "bounds_hrap": {"left": 4940902.266009701, "bottom": -7210895.878461189, "right": 5917214.766009701, "top": -6234583.378461189},
+    "dataset_tags": {"creation_time": "20260808T010324", "data_time": "20260808T00:00:00", "AREA_OR_POINT": "Area"},
+    "observation_band": {"index": 1, "name": "observation", "units": "Inches", "sample_min": 0.0, "sample_max": 0.1525590569}
+  },
+  "rules": {
+    "physical_area_crs": "EPSG:6566",
+    "cell_area_rule": "transform each HRAP cell polygon to EPSG:6566 before measuring physical intersection area",
+    "partial_cell_rule": "weight precipitation by exact intersection area with the stage-specific reservoir geometry",
+    "nodata_rule": "reject if any reservoir-intersecting observation cell is nodata",
+    "band_rule": "use observation band only; normal/departure/percent-normal bands are not precipitation depth",
+    "timestamp_rule": "preserve NOAA data_time and creation_time verbatim; a real balance requires explicit mapping to the selected hourly interval",
+    "qpe_uncertainty_rule": "numeric QPE uncertainty is required for admission; the frozen public sample does not by itself supply a per-cell uncertainty"
+  },
+  "real_balance_executed": false
+}
