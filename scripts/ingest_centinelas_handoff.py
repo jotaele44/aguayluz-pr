@@ -18,14 +18,21 @@ import os
 import sys
 from pathlib import Path
 
+from jsonschema import validate
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from ingest_centinelas_access_condition import OUT_DEFAULT as ACCESS_OUT_DEFAULT  # noqa: E402
-from ingest_centinelas_access_condition import promote_access_condition  # noqa: E402
 from ingest_centinelas_dispatch import payload_to_event  # noqa: E402
 from ingest_news_event import OUT_DEFAULT, _read_jsonl, _write_jsonl  # noqa: E402
 
 REPO = Path(__file__).resolve().parent.parent
 RECEIPTS_DEFAULT = REPO / "data" / "centinelas_handoffs"
+ACCESS_OUT_DEFAULT = REPO / "data" / "access_conditions.jsonl"
+_ACCESS_SCHEMA = REPO / "schemas" / "access_condition.v1.schema.json"
+_ACCESS_BINDINGS = REPO / "data" / "reference" / "el_yunque_access_asset_bindings.json"
+_FORBIDDEN_GEOMETRY_KEYS = {
+    "geometry", "coordinates", "latitude", "longitude", "bbox", "bounding_box",
+    "polygon", "polyline", "centroid", "geojson",
+}
 
 
 def receipt_path(idempotency_key: str, receipts_dir: Path) -> Path:
@@ -41,6 +48,55 @@ def write_receipt(payload: dict, receipts_dir: Path) -> tuple[Path, bool]:
     return out, duplicate
 
 
+def _read_access_jsonl(path: Path) -> list[dict]:
+    if not path.exists():
+        return []
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def _write_access_jsonl(path: Path, rows: list[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "".join(json.dumps(row, sort_keys=True, ensure_ascii=False) + "\n" for row in rows),
+        encoding="utf-8",
+    )
+
+
+def _access_binding(asset_key: str | None) -> tuple[str | None, str]:
+    if not asset_key:
+        return None, "unbound_no_asset_key"
+    registry = json.loads(_ACCESS_BINDINGS.read_text(encoding="utf-8"))["bindings"]
+    entry = registry.get(asset_key)
+    if not entry:
+        return None, "unbound_unknown_asset_key"
+    asset_id = entry.get("certified_asset_id")
+    if not asset_id:
+        return None, "unbound_no_certified_geometry"
+    return str(asset_id), "bound_certified_geometry"
+
+
+def _validate_access_signal(signal: dict) -> None:
+    forbidden = sorted(_FORBIDDEN_GEOMETRY_KEYS.intersection(signal))
+    if forbidden:
+        raise ValueError(f"access-condition payload must not carry geometry fields: {forbidden}")
+    schema = json.loads(_ACCESS_SCHEMA.read_text(encoding="utf-8"))
+    validate(instance=signal, schema=schema)
+    if signal.get("evidence_tier") != "T1":
+        raise ValueError("El Yunque official access condition must preserve T1 evidence")
+
+
+def _promote_access_condition(signal: dict, out: Path = ACCESS_OUT_DEFAULT) -> dict:
+    _validate_access_signal(signal)
+    bound_asset_id, binding_status = _access_binding(signal.get("asset_key"))
+    row = dict(signal)
+    row["bound_asset_id"] = bound_asset_id
+    row["binding_status"] = binding_status
+    existing = {item["condition_id"]: item for item in _read_access_jsonl(out)}
+    existing[row["condition_id"]] = row
+    _write_access_jsonl(out, list(existing.values()))
+    return row
+
+
 def promote_signal(
     payload: dict,
     events_out: Path,
@@ -52,7 +108,7 @@ def promote_signal(
 
     kind = payload.get("kind") or signal.get("kind") or "environmental_signal"
     if kind == "access_condition":
-        row = promote_access_condition(signal, access_out)
+        row = _promote_access_condition(signal, access_out)
         return None, row["condition_id"]
     if kind not in {"environmental_signal", "signal"}:
         raise ValueError(f"unsupported Centinelas handoff kind: {kind}")
