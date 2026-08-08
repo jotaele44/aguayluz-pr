@@ -1,0 +1,43 @@
+{
+  "schema_version": "aguayluz.pr-municipio-topology-repair/v0.3",
+  "input_package": "Municipalities Layer.zip",
+  "input_components_sha256": {
+    "municipios.shp": "5f22acde9a38bced4d29b938f28facfd46904e330e1485b30d23e5bfd5bd6b5e",
+    "municipios.shx": "c82920139e04868acf48dabd65507b47e6c289f5a2884e97a40b5ce11564622c",
+    "municipios.dbf": "52bd7fcb5a09ef247777b7183a56a0d29994f6939e53606653df3f41f901de36",
+    "municipios.prj": "52c144103b54567a609bd1b4b770de68fb3cffd269dfe5294ca989bcc136ee87"
+  },
+  "input_feature_count": 78,
+  "input_crs": "WGS84(DD)",
+  "repair": {
+    "invalid_edge_count_before": 1,
+    "invalid_edge_feature_geoids": ["72113", "72075"],
+    "invalid_edge_feature_names": ["Ponce", "Juana Díaz"],
+    "invalid_edge_length_m": 1.4186581504047462,
+    "nearest_edge_separation_m": 0.002159896804048541,
+    "deterministic_patch_buffer_m": 0.05,
+    "topology_preserving_coverage_simplification_m": 70.0,
+    "name_normalization_key": "GEOID",
+    "validation_tolerances_unchanged": true
+  },
+  "output": {
+    "path": "data/geo/pr_municipios.geojson",
+    "sha256": "109b0a7eff6594c4338b55ec7c89c696441059e5a8d68404ade7c8d591abd118",
+    "bytes": 803291,
+    "feature_count": 78,
+    "unique_geoid_count": 78,
+    "unique_name_count": 78,
+    "geometry_valid": true,
+    "coverage_is_valid": true,
+    "invalid_edge_count": 0,
+    "overlap_pair_count_above_1_m2": 0
+  },
+  "safety": {
+    "authoritative_claim": false,
+    "source_lineage": "user-supplied 2018 shapefile; legal-boundary authority not independently established",
+    "activation_hold": true,
+    "shadow_mode": true,
+    "notifications_enabled": false,
+    "production_promotion_enabled": false
+  }
+}

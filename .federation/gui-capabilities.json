@@ -474,6 +474,27 @@
       }
     },
     {
+      "id": "pr-geo-boundary-certification",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Fail-closed CRS and topology certification is a CI and release-integrity control for the map layer; operators consume only validated map outputs through existing GUI routes.",
+      "analysis": {
+        "files": [
+          "scripts/validate_pr_geo_boundaries.py"
+        ],
+        "symbols": [
+          "scripts/validate_pr_geo_boundaries.py:main",
+          "scripts/validate_pr_geo_boundaries.py:validate_boundaries"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_pr_geo_validation.py"
+        ]
+      }
+    },
+    {
       "id": "service-health",
       "classification": "internal",
       "status": "active",
