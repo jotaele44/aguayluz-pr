@@ -115,7 +115,7 @@ def test_http_failures_are_classified(case_name: str, expected_code: str):
     assert exc.value.code == expected_code
 
 
-def test_empty_response_is_empty_not_safe():
+def test_empty_response_is_explicitly_missing_and_never_safe():
     case = _fixtures()["cases"]["empty"]
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -125,6 +125,13 @@ def test_empty_response_is_empty_not_safe():
         rows, receipts = snapshot.fetch_collection(client, "latest-continuous", site="50014800", parameter_code="00060")
     assert rows == []
     assert len(receipts) == 1
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        result = snapshot.materialize_snapshot(client, now=datetime(2026, 8, 8, 22, 30, tzinfo=timezone.utc))
+    assert result["operational_state"] == "unknown"
+    assert result["safe_open_reopen_inference"] is False
+    assert result["diagnostics"]
+    assert {item["code"] for item in result["diagnostics"]} == {"empty_response"}
 
 
 def test_pagination_follows_next_link_and_hashes_each_page():

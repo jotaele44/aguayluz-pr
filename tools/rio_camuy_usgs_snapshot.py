@@ -195,6 +195,9 @@ def materialize_snapshot(client: httpx.Client, *, history_datetime: str | None =
         try:
             rows, page_receipts = fetch_collection(client, collection, site=site, parameter_code=parameter, datetime_range=history_datetime)
             receipts.extend(page_receipts)
+            if not rows:
+                diagnostics.append({"collection": collection, "site": site, "code": "empty_response"})
+                continue
             if collection in {"latest-continuous", "continuous"}:
                 for feature, receipt in rows:
                     row = normalize_observation(feature, receipt, collection=collection, now=reference)
