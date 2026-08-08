@@ -4,6 +4,7 @@ import copy
 import json
 from pathlib import Path
 
+from jsonschema.exceptions import ValidationError
 import pytest
 
 from scripts.ingest_centinelas_handoff import (
@@ -70,7 +71,7 @@ def test_geometry_fields_are_rejected():
 def test_non_t1_access_condition_is_rejected():
     signal = _signal()
     signal["evidence_tier"] = "T3"
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         _validate_access_signal(signal)
 
 
