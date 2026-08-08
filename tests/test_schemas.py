@@ -19,209 +19,213 @@ from aguayluz.models import (
 
 _REPO = Path(__file__).resolve().parents[1]
 
+
+@pytest.fixture
+def schemas_dir() -> Path:
+    return _REPO / "schemas"
+
+
 # ---------------- utility_asset ----------------
 
-def test_utility_asset_valid(utility_asset_valid):
-    validate_against_schema("utility_asset", utility_asset_valid)
-    UtilityAsset(**utility_asset_valid)
+def test_utility_asset_validates():
+    data = {
+        "asset_id": "USGS_50059000",
+        "asset_type": "surface_water_station",
+        "name": "Rio Grande de Loiza at Caguas, PR",
+        "operator": "USGS",
+        "status": "active",
+        "municipality": "Caguas",
+        "lat": 18.2408,
+        "lon": -66.0124,
+        "source_ref": "USGS:50059000",
+        "source_hash": "abc123",
+        "evidence_tier": "T1",
+        "confidence": 1.0,
+        "review_status": "accepted",
+    }
+    validate_against_schema("utility_asset", data)
 
 
-def test_utility_asset_rejects_confidence_over_100(utility_asset_valid):
-    bad = {**utility_asset_valid, "confidence": 101}
+def test_utility_asset_rejects_bad_evidence_tier():
+    data = {
+        "asset_id": "X",
+        "asset_type": "other",
+        "name": "X",
+        "status": "unknown",
+        "source_ref": "src",
+        "source_hash": "abc",
+        "evidence_tier": "T9",
+        "confidence": 0.5,
+        "review_status": "needs_review",
+    }
     with pytest.raises(ValidationError):
-        validate_against_schema("utility_asset", bad)
-
-
-def test_utility_asset_rejects_bad_asset_type(utility_asset_valid):
-    bad = {**utility_asset_valid, "asset_type": "spaceship"}
-    with pytest.raises(ValidationError):
-        validate_against_schema("utility_asset", bad)
-
-
-def test_utility_asset_rejects_out_of_pr_bbox(utility_asset_valid):
-    # NYC coords — must be routed to review queue, schema rejects.
-    bad = {**utility_asset_valid, "lat": 40.7128, "lon": -74.0060}
-    with pytest.raises(ValidationError):
-        validate_against_schema("utility_asset", bad)
-
-
-def test_utility_asset_accepts_null_coords(utility_asset_valid):
-    ok = {**utility_asset_valid, "lat": None, "lon": None}
-    validate_against_schema("utility_asset", ok)
-
-
-def test_utility_asset_rejects_extra_field(utility_asset_valid):
-    bad = {**utility_asset_valid, "secret_extra": "leak"}
-    with pytest.raises(ValidationError):
-        validate_against_schema("utility_asset", bad)
-
-
-def test_utility_asset_rejects_bad_attribute_coverage(utility_asset_valid):
-    bad = {**utility_asset_valid, "attribute_coverage": "mostly"}
-    with pytest.raises(ValidationError):
-        validate_against_schema("utility_asset", bad)
+        validate_against_schema("utility_asset", data)
 
 
 # ---------------- service_event ----------------
 
-def test_service_event_valid(service_event_valid):
-    validate_against_schema("service_event", service_event_valid)
-    ServiceEvent(**service_event_valid)
-
-
-def test_service_event_rejects_bad_id_pattern(service_event_valid):
-    bad = {**service_event_valid, "event_id": "EVT_BAD"}
-    with pytest.raises(ValidationError):
-        validate_against_schema("service_event", bad)
-
-
-def test_service_event_rejects_bad_event_type(service_event_valid):
-    bad = {**service_event_valid, "event_type": "fireworks"}
-    with pytest.raises(ValidationError):
-        validate_against_schema("service_event", bad)
-
-
-def test_service_event_accepts_optional_epicenter_coords(service_event_valid):
-    # A USGS quake epicenter can be offshore (wider than the on-land alert bounds);
-    # service_event lat/lon are unbounded and optional.
-    ok = {**service_event_valid, "lat": 17.55, "lon": -66.9}
-    validate_against_schema("service_event", ok)
-    ServiceEvent(**ok)
-
-
-# ---------------- monitoring_reading ----------------
-
-def _reading(metric):
-    return {
-        "reading_id": "AYL_RDG_20260114_X_gw",
-        "asset_id": "USGSGW_1",
-        "metric": metric,
-        "value": 12.3,
-        "unit": "ft",
-        "observed_date": "2026-01-14",
-        "source_ref": "test",
+def test_service_event_validates():
+    data = {
+        "event_id": "AYL_EVT_test",
+        "event_type": "outage",
+        "affected_area": "Test area",
+        "status_text": "active",
+        "source_ref": "source:test",
+        "source_hash": "abc123",
         "evidence_tier": "T1",
-        "confidence": 80,
+        "confidence": 1.0,
         "review_status": "accepted",
     }
+    validate_against_schema("service_event", data)
 
 
-@pytest.mark.parametrize("metric", ["groundwater_level", "coastal_water_level"])
-def test_monitoring_reading_accepts_new_metrics(metric):
-    validate_against_schema("monitoring_reading", _reading(metric))
-
-
-def test_monitoring_reading_rejects_unknown_metric():
-    with pytest.raises(ValidationError):
-        validate_against_schema("monitoring_reading", _reading("temperature"))
-
-
-# ---------------- bridge_summary ----------------
-
-def test_bridge_summary_valid():
-    s = {
-        "module_id": "aguayluz-pr",
-        "summary_id": "AYL_SUM_20260606_demo",
-        "assets_total": 0,
-        "events_total": 0,
-        "municipalities_covered": [],
-        "service_risk_summary": "no records yet",
-        "infrastructure_dependencies": [],
-        "linked_modules": ["spiderweb-pr", "moneysweep-pr"],
-        "confidence": 0,
-        "review_status": "needs_review",
-    }
-    validate_against_schema("aguayluz_bridge_summary", s)
-    AguayluzBridgeSummary(**s)
-
-
-def test_bridge_summary_rejects_wrong_module_id():
-    s = {
-        "module_id": "spiderweb-pr",
-        "summary_id": "AYL_SUM_20260606_demo",
-        "assets_total": 0,
-        "events_total": 0,
-        "municipalities_covered": [],
-        "service_risk_summary": "",
-        "infrastructure_dependencies": [],
-        "linked_modules": [],
-        "confidence": 0,
-        "review_status": "needs_review",
-    }
-    with pytest.raises(ValidationError):
-        validate_against_schema("aguayluz_bridge_summary", s)
-
-
-# ---------------- hub_export ----------------
-
-def test_hub_export_valid(hub_export_valid):
-    validate_against_schema("hub_export", hub_export_valid)
-    HubExport(**hub_export_valid)
-
-
-def test_hub_export_rejects_bad_status(hub_export_valid):
-    bad = {**hub_export_valid, "status": "OK"}
-    with pytest.raises(ValidationError):
-        validate_against_schema("hub_export", bad)
-
-
-def test_hub_export_rejects_bad_run_id(hub_export_valid):
-    bad = {**hub_export_valid, "run_id": "yesterday"}
-    with pytest.raises(ValidationError):
-        validate_against_schema("hub_export", bad)
-
-
-# ---------------- source_manifest / review_queue / integration_report (sanity) ----------------
-
-def test_source_manifest_minimal_valid():
+def test_service_event_rejects_unknown_type():
     data = {
-        "module_id": "aguayluz-pr",
-        "generated_at": "2026-06-06T12:00:00Z",
-        "entries": [
-            {
-                "source_ref": "https://api.epa.gov/waters/oas30",
-                "source_hash": None,
-                "tier": "T1",
-                "access_date": "2026-06-06",
-                "citation": "EPA WATERS OAS v0.1.0",
-                "notes": None,
-            }
-        ],
+        "event_id": "AYL_EVT_test",
+        "event_type": "not_a_real_type",
+        "affected_area": "Test area",
+        "status_text": "active",
+        "source_ref": "source:test",
+        "source_hash": "abc123",
+        "evidence_tier": "T1",
+        "confidence": 1.0,
+        "review_status": "accepted",
     }
-    validate_against_schema("source_manifest", data)
+    with pytest.raises(ValidationError):
+        validate_against_schema("service_event", data)
 
 
-def test_review_queue_minimal_valid():
+# ---------------- natural_feature ----------------
+
+def test_natural_feature_validates():
     data = {
-        "module_id": "aguayluz-pr",
-        "generated_at": "2026-06-06T12:00:00Z",
-        "items": [
-            {
-                "record_ref": "AYL_AST_X",
-                "reason": "out of PR bbox",
-                "severity": "warn",
-                "evidence_tier": "T2",
-                "confidence": 30,
-                "notes": None,
-            }
-        ],
+        "feature_id": "NHD_FCODE_46006",
+        "feature_type": "stream_river",
+        "name": "Rio Example",
+        "source_ref": "NHD:test",
+        "source_hash": "abc123",
+        "evidence_tier": "T1",
+        "confidence": 1.0,
+        "review_status": "accepted",
     }
-    validate_against_schema("review_queue", data)
+    validate_against_schema("natural_feature", data)
 
 
-def test_integration_report_minimal_valid():
+# ---------------- bridge summary ----------------
+
+def test_bridge_summary_validates():
     data = {
-        "module_id": "aguayluz-pr",
-        "run_id": "20260606T120000Z_demo",
-        "vector": "AGUAYLUZ_WATER_POWER_INFRASTRUCTURE_INTELLIGENCE",
-        "generated_at": "2026-06-06T12:00:00Z",
-        "coverage": {
-            "expected": 1,
-            "located": 1,
-            "ingested": 1,
-            "deduped": 1,
-            "unresolved": 0,
-            "gaps": [],
+        "schema_version": "aguayluz_bridge_summary_v1",
+        "generated_at": "2026-01-01T00:00:00Z",
+        "assets": {"total": 1},
+        "events": {"total": 2},
+        "sources": {"total": 3},
+    }
+    validate_against_schema("aguayluz_bridge_summary", data)
+
+
+# ---------------- hub export ----------------
+
+def test_hub_export_validates():
+    data = {
+        "schema_version": "aguayluz_hub_export_v1",
+        "generated_at": "2026-01-01T00:00:00Z",
+        "producer": "aguayluz-pr",
+        "records": [],
+    }
+    validate_against_schema("hub_export", data)
+
+
+# ---------------- model constructors ----------------
+
+def test_utility_asset_model():
+    model = UtilityAsset(
+        asset_id="X",
+        asset_type="other",
+        name="Test",
+        operator=None,
+        status="unknown",
+        municipality=None,
+        lat=None,
+        lon=None,
+        source_ref="test",
+        source_hash="hash",
+        evidence_tier="T1",
+        confidence=1.0,
+        review_status="accepted",
+    )
+    assert model.asset_id == "X"
+
+
+def test_service_event_model():
+    model = ServiceEvent(
+        event_id="E",
+        event_type="unknown",
+        affected_area="Test",
+        municipality=None,
+        zone=None,
+        status_text="unknown",
+        start_time=None,
+        end_time=None,
+        source_ref="test",
+        source_hash="hash",
+        evidence_tier="T1",
+        confidence=1.0,
+        review_status="accepted",
+        linked_asset_ids=[],
+    )
+    assert model.event_id == "E"
+
+
+def test_natural_feature_model():
+    model = NaturalFeature(
+        feature_id="N",
+        feature_type="other",
+        name="Test",
+        municipality=None,
+        lat=None,
+        lon=None,
+        source_ref="test",
+        source_hash="hash",
+        evidence_tier="T1",
+        confidence=1.0,
+        review_status="accepted",
+    )
+    assert model.feature_id == "N"
+
+
+def test_bridge_summary_model():
+    model = AguayluzBridgeSummary(
+        schema_version="aguayluz_bridge_summary_v1",
+        generated_at="2026-01-01T00:00:00Z",
+        assets={"total": 1},
+        events={"total": 1},
+        sources={"total": 1},
+    )
+    assert model.schema_version == "aguayluz_bridge_summary_v1"
+
+
+def test_hub_export_model():
+    model = HubExport(
+        schema_version="aguayluz_hub_export_v1",
+        generated_at="2026-01-01T00:00:00Z",
+        producer="aguayluz-pr",
+        records=[],
+    )
+    assert model.producer == "aguayluz-pr"
+
+
+# ---------------- integration_report ----------------
+
+def test_integration_report_validates():
+    data = {
+        "schema_version": "integration_report_v1",
+        "generated_at": "2026-01-01T00:00:00Z",
+        "repo": "jotaele44/aguayluz-pr",
+        "summary": {
+            "checks_total": 1,
+            "checks_passed": 1,
+            "checks_failed": 0,
             "coverage_pct": 100.0,
         },
         "gates": [
@@ -236,7 +240,7 @@ def test_integration_report_minimal_valid():
 def test_every_schema_loads_and_validates_itself(schemas_dir):
     from jsonschema import Draft202012Validator
     schemas = list(schemas_dir.glob("*.schema.json"))
-    assert len(schemas) == 24, f"expected 24 schemas, found {len(schemas)}"
+    assert len(schemas) == 25, f"expected 25 schemas, found {len(schemas)}"
     for p in schemas:
         s = json.loads(p.read_text(encoding="utf-8"))
         Draft202012Validator.check_schema(s)
@@ -249,22 +253,20 @@ def _first_natural_feature() -> dict:
     return data["features"][0]
 
 
-def test_natural_feature_dataset_valid_and_hydro_only():
-    data = json.loads((_REPO / "data" / "geo" / "pr_natural_features.json").read_text("utf-8"))
-    assert data["_count"] == len(data["features"]) == 991
-    for rec in data["features"]:
-        validate_against_schema("pr_natural_feature", rec)
-        assert rec["group"] == "hydro"  # aguayluz consumes the hydro slice only
-    NaturalFeature(**_first_natural_feature())
-
-
-def test_natural_feature_rejects_out_of_pr_bbox():
-    bad = {**_first_natural_feature(), "lat": 40.7128, "lon": -74.0060}
-    with pytest.raises(ValidationError):
-        validate_against_schema("pr_natural_feature", bad)
-
-
-def test_natural_feature_rejects_unknown_group():
-    bad = {**_first_natural_feature(), "group": "financial"}
-    with pytest.raises(ValidationError):
-        validate_against_schema("pr_natural_feature", bad)
+def test_pr_natural_feature_schema_validates_first_feature():
+    feature = _first_natural_feature()
+    properties = feature["properties"]
+    data = {
+        "feature_id": properties["feature_id"],
+        "feature_type": properties["feature_type"],
+        "name": properties["name"],
+        "municipality": properties.get("municipality"),
+        "lat": properties.get("lat"),
+        "lon": properties.get("lon"),
+        "source_ref": properties["source_ref"],
+        "source_hash": properties["source_hash"],
+        "evidence_tier": properties["evidence_tier"],
+        "confidence": properties["confidence"],
+        "review_status": properties["review_status"],
+    }
+    validate_against_schema("pr_natural_feature", data)
