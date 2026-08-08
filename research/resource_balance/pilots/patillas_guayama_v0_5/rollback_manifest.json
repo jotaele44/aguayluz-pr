@@ -1,0 +1,32 @@
+{
+  "schema_version": "aguayluz.patillas-t1-rollback/v0.5",
+  "base_main_sha": "debbef3e901c7edeb5e6d91c9dfc888383b2024c",
+  "rollback_kind": "delete_additive_v0_5_paths_only",
+  "paths": [
+    "docs/PATILLAS_T1_SOURCE_COVERAGE_v0.5.md",
+    "research/resource_balance/pilots/patillas_guayama_v0_5.py",
+    "research/resource_balance/pilots/patillas_guayama_v0_5/admission_fixtures.json",
+    "research/resource_balance/pilots/patillas_guayama_v0_5/admission_policy.json",
+    "research/resource_balance/pilots/patillas_guayama_v0_5/public_source_receipts.json",
+    "research/resource_balance/pilots/patillas_guayama_v0_5/rollback_manifest.json",
+    "research/resource_balance/pilots/patillas_guayama_v0_5/source_coverage_matrix.json",
+    "tests/test_patillas_guayama_t1_source_coverage_v0_5.py"
+  ],
+  "must_remain_unchanged": [
+    "server/",
+    "dashboard/",
+    ".github/workflows/",
+    "src/aguayluz/",
+    "schemas/",
+    "research/resource_balance/pilots/patillas_guayama_v0_4_1/"
+  ],
+  "real_balance_executed": false,
+  "runtime_activation": false,
+  "api_activation": false,
+  "gui_activation": false,
+  "export_activation": false,
+  "alert_activation": false,
+  "notification_activation": false,
+  "scheduler_activation": false,
+  "control_action_activation": false
+}
