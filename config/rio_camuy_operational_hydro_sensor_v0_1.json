@@ -1,0 +1,229 @@
+{
+  "schema_version": "aguayluz.rio-camuy-operational-monitor/v0.1",
+  "integration_id": "RIO_CAMUY_OPERATIONAL_HYDRO_SENSOR_V0_1",
+  "pilot_asset_id": "AYL_KARST_CAMUY_PARK",
+  "stacked_on_pr151_head": "145d9511947bcc4cd38125690a0409f4a3c3913d",
+  "policy": {
+    "mode": "read_only_fail_closed",
+    "public_notifications_enabled": false,
+    "automatic_public_reopening_enabled": false,
+    "sensor_things_enabled": false,
+    "live_polling_scheduled": false,
+    "stage_rain_thresholds_authority": "pilot_provisional",
+    "stage_rain_operational_authority": false,
+    "missing_data_can_imply_safe": false,
+    "stale_data_can_imply_safe": false,
+    "contradictory_data_can_imply_open": false
+  },
+  "modern_usgs": {
+    "root": "https://api.waterdata.usgs.gov/ogcapi/v0/collections",
+    "current_collection": "latest-continuous",
+    "history_collection": "continuous",
+    "monitoring_locations_collection": "monitoring-locations",
+    "time_series_metadata_collection": "time-series-metadata",
+    "credential_environment_variable": "USGS_API_KEY",
+    "credential_persisted": false,
+    "retired_sensor_things_dependency": false
+  },
+  "sources": [
+    {
+      "source_id": "SRC_KARST_USGS_50014800",
+      "provider": "USGS",
+      "monitoring_location_id": "USGS-50014800",
+      "site_number": "50014800",
+      "site_name": "RIO CAMUY NR BAYANEY, PR",
+      "evidence_tier": "T1",
+      "privacy_class": "P0_PUBLIC",
+      "role": "operational_surface_hydrologic_context",
+      "current_operational_admission": true,
+      "provenance": "USGS Water Data APIs / continuous and latest-continuous",
+      "datastreams": [
+        {
+          "observed_property": "discharge",
+          "parameter_code": "00060",
+          "unit": "ft3/s",
+          "datum": null,
+          "quality_flag_source": "approval_status+qualifier",
+          "sampling_cadence": "source_time_series_metadata_required",
+          "public_disclosure": "public"
+        },
+        {
+          "observed_property": "gage_height",
+          "parameter_code": "00065",
+          "unit": "ft",
+          "datum": "site_gage_datum_requires_time_series_metadata",
+          "quality_flag_source": "approval_status+qualifier",
+          "sampling_cadence": "source_time_series_metadata_required",
+          "public_disclosure": "public"
+        },
+        {
+          "observed_property": "stream_level_elevation",
+          "parameter_code": "72365",
+          "unit": "ft",
+          "datum": "PRVD02",
+          "quality_flag_source": "approval_status+qualifier",
+          "sampling_cadence": "source_time_series_metadata_required",
+          "public_disclosure": "public"
+        },
+        {
+          "observed_property": "precipitation",
+          "parameter_code": "00045",
+          "unit": "in",
+          "datum": null,
+          "quality_flag_source": "approval_status+qualifier",
+          "sampling_cadence": "historical_only",
+          "public_disclosure": "public",
+          "current_operational_admission": false,
+          "reason": "published period ended in 2022; do not treat as current rain telemetry"
+        }
+      ]
+    },
+    {
+      "source_id": "SRC_KARST_USGS_50014600",
+      "provider": "USGS",
+      "monitoring_location_id": "USGS-50014600",
+      "site_number": "50014600",
+      "site_name": "RIO CAMUY AT TRES PUEBLOS SINKHOLE, LARES PR",
+      "evidence_tier": "T1",
+      "privacy_class": "P0_PUBLIC",
+      "role": "historical_upstream_hydrologic_context",
+      "current_operational_admission": false,
+      "provenance": "USGS Water Data historical instantaneous record",
+      "datastreams": [
+        {
+          "observed_property": "discharge",
+          "parameter_code": "00060",
+          "unit": "ft3/s",
+          "datum": null,
+          "quality_flag_source": "approval_status+qualifier",
+          "sampling_cadence": "historical_record_1990_1996",
+          "public_disclosure": "public"
+        }
+      ],
+      "reason": "no current Waterdata observations; historical context only"
+    },
+    {
+      "source_id": "SRC_KARST_LOCAL_RAIN_CONTRACT",
+      "provider": "future_authorized_local_instrument",
+      "observed_property": "precipitation",
+      "unit": "mm",
+      "datum": null,
+      "quality_flag_source": "instrument_qc_required",
+      "sampling_cadence": "instrument_metadata_required",
+      "provenance": "commissioning record + calibration record + observation receipt required",
+      "privacy_class": "P2_CONTROLLED",
+      "current_operational_admission": false,
+      "commissioned": false
+    },
+    {
+      "source_id": "SRC_KARST_LOCAL_STAGE_CONTRACT",
+      "provider": "future_authorized_local_instrument",
+      "observed_property": "stage",
+      "unit": "m",
+      "datum": "surveyed_local_vertical_datum_required",
+      "quality_flag_source": "instrument_qc_required",
+      "sampling_cadence": "instrument_metadata_required",
+      "provenance": "survey + commissioning record + calibration record + observation receipt required",
+      "privacy_class": "P2_CONTROLLED",
+      "current_operational_admission": false,
+      "commissioned": false
+    },
+    {
+      "source_id": "SRC_KARST_LOCAL_O2_CONTRACT",
+      "provider": "future_authorized_local_instrument",
+      "observed_property": "oxygen",
+      "unit": "%",
+      "datum": null,
+      "quality_flag_source": "instrument_qc_required",
+      "sampling_cadence": "instrument_metadata_required",
+      "provenance": "commissioning record + calibration record + observation receipt required",
+      "privacy_class": "P3_RESTRICTED",
+      "current_operational_admission": false,
+      "commissioned": false
+    },
+    {
+      "source_id": "SRC_KARST_LOCAL_CO2_CONTRACT",
+      "provider": "future_authorized_local_instrument",
+      "observed_property": "carbon_dioxide",
+      "unit": "ppm",
+      "datum": null,
+      "quality_flag_source": "instrument_qc_required",
+      "sampling_cadence": "instrument_metadata_required",
+      "provenance": "commissioning record + calibration record + observation receipt required",
+      "privacy_class": "P3_RESTRICTED",
+      "current_operational_admission": false,
+      "commissioned": false
+    },
+    {
+      "source_id": "SRC_KARST_LOCAL_HEARTBEAT_CONTRACT",
+      "provider": "future_authorized_local_instrument",
+      "observed_property": "sensor_heartbeat",
+      "unit": "count",
+      "datum": null,
+      "quality_flag_source": "transport_receipt_required",
+      "sampling_cadence": "instrument_metadata_required",
+      "provenance": "commissioning record + transport receipt required",
+      "privacy_class": "P3_RESTRICTED",
+      "current_operational_admission": false,
+      "commissioned": false
+    },
+    {
+      "source_id": "SRC_KARST_LOCAL_CALIBRATION_CONTRACT",
+      "provider": "future_authorized_local_instrument",
+      "observed_property": "calibration_state",
+      "unit": "state",
+      "datum": null,
+      "quality_flag_source": "calibration_certificate_required",
+      "sampling_cadence": "event_driven",
+      "provenance": "instrument calibration certificate required",
+      "privacy_class": "P3_RESTRICTED",
+      "current_operational_admission": false,
+      "commissioned": false
+    }
+  ],
+  "pilot_thresholds": {
+    "stage_rise_15m_m": {
+      "value": 0.15,
+      "authority": "pilot_provisional",
+      "operational_authority": false
+    },
+    "stage_rise_30m_m": {
+      "value": 0.30,
+      "authority": "pilot_provisional",
+      "operational_authority": false
+    },
+    "rain_1h_mm": {
+      "value": 25.0,
+      "authority": "pilot_provisional",
+      "operational_authority": false
+    },
+    "rain_3h_mm": {
+      "value": 50.0,
+      "authority": "pilot_provisional",
+      "operational_authority": false
+    },
+    "o2_deficient_pct": {
+      "value": 19.5,
+      "authority": "v1.1_acceptance_fixture",
+      "operational_authority": false
+    },
+    "co2_elevated_ppm": {
+      "value": 5000.0,
+      "authority": "v1.1_acceptance_fixture",
+      "operational_authority": false
+    },
+    "co2_critical_ppm": {
+      "value": 30000.0,
+      "authority": "v1.1_acceptance_fixture",
+      "operational_authority": false
+    }
+  },
+  "activation_gates": [
+    "surveyed_camuy_stage_elevations",
+    "hydraulic_response_characterization",
+    "operator_evacuation_time_study",
+    "authorized_sensor_commissioning_records",
+    "calibration_and_qc_provenance",
+    "explicit_operator_approval_before_external_notifications"
+  ]
+}
