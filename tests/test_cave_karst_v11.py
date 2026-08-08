@@ -5,14 +5,14 @@ from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 
 from aguayluz import SCHEMAS_DIR
-from aguayluz.cave_karst import compute_record_hash, load_default_registry, validate_registry
-from aguayluz.cave_karst_v11 import (
+from aguayluz._cave_karst_v11 import (
     RULESET_VERSION,
     evaluate_replay_sample,
     materialize_v11_status,
     public_asset_projection,
     validate_public_projection,
 )
+from aguayluz.cave_karst import compute_record_hash, load_default_registry, validate_registry
 
 AS_OF = datetime(2026, 8, 7, 22, 0, tzinfo=timezone.utc)
 
@@ -145,7 +145,9 @@ def test_sensor_loss_never_emits_safe_or_open_action() -> None:
 
 
 def test_jsonld_context_is_parseable_and_maps_provenance_and_sosa() -> None:
-    context = json.loads((SCHEMAS_DIR / "cave_karst_context.jsonld").read_text(encoding="utf-8"))["@context"]
+    context = json.loads(
+        (SCHEMAS_DIR / "cave_karst_context.jsonld").read_text(encoding="utf-8")
+    )["@context"]
     assert context["source"]["@id"] == "prov:wasDerivedFrom"
     assert context["madeBySensor"]["@id"] == "sosa:madeBySensor"
     assert context["featureOfInterest"]["@id"] == "sosa:hasFeatureOfInterest"
