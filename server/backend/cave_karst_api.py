@@ -289,8 +289,8 @@ def _materialized_assets(
         alerts_by_asset.setdefault(str(alert["asset_id"]), []).append(alert)
 
     items: list[dict[str, Any]] = []
-    for asset in materialize_status(registry["assets"], registry["events"]):
-        payload = _redact_coordinates(asset)
+    for asset in materialize_v11_status(registry["assets"], registry["events"]):
+        payload = public_asset_projection(asset)
         payload["freshness"] = _freshness(payload.get("status_as_of"))
         payload["unresolved_gaps"] = _unresolved_gaps(payload)
         payload["active_alert_count"] = len(alerts_by_asset.get(payload["asset_id"], []))
@@ -408,7 +408,11 @@ def cave_karst_asset(asset_id: str) -> JSONResponse:
     )
     asset["observations"] = sorted(
         (
-            item
+            {
+                key: value
+                for key, value in item.items()
+                if key not in {"sensor_id", "monitoring_site_id"}
+            }
             for item in registry["observations"]
             if item.get("asset_id") == asset_id
         ),

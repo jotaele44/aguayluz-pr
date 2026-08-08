@@ -16,6 +16,11 @@ from aguayluz import SCHEMAS_DIR
 from aguayluz.cave_karst import compute_record_hash, load_default_registry, validate_registry
 
 AS_OF = datetime(2026, 8, 7, 22, 0, tzinfo=timezone.utc)
+CANONICAL_CAMUY_EVENT_HASHES = [
+    "sha256:1c06d82c8e2b2d933faf5ceac71a4d81b6069a65b870e6cc96c5656db6168bd6",
+    "sha256:eff7b2ba62306a58d66f3ac87f736386d78a5dfcf48d6f7db72f491422986b24",
+    "sha256:0e3f9c9bc2eb77630d966a337a22f95768a57c1e9e19970f41aceeee99069746",
+]
 
 
 def test_v11_pilot_registry_validates_without_rewriting_event_hashes() -> None:
@@ -26,6 +31,7 @@ def test_v11_pilot_registry_validates_without_rewriting_event_hashes() -> None:
     assert {item["schema_version"] for item in registry["assets"]} == {"1.1.0"}
     assert all(item["privacy_class"] == "P1_GENERALIZED" for item in registry["assets"])
     assert all(item["operational"]["conflict_hold"] is False for item in registry["assets"])
+    assert [item["record_hash"] for item in registry["events"]] == CANONICAL_CAMUY_EVENT_HASHES
 
 
 def test_v11_current_camuy_state_remains_closed_and_verified() -> None:
@@ -152,3 +158,38 @@ def test_jsonld_context_is_parseable_and_maps_provenance_and_sosa() -> None:
     assert context["source"]["@id"] == "prov:wasDerivedFrom"
     assert context["madeBySensor"]["@id"] == "sosa:madeBySensor"
     assert context["featureOfInterest"]["@id"] == "sosa:hasFeatureOfInterest"
+
+
+def test_pilot_contains_zero_inferred_entrance_geometry() -> None:
+    registry = load_default_registry()
+    cave_assets = [
+        item
+        for item in registry["assets"]
+        if item["asset_kind"] in {"cave", "cave_system"}
+    ]
+    assert cave_assets
+    assert all(item["geometry_type"] != "point" for item in cave_assets)
+    assert all(item["lat"] is None and item["lon"] is None for item in cave_assets)
+
+
+def test_cancelled_procurement_never_becomes_access_transition() -> None:
+    registry = load_default_registry()
+    procurement = next(
+        item
+        for item in registry["observations"]
+        if item["metric"] == "repair_procurement_status"
+    )
+    assert procurement["value"] == "cancelled"
+    assert all(
+        item["source_ref"] != "SRC_KARST_ASG_REPAIR_20260617"
+        for item in registry["events"]
+    )
+    park = next(
+        item
+        for item in materialize_v11_status(
+            registry["assets"], registry["events"], as_of=AS_OF
+        )
+        if item["asset_id"] == "AYL_KARST_CAMUY_PARK"
+    )
+    assert park["current_status"] == "closed"
+    assert park["status_event_id"] == "AYL_KEVT_CAMUY_CLOSED_OBS_20260803"
