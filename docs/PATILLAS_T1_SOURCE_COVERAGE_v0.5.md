@@ -8,7 +8,7 @@ Origin base: `main@debbef3e901c7edeb5e6d91c9dfc888383b2024c`. Latest reviewed ma
 
 ## Required interval inputs
 
-A real 15-minute slice requires all of the following:
+A real hourly slice requires all of the following:
 
 1. Río Grande de Patillas inflow;
 2. Río Marín inflow;
@@ -21,7 +21,7 @@ A real 15-minute slice requires all of the following:
 9. open-water evaporation volume;
 10. documented operational-loss volume.
 
-A daily balance may be assembled only from 96 individually admitted 15-minute slices. No required inflow or outflow component may be silently imputed as zero.
+A daily balance may be assembled only from 24 individually admitted hourly slices. No required inflow or outflow component may be silently imputed as zero.
 
 ## Public-source adjudication
 
@@ -43,7 +43,7 @@ USGS 50093120 measures Río Grande de Patillas below Lago Patillas. This is reta
 
 ### Direct treatment withdrawal
 
-Puerto Rico Statistics/AAA publicly describes average monthly raw-water extraction and production by filtration plant or well in MGD. That is authoritative public context but is too coarse for a 15-minute synchronized slice. A synchronized difference between USGS stations above and below the Guayama filtration plant may be retained as a derived diversion estimate, but it must not be labeled a direct plant-meter withdrawal.
+Puerto Rico Statistics/AAA publicly describes average monthly raw-water extraction and production by filtration plant or well in MGD. That is authoritative public context but is too coarse for a synchronized hourly slice. A synchronized difference between USGS stations above and below the Guayama filtration plant may be retained as a derived diversion estimate, but it must not be labeled a direct plant-meter withdrawal.
 
 ### Downstream terminal flow
 
@@ -51,7 +51,7 @@ USGS 50093078 below the Guayama Filtration Plant, USGS 50093083 above the AES in
 
 ### Precipitation
 
-NOAA/NWS publishes Stage IV quantitative precipitation estimates specifically for Puerto Rico in machine-readable NetCDF and GeoTIFF formats at hourly cadence. USGS 50093045 supplies an independent point precipitation observation. Conversion to reservoir precipitation volume still requires the water-surface geometry applicable to the interval, exact clipping/area weighting, and quantified QPE/geometry uncertainty. Because the current admission contract is 15-minute, the hourly Stage IV product cannot be silently disaggregated; a separately justified temporal-allocation model or a coarser synchronized balance window would be required.
+NOAA/NWS publishes Stage IV quantitative precipitation estimates specifically for Puerto Rico in machine-readable NetCDF and GeoTIFF formats at hourly cadence. USGS 50093045 supplies an independent point precipitation observation. The admission cadence is therefore hourly rather than silently subdividing the Stage IV product. Conversion to reservoir precipitation volume still requires the water-surface geometry applicable to the interval, exact clipping/area weighting, and quantified QPE/geometry uncertainty.
 
 ### Evaporation
 
@@ -63,17 +63,15 @@ DRNA identifies Canal de Patillas as originating at Embalse Patillas, operated b
 
 ## Admission policy
 
-Every real observation must be T1, nonprovisional, current/accepted revision, calibration-verified, source-hash bound, topology-version bound, and accompanied by numeric uncertainty with provenance. Rate/volume terms must represent the exact 15-minute interval. Stage observations must use PRVD02 and fall within 7.5 minutes of the corresponding boundary timestamp.
+Every real observation must be T1, nonprovisional, current/accepted revision, calibration-verified, source-hash bound, topology-version bound, and accompanied by numeric uncertainty with provenance. Rate/volume terms must represent the exact hourly interval. Stage observations must use PRVD02 and fall within 15 minutes of the corresponding boundary timestamp.
 
-`proxy_only` and `public_document_only` records cannot satisfy a real interval balance input.
-
-The precipitation cadence mismatch is intentionally left fail-closed: an hourly public QPE product is a valid precipitation precursor but is not a valid 15-minute volume until an explicit, independently validated temporal-allocation transform exists.
+`proxy_only` and `public_document_only` records cannot satisfy a real interval balance input. The hourly cadence is selected because NOAA Puerto Rico Stage IV QPE is natively hourly; no temporal subdivision is performed without a separately validated allocation model.
 
 ## Public OSINT disposition
 
 The bounded v0.5 sweep closes the major currently identifiable public source-discovery blind spots for the selected topology: both named reservoir tributaries, a separate below-dam river outlet, the downstream canal gauge chain through Intake 123, explicit Puerto Rico hourly QPE, public monthly AAA treatment context, and DRNA/AEE canal-operating context are represented. Source discovery is not admission, and the real balance remains blocked.
 
-The remaining evidence gaps are exact outlet-works/canal release, direct interval Guayama treatment withdrawal, a proven terminal canal boundary, stage-linked surface geometry and a 15-minute precipitation transform (or a cadence redesign), current open-water evaporation, synchronized documented operational losses, and calibration/revision/uncertainty bindings for every interval measurement.
+The remaining evidence gaps are exact outlet-works/canal release, direct interval Guayama treatment withdrawal, a proven terminal canal boundary, stage-linked surface geometry, current open-water evaporation, synchronized documented operational losses, and calibration/revision/uncertainty bindings for every interval measurement.
 
 No operator request has been sent. Any operator request remains downstream of public-path exhaustion and separate approval.
 
