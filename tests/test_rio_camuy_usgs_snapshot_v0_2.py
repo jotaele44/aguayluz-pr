@@ -14,7 +14,7 @@ FIXTURE = REPO / "tests" / "fixtures" / "rio_camuy_usgs_snapshot_v0_2" / "http_c
 CONFIG = REPO / "config" / "rio_camuy_usgs_snapshot_v0_2.json"
 
 _SPEC = importlib.util.spec_from_file_location(
-    "rio_camuy_usgs_snapshot", REPO / "scripts" / "rio_camuy_usgs_snapshot.py"
+    "rio_camuy_usgs_snapshot", REPO / "tools" / "rio_camuy_usgs_snapshot.py"
 )
 assert _SPEC and _SPEC.loader
 snapshot = importlib.util.module_from_spec(_SPEC)
@@ -58,7 +58,7 @@ def test_contract_is_operator_only_env_keyed_and_fail_closed():
 
 
 def test_adapter_has_no_cli_api_key_or_scheduler_surface():
-    source = (REPO / "scripts" / "rio_camuy_usgs_snapshot.py").read_text(encoding="utf-8")
+    source = (REPO / "tools" / "rio_camuy_usgs_snapshot.py").read_text(encoding="utf-8")
     assert 'os.environ.get("USGS_API_KEY"' in source
     assert '"X-Api-Key": api_key' in source
     assert "--api-key" not in source
