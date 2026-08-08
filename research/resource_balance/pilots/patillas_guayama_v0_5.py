@@ -11,10 +11,12 @@ from pathlib import Path
 from typing import Any
 
 REQUIRED_METRICS = {
-    "upstream_inflow_rate",
+    "rio_grande_inflow_rate",
+    "rio_marin_inflow_rate",
     "reservoir_stage_start",
     "reservoir_stage_end",
     "gate_or_canal_release_rate",
+    "downstream_river_release_rate",
     "direct_treatment_withdrawal_rate",
     "downstream_terminal_flow_rate",
     "area_weighted_precipitation_volume",
@@ -22,8 +24,10 @@ REQUIRED_METRICS = {
     "documented_operational_loss_volume",
 }
 RATE_METRICS = {
-    "upstream_inflow_rate",
+    "rio_grande_inflow_rate",
+    "rio_marin_inflow_rate",
     "gate_or_canal_release_rate",
+    "downstream_river_release_rate",
     "direct_treatment_withdrawal_rate",
     "downstream_terminal_flow_rate",
 }
