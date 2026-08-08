@@ -1,0 +1,432 @@
+{
+  "schema_version": "aguayluz.water-balance-compatibility/v0.1",
+  "source_main_sha": "17c843595b5cdfbcef4e5f7b1ac6c662092e335d",
+  "generated_at": "2026-08-04T19:16:00Z",
+  "design_only": true,
+  "components": [
+    {
+      "component_id": "MAIN_UTILITY_ASSET_SCHEMA",
+      "source_state": "main_current",
+      "path_or_reference": "schemas/utility_asset.schema.json",
+      "concept": "Static and slowly changing utility asset source record",
+      "disposition": "ADAPT",
+      "canonical_target": "Asset",
+      "runtime_changed": false,
+      "data_migration_authorized": false,
+      "overlaps": ["PR101_ASSET_GRAPH"],
+      "notes": ["Preserve source asset IDs and records", "Do not infer hydraulic topology from asset proximity"]
+    },
+    {
+      "component_id": "MAIN_ASSET_CROSSWALK",
+      "source_state": "main_current",
+      "path_or_reference": "schemas/asset_crosswalk.schema.json",
+      "concept": "Source asset identity reconciliation",
+      "disposition": "PRESERVE",
+      "canonical_target": "Lineage",
+      "runtime_changed": false,
+      "data_migration_authorized": false,
+      "overlaps": ["PR101_ASSET_GRAPH"],
+      "notes": ["Identity equivalence cannot create a flow edge"]
+    },
+    {
+      "component_id": "MAIN_MONITORING_READING",
+      "source_state": "main_current",
+      "path_or_reference": "schemas/monitoring_reading.schema.json",
+      "concept": "Routine date-based monitoring observation",
+      "disposition": "ADAPT",
+      "canonical_target": "WaterObservation",
+      "runtime_changed": false,
+      "data_migration_authorized": false,
+      "overlaps": ["PR109_USGS_ACQUISITION", "PR116_USGS_COVERAGE"],
+      "notes": ["Preserve date-only precision", "Add interval, uncertainty, freshness, quality and lineage only in projection"]
+    },
+    {
+      "component_id": "MAIN_SERVICE_EVENT",
+      "source_state": "main_current",
+      "path_or_reference": "schemas/service_event.schema.json",
+      "concept": "Discrete service or operational event",
+      "disposition": "PRESERVE",
+      "canonical_target": "ContextOnly",
+      "runtime_changed": false,
+      "data_migration_authorized": false,
+      "overlaps": [],
+      "notes": ["Event occurrence is not a measured quantity"]
+    },
+    {
+      "component_id": "MAIN_ALERT_SYSTEM",
+      "source_state": "main_current",
+      "path_or_reference": "schemas/alert_event.schema.json; scripts/build_alerts.py; src/aguayluz/water_alerts.py",
+      "concept": "Derived operational and hazard alert system",
+      "disposition": "PRESERVE",
+      "canonical_target": "ContextOnly",
+      "runtime_changed": false,
+      "data_migration_authorized": false,
+      "overlaps": [],
+      "notes": ["Balance residuals cannot enter alerts until a separate promotion ballot"]
+    },
+    {
+      "component_id": "MAIN_MONITORING_QUALITY",
+      "source_state": "main_current",
+      "path_or_reference": "server/backend/monitoring_quality.py",
+      "concept": "Monitoring-quality evaluation",
+      "disposition": "ADAPT",
+      "canonical_target": "Quality",
+      "runtime_changed": false,
+      "data_migration_authorized": false,
+      "overlaps": [],
+      "notes": ["Map existing flags rather than duplicate quality truth"]
+    },
+    {
+      "component_id": "MAIN_ALERT_GAPS",
+      "source_state": "main_current",
+      "path_or_reference": "schemas/alert_gap.schema.json",
+      "concept": "Monitoring and alert coverage gaps",
+      "disposition": "ADAPT",
+      "canonical_target": "Coverage",
+      "runtime_changed": false,
+      "data_migration_authorized": false,
+      "overlaps": ["PR116_USGS_COVERAGE", "PR118_LAGUNA_CONTROL_PLANE"],
+      "notes": ["Provider registration, observation coverage and current-condition eligibility remain separate states"]
+    },
+    {
+      "component_id": "MAIN_SOURCE_MANIFEST",
+      "source_state": "main_current",
+      "path_or_reference": "schemas/source_manifest.schema.json",
+      "concept": "Source provenance and materialization state",
+      "disposition": "PRESERVE",
+      "canonical_target": "Lineage",
+      "runtime_changed": false,
+      "data_migration_authorized": false,
+      "overlaps": [],
+      "notes": ["Every projected observation must retain source record and source hash lineage"]
+    },
+    {
+      "component_id": "MAIN_REVIEW_QUEUE",
+      "source_state": "main_current",
+      "path_or_reference": "schemas/review_queue.schema.json",
+      "concept": "Human review and adjudication queue",
+      "disposition": "PRESERVE",
+      "canonical_target": "Quality",
+      "runtime_changed": false,
+      "data_migration_authorized": false,
+      "overlaps": [],
+      "notes": ["Use for contradictions and promotion review"]
+    },
+    {
+      "component_id": "MAIN_WATER_INGESTORS",
+      "source_state": "main_current",
+      "path_or_reference": "scripts/ingest_water.py; scripts/ingest_usgs_water.py; scripts/ingest_usgs_levels.py; scripts/ingest_usgs_groundwater.py; scripts/ingest_usgs_samples.py",
+      "concept": "Surface water, reservoir, groundwater and sample acquisition",
+      "disposition": "ADAPT",
+      "canonical_target": "WaterObservation",
+      "runtime_changed": false,
+      "data_migration_authorized": false,
+      "overlaps": ["PR109_USGS_ACQUISITION", "PR116_USGS_COVERAGE", "RESCUE107_USGS_WIP"],
+      "notes": ["Preserve parameter codes, provisional flags, datum meaning and adapter ownership"]
+    },
+    {
+      "component_id": "MAIN_ENVIRONMENTAL_INGESTORS",
+      "source_state": "main_current",
+      "path_or_reference": "scripts/ingest_neon.py; scripts/ingest_neon_products.py; scripts/ingest_noaa_tides.py; scripts/ingest_nws_alerts.py",
+      "concept": "Environmental and hazard context",
+      "disposition": "ADAPT",
+      "canonical_target": "ContextOnly",
+      "runtime_changed": false,
+      "data_migration_authorized": false,
+      "overlaps": ["PR96_PROVIDER_REGISTRY", "PR109_USGS_ACQUISITION"],
+      "notes": ["NWS alerts are not rainfall quantities", "NEON and coastal sites require representativeness controls"]
+    },
+    {
+      "component_id": "MAIN_REFRESH",
+      "source_state": "main_current",
+      "path_or_reference": "scripts/refresh.py",
+      "concept": "Scheduled ingestion orchestration",
+      "disposition": "PRESERVE",
+      "canonical_target": "None",
+      "runtime_changed": false,
+      "data_migration_authorized": false,
+      "overlaps": [],
+      "notes": ["No water-balance job is registered in design v0.1"]
+    },
+    {
+      "component_id": "MAIN_INCIDENT_LEDGER",
+      "source_state": "main_current",
+      "path_or_reference": "server/backend/monitoring_incident_ledger.py; server/backend/water_disruption.py; server/backend/water_disruption_api.py",
+      "concept": "Append-only incident validation, truth and lifecycle",
+      "disposition": "PRESERVE",
+      "canonical_target": "IncidentLink",
+      "runtime_changed": false,
+      "data_migration_authorized": false,
+      "overlaps": ["PR118_LAGUNA_CONTROL_PLANE"],
+      "notes": ["A model residual cannot bypass existing truth-strength and lifecycle validation"]
+    },
+    {
+      "component_id": "MAIN_FEDERATION_EXPORT",
+      "source_state": "main_current",
+      "path_or_reference": "scripts/federation_export.py; federation.json",
+      "concept": "Federation publication contract",
+      "disposition": "PRESERVE",
+      "canonical_target": "None",
+      "runtime_changed": false,
+      "data_migration_authorized": false,
+      "overlaps": ["RESCUE104_FEDERATION_WIP", "RESCUE108_CONFORMANCE_WIP"],
+      "notes": ["Water-balance records remain export-ineligible until a later ballot"]
+    },
+    {
+      "component_id": "MAIN_GUI",
+      "source_state": "main_current",
+      "path_or_reference": "dashboard; .federation/gui-capabilities.json; .federation/gui-parity-baseline.json",
+      "concept": "Existing read-only operational surfaces and GUI governance",
+      "disposition": "PRESERVE",
+      "canonical_target": "None",
+      "runtime_changed": false,
+      "data_migration_authorized": false,
+      "overlaps": ["PR101_ASSET_GRAPH", "PR115_CAVE_GUI"],
+      "notes": ["No GUI route, sidebar item or public capability is added in design v0.1"]
+    },
+    {
+      "component_id": "PR101_ASSET_GRAPH",
+      "source_state": "open_pr_candidate",
+      "path_or_reference": "PR #101 @ c50855876c57c0d10cd3bcea81a6998814863a09",
+      "concept": "Canonical water asset graph and impact switchboard",
+      "disposition": "REVIEW",
+      "canonical_target": "Asset",
+      "runtime_changed": false,
+      "data_migration_authorized": false,
+      "overlaps": ["MAIN_UTILITY_ASSET_SCHEMA", "MAIN_ASSET_CROSSWALK"],
+      "notes": ["Strong identity candidate", "Declared dependency edges are not automatically hydraulic flow edges"]
+    },
+    {
+      "component_id": "PR96_PROVIDER_REGISTRY",
+      "source_state": "open_pr_candidate",
+      "path_or_reference": "PR #96 @ 4724e3110a47b08e88dd236c6dbca387b2e2c3e0",
+      "concept": "Environmental provider registry and opt-in health monitoring",
+      "disposition": "REVIEW",
+      "canonical_target": "Coverage",
+      "runtime_changed": false,
+      "data_migration_authorized": false,
+      "overlaps": ["MAIN_ENVIRONMENTAL_INGESTORS", "PR116_USGS_COVERAGE"],
+      "notes": ["Provider registration does not equal measured observation coverage"]
+    },
+    {
+      "component_id": "PR109_USGS_ACQUISITION",
+      "source_state": "open_pr_candidate",
+      "path_or_reference": "PR #109 @ 651ad41e8bbcbd7f1877bb14436bb19a1bcfab2a",
+      "concept": "USGS field measurements, annual peaks and NHC acquisition",
+      "disposition": "REVIEW",
+      "canonical_target": "WaterObservation",
+      "runtime_changed": false,
+      "data_migration_authorized": false,
+      "overlaps": ["MAIN_MONITORING_READING", "MAIN_WATER_INGESTORS", "PR116_USGS_COVERAGE"],
+      "notes": ["Adjudicate overlap with #116", "Preserve groundwater parameter direction and qualifier semantics"]
+    },
+    {
+      "component_id": "PR116_USGS_COVERAGE",
+      "source_state": "open_pr_candidate",
+      "path_or_reference": "PR #116 @ 628a7da4dddb0622f07d97850bf79a0567bdef3e",
+      "concept": "Auditable coverage for ten USGS Water Data categories",
+      "disposition": "REVIEW",
+      "canonical_target": "Coverage",
+      "runtime_changed": false,
+      "data_migration_authorized": false,
+      "overlaps": ["PR96_PROVIDER_REGISTRY", "PR109_USGS_ACQUISITION", "MAIN_ALERT_GAPS"],
+      "notes": ["Coverage contracts must remain separate from actual water-volume observations"]
+    },
+    {
+      "component_id": "PR118_LAGUNA_CONTROL_PLANE",
+      "source_state": "open_pr_candidate",
+      "path_or_reference": "PR #118 @ b82c724072d46631bc563c9562948d11119b4cc6",
+      "concept": "Laguna Cartagena current-condition control plane",
+      "disposition": "REVIEW",
+      "canonical_target": "NestedBalance",
+      "runtime_changed": false,
+      "data_migration_authorized": false,
+      "overlaps": ["MAIN_ALERT_GAPS", "MAIN_INCIDENT_LEDGER"],
+      "notes": ["Candidate pilot after merge adjudication", "No dependency on unmerged PR in this design branch"]
+    },
+    {
+      "component_id": "PR114_CAVE_KARST_CORE",
+      "source_state": "open_pr_candidate",
+      "path_or_reference": "PR #114 @ f31558444ef0d86e045b1e1869f24e993c7012d3",
+      "concept": "Cave and karst registry and hydrologic context",
+      "disposition": "REVIEW",
+      "canonical_target": "ContextOnly",
+      "runtime_changed": false,
+      "data_migration_authorized": false,
+      "overlaps": ["PR115_CAVE_GUI"],
+      "notes": ["Karst relations cannot be treated as quantified flow paths without direct evidence"]
+    },
+    {
+      "component_id": "PR115_CAVE_GUI",
+      "source_state": "open_pr_candidate",
+      "path_or_reference": "PR #115 @ 126a5d63a278136fc78c3e144e200d51f7379160",
+      "concept": "Read-only cave and karst API and GUI",
+      "disposition": "REVIEW",
+      "canonical_target": "ContextOnly",
+      "runtime_changed": false,
+      "data_migration_authorized": false,
+      "overlaps": ["PR114_CAVE_KARST_CORE", "MAIN_GUI"],
+      "notes": ["Stacked PR and coordinate-disclosure controls remain independent"]
+    },
+    {
+      "component_id": "RESCUE104_FEDERATION_WIP",
+      "source_state": "rescued_wip",
+      "path_or_reference": "PR #104",
+      "concept": "Rescued federation export, validation and schema WIP",
+      "disposition": "REVIEW",
+      "canonical_target": "None",
+      "runtime_changed": false,
+      "data_migration_authorized": false,
+      "overlaps": ["MAIN_FEDERATION_EXPORT"],
+      "notes": ["Review unique patches only; do not wholesale merge"]
+    },
+    {
+      "component_id": "RESCUE105_WATER_INTEL_TESTS",
+      "source_state": "rescued_wip",
+      "path_or_reference": "PR #105",
+      "concept": "Rescued water-intelligence tests and fixtures",
+      "disposition": "REVIEW",
+      "canonical_target": "Quality",
+      "runtime_changed": false,
+      "data_migration_authorized": false,
+      "overlaps": [],
+      "notes": ["Evaluate only for unique still-valid test cases"]
+    },
+    {
+      "component_id": "RESCUE106_PRESYNC_WIP",
+      "source_state": "rescued_wip",
+      "path_or_reference": "PR #106",
+      "concept": "Mixed presync data refresh and water-intelligence WIP",
+      "disposition": "REVIEW",
+      "canonical_target": "None",
+      "runtime_changed": false,
+      "data_migration_authorized": false,
+      "overlaps": ["MAIN_WATER_INGESTORS", "MAIN_FEDERATION_EXPORT"],
+      "notes": ["Mixed scope and large data changes prohibit wholesale adoption"]
+    },
+    {
+      "component_id": "RESCUE107_USGS_WIP",
+      "source_state": "rescued_wip",
+      "path_or_reference": "PR #107",
+      "concept": "Rescued USGS water ingestion WIP",
+      "disposition": "REVIEW",
+      "canonical_target": "WaterObservation",
+      "runtime_changed": false,
+      "data_migration_authorized": false,
+      "overlaps": ["MAIN_WATER_INGESTORS", "PR109_USGS_ACQUISITION", "PR116_USGS_COVERAGE"],
+      "notes": ["Likely superseded; compare patch identity before disposition"]
+    },
+    {
+      "component_id": "RESCUE108_CONFORMANCE_WIP",
+      "source_state": "rescued_wip",
+      "path_or_reference": "PR #108",
+      "concept": "Rescued federation conformance branch history",
+      "disposition": "REVIEW",
+      "canonical_target": "None",
+      "runtime_changed": false,
+      "data_migration_authorized": false,
+      "overlaps": ["MAIN_FEDERATION_EXPORT"],
+      "notes": ["No dependency in the water-balance design"]
+    },
+    {
+      "component_id": "EXTERNAL_OPERATOR_TELEMETRY",
+      "source_state": "external_gap",
+      "path_or_reference": "AAA/DRNA/operator records not present in current main",
+      "concept": "Treatment intake/output, tank, pressure-zone, valve, interconnection, gate and well-withdrawal telemetry",
+      "disposition": "REVIEW",
+      "canonical_target": "WaterObservation",
+      "runtime_changed": false,
+      "data_migration_authorized": false,
+      "overlaps": [],
+      "notes": ["Required for fine-grained operational attribution", "Absence forces underdetermined balances"]
+    }
+  ],
+  "contradictions": [
+    {
+      "contradiction_id": "WB_CONTRA_001",
+      "class": "event_vs_quantity",
+      "component_ids": ["MAIN_SERVICE_EVENT", "MAIN_MONITORING_READING"],
+      "risk": "high",
+      "required_resolution": "Keep operational events separate from measured or derived water quantities."
+    },
+    {
+      "contradiction_id": "WB_CONTRA_002",
+      "class": "topology",
+      "component_ids": ["MAIN_ALERT_SYSTEM", "PR101_ASSET_GRAPH"],
+      "risk": "blocking",
+      "required_resolution": "Do not promote dependency, proximity or service edges to balance-eligible hydraulic flow without source-declared or corroborated topology."
+    },
+    {
+      "contradiction_id": "WB_CONTRA_003",
+      "class": "metric_semantics",
+      "component_ids": ["MAIN_MONITORING_READING", "PR109_USGS_ACQUISITION"],
+      "risk": "blocking",
+      "required_resolution": "Keep groundwater depth-below-surface and elevation-above-datum parameters separate and direction-aware."
+    },
+    {
+      "contradiction_id": "WB_CONTRA_004",
+      "class": "coverage_state",
+      "component_ids": ["PR96_PROVIDER_REGISTRY", "PR116_USGS_COVERAGE"],
+      "risk": "high",
+      "required_resolution": "Represent provider registration, endpoint implementation, live verification, observation presence, freshness and balance eligibility as distinct states."
+    },
+    {
+      "contradiction_id": "WB_CONTRA_005",
+      "class": "open_pr_overlap",
+      "component_ids": ["PR109_USGS_ACQUISITION", "PR116_USGS_COVERAGE", "RESCUE107_USGS_WIP"],
+      "risk": "blocking",
+      "required_resolution": "Adjudicate adapter, schema, data and test ownership before implementation."
+    },
+    {
+      "contradiction_id": "WB_CONTRA_006",
+      "class": "residual_vs_proof",
+      "component_ids": ["MAIN_ALERT_SYSTEM", "MAIN_INCIDENT_LEDGER", "PR118_LAGUNA_CONTROL_PLANE"],
+      "risk": "blocking",
+      "required_resolution": "A model residual remains an analytical finding and cannot create a confirmed incident or allegation without existing validation and independent corroboration."
+    }
+  ],
+  "gaps": [
+    {
+      "gap_id": "WB_GAP_001",
+      "category": "topology",
+      "description": "Authoritative treatment, transmission and distribution hydraulic topology is not present in current main.",
+      "blocking_for": ["transmission", "distribution", "first_failed_boundary"],
+      "status": "external_dependency"
+    },
+    {
+      "gap_id": "WB_GAP_002",
+      "category": "telemetry",
+      "description": "Treatment intake/output, tanks, district meters, pressure zones, interconnections, releases and well pumping are incomplete or absent.",
+      "blocking_for": ["treatment", "transmission", "distribution", "groundwater"],
+      "status": "external_dependency"
+    },
+    {
+      "gap_id": "WB_GAP_003",
+      "category": "hydrology",
+      "description": "Stage-storage curves, sedimentation versions, rainfall-runoff/recharge models and lag policies are not canonical first-class records.",
+      "blocking_for": ["watershed", "reservoir", "groundwater"],
+      "status": "open"
+    },
+    {
+      "gap_id": "WB_GAP_004",
+      "category": "uncertainty",
+      "description": "Current routine monitoring readings do not carry numerical uncertainty envelopes or correlated-error groups.",
+      "blocking_for": ["closure_status", "anomaly_promotion"],
+      "status": "open"
+    },
+    {
+      "gap_id": "WB_GAP_005",
+      "category": "federation",
+      "description": "No federation entity contract authorizes water-balance ledger or assessment records.",
+      "blocking_for": ["federation_export"],
+      "status": "review_required"
+    },
+    {
+      "gap_id": "WB_GAP_006",
+      "category": "operator_records",
+      "description": "Private-well and industrial-withdrawal completeness remains unresolved.",
+      "blocking_for": ["groundwater", "unrecorded_abstraction_attribution"],
+      "status": "external_dependency"
+    }
+  ]
+}
