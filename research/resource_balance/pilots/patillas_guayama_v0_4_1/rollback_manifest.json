@@ -1,0 +1,24 @@
+{
+  "added_paths": [
+    "docs/PATILLAS_STAGE_VOLUME_RECOVERY_v0.4.1.md",
+    "research/resource_balance/pilots/patillas_guayama_v0_4_1.py",
+    "research/resource_balance/pilots/patillas_guayama_v0_4_1/",
+    "tests/test_patillas_stage_volume_v0_4_1.py"
+  ],
+  "merge_up_main": "a6b1bc591ef23d0558865d437ab2806319119bbb",
+  "must_remain_unchanged": [
+    "server/",
+    "dashboard/",
+    ".federation/",
+    "scripts/",
+    "src/",
+    "config/",
+    "schemas/"
+  ],
+  "pre_recovery_head": "cbc53e18c06acfe78adde5209555cca8fb171f44",
+  "real_balance_execution": false,
+  "rollback_kind": "delete_additive_v0_4_1_paths_and_restore_pre_merge_parent",
+  "runtime_activation": false,
+  "schema_version": "aguayluz.rollback-manifest/v0.4.1",
+  "temporary_path_removed": ".github/workflows/acquire-patillas-stage-volume-once.yml"
+}
