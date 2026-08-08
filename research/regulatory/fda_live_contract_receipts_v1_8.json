@@ -1,0 +1,148 @@
+{
+  "receipt_set_version": "fda-live-contract-receipts/v1.8",
+  "status": "frozen_documentation_receipts_only",
+  "reviewed_at_utc": "2026-08-05T04:51:32Z",
+  "provider_acquisition_executed": false,
+  "network_client_implemented": false,
+  "real_credentials_accepted": false,
+  "production_persistence_allowed": false,
+  "scheduler_registration_allowed": false,
+  "requires_separate_explicit_authorization": true,
+  "official_documentation_receipts": [
+    {
+      "receipt_id": "FDA_DOC_OPENFDA_TERMS_2026_08_05",
+      "url": "https://open.fda.gov/terms/",
+      "host": "open.fda.gov",
+      "purpose": "openFDA terms, data rights, limits, warranty, and service-use boundary",
+      "sha256": "documentation_sha256_not_captured_no_provider_acquisition",
+      "source_notes": [
+        "openFDA data is generally unrestricted subject to marked exceptions",
+        "openFDA service use is subject to the posted Terms of Service",
+        "FDA may limit access to manage load, equitable access, and abuse prevention"
+      ]
+    },
+    {
+      "receipt_id": "FDA_DOC_OPENFDA_AUTH_RATE_LIMIT_2026_08_05",
+      "url": "https://open.fda.gov/apis/authentication/",
+      "host": "open.fda.gov",
+      "purpose": "API key placement, HTTPS requirement, and current standard request limits",
+      "sha256": "documentation_sha256_not_captured_no_provider_acquisition",
+      "rate_limits": {
+        "without_api_key": {
+          "requests_per_minute_per_ip": 240,
+          "requests_per_day_per_ip": 1000
+        },
+        "with_api_key": {
+          "requests_per_minute_per_key": 240,
+          "requests_per_day_per_key": 120000
+        }
+      }
+    },
+    {
+      "receipt_id": "FDA_DOC_OPENFDA_QUERY_PARAMETERS_2026_08_05",
+      "url": "https://open.fda.gov/apis/query-parameters/",
+      "host": "open.fda.gov",
+      "purpose": "allowed query parameters and per-call limit/skip bounds",
+      "sha256": "documentation_sha256_not_captured_no_provider_acquisition",
+      "query_contract": {
+        "max_limit_per_call": 1000,
+        "max_skip": 25000
+      }
+    },
+    {
+      "receipt_id": "FDA_DOC_OPENFDA_PAGING_2026_08_05",
+      "url": "https://open.fda.gov/apis/paging/",
+      "host": "open.fda.gov",
+      "purpose": "paging, downloads, and search-after boundary for large result sets",
+      "sha256": "documentation_sha256_not_captured_no_provider_acquisition",
+      "paging_contract": {
+        "skip_limit_result_window": 26000,
+        "large_result_strategy": "downloads_or_search_after_only_after_profile_approval"
+      }
+    },
+    {
+      "receipt_id": "FDA_DOC_DEVICE_REGISTRATION_LISTING_OPENFDA_2026_08_05",
+      "url": "https://open.fda.gov/apis/device/registrationlisting/how-to-use-the-endpoint/",
+      "host": "open.fda.gov",
+      "purpose": "device registration and listing endpoint profile",
+      "sha256": "documentation_sha256_not_captured_no_provider_acquisition",
+      "base_endpoint": "https://api.fda.gov/device/registrationlisting.json"
+    },
+    {
+      "receipt_id": "FDA_DOC_DEVICE_REGISTRATION_LISTING_ACCESSDATA_2026_08_05",
+      "url": "https://www.fda.gov/medical-devices/device-registration-and-listing/search-registration-and-listing",
+      "host": "www.fda.gov",
+      "purpose": "AccessData registration/listing search and download boundary",
+      "sha256": "documentation_sha256_not_captured_no_provider_acquisition",
+      "source_notes": [
+        "database is updated weekly, usually every Monday",
+        "public search returns up to 100 different establishments",
+        "registration and listing does not denote FDA approval"
+      ]
+    },
+    {
+      "receipt_id": "FDA_DOC_INSPECTION_CLASSIFICATION_DATABASE_2026_08_05",
+      "url": "https://www.fda.gov/inspections-compliance-enforcement-and-criminal-investigations/inspection-classification-database",
+      "host": "www.fda.gov",
+      "purpose": "inspection classification dashboard source limits",
+      "sha256": "documentation_sha256_not_captured_no_provider_acquisition",
+      "source_notes": [
+        "database is not comprehensive",
+        "absence cannot be treated as no inspection",
+        "public data contains final classifications and known omissions"
+      ]
+    },
+    {
+      "receipt_id": "FDA_DOC_DATA_DASHBOARD_2026_08_05",
+      "url": "https://www.fda.gov/about-fda/performance-data/fda-data-dashboard",
+      "host": "www.fda.gov",
+      "purpose": "FDA Data Dashboard refresh and caveat profile",
+      "sha256": "documentation_sha256_not_captured_no_provider_acquisition",
+      "source_notes": [
+        "inspectional and compliance data are refreshed weekly",
+        "source data is public FDA transactional data and subject to change"
+      ]
+    },
+    {
+      "receipt_id": "FDA_DOC_WARNING_LETTERS_2026_08_05",
+      "url": "https://www.fda.gov/inspections-compliance-enforcement-and-criminal-investigations/compliance-actions-and-activities/warning-letters",
+      "host": "www.fda.gov",
+      "purpose": "warning letter source and response/closeout caveats",
+      "sha256": "documentation_sha256_not_captured_no_provider_acquisition",
+      "source_notes": [
+        "warning letters may be followed by later interactions changing regulatory status",
+        "response and closeout letters must be preserved when present"
+      ]
+    },
+    {
+      "receipt_id": "FDA_DOC_ENFORCEMENT_REPORTS_2026_08_05",
+      "url": "https://www.fda.gov/safety/recalls-market-withdrawals-safety-alerts/enforcement-reports",
+      "host": "www.fda.gov",
+      "purpose": "weekly enforcement report source, recall classification, and API caveats",
+      "sha256": "documentation_sha256_not_captured_no_provider_acquisition",
+      "source_notes": [
+        "recall classification can be pending and later updated",
+        "enforcement report posting is not an expansion or change to voluntary public warnings",
+        "update history must be preserved"
+      ]
+    }
+  ],
+  "source_profile_contract": {
+    "allowed_hosts": [
+      "api.fda.gov",
+      "open.fda.gov",
+      "www.fda.gov",
+      "www.accessdata.fda.gov",
+      "datadashboard.fda.gov"
+    ],
+    "redirects_to_unlisted_hosts_allowed": false,
+    "credentials_allowed": false,
+    "api_key_contract": "sentinel_redaction_tests_only_until_separate_authorization",
+    "rate_limit_contract": "client_side_limits_must_be_below_frozen_documented_limits",
+    "html_acquisition": "denied_by_default_until_source_specific_terms_and_robots_review",
+    "raw_bytes_required": true,
+    "sha256_required": true,
+    "checkpoint_replay_required": true,
+    "secret_redaction_required": true
+  }
+}
