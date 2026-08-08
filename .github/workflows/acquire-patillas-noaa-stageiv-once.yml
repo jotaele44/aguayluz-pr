@@ -1,0 +1,37 @@
+name: Acquire Patillas NOAA Stage IV once
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/acquire-patillas-noaa-stageiv-once.yml
+
+permissions:
+  contents: read
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Fetch one Puerto Rico hourly Stage IV GeoTIFF
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p acquisition/noaa_stageiv_pr
+          url="https://water.noaa.gov/resources/downloads/precip/stageIV/current/nws_precip_1hour_pr.tif"
+          curl --fail --location --retry 3 --retry-all-errors \
+            --dump-header acquisition/noaa_stageiv_pr/nws_precip_1hour_pr.tif.headers \
+            --output acquisition/noaa_stageiv_pr/nws_precip_1hour_pr.tif \
+            "$url"
+          sha256sum acquisition/noaa_stageiv_pr/nws_precip_1hour_pr.tif > acquisition/noaa_stageiv_pr/SHA256SUMS
+          stat --printf='%s\n' acquisition/noaa_stageiv_pr/nws_precip_1hour_pr.tif > acquisition/noaa_stageiv_pr/size_bytes.txt
+          printf '%s\n' "$url" > acquisition/noaa_stageiv_pr/source_url.txt
+          date -u +'%Y-%m-%dT%H:%M:%SZ' > acquisition/noaa_stageiv_pr/retrieved_at.txt
+          file acquisition/noaa_stageiv_pr/nws_precip_1hour_pr.tif > acquisition/noaa_stageiv_pr/file_type.txt
+      - name: Upload acquisition artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: patillas-noaa-stageiv-pr-hourly-source
+          path: acquisition/noaa_stageiv_pr/
+          if-no-files-found: error
+          retention-days: 7
