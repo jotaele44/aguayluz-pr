@@ -1,88 +1,22 @@
 {
   "schema_version": "aguayluz.patillas-public-source-receipts/v0.5",
-  "captured_at": "2026-08-08T01:00:00-04:00",
-  "base_main_sha": "debbef3e901c7edeb5e6d91c9dfc888383b2024c",
+  "captured_at": "2026-08-08T01:15:00-04:00",
+  "origin_main_sha": "debbef3e901c7edeb5e6d91c9dfc888383b2024c",
+  "latest_main_reviewed_sha": "01a991d6b7ecaf36458d6faf1acd1012b84da897",
   "sources": [
-    {
-      "source_id": "USGS-50092000",
-      "publisher": "U.S. Geological Survey",
-      "url": "https://waterdata.usgs.gov/nwis/uv?legacy=1&site_no=50092000",
-      "supports": ["upstream_inflow_rate"],
-      "public_machine_readable": true,
-      "quality_note": "instantaneous data provisional subject to revision"
-    },
-    {
-      "source_id": "USGS-50093045",
-      "publisher": "U.S. Geological Survey",
-      "url": "https://waterdata.usgs.gov/nwis/uv?legacy=1&site_no=50093045",
-      "supports": ["reservoir_stage_start", "reservoir_stage_end", "precipitation_point_crosscheck", "gate_opening_context"],
-      "public_machine_readable": true,
-      "quality_note": "PRVD02 stage is usable as a precursor after revision/calibration admission; gate-opening height is explicitly temporary operational data"
-    },
-    {
-      "source_id": "USGS-50093053",
-      "publisher": "U.S. Geological Survey",
-      "url": "https://waterdata.usgs.gov/nwis/uv?legacy=1&site_no=50093053",
-      "supports": ["canal_forebay_discharge_proxy"],
-      "public_machine_readable": true,
-      "quality_note": "forebay discharge is not automatically identical to dam release"
-    },
-    {
-      "source_id": "USGS-50093075",
-      "publisher": "U.S. Geological Survey",
-      "url": "https://waterdata.usgs.gov/nwis/uv?legacy=1&site_no=50093075",
-      "supports": ["above_Guayama_filtration_plant_discharge"],
-      "public_machine_readable": true,
-      "quality_note": "may support derived diversion estimates only when synchronized"
-    },
-    {
-      "source_id": "USGS-50093078",
-      "publisher": "U.S. Geological Survey",
-      "url": "https://waterdata.usgs.gov/nwis/uv?legacy=1&site_no=50093078",
-      "supports": ["below_Guayama_filtration_plant_discharge"],
-      "public_machine_readable": true,
-      "quality_note": "intermediate downstream gauge; not proven terminal boundary"
-    },
-    {
-      "source_id": "USGS-50093083",
-      "publisher": "U.S. Geological Survey",
-      "url": "https://waterdata.usgs.gov/nwis/uv?legacy=1&site_no=50093083",
-      "supports": ["above_AES_intake_downstream_discharge"],
-      "public_machine_readable": true,
-      "quality_note": "intermediate downstream gauge; not proven terminal boundary"
-    },
-    {
-      "source_id": "NOAA-MRMS-PRECIPRATE",
-      "publisher": "NOAA/NWS/NSSL",
-      "url": "https://mrms.ncep.noaa.gov/2D/PrecipRate/",
-      "supports": ["area_weighted_precipitation_precursor"],
-      "public_machine_readable": true,
-      "quality_note": "requires exact spatial clipping, reservoir surface geometry, temporal integration, and QPE uncertainty"
-    },
-    {
-      "source_id": "AAA-RAW-WATER-EXTRACTION-PRODUCTION",
-      "publisher": "Autoridad de Acueductos y Alcantarillados via Instituto de Estadísticas de Puerto Rico",
-      "url": "https://www.estadisticas.pr.gov/productos/extracciones-de-agua-cruda-y-produccion",
-      "supports": ["direct_treatment_withdrawal_context"],
-      "public_machine_readable": false,
-      "quality_note": "published product describes average monthly extraction/production by plant in MGD; insufficient cadence for 15-minute admission"
-    },
-    {
-      "source_id": "AEE-TRANSITION-2024",
-      "publisher": "Autoridad de Energía Eléctrica de Puerto Rico",
-      "url": "https://transicion2024.pr.gov/Agencias/169/Ponencias/Ponencia_del_Director_Ejecutivo_de_la_AEE%2020%20nov.pdf",
-      "supports": ["canal_operator_and_consumer_topology_context"],
-      "public_machine_readable": false,
-      "quality_note": "confirms Patillas irrigation system serves AAA plants, agriculture, AES, domestic services and other contracted uses; no synchronized loss ledger identified"
-    },
-    {
-      "source_id": "USGS-HA730-PR-VI",
-      "publisher": "U.S. Geological Survey",
-      "url": "https://pubs.usgs.gov/ha/ha730/ch_n/N-PR_VItext1.html",
-      "supports": ["evaporation_climatology_context"],
-      "public_machine_readable": false,
-      "quality_note": "historical regional pan-evaporation climatology is a proxy and not an interval Lago Patillas evaporation measurement"
-    }
+    {"source_id":"USGS-50092000","publisher":"U.S. Geological Survey","url":"https://waterdata.usgs.gov/nwis/uv?legacy=1&site_no=50092000","supports":["rio_grande_inflow_rate"],"public_machine_readable":true,"quality_note":"instantaneous discharge requires revision/calibration/uncertainty admission"},
+    {"source_id":"USGS-50093000","publisher":"U.S. Geological Survey","url":"https://waterdata.usgs.gov/nwis/inventory/?agency_cd=USGS&site_no=50093000","supports":["rio_marin_inflow_rate"],"public_machine_readable":true,"quality_note":"Rio Marin is a named Lago Patillas tributary; public discharge record exists and must be admitted separately"},
+    {"source_id":"USGS-SIM3128","publisher":"U.S. Geological Survey","url":"https://pubs.usgs.gov/sim/3128/","supports":["two_tributary_topology","canal_outlet_topology","spillway_context"],"public_machine_readable":false,"quality_note":"reports Lago Patillas at the confluence of Rio Grande de Patillas and Rio Marin and irrigation releases through outlet works into Patillas Irrigation Canal"},
+    {"source_id":"USGS-50093045","publisher":"U.S. Geological Survey","url":"https://waterdata.usgs.gov/nwis/uv?legacy=1&site_no=50093045","supports":["reservoir_stage_start","reservoir_stage_end","precipitation_point_crosscheck","gate_opening_context"],"public_machine_readable":true,"quality_note":"PRVD02 stage is transformable after admission; gate-opening height is temporary operational data and not itself discharge"},
+    {"source_id":"USGS-50093053","publisher":"U.S. Geological Survey","url":"https://waterdata.usgs.gov/nwis/uv?legacy=1&site_no=50093053","supports":["canal_forebay_discharge_proxy"],"public_machine_readable":true,"quality_note":"forebay discharge is not automatically identical to outlet-works release"},
+    {"source_id":"USGS-50093120","publisher":"U.S. Geological Survey","url":"https://waterdata.usgs.gov/nwis/inventory/?agency_cd=USGS&site_no=50093120","supports":["downstream_river_release_rate"],"public_machine_readable":true,"quality_note":"below-reservoir river discharge is a distinct observable outlet/spill-path term; it must not be silently assumed zero"},
+    {"source_id":"USGS-50093075","publisher":"U.S. Geological Survey","url":"https://waterdata.usgs.gov/nwis/uv?legacy=1&site_no=50093075","supports":["above_Guayama_filtration_plant_discharge"],"public_machine_readable":true,"quality_note":"may support a derived diversion estimate only when synchronized"},
+    {"source_id":"USGS-50093078","publisher":"U.S. Geological Survey","url":"https://waterdata.usgs.gov/nwis/uv?legacy=1&site_no=50093078","supports":["below_Guayama_filtration_plant_discharge"],"public_machine_readable":true,"quality_note":"intermediate downstream gauge; not proven terminal boundary"},
+    {"source_id":"USGS-50093083","publisher":"U.S. Geological Survey","url":"https://waterdata.usgs.gov/nwis/uv?legacy=1&site_no=50093083","supports":["above_AES_intake_downstream_discharge"],"public_machine_readable":true,"quality_note":"intermediate downstream gauge; not proven terminal boundary"},
+    {"source_id":"NOAA-MRMS-PRECIPRATE","publisher":"NOAA/NWS/NSSL","url":"https://mrms.ncep.noaa.gov/2D/PrecipRate/","supports":["area_weighted_precipitation_precursor"],"public_machine_readable":true,"quality_note":"requires stage-linked surface geometry, exact temporal/spatial integration and QPE uncertainty"},
+    {"source_id":"AAA-RAW-WATER-EXTRACTION-PRODUCTION","publisher":"Autoridad de Acueductos y Alcantarillados via Instituto de Estadísticas de Puerto Rico","url":"https://www.estadisticas.pr.gov/productos/extracciones-de-agua-cruda-y-produccion","supports":["direct_treatment_withdrawal_context"],"public_machine_readable":false,"quality_note":"average monthly plant extraction/production is insufficient cadence for 15-minute admission"},
+    {"source_id":"AEE-TRANSITION-2024","publisher":"Autoridad de Energía Eléctrica de Puerto Rico","url":"https://transicion2024.pr.gov/Agencias/169/Ponencias/Ponencia_del_Director_Ejecutivo_de_la_AEE%2020%20nov.pdf","supports":["canal_operator_and_consumer_topology_context"],"public_machine_readable":false,"quality_note":"confirms multiple Patillas canal consumers; no synchronized operational-loss ledger identified"},
+    {"source_id":"USGS-HA730-PR-VI","publisher":"U.S. Geological Survey","url":"https://pubs.usgs.gov/ha/ha730/ch_n/N-PR_VItext1.html","supports":["evaporation_climatology_context"],"public_machine_readable":false,"quality_note":"historical regional pan-evaporation climatology is a proxy, not current interval Lago Patillas evaporation"}
   ],
   "operator_requests_sent": false,
   "real_balance_executed": false
