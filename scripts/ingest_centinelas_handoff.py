@@ -41,7 +41,11 @@ def write_receipt(payload: dict, receipts_dir: Path) -> tuple[Path, bool]:
     return out, duplicate
 
 
-def promote_signal(payload: dict, events_out: Path, access_out: Path) -> tuple[str | None, str | None]:
+def promote_signal(
+    payload: dict,
+    events_out: Path,
+    access_out: Path = ACCESS_OUT_DEFAULT,
+) -> tuple[str | None, str | None]:
     signal = payload.get("signal")
     if not isinstance(signal, dict) or not signal:
         return None, None
