@@ -50,7 +50,7 @@ PARAMETERS = {
     "72365": ("stream_level_elevation", "ft", "PRVD02"),
     "00045": ("precipitation", "in", None),
 }
-SAFE_ACTION_WORDS = {"safe", "open", "reopen"}
+STALE_AFTER_MINUTES = 90
 
 
 class SnapshotError(RuntimeError):
@@ -78,6 +78,19 @@ def sha256_hex(value: bytes) -> str:
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _parse_dt(value: str) -> datetime | None:
+    text = value.strip()
+    if not text:
+        return None
+    if text.endswith(("Z", "z")):
+        text = f"{text[:-1]}+00:00"
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
 
 
 def _receipt(response: httpx.Response, received_at: str) -> RequestReceipt:
@@ -193,6 +206,7 @@ def normalize_observation(
     receipt: RequestReceipt,
     *,
     collection: str,
+    now: datetime | None = None,
 ) -> dict[str, Any] | None:
     props = feature.get("properties")
     if not isinstance(props, dict):
@@ -218,6 +232,10 @@ def normalize_observation(
     operational = collection == "latest-continuous" and current_allowed and site == "50014800"
     if site == "50014600" or pcode == "00045":
         operational = False
+    observed_dt = _parse_dt(observed_at)
+    reference = now or datetime.now(timezone.utc)
+    age_minutes = None if observed_dt is None else max(0.0, (reference - observed_dt).total_seconds() / 60.0)
+    freshness = "unknown" if age_minutes is None else ("stale" if age_minutes > STALE_AFTER_MINUTES else "current")
     return {
         "source_id": SITE_POLICY[site]["source_id"],
         "monitoring_location": SITE_POLICY[site]["monitoring_location"],
@@ -239,6 +257,8 @@ def normalize_observation(
         ),
         "privacy_class": SITE_POLICY[site]["privacy_class"],
         "operational_admission": operational,
+        "freshness": freshness,
+        "age_minutes": age_minutes,
     }
 
 
@@ -246,10 +266,12 @@ def materialize_snapshot(
     client: httpx.Client,
     *,
     history_datetime: str | None = None,
+    now: datetime | None = None,
 ) -> dict[str, Any]:
     observations: list[dict[str, Any]] = []
     receipts: list[RequestReceipt] = []
     diagnostics: list[dict[str, str]] = []
+    reference = now or datetime.now(timezone.utc)
 
     plans: Iterable[tuple[str, str, str | None]] = (
         ("latest-continuous", "50014800", "00060"),
@@ -275,17 +297,21 @@ def materialize_snapshot(
             receipts.extend(page_receipts)
             if collection in {"latest-continuous", "continuous"}:
                 for feature, receipt in rows:
-                    normalized = normalize_observation(feature, receipt, collection=collection)
-                    if normalized is not None:
-                        observations.append(normalized)
+                    normalized = normalize_observation(feature, receipt, collection=collection, now=reference)
+                    if normalized is None:
+                        diagnostics.append({"collection": collection, "site": site, "code": "partial_record"})
+                        continue
+                    observations.append(normalized)
+                    if normalized["operational_admission"] and normalized["freshness"] != "current":
+                        diagnostics.append({"collection": collection, "site": site, "code": "stale_current_observation"})
         except SnapshotError as exc:
             diagnostics.append({"collection": collection, "site": site, "code": exc.code})
 
-    current = [row for row in observations if row["operational_admission"]]
+    current = [row for row in observations if row["operational_admission"] and row["freshness"] == "current"]
     state = "observed" if current and not diagnostics else "unknown"
     return {
         "schema_version": "aguayluz.rio-camuy-usgs-snapshot/v0.2",
-        "generated_at": _now(),
+        "generated_at": reference.isoformat().replace("+00:00", "Z"),
         "operational_state": state,
         "safe_open_reopen_inference": False,
         "public_notifications_enabled": False,
