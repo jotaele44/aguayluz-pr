@@ -1,0 +1,35 @@
+{
+  "schema_version": "aguayluz.patillas-qpe-replay-fixture/v0.5.1",
+  "public_byte_replay": {
+    "stage_m_prvd02": 67.55,
+    "geometry_binding": "Patillas_shoreline83_2011@67.55m_PRVD02",
+    "geometry_area_m2": 1203713.9819335968,
+    "source_sha256": "56aaa69d6d1e4ef33aac4e4c4c5ec4a2e24a7d2d9cd5f30b22805caa243d06f1",
+    "source_data_time": "20260808T00:00:00",
+    "cells": [
+      {"row": 99, "col": 101, "depth_in": 0.009842519648373127, "intersection_area_m2": 97483.45629338532},
+      {"row": 99, "col": 102, "depth_in": 0.014763779938220978, "intersection_area_m2": 1106230.5256401976}
+    ],
+    "expected_intersection_area_sum_m2": 1203713.9819335829,
+    "expected_precipitation_volume_m3": 439.2073226365154,
+    "expected_area_weighted_depth_m": 0.0003648768139512643,
+    "admission_status": "blocked_qpe_uncertainty_unknown",
+    "real_balance_executed": false
+  },
+  "synthetic_replay": {
+    "stage_m_prvd02": 67.55,
+    "geometry_area_m2": 1203713.9819335968,
+    "cells": [
+      {"depth_in": 0.01, "intersection_area_m2": 600000.0},
+      {"depth_in": 0.02, "intersection_area_m2": 603713.9819335968}
+    ],
+    "qpe_uncertainty_fraction": 0.20,
+    "admission_status": "transform_only_not_balance"
+  },
+  "negative_cases": [
+    {"case": "nodata_intersection", "expected": "reject_nodata"},
+    {"case": "area_sum_mismatch", "expected": "reject_geometry_area_mismatch"},
+    {"case": "lower_stage_without_geometry", "stage_m_prvd02": 60.55, "expected": "reject_stage_specific_geometry_required"},
+    {"case": "unknown_qpe_uncertainty", "expected": "computed_not_admitted"}
+  ]
+}
