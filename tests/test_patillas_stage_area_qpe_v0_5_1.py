@@ -34,7 +34,7 @@ def test_plateau_and_extrapolation_fail_closed() -> None:
 
 def test_frozen_noaa_bytes_cross_bind() -> None:
     receipt = load_json(PILOT / "noaa_stageiv_pr_20260808T000000Z.receipt.json")
-    raw = verify_frozen_bytes(PILOT / "noaa_stageiv_pr_20260808T000000Z.tif.b64", receipt)
+    raw = verify_frozen_bytes(PILOT / "noaa_stageiv_pr_20260808T000000Z.tif", receipt)
     assert len(raw) == 5882
     assert receipt["bytes"]["sha256"] == "56aaa69d6d1e4ef33aac4e4c4c5ec4a2e24a7d2d9cd5f30b22805caa243d06f1"
 

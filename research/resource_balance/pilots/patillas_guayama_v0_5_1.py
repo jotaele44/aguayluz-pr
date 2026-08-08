@@ -4,7 +4,6 @@ No complete water balance, provider polling, persistence, alerting, or control a
 """
 from __future__ import annotations
 
-import base64
 import hashlib
 import json
 from pathlib import Path
@@ -17,8 +16,8 @@ def load_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def verify_frozen_bytes(encoded_path: Path, receipt: dict[str, Any]) -> bytes:
-    raw = base64.b64decode(encoded_path.read_text(encoding="ascii"))
+def verify_frozen_bytes(source_path: Path, receipt: dict[str, Any]) -> bytes:
+    raw = source_path.read_bytes()
     if len(raw) != receipt["bytes"]["size"]:
         raise ValueError("source_size_mismatch")
     if hashlib.sha256(raw).hexdigest() != receipt["bytes"]["sha256"]:
@@ -90,7 +89,7 @@ def qpe_volume_from_fragments(
 def replay_public_sample(root: Path) -> dict[str, Any]:
     receipt = load_json(root / "noaa_stageiv_pr_20260808T000000Z.receipt.json")
     fixture = load_json(root / "qpe_replay_fixture.json")["public_byte_replay"]
-    verify_frozen_bytes(root / "noaa_stageiv_pr_20260808T000000Z.tif.b64", receipt)
+    verify_frozen_bytes(root / "noaa_stageiv_pr_20260808T000000Z.tif", receipt)
     if fixture["stage_m_prvd02"] != 67.55:
         raise ValueError("stage_specific_geometry_required")
     result = qpe_volume_from_fragments(fixture["cells"], fixture["geometry_area_m2"], qpe_uncertainty_fraction=None)
