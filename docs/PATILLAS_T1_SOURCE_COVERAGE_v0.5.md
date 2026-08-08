@@ -47,7 +47,7 @@ Puerto Rico Statistics/AAA publicly describes average monthly raw-water extracti
 
 ### Downstream terminal flow
 
-USGS 50093078 below the Guayama Filtration Plant, USGS 50093083 above the AES intake, and USGS 50093115 at Intake 123 in Salinas provide a progressively farther-downstream public discharge chain. Station 50093115 materially extends the measured canal topology, but its name does not establish that it is the terminal Patillas Canal balance boundary. All intervening and downstream diversions must still be enumerated, or the balance boundary must be moved to a demonstrably closed measured endpoint.
+USGS 50093078 below the Guayama Filtration Plant, USGS 50093083 above the AES intake, USGS 50093110 at Intake 113 in Salinas, and USGS 50093115 at Intake 123 in Salinas provide a progressively farther-downstream public discharge chain. The Salinas stations materially extend the measured canal topology, but their names do not establish that either is the terminal Patillas Canal balance boundary. All intervening and downstream diversions must still be enumerated, or the balance boundary must be moved to a demonstrably closed measured endpoint.
 
 ### Precipitation
 
@@ -69,9 +69,9 @@ Every real observation must be T1, nonprovisional, current/accepted revision, ca
 
 ## Public OSINT disposition
 
-The bounded v0.5 sweep closes the major currently identifiable public source-discovery blind spots for the selected topology: both named reservoir tributaries, a separate below-dam river outlet, the downstream canal gauge chain through Intake 123, explicit Puerto Rico hourly QPE, public monthly AAA treatment context, and DRNA/AEE canal-operating context are represented. Source discovery is not admission, and the real balance remains blocked.
+The bounded v0.5 sweep closes the major currently identifiable public source-discovery blind spots for the selected topology: both named reservoir tributaries, a separate below-dam river outlet, the downstream canal gauge chain through Intakes 113 and 123, explicit Puerto Rico hourly QPE, public monthly AAA treatment context, and DRNA/AEE canal-operating context are represented. Source discovery is not admission, and the real balance remains blocked.
 
-The remaining evidence gaps are exact outlet-works/canal release, direct interval Guayama treatment withdrawal, a proven terminal canal boundary, stage-linked surface geometry, current open-water evaporation, synchronized documented operational losses, and calibration/revision/uncertainty bindings for every interval measurement.
+The remaining evidence gaps are exact outlet-works/canal release, direct interval Guayama treatment withdrawal, a proven terminal canal boundary, stage-linked water-surface geometry, current open-water evaporation, synchronized documented operational losses, and calibration/revision/uncertainty bindings for every interval measurement.
 
 No operator request has been sent. Any operator request remains downstream of public-path exhaustion and separate approval.
 
