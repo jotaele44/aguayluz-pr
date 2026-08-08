@@ -1,0 +1,184 @@
+name: Río Camuy USGS operator acceptance
+
+on:
+  push:
+    branches:
+      - agent/rio-camuy-operational-hydro-sensor-v0-1
+    paths:
+      - .github/workflows/rio-camuy-usgs-acceptance.yml
+
+permissions:
+  contents: read
+
+jobs:
+  live-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      USGS_API_KEY: ${{ secrets.USGS_API_KEY }}
+    steps:
+      - name: Checkout certified PR head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+
+      - name: Require nonpublic USGS API key
+        shell: bash
+        run: |
+          if [ -z "${USGS_API_KEY:-}" ]; then
+            echo "::error::USGS_API_KEY repository secret is not configured"
+            exit 78
+          fi
+          echo "USGS_API_KEY is configured; value will not be printed or persisted."
+
+      - name: Install bounded runtime dependency
+        run: python -m pip install --disable-pip-version-check httpx==0.28.1
+
+      - name: Execute certified read-only snapshot tool
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/camuy-acceptance"
+          python tools/rio_camuy_usgs_snapshot.py \
+            --out "$RUNNER_TEMP/camuy-acceptance/internal_snapshot.json" \
+            --receipt "$RUNNER_TEMP/camuy-acceptance/request_receipt.json"
+
+      - name: Build redacted acceptance receipt
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from collections import Counter
+          from pathlib import Path
+          from urllib.parse import urlparse
+
+          root = Path(os.environ["RUNNER_TEMP"]) / "camuy-acceptance"
+          snapshot = json.loads((root / "internal_snapshot.json").read_text(encoding="utf-8"))
+          request_receipt = json.loads((root / "request_receipt.json").read_text(encoding="utf-8"))
+
+          allowed_collections = {
+              "latest-continuous",
+              "continuous",
+              "monitoring-locations",
+              "time-series-metadata",
+          }
+          allowed_sites = {"USGS-50014800", "USGS-50014600"}
+          current_allowed = {("USGS-50014800", "00060"), ("USGS-50014800", "00065"), ("USGS-50014800", "72365")}
+          historical_only = {("USGS-50014800", "00045"), ("USGS-50014600", "00060")}
+
+          receipts = request_receipt.get("request_receipts", [])
+          collections = []
+          status_codes = Counter()
+          collection_pages = Counter()
+          receipt_hashes = []
+          response_hashes = []
+          for row in receipts:
+              path = urlparse(row["url"]).path
+              parts = [part for part in path.split("/") if part]
+              try:
+                  collection = parts[parts.index("collections") + 1]
+              except (ValueError, IndexError) as exc:
+                  raise SystemExit(f"unexpected receipt URL path: {path}") from exc
+              if collection not in allowed_collections:
+                  raise SystemExit(f"out-of-scope collection in receipt: {collection}")
+              collections.append(collection)
+              collection_pages[collection] += 1
+              status_codes[str(row["status_code"])] += 1
+              receipt_hashes.append(row["request_receipt_sha256"])
+              response_hashes.append(row["response_sha256"])
+
+          observations = snapshot.get("observations", [])
+          site_counts = Counter()
+          parameter_counts = Counter()
+          current_admitted = Counter()
+          historical_rejected = Counter()
+          for row in observations:
+              site = row.get("monitoring_location")
+              pcode = row.get("parameter_code")
+              if site not in allowed_sites:
+                  raise SystemExit(f"out-of-scope site in projection: {site}")
+              if row.get("privacy_class") != "P0_PUBLIC":
+                  raise SystemExit("non-P0 observation leaked into internal projection")
+              site_counts[site] += 1
+              parameter_counts[f"{site}:{pcode}"] += 1
+              pair = (site, pcode)
+              admitted = bool(row.get("operational_admission"))
+              if admitted:
+                  if pair not in current_allowed:
+                      raise SystemExit(f"unexpected current admission: {pair}")
+                  current_admitted[f"{site}:{pcode}"] += 1
+              if pair in historical_only:
+                  if admitted:
+                      raise SystemExit(f"historical-only row admitted current: {pair}")
+                  historical_rejected[f"{site}:{pcode}"] += 1
+
+          forbidden_serialized = json.dumps(snapshot, sort_keys=True).lower()
+          for forbidden in ("sensor_id", "monitoring_site_id", "emergency_geometry", "evacuation_route", "muster_point"):
+              if forbidden in forbidden_serialized:
+                  raise SystemExit(f"forbidden controlled field present: {forbidden}")
+
+          invariants = {
+              "local_sensor_commissioned_count_zero": snapshot.get("local_sensor_commissioned_count") == 0,
+              "stage_rain_thresholds_pilot_provisional": snapshot.get("stage_rain_thresholds_authority") == "pilot_provisional",
+              "safe_open_reopen_inference_false": snapshot.get("safe_open_reopen_inference") is False,
+              "public_notifications_disabled": snapshot.get("public_notifications_enabled") is False,
+              "automatic_public_reopening_disabled": snapshot.get("automatic_public_reopening_enabled") is False,
+          }
+          if not all(invariants.values()):
+              raise SystemExit(f"projection invariant failure: {invariants}")
+
+          snapshot_sha256 = hashlib.sha256(
+              json.dumps(snapshot, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+          ).hexdigest()
+          expected_snapshot_sha = request_receipt.get("snapshot_sha256")
+          if snapshot_sha256 != expected_snapshot_sha:
+              raise SystemExit("snapshot SHA-256 mismatch")
+
+          diagnostics = snapshot.get("diagnostics", [])
+          degraded_codes = sorted({str(row.get("code")) for row in diagnostics if isinstance(row, dict) and row.get("code")})
+          if degraded_codes and snapshot.get("operational_state") != "unknown":
+              raise SystemExit("degraded diagnostics did not force operational_state=unknown")
+
+          acceptance = {
+              "schema_version": "aguayluz.rio-camuy-usgs-operator-acceptance/v0.3",
+              "tool_head": os.environ.get("GITHUB_SHA"),
+              "raw_payloads_committed": False,
+              "credential_source": "GitHub Actions secret -> USGS_API_KEY environment variable",
+              "credential_persisted": False,
+              "credential_echoed": False,
+              "collections_observed": sorted(set(collections)),
+              "collection_page_counts": dict(sorted(collection_pages.items())),
+              "http_status_counts": dict(sorted(status_codes.items())),
+              "site_observation_counts": dict(sorted(site_counts.items())),
+              "parameter_observation_counts": dict(sorted(parameter_counts.items())),
+              "current_admission_counts": dict(sorted(current_admitted.items())),
+              "historical_only_rejection_counts": dict(sorted(historical_rejected.items())),
+              "request_receipt_sha256": receipt_hashes,
+              "response_sha256": response_hashes,
+              "snapshot_sha256": snapshot_sha256,
+              "operational_state": snapshot.get("operational_state"),
+              "fail_closed_diagnostics": diagnostics,
+              "invariants": invariants,
+          }
+          out = root / "rio_camuy_usgs_operator_acceptance_v0_3.json"
+          out.write_text(json.dumps(acceptance, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+          print("Redacted acceptance receipt generated.")
+          print(f"collections={acceptance['collections_observed']}")
+          print(f"status_counts={acceptance['http_status_counts']}")
+          print(f"operational_state={acceptance['operational_state']}")
+          print(f"diagnostic_codes={degraded_codes}")
+          PY
+
+      - name: Upload redacted acceptance receipt only
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: rio-camuy-usgs-operator-acceptance-v0-3
+          path: ${{ runner.temp }}/camuy-acceptance/rio_camuy_usgs_operator_acceptance_v0_3.json
+          if-no-files-found: error
+          retention-days: 7
