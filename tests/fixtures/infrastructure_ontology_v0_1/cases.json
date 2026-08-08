@@ -1,0 +1,24 @@
+{
+  "schema_version": "aguayluz.infrastructure-ontology-fixtures/v0.1",
+  "ontology_version": "aguayluz.infrastructure-ontology/v0.1",
+  "cases": [
+    {"id":"eb_tk_los_alvarez","raw":"EB Tk los alvarez","context":["potable_water","facility_label"],"status":"composite","concept_ids":["AYL.WATER.PUMP_STATION","AYL.WATER.STORAGE_TANK"],"preserve_raw":true},
+    {"id":"ebas","raw":"EBAS","context":["wastewater"],"status":"resolved","concept_ids":["AYL.WASTEWATER.LIFT_STATION"],"preserve_raw":true},
+    {"id":"pta","raw":"PTA","context":[],"status":"ambiguous","concept_ids":[],"preserve_raw":true},
+    {"id":"pf","raw":"PF","context":["potable_water"],"status":"resolved","concept_ids":["AYL.WATER.TREATMENT_PLANT"],"preserve_raw":true},
+    {"id":"toma","raw":"Toma Rancheras","context":["raw_water"],"status":"resolved","concept_ids":["AYL.WATER.INTAKE"],"preserve_raw":true},
+    {"id":"represa","raw":"Represa","context":[],"status":"ambiguous","concept_ids":[],"preserve_raw":true},
+    {"id":"embalse","raw":"Embalse","context":["surface_storage"],"status":"resolved","concept_ids":["AYL.HYDROLOGY.RESERVOIR"],"preserve_raw":true},
+    {"id":"pozo","raw":"Pozo","context":[],"status":"ambiguous","concept_ids":[],"preserve_raw":true},
+    {"id":"linea_matriz","raw":"Línea matriz","context":["potable_water"],"status":"resolved","concept_ids":["AYL.WATER.TRANSMISSION_MAIN"],"preserve_raw":true},
+    {"id":"ventosa","raw":"Ventosa","context":["pipeline_appurtenance"],"status":"resolved","concept_ids":["AYL.WATER.AIR_RELEASE_VALVE"],"preserve_raw":true},
+    {"id":"vrp","raw":"VRP","context":["potable_water"],"status":"resolved","concept_ids":["AYL.WATER.PRESSURE_REDUCING_VALVE"],"preserve_raw":true},
+    {"id":"scada","raw":"SCADA","context":["control_system"],"status":"resolved","concept_ids":["AYL.CONTROL_SCADA.SYSTEM"],"preserve_raw":true}
+  ],
+  "global_assertions": {
+    "asset_merge_performed": false,
+    "hydraulic_edge_created": false,
+    "evidence_promoted": false,
+    "runtime_wired": false
+  }
+}

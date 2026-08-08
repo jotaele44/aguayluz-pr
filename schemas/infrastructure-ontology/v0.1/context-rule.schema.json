@@ -1,0 +1,18 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://aguayluz.local/schemas/infrastructure-ontology/v0.1/context-rule.schema.json",
+  "title":"AguaYLuz Ontology Context Rule v0.1",
+  "type":"object","additionalProperties":false,
+  "required":["schema_version","rule_id","literal","required_context","resolution","fail_closed"],
+  "properties":{
+    "schema_version":{"const":"aguayluz.infrastructure-ontology-context-rule/v0.1"},
+    "rule_id":{"type":"string","minLength":1},
+    "literal":{"type":"string","minLength":1},
+    "required_context":{"type":"array","minItems":1,"uniqueItems":true,"items":{"type":"string"}},
+    "excluded_context":{"type":"array","uniqueItems":true,"items":{"type":"string"}},
+    "resolution":{"enum":["single","composite","ambiguous","unmapped"]},
+    "candidate_concept_ids":{"type":"array","uniqueItems":true,"items":{"type":"string","pattern":"^AYL\\."}},
+    "fail_closed":{"const":true},
+    "priority":{"type":"integer","minimum":0}
+  }
+}
