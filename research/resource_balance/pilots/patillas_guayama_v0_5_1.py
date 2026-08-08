@@ -37,7 +37,7 @@ def stage_area_m2(stage_m: float, model: dict[str, Any]) -> float:
     for point in points:
         if abs(point["stage_m_prvd02"] - stage_m) < 1e-9:
             return float(point["area_m2"])
-    for left, right in zip(points, points[1:]):
+    for left, right in zip(points, points[1:], strict=False):
         if left["stage_m_prvd02"] < stage_m < right["stage_m_prvd02"]:
             fraction = (stage_m - left["stage_m_prvd02"]) / (right["stage_m_prvd02"] - left["stage_m_prvd02"])
             return float(left["area_m2"] + fraction * (right["area_m2"] - left["area_m2"]))
