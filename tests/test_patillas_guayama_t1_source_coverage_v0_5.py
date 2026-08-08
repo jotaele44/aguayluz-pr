@@ -71,6 +71,7 @@ def test_expanded_public_sweep_sources_are_preserved() -> None:
     source_ids = {row["source_id"] for row in receipts["sources"]}
     assert "USGS-50093000" in source_ids
     assert "USGS-50093120" in source_ids
+    assert "USGS-50093110" in source_ids
     assert "USGS-50093115" in source_ids
     assert "NOAA-STAGE-IV-PR" in source_ids
     assert "DRNA-CANAL-PATILLAS" in source_ids
