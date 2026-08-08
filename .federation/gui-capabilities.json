@@ -27,7 +27,8 @@
       "dashboard/src/pages"
     ],
     "frontend_api_roots": [
-      "dashboard/src/lib/api.js"
+      "dashboard/src/lib/api.js",
+      "dashboard/src/lib/cave-karst-api.js"
     ],
     "route_files": [
       "dashboard/src/App.jsx"
@@ -579,6 +580,112 @@
           "tests/test_ingest_neon_products.py",
           "tests/test_alert_promotion_neon.py",
           "tests/test_refresh_plans.py"
+        ]
+      }
+    },
+    {
+      "id": "usgs-discrete-samples-ingest",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Scheduled archival producer, not an operator workflow. Invoked by the cron cadences in .github/workflows/refresh.yml via scripts/refresh.py, never by a person, so no normal user path requires a terminal. The sampled well is rendered as a utility_asset row on the existing assets and map views. The 120 water-quality results reach the PRII hub through the canonical federation export (scripts/federation_export.py globs data/*_readings.jsonl; verified as monitoring_readings=120), which per docs/adr/0001 is this producer's supported product surface -- this repo's own dashboard is diagnostic-only. They are NOT currently selectable on that diagnostic dashboard: server/backend/app.py's READING_VECTOR_REGISTRY has no usgs_samples vector and monitoring_quality.py's SERIES_METADATA_REGISTRY has no water_quality entry, so GET /readings would reject the kind. Adding that vector is a tracked follow-up, not a claim made here.",
+      "analysis": {
+        "files": [
+          "scripts/ingest_usgs_samples.py"
+        ],
+        "symbols": [
+          "scripts/ingest_usgs_samples.py:asset_id_for",
+          "scripts/ingest_usgs_samples.py:build_assets",
+          "scripts/ingest_usgs_samples.py:build_readings",
+          "scripts/ingest_usgs_samples.py:fetch_samples_live",
+          "scripts/ingest_usgs_samples.py:main",
+          "scripts/ingest_usgs_samples.py:merge_assets",
+          "scripts/ingest_usgs_samples.py:merge_readings"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_ingest_usgs_samples.py",
+          "tests/test_refresh_plans.py"
+        ]
+      }
+    },
+    {
+      "id": "cave-karst-monitor",
+      "classification": "analysis",
+      "status": "active",
+      "requires_terminal": false,
+      "backend": {
+        "files": [
+          "src/aguayluz/cave_karst.py",
+          "server/backend/cave_karst_api.py",
+          "server/backend/app.py"
+        ],
+        "endpoints": [
+          "GET /cave-karst/summary",
+          "GET /cave-karst/assets",
+          "GET /cave-karst/assets/{asset_id}",
+          "GET /cave-karst/assets/{asset_id}/status-history",
+          "GET /cave-karst/assets/{asset_id}/provenance",
+          "GET /cave-karst/assets/{asset_id}/edges",
+          "GET /cave-karst/alerts"
+        ],
+        "symbols": [
+          "src/aguayluz/cave_karst.py:build_alerts",
+          "src/aguayluz/cave_karst.py:compute_record_hash",
+          "src/aguayluz/cave_karst.py:detect_status_contradictions",
+          "src/aguayluz/cave_karst.py:load_default_registry",
+          "src/aguayluz/cave_karst.py:load_jsonl",
+          "src/aguayluz/cave_karst.py:materialize_status",
+          "src/aguayluz/cave_karst.py:validate_records",
+          "src/aguayluz/cave_karst.py:validate_registry",
+          "src/aguayluz/cave_karst.py:verify_event_chain",
+          "server/backend/cave_karst_api.py:cave_karst_summary",
+          "server/backend/cave_karst_api.py:cave_karst_assets",
+          "server/backend/cave_karst_api.py:cave_karst_asset",
+          "server/backend/cave_karst_api.py:cave_karst_status_history",
+          "server/backend/cave_karst_api.py:cave_karst_provenance",
+          "server/backend/cave_karst_api.py:cave_karst_edges",
+          "server/backend/cave_karst_api.py:cave_karst_alerts"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/validate_cave_karst_registry.py"
+        ],
+        "symbols": [
+          "scripts/validate_cave_karst_registry.py:main"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/cave-karst"
+        ],
+        "e2e_routes": [
+          "/cave-karst"
+        ],
+        "components": [
+          "dashboard/src/lib/cave-karst-api.js",
+          "dashboard/src/pages/CaveKarstPage.jsx",
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_cave_karst_api.py"
+        ],
+        "contract": [
+          "tests/test_cave_karst_monitor.py",
+          "tests/test_gui_parity.py"
+        ],
+        "unit": [
+          "dashboard/src/pages/CaveKarstPage.test.jsx"
+        ],
+        "e2e": [
+          "dashboard/tests/gui-parity.spec.mjs"
         ]
       }
     }

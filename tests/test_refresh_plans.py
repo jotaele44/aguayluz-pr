@@ -54,7 +54,7 @@ def test_alert_system_build_is_blocking():
 def test_keyed_and_waf_gated_steps_are_optional():
     """Steps that need a credential or a permissioned network path warn and continue."""
     for step in (refresh.STEP_WATERS_ENRICH, refresh.STEP_AEE_FETCH, refresh.STEP_OSHA,
-                 refresh.STEP_NEON_PRODUCTS):
+                 refresh.STEP_NEON_PRODUCTS, refresh.STEP_USGS_SAMPLES):
         assert step[2] is True, f"{_script_of(step)} must be optional"
 
 
@@ -73,6 +73,16 @@ def test_neon_availability_runs_before_alert_promotion():
 def test_neon_availability_is_scheduled_daily():
     """The keyless half needs no credential, so there is no reason to run it rarely."""
     assert "scripts/ingest_neon.py" in {_script_of(s) for s in refresh.PLANS["daily"]}
+
+
+def test_usgs_samples_runs_in_every_cadence():
+    """The readings file is gitignored, so it exists only for the life of the job that
+    wrote it. Every sibling reading vector is refreshed daily; a weekly-only producer
+    would leave this one absent six days in seven."""
+    for cadence in ("daily", "weekly", "all"):
+        assert "scripts/ingest_usgs_samples.py" in {
+            _script_of(s) for s in refresh.PLANS[cadence]
+        }, cadence
 
 
 def test_readings_producers_are_scheduled():

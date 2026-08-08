@@ -82,6 +82,7 @@ def test_alert_id_is_stable_across_redetection():
         ("DP1.20093.001", "CONTAMINATION"),    # surface-water chemistry
         ("DP1.20033.001", "CONTAMINATION"),    # nitrate
         ("DP1.00045.001", "WEATHER_HAZARD"),   # precipitation
+        ("DP1.20092.001", "CONTAMINATION"),     # groundwater chemistry
     ],
 )
 def test_product_routes_to_the_right_module(product_code, expected):

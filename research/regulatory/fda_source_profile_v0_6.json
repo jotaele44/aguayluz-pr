@@ -1,0 +1,41 @@
+{
+  "profile_version": "fda-source-profile/v0.6",
+  "provider": "FDA",
+  "status": "disabled_offline_only",
+  "network_access": false,
+  "persistence": false,
+  "scheduler_registration": false,
+  "automatic_entity_promotion": false,
+  "compliance_inference": false,
+  "record_family_mapping": {
+    "establishment": "entity",
+    "registration": "permit",
+    "device_listing": "permit",
+    "inspection": "inspection",
+    "recall": "enforcement",
+    "warning_letter": "enforcement"
+  },
+  "identifier_rules": {
+    "fei": "source_asserted_identifier_not_globally_unique_without_contradiction_review",
+    "registration_number": "source_asserted_registration_identifier",
+    "listing_number": "source_asserted_product_listing_identifier",
+    "inspection_id": "source_asserted_inspection_identifier",
+    "recall_number": "source_asserted_recall_identifier",
+    "warning_letter_id": "source_asserted_enforcement_identifier"
+  },
+  "pagination": {
+    "mode": "opaque_cursor",
+    "checkpoint_fields": ["cursor", "watermark", "fixture_revision"],
+    "secrets_allowed": false
+  },
+  "terms_boundary": [
+    "public_metadata_only",
+    "no_claim_of_current_registration_without_source_date",
+    "no_environmental_permit_inference",
+    "no_compliance_inference_from_absence_or_presence_of_records"
+  ],
+  "public_export_policy": {
+    "allow": ["provider", "record_family", "provider_record_id", "observed_at", "source_receipt_id", "identifiers", "freshness_state"],
+    "deny": ["credentials", "authorization_headers", "session_tokens", "private_contact_details", "non_public_coordinates"]
+  }
+}
