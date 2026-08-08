@@ -6,8 +6,12 @@ from pathlib import Path
 
 import pytest
 
-from scripts.ingest_centinelas_access_condition import promote_access_condition, validate_signal
-from scripts.ingest_centinelas_handoff import promote_signal, write_receipt
+from scripts.ingest_centinelas_handoff import (
+    _promote_access_condition,
+    _validate_access_signal,
+    promote_signal,
+    write_receipt,
+)
 
 
 def _signal() -> dict:
@@ -48,7 +52,7 @@ def _signal() -> dict:
 
 def test_access_condition_preserves_t1_and_stays_unbound_without_certified_geometry(tmp_path: Path):
     out = tmp_path / "access_conditions.jsonl"
-    row = promote_access_condition(_signal(), out)
+    row = _promote_access_condition(_signal(), out)
     assert row["evidence_tier"] == "T1"
     assert row["bound_asset_id"] is None
     assert row["binding_status"] == "unbound_no_certified_geometry"
@@ -60,14 +64,14 @@ def test_geometry_fields_are_rejected():
     signal = _signal()
     signal["geometry"] = {"type": "Point", "coordinates": [-65.8, 18.3]}
     with pytest.raises(ValueError, match="must not carry geometry"):
-        validate_signal(signal)
+        _validate_access_signal(signal)
 
 
 def test_non_t1_access_condition_is_rejected():
     signal = _signal()
     signal["evidence_tier"] = "T3"
     with pytest.raises(Exception):
-        validate_signal(signal)
+        _validate_access_signal(signal)
 
 
 def test_handoff_routes_access_condition_without_service_event_conversion(tmp_path: Path):
