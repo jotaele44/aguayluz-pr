@@ -2,49 +2,81 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/cave_karst_asset.schema.json",
   "title": "CaveKarstAsset",
-  "description": "Canonical Puerto Rico cave, karst, subterranean-water, access, or monitoring asset.",
+  "description": "Canonical Puerto Rico cave, karst, subterranean-water, access, or monitoring asset. v1.1 adds explicit privacy, access, legal/cultural, monitoring, emergency, geometry-quality, and status-quality contracts while retaining the cave/karst domain boundary.",
   "type": "object",
   "required": [
+    "schema_version",
     "asset_id",
     "canonical_name",
     "asset_kind",
     "municipalities",
     "geometry_type",
     "location_disclosure",
+    "privacy_class",
     "operational",
+    "access",
     "hydrologic",
     "environmental",
     "infrastructure",
+    "legal",
+    "culture",
+    "monitoring",
+    "emergency",
     "source_refs",
     "evidence_tier",
     "confidence",
-    "review_status"
+    "review_status",
+    "registry_scope"
   ],
   "additionalProperties": false,
   "properties": {
+    "schema_version": {"const": "1.1.0"},
     "asset_id": {"type": "string", "pattern": "^AYL_KARST_[A-Z0-9_]+$"},
     "canonical_name": {"type": "string", "minLength": 1},
     "aliases": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
     "asset_kind": {"enum": ["cave_system", "cave", "sinkhole", "karst_window", "underground_river", "spring", "park", "access_infrastructure", "monitoring_station", "other"]},
     "parent_asset_id": {"type": ["string", "null"], "pattern": "^AYL_KARST_[A-Z0-9_]+$"},
     "municipalities": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
-    "geometry_type": {"enum": ["point", "line", "polygon", "unknown"]},
+    "geometry_type": {"enum": ["point", "line", "polygon", "multipoint", "multiline", "multipolygon", "unknown"]},
     "lat": {"type": ["number", "null"], "minimum": 17.7, "maximum": 18.7},
     "lon": {"type": ["number", "null"], "minimum": -68.1, "maximum": -65.1},
+    "geometry_crs": {"type": ["string", "null"], "minLength": 1},
+    "geometry_accuracy_m": {"type": ["number", "null"], "minimum": 0},
+    "geometry_method": {"enum": ["surveyed_gnss", "agency_gis", "georeferenced_map", "remote_sensing", "generalized", "unknown"]},
+    "geometry_source_ref": {"type": ["string", "null"], "pattern": "^SRC_KARST_[A-Z0-9_]+$"},
     "location_disclosure": {"enum": ["public_exact", "public_generalized", "restricted", "unknown"]},
+    "privacy_class": {"enum": ["P0_PUBLIC", "P1_GENERALIZED", "P2_CONTROLLED", "P3_RESTRICTED"]},
     "operational": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["status", "public_access", "status_as_of", "operator", "reservation_required"],
+      "required": ["status", "public_access", "status_as_of", "operator", "reservation_required", "status_quality", "conflict_hold"],
       "properties": {
         "status": {"enum": ["open", "closed", "partially_open", "restricted", "maintenance", "unknown"]},
         "public_access": {"enum": ["yes", "no", "limited", "unknown"]},
         "status_as_of": {"type": ["string", "null"], "format": "date-time"},
         "operator": {"type": ["string", "null"]},
+        "operator_id": {"type": ["string", "null"]},
         "reservation_required": {"enum": ["yes", "no", "unknown"]},
         "closure_reason": {"type": ["string", "null"]},
+        "closure_reason_code": {"type": ["string", "null"], "enum": ["weather", "flood", "maintenance", "infrastructure", "ecological", "archaeological", "security", "incident", "administrative", "unknown", "other", null]},
         "expected_reopen": {"type": ["string", "null"], "format": "date-time"},
+        "status_quality": {"enum": ["verified", "provisional", "stale", "conflicting", "unknown"]},
+        "conflict_hold": {"type": "boolean"},
         "operating_notes": {"type": ["string", "null"]}
+      }
+    },
+    "access": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entry_mode", "ada_access", "route_condition", "last_assessed_at"],
+      "properties": {
+        "entry_mode": {"enum": ["self_guided", "guided", "permit_only", "research_only", "staff_only", "prohibited", "unknown"]},
+        "ada_access": {"enum": ["full", "partial", "none", "unknown", "not_applicable"]},
+        "route_condition": {"enum": ["serviceable", "degraded", "closed", "under_repair", "unknown"]},
+        "reservation_channel_ref": {"type": ["string", "null"]},
+        "max_group_size": {"type": ["integer", "null"], "minimum": 1},
+        "operating_hours_ref": {"type": ["string", "null"]},
+        "last_assessed_at": {"type": ["string", "null"], "format": "date-time"}
       }
     },
     "hydrologic": {
@@ -55,10 +87,15 @@
         "roles": {"type": "array", "uniqueItems": true, "items": {"enum": ["conduit", "recharge", "discharge", "storage", "underground_channel", "spring_outlet", "unknown"]}},
         "waterbody_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
         "watershed_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "aquifer_ref": {"type": ["string", "null"]},
         "flood_sensitivity": {"enum": ["low", "moderate", "high", "unknown"]},
         "surface_water_connection": {"enum": ["confirmed", "suspected", "none", "unknown"]},
         "monitoring_status": {"enum": ["active", "intermittent", "historical", "none", "unknown"]},
-        "last_observation_at": {"type": ["string", "null"], "format": "date-time"}
+        "last_observation_at": {"type": ["string", "null"], "format": "date-time"},
+        "upstream_monitor_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "evacuation_stage_m": {"type": ["number", "null"]},
+        "stage_datum_ref": {"type": ["string", "null"]},
+        "recharge_context": {"enum": ["direct", "diffuse", "mixed", "unknown"]}
       }
     },
     "environmental": {
@@ -68,21 +105,86 @@
       "properties": {
         "protected_designations": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
         "habitat_sensitivity": {"enum": ["low", "moderate", "high", "restricted", "unknown"]},
+        "sensitive_biota": {"enum": ["present", "not_documented", "unknown", "restricted"]},
         "water_quality_monitoring": {"enum": ["active", "intermittent", "historical", "none", "unknown"]},
-        "hazards": {"type": "array", "uniqueItems": true, "items": {"enum": ["flash_flood", "rockfall", "air_quality", "biological_sensitivity", "contamination", "structural_failure", "access_failure", "unknown"]}}
+        "hazards": {"type": "array", "uniqueItems": true, "items": {"enum": ["flash_flood", "rockfall", "air_quality", "biological_sensitivity", "contamination", "structural_failure", "access_failure", "collapse", "unknown"]}},
+        "contamination_status": {"enum": ["none_known", "suspected", "confirmed", "under_assessment", "unknown"]},
+        "microclimate_baseline_ref": {"type": ["string", "null"]}
       }
     },
     "infrastructure": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["components", "linked_utility_asset_ids", "power_dependency", "communications_dependency", "emergency_access"],
+      "required": ["components", "linked_utility_asset_ids", "power_dependency", "communications_dependency", "emergency_access", "critical_route_status"],
       "properties": {
-        "components": {"type": "array", "uniqueItems": true, "items": {"enum": ["visitor_center", "road", "trail", "stairs", "railings", "lighting", "tram", "bridge", "gate", "signage", "sensor", "other"]}},
+        "components": {"type": "array", "uniqueItems": true, "items": {"enum": ["visitor_center", "road", "trail", "stairs", "railings", "lighting", "tram", "bridge", "gate", "signage", "sensor", "communications", "other"]}},
         "linked_utility_asset_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
         "power_dependency": {"enum": ["critical", "supporting", "none", "unknown"]},
         "communications_dependency": {"enum": ["critical", "supporting", "none", "unknown"]},
         "emergency_access": {"enum": ["available", "limited", "unavailable", "unknown"]},
-        "condition": {"enum": ["serviceable", "degraded", "damaged", "under_repair", "unknown"]}
+        "critical_route_status": {"enum": ["clear", "impaired", "blocked", "unknown"]},
+        "condition": {"enum": ["serviceable", "degraded", "damaged", "under_repair", "unknown"]},
+        "last_inspection_at": {"type": ["string", "null"], "format": "date-time"}
+      }
+    },
+    "legal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owner_type", "management_authority_id", "designations", "access_rights", "verified_at"],
+      "properties": {
+        "owner_type": {"enum": ["commonwealth", "municipal", "federal", "private", "nonprofit", "mixed", "unknown"]},
+        "owner_name": {"type": ["string", "null"]},
+        "management_authority_id": {"type": ["string", "null"]},
+        "parcel_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "designations": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "access_rights": {"enum": ["public", "conditional", "permit_only", "private", "restricted", "unknown"]},
+        "permit_requirements": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "verified_at": {"type": ["string", "null"], "format": "date-time"}
+      }
+    },
+    "culture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["archaeological_sensitivity", "rock_art_present", "human_remains_sensitivity", "disclosure_class"],
+      "properties": {
+        "archaeological_sensitivity": {"enum": ["none_known", "potential", "known", "restricted", "unknown"]},
+        "heritage_registry_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "rock_art_present": {"enum": ["yes", "no", "unknown", "restricted"]},
+        "human_remains_sensitivity": {"enum": ["none_known", "potential", "known", "restricted", "unknown"]},
+        "cultural_periods": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "disclosure_class": {"enum": ["P0_PUBLIC", "P1_GENERALIZED", "P2_CONTROLLED", "P3_RESTRICTED"]},
+        "last_heritage_review_at": {"type": ["string", "null"], "format": "date-time"}
+      }
+    },
+    "monitoring": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["site_ids", "sensor_ids", "sensor_types", "telemetry_mode", "health"],
+      "properties": {
+        "site_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "sensor_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "sensor_types": {"type": "array", "uniqueItems": true, "items": {"enum": ["water_stage", "rainfall", "water_temp", "conductivity", "turbidity", "ph", "dissolved_oxygen", "air_temp", "relative_humidity", "co2", "o2", "vibration", "tilt", "gate", "occupancy", "power", "other"]}},
+        "default_sampling_interval_s": {"type": ["integer", "null"], "minimum": 1},
+        "telemetry_mode": {"enum": ["realtime", "store_forward", "manual", "hybrid", "none"]},
+        "health": {"enum": ["nominal", "degraded", "offline", "calibration_due", "unknown"]},
+        "last_heartbeat_at": {"type": ["string", "null"], "format": "date-time"},
+        "calibration_due_at": {"type": ["string", "null"], "format": "date-time"}
+      }
+    },
+    "emergency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hazard_zone", "response_lead_role", "communications", "incident_state", "closure_ruleset_id"],
+      "properties": {
+        "plan_ref": {"type": ["string", "null"]},
+        "hazard_zone": {"enum": ["normal", "watch", "warning", "evacuate", "closed", "unknown"]},
+        "evacuation_route_ref": {"type": ["string", "null"]},
+        "muster_point_ref": {"type": ["string", "null"]},
+        "response_lead_role": {"type": ["string", "null"]},
+        "communications": {"enum": ["primary_available", "backup_only", "none", "unknown"]},
+        "last_drill_at": {"type": ["string", "null"], "format": "date-time"},
+        "incident_state": {"enum": ["normal", "monitoring", "response", "recovery", "after_action"]},
+        "closure_ruleset_id": {"type": "string", "minLength": 1}
       }
     },
     "source_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^SRC_KARST_[A-Z0-9_]+$"}},
