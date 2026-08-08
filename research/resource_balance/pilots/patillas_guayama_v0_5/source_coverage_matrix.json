@@ -1,0 +1,154 @@
+{
+  "schema_version": "aguayluz.patillas-t1-source-coverage/v0.5",
+  "pilot_id": "patillas-guayama-t1-source-coverage-v0.5",
+  "base_main_sha": "debbef3e901c7edeb5e6d91c9dfc888383b2024c",
+  "generated_at": "2026-08-08T01:00:00-04:00",
+  "real_balance_executed": false,
+  "public_osint_status": "bounded_sweep_complete_for_v0.5",
+  "classification_vocabulary": [
+    "public_machine_readable",
+    "public_document_only",
+    "operator_record_required",
+    "field_measurement_required",
+    "proxy_only",
+    "unavailable"
+  ],
+  "inputs": [
+    {
+      "metric": "upstream_inflow_rate",
+      "required_role": "reservoir_external_inflow",
+      "primary_classification": "public_machine_readable",
+      "source": "USGS 50092000 RIO GRANDE DE PATILLAS NR PATILLAS, PR",
+      "source_url": "https://waterdata.usgs.gov/nwis/uv?legacy=1&site_no=50092000",
+      "parameter": "00060 discharge",
+      "evidence_tier": "T1",
+      "coverage_status": "partial_not_yet_total_reservoir_inflow",
+      "admission_status": "blocked",
+      "blockers": [
+        "USGS instantaneous values are provisional until revised/approved",
+        "topology must prove whether this station captures the complete external inflow required by the reservoir boundary",
+        "ungauged tributary or local runoff contributions must be explicitly included or excluded"
+      ]
+    },
+    {
+      "metric": "reservoir_stage_start_end",
+      "required_role": "storage_change_precursor",
+      "primary_classification": "public_machine_readable",
+      "source": "USGS 50093045 LAGO PATILLAS AT DAMSITE NEAR PATILLAS, PR",
+      "source_url": "https://waterdata.usgs.gov/nwis/uv?legacy=1&site_no=50093045",
+      "parameter": "72379/72380 reservoir elevation PRVD02",
+      "evidence_tier": "T1",
+      "coverage_status": "transformable_with_merged_v0_4_1_stage_storage_model",
+      "admission_status": "blocked_until_nonprovisional_revision_and_uncertainty",
+      "blockers": [
+        "current instantaneous values are provisional subject to revision",
+        "measurement uncertainty/calibration state must be bound to each admitted observation"
+      ]
+    },
+    {
+      "metric": "gate_or_canal_release_rate",
+      "required_role": "reservoir_release",
+      "primary_classification": "proxy_only",
+      "source": "USGS 50093053 CANAL DE PATILLAS AT FOREBAY plus USGS 50093045 temporary gate-opening heights",
+      "source_url": "https://waterdata.usgs.gov/nwis/uv?legacy=1&site_no=50093053",
+      "parameter": "00060 discharge; gate opening heights are operational-only",
+      "evidence_tier": "T1",
+      "coverage_status": "public_proxy_not_exact_dam_release",
+      "admission_status": "blocked",
+      "blockers": [
+        "forebay discharge is downstream of the release point and may embed intervening gains/losses",
+        "gate opening height is not discharge without an authoritative rating/operation relation",
+        "USGS states gate-opening data are temporary operational data not suitable for archival scientific interpretation"
+      ],
+      "next_public_path": "search authoritative PREPA/AEE canal rating, gate-operation, or archived release tables before any operator request"
+    },
+    {
+      "metric": "direct_treatment_withdrawal_rate",
+      "required_role": "Guayama_treatment_outflow",
+      "primary_classification": "public_document_only",
+      "source": "Puerto Rico Statistics / AAA Untreated Water Extractions and Production",
+      "source_url": "https://www.estadisticas.pr.gov/productos/extracciones-de-agua-cruda-y-produccion",
+      "parameter": "average monthly raw-water extraction/production in MGD by plant",
+      "evidence_tier": "T1",
+      "coverage_status": "public_monthly_average_not_interval_meter",
+      "admission_status": "blocked",
+      "blockers": [
+        "annual publication with average monthly values is too coarse for a synchronized 15-minute balance slice",
+        "USGS 50093075 minus 50093078 can be a derived diversion estimate only when synchronized and cannot be labeled a direct plant meter"
+      ],
+      "fallback_classification": "operator_record_required"
+    },
+    {
+      "metric": "downstream_terminal_flow_rate",
+      "required_role": "canal_boundary_terminal_outflow",
+      "primary_classification": "proxy_only",
+      "source": "USGS 50093078 below Guayama Filtration Plant and USGS 50093083 above AES intake",
+      "source_url": "https://waterdata.usgs.gov/nwis/uv?legacy=1&site_no=50093083",
+      "parameter": "00060 discharge",
+      "evidence_tier": "T1",
+      "coverage_status": "intermediate_downstream_gauges_not_proven_terminal_boundary",
+      "admission_status": "blocked",
+      "blockers": [
+        "neither station is proven to be the terminal Patillas Canal boundary",
+        "downstream diversions between gauges and terminal boundary must be enumerated",
+        "instantaneous records are provisional until revision"
+      ]
+    },
+    {
+      "metric": "area_weighted_precipitation_volume",
+      "required_role": "direct_reservoir_precipitation",
+      "primary_classification": "public_machine_readable",
+      "source": "NOAA/NWS MRMS Caribbean precipitation products plus USGS 50093045 point precipitation",
+      "source_url": "https://mrms.ncep.noaa.gov/2D/PrecipRate/",
+      "parameter": "gridded precipitation rate/QPE; USGS parameter 00045 as local cross-check",
+      "evidence_tier": "T1",
+      "coverage_status": "precipitation_precursor_available_volume_transform_incomplete",
+      "admission_status": "blocked",
+      "blockers": [
+        "must freeze the exact reservoir-water-surface geometry appropriate to each stage or a validated stage-area relation",
+        "MRMS cells must be clipped and area-weighted for the exact balance interval",
+        "radar/QPE uncertainty must be quantified and point gauge retained as an independent cross-check"
+      ]
+    },
+    {
+      "metric": "evaporation_volume",
+      "required_role": "reservoir_expected_loss",
+      "primary_classification": "proxy_only",
+      "source": "USGS regional/historical evaporation estimates and meteorological precursors",
+      "source_url": "https://pubs.usgs.gov/ha/ha730/ch_n/N-PR_VItext1.html",
+      "parameter": "historical pan-evaporation climatology",
+      "evidence_tier": "T1",
+      "coverage_status": "historical_climatology_only_no_current_interval_open_water_observation_found",
+      "admission_status": "blocked",
+      "blockers": [
+        "historical pan evaporation is not a synchronized current open-water evaporation measurement",
+        "an interval model would require meteorological inputs, conversion/model version, water-surface area, and uncertainty",
+        "no public current direct interval Lago Patillas evaporation stream was found in the v0.5 sweep"
+      ],
+      "fallback_classification": "field_measurement_required"
+    },
+    {
+      "metric": "documented_operational_losses",
+      "required_role": "reservoir_and_canal_documented_loss",
+      "primary_classification": "operator_record_required",
+      "source": "PREPA/AEE public transition records describe Canal de Patillas operations and consumers but no interval loss ledger was found",
+      "source_url": "https://transicion2024.pr.gov/Agencias/169/Ponencias/Ponencia_del_Director_Ejecutivo_de_la_AEE%2020%20nov.pdf",
+      "parameter": "operations/maintenance context only",
+      "evidence_tier": "T1",
+      "coverage_status": "no_public_interval_loss_measurement_found",
+      "admission_status": "blocked",
+      "blockers": [
+        "public records reviewed do not provide synchronized reservoir flushing, leakage, spill, canal maintenance discharge, or other operational-loss volumes",
+        "unmeasured conveyance loss must not be inserted as a balancing term"
+      ]
+    }
+  ],
+  "public_context_findings": [
+    "DRNA describes Canal de Patillas as originating at Embalse Patillas, operated by AEE/PREPA, serving irrigation and public supply including the Guayama filtration plant.",
+    "AEE 2024 transition material states the Patillas irrigation system serves two AAA filtration plants, agriculture, AES, domestic services, and other contracted uses.",
+    "AAA public statistics provide monthly-average raw-water extraction and plant production, not synchronized interval plant-meter data.",
+    "USGS reservoir gate-opening heights are explicitly temporary operational data and are not an archival discharge series."
+  ],
+  "operator_requests_sent": false,
+  "field_measurements_requested": false
+}
