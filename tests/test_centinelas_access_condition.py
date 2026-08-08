@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pytest
 from jsonschema import ValidationError
-
 from scripts.ingest_centinelas_handoff import (
     _promote_access_condition,
     _validate_access_signal,
