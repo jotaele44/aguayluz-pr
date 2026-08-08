@@ -116,9 +116,11 @@ def admit_slice(scenario: dict[str, Any], policy: dict[str, Any]) -> dict[str, A
         if row.get("source_classification") != policy["require_source_classification"]:
             errors.append(f"source_classification:{metric}")
 
-        if metric in RATE_METRICS | VOLUME_METRICS:
-            if row.get("interval_start") != start or row.get("interval_end") != end:
-                errors.append(f"interval_alignment:{metric}")
+        if (
+            metric in RATE_METRICS | VOLUME_METRICS
+            and (row.get("interval_start") != start or row.get("interval_end") != end)
+        ):
+            errors.append(f"interval_alignment:{metric}")
         if metric in RATE_METRICS and row.get("unit") not in {"m3/s", "ft3/s"}:
             errors.append(f"unit:{metric}")
         if metric in VOLUME_METRICS and row.get("unit") != "m3":
