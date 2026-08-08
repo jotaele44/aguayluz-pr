@@ -5,14 +5,14 @@ from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 
 from aguayluz import SCHEMAS_DIR
-from aguayluz._cave_karst_v11 import (
+from aguayluz.cave_karst import compute_record_hash, load_default_registry, validate_registry
+from server.backend.cave_karst_api import (
     RULESET_VERSION,
     evaluate_replay_sample,
     materialize_v11_status,
     public_asset_projection,
     validate_public_projection,
 )
-from aguayluz.cave_karst import compute_record_hash, load_default_registry, validate_registry
 
 AS_OF = datetime(2026, 8, 7, 22, 0, tzinfo=timezone.utc)
 
