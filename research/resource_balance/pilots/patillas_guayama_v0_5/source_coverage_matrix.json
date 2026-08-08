@@ -4,7 +4,7 @@
   "origin_main_sha": "debbef3e901c7edeb5e6d91c9dfc888383b2024c",
   "latest_main_reviewed_sha": "01a991d6b7ecaf36458d6faf1acd1012b84da897",
   "real_balance_executed": false,
-  "public_osint_status": "bounded_sweep_complete_for_v0.5_after_two_tributary_below_dam_downstream_chain_and_precipitation_source_corrections",
+  "public_osint_status": "bounded_sweep_complete_for_v0.5_after_two_tributary_below_dam_downstream_chain_and_hourly_qpe_corrections",
   "classification_vocabulary": ["public_machine_readable","public_document_only","operator_record_required","field_measurement_required","proxy_only","unavailable"],
   "inputs": [
     {
@@ -18,11 +18,7 @@
       "evidence_tier": "T1",
       "coverage_status": "two_named_tributary_gauges_identified",
       "admission_status": "blocked",
-      "blockers": [
-        "Lago Patillas is located at the confluence of Rio Grande de Patillas and Rio Marin; both tributary components must be admitted before composite inflow is derived",
-        "instantaneous values must pass revision, calibration, uncertainty, interval-alignment and source-hash gates",
-        "local ungauged runoff between gauges and reservoir must be quantified, modeled with uncertainty, or proven immaterial for the chosen boundary"
-      ],
+      "blockers": ["both tributary series must be accepted-current and uncertainty-bound for the same hourly interval","local ungauged runoff between gauges and reservoir must be quantified or proven immaterial"],
       "derived_rule": "upstream_inflow_rate=rio_grande_inflow_rate+rio_marin_inflow_rate+explicitly_admitted_local_runoff_if_nonzero"
     },
     {
@@ -30,64 +26,61 @@
       "required_role": "storage_change_precursor",
       "primary_classification": "public_machine_readable",
       "source": "USGS 50093045 LAGO PATILLAS AT DAMSITE NEAR PATILLAS, PR",
-      "parameter": "reservoir elevation PRVD02",
       "evidence_tier": "T1",
       "coverage_status": "transformable_with_merged_v0_4_1_stage_storage_model",
       "admission_status": "blocked",
-      "blockers": ["instantaneous observations must be accepted-current rather than provisional","measurement uncertainty and calibration evidence must be bound to each stage observation"]
+      "blockers": ["stage values must be accepted-current rather than provisional","measurement uncertainty and calibration evidence must be bound to each boundary observation"]
     },
     {
       "metric": "gate_or_canal_release_rate",
       "required_role": "reservoir_canal_outlet",
       "primary_classification": "proxy_only",
-      "source": "USGS 50093053 CANAL DE PATILLAS AT FOREBAY plus USGS 50093045 gate-opening context",
+      "source": "USGS 50093053 CANAL DE PATILLAS AT FOREBAY plus 50093045 gate-opening context",
       "evidence_tier": "T1",
-      "coverage_status": "forebay_discharge_public_but_not_proven_identical_to_dam_outlet_release",
+      "coverage_status": "forebay_discharge_public_but_not_proven_identical_to_outlet_works_release",
       "admission_status": "blocked",
-      "blockers": ["forebay gauge is downstream of the outlet works","gate-opening height is not discharge without an authoritative rating or operation relation","intervening canal gain/loss cannot be silently absorbed"]
+      "blockers": ["forebay gauge is downstream of outlet works","gate opening is not discharge without an authoritative rating/operation relation","intervening gain/loss cannot be silently absorbed"]
     },
     {
       "metric": "downstream_river_release_rate",
       "required_role": "reservoir_river_outlet_or_spill_path",
       "primary_classification": "public_machine_readable",
       "source": "USGS 50093120 RIO GRANDE DE PATILLAS BLW LAGO PATILLAS, PR",
-      "parameter": "00060 discharge",
       "evidence_tier": "T1",
       "coverage_status": "direct_below_reservoir_river_gauge_identified",
       "admission_status": "blocked",
-      "blockers": ["instantaneous records must pass revision/calibration/uncertainty gates","topology must determine which outlet/spill pathways are represented at this gauge","this term may not be assumed zero merely because irrigation releases normally enter the canal"]
+      "blockers": ["records must pass revision/calibration/uncertainty gates","topology must determine which outlet or spill pathways are represented at the gauge","the term cannot be assumed zero without interval evidence"]
     },
     {
       "metric": "direct_treatment_withdrawal_rate",
       "required_role": "Guayama_treatment_outflow",
       "primary_classification": "public_document_only",
       "source": "Puerto Rico Statistics / AAA Untreated Water Extractions and Production",
-      "parameter": "average monthly raw-water extraction/production in MGD by plant",
       "evidence_tier": "T1",
-      "coverage_status": "public_monthly_average_not_interval_meter",
+      "coverage_status": "public_monthly_average_not_hourly_meter",
       "admission_status": "blocked",
-      "blockers": ["monthly-average publication is too coarse for a 15-minute slice","USGS 50093075 minus 50093078 is only a derived diversion estimate when synchronized and is not a direct plant meter"],
+      "blockers": ["monthly-average publication is too coarse for an hourly balance slice","USGS 50093075 minus 50093078 can only be a synchronized derived diversion estimate and is not a direct plant meter"],
       "fallback_classification": "operator_record_required"
     },
     {
       "metric": "downstream_terminal_flow_rate",
       "required_role": "canal_boundary_terminal_outflow",
       "primary_classification": "proxy_only",
-      "source": "USGS 50093078 below Guayama Filtration Plant, USGS 50093083 above AES intake, and USGS 50093115 at Intake 123 in Salinas",
+      "sources": ["USGS 50093078 below Guayama Filtration Plant","USGS 50093083 above AES intake","USGS 50093110 at Intake 113 Salinas","USGS 50093115 at Intake 123 Salinas"],
       "evidence_tier": "T1",
-      "coverage_status": "downstream_public_gauge_chain_extended_to_Salinas_but_terminal_boundary_not_proven",
+      "coverage_status": "measured_canal_chain_extended_into_salinas_but_terminal_boundary_not_documentarily_proven",
       "admission_status": "blocked",
-      "blockers": ["USGS 50093115 extends the measured canal chain farther downstream but is named for Intake 123 rather than a demonstrated terminal boundary","all intervening and downstream diversions must be enumerated or the balance boundary moved to a proven measured endpoint","instantaneous records must pass revision/calibration/uncertainty gates"]
+      "blockers": ["Intake 123 is farther downstream but is not by name a demonstrated terminal boundary","all diversions between the selected terminal gauge and physical canal termination must be enumerated or boundary redefined","records must pass revision/calibration/uncertainty gates"]
     },
     {
       "metric": "area_weighted_precipitation_volume",
       "required_role": "direct_reservoir_precipitation",
       "primary_classification": "public_machine_readable",
-      "source": "NOAA/NWS Stage IV Puerto Rico QPE plus USGS 50093045 point precipitation",
+      "source": "NOAA/NWS Puerto Rico Stage IV hourly QPE plus USGS 50093045 point precipitation cross-check",
       "evidence_tier": "T1",
-      "coverage_status": "Puerto_Rico_hourly_QPE_precursor_available_but_15_minute_volume_transform_incomplete",
+      "coverage_status": "native_hourly_qpe_available_volume_transform_incomplete",
       "admission_status": "blocked",
-      "blockers": ["freeze water-surface geometry applicable to each stage or an authoritative stage-area relation","clip and area-weight Puerto Rico Stage IV QPE cells to the reservoir surface","Stage IV is hourly, so a 15-minute balance requires an independently justified temporal-allocation model or a coarser synchronized window","quantify QPE and geometry uncertainty; retain the USGS point gauge as an independent cross-check"]
+      "blockers": ["freeze reservoir water-surface geometry applicable to the hourly stage or an authoritative stage-area relation","clip and area-weight Puerto Rico Stage IV NetCDF/GeoTIFF over the water surface","quantify QPE and geometry uncertainty","do not subdivide hourly QPE without a separately validated temporal model"]
     },
     {
       "metric": "evaporation_volume",
@@ -95,15 +88,15 @@
       "primary_classification": "proxy_only",
       "source": "USGS historical Puerto Rico evaporation climatology and meteorological precursors",
       "evidence_tier": "T1",
-      "coverage_status": "historical_climatology_only_no_current_interval_open_water_observation_found",
+      "coverage_status": "historical_climatology_only_no_current_hourly_open_water_observation_found",
       "admission_status": "blocked",
-      "blockers": ["historical pan evaporation is not a synchronized open-water measurement","modeled interval evaporation requires meteorological inputs, model version, water-surface area and uncertainty","no current direct public Lago Patillas interval evaporation stream was found"]
+      "blockers": ["historical pan evaporation is not a synchronized open-water measurement","modeled hourly evaporation requires meteorological inputs, model version, water-surface area and uncertainty","no current direct public Lago Patillas hourly evaporation stream was found"]
     },
     {
       "metric": "documented_operational_loss_volume",
       "required_role": "reservoir_and_canal_documented_loss",
       "primary_classification": "operator_record_required",
-      "source": "DRNA Canal de Patillas topology context plus AEE/PREPA public transition and historical operational documents",
+      "source": "DRNA Canal de Patillas topology context plus AEE/PREPA public operational documents",
       "evidence_tier": "T1",
       "coverage_status": "no_public_synchronized_loss_ledger_found",
       "admission_status": "blocked",
@@ -111,14 +104,13 @@
     }
   ],
   "public_context_findings": [
-    "USGS reports Lago Patillas at the confluence of Rio Grande de Patillas and Rio Marin and irrigation releases through outlet works into the Patillas Irrigation Canal.",
-    "USGS 50093000 supplies a public Rio Marin discharge record, closing a previously identified tributary-source gap at the source-discovery level.",
-    "USGS 50093120 supplies public discharge below Lago Patillas and is retained as a separate reservoir river-outlet/spill term rather than silently assuming canal-only outflow.",
-    "USGS 50093115 extends the public Canal de Patillas gauge chain to Intake 123 in Salinas but does not by itself prove the terminal balance boundary.",
-    "NOAA publishes hourly Stage IV QPE specifically for Puerto Rico in machine-readable NetCDF/GeoTIFF formats; its hourly cadence is not silently disaggregated to 15-minute slices.",
-    "AAA public statistics provide monthly-average plant extraction/production, not synchronized interval plant-meter data.",
-    "DRNA identifies Canal de Patillas as originating at Embalse Patillas, operated by AEE, and supplying irrigation and public water including the Guayama filtration plant.",
-    "AEE/PREPA public material confirms multiple canal consumers but no synchronized operational-loss ledger was found."
+    "USGS documents Lago Patillas at the confluence of Rio Grande de Patillas and Rio Marin and irrigation releases through outlet works into Patillas Irrigation Canal.",
+    "USGS 50093000 closes the named Rio Marin tributary source-discovery gap.",
+    "USGS 50093120 provides a distinct below-reservoir river discharge observation and prevents a canal-only outflow assumption.",
+    "USGS 50093110 and 50093115 extend the measured canal chain into Salinas, but neither name alone proves the physical terminal boundary.",
+    "NOAA publishes Puerto Rico Stage IV 1-hour QPE as NetCDF and GeoTIFF; hourly is the v0.5 native precipitation cadence.",
+    "AAA public plant statistics remain monthly-average rather than hourly direct-meter data.",
+    "No synchronized public operational-loss ledger was found."
   ],
   "operator_requests_sent": false,
   "field_measurements_requested": false
