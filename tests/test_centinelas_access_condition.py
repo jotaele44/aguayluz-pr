@@ -4,8 +4,8 @@ import copy
 import json
 from pathlib import Path
 
-from jsonschema.exceptions import ValidationError
 import pytest
+from jsonschema import ValidationError
 
 from scripts.ingest_centinelas_handoff import (
     _promote_access_condition,
