@@ -1,0 +1,14 @@
+{
+  "version": "0.1",
+  "enabled": false,
+  "external_watch_intake_enabled": false,
+  "live_aaa_adapter_enabled": false,
+  "auto_promotion_enabled": false,
+  "backend_reload_enabled": false,
+  "gui_refetch_enabled": false,
+  "gui_refetch_interval_ms": 120000,
+  "allowed_promotion_status": ["candidate"],
+  "required_review_status": "needs_review",
+  "required_receipt_hash": "sha256",
+  "notes": "Design-only configuration. No live providers, writes, reloads, polling, or verified promotion are activated by this PR."
+}
