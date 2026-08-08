@@ -1,7 +1,8 @@
 {
   "schema_version": "aguayluz.patillas-t1-admission-policy/v0.5",
   "policy_id": "patillas-guayama-t1-admission-v0.5",
-  "base_main_sha": "debbef3e901c7edeb5e6d91c9dfc888383b2024c",
+  "origin_main_sha": "debbef3e901c7edeb5e6d91c9dfc888383b2024c",
+  "latest_main_reviewed_sha": "01a991d6b7ecaf36458d6faf1acd1012b84da897",
   "canonical_volume_unit": "m3",
   "slice_cadence_minutes": 15,
   "daily_window_slices": 96,
@@ -23,16 +24,23 @@
   "stage_storage_extrapolation": "prohibited",
   "stage_storage_plateau_interpolation": "prohibited",
   "required_metrics_per_slice": [
-    "upstream_inflow_rate",
+    "rio_grande_inflow_rate",
+    "rio_marin_inflow_rate",
     "reservoir_stage_start",
     "reservoir_stage_end",
     "gate_or_canal_release_rate",
+    "downstream_river_release_rate",
     "direct_treatment_withdrawal_rate",
     "downstream_terminal_flow_rate",
     "area_weighted_precipitation_volume",
     "evaporation_volume",
     "documented_operational_loss_volume"
   ],
+  "derived_composite_rules": {
+    "upstream_inflow_rate": "rio_grande_inflow_rate + rio_marin_inflow_rate + separately_admitted_local_runoff_if_nonzero",
+    "measured_reservoir_outflow_rate": "gate_or_canal_release_rate + downstream_river_release_rate"
+  },
+  "zero_assumption_rule": "no_required_inflow_or_outflow_component_may_be_imputed_as_zero_without_T1_evidence_for_that_interval",
   "daily_window_rule": "all_96_slices_must_be_individually_admitted_before_aggregation",
   "contradiction_rule": "reject_on_conflicting_values_for_same_metric_interval_source_or_topology",
   "missing_rule": "fail_closed",
