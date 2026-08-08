@@ -31,12 +31,14 @@ def test_complete_synthetic_t1_slice_is_admitted_but_not_executed() -> None:
     ("scenario_id", "expected_error"),
     [
         ("missing_input", "missing:direct_treatment_withdrawal_rate"),
+        ("missing_rio_marin", "missing:rio_marin_inflow_rate"),
+        ("missing_river_outlet", "missing:downstream_river_release_rate"),
         ("asynchronous_input", "interval_alignment:downstream_terminal_flow_rate"),
-        ("provisional_input", "provisional:upstream_inflow_rate"),
+        ("provisional_input", "provisional:rio_grande_inflow_rate"),
         ("superseded_input", "revision:gate_or_canal_release_rate"),
         ("calibration_unknown", "calibration:direct_treatment_withdrawal_rate"),
         ("uncertainty_unknown", "uncertainty:evaporation_volume"),
-        ("topology_contradictory", "topology:downstream_terminal_flow_rate"),
+        ("topology_contradictory", "topology:downstream_river_release_rate"),
         ("proxy_only_input", "source_classification:gate_or_canal_release_rate"),
         ("datum_mismatch", "stage_reference:reservoir_stage_end"),
     ],
@@ -57,6 +59,8 @@ def test_public_source_matrix_keeps_real_window_blocked() -> None:
     assert readiness["status"] == "blocked"
     assert readiness["real_balance_executed"] is False
     assert readiness["operator_requests_sent"] is False
+    assert "upstream_inflow_rate" in readiness["blocking_metrics"]
+    assert "downstream_river_release_rate" in readiness["blocking_metrics"]
     assert "direct_treatment_withdrawal_rate" in readiness["blocking_metrics"]
     assert "evaporation_volume" in readiness["blocking_metrics"]
     assert "documented_operational_losses" in readiness["blocking_metrics"]
