@@ -1,0 +1,93 @@
+{
+  "receipt_set_version": "fda-live-policy-receipts/v1.8",
+  "status": "frozen_policy_receipts_only_no_provider_acquisition",
+  "retrieved_at_utc": "2026-08-05T04:34:22Z",
+  "provider_acquisition_calls_executed": false,
+  "network_implementation_allowed": false,
+  "scheduler_registration_allowed": false,
+  "production_persistence_allowed": false,
+  "credentials_allowed": false,
+  "gui_api_capabilities_allowed": false,
+  "automatic_entity_promotion_allowed": false,
+  "compliance_inference_allowed": false,
+  "requires_separate_explicit_authorization": true,
+  "receipts": [
+    {
+      "receipt_id": "AYL_REGRCPT_FDA_POLICY_OPENFDA_TERMS_20260805",
+      "source_url": "https://open.fda.gov/terms/",
+      "source_host": "open.fda.gov",
+      "source_kind": "terms_policy_page",
+      "access_mode": "official_documentation_snapshot",
+      "retrieved_at_utc": "2026-08-05T04:34:22Z",
+      "sha256": "f1c9fa3daaa6c816340ea0d714d81817d61926ea07336cd0b755a0a1dd8cb336",
+      "byte_count": 128668,
+      "media_type": "text/html",
+      "policy_assertions": [
+        "terms_must_be_reviewed_before_activation",
+        "snapshot_is_not_source_data_acquisition",
+        "redistribution_boundary_must_be_preserved"
+      ]
+    },
+    {
+      "receipt_id": "AYL_REGRCPT_FDA_POLICY_OPENFDA_AUTH_RATE_20260805",
+      "source_url": "https://open.fda.gov/apis/authentication/",
+      "source_host": "open.fda.gov",
+      "source_kind": "authentication_and_rate_limit_documentation",
+      "access_mode": "official_documentation_snapshot",
+      "retrieved_at_utc": "2026-08-05T04:34:22Z",
+      "sha256": "fb6d31a8a622c3db1d4ffd8aef2f8821b9f5e3c9ca0fb66bcf9bb2fc10615c41",
+      "byte_count": 116494,
+      "media_type": "text/html",
+      "rate_limit_assertions": {
+        "activation_must_read_current_documented_limits": true,
+        "hard_code_from_memory_allowed": false,
+        "routine_acquisition_requires_operator_approved_profile": true,
+        "retry_after_header_must_be_honored": true,
+        "official_snapshot_values": {
+          "without_api_key": {
+            "requests_per_minute_per_ip": 240,
+            "requests_per_day_per_ip": 1000
+          },
+          "with_api_key": {
+            "requests_per_minute_per_key": 240,
+            "requests_per_day_per_key": 120000
+          }
+        }
+      }
+    },
+    {
+      "receipt_id": "AYL_REGRCPT_FDA_POLICY_WEBSITE_POLICIES_20260805",
+      "source_url": "https://www.fda.gov/about-fda/about-website/website-policies",
+      "source_host": "www.fda.gov",
+      "source_kind": "website_policy_page",
+      "access_mode": "official_documentation_snapshot",
+      "retrieved_at_utc": "2026-08-05T04:34:22Z",
+      "sha256": "da6d52ede7bec71d9da16774ce6a511caabe50d52bbe153ead5059a404beb16c",
+      "byte_count": 45941,
+      "media_type": "text/html",
+      "policy_assertions": [
+        "official_fda_website_policy_snapshot",
+        "copying_and_linking_boundary_must_be_reviewed_before_activation",
+        "updated_material_requires_new_receipt"
+      ]
+    },
+    {
+      "receipt_id": "AYL_REGRCPT_FDA_PROFILE_REGISTRY_V1_4_20260805",
+      "source_url": "repo://research/regulatory/fda_live_source_registry_v1_4.json",
+      "source_host": "local_repository",
+      "source_kind": "merged_source_profile_registry",
+      "access_mode": "local_gate_snapshot",
+      "retrieved_at_utc": "2026-08-05T04:34:22Z",
+      "sha256": "bca2f9276fe964c3f76ba1baad0eb76f30052caa420b75151dff962da5428372",
+      "byte_count": 4938,
+      "media_type": "application/json",
+      "policy_assertions": [
+        "network_implementation_allowed_false",
+        "scheduler_registration_allowed_false",
+        "production_persistence_allowed_false",
+        "credentials_allowed_false",
+        "requires_separate_explicit_authorization_true"
+      ]
+    }
+  ]
+}
