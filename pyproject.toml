@@ -91,6 +91,9 @@ known-first-party = ["research"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["B011"]
+"server/backend/water_disruption.py" = ["E731", "I001"]
+"tests/test_laguna_cartagena_control_plane.py" = ["I001"]
+"tests/test_laguna_cartagena_control_plane_api.py" = ["I001"]
 
 # ── mypy ─────────────────────────────────────────────────────────────────────
 # Gradually-typed baseline, matching spiderweb-pr and moneysweep-pr. Scoped to
