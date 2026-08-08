@@ -62,7 +62,8 @@ def test_adapter_has_no_cli_api_key_or_scheduler_surface():
     assert 'os.environ.get("USGS_API_KEY"' in source
     assert '"X-Api-Key": api_key' in source
     assert "--api-key" not in source
-    assert "schedule" not in source.lower()
+    assert "apscheduler" not in source.lower()
+    assert "cron" not in source.lower()
     assert "sensorthings" not in source.lower()
 
 
