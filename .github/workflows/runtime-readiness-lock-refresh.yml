@@ -1,0 +1,31 @@
+name: Runtime readiness lock refresh
+
+on:
+  push:
+    branches:
+      - agent/runtime-readiness-fastapi-testdep-v0-3
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-lock:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: agent/runtime-readiness-fastapi-testdep-v0-3
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78
+      - name: Regenerate canonical uv lock
+        run: uv lock
+      - name: Commit generated lock only
+        run: |
+          if git diff --quiet -- uv.lock; then
+            echo "uv.lock already canonical"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add uv.lock
+          git commit -m "chore: regenerate uv lock for FastAPI dev dependency"
+          git push origin HEAD:agent/runtime-readiness-fastapi-testdep-v0-3
