@@ -1,0 +1,55 @@
+name: Spatial Shadow Reference
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "config/spatial_compute_shadow_v0_2.json"
+      - "data/geo/pr_municipios.geojson"
+      - "data/geo/pr_barrios.geojson"
+      - "docs/SPATIAL_BASELINE_GRID.md"
+      - "docs/SPATIAL_OVERLAY_JOIN_RULES.md"
+      - "tests/test_spatial_compute_shadow_contract.py"
+      - "tools/spatial_shadow/**"
+      - ".github/workflows/spatial-shadow-reference.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  local-reference:
+    name: Local world-space reference
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install reference dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "geopandas>=0.14,<2" pytest
+
+      - name: Enforce pixel/world authority firewall
+        run: |
+          pytest -q tests/test_spatial_compute_shadow_contract.py
+          python scripts/validate_pr_grid.py --require-sha
+
+      - name: Build deterministic local reference receipt
+        run: |
+          python tools/spatial_shadow/benchmark_reference.py \
+            --output reports/spatial_compute/local_reference_receipt.json
+
+      - name: Upload reference receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: spatial-shadow-local-reference
+          path: reports/spatial_compute/local_reference_receipt.json
+          if-no-files-found: error
+          retention-days: 14
