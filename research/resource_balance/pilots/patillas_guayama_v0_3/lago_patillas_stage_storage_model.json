@@ -1,0 +1,30 @@
+{
+  "schema_version": "aguayluz.stage-storage-model/v0.3",
+  "model_id": "lago-patillas-stage-storage-2019-prvd02-v0.3",
+  "model_version": "2019-survey-source-envelope-v0.3",
+  "reservoir_asset_id": "USGS_50093045",
+  "status": "authoritative_source_identified_not_materialized",
+  "datum": "PRVD02",
+  "stage_unit": "m",
+  "storage_unit": "m3",
+  "valid_from": "2019-08-16T00:00:00Z",
+  "valid_until": null,
+  "source_receipt": "authoritative_source_receipt.json",
+  "source_report_doi": "10.3133/sim3471",
+  "source_data_release_doi": "10.5066/P9Y2SCY1",
+  "published_interval_m": 1.0,
+  "anchors": [
+    {
+      "stage_m_prvd02": 67.55,
+      "storage_m3": 12960000.0,
+      "anchor_kind": "spillway_capacity"
+    }
+  ],
+  "points": [],
+  "interpolation_policy": "prohibited_until_full_table_materialized",
+  "extrapolation_policy": "prohibited",
+  "uncertainty_abs_m3": null,
+  "eligible_for_real_balance": false,
+  "supersedes_datum": "mean_sea_level_legacy",
+  "claim_boundary": "Source identity, datum, interval, and spillway-capacity anchor only; no unmaterialized table values are inferred."
+}

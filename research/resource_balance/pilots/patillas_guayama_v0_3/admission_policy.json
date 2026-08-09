@@ -1,0 +1,46 @@
+{
+  "schema_version": "aguayluz.synchronized-balance-admission-policy/v0.3",
+  "policy_id": "patillas-guayama-admission-policy-v0.3",
+  "pilot_id": "patillas-guayama-synchronized-admission-v0.3",
+  "pinned_main_sha": "17c843595b5cdfbcef4e5f7b1ac6c662092e335d",
+  "pinned_parent_head": "40fc362d7cb11cdabe3cde04733b41ceac97eb77",
+  "required_topology_state_id": "topology:patillas-guayama:20260804:v0.2",
+  "required_metrics": [
+    "upstream_inflow_rate",
+    "reservoir_stage_start",
+    "reservoir_stage_end",
+    "gate_or_canal_release_rate",
+    "direct_treatment_withdrawal_rate",
+    "downstream_flow_rate",
+    "precipitation_volume",
+    "evaporation_volume",
+    "reservoir_operational_loss_volume",
+    "canal_operational_loss_volume"
+  ],
+  "canonical_volume_unit": "m3",
+  "allowed_rate_units": [
+    "m3/s",
+    "ft3/s"
+  ],
+  "required_evidence_tier_for_real": "T1",
+  "max_time_skew_minutes": 60,
+  "freshness_limit_hours": 48,
+  "require_exact_common_interval": true,
+  "require_provisional_false": true,
+  "required_revision_status": "accepted_current",
+  "required_sensor_calibration_state": "verified",
+  "require_source_sha256": true,
+  "stage_datum": "PRVD02",
+  "extrapolation": "prohibited",
+  "real_execution_gate": "all_required_T1_inputs_and_materialized_authoritative_stage_storage_model",
+  "activation": {
+    "runtime": false,
+    "api": false,
+    "gui": false,
+    "exports": false,
+    "alerts": false,
+    "notifications": false,
+    "scheduler": false,
+    "deprecation": false
+  }
+}

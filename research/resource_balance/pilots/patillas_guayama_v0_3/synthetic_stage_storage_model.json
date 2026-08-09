@@ -1,0 +1,31 @@
+{
+  "schema_version": "aguayluz.stage-storage-model/v0.3",
+  "model_id": "synthetic-patillas-stage-storage-v0.3",
+  "model_version": "synthetic-regression-only-v0.3",
+  "reservoir_asset_id": "SYNTHETIC_USGS_50093045",
+  "status": "synthetic_test_only",
+  "datum": "PRVD02",
+  "stage_unit": "m",
+  "storage_unit": "m3",
+  "valid_from": "2026-07-28T00:00:00-04:00",
+  "valid_until": "2026-07-29T00:00:00-04:00",
+  "points": [
+    {
+      "stage_m_prvd02": 60.0,
+      "storage_m3": 5000000.0
+    },
+    {
+      "stage_m_prvd02": 61.0,
+      "storage_m3": 6000000.0
+    },
+    {
+      "stage_m_prvd02": 62.0,
+      "storage_m3": 7200000.0
+    }
+  ],
+  "interpolation_policy": "piecewise_linear_between_published_points",
+  "extrapolation_policy": "prohibited",
+  "uncertainty_abs_m3": 0.0,
+  "eligible_for_real_balance": false,
+  "claim_boundary": "Synthetic values test contracts only and do not describe Lago Patillas."
+}

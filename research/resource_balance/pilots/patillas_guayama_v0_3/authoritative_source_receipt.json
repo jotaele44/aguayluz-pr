@@ -1,0 +1,36 @@
+{
+  "schema_version": "aguayluz.authoritative-stage-storage-source-receipt/v0.3",
+  "receipt_id": "patillas-stage-storage-source-20260804",
+  "retrieved_at": "2026-08-04T22:01:00Z",
+  "publisher": "U.S. Geological Survey",
+  "cooperating_agency": "Puerto Rico Electric Power Authority",
+  "report": {
+    "title": "Bathymetric survey and sedimentation analysis of Lago Patillas, Puerto Rico, August 2019",
+    "series": "Scientific Investigations Map 3471",
+    "doi": "10.3133/sim3471",
+    "publication_date": "2021-04-27",
+    "source_url": "https://pubs.usgs.gov/sim/3471/sim3471.pdf"
+  },
+  "data_release": {
+    "title": "Spatial and bathymetric data for Lago Patillas, Puerto Rico, August 2019",
+    "doi": "10.5066/P9Y2SCY1",
+    "publication_date": "2021-04-23",
+    "source_url": "https://data.usgs.gov/datacatalog/data/USGS%3A5f45726282ce4c3d12251b6e"
+  },
+  "verified_source_claims": [
+    "The data release contains a stage-volume table calculated at 1.0-meter stage intervals from the 2019 terrain model.",
+    "The official vertical datum is Puerto Rico Vertical Datum of 2002 (PRVD02).",
+    "The spillway elevation is 67.55 meters above PRVD02.",
+    "The 2019 storage capacity at 67.55 meters above PRVD02 is 12.96 million cubic meters.",
+    "The PRVD02 datum supersedes the prior mean-sea-level datum for this reservoir."
+  ],
+  "capture_state": "authoritative_source_identified_table_bytes_not_materialized",
+  "limitations": [
+    "The complete published stage-volume table bytes are not committed in v0.3.",
+    "The single spillway-capacity anchor is not sufficient for interpolation.",
+    "A real stage-to-storage transform remains prohibited until the complete table is acquired and hashed."
+  ],
+  "evidence_tier": "T1",
+  "review_status": "accepted_source_identity_blocked_table_materialization",
+  "receipt_payload_sha256": "ace5a31f703509e4b91304914becd84039176643c8fee1fe614b0535db34e5b8"
+}

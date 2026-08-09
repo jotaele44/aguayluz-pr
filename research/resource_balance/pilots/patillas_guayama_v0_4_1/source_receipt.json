@@ -1,0 +1,160 @@
+{
+  "archive": {
+    "media_type": "application/zip",
+    "observed_md5": "562ed7f0458a5c84b379963a90b9c8d1",
+    "published_md5": "562ed7f0458a5c84b379963a90b9c8d1",
+    "requested_url": "https://www.sciencebase.gov/catalog/file/get/5f45726282ce4c3d12251b6e?f=__disk__98%2F44%2Fc9%2F9844c9122749700de25ae4f702abd098c3a3308b",
+    "retrieved_at": "2026-08-04T23:24:26Z",
+    "sha256": "3beac301b1521a197837ebb49eff701e2774385cb34f220e3546c82c5d732ea7",
+    "size_bytes": 27171688
+  },
+  "data_release_doi": "10.5066/P9Y2SCY1",
+  "datum": "PRVD02",
+  "http_headers": {
+    "archive": {
+      "content_disposition": "attachment; filename=\"Patillas_Terrain_2019.gdb.zip\"",
+      "content_length": 27171688,
+      "content_type": "application/zip",
+      "date": "Tue, 04 Aug 2026 23:24:26 GMT",
+      "http_status": 200,
+      "last_modified": "Tue, 04 Aug 2026 23:24:25 GMT",
+      "raw_header_sha256": "94d26748bbf5c4664da15ab3dd33422530f5872a6629dfc3ea54d03f4f6c56f8",
+      "raw_header_size_bytes": 3389,
+      "redacted_headers": [
+        "set-cookie",
+        "content-security-policy"
+      ]
+    },
+    "metadata_xml": {
+      "content_disposition": "attachment; filename=\"geodatabase_Patillas_2019.xml\"",
+      "content_length": 29951,
+      "content_type": "application/fgdc+xml",
+      "date": "Tue, 04 Aug 2026 23:24:46 GMT",
+      "http_status": 200,
+      "last_modified": "Tue, 04 Aug 2026 23:24:46 GMT",
+      "raw_header_sha256": "45294e9e8a5f970c402506b5a12f0c87df9f0a9754d6d0b6d999c7cc82b0aa9a",
+      "raw_header_size_bytes": 3391,
+      "redacted_headers": [
+        "set-cookie",
+        "content-security-policy"
+      ]
+    }
+  },
+  "inserted_rows": 0,
+  "metadata_xml": {
+    "adjudication": "metadata_checksum_contradiction_preserved_nonblocking",
+    "catalog_md5": "b2f0ab711efabca8684c2a4e8018f4a8",
+    "catalog_md5_matches": false,
+    "media_type": "application/fgdc+xml",
+    "observed_md5": "32a67287f5568dbdc41cc9d2f7a1abf1",
+    "requested_url": "https://www.sciencebase.gov/catalog/file/get/5f45726282ce4c3d12251b6e?f=__disk__5a%2Fec%2Ff0%2F5aecf0ef78b085d23b7f2c924cc0e4284e666779",
+    "retrieved_at": "2026-08-04T23:24:46Z",
+    "sha256": "530da759751f69d488ac47119c37e0c55722e2f52512427c3acf32e16c5ff7cb",
+    "size_bytes": 29951
+  },
+  "model_path": "lago_patillas_stage_storage_model.json",
+  "model_sha256": "40a90b56a5bfa38816c7ef515366aa3dad667c9506c237e26d76981958c1fb44",
+  "parse_method": "OpenFileGDB_machine_readable_no_OCR_no_manual_transcription",
+  "parsed_table_path": "patillas_stage_volume_table.json",
+  "parsed_table_sha256": "293c43b265702b893e0e5c23b762f133b4f2b3ffa12c5778b662e06701eab6ca",
+  "published_precision_plateau": {
+    "decision": "interpolation_prohibited_inside_open_interval",
+    "exact_endpoint_lookup_allowed": true,
+    "lower_stage_m_prvd02": 44.55,
+    "lower_storage_m3": 0,
+    "row_insertion": false,
+    "source_fids": [
+      24,
+      23
+    ],
+    "strict_storage_increase_claim": false,
+    "upper_stage_m_prvd02": 45.55,
+    "upper_storage_m3": 0,
+    "value_correction": false
+  },
+  "publisher": "U.S. Geological Survey",
+  "real_window_readiness": {
+    "activation": {
+      "alerts": false,
+      "api": false,
+      "deprecation": false,
+      "exports": false,
+      "gui": false,
+      "migration": false,
+      "notifications": false,
+      "runtime": false,
+      "scheduler": false
+    },
+    "blockers": [
+      "missing_synchronized_T1_direct_treatment_withdrawal",
+      "missing_synchronized_T1_downstream_terminal_flow",
+      "missing_full_window_gate_or_canal_release",
+      "missing_area_weighted_precipitation_volume",
+      "missing_evaporation_volume",
+      "missing_documented_reservoir_operational_loss_volume",
+      "missing_documented_canal_operational_loss_volume",
+      "missing_verified_current_calibration_and_revision_state_for_all_inputs",
+      "physical_stage_storage_uncertainty_not_published_in_table"
+    ],
+    "real_balance_executed": false,
+    "root_cause_claim": null,
+    "stage_storage_plateau_adjudicated": true,
+    "stage_storage_table_materialized": true,
+    "status": "blocked"
+  },
+  "receipt_id": "patillas-stage-volume-recovery-20260804-v0.4.1",
+  "receipt_payload_sha256": "17950be4b20ddf4748f011c68486bb56ad5ea30eb94b38dfe16c32d7569ff41b",
+  "report_doi": "10.3133/sim3471",
+  "review_status": "accepted_source_materialization_real_balance_still_blocked",
+  "row_count": 24,
+  "schema_version": "aguayluz.patillas-stage-volume-source-receipt/v0.4.1",
+  "sciencebase_item_id": "5f45726282ce4c3d12251b6e",
+  "source_order_csv_path": "source/Patillas2019_volume.source_order.csv",
+  "source_order_csv_sha256": "6d8217ccec08dab2c92b0a3f0ddbc89e8051d0c080e2884691aec47fdf4f81ae",
+  "table_component_identification": {
+    "binary_anchors": [
+      {
+        "encoding": "IEEE754_float64_little_endian",
+        "offset": 196,
+        "value": 67.55
+      },
+      {
+        "encoding": "IEEE754_float64_little_endian",
+        "offset": 204,
+        "value": 12.96
+      },
+      {
+        "encoding": "IEEE754_float64_little_endian",
+        "offset": 679,
+        "value": 44.55
+      }
+    ],
+    "physical_component_prefix": "a00000064"
+  },
+  "table_components": [
+    {
+      "path": "source/Patillas_Terrain_2019.gdb/a00000064.gdbtable",
+      "sha256": "cd948248dca8179dcac99db745c88449b61fe3022831280350b902bc1e0fb804",
+      "size_bytes": 695
+    },
+    {
+      "path": "source/Patillas_Terrain_2019.gdb/a00000064.gdbtablx",
+      "sha256": "a0e2a5535d04bdcd7ab71c2b593a4b4f3d1a859db4812aa22b7dd66c0826c1da",
+      "size_bytes": 5152
+    },
+    {
+      "path": "source/Patillas_Terrain_2019.gdb/a00000064.gdbindexes",
+      "sha256": "f783c7cdca04f92be11d622f5ed3e7be6dc871316a6d7932b7ea4add7540845b",
+      "size_bytes": 66
+    }
+  ],
+  "table_name": "Patillas2019_volume",
+  "value_corrections": 0,
+  "workflow_artifact": {
+    "artifact_digest": "sha256:881537c057a54ca38eb23822487fe84bacfdb601cfe64c16c2c3614bf7f597b2",
+    "artifact_id": 8912513566,
+    "artifact_zip_size_bytes": 54169301,
+    "created_at": "2026-08-04T23:24:51Z",
+    "name": "patillas-stage-volume-authoritative-source"
+  }
+}
