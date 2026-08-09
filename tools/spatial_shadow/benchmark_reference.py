@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the local reference receipt for the provider-neutral spatial shadow pilot.
 
-This benchmark deliberately excludes PR_SPIDERWEB_PIXEL_GRID_V1.  It uses only the
+This benchmark deliberately excludes PR_SPIDERWEB_PIXEL_GRID_V1. It uses only the
 native world-space Puerto Rico municipio and barrio GeoJSON products generated from
 U.S. Census Bureau cartographic boundary sources.
 """
@@ -191,8 +191,8 @@ def main() -> int:
         intersection_area = float(intersection.area)
         outside_area = max(0.0, barrio_area - intersection_area)
         coverage_ratio = intersection_area / barrio_area if barrio_area else 0.0
-        point = barrio_geom.representative_point()
-        boundary_distance = float(point.distance(municipio_geom.boundary))
+        centroid = barrio_geom.centroid
+        boundary_distance = float(centroid.distance(municipio_geom.boundary))
 
         if barrio_geom.within(municipio_geom):
             topology = "FULL_WITHIN"
@@ -215,7 +215,7 @@ def main() -> int:
                 "intersection_area_m2": round(intersection_area, 6),
                 "outside_area_m2": round(outside_area, 6),
                 "coverage_ratio": round(coverage_ratio, 12),
-                "point_to_municipio_boundary_m": round(boundary_distance, 6),
+                "centroid_to_municipio_boundary_m": round(boundary_distance, 6),
                 "intersection_wkb_sha256_local_diagnostic": hashlib.sha256(
                     intersection.wkb
                 ).hexdigest(),
@@ -253,6 +253,7 @@ def main() -> int:
         "operation": {
             "parent_join": ref["join_semantics"],
             "metric_geometry": ref["metric_geometry"],
+            "distance_metric": ref["distance_metric"],
             "computation_crs": metric_crs,
             "record_count": len(records),
             "declared_parent_match_count": sum(r["declared_parent_match"] for r in records),
