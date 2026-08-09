@@ -2,10 +2,10 @@
   "schema_version": "1.0",
   "policy": "Only entries with a non-null certified_asset_id may bind an access condition to AguaYLuz geometry. Null entries remain intentionally unbound; no coordinates or inferred geometry are permitted in federation payloads.",
   "bindings": {
-    "elyunque.trail.la_mina": {"certified_asset_id": null, "geometry_status": "unbound", "reason": "No exact certified AguaYLuz geometry binding established on baseline main."},
-    "elyunque.trail.big_tree": {"certified_asset_id": null, "geometry_status": "unbound", "reason": "No exact certified AguaYLuz geometry binding established on baseline main."},
-    "elyunque.trail.bano_de_oro": {"certified_asset_id": null, "geometry_status": "unbound", "reason": "No exact certified AguaYLuz geometry binding established on baseline main."},
-    "elyunque.trail.el_yunque.los_picachos_to_peak": {"certified_asset_id": null, "geometry_status": "unbound", "reason": "No exact certified segment geometry established on baseline main; do not infer from whole-trail geometry."},
-    "elyunque.facility.el_portal_rainforest_center": {"certified_asset_id": null, "geometry_status": "unbound", "reason": "No exact certified AguaYLuz geometry binding established on baseline main."}
+    "elyunque.trail.la_mina": {"certified_asset_id": "LOCAL_1c4282d2a26d3548", "geometry_status": "source_native_exact", "reason": "Exact USDA Forest Service NFS Trails record TRAIL_CN 5050.010071; source geometry preserved in data/reference/el_yunque_access_assets.json."},
+    "elyunque.trail.big_tree": {"certified_asset_id": "LOCAL_3a22be084cc477e6", "geometry_status": "source_native_exact", "reason": "Exact USDA Forest Service NFS Trails record TRAIL_CN 5051.010071; source geometry preserved in data/reference/el_yunque_access_assets.json."},
+    "elyunque.trail.bano_de_oro": {"certified_asset_id": "LOCAL_b249b86bb2adeb1a", "geometry_status": "source_native_exact", "reason": "Exact USDA Forest Service NFS Trails record TRAIL_CN 5060.010071; source geometry preserved in data/reference/el_yunque_access_assets.json."},
+    "elyunque.trail.el_yunque.los_picachos_to_peak": {"certified_asset_id": null, "geometry_status": "unbound", "reason": "USFS source contains whole EL YUNQUE TRAIL (TRAIL_CN 5053.010071) and separate LOS PICACHOS TRAIL spur (TRAIL_CN 5078.010071), but no source-native Los Picachos-to-peak subsegment or authoritative measure interval; whole-trail substitution and derived splitting remain prohibited."},
+    "elyunque.facility.el_portal_rainforest_center": {"certified_asset_id": "LOCAL_792949c90aaf0a0f", "geometry_status": "source_native_exact", "reason": "Exact USDA Forest Service Recreation Sites Public Information record SITE_CN 5071.010071, SITE_ID 85700, GLOBALID {D51F4256-F7D2-4DA0-9674-25F41A3292FE}; source point geometry preserved in data/reference/el_yunque_access_assets.json."}
   }
 }
