@@ -1,0 +1,120 @@
+{
+  "schema_version": "prii.spatial-compute-shadow/v0.2",
+  "status": "shadow",
+  "authority": {
+    "canonical_storage_owner": "producer_or_federation",
+    "execution_provider_is_authoritative": false,
+    "local_provider_required": true,
+    "managed_provider_required": false
+  },
+  "legacy_pixel_grid": {
+    "dataset_id": "PR_SPIDERWEB_PIXEL_GRID_V1",
+    "path": "registry/spatial/pr_grid_full_cell_index_saturated.csv",
+    "sha256": "17733f3f18c8a644e31c1eb25fb27b73b4bf353c6de57d5203c4311e05d64483",
+    "bytes": 6807952,
+    "cell_count": 98304,
+    "grid_rows": 256,
+    "grid_columns": 384,
+    "cell_width_px": 4,
+    "cell_height_px": 4,
+    "pixel_width": 1536,
+    "pixel_height": 1024,
+    "coordinate_domain": "IMAGE_PIXEL",
+    "geographic_status": "PIXEL_CONTEXT_ONLY",
+    "geographic_assignment_enabled": false,
+    "world_binding": {
+      "crs": null,
+      "bounds": null,
+      "affine": null,
+      "source_raster_sha256": null
+    },
+    "forbidden_operations_without_certified_world_binding": [
+      "assign_crs",
+      "assign_world_bounds",
+      "assign_affine",
+      "coordinate_to_cell_resolution",
+      "municipio_join",
+      "barrio_join",
+      "world_space_overlay"
+    ]
+  },
+  "reference_overlay": {
+    "purpose": "provider-neutral world-space semantic parity control",
+    "left": {
+      "dataset_id": "pr_municipios",
+      "path": "data/geo/pr_municipios.geojson",
+      "expected_feature_count": 78,
+      "id_field": "geoid",
+      "name_field": "name",
+      "declared_crs": "OGC:CRS84",
+      "source_family": "U.S. Census Bureau 2023 cartographic boundary"
+    },
+    "right": {
+      "dataset_id": "pr_barrios",
+      "path": "data/geo/pr_barrios.geojson",
+      "expected_feature_count": 901,
+      "id_field": "geoid",
+      "name_field": "name",
+      "parent_name_field": "municipio",
+      "declared_crs": "OGC:CRS84",
+      "source_family": "U.S. Census Bureau 2023 cartographic boundary"
+    },
+    "join_semantics": "ST_Within(ST_PointOnSurface(barrio), municipio)",
+    "metric_geometry": "ST_Intersection(barrio, municipio)",
+    "computation_crs": "EPSG:32161",
+    "expected_record_count": 901
+  },
+  "provider_contract": {
+    "canonical_output_fields": [
+      "barrio_geoid",
+      "municipio_geoid",
+      "barrio_name",
+      "municipio_name",
+      "declared_parent_match",
+      "topology_relation",
+      "barrio_area_m2",
+      "intersection_area_m2",
+      "outside_area_m2",
+      "coverage_ratio",
+      "point_to_municipio_boundary_m"
+    ],
+    "runtime_receipt_only_fields": [
+      "provider_name",
+      "provider_version",
+      "runtime_ms",
+      "peak_memory_bytes",
+      "monetary_cost_usd",
+      "execution_id"
+    ],
+    "forbidden_canonical_field_prefixes": [
+      "wherobots_",
+      "sedona_",
+      "spark_"
+    ],
+    "providers": {
+      "local": {
+        "required": true,
+        "offline_capable": true,
+        "canonical_write_authority": false
+      },
+      "wherobots": {
+        "required": false,
+        "compatibility_profile": "apache_sedona",
+        "canonical_write_authority": false
+      }
+    }
+  },
+  "numeric_tolerances": {
+    "area_absolute_m2": 1.0,
+    "area_relative": 1e-8,
+    "distance_absolute_m": 0.05
+  },
+  "promotion_gates": {
+    "semantic_record_parity": 1.0,
+    "canonical_mutations_allowed": 0,
+    "provider_specific_fields_in_canonical_output": 0,
+    "secret_leakage_allowed": 0,
+    "local_fallback_required": true,
+    "complete_provenance_receipt_required": true
+  }
+}
