@@ -77,7 +77,7 @@ credentials in environment variables and out of commits.
 ## Commit & PR
 
 - Write clear, imperative commit messages that explain the *why*.
-- Open the PR against `main` and fill out the PR template.
+- Open the PR against `main` and fill out the template.
 - By contributing you agree your work is licensed under the repository's
   [MIT License](LICENSE).
 
