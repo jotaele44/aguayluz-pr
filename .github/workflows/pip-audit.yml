@@ -63,9 +63,10 @@ jobs:
             echo "::error::no lock artifact (uv.lock / requirements.lock / constraints.txt)"
             exit 1
           fi
-          # Drop editable and local-path entries: these local federation
-          # packages have no PyPI advisories and would fail resolution outside
-          # their checkout context. Their own repo's audit covers them.
+          # Drop editable and local-path entries: these are sibling federation
+          # packages (e.g. -e ../thehub-pr/packages/prii_maintenance) that have
+          # no PyPI advisories and would fail resolution without the sibling
+          # checkout. Their own repo's audit covers them.
           grep -vE '^\s*(-e |\.\./|/)' /tmp/locked.txt > /tmp/audit.txt
           echo "auditing $(grep -cE '^[A-Za-z0-9]' /tmp/audit.txt || echo 0) pinned packages"
 
