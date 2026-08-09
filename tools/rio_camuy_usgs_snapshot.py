@@ -99,7 +99,8 @@ def fetch_collection(client: httpx.Client, collection: str, *, site: str, parame
         raise SnapshotError("collection_not_allowed", collection)
     if site not in SITE_POLICY:
         raise SnapshotError("out_of_scope_site", site)
-    params: dict[str, Any] = {"monitoring_location_id": SITE_POLICY[site]["monitoring_location"], "limit": page_limit, "f": "json"}
+    site_query_key = "id" if collection == "monitoring-locations" else "monitoring_location_id"
+    params: dict[str, Any] = {site_query_key: SITE_POLICY[site]["monitoring_location"], "limit": page_limit, "f": "json"}
     if parameter_code:
         params["parameter_code"] = parameter_code
     if datetime_range and collection == "continuous":
