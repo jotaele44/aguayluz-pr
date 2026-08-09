@@ -88,6 +88,11 @@ jobs:
               receipt_hashes.append(row["request_receipt_sha256"])
               response_hashes.append(row["response_sha256"])
 
+          observed_collections = set(collections)
+          missing_collections = sorted(allowed_collections - observed_collections)
+          if missing_collections:
+              raise SystemExit(f"missing required collection receipts: {missing_collections}")
+
           observations = snapshot.get("observations", [])
           site_counts = Counter()
           parameter_counts = Counter()
@@ -144,7 +149,7 @@ jobs:
               "credential_source": "GitHub Actions secret -> USGS_API_KEY environment variable",
               "credential_persisted": False,
               "credential_echoed": False,
-              "collections_observed": sorted(set(collections)),
+              "collections_observed": sorted(observed_collections),
               "collection_page_counts": dict(sorted(collection_pages.items())),
               "http_status_counts": dict(sorted(status_codes.items())),
               "site_observation_counts": dict(sorted(site_counts.items())),
