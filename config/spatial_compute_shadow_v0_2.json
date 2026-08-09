@@ -43,21 +43,33 @@
     "left": {
       "dataset_id": "pr_municipios",
       "path": "data/geo/pr_municipios.geojson",
+      "expected_sha256": "4320683f165f6c4c24bdceead5ce40da4a29de94898a27819c039fad09ea9796",
+      "expected_bytes": 320580,
       "expected_feature_count": 78,
+      "expected_bounds": [-67.9454, 17.88328, -65.22108, 18.51602],
+      "expected_geometry_types": ["MultiPolygon", "Polygon"],
       "id_field": "geoid",
       "name_field": "name",
       "declared_crs": "OGC:CRS84",
-      "source_family": "U.S. Census Bureau 2023 cartographic boundary"
+      "source_family": "U.S. Census Bureau 2023 cartographic boundary",
+      "upstream_url": "https://www2.census.gov/geo/tiger/GENZ2023/shp/cb_2023_us_county_500k.zip",
+      "upstream_byte_hash_status": "NOT_FROZEN_IN_REPOSITORY"
     },
     "right": {
       "dataset_id": "pr_barrios",
       "path": "data/geo/pr_barrios.geojson",
+      "expected_sha256": "eb8481fb1a8cb513ac6eb1d1eaae92f06fb99a05dd1f3f981334c30f4edda0e9",
+      "expected_bytes": 1142458,
       "expected_feature_count": 901,
+      "expected_bounds": [-67.9454, 17.88328, -65.22108, 18.51602],
+      "expected_geometry_types": ["MultiPolygon", "Polygon"],
       "id_field": "geoid",
       "name_field": "name",
       "parent_name_field": "municipio",
       "declared_crs": "OGC:CRS84",
-      "source_family": "U.S. Census Bureau 2023 cartographic boundary"
+      "source_family": "U.S. Census Bureau 2023 cartographic boundary",
+      "upstream_url": "https://www2.census.gov/geo/tiger/GENZ2023/shp/cb_2023_72_cousub_500k.zip",
+      "upstream_byte_hash_status": "NOT_FROZEN_IN_REPOSITORY"
     },
     "join_semantics": "ST_Within(ST_PointOnSurface(barrio), municipio)",
     "metric_geometry": "ST_Intersection(barrio, municipio)",
