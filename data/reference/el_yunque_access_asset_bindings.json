@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0",
+  "policy": "Only entries with a non-null certified_asset_id may bind an access condition to AguaYLuz geometry. Null entries remain intentionally unbound; no coordinates or inferred geometry are permitted in federation payloads.",
+  "bindings": {
+    "elyunque.trail.la_mina": {"certified_asset_id": null, "geometry_status": "unbound", "reason": "No exact certified AguaYLuz geometry binding established on baseline main."},
+    "elyunque.trail.big_tree": {"certified_asset_id": null, "geometry_status": "unbound", "reason": "No exact certified AguaYLuz geometry binding established on baseline main."},
+    "elyunque.trail.bano_de_oro": {"certified_asset_id": null, "geometry_status": "unbound", "reason": "No exact certified AguaYLuz geometry binding established on baseline main."},
+    "elyunque.trail.el_yunque.los_picachos_to_peak": {"certified_asset_id": null, "geometry_status": "unbound", "reason": "No exact certified segment geometry established on baseline main; do not infer from whole-trail geometry."},
+    "elyunque.facility.el_portal_rainforest_center": {"certified_asset_id": null, "geometry_status": "unbound", "reason": "No exact certified AguaYLuz geometry binding established on baseline main."}
+  }
+}
