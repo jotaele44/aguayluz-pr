@@ -61,6 +61,7 @@
     },
     "join_semantics": "ST_Within(ST_PointOnSurface(barrio), municipio)",
     "metric_geometry": "ST_Intersection(barrio, municipio)",
+    "distance_metric": "ST_Distance(ST_Centroid(barrio), ST_Boundary(municipio))",
     "computation_crs": "EPSG:32161",
     "expected_record_count": 901
   },
@@ -76,7 +77,7 @@
       "intersection_area_m2",
       "outside_area_m2",
       "coverage_ratio",
-      "point_to_municipio_boundary_m"
+      "centroid_to_municipio_boundary_m"
     ],
     "runtime_receipt_only_fields": [
       "provider_name",
