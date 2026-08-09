@@ -53,3 +53,52 @@ jobs:
           path: reports/spatial_compute/local_reference_receipt.json
           if-no-files-found: error
           retention-days: 14
+
+  sedona-parity:
+    name: Apache Sedona semantic parity
+    needs: local-reference
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install Apache Sedona reference dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "apache-sedona==1.9.0" "pyspark>=3.5,<3.6"
+
+      - name: Download local reference receipt
+        uses: actions/download-artifact@v4
+        with:
+          name: spatial-shadow-local-reference
+          path: reports/spatial_compute
+
+      - name: Execute Sedona and compare semantic parity
+        run: |
+          python tools/spatial_shadow/benchmark_sedona_reference.py \
+            --local-receipt reports/spatial_compute/local_reference_receipt.json \
+            --output reports/spatial_compute/sedona_reference_receipt.json \
+            --parity-output reports/spatial_compute/sedona_parity_receipt.json
+
+      - name: Upload Sedona parity receipts
+        uses: actions/upload-artifact@v4
+        with:
+          name: spatial-shadow-sedona-parity
+          path: |
+            reports/spatial_compute/sedona_reference_receipt.json
+            reports/spatial_compute/sedona_parity_receipt.json
+          if-no-files-found: error
+          retention-days: 14
