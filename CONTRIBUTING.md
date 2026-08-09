@@ -43,7 +43,7 @@ job and in `pyproject.toml`, not hidden.
 | Tests | `pytest -q` |
 | Coverage | `pytest -q --cov` — must stay at or above the `fail_under` floor in `pyproject.toml` |
 | Lockfile | `uv lock --check` |
-| Template drift | `python3 ../thehub-pr/tools/render_federation_templates.py --repo aguayluz-pr --check` |
+| Template drift | Run `python3 tools/render_federation_templates.py --repo aguayluz-pr --repo-root /path/to/aguayluz-pr --check` from a local Hub checkout. |
 
 ### Coverage is a ratchet
 
@@ -77,7 +77,7 @@ credentials in environment variables and out of commits.
 ## Commit & PR
 
 - Write clear, imperative commit messages that explain the *why*.
-- Open the PR against `main` and fill out the template.
+- Open the PR against `main` and fill out the PR template.
 - By contributing you agree your work is licensed under the repository's
   [MIT License](LICENSE).
 
