@@ -1,0 +1,73 @@
+{
+  "schema_version": "aguayluz.resource-balance-pr-overlap/v0.3",
+  "generated_at": "2026-08-04T22:01:00Z",
+  "pinned_main_sha": "17c843595b5cdfbcef4e5f7b1ac6c662092e335d",
+  "pr_121_parent_head": "40fc362d7cb11cdabe3cde04733b41ceac97eb77",
+  "pull_requests": {
+    "101": {
+      "head_sha": "c50855876c57c0d10cd3bcea81a6998814863a09",
+      "state": "open_draft_unmerged",
+      "owner": "asset_identity_and_relationship_graph"
+    },
+    "116": {
+      "head_sha": "628a7da4dddb0622f07d97850bf79a0567bdef3e",
+      "state": "open_draft_unmerged",
+      "owner": "USGS_provider_ingestion_and_category_coverage"
+    },
+    "118": {
+      "head_sha": "6f7de1da593bf36e9d6587ec1ffde2fc57789980",
+      "state": "open_draft_unmerged_head_moved_since_v0.2_matrix",
+      "owner": "Laguna_specific_freshness_intake_replay_and_current_condition"
+    },
+    "121": {
+      "head_sha_before_v0_3": "40fc362d7cb11cdabe3cde04733b41ceac97eb77",
+      "state": "open_draft_unmerged",
+      "owner": "balance_ready_contracts_admission_transforms_and_residual_logic"
+    }
+  },
+  "concept_ownership": [
+    {
+      "concept": "asset_identity_and_relationship_graph",
+      "canonical_owner": "PR_101_after_merge",
+      "pr_121_role": "read_only_reference_in_time_versioned_balance_topology"
+    },
+    {
+      "concept": "provider_raw_observation_ingestion",
+      "canonical_owner": "PR_116_for_USGS",
+      "pr_118_role": "Laguna_specific_probe_and_replay",
+      "pr_121_role": "no_provider_client_consume_only_provenance_bound_projection"
+    },
+    {
+      "concept": "freshness_revision_and_sensor_eligibility",
+      "canonical_owner": "domain_source_policy_plus_PR_121_admission_gate",
+      "decision": "PR_121_requires_explicit_T1_current_nonprovisional_verified_inputs_without_overwriting_source_policy"
+    },
+    {
+      "concept": "stage_storage_relation",
+      "canonical_owner": "PR_121_design_contract_for_balance_conversion",
+      "source_authority": "USGS_SIM_3471_and_data_release_P9Y2SCY1",
+      "decision": "no_real_transform_until_full_table_bytes_are_frozen"
+    },
+    {
+      "concept": "resource_balance_and_residual",
+      "canonical_owner": "PR_121",
+      "pr_118_role": "legacy_domain_specific_equivalence_path",
+      "decision": "no_runtime_replacement_before_separate_ballot"
+    }
+  ],
+  "direct_path_overlap": {
+    "planned_v0_3_paths_vs_PR_101": [],
+    "planned_v0_3_paths_vs_PR_116": [],
+    "planned_v0_3_paths_vs_PR_118": [],
+    "governance_shared_paths_modified_by_v0_3": []
+  },
+  "semantic_overlap_changes_since_v0_2": [
+    "PR_118 head moved and now includes operator live-probe and replay paths.",
+    "PR_121 remains provider-neutral and does not import, copy, or activate those paths."
+  ],
+  "promotion_blockers": [
+    "Full authoritative Lago Patillas stage-volume table bytes are not materialized.",
+    "No complete synchronized T1 real window exists.",
+    "No runtime-promotion ballot is approved."
+  ]
+}

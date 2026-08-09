@@ -1,0 +1,32 @@
+{
+  "schema_version": "aguayluz.rollback-manifest/v0.3",
+  "pilot_id": "patillas-guayama-synchronized-admission-v0.3",
+  "rollback_kind": "delete_additive_paths_only",
+  "paths": [
+    "docs/PATILLAS_SYNCHRONIZED_DATA_ADMISSION_v0.3.md",
+    "docs/resource_balance_pr_overlap_matrix_v0.3.json",
+    "research/resource_balance/pilots/patillas_guayama_v0_3.py",
+    "research/resource_balance/pilots/patillas_guayama_v0_3/admission_policy.json",
+    "research/resource_balance/pilots/patillas_guayama_v0_3/admission_fixtures.json",
+    "research/resource_balance/pilots/patillas_guayama_v0_3/authoritative_source_receipt.json",
+    "research/resource_balance/pilots/patillas_guayama_v0_3/lago_patillas_stage_storage_model.json",
+    "research/resource_balance/pilots/patillas_guayama_v0_3/synthetic_stage_storage_model.json",
+    "research/resource_balance/pilots/patillas_guayama_v0_3/real_window_candidate.json",
+    "research/resource_balance/pilots/patillas_guayama_v0_3/evidence_manifest.json",
+    "research/resource_balance/pilots/patillas_guayama_v0_3/rollback_manifest.json",
+    "tests/test_patillas_guayama_admission_v0_3.py"
+  ],
+  "must_remain_unchanged": [
+    "server/",
+    "dashboard/",
+    ".github/workflows/",
+    ".federation/",
+    "scripts/",
+    "src/",
+    "config/",
+    "schemas/"
+  ],
+  "runtime_activation": false,
+  "data_migration": false,
+  "deprecation": false
+}

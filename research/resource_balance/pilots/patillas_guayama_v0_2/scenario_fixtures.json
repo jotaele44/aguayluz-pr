@@ -1,0 +1,117 @@
+{
+  "pilot_id": "patillas-guayama-water-balance-v0.2",
+  "scenarios": [
+    {
+      "expected_legacy_status": "balanced_within_tolerance",
+      "expected_shared_status": "balanced",
+      "fixture_kind": "synthetic_regression",
+      "scenario_id": "positive_control_balanced",
+      "values": {
+        "agricultural_turnout": {"unit": "ft3/s", "value": 20},
+        "canal_release": {"unit": "ft3/s", "value": 100},
+        "known_leak_flow": {"unit": "ft3/s", "value": 15},
+        "terminal_flow": {"unit": "ft3/s", "value": 35},
+        "treatment_withdrawal": {"unit": "ft3/s", "value": 30}
+      }
+    },
+    {
+      "expected_legacy_status": "balanced_within_tolerance",
+      "expected_shared_status": "within_uncertainty",
+      "fixture_kind": "synthetic_regression",
+      "scenario_id": "within_uncertainty",
+      "values": {
+        "agricultural_turnout": {"unit": "ft3/s", "value": 20},
+        "canal_release": {"unit": "ft3/s", "value": 100},
+        "known_leak_flow": {"unit": "ft3/s", "value": 5},
+        "terminal_flow": {"unit": "ft3/s", "value": 40},
+        "treatment_withdrawal": {"unit": "ft3/s", "value": 30}
+      }
+    },
+    {
+      "expected_legacy_status": "unexplained_positive_residual",
+      "expected_shared_status": "unaccounted_deficit",
+      "fixture_kind": "synthetic_regression",
+      "scenario_id": "unaccounted_deficit",
+      "values": {
+        "agricultural_turnout": {"unit": "ft3/s", "value": 20},
+        "canal_release": {"unit": "ft3/s", "value": 100},
+        "known_leak_flow": {"unit": "ft3/s", "value": 5},
+        "terminal_flow": {"unit": "ft3/s", "value": 35},
+        "treatment_withdrawal": {"unit": "ft3/s", "value": 20}
+      }
+    },
+    {
+      "expected_legacy_status": "contradictory_negative_residual",
+      "expected_shared_status": "unaccounted_surplus",
+      "fixture_kind": "synthetic_regression",
+      "scenario_id": "unaccounted_surplus",
+      "values": {
+        "agricultural_turnout": {"unit": "ft3/s", "value": 25},
+        "canal_release": {"unit": "ft3/s", "value": 100},
+        "known_leak_flow": {"unit": "ft3/s", "value": 5},
+        "terminal_flow": {"unit": "ft3/s", "value": 50},
+        "treatment_withdrawal": {"unit": "ft3/s", "value": 40}
+      }
+    },
+    {
+      "expected_legacy_status": "incomplete",
+      "expected_shared_status": "insufficient_data",
+      "fixture_kind": "synthetic_regression",
+      "scenario_id": "missing_treatment",
+      "values": {
+        "agricultural_turnout": {"unit": "ft3/s", "value": 20},
+        "canal_release": {"unit": "ft3/s", "value": 100},
+        "terminal_flow": {"unit": "ft3/s", "value": 70}
+      }
+    },
+    {
+      "expected_pilot_status": "excluded_stale",
+      "fixture_kind": "synthetic_regression",
+      "scenario_id": "stale_window",
+      "values": {
+        "agricultural_turnout": {"observed_at": "2025-01-01T00:00:00Z", "unit": "ft3/s", "value": 20},
+        "canal_release": {"observed_at": "2025-01-01T00:00:00Z", "unit": "ft3/s", "value": 100},
+        "terminal_flow": {"observed_at": "2025-01-01T00:00:00Z", "unit": "ft3/s", "value": 50},
+        "treatment_withdrawal": {"observed_at": "2025-01-01T00:00:00Z", "unit": "ft3/s", "value": 30}
+      }
+    },
+    {
+      "expected_legacy_status": "mixed_or_unsupported_units",
+      "expected_shared_error": "one canonical unit",
+      "fixture_kind": "synthetic_regression",
+      "scenario_id": "mixed_unit",
+      "values": {
+        "agricultural_turnout": {"unit": "ft3/s", "value": 20},
+        "canal_release": {"unit": "ft3/s", "value": 100},
+        "terminal_flow": {"unit": "ft3/s", "value": 50},
+        "treatment_withdrawal": {"unit": "m3/s", "value": 30}
+      }
+    },
+    {
+      "expected_pilot_status": "topology_error",
+      "fixture_kind": "synthetic_regression",
+      "scenario_id": "topology_contradiction",
+      "topology_mutation": {
+        "add_edge": {
+          "edge_id": "edge:cycle",
+          "from_asset_id": "USGS_50093085",
+          "relationship": "invalid_reverse",
+          "to_asset_id": "USGS_50092000"
+        }
+      }
+    },
+    {
+      "bias": {"additive_correction": -5.0, "metric": "canal_release"},
+      "expected_pilot_status": "bias_inference_only",
+      "fixture_kind": "synthetic_regression",
+      "scenario_id": "sensor_bias",
+      "values": {
+        "agricultural_turnout": {"unit": "ft3/s", "value": 20},
+        "canal_release": {"unit": "ft3/s", "value": 100},
+        "terminal_flow": {"unit": "ft3/s", "value": 45},
+        "treatment_withdrawal": {"unit": "ft3/s", "value": 30}
+      }
+    }
+  ],
+  "schema_version": "aguayluz.water-balance-regression-scenarios/v0.2"
+}
