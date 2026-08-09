@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import resource
 import time
 import unicodedata
@@ -97,6 +98,38 @@ def require_dataset(
         raise RuntimeError(f"{name}: duplicate {id_field} present")
 
 
+def require_frozen_input(
+    *,
+    name: str,
+    spec: dict[str, Any],
+    receipt: dict[str, Any],
+) -> None:
+    exact_pairs = {
+        "sha256": spec["expected_sha256"],
+        "bytes": int(spec["expected_bytes"]),
+        "feature_count": int(spec["expected_feature_count"]),
+        "geometry_types": sorted(spec["expected_geometry_types"]),
+    }
+    for field, expected in exact_pairs.items():
+        actual = receipt[field]
+        if actual != expected:
+            raise RuntimeError(f"{name}: frozen {field} mismatch: expected {expected!r}, found {actual!r}")
+
+    expected_bounds = [float(v) for v in spec["expected_bounds"]]
+    actual_bounds = [float(v) for v in receipt["bounds"]]
+    if len(expected_bounds) != 4 or len(actual_bounds) != 4:
+        raise RuntimeError(f"{name}: invalid bounds cardinality")
+    for index, (actual, expected) in enumerate(zip(actual_bounds, expected_bounds, strict=True)):
+        if not math.isclose(actual, expected, rel_tol=0.0, abs_tol=1e-9):
+            raise RuntimeError(
+                f"{name}: frozen bounds[{index}] mismatch: expected {expected}, found {actual}"
+            )
+
+    for field in ("null_geometry_count", "empty_geometry_count", "invalid_geometry_count", "duplicate_id_count"):
+        if int(receipt[field]) != 0:
+            raise RuntimeError(f"{name}: {field} must remain zero, found {receipt[field]}")
+
+
 def peak_memory_bytes() -> int:
     # Linux GitHub-hosted runners report ru_maxrss in KiB.
     return int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss) * 1024
@@ -134,6 +167,11 @@ def main() -> int:
         id_field=ref["right"]["id_field"],
         required_fields=("geoid", "name", "municipio", "geometry"),
     )
+
+    municipio_input = dataset_receipt(left_path, municipios, "geoid")
+    barrio_input = dataset_receipt(right_path, barrios, "geoid")
+    require_frozen_input(name="municipios", spec=ref["left"], receipt=municipio_input)
+    require_frozen_input(name="barrios", spec=ref["right"], receipt=barrio_input)
 
     municipios = municipios.to_crs("EPSG:4326").copy()
     barrios = barrios.to_crs("EPSG:4326").copy()
@@ -235,6 +273,11 @@ def main() -> int:
     for row in records:
         topology_counts[row["topology_relation"]] = topology_counts.get(row["topology_relation"], 0) + 1
 
+    municipio_input["upstream_url"] = ref["left"]["upstream_url"]
+    municipio_input["upstream_byte_hash_status"] = ref["left"]["upstream_byte_hash_status"]
+    barrio_input["upstream_url"] = ref["right"]["upstream_url"]
+    barrio_input["upstream_byte_hash_status"] = ref["right"]["upstream_byte_hash_status"]
+
     receipt = {
         "schema_version": "prii.spatial-compute-reference-receipt/v0.2",
         "status": "PASS",
@@ -247,8 +290,8 @@ def main() -> int:
         "contract": str(CONFIG_PATH.relative_to(ROOT)),
         "pixel_grid_used": False,
         "inputs": {
-            "municipios": dataset_receipt(left_path, municipios, "geoid"),
-            "barrios": dataset_receipt(right_path, barrios, "geoid"),
+            "municipios": municipio_input,
+            "barrios": barrio_input,
         },
         "operation": {
             "parent_join": ref["join_semantics"],
