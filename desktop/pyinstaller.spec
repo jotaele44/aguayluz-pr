@@ -37,6 +37,9 @@ datas = [
 if (REPO_ROOT / "outputs").exists():
     datas.append((str(REPO_ROOT / "outputs"), "outputs"))
 
+# src/ must be on both pathex and datas: pathex makes aguayluz importable as a module
+# (required for server.backend.app's module-scope imports), while datas ensures the
+# bundled scripts (federation-export) can find src/ files at runtime.
 a = Analysis(
     [str(REPO_ROOT / "desktop" / "launch.py")],
     pathex=[str(REPO_ROOT), str(REPO_ROOT / "src")],
@@ -49,6 +52,8 @@ a = Analysis(
         "uvicorn.lifespan.on",
         "desktop.app_server",
         "server.backend.app",
+        "aguayluz",
+        "aguayluz.cave_karst",
         "server.backend.main",
         # src-layout application package reached transitively from
         # server.backend.cave_karst_api in the frozen backend.
