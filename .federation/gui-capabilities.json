@@ -688,6 +688,36 @@
           "dashboard/tests/gui-parity.spec.mjs"
         ]
       }
+    },
+    {
+      "id": "water-balance-fail-closed-builder",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Backend evidence gate for Agua Ilos-style balance monitoring, not a standalone operator workflow. It refuses to infer inflow/outflow/storage roles and produces quarantines for missing lineage, source hashes, confidence, units or synthetic production inputs. Accepted or degraded intervals can be promoted later through the existing monitoring/export capability once site-specific role maps are available.",
+      "analysis": {
+        "files": [
+          "src/aguayluz/water_balance.py",
+          "scripts/build_water_balance.py",
+          "docs/WATER_BALANCE_MONITORING.md"
+        ],
+        "symbols": [
+          "src/aguayluz/water_balance.py:BalanceInput",
+          "src/aguayluz/water_balance.py:build_balance_intervals",
+          "src/aguayluz/water_balance.py:admit_reading",
+          "src/aguayluz/water_balance.py:quarantine_record",
+          "src/aguayluz/water_balance.py:role_for",
+          "src/aguayluz/water_balance.py:stable_digest",
+          "scripts/build_water_balance.py:read_jsonl",
+          "scripts/build_water_balance.py:main"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_water_balance.py",
+          "tests/test_schemas.py"
+        ]
+      }
     }
   ],
   "exceptions": []
