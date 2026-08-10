@@ -192,8 +192,10 @@ def _iter_files(
 
 def _read_text(path: Path) -> str:
     try:
-        return path.read_text(encoding="utf-8")
-    except (OSError, UnicodeDecodeError):
+        size = path.stat().st_size
+        with path.open("rb") as handle:
+            return handle.read(size).decode("utf-8", errors="ignore")
+    except OSError:
         return ""
 
 
@@ -413,6 +415,7 @@ def _discover_frontend(
 def discover_candidates(
     repo_root: Path, manifest: dict[str, Any]
 ) -> list[dict[str, Any]]:
+    repo_root = repo_root.resolve()
     discovery = manifest.get("discovery", {})
     records = [
         *_discover_python(repo_root, discovery),

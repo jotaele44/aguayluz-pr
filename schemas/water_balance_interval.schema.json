@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/water_balance_interval.schema.json",
+  "title": "WaterBalanceInterval",
+  "description": "Evidence-auditable water balance interval. A record is accepted only when all contributing measurements preserve lineage, confidence, source hash, explicit balance role and usable units.",
+  "type": "object",
+  "required": [
+    "interval_id",
+    "asset_id",
+    "interval_start",
+    "interval_end",
+    "interval_days",
+    "balance_status",
+    "unit",
+    "input_reading_ids",
+    "inflow_volume",
+    "outflow_volume",
+    "storage_delta",
+    "unaccounted_volume",
+    "source_hash",
+    "evidence_tier",
+    "confidence",
+    "review_status",
+    "quarantine_codes"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "interval_id": { "type": "string", "pattern": "^AYL_WBAL_[0-9]{8}_[0-9]{8}_[A-Za-z0-9_.-]+$" },
+    "asset_id": { "type": "string", "minLength": 1 },
+    "interval_start": { "type": "string", "format": "date" },
+    "interval_end": { "type": "string", "format": "date" },
+    "interval_days": { "type": "number", "exclusiveMinimum": 0 },
+    "balance_status": { "enum": ["accepted", "degraded", "blocked"] },
+    "unit": { "enum": ["Mgal"] },
+    "input_reading_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "inflow_volume": { "type": ["number", "null"] },
+    "outflow_volume": { "type": ["number", "null"] },
+    "storage_delta": { "type": ["number", "null"] },
+    "unaccounted_volume": { "type": ["number", "null"] },
+    "source_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "evidence_tier": { "enum": ["T1", "T2", "T3", "T4"] },
+    "confidence": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "review_status": { "enum": ["accepted", "needs_review", "rejected", "blocked"] },
+    "quarantine_codes": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    }
+  }
+}

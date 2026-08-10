@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/water_balance_quarantine.schema.json",
+  "title": "WaterBalanceQuarantine",
+  "description": "Fail-closed quarantine record for water-balance inputs or intervals that cannot be admitted without fabrication, inference or silent repair.",
+  "type": "object",
+  "required": [
+    "quarantine_id",
+    "asset_id",
+    "reading_id",
+    "observed_date",
+    "quarantine_code",
+    "source_ref",
+    "source_hash",
+    "raw_record",
+    "review_status"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "quarantine_id": { "type": "string", "pattern": "^AYL_WBAL_Q_[a-f0-9]{24}$" },
+    "asset_id": { "type": "string", "minLength": 1 },
+    "reading_id": { "type": ["string", "null"] },
+    "observed_date": { "type": ["string", "null"], "format": "date" },
+    "quarantine_code": { "type": "string", "minLength": 1 },
+    "source_ref": { "type": ["string", "null"] },
+    "source_hash": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "raw_record": { "type": "object" },
+    "review_status": { "enum": ["blocked"] }
+  }
+}
