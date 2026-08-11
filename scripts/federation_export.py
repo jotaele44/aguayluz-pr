@@ -98,6 +98,12 @@ def _load_geo(path: Path) -> dict[str, dict]:
     return {_geo_key(m["name"]): m for m in doc.get("municipios", [])}
 
 
+def _geo_lookup(geo: dict[str, dict], name: str) -> dict | None:
+    """Resolve a municipio centroid from canonical or slugged geo indexes."""
+    key = _geo_key(name)
+    return geo.get(key) or geo.get(key.lower().replace(" ", "_"))
+
+
 def _conf(value: Any) -> float:
     try:
         c = float(value)
@@ -235,7 +241,7 @@ def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], no
             entities.setdefault(m_id, _entity(m_id, sid, muni, "municipality", 0.95, inputs, now))
             ev_src = ["data/aee_incidents.jsonl"] if e.get("evidence_tier") == "T2" else ["data/service_events.jsonl"]
             relationships.update(_rel_kv(ev_id, "located_in", m_id, sid, conf, now, source_inputs=ev_src))
-            centroid = geo.get(_geo_key(muni))
+            centroid = _geo_lookup(geo, muni)
             if centroid:
                 entities[ev_id]["location"] = {
                     "lat": round(float(centroid["lat"]), 6),
@@ -439,7 +445,7 @@ def _compute_aggregates(
             + sum(
                 1 for e in events
                 if isinstance(e.get("lat"), (int, float))
-                or (e.get("municipality") and geo.get(_geo_key(e["municipality"])))
+                or (e.get("municipality") and _geo_lookup(geo, e["municipality"]))
             )
         )
     else:
