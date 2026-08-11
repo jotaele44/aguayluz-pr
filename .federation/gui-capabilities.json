@@ -718,6 +718,90 @@
           "tests/test_schemas.py"
         ]
       }
+    },
+    {
+      "id": "water-intelligence-rescue-producers",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Rescued producer, deduplication, graph-building, and export scripts for water/power intelligence. They are not a separate operator workflow: they materialize assets, relationships, alerts, and federation exports consumed through the existing asset/map, alert/monitoring, and federation export surfaces. PR #105 keeps the old untracked WIP reviewable without claiming a new GUI path.",
+      "analysis": {
+        "files": [
+          "scripts/assess_lake_documentation.py",
+          "scripts/build_water_relationship_graph.py",
+          "scripts/dedup_power_assets.py",
+          "scripts/derive_reservoir_alerts.py",
+          "scripts/export_water_intelligence.py",
+          "scripts/ingest_egrid_emissions.py",
+          "scripts/ingest_eia_facility_fuel.py",
+          "scripts/ingest_eia_reliability.py",
+          "scripts/ingest_hifld_power.py",
+          "scripts/ingest_osm_power.py"
+        ],
+        "symbols": [
+          "scripts/assess_lake_documentation.py:composite_tier",
+          "scripts/assess_lake_documentation.py:main",
+          "scripts/assess_lake_documentation.py:monitoring_tier",
+          "scripts/assess_lake_documentation.py:scan_hydro",
+          "scripts/assess_lake_documentation.py:scan_osti",
+          "scripts/build_water_relationship_graph.py:build_graph",
+          "scripts/build_water_relationship_graph.py:edge",
+          "scripts/build_water_relationship_graph.py:fid",
+          "scripts/build_water_relationship_graph.py:load_jsonl",
+          "scripts/build_water_relationship_graph.py:main",
+          "scripts/build_water_relationship_graph.py:norm",
+          "scripts/build_water_relationship_graph.py:write_jsonl",
+          "scripts/dedup_power_assets.py:UF",
+          "scripts/dedup_power_assets.py:asset_class",
+          "scripts/dedup_power_assets.py:build_clusters",
+          "scripts/dedup_power_assets.py:haversine_m",
+          "scripts/dedup_power_assets.py:main",
+          "scripts/dedup_power_assets.py:source_of",
+          "scripts/derive_reservoir_alerts.py:build_alerts",
+          "scripts/derive_reservoir_alerts.py:main",
+          "scripts/derive_reservoir_alerts.py:merge",
+          "scripts/export_water_intelligence.py:load_jsonl",
+          "scripts/export_water_intelligence.py:main",
+          "scripts/export_water_intelligence.py:write_jsonl",
+          "scripts/ingest_egrid_emissions.py:build_readings",
+          "scripts/ingest_egrid_emissions.py:main",
+          "scripts/ingest_egrid_emissions.py:merge",
+          "scripts/ingest_eia_facility_fuel.py:main",
+          "scripts/ingest_eia_facility_fuel.py:merge_assets",
+          "scripts/ingest_eia_facility_fuel.py:merge_readings",
+          "scripts/ingest_eia_facility_fuel.py:parse",
+          "scripts/ingest_eia_reliability.py:main",
+          "scripts/ingest_eia_reliability.py:merge_assets",
+          "scripts/ingest_eia_reliability.py:merge_readings",
+          "scripts/ingest_eia_reliability.py:parse_rows",
+          "scripts/ingest_hifld_power.py:build_rows",
+          "scripts/ingest_hifld_power.py:load_municipios",
+          "scripts/ingest_hifld_power.py:main",
+          "scripts/ingest_hifld_power.py:merge",
+          "scripts/ingest_hifld_power.py:municipality_for",
+          "scripts/ingest_hifld_power.py:representative_point",
+          "scripts/ingest_osm_power.py:build_rows",
+          "scripts/ingest_osm_power.py:load_municipios",
+          "scripts/ingest_osm_power.py:main",
+          "scripts/ingest_osm_power.py:merge",
+          "scripts/ingest_osm_power.py:municipality_for",
+          "scripts/ingest_osm_power.py:plant_subtype",
+          "scripts/ingest_osm_power.py:representative_point"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_dedup_power_assets.py",
+          "tests/test_derive_reservoir_alerts.py",
+          "tests/test_federation_dedup.py",
+          "tests/test_ingest_egrid_emissions.py",
+          "tests/test_ingest_eia_facility_fuel.py",
+          "tests/test_ingest_eia_reliability.py",
+          "tests/test_ingest_hifld_power.py",
+          "tests/test_ingest_osm_power.py",
+          "tests/test_local_hydro_assets.py"
+        ]
+      }
     }
   ],
   "exceptions": []
