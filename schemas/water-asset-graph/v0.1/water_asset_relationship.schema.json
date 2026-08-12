@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/water-asset-graph/v0.1/water_asset_relationship.schema.json",
+  "title": "WaterAssetRelationship",
+  "type": "object",
+  "required": [
+    "relationship_id",
+    "from_node_id",
+    "to_node_id",
+    "relationship_type",
+    "confidence",
+    "evidence_class",
+    "inferred",
+    "propagation_allowed"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "relationship_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "from_node_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "to_node_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "relationship_type": {
+      "enum": [
+        "UPSTREAM_OF",
+        "DOWNSTREAM_OF",
+        "SUPPLIES",
+        "DEPENDS_ON",
+        "POWERED_BY",
+        "BACKUP_FOR",
+        "LOCATED_IN",
+        "SERVES",
+        "MONITORED_BY"
+      ]
+    },
+    "confidence": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "evidence_class": {
+      "enum": [
+        "direct_attribute",
+        "corroborated",
+        "inferred_proxy"
+      ]
+    },
+    "inferred": {
+      "type": "boolean"
+    },
+    "propagation_allowed": {
+      "type": "boolean"
+    },
+    "source_ref": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "notes": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}
