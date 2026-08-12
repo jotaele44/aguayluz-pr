@@ -1,7 +1,7 @@
 # Drought and Water Resilience Architecture v0.1 — P0
 
 **Status:** design-only reference core  
-**Implementation base:** `main@ed75d9f48f385c0dfcbf7fa015f46ff2e2bf7387`  
+**Implementation base:** `main@6dc9543f939b2e79258c83d0272bfd756768aacf`  
 **Runtime state:** inactive; no API, GUI, scheduler, export, alert activation, or data migration
 
 ## Mission
