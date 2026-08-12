@@ -723,6 +723,93 @@
           "tests/test_schemas.py"
         ]
       }
+    },
+    {
+      "id": "usgs-water-api-category-ingestion",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Scheduled evidence-ingestion and coverage-governance surfaces, not a separate user workflow. The producers run through scripts/refresh.py and feed existing asset, reading, export, alert, and provenance surfaces. Newly added modern endpoints remain implemented_unverified_live until an operator reviews network receipts; no provider-registration record alone can satisfy the coverage gate.",
+      "backend": {
+        "files": [
+          "src/aguayluz/usgs_water_api.py"
+        ],
+        "symbols": [
+          "src/aguayluz/usgs_water_api.py:ContractError",
+          "src/aguayluz/usgs_water_api.py:api_headers",
+          "src/aguayluz/usgs_water_api.py:utc_now",
+          "src/aguayluz/usgs_water_api.py:bare_site",
+          "src/aguayluz/usgs_water_api.py:safe_float",
+          "src/aguayluz/usgs_water_api.py:iso_day",
+          "src/aguayluz/usgs_water_api.py:timestamp_token",
+          "src/aguayluz/usgs_water_api.py:stable_hash",
+          "src/aguayluz/usgs_water_api.py:flatten_features",
+          "src/aguayluz/usgs_water_api.py:next_link",
+          "src/aguayluz/usgs_water_api.py:iter_ogc_pages",
+          "src/aguayluz/usgs_water_api.py:read_json_documents",
+          "src/aguayluz/usgs_water_api.py:read_jsonl",
+          "src/aguayluz/usgs_water_api.py:merge_by_key",
+          "src/aguayluz/usgs_water_api.py:write_jsonl",
+          "src/aguayluz/usgs_water_api.py:metric_for_parameter",
+          "src/aguayluz/usgs_water_api.py:reading_row",
+          "src/aguayluz/usgs_water_api.py:source_receipt"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/ingest_usgs_continuous.py",
+          "scripts/ingest_usgs_field_measurements.py",
+          "scripts/ingest_usgs_time_series_metadata.py",
+          "scripts/ingest_usgs_peaks.py",
+          "scripts/ingest_usgs_water_quality.py",
+          "scripts/ingest_usgs_rtfi.py",
+          "scripts/ingest_usgs_nims.py",
+          "scripts/ingest_usgs_statistics.py",
+          "scripts/validate_usgs_api_coverage.py"
+        ],
+        "symbols": [
+          "scripts/ingest_usgs_continuous.py:rows_from_documents",
+          "scripts/ingest_usgs_continuous.py:fetch_live",
+          "scripts/ingest_usgs_continuous.py:main",
+          "scripts/ingest_usgs_field_measurements.py:year_slices",
+          "scripts/ingest_usgs_field_measurements.py:rows_from_documents",
+          "scripts/ingest_usgs_field_measurements.py:fetch_live",
+          "scripts/ingest_usgs_field_measurements.py:main",
+          "scripts/ingest_usgs_time_series_metadata.py:location_rows",
+          "scripts/ingest_usgs_time_series_metadata.py:metadata_rows",
+          "scripts/ingest_usgs_time_series_metadata.py:fetch_collection",
+          "scripts/ingest_usgs_time_series_metadata.py:main",
+          "scripts/ingest_usgs_peaks.py:rows_from_documents",
+          "scripts/ingest_usgs_peaks.py:fetch_live",
+          "scripts/ingest_usgs_peaks.py:main",
+          "scripts/ingest_usgs_water_quality.py:parse_csv",
+          "scripts/ingest_usgs_water_quality.py:station_rows",
+          "scripts/ingest_usgs_water_quality.py:asset_id_for",
+          "scripts/ingest_usgs_water_quality.py:asset_rows",
+          "scripts/ingest_usgs_water_quality.py:result_rows",
+          "scripts/ingest_usgs_water_quality.py:fetch_text",
+          "scripts/ingest_usgs_water_quality.py:fetch_statewide",
+          "scripts/ingest_usgs_water_quality.py:main",
+          "scripts/ingest_usgs_rtfi.py:parse",
+          "scripts/ingest_usgs_rtfi.py:main",
+          "scripts/ingest_usgs_nims.py:site_ids_from_assets",
+          "scripts/ingest_usgs_nims.py:camera_rows",
+          "scripts/ingest_usgs_nims.py:image_rows",
+          "scripts/ingest_usgs_nims.py:main",
+          "scripts/ingest_usgs_statistics.py:site_ids_from_assets",
+          "scripts/ingest_usgs_statistics.py:normalize",
+          "scripts/ingest_usgs_statistics.py:fetch_endpoint",
+          "scripts/ingest_usgs_statistics.py:main",
+          "scripts/validate_usgs_api_coverage.py:validate_document",
+          "scripts/validate_usgs_api_coverage.py:main"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_usgs_water_api_coverage.py",
+          "tests/test_refresh_plans.py"
+        ]
+      }
     }
   ],
   "exceptions": []
