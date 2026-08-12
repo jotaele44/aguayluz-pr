@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import copy
-
 import pytest
-from jsonschema import Draft202012Validator, FormatChecker
+from jsonschema import Draft202012Validator, FormatChecker, ValidationError
 
 from aguayluz.models import validate_against_schema
 from research.drought_resilience import (
@@ -62,7 +60,7 @@ def test_drought_state_is_deterministic():
 def test_drought_state_rejects_cross_class_container():
     bad = _hydro_state()
     bad["meteorological_state"] = "drought"
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         _validate_local("drought_state.schema.json", bad)
 
 
