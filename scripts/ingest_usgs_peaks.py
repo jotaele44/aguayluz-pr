@@ -123,6 +123,11 @@ def fetch_peaks_live(
     return docs
 
 
+def fetch_live(page_size: int) -> list[dict]:
+    """Current-main compatibility wrapper around the certified live fetcher."""
+    return fetch_peaks_live(limit=page_size)
+
+
 # ── build rows ────────────────────────────────────────────────────────────────
 def _site_no(monitoring_location_id: Any) -> str:
     return str(monitoring_location_id or "").split("-", 1)[-1].strip()
@@ -237,6 +242,61 @@ def build_readings(docs: Any) -> tuple[list[dict], dict[str, int]]:
             "review_status": "needs_review" if _needs_review(quals) else "accepted",
         })
     return readings, skipped
+
+
+def _compat_peak_features(documents: Any) -> list[dict]:
+    """Map current-main's compact peaks shape into this producer's canonical shape."""
+    from ingest_usgs_field_measurements import parse_features
+
+    out: list[dict] = []
+    for feat in parse_features(documents):
+        props = feat.get("properties") or {}
+        site = props.get("monitoring_location_id")
+        observed = props.get("peak_date") or props.get("peak_time") or props.get("time")
+        water_year = props.get("water_year") or str(observed or "")[:4]
+        discharge = props.get("peak_discharge") or props.get("discharge") or props.get("value")
+        stage = (
+            props.get("peak_gage_height")
+            or props.get("gage_height")
+            or props.get("peak_stage")
+        )
+        if discharge not in (None, ""):
+            out.append({
+                "type": "Feature",
+                "properties": {
+                    "monitoring_location_id": site,
+                    "parameter_code": "00060",
+                    "value": discharge,
+                    "unit_of_measure": props.get("discharge_unit") or "ft3/s",
+                    "time": observed,
+                    "water_year": water_year,
+                    "qualifier": props.get("peak_discharge_qualifiers")
+                    or props.get("qualifier")
+                    or [],
+                },
+            })
+        if stage not in (None, ""):
+            out.append({
+                "type": "Feature",
+                "properties": {
+                    "monitoring_location_id": site,
+                    "parameter_code": "00065",
+                    "value": stage,
+                    "unit_of_measure": props.get("gage_height_unit") or "ft",
+                    "time": observed,
+                    "water_year": water_year,
+                    "qualifier": props.get("peak_gage_height_qualifiers")
+                    or props.get("peak_stage_qualifiers")
+                    or props.get("qualifier")
+                    or [],
+                },
+            })
+    return out
+
+
+def rows_from_documents(documents: list[dict]) -> tuple[list[dict], dict[str, int]]:
+    """Current-main coverage adapter preserving qualifier-aware identity."""
+    return build_readings({"type": "FeatureCollection", "features": _compat_peak_features(documents)})
 
 
 # ── merge + write ─────────────────────────────────────────────────────────────

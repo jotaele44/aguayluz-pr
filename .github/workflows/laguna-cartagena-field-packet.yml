@@ -1,0 +1,69 @@
+name: Laguna Cartagena field packet
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/laguna-cartagena-control-plane-v0-2
+    paths:
+      - operators/laguna_cartagena_field_packet.py
+      - config/laguna_cartagena_field_operator_packet.v0.4.json
+      - templates/laguna_cartagena/v0.4/**
+      - tests/test_laguna_cartagena_field_packet.py
+      - .github/workflows/laguna-cartagena-field-packet.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: laguna-cartagena-field-packet-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate-packet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch shared federation packages
+        run: git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr
+
+      - name: Install
+        run: python -m pip install uv && uv pip install --system -e ".[dev]"
+
+      - name: Focused packet tests
+        run: pytest -q tests/test_laguna_cartagena_field_packet.py
+
+      - name: Blank packet must fail closed
+        run: |
+          python operators/laguna_cartagena_field_packet.py \
+            templates/laguna_cartagena/v0.4/blank_packet \
+            --output-dir artifacts/laguna_cartagena_field_packet
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          receipt = json.loads(
+              Path("artifacts/laguna_cartagena_field_packet/final_receipt.json").read_text()
+          )
+          assert receipt["outcome"] == "explicit_gap_receipt"
+          assert receipt["current_condition_status"] == "unknown"
+          assert receipt["ingested_observation_count"] == 0
+          assert receipt["automatic_leakage_claim"] is None
+          assert receipt["shadow_mode"] is True
+          assert receipt["notifications_enabled"] is False
+          assert receipt["automatic_control_actions_enabled"] is False
+          assert receipt["production_promotion_enabled"] is False
+          PY
+
+      - name: Upload gap receipt
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: laguna-cartagena-field-packet-${{ github.sha }}
+          path: artifacts/laguna_cartagena_field_packet/
+          if-no-files-found: error
+          retention-days: 30

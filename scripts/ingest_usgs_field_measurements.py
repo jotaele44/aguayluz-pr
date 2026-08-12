@@ -167,6 +167,19 @@ def _year_slices(start: str, end: str) -> list[tuple[str, str]]:
     return out
 
 
+def year_slices(start: date, end: date) -> list[tuple[date, date]]:
+    """Current-main compatibility wrapper for coverage tests.
+
+    The durable producer uses ISO strings because they flow directly into the OGC
+    ``datetime`` query. The coverage matrix tests exercise the same year-boundary
+    behavior with ``date`` objects, so keep both entry points backed by one rule.
+    """
+    return [
+        (date.fromisoformat(left), date.fromisoformat(right))
+        for left, right in _year_slices(start.isoformat(), end.isoformat())
+    ]
+
+
 def fetch_field_measurements_live(
     *,
     bbox: str = DEFAULT_BBOX,
@@ -208,6 +221,18 @@ def fetch_field_measurements_live(
                         break
                     offset += limit
     return docs
+
+
+def fetch_live(days: int, parameter_codes: list[str], page_size: int) -> list[dict]:
+    """Current-main compatibility wrapper around the certified live fetcher."""
+    end = datetime.now(timezone.utc).date().isoformat()
+    start = (date.fromisoformat(end) - timedelta(days=max(1, days))).isoformat()
+    return fetch_field_measurements_live(
+        parameter_codes=tuple(parameter_codes),
+        start=start,
+        end=end,
+        limit=page_size,
+    )
 
 
 def fetch_locations_live(
@@ -543,6 +568,20 @@ def build_readings(features: list[dict]) -> tuple[list[dict], dict[str, int]]:
             "review_status": "needs_review" if _needs_review(quals) else "accepted",
         })
     return readings, skipped
+
+
+def rows_from_documents(documents: list[dict]) -> tuple[list[dict], list[dict], dict[str, int]]:
+    """Current-main coverage adapter without weakening the richer producer contract."""
+    features = parse_features(documents)
+    rows, skipped = build_readings(features)
+    skipped = dict(skipped)
+    skipped["nonstatic_qualifier"] = sum(
+        1
+        for feat in features
+        if _needs_review(_qualifiers(feat.get("properties") or {}))
+    )
+    assets = build_assets(features, None)
+    return rows, assets, skipped
 
 
 # ── merge + write ─────────────────────────────────────────────────────────────
