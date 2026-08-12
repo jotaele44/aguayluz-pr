@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/drought-resilience/v0.1/rapid_onset_assessment.schema.json",
+  "title": "RapidOnsetAssessment",
+  "description": "Deterministic trajectory assessment against an explicit provenance-bound rule. A rapid_decline result is an analytical trigger, not an official drought declaration.",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assessment", "reason", "metric", "point_count", "rule_source_ref", "rule_id"],
+      "properties": {
+        "assessment": {"const": "not_assessable"},
+        "reason": {"enum": ["insufficient_points", "insufficient_span"]},
+        "metric": {"type": "string", "minLength": 1},
+        "point_count": {"type": "integer", "minimum": 0},
+        "span_days": {"type": "integer", "minimum": 0},
+        "rule_source_ref": {"type": "string", "minLength": 1},
+        "rule_id": {"type": ["string", "null"]}
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assessment_id", "assessment", "metric", "start_date", "end_date", "start_value", "end_value", "span_days", "point_count", "signed_rate_per_day", "concerning_rate_per_day", "threshold_rate_per_day", "direction", "rule_source_ref", "rule_id"],
+      "properties": {
+        "assessment_id": {"type": "string", "pattern": "^AYL_RAPID_[0-9a-f]{16}$"},
+        "assessment": {"enum": ["rapid_decline", "no_rapid_decline"]},
+        "metric": {"type": "string", "minLength": 1},
+        "start_date": {"type": "string", "format": "date"},
+        "end_date": {"type": "string", "format": "date"},
+        "start_value": {"type": "number"},
+        "end_value": {"type": "number"},
+        "span_days": {"type": "integer", "minimum": 1},
+        "point_count": {"type": "integer", "minimum": 2},
+        "signed_rate_per_day": {"type": "number"},
+        "concerning_rate_per_day": {"type": "number"},
+        "threshold_rate_per_day": {"type": "number", "exclusiveMinimum": 0},
+        "direction": {"enum": ["decrease", "increase"]},
+        "rule_source_ref": {"type": "string", "minLength": 1},
+        "rule_id": {"type": ["string", "null"]}
+      }
+    }
+  ]
+}
