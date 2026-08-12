@@ -30,6 +30,17 @@ PR #120 landed design authority for provider-agnostic regulatory observations, s
 - Mycelial Phase 1 remains independently balloted and unimplemented.
 - Authorized live outage provenance remains externally constrained.
 
+### PR #109 live-data evidence to adjudicate
+
+The PR #109 vector adds keyless USGS OGC field-measurements, USGS annual peaks,
+and NHC active-cyclone ingestion. Its current materialization evidence records
+6,915 field-measurement readings across 89 wells, 8,317 annual peaks across 244
+sites for water years 1899-2025, and a zero-row NHC active-cyclone pull because
+the active storm was outside the Atlantic/PR threat envelope. These close the
+Laguna Cartagena "not retrievable through the new API" assumption at the adapter
+level, but the roadmap score should change only after the branch lands on
+`main` and the PR #109/#116 overlap is adjudicated.
+
 ## Priority exit sequence
 
 1. Implement the PR #120 regulatory framework through separately reviewed provider, persistence, scheduler, API/GUI and promotion increments.

@@ -294,3 +294,75 @@ def test_offline_csv_path_writes_valid_readings(tmp_path):
     assert rows
     for row in rows:
         jsonschema.validate(row, READING_SCHEMA)
+
+
+# ── synthetic-fixture labelling ───────────────────────────────────────────────
+def test_both_fixtures_say_in_file_that_they_are_synthetic():
+    """docs/NEON_INTEGRATION.md claims both fixtures are "labelled as such in the files
+    themselves". That was true of the JSON manifest and NOT of the CSV, which was a bare
+    header with nothing marking it. The marker is a column name rather than a comment
+    row: a leading `#` would be parsed as the header by csv.DictReader.
+    """
+    manifest = (FIXTURES / "neon_data_manifest_sample.json").read_text()
+    assert "SYNTHETIC" in manifest
+
+    csv_text = (FIXTURES / "neon_continuous_discharge_sample.csv").read_text()
+    header = csv_text.splitlines()[0]
+    assert "_SYNTHETIC_FIXTURE_NOT_A_REAL_NEON_CAPTURE" in header
+
+
+def test_the_synthetic_marker_column_does_not_disturb_parsing():
+    """Columns are looked up by name, so an extra one is inert — assert that rather than
+    assume it."""
+    from ingest_neon_products import build_readings
+
+    text = (FIXTURES / "neon_continuous_discharge_sample.csv").read_text()
+    assert build_readings(text, "DP4.00130.001", "CUPE")
+
+
+# ── column receipt ────────────────────────────────────────────────────────────
+def test_receipt_records_which_documented_column_matched():
+    """The receipt exists to answer "have the CSV column names ever been verified?".
+
+    CSV_COLUMNS was written from NEON's product documentation, never from a response.
+    """
+    from ingest_neon_products import inspect_columns
+
+    text = (FIXTURES / "neon_continuous_discharge_sample.csv").read_text()
+    entry = inspect_columns(text, "DP4.00130.001")
+    assert entry["matched_value_column"] == "maxpostDischarge"
+    assert entry["matched_date_column"] in ("endDate", "startDate")
+    assert entry["matched_unit"] == "m3/s"
+    assert "dischargeFinalQF" in entry["qa_flag_columns_present"]
+
+
+def test_receipt_records_a_miss_rather_than_going_quiet():
+    """A file whose columns do not match is the finding, not an absence of one."""
+    from ingest_neon_products import inspect_columns
+
+    entry = inspect_columns("siteID,someOtherColumn\nCUPE,1\n", "DP4.00130.001")
+    assert entry["matched_value_column"] is None
+    assert entry["header_columns"] == ["siteID", "someOtherColumn"]
+    assert entry["expected_value_columns"]      # what it looked for is recorded too
+
+
+def test_receipt_carries_no_credential_material():
+    """It is committed, so the G07 secret gate applies. Column names and counts only —
+    no token, no URL, no row values."""
+    from ingest_neon_products import inspect_columns
+
+    text = (FIXTURES / "neon_continuous_discharge_sample.csv").read_text()
+    blob = json.dumps(inspect_columns(text, "DP4.00130.001")).lower()
+    for forbidden in ("token", "authorization", "x-api", "http://", "https://"):
+        assert forbidden not in blob
+    assert "1250.0" not in blob      # no measured values leak into the receipt
+
+
+def test_receipt_is_committed_not_gitignored():
+    """The whole point: data/* and outputs/* are ignored, so without a re-include the
+    receipt would share the fate of the readings it documents — discarded with the job."""
+    proc = subprocess.run(
+        ["git", "check-ignore", "data/neon_ingest_receipt.json"],
+        cwd=REPO, capture_output=True, text=True,
+    )
+    assert proc.returncode != 0, "data/neon_ingest_receipt.json must be committable"

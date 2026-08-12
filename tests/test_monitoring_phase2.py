@@ -34,9 +34,23 @@ def client(tmp_path, monkeypatch):
     groundwater.write_text("", encoding="utf-8")
     coastal = tmp_path / "coastal_levels.jsonl"
     coastal.write_text("", encoding="utf-8")
+    peaks = tmp_path / "usgs_peaks_readings.jsonl"
+    peaks.write_text("".join(json.dumps(row) + "\n" for row in [
+        {"site_no": "P1", "metric": "streamflow", "parameter_code": "00060", "unit": "ft^3/s", "value": 284000.0, "observed_date": "2017-09-20"},
+        {"site_no": "P1", "metric": "gage_height", "parameter_code": "00065", "unit": "ft", "value": 43.36, "observed_date": "2017-09-20"},
+    ]), encoding="utf-8")
+    field = tmp_path / "usgs_field_measurements_readings.jsonl"
+    field.write_text(json.dumps({
+        "site_no": "F1", "metric": "groundwater_level", "parameter_code": "72019",
+        "unit": "ft", "value": 11.2, "observed_date": "2026-07-28",
+    }) + "\n", encoding="utf-8")
     monkeypatch.setitem(backend.READING_VECTOR_REGISTRY["reservoir"], "path", surface)
     monkeypatch.setitem(backend.READING_VECTOR_REGISTRY["groundwater"], "path", groundwater)
     monkeypatch.setitem(backend.READING_VECTOR_REGISTRY["coastal"], "path", coastal)
+    # Isolate the new vectors too, or these tests read the developer's real data/ files
+    # (they are gitignored, so CI would pass while local runs drifted).
+    monkeypatch.setitem(backend.READING_VECTOR_REGISTRY["usgs_peaks"], "path", peaks)
+    monkeypatch.setitem(backend.READING_VECTOR_REGISTRY["usgs_field_measurements"], "path", field)
     with TestClient(backend.app) as test_client:
         yield test_client
 
@@ -71,10 +85,10 @@ def test_site_threshold_override_requires_provenance_and_effective_date():
         }
     }
     with pytest.raises(ValueError, match="site_threshold_without_provenance"):
-        resolve_threshold("streamflow", "S1", registry)
+        resolve_threshold("reservoir", "streamflow", "S1", registry)
     registry["site_thresholds"]["streamflow"]["S1"]["provenance"] = "approved_stage_table"
     with pytest.raises(ValueError, match="site_threshold_without_effective_date"):
-        resolve_threshold("streamflow", "S1", registry)
+        resolve_threshold("reservoir", "streamflow", "S1", registry)
 
 
 def test_site_threshold_override_changes_lifecycle_deterministically():
@@ -94,7 +108,7 @@ def test_site_threshold_override_changes_lifecycle_deterministically():
             }
         }
     }
-    assert lifecycle_alerts("streamflow", rows, backend.legacy._parse_dt, registry) == []
+    assert lifecycle_alerts("reservoir", "streamflow", rows, backend.legacy._parse_dt, registry) == []
 
 
 def test_federation_export_contains_certified_lifecycle_counts(client):

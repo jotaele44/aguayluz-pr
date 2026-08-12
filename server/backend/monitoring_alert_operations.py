@@ -7,7 +7,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-from server.backend.monitoring_quality import SERIES_METADATA_REGISTRY, observation_time
+from server.backend.monitoring_quality import observation_time, series_policy
 
 SITE_THRESHOLD_CONFIG = Path(__file__).resolve().parents[2] / "config" / "monitoring_site_thresholds.json"
 
@@ -21,8 +21,18 @@ def load_site_thresholds(path: Path = SITE_THRESHOLD_CONFIG) -> dict[str, Any]:
     return payload
 
 
-def resolve_threshold(metric: str, site_no: str | None, registry: dict[str, Any] | None = None) -> dict[str, Any]:
-    metadata = SERIES_METADATA_REGISTRY[metric]
+def resolve_threshold(
+    kind: str, metric: str, site_no: str | None, registry: dict[str, Any] | None = None
+) -> dict[str, Any] | None:
+    """Effective threshold for a series, or ``None`` for a reference series.
+
+    Site overrides stay keyed by *metric* in config/monitoring_site_thresholds.json — a
+    threshold is a property of the measured quantity at a site, not of which corpus
+    published it, and that file is currently empty so nothing needed migrating.
+    """
+    metadata = series_policy(kind, metric)
+    if metadata["threshold"] is None:
+        return None
     threshold = dict(metadata["threshold"])
     threshold.update({"scope": "default", "site_no": None, "effective_date": None})
     registry = registry or load_site_thresholds()
@@ -59,12 +69,18 @@ def _incident_id(metric: str, site_no: str, threshold: dict[str, Any]) -> str:
 
 
 def lifecycle_alerts(
+    kind: str,
     metric: str,
     rows: list[dict[str, Any]],
     parse_dt,
     registry: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     """Return one deduplicated lifecycle incident per exact metric/site."""
+    if series_policy(kind, metric)["threshold"] is None:
+        # Reference series (historical peaks, discrete well visits): inspectable, never an
+        # alerting surface. Checked once here rather than per site — a series without a
+        # default threshold has none for any site either.
+        return []
     grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for row in rows:
         if row.get("provisional") or not isinstance(row.get("value"), (int, float)):
@@ -77,7 +93,8 @@ def lifecycle_alerts(
             site_rows,
             key=lambda row: observation_time(row, parse_dt) or parse_dt("1970-01-01T00:00:00Z"),
         )
-        threshold = resolve_threshold(metric, site_no, registry)
+        threshold = resolve_threshold(kind, metric, site_no, registry)
+        assert threshold is not None      # guarded above; narrows the type for mypy
         breaches = [row for row in ordered if threshold_tripped(float(row["value"]), threshold)]
         if not breaches:
             continue
