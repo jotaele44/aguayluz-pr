@@ -11,12 +11,13 @@ Scientific/operational thresholds must be supplied explicitly and bound to a sou
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from datetime import date, datetime
-from typing import Any, Iterable
 import hashlib
 import json
 import re
+from collections.abc import Iterable
+from dataclasses import dataclass
+from datetime import date, datetime
+from typing import Any
 
 DROUGHT_CLASSES = frozenset(
     {"meteorological", "hydrological", "agricultural", "socioeconomic"}
