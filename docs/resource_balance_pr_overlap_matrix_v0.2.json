@@ -1,0 +1,82 @@
+{
+  "schema_version": "aguayluz.resource-balance-pr-overlap/v0.2",
+  "generated_at": "2026-08-04T21:32:00Z",
+  "pinned_main_sha": "17c843595b5cdfbcef4e5f7b1ac6c662092e335d",
+  "pull_requests": {
+    "101": {
+      "head_sha": "c50855876c57c0d10cd3bcea81a6998814863a09",
+      "scope": "water asset graph and impact switchboard",
+      "state": "open_draft_unmerged"
+    },
+    "116": {
+      "head_sha": "628a7da4dddb0622f07d97850bf79a0567bdef3e",
+      "scope": "USGS provider ingestion and category coverage",
+      "state": "open_draft_unmerged"
+    },
+    "118": {
+      "head_sha": "b82c724072d46631bc563c9562948d11119b4cc6",
+      "scope": "Laguna Cartagena freshness, synchronization and current-condition control plane",
+      "state": "open_draft_unmerged"
+    },
+    "121": {
+      "head_sha_before_v0_2": "8b80f5f362901adf6ccca6f13c6b047197f2cfbb",
+      "scope": "shared resource balance contracts and design-only accounting engine",
+      "state": "open_draft_unmerged"
+    }
+  },
+  "concept_ownership": [
+    {
+      "concept": "asset_identity_and_relationship_graph",
+      "canonical_owner": "PR_101_after_merge",
+      "current_main_owner": "utility_asset_and_existing_relationship_corpora",
+      "PR_121_role": "read_only_adapter_and_balance_boundary_reference",
+      "decision": "do_not_duplicate_asset_graph"
+    },
+    {
+      "concept": "provider_raw_observation_ingestion",
+      "canonical_owner": "PR_116_for_USGS_categories",
+      "PR_118_role": "Laguna_specific_intake_and_eligibility",
+      "PR_121_role": "consume_normalized_balance_ready_projection_only",
+      "decision": "provider_adapters_remain_outside_balance_core"
+    },
+    {
+      "concept": "balance_ready_resource_observation",
+      "canonical_owner": "PR_121",
+      "PR_116_role": "source_producer",
+      "PR_118_role": "domain_specific_eligibility_source",
+      "decision": "explicit_adapter_required_no_implicit_promotion"
+    },
+    {
+      "concept": "topology_truth",
+      "canonical_owner": "PR_101_after_merge",
+      "PR_121_role": "time_versioned_balance_topology_snapshot",
+      "PR_118_role": "Laguna_operational_context_only",
+      "decision": "PR_121_snapshots_reference_graph_ids_and_preserve_review_state"
+    },
+    {
+      "concept": "freshness_and_current_condition_eligibility",
+      "canonical_owner": "existing_monitoring_quality_plus_domain_specific_extensions",
+      "PR_118_role": "Laguna_specific_policy",
+      "PR_121_role": "consumer_not_policy_owner",
+      "decision": "ineligible_or_stale_records_are_context_only"
+    },
+    {
+      "concept": "resource_balance_and_residual",
+      "canonical_owner": "PR_121",
+      "PR_118_role": "legacy_domain_specific_balance_path_for_equivalence",
+      "decision": "retain_PR_118_behavior_until_shared_equivalence_and_runtime_ballot"
+    }
+  ],
+  "path_overlap": {
+    "direct_shared_paths_between_101_116_118_121_before_v0_2": [],
+    "governance_overlap": [".federation/gui-capabilities.json"],
+    "adjudication": "No runtime file from PRs 101, 116, or 118 is modified by this pilot."
+  },
+  "promotion_blockers": [
+    "No merged authoritative hydraulic topology",
+    "No synchronized treatment withdrawal and terminal-flow telemetry",
+    "No validated reservoir stage-storage relation for the frozen window",
+    "No validated expected-loss model",
+    "No approved runtime-promotion ballot"
+  ]
+}

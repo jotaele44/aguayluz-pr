@@ -1,0 +1,41 @@
+{
+  "schema_version": "aguayluz.resource-balance-inventory/v0.1",
+  "repository": "jotaele44/aguayluz-pr",
+  "pinned_main_sha": "17c843595b5cdfbcef4e5f7b1ac6c662092e335d",
+  "generated_at": "2026-08-04T19:25:00Z",
+  "scope": "design-only shared water/electricity accounting foundation",
+  "runtime_activation": false,
+  "components": [
+    {"component":"utility_asset schema and UtilityAsset model","classification":"wrap","target":"ResourceAsset","reason":"preserve identifiers and provenance without rewriting source rows"},
+    {"component":"monitoring_reading schema and data streams","classification":"extend","target":"ResourceObservation","reason":"direction, interval, topology and uncertainty are missing from many legacy rows"},
+    {"component":"service_event schema","classification":"reuse_unchanged","target":"corroboration","reason":"known events can validate residual timing but are not flows"},
+    {"component":"alert_event schema and alert modules","classification":"reuse_unchanged","target":"future promotion","reason":"activation requires a separate policy ballot"},
+    {"component":"monitoring freshness and quality","classification":"generalize","target":"observation eligibility","reason":"stale and proxy records must not become current direct evidence"},
+    {"component":"monitoring incident ledger","classification":"reuse_unchanged","target":"investigation history","reason":"append-only lifecycle can preserve adjudication"},
+    {"component":"water disruption shadow consumer","classification":"domain_specific","target":"water operational context","reason":"do not duplicate intake and incident lifecycle"},
+    {"component":"impact dependency linkage","classification":"generalize","target":"candidate boundary linkage","reason":"proximity alone cannot prove physical flow"},
+    {"component":"review queue","classification":"reuse_unchanged","target":"human adjudication","reason":"residual causes cannot be auto-confirmed"},
+    {"component":"source manifest and evidence tiers","classification":"reuse_unchanged","target":"provenance","reason":"retain T1-T4 semantics"},
+    {"component":"asset crosswalk","classification":"generalize","target":"alias resolution","reason":"identity mapping does not establish topology"},
+    {"component":"federation exporter","classification":"extend_later","target":"validated balance export","reason":"hub contract approval is not present"},
+    {"component":"monitoring and analytics GUI","classification":"extend_later","target":"read-only balance control plane","reason":"no GUI activation in v0.1"},
+    {"component":"G01-G08 validation gates","classification":"reuse_unchanged","target":"promotion certification","reason":"focused tests do not replace full CI"},
+    {"component":"GUI parity ratchet","classification":"reuse_unchanged","target":"promotion certification","reason":"reference core remains outside runtime discovery roots"},
+    {"component":"scheduled refresh","classification":"extend_later","target":"synchronized materialization","reason":"no cadence change in v0.1"},
+    {"component":"water_alerts statistical proxies","classification":"legacy_analytic","target":"corroborating context","reason":"tail anomalies are not mass balances"},
+    {"component":"PR #101 utility asset graph","classification":"external_overlap","target":"future topology","reason":"unmerged work is not copied or assumed"},
+    {"component":"PR #116 USGS category coverage","classification":"external_overlap","target":"future suppliers","reason":"registered provider coverage is not balance eligibility"},
+    {"component":"PR #118 Laguna Cartagena control plane","classification":"external_overlap","target":"future water pilot","reason":"operator observations remain unavailable"}
+  ],
+  "contradictions": [
+    "Daily readings can be current yet still lack interval-total semantics required for a balance.",
+    "Asset proximity and impact linkage can conflict with actual hydraulic or electrical topology.",
+    "Two opposing measurement biases can cancel and falsely produce a closed balance.",
+    "An unaccounted residual can be caused by model or meter error and cannot be treated as proof of unauthorized activity."
+  ],
+  "gaps": {
+    "water": ["authoritative time-versioned topology","treatment and well withdrawal telemetry","tank and pressure-zone interval flows","validated evaporation, seepage and treatment-loss models"],
+    "electricity": ["substation-feeder-transformer-service topology","gross/net generation and station service","interval AMI and public unmetered loads","distributed solar, storage and net-metering ledger","validated technical-loss models"],
+    "shared": ["canonical units and conversion policy","clock synchronization and interval closure","uncertainty calibration","frozen historical regression fixtures","rollback and federation promotion contracts"]
+  }
+}

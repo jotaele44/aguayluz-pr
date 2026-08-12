@@ -39,7 +39,7 @@ if (REPO_ROOT / "outputs").exists():
 
 a = Analysis(
     [str(REPO_ROOT / "desktop" / "launch.py")],
-    pathex=[str(REPO_ROOT)],
+    pathex=[str(REPO_ROOT), str(REPO_ROOT / "src")],
     datas=datas,
     hiddenimports=[
         "uvicorn.logging",
@@ -50,6 +50,9 @@ a = Analysis(
         "desktop.app_server",
         "server.backend.app",
         "server.backend.main",
+        # src-layout application package reached transitively from
+        # server.backend.cave_karst_api in the frozen backend.
+        "aguayluz.cave_karst",
         # Shared desktop-wrapper runtime (thehub-pr/packages/prii_desktop),
         # imported by the desktop/ shims — bundle it into the frozen build.
         "prii_desktop",

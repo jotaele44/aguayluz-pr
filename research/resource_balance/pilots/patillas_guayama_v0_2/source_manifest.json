@@ -1,0 +1,56 @@
+{
+  "entries": [
+    {
+      "capture_kind": "canonical_extract",
+      "path": "source_snapshots/repository_asset_slice.json",
+      "sha256": "db0c032a63481710964d8e993d2a2acaad1cef62057af8b828829c9745cbc9ef",
+      "size_bytes": 1496
+    },
+    {
+      "capture_kind": "canonical_extract",
+      "path": "source_snapshots/usgs_50092000_upstream_inflow.json",
+      "sha256": "c6d05bcba0886633b6c23a1b4d67aa768a393916e9172a3695b571d460732651",
+      "size_bytes": 759
+    },
+    {
+      "capture_kind": "canonical_extract",
+      "path": "source_snapshots/usgs_50093045_reservoir.json",
+      "sha256": "7c41641ad5b6afdfe409240075207e31957f5efa4ffa578ce64452345cc4759d",
+      "size_bytes": 1640
+    },
+    {
+      "capture_kind": "canonical_extract",
+      "path": "source_snapshots/usgs_50093053_forebay.json",
+      "sha256": "dfc4fabd5351c24f873cf87ae48b9fb80f167edee5f042bd0390a7f65e222e1a",
+      "size_bytes": 692
+    },
+    {
+      "capture_kind": "canonical_extract",
+      "path": "source_snapshots/usgs_50093075_above_filtration.json",
+      "sha256": "1ab34e4211770b5caab5b52c8e5a59e68929b449df5be98c024709b295fc3e33",
+      "size_bytes": 794
+    },
+    {
+      "capture_kind": "canonical_extract",
+      "path": "source_snapshots/usgs_50093078_below_filtration.json",
+      "sha256": "5d286f270e5a1e25c3c73063269ed65e378e227f09a54cd1990d7d46ea87d02e",
+      "size_bytes": 788
+    },
+    {
+      "capture_kind": "canonical_extract",
+      "path": "source_snapshots/usgs_50093083_above_aes_intake.json",
+      "sha256": "73b14f7308fb41f903828d5a282819fdd111ed8158211bfd9a51d3adde5cd2c9",
+      "size_bytes": 786
+    }
+  ],
+  "generated_at": "2026-08-04T21:32:00Z",
+  "limitations": [
+    "Entries hash the committed canonical extracts, not complete upstream HTTP response bodies.",
+    "All upstream observations are provisional and subject to revision.",
+    "No synchronized treatment withdrawal, terminal-flow, storage-volume, or storage-change telemetry is available in the frozen baseline."
+  ],
+  "parent_pr": 121,
+  "pilot_id": "patillas-guayama-water-balance-v0.2",
+  "pinned_main_sha": "17c843595b5cdfbcef4e5f7b1ac6c662092e335d",
+  "schema_version": "aguayluz.frozen-source-manifest/v0.2"
+}

@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/cave_karst_edge.schema.json",
+  "title": "CaveKarstEdge",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "edge_id",
+    "from_asset_id",
+    "to_node_id",
+    "to_node_type",
+    "relation",
+    "source_refs",
+    "evidence_tier",
+    "confidence",
+    "review_status"
+  ],
+  "properties": {
+    "edge_id": {
+      "type": "string",
+      "pattern": "^AYL_KEDGE_[A-Z0-9_]+$"
+    },
+    "from_asset_id": {
+      "type": "string",
+      "pattern": "^AYL_KARST_[A-Z0-9_]+$"
+    },
+    "to_node_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "to_node_type": {
+      "enum": [
+        "cave_asset",
+        "utility_asset",
+        "natural_feature",
+        "monitoring_site",
+        "watershed",
+        "municipality",
+        "operator",
+        "source"
+      ]
+    },
+    "relation": {
+      "enum": [
+        "contains",
+        "part_of",
+        "hydrologically_connected_to",
+        "drains_to",
+        "monitored_by",
+        "accessed_via",
+        "depends_on",
+        "managed_by",
+        "evidenced_by",
+        "spatially_intersects"
+      ]
+    },
+    "source_refs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^SRC_KARST_[A-Z0-9_]+$"
+      }
+    },
+    "evidence_tier": {
+      "enum": [
+        "T1",
+        "T2",
+        "T3",
+        "T4"
+      ]
+    },
+    "confidence": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "review_status": {
+      "enum": [
+        "accepted",
+        "needs_review",
+        "rejected",
+        "blocked"
+      ]
+    },
+    "notes": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}
