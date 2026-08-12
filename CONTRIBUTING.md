@@ -43,7 +43,7 @@ job and in `pyproject.toml`, not hidden.
 | Tests | `pytest -q` |
 | Coverage | `pytest -q --cov` — must stay at or above the `fail_under` floor in `pyproject.toml` |
 | Lockfile | `uv lock --check` |
-| Template drift | Run `python3 tools/render_federation_templates.py --repo aguayluz-pr --repo-root /path/to/aguayluz-pr --check` from a local Hub checkout. |
+| Template drift | `python3 ../thehub-pr/tools/render_federation_templates.py --repo aguayluz-pr --check` |
 
 ### Coverage is a ratchet
 
