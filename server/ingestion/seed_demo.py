@@ -5,19 +5,24 @@ it exists, runs it before uvicorn::
 
     python server/ingestion/seed_demo.py && python -m uvicorn server.backend.main:app ...
 
-That branch has never fired, because the file did not exist. The consequence is
+That branch had never fired, because the file did not exist. The consequence is
 easy to miss and worth stating plainly: ``outputs/`` is gitignored apart from
 ``.gitkeep``, and the GUI Reachability E2E job runs no exporter, so in CI
 ``outputs/review_queue.json`` is absent, ``GET /review-queue`` returns
 ``{"total": 0, "items": []}``, and ``/review`` renders "no items". The
-reachability spec has been asserting that a route with no data in it does not
-crash — a gate passing over something it never examined.
+reachability spec was asserting that a route with no data in it does not crash —
+a gate passing over something it never examined.
 
-Seeding fixes that for every route backed by this file, not just the review page.
+Two rules keep the fixture from becoming a liability:
 
-**Only writes when the file is absent.** A working checkout's real export is
-thousands of records and must not be replaced by running the e2e suite. Present
-means a developer or an exporter put it there, and it is left alone.
+*Never replace real data.* A working checkout's export is thousands of records.
+If ``review_queue.json`` already exists it is left completely alone.
+
+*Never leave fake data behind.* When this script does write the fixture it also
+drops a marker file beside it. ``gui_parity_teardown.py`` removes the queue file
+only when that marker is present, so a seeded run cleans up after itself and a
+later ordinary backend run cannot serve ``SEED-*`` records as if they were real.
+Without the marker a teardown could not tell a fixture apart from an export.
 
 The backend re-reads this file on every request (``_load_json`` is called inside
 the ``/review-queue`` handler, unlike the JSONL corpora loaded at import), so a
@@ -39,6 +44,9 @@ _workspace = os.getenv("AGUAYLUZ_DATA_HOME", "").strip()
 OUTPUTS = Path(_workspace) / "exports" if _workspace else REPO_ROOT / "outputs"
 
 REVIEW_QUEUE = OUTPUTS / "review_queue.json"
+# Presence of this marker is the only thing that authorises deleting the queue
+# file. It means "this run created that file", never "this file is disposable".
+SEED_MARKER = OUTPUTS / ".review_queue.seeded"
 
 # Deliberately small and deliberately mixed. `block` comes first because
 # ReviewPage does no client-side sort — it renders backend file order, sliced to
@@ -79,6 +87,14 @@ def main() -> int:
     try:
         OUTPUTS.mkdir(parents=True, exist_ok=True)
         REVIEW_QUEUE.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        # Written after the queue file, so a crash between the two leaves no
+        # marker and the teardown declines to delete anything.
+        SEED_MARKER.write_text(
+            "Written by server/ingestion/seed_demo.py. Presence of this file means\n"
+            "review_queue.json is a GUI-parity fixture and may be removed by\n"
+            "server/ingestion/gui_parity_teardown.py.\n",
+            encoding="utf-8",
+        )
     except OSError as exc:
         # The playwright config chains this with `&&`, so a non-zero exit fails
         # the whole webServer boot rather than starting a backend with no data.

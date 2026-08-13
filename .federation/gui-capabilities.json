@@ -805,6 +805,28 @@
           "tests/test_refresh_plans.py"
         ]
       }
+    },
+    {
+      "id": "gui-parity-review-fixture",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Test fixture for the GUI parity gate, not a user capability. outputs/ is gitignored and the E2E job runs no exporter, so /review-queue returned an empty list in CI and the reachability spec passed over a blank page. seed_demo.py writes a minimal review queue only when none exists, and the teardown removes it only when seed_demo.py created it, so neither a real export nor a developer checkout is ever altered. Both run from the Playwright config; no operator invokes them and neither has a GUI surface. The capability they serve is review-queue, whose GUI path is unchanged.",
+      "analysis": {
+        "files": [
+          "server/ingestion/seed_demo.py",
+          "server/ingestion/gui_parity_teardown.py"
+        ],
+        "symbols": [
+          "server/ingestion/seed_demo.py:main",
+          "server/ingestion/gui_parity_teardown.py:main"
+        ]
+      },
+      "tests": {
+        "e2e": [
+          "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
     }
   ],
   "exceptions": []

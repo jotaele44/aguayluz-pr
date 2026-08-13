@@ -147,6 +147,42 @@ const REVIEW_STUB = {
   ],
 };
 
+test("review queue serves real records to the page, unstubbed", async ({ page }) => {
+  // Codex was right that the stubbed test below cannot prove the backend reaches
+  // the GUI — page.route replaces the response, and the generated reachability
+  // test only checks that #root rendered and nothing threw. So an empty 200 from
+  // /review-queue would leave both green while /review showed nothing.
+  //
+  // This one deliberately does NOT intercept. It asserts the page displays at
+  // least one record that came off the wire, which is what the seed exists to
+  // guarantee in CI. It is written against record *count*, not against SEED-*
+  // ids, because a developer's checkout has a real export and the seed no-ops
+  // there — asserting on fixture ids would pass in CI and fail locally.
+  const payloads = [];
+  page.on("response", async (response) => {
+    if (!response.url().includes("/review-queue")) return;
+    try {
+      payloads.push(await response.json());
+    } catch {
+      // Non-JSON or already-consumed body; the assertions below still apply.
+    }
+  });
+
+  await page.goto("/review", { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(750);
+
+  const served = payloads.find((p) => Array.isArray(p?.items));
+  expect(served, "GET /review-queue returned nothing usable").toBeTruthy();
+  expect(
+    served.items.length,
+    "the backend served an empty review queue — the seed did not run, or it wrote nothing",
+  ).toBeGreaterThan(0);
+
+  // And the records reached the DOM, not just the network tab. The first record
+  // is on page one, since ReviewPage renders backend order sliced to PAGE_SIZE.
+  await expect(page.getByText(served.items[0].record_ref)).toBeVisible();
+});
+
 test("review queue renders block and warn with different severity tones", async ({ page }) => {
   // The page is served from :5173 and the API from :8000, so a fulfilled
   // response without CORS headers is blocked by the browser — and getJSON's bare
