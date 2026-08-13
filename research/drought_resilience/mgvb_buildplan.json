@@ -70,16 +70,19 @@
     "sha256": "eb6b83082a243e18d0894c43e5ffd0ab28d5ced9f58a36c34e5eafa251fe416e"
   },
   "status": {
-    "live_freeze": "annual_archive_assumption_falsified; corrected_155_release_pipeline_pending_live_recertification",
-    "preserved_required": ["S01", "S02", "S03"],
-    "invalidated_required": ["S04", "S05", "S06"],
-    "authoritative_findings": {
-      "annual_archive_date_counts": {"2014": 52, "2015": 39, "2016": 51},
-      "annual_union": 142,
-      "annual_missing": 14,
-      "2015_supplemental_weekly_available": 13,
-      "known_non_issue_dates": ["2016-11-01"]
-    },
-    "static_closure": "pending_recertification_after_S04_S05_change"
+    "live_freeze": "certified",
+    "static_closure": "passed",
+    "synthetic_closure": "passed_155_release_authoritative_shape",
+    "authoritative_usdm_denominator": "certified",
+    "authoritative_manifest_sha256": "46ee7c56790f0bb54988d1b151b64e10f8d172d18c2332877c7726b2cf5b6ef9",
+    "authoritative_artifact_id": 9173764047,
+    "authoritative_artifact_sha256": "00d6489b783717fa0d73dcd4422a51392e38f87714610d0455a6e460abf38f94",
+    "authoritative_release_count": 155,
+    "known_non_issue_dates": ["2016-11-01"],
+    "offline_replay": "passed_network_required_false",
+    "s07_activation": "activated_prerequisite_satisfied_not_yet_executed",
+    "s08_activation": "blocked_until_USGS_RAW_METADATA_FROZEN",
+    "preserved_required_after_E003": ["S01", "S02", "S03"],
+    "recovered_required_after_E003": ["S04", "S05", "S06"]
   }
 }
