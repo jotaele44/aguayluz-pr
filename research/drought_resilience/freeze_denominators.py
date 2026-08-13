@@ -150,9 +150,8 @@ def _download(url: str, destination: Path, timeout: int = 120) -> FrozenObject:
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     retrieved = datetime.now(timezone.utc).isoformat()
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310
-            with destination.open("wb") as target:
-                shutil.copyfileobj(response, target, length=1024 * 1024)
+        with urllib.request.urlopen(request, timeout=timeout) as response, destination.open("wb") as target:  # noqa: S310
+            shutil.copyfileobj(response, target, length=1024 * 1024)
     except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError):
         destination.unlink(missing_ok=True)
         raise
