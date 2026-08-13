@@ -1,0 +1,76 @@
+{
+  "schema_version": "aguayluz.self-correcting-failure-ledger/v0.1",
+  "skill_package": {
+    "name": "self-correcting-code-builder-v0.4.skill",
+    "sha256": "eb6b83082a243e18d0894c43e5ffd0ab28d5ced9f58a36c34e5eafa251fe416e"
+  },
+  "policy": {
+    "failure_is_not_zero_result": true,
+    "invalidate_only_dependency_closure": true,
+    "preserve_frozen_upstream_pass_artifacts": true,
+    "candidate_is_not_certified_identity": true
+  },
+  "events": [
+    {
+      "event_id": "MGVB-E001-GUI-CAPABILITY-ROOT",
+      "classification": "repository_contract_capability_surface",
+      "failed_head": "2929abe84efca53c07440496916e1f7a3cf33d6b",
+      "symptoms": [
+        "ANALYSIS_NOT_GUI_RENDERED for scripts/freeze_drought_denominators.py",
+        "TERMINAL_REQUIRED for scripts/freeze_drought_denominators.py"
+      ],
+      "root_cause": "A research-only acquisition utility was placed under the repository scripts discovery root, semantically declaring a new terminal/analysis capability subject to GUI parity.",
+      "invalidated": [
+        "GUI parity status for the affected head",
+        "capability-location assumption for the freezer"
+      ],
+      "preserved": [
+        "drought source identities",
+        "USDM 156-week closure design",
+        "NCEI denominator design",
+        "USGS query identity design"
+      ],
+      "correction": "Move freezer to research/drought_resilience/freeze_denominators.py so its repository location matches research-only scope.",
+      "verification": "Subsequent research-root heads no longer emitted the new terminal/analysis capability finding.",
+      "lesson": "Repository path is a semantic capability declaration; research-only utilities must remain outside runtime/analysis discovery roots when GUI parity is not intended."
+    },
+    {
+      "event_id": "MGVB-E002-CI-EQUIVALENCE-LINT",
+      "classification": "static_validation_lint",
+      "failed_head": "7584c1587ac114207f7f8fe146756dca8facae80",
+      "failed_workflow": "validate",
+      "failed_jobs": ["test (3.10)", "test (3.12)"],
+      "symptoms": [
+        "SIM117 nested with statements in research/drought_resilience/freeze_denominators.py",
+        "I001 import block ordering in tests/test_drought_mgvb.py"
+      ],
+      "root_cause": "Static repository style closure had not been exercised against main-targeted validate because the stacked P1 PR did not trigger that workflow.",
+      "invalidated": [
+        "full static/lint certification of P1",
+        "downstream pytest/validation results for the failed validate attempt"
+      ],
+      "preserved": [
+        "S01-S06 required-module source SHA256 values",
+        "acyclic MGVB dependency DAG",
+        "synthetic 3-archive 156-week closure",
+        "canonical manifest behavior",
+        "offline replay behavior",
+        "lock and geo-import pass artifacts from the failed validate attempt"
+      ],
+      "correction_commit": "07ec3b1a818f2fceed7d1c002f7a22e36fa16bf3",
+      "correction": "Combine the nested context managers in conditional S07 and apply the repository-approved import-order exception to the MGVB test harness.",
+      "verification": {
+        "ci_equivalence_pr": 164,
+        "validate_run_id": 31679895619,
+        "python_3_10": "success: lint+tests+validation_gates",
+        "python_3_12": "success: lint+tests+validation_gates",
+        "dashboard_build": "success",
+        "geo_import_check": "success",
+        "lock": "success",
+        "typecheck": "success",
+        "live_smoke": "skipped_by_pull_request_policy"
+      },
+      "lesson": "When stacked-PR path/base filters suppress the full repository gate, create an exact-tree main-based CI-equivalence PR before promotion; repair only the failed dependency closure and retain unaffected upstream evidence."
+    }
+  ]
+}
