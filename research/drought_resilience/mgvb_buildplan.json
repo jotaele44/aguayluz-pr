@@ -54,7 +54,7 @@
     {"class":"required","depends_on":[],"id":"S02","path":"research/drought_resilience/mgvb/content_store.py","sha256":"d94b589098ebb2e5bf63809e917218b0bc37bf150c0165397f6a4b07b9fc50ee"},
     {"class":"required","depends_on":[],"id":"S03","path":"research/drought_resilience/mgvb/manifest.py","sha256":"165f095d72158343ab19b3a837130ef1fa22d6d126a01bbaed0979ae54e60b82"},
     {"class":"required","depends_on":["S01","S02","S03"],"id":"S04","path":"research/drought_resilience/mgvb/usdm_freeze.py","sha256":"531b2296586460b51a21a1cda1b740d40b98b74ea565952f5fdd45b4441aefa7"},
-    {"class":"required","depends_on":["S02","S03","S04"],"id":"S05","path":"research/drought_resilience/mgvb/certify_usdm.py","sha256":"2d965ab3707dc504b0064b348933a4cd046ea6504d010092986ebbf0e17a06bc"},
+    {"class":"required","depends_on":["S02","S03","S04"],"id":"S05","path":"research/drought_resilience/mgvb/certify_usdm.py","sha256":"ba5b79ada7136620e7bd3c0a9ac71f6e361fe525fc831d872235e30e6f816942"},
     {"class":"required","depends_on":["S03","S05"],"id":"S06","path":"research/drought_resilience/mgvb/replay_freeze.py","sha256":"ed789d0bc9f5e0ff4e2f7c777385fc4faa9c22485896a6e1f0aa8980d6dc131b"},
     {"activation":"MGVB_USDM_CERTIFIED","class":"conditional","depends_on":["S06"],"id":"S07","path":"research/drought_resilience/freeze_denominators.py","purpose":"expand certified acquisition to NCEI and USGS query families"},
     {"activation":"USGS_RAW_METADATA_FROZEN","class":"conditional","depends_on":["S07"],"id":"S08","path":"research/drought_resilience/parameter_registry.py","purpose":"bind parameter/unit/datum/direction semantics"},
@@ -64,7 +64,7 @@
     {"activation":"METHOD_REGISTRY_AND_CLASS_SERIES_CERTIFIED","class":"deferred","depends_on":["S11"],"id":"S12","path":"research/drought_resilience/derive_event_bounds.py","purpose":"derive candidate onset/peak/termination"},
     {"activation":"CANDIDATE_BOUNDS_EXIST","class":"deferred","depends_on":["S12"],"id":"S13","path":"research/drought_resilience/falsify_bounds.py","purpose":"negative controls, sensitivity and contradiction adjudication"}
   ],
-  "script_census_sha256": "64be1a47ecef794aaf4f26ff9003233554f15316116bcc3c4537dc294cc0ceea",
+  "script_census_sha256": "796cdb23acf3a491874dfeb08ea988bb5a6041cecb61dfa0f58f4dc62396ccc6",
   "skill_package": {
     "name": "self-correcting-code-builder-v0.4.skill",
     "sha256": "eb6b83082a243e18d0894c43e5ffd0ab28d5ced9f58a36c34e5eafa251fe416e"
