@@ -1,0 +1,69 @@
+name: USDM live freeze v2
+
+on:
+  push:
+    branches:
+      - ci/usdm-live-freeze-v2
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Install test dependency
+        run: python -m pip install pytest
+      - name: Static and synthetic closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile \
+            research/drought_resilience/mgvb/transport.py \
+            research/drought_resilience/mgvb/content_store.py \
+            research/drought_resilience/mgvb/manifest.py \
+            research/drought_resilience/mgvb/usdm_freeze.py \
+            research/drought_resilience/mgvb/certify_usdm.py \
+            research/drought_resilience/mgvb/replay_freeze.py
+          python -m pytest -q tests/test_drought_mgvb.py
+      - name: Execute authoritative corrected USDM MGVB
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _usdm_live
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from research.drought_resilience.mgvb.usdm_freeze import freeze
+          from research.drought_resilience.mgvb.certify_usdm import certify
+          from research.drought_resilience.mgvb.replay_freeze import replay
+
+          root = Path('_usdm_live/evidence').resolve()
+          manifest, manifest_sha = freeze(root)
+          certification = certify(manifest)
+          replay_result = replay(manifest, manifest_sha)
+          summary = {
+              'manifest': str(manifest),
+              'manifest_sha256': manifest_sha,
+              'certification': certification,
+              'replay': replay_result,
+          }
+          Path('_usdm_live/result.json').write_text(
+              json.dumps(summary, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          print(json.dumps(summary, sort_keys=True))
+          PY
+          find _usdm_live -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > _usdm_live/SHA256SUMS.txt
+          cat _usdm_live/result.json
+      - name: Upload certified evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: usdm-2014-2016-certified-v2
+          path: _usdm_live/
+          if-no-files-found: error
+          retention-days: 30
