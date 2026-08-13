@@ -1,0 +1,58 @@
+{
+  "schema_version": "aguayluz.drought-usdm-authoritative-certification/v0.1",
+  "source_family": "USDM_GML",
+  "research_window": ["2014-01-01", "2016-12-31"],
+  "certification_status": "certified",
+  "epistemic_role": "composite_context_not_independent_drought_class",
+  "live_run": {
+    "workflow": "USDM live freeze v2",
+    "run_id": 31681792012,
+    "job_id": 94388671656,
+    "head_sha": "a1b4f55b13e6da75f1c757e411f31f80f423d32e"
+  },
+  "artifact": {
+    "artifact_id": 9173764047,
+    "name": "usdm-2014-2016-certified-v2",
+    "bytes": 126566044,
+    "sha256": "00d6489b783717fa0d73dcd4422a51392e38f87714610d0455a6e460abf38f94",
+    "expires_at": "2026-09-12T08:23:20Z"
+  },
+  "manifest": {
+    "sha256": "46ee7c56790f0bb54988d1b151b64e10f8d172d18c2332877c7726b2cf5b6ef9",
+    "content_identity_sha256": "ac7f215559354958a601abdc748a2787b79c2d30f165c0d3109c09bf5558be38",
+    "schema_version": "aguayluz.drought-usdm-freeze/v0.2"
+  },
+  "closure": {
+    "expected_release_count": 155,
+    "observed_release_count": 155,
+    "first_issue": "2014-01-07",
+    "last_issue": "2016-12-27",
+    "known_non_issue_dates": ["2016-11-01"],
+    "missing": [],
+    "unexpected": []
+  },
+  "objects": [
+    {"source_id":"USDM_GML_2014","kind":"annual_archive","bytes":36955145,"sha256":"c86f70ec47b4707bf4cc860d97b61ef4add97dbf2d686bbd49ff4f8a81c27ee0","http_status":200,"etag":"\"9c59828a224d01:0\"","last_modified":"Wed, 31 Dec 2014 02:33:26 GMT"},
+    {"source_id":"USDM_GML_2015","kind":"annual_archive","bytes":43773729,"sha256":"c26bfc21e526de4d53e18c243f48686645f13450e9b76bc40402bd85daf4d8bb","http_status":200,"etag":"\"7825a9b4e2fbd01:0\"","last_modified":"Thu, 01 Oct 2015 00:47:10 GMT"},
+    {"source_id":"USDM_GML_2016","kind":"annual_archive","bytes":37086879,"sha256":"777b4b8de4f14e1a1bb723e5f6c92c6a4487485f3a5f0563527f5102e9fb9cd2","http_status":200,"etag":"\"7726e13e549d31:0\"","last_modified":"Fri, 20 Oct 2017 20:50:34 GMT"},
+    {"source_id":"USDM_GML_WEEKLY_20151006","kind":"supplemental_weekly","issue":"2015-10-06","bytes":969927,"sha256":"1227740cede329df8999cfb8b02af490bb0a4f8433b4a22fe0c103561936c50b"},
+    {"source_id":"USDM_GML_WEEKLY_20151013","kind":"supplemental_weekly","issue":"2015-10-13","bytes":913727,"sha256":"279201bfdc9f2b84705f3209e7fdf54860441d72ad15aa20232b5550dc0b3a88"},
+    {"source_id":"USDM_GML_WEEKLY_20151020","kind":"supplemental_weekly","issue":"2015-10-20","bytes":908180,"sha256":"662db60045e32fdcb9ebf7aa9fdc6f6cfd4a3cf71b8977fb68890a347c17cd81"},
+    {"source_id":"USDM_GML_WEEKLY_20151027","kind":"supplemental_weekly","issue":"2015-10-27","bytes":711767,"sha256":"5c424a8f0b137d378e0cd017723a78f51e15f5d951cee1122e9b8009b1fc1b39"},
+    {"source_id":"USDM_GML_WEEKLY_20151103","kind":"supplemental_weekly","issue":"2015-11-03","bytes":755305,"sha256":"b1331d8f6a1a6662f651ea87c774d5f3a1ff597d57ebc77af48766cf163800f8"},
+    {"source_id":"USDM_GML_WEEKLY_20151110","kind":"supplemental_weekly","issue":"2015-11-10","bytes":729073,"sha256":"6951210ca08702d86f986a4f79f7c9b8efd14c59a537f8fc510a2bac0135bd24"},
+    {"source_id":"USDM_GML_WEEKLY_20151117","kind":"supplemental_weekly","issue":"2015-11-17","bytes":696584,"sha256":"86dfa0dedf007d57de1f30fd69a03659598f0a7b0eefd954fa7c250ecaf84d75"},
+    {"source_id":"USDM_GML_WEEKLY_20151124","kind":"supplemental_weekly","issue":"2015-11-24","bytes":563448,"sha256":"e7b4e15e56ec3fc285236bb6578d1459f8540f4461261372d37c75e09cee8303"},
+    {"source_id":"USDM_GML_WEEKLY_20151201","kind":"supplemental_weekly","issue":"2015-12-01","bytes":536387,"sha256":"228c7b7a7ed3f6b2b3aa773369e21224e0270c848751a1a428551531e62c6787"},
+    {"source_id":"USDM_GML_WEEKLY_20151208","kind":"supplemental_weekly","issue":"2015-12-08","bytes":459079,"sha256":"e6e98b02398cb3a3bd725be0c1424b7f6da2bea582a59a40d69e4eb8bba026c2"},
+    {"source_id":"USDM_GML_WEEKLY_20151215","kind":"supplemental_weekly","issue":"2015-12-15","bytes":479038,"sha256":"9ee92eccb7af95825e41cc0774340d94231cb54a3a3c378c7965c3836bd4fbb1"},
+    {"source_id":"USDM_GML_WEEKLY_20151222","kind":"supplemental_weekly","issue":"2015-12-22","bytes":499898,"sha256":"6955e637d5c8969c19c8160ff58ae290f471e43fb026af4bd90f573867e885c1"},
+    {"source_id":"USDM_GML_WEEKLY_20151229","kind":"supplemental_weekly","issue":"2015-12-29","bytes":487632,"sha256":"98cb0f9983a4d3f060643f3fdb9e1516521c3b837f822877e4721423e6fa4d0b"}
+  ],
+  "replay": {
+    "status": "replay_pass",
+    "network_required": false,
+    "manifest_sha256": "46ee7c56790f0bb54988d1b151b64e10f8d172d18c2332877c7726b2cf5b6ef9"
+  },
+  "promotion_boundary": "certifies USDM GML composite denominator only; does not certify any independent meteorological, hydrological, agricultural, or socioeconomic drought class"
+}

@@ -1,0 +1,132 @@
+{
+  "schema_version": "aguayluz.self-correcting-failure-ledger/v0.1",
+  "skill_package": {
+    "name": "self-correcting-code-builder-v0.4.skill",
+    "sha256": "eb6b83082a243e18d0894c43e5ffd0ab28d5ced9f58a36c34e5eafa251fe416e"
+  },
+  "policy": {
+    "failure_is_not_zero_result": true,
+    "invalidate_only_dependency_closure": true,
+    "preserve_frozen_upstream_pass_artifacts": true,
+    "candidate_is_not_certified_identity": true
+  },
+  "events": [
+    {
+      "event_id": "MGVB-E001-GUI-CAPABILITY-ROOT",
+      "classification": "repository_contract_capability_surface",
+      "failed_head": "2929abe84efca53c07440496916e1f7a3cf33d6b",
+      "symptoms": [
+        "ANALYSIS_NOT_GUI_RENDERED for scripts/freeze_drought_denominators.py",
+        "TERMINAL_REQUIRED for scripts/freeze_drought_denominators.py"
+      ],
+      "root_cause": "A research-only acquisition utility was placed under the repository scripts discovery root, semantically declaring a new terminal/analysis capability subject to GUI parity.",
+      "invalidated": [
+        "GUI parity status for the affected head",
+        "capability-location assumption for the freezer"
+      ],
+      "preserved": [
+        "drought source identities",
+        "USDM closure design principle",
+        "NCEI denominator design",
+        "USGS query identity design"
+      ],
+      "correction": "Move freezer to research/drought_resilience/freeze_denominators.py so its repository location matches research-only scope.",
+      "verification": "Subsequent research-root heads no longer emitted the new terminal/analysis capability finding.",
+      "lesson": "Repository path is a semantic capability declaration; research-only utilities must remain outside runtime/analysis discovery roots when GUI parity is not intended."
+    },
+    {
+      "event_id": "MGVB-E002-CI-EQUIVALENCE-LINT",
+      "classification": "static_validation_lint",
+      "failed_head": "7584c1587ac114207f7f8fe146756dca8facae80",
+      "failed_workflow": "validate",
+      "failed_jobs": ["test (3.10)", "test (3.12)"],
+      "symptoms": [
+        "SIM117 nested with statements in research/drought_resilience/freeze_denominators.py",
+        "I001 import block ordering in tests/test_drought_mgvb.py"
+      ],
+      "root_cause": "Static repository style closure had not been exercised against main-targeted validate because the stacked P1 PR did not trigger that workflow.",
+      "invalidated": [
+        "full static/lint certification of P1",
+        "downstream pytest/validation results for the failed validate attempt"
+      ],
+      "preserved": [
+        "S01-S06 required-module source SHA256 values at that revision",
+        "acyclic MGVB dependency DAG",
+        "synthetic closure behavior",
+        "canonical manifest behavior",
+        "offline replay behavior",
+        "lock and geo-import pass artifacts from the failed validate attempt"
+      ],
+      "correction_commit": "07ec3b1a818f2fceed7d1c002f7a22e36fa16bf3",
+      "correction": "Combine the nested context managers in conditional S07 and apply the repository-approved import-order exception to the MGVB test harness.",
+      "verification": {
+        "ci_equivalence_pr": 164,
+        "validate_run_id": 31679895619,
+        "python_3_10": "success: lint+tests+validation_gates",
+        "python_3_12": "success: lint+tests+validation_gates",
+        "dashboard_build": "success",
+        "geo_import_check": "success",
+        "lock": "success",
+        "typecheck": "success",
+        "live_smoke": "skipped_by_pull_request_policy"
+      },
+      "lesson": "When stacked-PR path/base filters suppress the full repository gate, create an exact-tree main-based CI-equivalence PR before promotion; repair only the failed dependency closure and retain unaffected upstream evidence."
+    },
+    {
+      "event_id": "MGVB-E003-AUTHORITATIVE-USDM-RELEASE-CALENDAR",
+      "classification": "authoritative_source_denominator_falsification",
+      "failed_assumption": "three annual USDM GML archives contain one object for every civil-calendar Tuesday in 2014-2016, yielding 156 releases",
+      "first_live_run_id": 31681038001,
+      "first_live_job_id": 94386295701,
+      "symptoms": [
+        "authoritative annual archive union observed 142 issue dates",
+        "14 civil-calendar Tuesdays were absent from annual archive union",
+        "13 missing 2015-Q4 releases exist as authoritative weekly GML ZIPs",
+        "2016-11-01 is absent from the official annual GML archive and the corresponding weekly GML object returns HTTP 404"
+      ],
+      "authoritative_annual_counts": {
+        "2014": 52,
+        "2015": 39,
+        "2016": 51,
+        "union": 142
+      },
+      "root_cause": "The expected denominator was derived from the civil Tuesday calendar rather than the actual USDM GML publication/archive calendar, and the 2015 annual aggregate itself stops after 2015-09-29.",
+      "invalidated": [
+        "S04 annual-only acquisition/closure assumption",
+        "S05 156-release certification contract",
+        "S06 downstream replay certification at the invalidated manifest schema",
+        "all prior claims that the authoritative 2014-2016 GML denominator contains 156 releases"
+      ],
+      "preserved": [
+        "S01 transport abstraction",
+        "S02 immutable content-addressed store",
+        "S03 canonical manifest primitives",
+        "failure-is-not-zero-result policy",
+        "dependency-closure invalidation policy",
+        "USDM epistemic role as composite context only"
+      ],
+      "correction": "Version the freeze manifest to v0.2; bind the actual 155-release GML calendar; acquire three annual archives plus the 13 authoritative 2015-Q4 weekly supplements; explicitly bind 2016-11-01 as a known non-issue rather than fabricating a missing object.",
+      "static_repair_run": {
+        "failed_run_id": 31681564117,
+        "finding": "one stale frozen S05 SHA256; three other MGVB tests passed",
+        "minimal_fix": "update S05 SHA256 and canonical script-census SHA256 only"
+      },
+      "verification": {
+        "live_run_id": 31681792012,
+        "live_job_id": 94388671656,
+        "static_and_synthetic": "4 passed",
+        "annual_objects": 3,
+        "supplemental_weekly_objects": 13,
+        "release_count": 155,
+        "known_non_issue_dates": ["2016-11-01"],
+        "missing": 0,
+        "unexpected": 0,
+        "manifest_sha256": "46ee7c56790f0bb54988d1b151b64e10f8d172d18c2332877c7726b2cf5b6ef9",
+        "artifact_id": 9173764047,
+        "artifact_sha256": "00d6489b783717fa0d73dcd4422a51392e38f87714610d0455a6e460abf38f94",
+        "offline_replay": "replay_pass; network_required=false"
+      },
+      "lesson": "Never infer a source-release denominator from a civil calendar. Bind the source's actual publication/archive universe, distinguish incomplete aggregate archives from absent releases, and preserve explicit non-issue dates instead of manufacturing expected objects."
+    }
+  ]
+}

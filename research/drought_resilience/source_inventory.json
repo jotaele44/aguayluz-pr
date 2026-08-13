@@ -1,0 +1,126 @@
+{
+  "inventory_version": "2026-08-12",
+  "scope": "authoritative drought/resilience source inventory for Puerto Rico",
+  "sources": [
+    {
+      "source_id": "NOAA_NCEI_GHCND",
+      "authority": "NOAA NCEI",
+      "domain": "meteorological",
+      "source_ref": "https://www.ncei.noaa.gov/access/search/data-search/daily-summaries",
+      "access_ref": "https://www.ncei.noaa.gov/access/services/data/v1",
+      "role": "station precipitation and temperature observations; historical denominator",
+      "evidence_tier": "T1",
+      "access_mode": "API/download",
+      "status": "discovered",
+      "notes": "Use station metadata and quality flags; freeze exact query, retrieval UTC, response bytes and SHA256 before episode computation."
+    },
+    {
+      "source_id": "USGS_WATERDATA_DAILY_FIELD",
+      "authority": "U.S. Geological Survey",
+      "domain": "hydrological",
+      "source_ref": "https://api.waterdata.usgs.gov/docs/ogcapi/migration/",
+      "access_ref": "https://api.waterdata.usgs.gov/ogcapi/v0",
+      "role": "daily values and discrete field measurements for streamflow, groundwater and related observations",
+      "evidence_tier": "T1",
+      "access_mode": "OGC API",
+      "status": "discovered",
+      "notes": "Respect parameter semantics: depth-to-water and elevation-above-datum can have opposite concerning directions."
+    },
+    {
+      "source_id": "USGS_PR_SELECTED_RESERVOIRS_2015",
+      "authority": "U.S. Geological Survey",
+      "domain": "hydrological",
+      "source_ref": "https://pr.water.usgs.gov/drought/hydro_conditions_selected_sites.html",
+      "access_ref": "https://pr.water.usgs.gov/drought/hydro_conditions_selected_sites.html",
+      "role": "2015 reservoir-level comparison for Lago Loiza, Lago La Plata and Lago Toa Vaca; includes PRASA operating-level references",
+      "evidence_tier": "T1",
+      "access_mode": "web tool/static graphs",
+      "status": "discovered",
+      "notes": "Do not OCR graph values unless machine-readable source cannot be recovered; prefer underlying USGS station series."
+    },
+    {
+      "source_id": "USDM_ARCHIVE",
+      "authority": "U.S. Drought Monitor",
+      "domain": "multi-class contextual",
+      "source_ref": "https://droughtmonitor.unl.edu/dmdata/DataArchive.aspx?p=gml",
+      "access_ref": "https://droughtmonitor.unl.edu/dmdata/DataArchive.aspx?p=gml",
+      "role": "weekly spatial drought classifications and historical archive",
+      "evidence_tier": "T1",
+      "access_mode": "archive download",
+      "status": "discovered",
+      "notes": "USDM class is a composite product; preserve it as its own observation and do not substitute it for independently computed drought classes."
+    },
+    {
+      "source_id": "DRNA_2015_STREAMFLOW_NOTICE",
+      "authority": "Puerto Rico Department of Natural and Environmental Resources",
+      "domain": "hydrological/response",
+      "source_ref": "https://www.drna.pr.gov/noticias/se-reduce-el-flujo-de-agua-en-las-cuencas-que-suplen-principales-embalses/",
+      "access_ref": "https://www.drna.pr.gov/noticias/se-reduce-el-flujo-de-agua-en-las-cuencas-que-suplen-principales-embalses/",
+      "role": "dated 2015 operational statement on inflows and USGS streamflow conditions during rationing",
+      "evidence_tier": "T1",
+      "access_mode": "official notice",
+      "status": "discovered",
+      "notes": "Contains quoted aggregate conditions; underlying station series remain preferred for quantitative reconstruction."
+    },
+    {
+      "source_id": "DRNA_2015_DROUGHT_MONITOR_NOV10",
+      "authority": "Puerto Rico Department of Natural and Environmental Resources",
+      "domain": "hydrological/response",
+      "source_ref": "https://www.drna.pr.gov/noticias/acuiferos-del-sur-muestran-aumentos-en-niveles-excepto-santa-isabel/",
+      "access_ref": "https://www.drna.pr.gov/noticias/acuiferos-del-sur-muestran-aumentos-en-niveles-excepto-santa-isabel/",
+      "role": "dated 2015 statement linking aquifer conditions with weekly drought-monitor percentages",
+      "evidence_tier": "T1",
+      "access_mode": "official notice",
+      "status": "discovered",
+      "notes": "Use as institutional observation and cross-check against USDM archive plus well records."
+    },
+    {
+      "source_id": "DACO_ORDER_2015_03",
+      "authority": "Puerto Rico Department of Consumer Affairs",
+      "domain": "socioeconomic/response",
+      "source_ref": "https://www.daco.pr.gov/orden/orden-de-congelacion-de-precios-2015-03/",
+      "access_ref": "https://www.daco.pr.gov/orden/orden-de-congelacion-de-precios-2015-03/",
+      "role": "official drought-related price-freeze response associated with possible water rationing",
+      "evidence_tier": "T1",
+      "access_mode": "official order",
+      "status": "discovered",
+      "notes": "Bind exact signed/order PDF when freezing."
+    },
+    {
+      "source_id": "DACO_ORDER_2015_12",
+      "authority": "Puerto Rico Department of Consumer Affairs",
+      "domain": "socioeconomic/response",
+      "source_ref": "https://www.daco.pr.gov/orden/orden-2015-12/",
+      "access_ref": "https://www.daco.pr.gov/orden/orden-2015-12/",
+      "role": "official rescission after cessation of the water rationing plan on 2015-10-25",
+      "evidence_tier": "T1",
+      "access_mode": "official order",
+      "status": "discovered",
+      "notes": "Use to bound a response intervention, not the meteorological or hydrological drought interval."
+    },
+    {
+      "source_id": "USGS_WATER_USE_2015",
+      "authority": "U.S. Geological Survey",
+      "domain": "socioeconomic/demand",
+      "source_ref": "https://pubs.usgs.gov/publication/ofr20211060",
+      "access_ref": "https://www.usgs.gov/data/spatial-and-tabular-datasets-water-withdrawals-and-use-puerto-rico-2015",
+      "role": "2015 withdrawals/use by source and category; annual demand context",
+      "evidence_tier": "T1",
+      "access_mode": "report + data release",
+      "status": "discovered",
+      "notes": "Annual estimates cannot establish daily shortage timing; use only at matching temporal granularity."
+    },
+    {
+      "source_id": "USGS_PR_DROUGHT_SYNTHESIS",
+      "authority": "U.S. Geological Survey",
+      "domain": "methodology/context",
+      "source_ref": "https://www.usgs.gov/centers/caribbean-florida-water-science-center-%28cfwsc%29/science/drought-conditions-puerto-rico",
+      "access_ref": "https://www.usgs.gov/centers/caribbean-florida-water-science-center-%28cfwsc%29/science/drought-conditions-puerto-rico",
+      "role": "Puerto Rico-specific drought taxonomy, historical context, SPI/PDI discussion and reservoir-storage context",
+      "evidence_tier": "T1",
+      "access_mode": "official synthesis",
+      "status": "discovered",
+      "notes": "Methodology/context source; do not substitute narrative figures for frozen raw observations when raw series exist."
+    }
+  ]
+}
