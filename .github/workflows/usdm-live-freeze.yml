@@ -16,40 +16,93 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: '3.12'
-      - name: Execute certified USDM MGVB
+      - name: Freeze authoritative annual bytes and diagnose closure
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p _usdm_live
+          mkdir -p _usdm_live/raw/annual _usdm_live/raw/supplemental
           python - <<'PY'
+          import hashlib
           import json
+          import shutil
+          import urllib.request
           from pathlib import Path
-          from research.drought_resilience.mgvb.usdm_freeze import freeze
-          from research.drought_resilience.mgvb.certify_usdm import certify
-          from research.drought_resilience.mgvb.replay_freeze import replay
+          from research.drought_resilience.mgvb.usdm_freeze import archive_dates, expected_issue_dates
 
-          root = Path('_usdm_live/evidence').resolve()
-          manifest, manifest_sha = freeze(root)
-          certification = certify(manifest)
-          replay_result = replay(manifest, manifest_sha)
+          root = Path('_usdm_live')
+          annual_dir = root / 'raw' / 'annual'
+          supplemental_dir = root / 'raw' / 'supplemental'
+          annual = {}
+          observed = set()
+          for year in (2014, 2015, 2016):
+              url = f'https://droughtmonitor.unl.edu/data/gml/{year}_USDM_GML.zip'
+              path = annual_dir / f'{year}_USDM_GML.zip'
+              req = urllib.request.Request(url, headers={'User-Agent':'aguayluz-usdm-mgvb-live-freeze/0.1'})
+              with urllib.request.urlopen(req, timeout=120) as response, path.open('wb') as out:
+                  shutil.copyfileobj(response, out)
+              digest = hashlib.sha256(path.read_bytes()).hexdigest()
+              dates = archive_dates(path)
+              observed.update(dates)
+              annual[str(year)] = {
+                  'url': url,
+                  'bytes': path.stat().st_size,
+                  'sha256': digest,
+                  'date_count': len(dates),
+                  'first_date': min(dates).isoformat() if dates else None,
+                  'last_date': max(dates).isoformat() if dates else None,
+              }
+
+          expected = set(expected_issue_dates())
+          missing = sorted(expected - observed)
+          unexpected = sorted(observed - expected)
+          supplemental = []
+          supplement_dates = set()
+          for d in missing:
+              stamp = d.strftime('%Y%m%d')
+              url = f'https://droughtmonitor.unl.edu/data/gml/usdm_{stamp}_gml.zip'
+              path = supplemental_dir / f'usdm_{stamp}_gml.zip'
+              req = urllib.request.Request(url, headers={'User-Agent':'aguayluz-usdm-mgvb-live-freeze/0.1'})
+              with urllib.request.urlopen(req, timeout=120) as response, path.open('wb') as out:
+                  shutil.copyfileobj(response, out)
+              dates = archive_dates(path)
+              supplement_dates.update(dates)
+              supplemental.append({
+                  'date': d.isoformat(),
+                  'url': url,
+                  'bytes': path.stat().st_size,
+                  'sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
+                  'archive_dates': sorted(x.isoformat() for x in dates),
+              })
+
+          combined = observed | supplement_dates
+          final_missing = sorted(expected - combined)
+          final_unexpected = sorted(combined - expected)
           summary = {
-              'manifest': str(manifest),
-              'manifest_sha256': manifest_sha,
-              'certification': certification,
-              'replay': replay_result,
+              'source_family': 'USDM',
+              'annual': annual,
+              'annual_observed_count': len(observed),
+              'annual_missing': [d.isoformat() for d in missing],
+              'annual_unexpected': [d.isoformat() for d in unexpected],
+              'supplemental': supplemental,
+              'combined_observed_count': len(combined),
+              'combined_missing': [d.isoformat() for d in final_missing],
+              'combined_unexpected': [d.isoformat() for d in final_unexpected],
+              'expected_count': 156,
+              'first_expected': min(expected).isoformat(),
+              'last_expected': max(expected).isoformat(),
           }
-          Path('_usdm_live/result.json').write_text(
-              json.dumps(summary, indent=2, sort_keys=True) + '\n',
-              encoding='utf-8',
-          )
+          (root / 'diagnostic.json').write_text(json.dumps(summary, indent=2, sort_keys=True) + '\n', encoding='utf-8')
           print(json.dumps(summary, sort_keys=True))
+          if len(combined) != 156 or final_missing or final_unexpected:
+              raise SystemExit('authoritative annual+supplemental weekly closure failed')
           PY
-          find _usdm_live -type f -print0 | sort -z | xargs -0 sha256sum > _usdm_live/SHA256SUMS.txt
-          cat _usdm_live/result.json
+          find _usdm_live -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > _usdm_live/SHA256SUMS.txt
+          cat _usdm_live/diagnostic.json
       - name: Upload frozen evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: usdm-2014-2016-live-freeze
+          name: usdm-2014-2016-authoritative-diagnostic
           path: _usdm_live/
           if-no-files-found: error
           retention-days: 30
