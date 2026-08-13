@@ -1,0 +1,64 @@
+name: Drought S07 live freeze
+on:
+  push:
+    branches: [ci/drought-s07-live-freeze]
+permissions:
+  contents: read
+jobs:
+  freeze:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Static S07 closure
+        run: |
+          set -euo pipefail
+          python -m pip install pytest
+          python -m py_compile research/drought_resilience/freeze_denominators.py
+          python -m pytest -q tests/test_drought_s07.py tests/test_drought_mgvb.py
+      - name: Execute authoritative S07 freeze
+        run: |
+          set -euo pipefail
+          python research/drought_resilience/freeze_denominators.py --output _s07_live/evidence | tee _s07_live_run.txt
+          python - <<'PY'
+          import json, hashlib
+          from pathlib import Path
+          root=Path('_s07_live/evidence')
+          manifest=root/'manifests/s07_ncei_usgs_2014_2016.json'
+          doc=json.loads(manifest.read_text())
+          summary={
+            'manifest_sha256': hashlib.sha256(manifest.read_bytes()).hexdigest(),
+            'object_count': len(doc['objects']),
+            'replay': doc['replay'],
+            'ncei': {
+              'master_station_count': doc['ncei']['master_station_count'],
+              'prcp_overlap_station_count': doc['ncei']['prcp_overlap_station_count'],
+            },
+            'usgs': {
+              'time_series_metadata_feature_count': doc['usgs']['time_series_metadata_feature_count'],
+              'overlapping_time_series_count': doc['usgs']['overlapping_time_series_count'],
+              'daily_observation_count': doc['usgs']['daily_observation_count'],
+              'field_measurement_count': doc['usgs']['field_measurement_count'],
+              'field_measurement_metadata_count': doc['usgs']['field_measurement_metadata_count'],
+              's08_activation_ready': doc['usgs']['s08_activation_ready'],
+              's08_block_reason': doc['usgs']['s08_block_reason'],
+            },
+            'certification': doc['certification'],
+          }
+          Path('_s07_live/result.json').write_text(json.dumps(summary, indent=2, sort_keys=True)+'\n')
+          print(json.dumps(summary, sort_keys=True))
+          PY
+          find _s07_live -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > _s07_live/SHA256SUMS.txt
+      - name: Upload S07 evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: drought-s07-ncei-usgs-2014-2016
+          path: |
+            _s07_live/
+            _s07_live_run.txt
+          if-no-files-found: warn
+          retention-days: 30
