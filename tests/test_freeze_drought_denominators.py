@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.freeze_drought_denominators import (
+from research.drought_resilience.freeze_denominators import (
     assert_usdm_archive_closure,
     build_usgs_request_plan,
     expected_usdm_issue_dates,
@@ -69,7 +69,10 @@ def test_ncei_inventory_requires_prcp_and_window_overlap():
 def _write_usdm_zip(path: Path, dates: list[date]) -> None:
     with zipfile.ZipFile(path, "w") as archive:
         for item in dates:
-            archive.writestr(f"USDM_{item.strftime('%Y%m%d')}_M/USDM_{item.strftime('%Y%m%d')}.gml", "<gml/>")
+            archive.writestr(
+                f"USDM_{item.strftime('%Y%m%d')}_M/USDM_{item.strftime('%Y%m%d')}.gml",
+                "<gml/>",
+            )
 
 
 def test_usdm_archive_closure_accepts_complete_partition(tmp_path: Path):
@@ -107,5 +110,10 @@ def test_usgs_plan_is_query_identity_not_certified_observations():
     }
     assert all(item["certification"] == "query_identity_only" for item in plan)
     assert all("bbox=-67.95,17.7,-65.2,18.7" in item["url"] for item in plan)
-    observation_requests = [item for item in plan if item["collection"] != "time-series-metadata"]
-    assert all("2014-01-01" in item["url"] and "2016-12-31" in item["url"] for item in observation_requests)
+    observation_requests = [
+        item for item in plan if item["collection"] != "time-series-metadata"
+    ]
+    assert all(
+        "2014-01-01" in item["url"] and "2016-12-31" in item["url"]
+        for item in observation_requests
+    )
