@@ -17,12 +17,12 @@ jobs:
         run: |
           set -euo pipefail
           python -m pip install pytest
-          python -m py_compile research/drought_resilience/freeze_denominators.py
+          python -m py_compile research/drought_resilience/freeze_denominators.py research/drought_resilience/freeze_denominators_v03.py
           python -m pytest -q tests/test_drought_s07.py tests/test_drought_mgvb.py
       - name: Execute authoritative S07 freeze
         run: |
           set -euo pipefail
-          python research/drought_resilience/freeze_denominators.py --output _s07_live/evidence | tee _s07_live_run.txt
+          python research/drought_resilience/freeze_denominators_v03.py --output _s07_live/evidence | tee _s07_live_run.txt
           python - <<'PY'
           import json, hashlib
           from pathlib import Path
@@ -40,6 +40,7 @@ jobs:
             'usgs': {
               'time_series_metadata_feature_count': doc['usgs']['time_series_metadata_feature_count'],
               'overlapping_time_series_count': doc['usgs']['overlapping_time_series_count'],
+              'daily_time_series_count': doc['usgs']['daily_time_series_count'],
               'daily_observation_count': doc['usgs']['daily_observation_count'],
               'field_measurement_count': doc['usgs']['field_measurement_count'],
               'field_measurement_metadata_count': doc['usgs']['field_measurement_metadata_count'],
