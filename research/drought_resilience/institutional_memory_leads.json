@@ -27,24 +27,29 @@
       "epistemic_use": "Certifies committee existence and advisory function only; does not establish institutional-memory completeness."
     },
     {
-      "record_id": "DRNA_2015_10_29_SOUTH_AQUIFER_SENTINEL_METHOD",
+      "record_id": "DRNA_2015_SOUTH_AQUIFER_SENTINEL_METHOD",
       "authority": "Puerto Rico Department of Natural and Environmental Resources",
-      "source_ref": "https://www.drna.pr.gov/noticias/acuiferos-de-sur-registran-mejoria-en-niveles/",
-      "published_date": "2015-10-29",
-      "classification": "primary_official_notice",
+      "source_refs": [
+        "https://www.drna.pr.gov/noticias/continuan-en-descenso-los-niveles-de-los-acuiferos-del-sur/",
+        "https://www.drna.pr.gov/noticias/continuan-en-descenso-los-niveles-del-acuifero-de-salinas-2/",
+        "https://www.drna.pr.gov/noticias/acuiferos-del-sur-registran-aumentos-en-niveles/"
+      ],
+      "classification": "primary_official_notice_series",
       "certified_facts": [
         "DRNA described a monitoring metric based on four USGS-operated sentinel wells for southern aquifers.",
+        "The four sentinel observation points are Aguirre in Salinas, Constancia in Ponce, Jac-6 in Juana Diaz, and Alomar Oeste in Santa Isabel.",
         "The public-facing condition scale comprised optimal, observation, controls-and-adjustments, and critical states.",
-        "The notice treated aquifer conditions separately from reservoir conditions."
+        "DRNA treated aquifer conditions separately from reservoir conditions.",
+        "Published weekly examples report depth below land surface, so parameter direction must be preserved when binding the USGS series."
       ],
       "not_certified": [
-        "identities of all four sentinel wells from this notice alone",
+        "USGS site numbers for all four sentinel points",
         "numeric threshold for each condition state",
         "effective date of each threshold",
         "revision history of the scale",
         "mapping between USGS parameter codes and each threshold"
       ],
-      "epistemic_use": "Primary lead for recovering official groundwater operating thresholds; no threshold may be inferred from the category labels alone."
+      "epistemic_use": "Certifies sentinel identities and qualitative operating-state vocabulary; numeric thresholds and USGS parameter/site bindings remain unresolved and may not be inferred from example readings alone."
     }
   ]
 }
