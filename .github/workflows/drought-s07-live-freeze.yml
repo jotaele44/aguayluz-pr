@@ -22,7 +22,7 @@ jobs:
       - name: Execute authoritative S07 freeze
         run: |
           set -euo pipefail
-          python research/drought_resilience/freeze_denominators_v03.py --output _s07_live/evidence | tee _s07_live_run.txt
+          python -m research.drought_resilience.freeze_denominators_v03 --output _s07_live/evidence | tee _s07_live_run.txt
           python - <<'PY'
           import json, hashlib
           from pathlib import Path
