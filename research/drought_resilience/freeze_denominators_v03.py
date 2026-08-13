@@ -3,17 +3,60 @@
 
 Supersedes the v0.2 monolithic /daily bbox query that authoritative runtime
 rejected with HTTP 400. NCEI and USGS metadata contracts are preserved; daily
-observations are fetched by metadata-bound Daily time_series_id.
+observations are fetched by metadata-bound Daily time_series_id. HTTP 429 is
+handled by deterministic pacing plus bounded Retry-After/backoff; no partial
+response set is promoted.
 """
 from __future__ import annotations
 
 import argparse
+import time
+import urllib.error
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from research.drought_resilience import freeze_denominators as base
+
+_ORIGINAL_FETCH_BYTES = base.fetch_bytes
+_LAST_REQUEST_STARTED = 0.0
+MIN_REQUEST_INTERVAL_SECONDS = 1.25
+MAX_429_RETRIES = 8
+
+
+def _paced_fetch_bytes(
+    root: Path,
+    source_id: str,
+    url: str,
+    role: str,
+    timeout: int = 180,
+) -> tuple[base.FrozenObject, bytes]:
+    """Preserve exact acquisition while respecting authoritative API rate limits."""
+    global _LAST_REQUEST_STARTED
+    for attempt in range(MAX_429_RETRIES + 1):
+        elapsed = time.monotonic() - _LAST_REQUEST_STARTED
+        if elapsed < MIN_REQUEST_INTERVAL_SECONDS:
+            time.sleep(MIN_REQUEST_INTERVAL_SECONDS - elapsed)
+        _LAST_REQUEST_STARTED = time.monotonic()
+        try:
+            return _ORIGINAL_FETCH_BYTES(root, source_id, url, role, timeout)
+        except urllib.error.HTTPError as exc:
+            if exc.code != 429 or attempt >= MAX_429_RETRIES:
+                raise
+            retry_after = exc.headers.get("Retry-After") if exc.headers else None
+            try:
+                server_wait = float(retry_after) if retry_after else 0.0
+            except ValueError:
+                server_wait = 0.0
+            backoff = min(60.0, 5.0 * (2**attempt))
+            time.sleep(max(server_wait, backoff))
+    raise AssertionError("unreachable rate-control loop")
+
+
+# All helpers in the base S07 module route through base.fetch_bytes.
+# Override only for this v0.3 execution; S01-S06 and the base source file remain unchanged.
+base.fetch_bytes = _paced_fetch_bytes
 
 
 def freeze_usgs(root: Path) -> dict[str, Any]:
