@@ -86,9 +86,9 @@ def _write_authoritative_shape_archives(root: Path) -> None:
 def test_authoritative_issue_calendar_excludes_known_2016_non_issue():
     issues = expected_issue_dates()
     assert len(issues) == 155
-    assert KNOWN_NON_ISSUE_DATES == {
+    assert {
         date(2016, 11, 1): "absent_from_official_gml_archive_and_weekly_object_returns_404"
-    }
+    } == KNOWN_NON_ISSUE_DATES
     assert date(2016, 11, 1) not in issues
 
 
