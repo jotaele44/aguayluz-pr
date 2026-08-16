@@ -133,7 +133,7 @@ def test_lifecycle_measurement_and_entity_roles_are_separate_sidecars() -> None:
     assert owner["entity_ref"] != operator["entity_ref"]
 
 
-def test_legacy_projection_is_read_only_and_refuses_untyped_site() -> None:
+def test_legacy_projection_is_read_only_fail_closed_and_schema_compatible_when_ready() -> None:
     module = runpy.run_path(str(_ONTOLOGY / "tools" / "project_legacy_compat.py"))
     project_object = module["project_object"]
     registry = json.loads((_ONTOLOGY / "infrastructure_terms.v0.1.json").read_text(encoding="utf-8"))
@@ -145,15 +145,38 @@ def test_legacy_projection_is_read_only_and_refuses_untyped_site() -> None:
 
     legacy_path = _REPO / "data" / "utility_assets.jsonl"
     before = _sha256(legacy_path)
-    projection = project_object(asset, registry, rules)
+
+    blocked = project_object(asset, registry, rules)
+    _validate("infrastructure_legacy_projection.schema.json", blocked)
+    assert blocked["projection_state"] == "BLOCKED_MISSING_CONTEXT"
+    assert blocked["legacy_record"] is None
+
+    context = {
+        "operator": "FIXTURE_ONLY",
+        "municipality": "Trujillo Alto",
+        "lat": 18.3,
+        "lon": -66.0,
+        "geometry_type": "point",
+        "status": "unknown",
+        "source_ref": "FIXTURE_ONLY",
+        "source_hash": None,
+        "evidence_tier": "T4",
+        "confidence": 0,
+        "review_status": "needs_review",
+    }
+    ready = project_object(asset, registry, rules, context)
     after = _sha256(legacy_path)
 
-    _validate("infrastructure_legacy_projection.schema.json", projection)
-    assert projection["legacy_asset_type"] == "wastewater"
-    assert projection["legacy_asset_subtype"] == "pump_station"
-    assert projection["compatibility_only"] is True
-    assert projection["identity_effect"] == "none"
+    _validate("infrastructure_legacy_projection.schema.json", ready)
+    assert ready["projection_state"] == "READY"
+    assert ready["canonical_term_id"] == "AYL_TERM_SANITARY_SEWER_PUMP_STATION"
+    assert ready["rules_version"] == rules["schema_version"]
+    assert ready["legacy_record"]["asset_type"] == "wastewater"
+    assert ready["legacy_record"]["asset_subtype"] == "pump_station"
+    assert ready["compatibility_only"] is True
+    assert ready["identity_effect"] == "none"
+    _validate("utility_asset.schema.json", ready["legacy_record"])
     assert before == after
 
     with pytest.raises(ValueError, match="canonically untyped"):
-        project_object(site, registry, rules)
+        project_object(site, registry, rules, context)
