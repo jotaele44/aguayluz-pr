@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/infrastructure_entity_role.schema.json",
+  "title": "InfrastructureEntityRole",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["role_id", "object_id", "entity_ref", "role", "source_assertion_ids", "identity_effect", "certification_state"],
+  "properties": {
+    "role_id": {"type": "string", "pattern": "^AYL_ROLE_[A-Z0-9_]+$"},
+    "object_id": {"type": "string", "minLength": 1},
+    "entity_ref": {"type": "string", "minLength": 1},
+    "role": {"enum": ["OWNER", "OPERATOR", "MAINTAINER", "REGULATOR", "CONTRACTOR"]},
+    "valid_from": {"type": ["string", "null"], "format": "date-time"},
+    "valid_to": {"type": ["string", "null"], "format": "date-time"},
+    "source_assertion_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
+    "identity_effect": {"const": "none"},
+    "certification_state": {"enum": ["PASS", "FAIL", "OPEN", "BLOCKED", "PROVISIONAL", "AUDIT_ONLY", "NONCANONICAL", "CANDIDATE_NOT_IDENTITY", "UNRESOLVED", "SUPERSEDED"]},
+    "notes": {"type": ["string", "null"]}
+  }
+}
