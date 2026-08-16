@@ -16,7 +16,13 @@
   ],
   "properties": {
     "object_id": {"type":"string","minLength":1},
-    "canonical_term_id": {"type":"string","pattern":"^AYL_TERM_[A-Z0-9_]+$"},
+    "canonical_term_id": {
+      "oneOf":[
+        {"type":"string","pattern":"^AYL_TERM_[A-Z0-9_]+$"},
+        {"type":"null"}
+      ],
+      "description":"Null is permitted when an independently tracked site/object has not yet earned a canonical physical type."
+    },
     "feature_kind": {
       "enum":["site","asset","component","linear_asset","area_feature","network_node","network_edge","observation_point","service_geography","administrative_geography","event"]
     },
