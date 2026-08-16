@@ -6,7 +6,7 @@ import runpy
 from pathlib import Path
 
 import pytest
-from jsonschema import Draft202012Validator
+from jsonschema import Draft202012Validator, ValidationError
 
 _REPO = Path(__file__).resolve().parents[1]
 _SCHEMAS = _REPO / "schemas"
@@ -59,7 +59,7 @@ def test_geometry_manifestation_is_versioned_and_identity_neutral() -> None:
     }
     _validate("infrastructure_geometry.schema.json", record)
     bad = {**record, "identity_effect": "establishes_identity"}
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         _validate("infrastructure_geometry.schema.json", bad)
 
 
@@ -119,7 +119,12 @@ def test_lifecycle_measurement_and_entity_roles_are_separate_sidecars() -> None:
         "certification_state": "NONCANONICAL",
         "notes": None,
     }
-    operator = {**owner, "role_id": "AYL_ROLE_FIXTURE_OPERATOR_001", "entity_ref": "AYL_FIX_ENTITY_OPERATOR", "role": "OPERATOR"}
+    operator = {
+        **owner,
+        "role_id": "AYL_ROLE_FIXTURE_OPERATOR_001",
+        "entity_ref": "AYL_FIX_ENTITY_OPERATOR",
+        "role": "OPERATOR",
+    }
 
     _validate("infrastructure_lifecycle_event.schema.json", lifecycle)
     _validate("infrastructure_measurement.schema.json", measurement)
@@ -133,7 +138,9 @@ def test_legacy_projection_is_read_only_and_refuses_untyped_site() -> None:
     project_object = module["project_object"]
     registry = json.loads((_ONTOLOGY / "infrastructure_terms.v0.1.json").read_text(encoding="utf-8"))
     rules = json.loads((_ONTOLOGY / "legacy_projection_rules.v0.1.json").read_text(encoding="utf-8"))
-    fixture = json.loads((_REPO / "tests" / "fixtures" / "ebas_vertical_slice.json").read_text(encoding="utf-8"))
+    fixture = json.loads(
+        (_REPO / "tests" / "fixtures" / "ebas_vertical_slice.json").read_text(encoding="utf-8")
+    )
     site, asset, _component = fixture["objects"]
 
     legacy_path = _REPO / "data" / "utility_assets.jsonl"
