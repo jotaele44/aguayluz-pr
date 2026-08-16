@@ -24,6 +24,9 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+
       - name: Run ontology regression tests
         run: python -m pytest -q tests/test_infrastructure_ontology.py
 
