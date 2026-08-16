@@ -1,0 +1,51 @@
+{
+  "schema_version": "aguayluz.infrastructure-source-aware-crosswalk/v0.1",
+  "overlay_version": "0.1.0",
+  "base_ontology_version": "0.1.0",
+  "scope": "Exact legacy type/subtype pairs whose source family provides independent classification support beyond the raw label alone. This overlay classifies type only and never establishes physical identity.",
+  "invariants": [
+    "source_family_supports_classification_not_identity",
+    "exact_pair_only",
+    "no_nearest_type_inference",
+    "no_name_only_identity",
+    "unlisted_pairs_remain_unresolved"
+  ],
+  "mappings": [
+    {
+      "legacy_asset_type": "wastewater",
+      "legacy_asset_subtype": "wastewater_treatment",
+      "state": "provisional",
+      "canonical_term_id": "AYL_TERM_WASTEWATER_TREATMENT_PLANT",
+      "source_family": "PR_Geodata/wastewater_plant.geojson (OSM)",
+      "evidence_basis": "Source layer is explicitly wastewater_plant; classification is source-layer-supported but source row identity remains independent.",
+      "expected_current_rows": 95
+    },
+    {
+      "legacy_asset_type": "water",
+      "legacy_asset_subtype": "stream_gage",
+      "state": "provisional",
+      "canonical_term_id": "AYL_TERM_SURFACE_WATER_GAGE",
+      "source_family": "USGS NWIS Site Service",
+      "evidence_basis": "USGS NWIS site-service records are monitoring locations; current legacy subtype stream_gage is source-family-consistent.",
+      "expected_current_rows": 1085
+    },
+    {
+      "legacy_asset_type": "water",
+      "legacy_asset_subtype": "treatment",
+      "state": "provisional",
+      "canonical_term_id": "AYL_TERM_WATER_TREATMENT_PLANT",
+      "source_family": "PR_Geodata/water_treatment_plant.geojson (OSM)",
+      "evidence_basis": "Source layer explicitly denotes water_treatment_plant; classification is source-layer-supported but remains provisional.",
+      "expected_current_rows": 4
+    },
+    {
+      "legacy_asset_type": "power",
+      "legacy_asset_subtype": "Generation (Water)",
+      "state": "provisional",
+      "canonical_term_id": "AYL_TERM_HYDROELECTRIC_GENERATOR",
+      "source_family": "EIA Form 860",
+      "evidence_basis": "EIA generation technology/fuel classification supports hydroelectric generation class; generator/site identity is not inferred from class alone.",
+      "expected_current_rows": 5
+    }
+  ]
+}
