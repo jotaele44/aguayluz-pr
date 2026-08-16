@@ -36,7 +36,8 @@ jobs:
             tests/test_infrastructure_source_aware.py \
             tests/test_infrastructure_source_assertions.py \
             tests/test_ebas_vertical_slice.py \
-            tests/test_infrastructure_v7_v10.py
+            tests/test_infrastructure_v7_v10.py \
+            tests/test_infrastructure_sidecar_invariants.py
 
       - name: Generate frozen baseline vocabulary audit
         run: |
