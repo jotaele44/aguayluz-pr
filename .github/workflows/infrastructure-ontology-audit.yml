@@ -6,6 +6,7 @@ on:
       - "ontology/**"
       - "schemas/infrastructure_*.schema.json"
       - "tests/test_infrastructure_*.py"
+      - "tests/test_ebas_vertical_slice.py"
       - "tests/fixtures/ebas_vertical_slice.json"
       - ".github/workflows/infrastructure-ontology-audit.yml"
   workflow_dispatch:
@@ -34,7 +35,7 @@ jobs:
             tests/test_infrastructure_ontology.py \
             tests/test_infrastructure_source_aware.py \
             tests/test_infrastructure_source_assertions.py \
-            tests/test_infrastructure_object_model.py \
+            tests/test_ebas_vertical_slice.py \
             tests/test_infrastructure_v7_v10.py
 
       - name: Generate frozen baseline vocabulary audit
