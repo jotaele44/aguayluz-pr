@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/infrastructure_object.schema.json",
+  "title": "InfrastructureObject",
+  "description": "Canonical-or-candidate infrastructure object separated from raw source manifestations.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "object_id",
+    "canonical_term_id",
+    "feature_kind",
+    "identity_state",
+    "source_assertion_ids",
+    "classification_decision_ids",
+    "review_status"
+  ],
+  "properties": {
+    "object_id": {"type":"string","minLength":1},
+    "canonical_term_id": {"type":"string","pattern":"^AYL_TERM_[A-Z0-9_]+$"},
+    "feature_kind": {
+      "enum":["site","asset","component","linear_asset","area_feature","network_node","network_edge","observation_point","service_geography","administrative_geography","event"]
+    },
+    "identity_state": {
+      "enum":["certified","provisional","candidate_not_identity","unresolved","noncanonical_fixture"]
+    },
+    "public_label": {"type":["string","null"]},
+    "site_id": {"type":["string","null"]},
+    "parent_object_id": {"type":["string","null"]},
+    "municipality": {"type":["string","null"]},
+    "geometry_ref": {"type":["string","null"]},
+    "lifecycle_status": {"type":["string","null"]},
+    "source_assertion_ids": {"type":"array","uniqueItems":true,"items":{"type":"string"}},
+    "classification_decision_ids": {"type":"array","uniqueItems":true,"items":{"type":"string"}},
+    "confidence": {"type":["integer","null"],"minimum":0,"maximum":100},
+    "review_status": {"enum":["accepted","needs_review","blocked","rejected","fixture_only"]},
+    "notes": {"type":["string","null"]}
+  }
+}
