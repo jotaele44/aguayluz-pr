@@ -6,7 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY_PATH = ROOT / "ontology" / "infrastructure_terms.v0.1.json"
-AUDIT_PATH = ROOT / "scripts" / "audit_infrastructure_vocabulary.py"
+AUDIT_PATH = ROOT / "ontology" / "tools" / "audit_infrastructure_vocabulary.py"
 
 
 def load_audit_module():
