@@ -1,0 +1,76 @@
+name: Infrastructure ontology audit
+
+on:
+  pull_request:
+    paths:
+      - "ontology/**"
+      - "schemas/infrastructure_classification.schema.json"
+      - "tests/test_infrastructure_ontology.py"
+      - ".github/workflows/infrastructure-ontology-audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ontology-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run ontology regression tests
+        run: python -m pytest -q tests/test_infrastructure_ontology.py
+
+      - name: Generate bounded vocabulary audit
+        run: |
+          mkdir -p reports
+          python ontology/tools/audit_infrastructure_vocabulary.py \
+            --assets data/utility_assets.jsonl \
+            --registry ontology/infrastructure_terms.v0.1.json \
+            --report reports/infrastructure_vocabulary_audit.json \
+            --decisions reports/infrastructure_classification_decisions.jsonl
+
+      - name: Freeze audit artifact hashes
+        run: |
+          sha256sum \
+            ontology/infrastructure_terms.v0.1.json \
+            schemas/infrastructure_classification.schema.json \
+            data/utility_assets.jsonl \
+            reports/infrastructure_vocabulary_audit.json \
+            reports/infrastructure_classification_decisions.jsonl \
+            > reports/infrastructure_ontology_SHA256SUMS.txt
+
+      - name: Assert arithmetic closure
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("reports/infrastructure_vocabulary_audit.json").read_text())
+          assert report["arithmetic"]["pass"] is True, report["arithmetic"]
+          assert report["arithmetic"]["source_rows"] == report["summary"]["row_count"]
+          assert sum(x["count"] for x in report["summary"]["raw_pairs"]) == report["summary"]["row_count"]
+          assert report["universal_exhaustion_claimed"] is False
+          print(json.dumps({
+              "source_rows": report["arithmetic"]["source_rows"],
+              "unique_raw_pairs": report["summary"]["unique_raw_pairs"],
+              "state_counts": report["summary"]["state_counts"],
+              "certification_state": report["certification_state"],
+          }, sort_keys=True))
+          PY
+
+      - name: Upload audit artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: infrastructure-ontology-audit
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            reports/infrastructure_vocabulary_audit.json
+            reports/infrastructure_classification_decisions.jsonl
+            reports/infrastructure_ontology_SHA256SUMS.txt
