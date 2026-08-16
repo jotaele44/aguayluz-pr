@@ -66,9 +66,14 @@ def validate_object_graph(objects: list[dict[str, Any]], relations: list[dict[st
             raise ValueError(f"duplicate semantic relation: {signature}")
         seen_edges.add(signature)
 
-        if relation["relation_type"] == "component_of":
-            if by_id[from_id]["feature_kind"] != "component" or by_id[to_id]["feature_kind"] != "asset":
-                raise ValueError("component_of requires component -> asset")
+        if (
+            relation["relation_type"] == "component_of"
+            and (
+                by_id[from_id]["feature_kind"] != "component"
+                or by_id[to_id]["feature_kind"] != "asset"
+            )
+        ):
+            raise ValueError("component_of requires component -> asset")
         if relation["relation_type"] == "located_at" and by_id[to_id]["feature_kind"] != "site":
             raise ValueError("located_at target must be a site")
 
