@@ -141,6 +141,19 @@ def test_audit_arithmetic_closes_on_mixed_fixture(tmp_path: Path):
     assert report["certification_state"] == "provisional"
 
 
+def test_current_legacy_asset_snapshot_audits_without_row_loss():
+    assets = ROOT / "data" / "utility_assets.jsonl"
+    assert assets.is_file()
+    audit = load_audit_module()
+    report, decisions = audit.build_report(assets, REGISTRY_PATH)
+    assert report["arithmetic"]["pass"] is True
+    assert report["arithmetic"]["source_rows"] == len(decisions)
+    assert report["summary"]["row_count"] == len(decisions)
+    assert sum(pair["count"] for pair in report["summary"]["raw_pairs"]) == len(decisions)
+    assert report["summary"]["unique_raw_pairs"] > 0
+    assert report["universal_exhaustion_claimed"] is False
+
+
 def test_registry_validator_passes():
     audit = load_audit_module()
     result = audit.validate_registry(load_registry())
