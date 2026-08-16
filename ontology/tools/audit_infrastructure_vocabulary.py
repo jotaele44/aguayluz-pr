@@ -13,8 +13,9 @@ import hashlib
 import json
 import unicodedata
 from collections import Counter, defaultdict
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 REPO = Path(__file__).resolve().parents[2]
 DEFAULT_ASSETS = REPO / "data" / "utility_assets.jsonl"
