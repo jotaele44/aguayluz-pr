@@ -6,6 +6,7 @@ on:
       - "ontology/**"
       - "schemas/infrastructure_classification.schema.json"
       - "tests/test_infrastructure_ontology.py"
+      - "tests/test_infrastructure_source_aware.py"
       - ".github/workflows/infrastructure-ontology-audit.yml"
   workflow_dispatch:
 
@@ -28,9 +29,12 @@ jobs:
         run: python -m pip install --disable-pip-version-check pytest
 
       - name: Run ontology regression tests
-        run: python -m pytest -q tests/test_infrastructure_ontology.py
+        run: |
+          python -m pytest -q \
+            tests/test_infrastructure_ontology.py \
+            tests/test_infrastructure_source_aware.py
 
-      - name: Generate bounded vocabulary audit
+      - name: Generate frozen baseline vocabulary audit
         run: |
           mkdir -p reports
           python ontology/tools/audit_infrastructure_vocabulary.py \
@@ -39,31 +43,53 @@ jobs:
             --report reports/infrastructure_vocabulary_audit.json \
             --decisions reports/infrastructure_classification_decisions.jsonl
 
+      - name: Generate source-aware overlay audit
+        run: |
+          python ontology/tools/audit_infrastructure_source_aware.py \
+            --assets data/utility_assets.jsonl \
+            --registry ontology/infrastructure_terms.v0.1.json \
+            --overlay ontology/source_aware_crosswalk.v0.1.json \
+            --report reports/infrastructure_source_aware_audit.json \
+            --decisions reports/infrastructure_source_aware_decisions.jsonl
+
       - name: Freeze audit artifact hashes
         run: |
           sha256sum \
             ontology/infrastructure_terms.v0.1.json \
+            ontology/source_aware_crosswalk.v0.1.json \
             schemas/infrastructure_classification.schema.json \
             data/utility_assets.jsonl \
             reports/infrastructure_vocabulary_audit.json \
             reports/infrastructure_classification_decisions.jsonl \
+            reports/infrastructure_source_aware_audit.json \
+            reports/infrastructure_source_aware_decisions.jsonl \
             > reports/infrastructure_ontology_SHA256SUMS.txt
 
-      - name: Assert arithmetic closure
+      - name: Assert arithmetic closure and monotonic improvement
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
-          report = json.loads(Path("reports/infrastructure_vocabulary_audit.json").read_text())
-          assert report["arithmetic"]["pass"] is True, report["arithmetic"]
-          assert report["arithmetic"]["source_rows"] == report["summary"]["row_count"]
-          assert sum(x["count"] for x in report["summary"]["raw_pairs"]) == report["summary"]["row_count"]
-          assert report["universal_exhaustion_claimed"] is False
+          baseline = json.loads(Path("reports/infrastructure_vocabulary_audit.json").read_text())
+          source_aware = json.loads(Path("reports/infrastructure_source_aware_audit.json").read_text())
+          for report in (baseline, source_aware):
+              assert report["arithmetic"]["pass"] is True, report["arithmetic"]
+              assert report["arithmetic"]["source_rows"] == report["summary"]["row_count"]
+              assert sum(x["count"] for x in report["summary"]["raw_pairs"]) == report["summary"]["row_count"]
+              assert report["universal_exhaustion_claimed"] is False
+          assert source_aware["arithmetic"]["source_rows"] == baseline["arithmetic"]["source_rows"]
+          assert source_aware["arithmetic"]["classified"] > baseline["arithmetic"]["classified"]
+          assert source_aware["arithmetic"]["unresolved"] < baseline["arithmetic"]["unresolved"]
+          assert source_aware["classification_is_identity"] is False
+          assert source_aware["overlay_expected_counts"]["pass"] is True
           print(json.dumps({
-              "source_rows": report["arithmetic"]["source_rows"],
-              "unique_raw_pairs": report["summary"]["unique_raw_pairs"],
-              "state_counts": report["summary"]["state_counts"],
-              "certification_state": report["certification_state"],
+              "source_rows": source_aware["arithmetic"]["source_rows"],
+              "baseline_classified": baseline["arithmetic"]["classified"],
+              "source_aware_classified": source_aware["arithmetic"]["classified"],
+              "baseline_unresolved": baseline["arithmetic"]["unresolved"],
+              "source_aware_unresolved": source_aware["arithmetic"]["unresolved"],
+              "unique_raw_pairs": source_aware["summary"]["unique_raw_pairs"],
+              "certification_state": source_aware["certification_state"],
           }, sort_keys=True))
           PY
 
@@ -76,4 +102,6 @@ jobs:
           path: |
             reports/infrastructure_vocabulary_audit.json
             reports/infrastructure_classification_decisions.jsonl
+            reports/infrastructure_source_aware_audit.json
+            reports/infrastructure_source_aware_decisions.jsonl
             reports/infrastructure_ontology_SHA256SUMS.txt
