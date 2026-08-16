@@ -1,25 +1,42 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/infrastructure_legacy_projection.schema.json",
-  "title": "InfrastructureLegacyProjection",
-  "description": "Read-only compatibility representation derived from the new ontology. It is never a canonical source of truth and never mutates the production legacy ledger.",
+  "title": "InfrastructureLegacyProjectionReceipt",
+  "description": "Read-only projection receipt. A legacy record is emitted only when every required legacy field is available; otherwise projection is explicitly blocked.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["projection_id", "object_id", "legacy_asset_type", "legacy_asset_subtype", "compatibility_only", "source_of_truth", "identity_effect", "certification_state"],
+  "required": ["projection_id", "object_id", "canonical_term_id", "rules_version", "projection_state", "missing_required_fields", "legacy_record", "compatibility_only", "source_of_truth", "identity_effect", "certification_state"],
   "properties": {
     "projection_id": {"type": "string", "pattern": "^AYL_COMPAT_[A-Z0-9_]+$"},
     "object_id": {"type": "string", "minLength": 1},
-    "legacy_asset_type": {"enum": ["water", "wastewater", "power", "telecom", "fuel", "unknown"]},
-    "legacy_asset_subtype": {"type": ["string", "null"]},
-    "legacy_name": {"type": ["string", "null"]},
-    "legacy_operator": {"type": ["string", "null"]},
-    "legacy_lat": {"type": ["number", "null"], "minimum": 17.5, "maximum": 18.7},
-    "legacy_lon": {"type": ["number", "null"], "minimum": -67.4, "maximum": -65.1},
-    "legacy_status": {"type": ["string", "null"]},
+    "canonical_term_id": {"type": "string", "pattern": "^AYL_TERM_[A-Z0-9_]+$"},
+    "rules_version": {"type": "string", "minLength": 1},
+    "projection_state": {"enum": ["READY", "BLOCKED_MISSING_CONTEXT", "BLOCKED_UNMAPPED_SUBTYPE"]},
+    "missing_required_fields": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "legacy_record": {"type": ["object", "null"]},
     "compatibility_only": {"const": true},
     "source_of_truth": {"const": "canonical_infrastructure_model"},
     "identity_effect": {"const": "none"},
     "certification_state": {"enum": ["PASS", "FAIL", "OPEN", "BLOCKED", "PROVISIONAL", "AUDIT_ONLY", "NONCANONICAL", "CANDIDATE_NOT_IDENTITY", "UNRESOLVED", "SUPERSEDED"]},
     "notes": {"type": ["string", "null"]}
-  }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"projection_state": {"const": "READY"}}},
+      "then": {
+        "properties": {
+          "missing_required_fields": {"maxItems": 0},
+          "legacy_record": {"type": "object"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"projection_state": {"enum": ["BLOCKED_MISSING_CONTEXT", "BLOCKED_UNMAPPED_SUBTYPE"]}}},
+      "then": {
+        "properties": {
+          "legacy_record": {"type": "null"}
+        }
+      }
+    }
+  ]
 }
