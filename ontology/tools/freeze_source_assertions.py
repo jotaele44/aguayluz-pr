@@ -81,7 +81,7 @@ def parse_rows(
         if len(values) != len(headers):
             width_mismatches.append(row_index)
             continue
-        raw_fields = dict(zip(headers, values))
+        raw_fields = dict(zip(headers, values, strict=True))
         assertions.append(
             {
                 "assertion_id": assertion_id(source_sha256, row_index, raw_fields),
