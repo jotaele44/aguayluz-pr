@@ -111,13 +111,13 @@ installs dependencies, later runs work offline):
 
 ## Bounded real-data partial export
 
-`scripts/build_real_data_partial_export.py` builds a small deterministic package
-from committed real/public-derived data without network access or credentials.
-The package is explicitly marked `PRODUCTION_REAL_DATA_PARTIAL`; it is not a
-Puerto Rico-wide completeness claim.
+`tools/build_real_data_partial_export.py` is an internal verification/export tool
+that builds a small deterministic package from committed real/public-derived data
+without network access or credentials. The package is explicitly marked
+`PRODUCTION_REAL_DATA_PARTIAL`; it is not a Puerto Rico-wide completeness claim.
 
 ```bash
-python scripts/build_real_data_partial_export.py \
+python tools/build_real_data_partial_export.py \
   --generated-at 2026-08-17T01:15:00Z \
   --out /tmp/aguayluz-real-data-partial
 python -m pytest -q tests/test_real_data_partial_export.py tests/test_schemas.py
