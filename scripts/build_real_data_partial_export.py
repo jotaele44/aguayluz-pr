@@ -15,16 +15,16 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
 
 REPO = Path(__file__).resolve().parent.parent
 OUTAGE_TYPES = {"outage", "restoration", "service_interruption"}
 FUEL_TOKENS = ("diesel", "fuel oil", "oil", "petroleum", "natural gas", "lng", "coal")
-EMPTY_SHA256 = hashlib.sha256(b"").hexdigest()
 
 
 def _sha256_bytes(data: bytes) -> str:
