@@ -1,0 +1,57 @@
+{
+  "schema_version": "aguayluz_continuity_risk_taxonomy_v1",
+  "module_id": "aguayluz-pr",
+  "classes": [
+    {
+      "risk_type": "water_asset_power_dependency_candidate",
+      "from_domain": "power",
+      "to_domain": "water_or_wastewater",
+      "discovery_basis": "Existing EDGE-WP-* spatial-proxy dependency rows.",
+      "identity_semantics": "PROXY_ONLY",
+      "allowed_status": ["candidate", "provisional"],
+      "evidence_required": true,
+      "promotion_requirement": "Independent authoritative feeder/circuit or utility-system binding evidence. Proximity alone can never promote this edge to verified."
+    },
+    {
+      "risk_type": "service_event_affects_asset",
+      "from_domain": "service_event",
+      "to_domain": "utility_asset",
+      "discovery_basis": "Explicit linked_asset_ids supplied by the source-derived event record.",
+      "identity_semantics": "SOURCE_EXPLICIT_OR_REVIEW",
+      "allowed_status": ["candidate", "provisional", "verified", "rejected"],
+      "evidence_required": false,
+      "promotion_requirement": "Verified only when the underlying source explicitly binds the event to the asset or an independently adjudicated stable-ID binding exists."
+    },
+    {
+      "risk_type": "outage_affects_municipio",
+      "from_domain": "outage_event",
+      "to_domain": "municipio",
+      "discovery_basis": "Municipio/affected_area explicitly carried by the source-derived event.",
+      "identity_semantics": "SOURCE_EXPLICIT",
+      "allowed_status": ["provisional", "verified", "rejected"],
+      "evidence_required": false,
+      "promotion_requirement": "Preserve source scope; island-wide events must not be expanded to facility-level attribution."
+    },
+    {
+      "risk_type": "recovery_project_targets_asset",
+      "from_domain": "recovery_project",
+      "to_domain": "utility_asset",
+      "discovery_basis": "Explicit stable asset ID or authoritative project-to-facility binding.",
+      "identity_semantics": "AUTHORITATIVE_BINDING_REQUIRED",
+      "allowed_status": ["candidate", "provisional", "verified", "rejected"],
+      "evidence_required": true,
+      "promotion_requirement": "No name-only or proximity-only project/asset matching."
+    },
+    {
+      "risk_type": "fuel_sensitive_candidate",
+      "from_domain": "fuel_class",
+      "to_domain": "power_asset",
+      "discovery_basis": "Explicit fuel token already preserved in the asset_subtype produced from the public EIA/OSM source layer.",
+      "identity_semantics": "PROXY_ONLY",
+      "allowed_status": ["candidate", "provisional"],
+      "evidence_required": true,
+      "explicit_fuel_tokens": ["diesel", "fuel oil", "oil", "petroleum", "natural gas", "lng", "coal"],
+      "promotion_requirement": "Fuel-tag presence identifies a fuel-sensitive candidate only; it does not prove current fuel supply, stock level, vendor, delivery route, or outage cause."
+    }
+  ]
+}
