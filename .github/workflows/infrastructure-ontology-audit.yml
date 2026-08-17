@@ -58,6 +58,13 @@ jobs:
             --report reports/infrastructure_source_aware_audit.json \
             --decisions reports/infrastructure_source_aware_decisions.jsonl
 
+      - name: Generate recovered-source ledger replay audit
+        run: |
+          python ontology/tools/audit_infrastructure_recovered_replay.py \
+            --source-aware-decisions reports/infrastructure_source_aware_decisions.jsonl \
+            --report reports/infrastructure_recovered_replay_audit.json \
+            --decisions reports/infrastructure_recovered_replay_decisions.jsonl
+
       - name: Freeze audit artifact hashes
         run: |
           sha256sum \
@@ -80,6 +87,8 @@ jobs:
             reports/infrastructure_classification_decisions.jsonl \
             reports/infrastructure_source_aware_audit.json \
             reports/infrastructure_source_aware_decisions.jsonl \
+            reports/infrastructure_recovered_replay_audit.json \
+            reports/infrastructure_recovered_replay_decisions.jsonl \
             > reports/infrastructure_ontology_SHA256SUMS.txt
 
       - name: Assert arithmetic closure and monotonic improvement
@@ -90,6 +99,7 @@ jobs:
           baseline = json.loads(Path("reports/infrastructure_vocabulary_audit.json").read_text())
           source_aware = json.loads(Path("reports/infrastructure_source_aware_audit.json").read_text())
           recovery = json.loads(Path("ontology/recovered_hydro_sources.v0.1.json").read_text())
+          replay = json.loads(Path("reports/infrastructure_recovered_replay_audit.json").read_text())
           for report in (baseline, source_aware):
               assert report["arithmetic"]["pass"] is True, report["arithmetic"]
               assert report["arithmetic"]["source_rows"] == report["summary"]["row_count"]
@@ -101,20 +111,29 @@ jobs:
           assert source_aware["classification_is_identity"] is False
           assert source_aware["overlay_expected_counts"]["pass"] is True
           projection = recovery["bounded_reclassification_projection"]
-          assert projection["projected_classified"] + projection["projected_excluded"] + projection["projected_unresolved"] == projection["starting_source_rows"] == 8475
-          assert projection["physical_asset_count_claimed"] is False
-          assert projection["pr_wide_exhaustion_claimed"] is False
+          assert projection["primary_classified"] + projection["duplicate_derived_manifestations"] + projection["excluded"] + projection["unresolved"] == projection["starting_source_rows"] == 8475
+          assert projection["class_known_source_rows"] == 8245
+          assert replay["arithmetic_pass"] is True
+          assert replay["source_rows"] == 8475
+          assert replay["primary_classified"] == 5058
+          assert replay["duplicate_derived_manifestations"] == 3187
+          assert replay["class_known_source_rows"] == 8245
+          assert replay["excluded"] == 11
+          assert replay["unresolved"] == 219
+          assert replay["identity_effect"] == "none"
+          assert replay["physical_asset_count_claimed"] is False
+          assert replay["pr_wide_exhaustion_claimed"] is False
           print(json.dumps({
-              "source_rows": source_aware["arithmetic"]["source_rows"],
+              "source_rows": replay["source_rows"],
               "baseline_classified": baseline["arithmetic"]["classified"],
               "source_aware_classified": source_aware["arithmetic"]["classified"],
-              "baseline_unresolved": baseline["arithmetic"]["unresolved"],
               "source_aware_unresolved": source_aware["arithmetic"]["unresolved"],
-              "recovery_projected_classified": projection["projected_classified"],
-              "recovery_projected_excluded": projection["projected_excluded"],
-              "recovery_projected_unresolved": projection["projected_unresolved"],
-              "unique_raw_pairs": source_aware["summary"]["unique_raw_pairs"],
-              "certification_state": source_aware["certification_state"],
+              "replay_primary_classified": replay["primary_classified"],
+              "replay_duplicate_derived": replay["duplicate_derived_manifestations"],
+              "replay_class_known": replay["class_known_source_rows"],
+              "replay_excluded": replay["excluded"],
+              "replay_unresolved": replay["unresolved"],
+              "unique_raw_pairs": source_aware["summary"]["unique_raw_pairs"]
           }, sort_keys=True))
           PY
 
@@ -129,4 +148,6 @@ jobs:
             reports/infrastructure_classification_decisions.jsonl
             reports/infrastructure_source_aware_audit.json
             reports/infrastructure_source_aware_decisions.jsonl
+            reports/infrastructure_recovered_replay_audit.json
+            reports/infrastructure_recovered_replay_decisions.jsonl
             reports/infrastructure_ontology_SHA256SUMS.txt
