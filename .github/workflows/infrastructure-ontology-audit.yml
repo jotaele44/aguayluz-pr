@@ -160,8 +160,12 @@ jobs:
           assert ebas["identity_candidate_key_count"] == 42
           assert ebas["candidate_not_identity_count"] == 44
           assert ebas["certified_enumerators"] == 0
+          assert ebas["certified_reported_denominator_sources"] == 1
           assert ebas["aaa_bounded_current_denominator"] == "OPEN"
-          assert ebas["aaa_bounded_historical_denominator"] == "OPEN"
+          assert ebas["aaa_bounded_historical_denominator"] == 835
+          assert ebas["aaa_bounded_historical_snapshot"] == "2024-06"
+          assert ebas["aaa_bounded_historical_state"] == "CERTIFIED_REPORTED_SNAPSHOT"
+          assert ebas["aaa_bounded_historical_computed_from_enumerator"] is False
           assert ebas["pr_wide_denominator"] == "OPEN"
           assert ebas["physical_asset_count_claimed"] is False
           print(json.dumps({
@@ -172,7 +176,10 @@ jobs:
               "unresolved": residual["unresolved"],
               "ebas_manifestations": ebas["manifestation_count"],
               "ebas_candidate_keys": ebas["identity_candidate_key_count"],
-              "aaa_denominator": ebas["aaa_bounded_current_denominator"],
+              "aaa_current_denominator": ebas["aaa_bounded_current_denominator"],
+              "aaa_historical_denominator": ebas["aaa_bounded_historical_denominator"],
+              "aaa_historical_snapshot": ebas["aaa_bounded_historical_snapshot"],
+              "historical_computed_from_enumerator": ebas["aaa_bounded_historical_computed_from_enumerator"],
               "pr_wide_denominator": ebas["pr_wide_denominator"]
           }, sort_keys=True))
           PY
