@@ -31,6 +31,7 @@
       "authority": "Autoridad de Acueductos y Alcantarillados via Puerto Rico GIS download portal",
       "source_type": "file_geodatabase_archive",
       "url": "https://gis.pr.gov/descargaGeodatos/Infraestructuras/Pages/Agua.aspx",
+      "download_url": "https://gis.otg.pr.gov/Downloads/AAA/GDB_NAD83_2011.gdb.zip",
       "name": "Infraestructura Acueductos y Sanitaria",
       "nominal_snapshot": "2015",
       "eligibility": "AUTHORITATIVE_ARCHIVE_CANDIDATE",
@@ -38,7 +39,25 @@
       "temporal_scope": "2015 snapshot",
       "operator_scope": "AAA/PRASA",
       "denominator_effect": "NOT_CERTIFIED",
-      "reason": "Official portal describes a 2015 AAA sanitary and potable infrastructure file geodatabase; archive bytes/layer inventory are not available in the bounded repository/library surfaces used by this execution."
+      "reason": "Official portal describes a 2015 AAA sanitary and potable infrastructure file geodatabase; the exact ZIP endpoint is now frozen, but archive bytes/layer inventory were not retrievable in this execution environment."
+    },
+    {
+      "source_id": "EBAS_SRC_PRASA_FY2024_CER_SYSTEM_INVENTORY",
+      "authority": "PRASA / FY2024 Consulting Engineer's Report (Arcadis Caribe, PSC)",
+      "source_type": "consulting_engineer_system_inventory",
+      "name": "FY2024 Consulting Engineer's Report — PRASA system asset inventory",
+      "eligibility": "AUTHORITATIVE_BOUNDED_DENOMINATOR_SOURCE",
+      "query_completeness": "SYSTEM_COUNT_REPORTED",
+      "temporal_scope": "PRASA GIS updated June 2024",
+      "operator_scope": "AAA/PRASA owned and operated facilities",
+      "denominator_effect": "CERTIFIED_REPORTED_HISTORICAL",
+      "reported_wwps_count": 835,
+      "reported_class": "Wastewater Pump Station (WWPS)",
+      "canonical_binding": "AYL_TERM_SANITARY_SEWER_PUMP_STATION",
+      "binding_basis": "The CER defines WWPS as Wastewater Pump Station, states PRASA owns and operates 835 WWPSs, and describes them by pumping capacity and proximity to receiving WWTPs. AAA's Spanish fiscal-plan terminology defines EBAS as Estación de bombeo de alcantarillado sanitario and uses EBAS for the same wastewater-pump facility class. This supports class equivalence for the bounded PRASA snapshot without asserting row-level facility identities.",
+      "computed_from_retrieved_enumerator": false,
+      "physical_identity_rows_retrieved": false,
+      "reason": "Authoritative consulting-engineer report provides a system-wide PRASA GIS count of 835 WWPSs for the June 2024 snapshot. The count is certified as a reported historical denominator, not as a recomputation from retrieved feature rows."
     },
     {
       "source_id": "EBAS_SRC_SIGE_AAA_V10_N",
@@ -106,12 +125,17 @@
   ],
   "enumerator_certification": {
     "aaa_bounded_current_denominator": "OPEN",
-    "aaa_bounded_historical_denominator": "OPEN",
+    "aaa_bounded_historical_denominator": 835,
+    "aaa_bounded_historical_snapshot": "2024-06",
+    "aaa_bounded_historical_state": "CERTIFIED_REPORTED_SNAPSHOT",
+    "aaa_bounded_historical_basis": "PRASA GIS count reported in FY2024 Consulting Engineer's Report",
+    "aaa_bounded_historical_computed_from_enumerator": false,
     "pr_wide_denominator": "OPEN",
     "blocking_conditions": [
-      "Complete query/count of EBAS_SRC_SIGE_CALIDAD_AMBIENTE_L5 not retrieved in this execution environment.",
+      "Complete query/count and feature retrieval of EBAS_SRC_SIGE_CALIDAD_AMBIENTE_L5 remain unavailable in this execution environment.",
       "Temporal currency and operator scope of the SIGE wastewater-pump layer are unresolved.",
-      "Official 2015 AAA geodatabase bytes/layer inventory were not recovered from bounded file surfaces.",
+      "Official 2015 AAA geodatabase ZIP endpoint is frozen, but archive bytes/layer inventory were not recovered.",
+      "The June 2024 value 835 is source-reported from PRASA GIS, not independently recomputed from row-level enumerator output.",
       "No proof that AAA/PRASA alone covers every sanitary-sewer pump-station operator and historical facility in Puerto Rico."
     ]
   }
