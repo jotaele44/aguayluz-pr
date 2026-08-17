@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/recovery_project.schema.json",
+  "title": "RecoveryProject",
+  "description": "Evidence-bounded utility recovery or hardening project. Absence of materialized projects is represented by zero rows, never fabricated placeholders.",
+  "type": "object",
+  "required": [
+    "project_id",
+    "project_name",
+    "project_type",
+    "status",
+    "source_ref",
+    "evidence_tier",
+    "confidence",
+    "review_status"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "project_id": {"type": "string", "pattern": "^AYL_PRJ_[A-Za-z0-9_-]+$"},
+    "project_name": {"type": "string", "minLength": 1},
+    "project_type": {
+      "enum": [
+        "water_infrastructure",
+        "power_infrastructure",
+        "grid_hardening",
+        "water_system_hardening",
+        "renewable_energy",
+        "generation",
+        "fuel_resilience",
+        "other"
+      ]
+    },
+    "status": {"enum": ["planned", "active", "complete", "paused", "cancelled", "unknown"]},
+    "municipality": {"type": ["string", "null"]},
+    "linked_asset_ids": {"type": "array", "items": {"type": "string"}, "default": []},
+    "announced_date": {"type": ["string", "null"], "format": "date"},
+    "start_date": {"type": ["string", "null"], "format": "date"},
+    "completion_date": {"type": ["string", "null"], "format": "date"},
+    "funding_program": {"type": ["string", "null"]},
+    "amount_usd": {"type": ["number", "null"], "minimum": 0},
+    "source_ref": {"type": "string", "minLength": 1},
+    "source_hash": {"type": ["string", "null"]},
+    "evidence_tier": {"enum": ["T1", "T2", "T3", "T4"]},
+    "confidence": {"type": "integer", "minimum": 0, "maximum": 100},
+    "review_status": {"enum": ["accepted", "needs_review", "rejected", "blocked"]},
+    "attribute_coverage": {"enum": ["full", "partial"]},
+    "notes": {"type": ["string", "null"]}
+  }
+}
