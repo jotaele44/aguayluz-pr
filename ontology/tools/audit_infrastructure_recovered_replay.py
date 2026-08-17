@@ -31,13 +31,13 @@ def replay(decisions: list[dict[str, Any]]) -> tuple[dict[str, Any], list[dict[s
     if len(by_id) != len(decisions):
         raise RuntimeError("duplicate source_record_id in source-aware decisions")
 
-    expected_water = {water_id(n) for n in range(1, 3203)}
-    expected_canal = {canal_id(n) for n in range(1, 3189)}
-    missing_water = sorted(expected_water - by_id.keys())
-    missing_canal = sorted(expected_canal - by_id.keys())
+    water_rows = {water_id(n): n for n in range(1, 3203)}
+    canal_rows = {canal_id(n): n for n in range(1, 3189)}
+    missing_water = sorted(set(water_rows) - by_id.keys())
+    missing_canal = sorted(set(canal_rows) - by_id.keys())
     if missing_water or missing_canal:
         raise RuntimeError(
-            f"recovered source rows do not reconcile to ledger IDs: "
+            "recovered source rows do not reconcile to ledger IDs: "
             f"water_missing={len(missing_water)} canal_missing={len(missing_canal)}"
         )
 
@@ -45,49 +45,57 @@ def replay(decisions: list[dict[str, Any]]) -> tuple[dict[str, Any], list[dict[s
     counts: Counter[str] = Counter()
     for decision in decisions:
         asset_id = str(decision["source_record_id"])
+        water_row = water_rows.get(asset_id)
+        canal_row = canal_rows.get(asset_id)
         disposition = "UNRESOLVED"
         term_id = decision.get("canonical_term_id")
         evidence = list(decision.get("evidence_basis") or [])
         manifestation_relation = "NONE"
+        source_row_number = None
 
-        if asset_id in {water_id(n) for n in range(1, 11)}:
-            disposition = "EXCLUDED_SOURCE_FORMAT_RESIDUE"
-            term_id = None
-            evidence.append("Recovered Waterworks source row is fully blank across all 31 fields.")
-        elif asset_id in {water_id(n) for n in range(11, 3198)}:
-            disposition = "DUPLICATE_DERIVED_MANIFESTATION"
-            term_id = "AYL_TERM_IRRIGATION_CANAL"
-            manifestation_relation = "SAME_SOURCE_FEATURE_DERIVED_MANIFESTATION"
-            evidence.append("Recovered Waterworks canal row binds 1:1 to raw canal OBJECTID manifestation.")
-        elif asset_id in {water_id(n) for n in (3198, 3199, 3200, 3202)}:
-            disposition = "CLASSIFIED_SOURCE_ROW"
-            term_id = "AYL_TERM_SURFACE_WATER_GAGE"
-            evidence.append("Recovered source Function explicitly states surface-water monitoring (discharge/gage height).")
-        elif asset_id == water_id(3201):
-            disposition = "UNRESOLVED"
-            term_id = None
-            evidence.append("Recovered source Function states water-quality sample site; no forced gage mapping.")
-        elif asset_id == canal_id(1):
-            disposition = "EXCLUDED_PARSER_ARTIFACT"
-            term_id = None
-            evidence.append("Legacy DictReader consumed blank row as header and emitted true CSV header as data.")
-        elif asset_id in {canal_id(n) for n in range(2, 3189)}:
-            disposition = "CLASSIFIED_SOURCE_ROW"
-            term_id = "AYL_TERM_IRRIGATION_CANAL"
-            evidence.append("Recovered nonblank-header canal source row is an irrigation canal feature.")
+        if water_row is not None:
+            source_row_number = water_row
+            if water_row <= 10:
+                disposition = "EXCLUDED_SOURCE_FORMAT_RESIDUE"
+                term_id = None
+                evidence.append("Recovered Waterworks source row is fully blank across all 31 fields.")
+            elif water_row <= 3197:
+                disposition = "DUPLICATE_DERIVED_MANIFESTATION"
+                term_id = "AYL_TERM_IRRIGATION_CANAL"
+                manifestation_relation = "SAME_SOURCE_FEATURE_DERIVED_MANIFESTATION"
+                evidence.append("Recovered Waterworks canal row binds 1:1 to raw canal OBJECTID manifestation.")
+            elif water_row in {3198, 3199, 3200, 3202}:
+                disposition = "CLASSIFIED_SOURCE_ROW"
+                term_id = "AYL_TERM_SURFACE_WATER_GAGE"
+                evidence.append("Recovered source Function explicitly states surface-water monitoring (discharge/gage height).")
+            else:
+                disposition = "UNRESOLVED"
+                term_id = None
+                evidence.append("Recovered source Function states water-quality sample site; no forced gage mapping.")
+        elif canal_row is not None:
+            source_row_number = canal_row
+            if canal_row == 1:
+                disposition = "EXCLUDED_PARSER_ARTIFACT"
+                term_id = None
+                evidence.append("Legacy DictReader consumed blank row as header and emitted true CSV header as data.")
+            else:
+                disposition = "CLASSIFIED_SOURCE_ROW"
+                term_id = "AYL_TERM_IRRIGATION_CANAL"
+                evidence.append("Recovered nonblank-header canal source row is an irrigation canal feature.")
         elif decision.get("classification_state") in {"pass", "provisional", "candidate_not_identity"}:
             disposition = "CLASSIFIED_SOURCE_ROW"
         elif decision.get("classification_state") == "excluded":
             disposition = "EXCLUDED_SOURCE_FORMAT_RESIDUE"
         elif decision.get("classification_state") == "superseded":
             disposition = "DUPLICATE_DERIVED_MANIFESTATION"
+
         counts[disposition] += 1
         output.append(
             {
                 "decision_id": "AYL_REPLAY_" + hashlib.sha256(asset_id.encode()).hexdigest()[:20],
                 "legacy_asset_id": asset_id,
                 "source_member": decision.get("source_ref"),
-                "source_row_number": None,
+                "source_row_number": source_row_number,
                 "raw_asset_type": decision.get("legacy_asset_type_raw"),
                 "raw_asset_subtype": decision.get("legacy_asset_subtype_raw"),
                 "canonical_term_id": term_id,
@@ -118,13 +126,13 @@ def replay(decisions: list[dict[str, Any]]) -> tuple[dict[str, Any], list[dict[s
             "duplicate_derived_manifestations": 3187,
             "class_known_source_rows": 8245,
             "excluded": 11,
-            "unresolved": 219,
+            "unresolved": 219
         },
         "identity_effect": "none",
         "physical_asset_count_claimed": False,
-        "pr_wide_exhaustion_claimed": False,
+        "pr_wide_exhaustion_claimed": False
     }
-    observed = {k: report[k] for k in report["expected"]}
+    observed = {key: report[key] for key in report["expected"]}
     if not report["arithmetic_pass"] or observed != report["expected"]:
         raise RuntimeError(f"recovered replay count drift: observed={observed!r} expected={report['expected']!r}")
     return report, output
