@@ -4,6 +4,7 @@ import csv
 import io
 from pathlib import Path
 
+from ontology.tools.audit_infrastructure_recovered_replay import canal_id, replay, water_id
 from ontology.tools.audit_recovered_hydro_sources import nonblank_csv_rows, stable_id
 
 
@@ -52,6 +53,59 @@ def test_recovered_denominators_and_projection_close() -> None:
     assert canal["legacy_import_rows"] == 3188
     assert canal["legacy_parser_artifacts"] == 1
     p = manifest["bounded_reclassification_projection"]
-    assert p["projected_classified"] + p["projected_excluded"] + p["projected_unresolved"] == p["starting_source_rows"] == 8475
+    assert p["primary_classified"] + p["duplicate_derived_manifestations"] + p["excluded"] + p["unresolved"] == p["starting_source_rows"] == 8475
+    assert p["class_known_source_rows"] == p["primary_classified"] + p["duplicate_derived_manifestations"] == 8245
     assert p["physical_asset_count_claimed"] is False
     assert p["pr_wide_exhaustion_claimed"] is False
+
+
+def test_ledger_replay_partition_and_recovered_ids() -> None:
+    decisions = []
+    for n in range(1, 3203):
+        decisions.append({
+            "source_record_id": water_id(n),
+            "source_ref": "Waterworks_Integrated_v2.csv",
+            "legacy_asset_type_raw": "water",
+            "legacy_asset_subtype_raw": "waterworks",
+            "classification_state": "unresolved",
+            "canonical_term_id": None,
+            "evidence_basis": [],
+        })
+    for n in range(1, 3189):
+        decisions.append({
+            "source_record_id": canal_id(n),
+            "source_ref": "Canal_de_Riego_features_summary.csv",
+            "legacy_asset_type_raw": "water",
+            "legacy_asset_subtype_raw": "canal_feature",
+            "classification_state": "unresolved",
+            "canonical_term_id": None,
+            "evidence_basis": [],
+        })
+    for n in range(1867):
+        decisions.append({
+            "source_record_id": f"EXISTING_CLASSIFIED_{n}",
+            "source_ref": "other",
+            "legacy_asset_type_raw": "water",
+            "legacy_asset_subtype_raw": "other",
+            "classification_state": "provisional",
+            "canonical_term_id": "AYL_TERM_OTHER",
+            "evidence_basis": [],
+        })
+    for n in range(218):
+        decisions.append({
+            "source_record_id": f"EXISTING_UNRESOLVED_{n}",
+            "source_ref": "other",
+            "legacy_asset_type_raw": "water",
+            "legacy_asset_subtype_raw": "other",
+            "classification_state": "unresolved",
+            "canonical_term_id": None,
+            "evidence_basis": [],
+        })
+    report, rows = replay(decisions)
+    assert len(rows) == 8475
+    assert report["primary_classified"] == 5058
+    assert report["duplicate_derived_manifestations"] == 3187
+    assert report["class_known_source_rows"] == 8245
+    assert report["excluded"] == 11
+    assert report["unresolved"] == 219
+    assert report["arithmetic_pass"] is True
