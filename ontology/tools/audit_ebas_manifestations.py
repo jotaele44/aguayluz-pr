@@ -57,7 +57,13 @@ def audit(seed: dict[str, Any], registry: dict[str, Any]) -> tuple[dict[str, Any
     candidates = len(key_counts)
     enum = registry["enumerator_certification"]
     if enum["aaa_bounded_current_denominator"] != "OPEN" or enum["pr_wide_denominator"] != "OPEN":
-        raise RuntimeError("denominator must remain OPEN until an eligible enumerator is fully retrieved")
+        raise RuntimeError("current and PR-wide denominators must remain OPEN until an eligible enumerator is fully retrieved")
+    if enum["aaa_bounded_historical_denominator"] != 835:
+        raise RuntimeError("historical denominator drift from certified June 2024 PRASA GIS report")
+    if enum["aaa_bounded_historical_state"] != "CERTIFIED_REPORTED_SNAPSHOT":
+        raise RuntimeError("historical denominator must retain reported-snapshot certification state")
+    if enum["aaa_bounded_historical_computed_from_enumerator"] is not False:
+        raise RuntimeError("reported historical denominator must not be relabeled as enumerator-computed")
 
     report = {
         "manifestation_count": len(manifestations),
@@ -67,12 +73,18 @@ def audit(seed: dict[str, Any], registry: dict[str, Any]) -> tuple[dict[str, Any
         "authoritative_project_manifestations_present": True,
         "aaa_bounded_current_denominator": enum["aaa_bounded_current_denominator"],
         "aaa_bounded_historical_denominator": enum["aaa_bounded_historical_denominator"],
+        "aaa_bounded_historical_snapshot": enum["aaa_bounded_historical_snapshot"],
+        "aaa_bounded_historical_state": enum["aaa_bounded_historical_state"],
+        "aaa_bounded_historical_computed_from_enumerator": enum["aaa_bounded_historical_computed_from_enumerator"],
         "pr_wide_denominator": enum["pr_wide_denominator"],
         "enumerator_candidates": sum(
             source["eligibility"] in {"AUTHORITATIVE_BOUNDED_ENUMERATOR_CANDIDATE", "AUTHORITATIVE_ARCHIVE_CANDIDATE"}
             for source in registry["sources"]
         ),
         "certified_enumerators": sum(source["denominator_effect"] == "CERTIFIED" for source in registry["sources"]),
+        "certified_reported_denominator_sources": sum(
+            source["denominator_effect"] == "CERTIFIED_REPORTED_HISTORICAL" for source in registry["sources"]
+        ),
         "identity_effect": "none",
         "physical_asset_count_claimed": False,
         "pr_wide_exhaustion_claimed": False,
@@ -83,6 +95,7 @@ def audit(seed: dict[str, Any], registry: dict[str, Any]) -> tuple[dict[str, Any
         "candidate_not_identity_count": 44,
         "enumerator_candidates": 2,
         "certified_enumerators": 0,
+        "certified_reported_denominator_sources": 1,
     }
     observed = {key: report[key] for key in expected}
     if observed != expected:
