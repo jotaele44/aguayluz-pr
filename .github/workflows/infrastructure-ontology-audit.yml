@@ -6,7 +6,7 @@ on:
       - "ontology/**"
       - "schemas/infrastructure_*.schema.json"
       - "tests/test_infrastructure_*.py"
-      - "tests/test_ebas_vertical_slice.py"
+      - "tests/test_ebas_*.py"
       - "tests/fixtures/ebas_vertical_slice.json"
       - ".github/workflows/infrastructure-ontology-audit.yml"
   workflow_dispatch:
@@ -36,7 +36,9 @@ jobs:
             tests/test_infrastructure_source_aware.py \
             tests/test_infrastructure_source_assertions.py \
             tests/test_infrastructure_recovered_hydro.py \
+            tests/test_infrastructure_residual_219.py \
             tests/test_ebas_vertical_slice.py \
+            tests/test_ebas_source_universe.py \
             tests/test_infrastructure_v7_v10.py \
             tests/test_infrastructure_sidecar_invariants.py
 
@@ -65,12 +67,30 @@ jobs:
             --report reports/infrastructure_recovered_replay_audit.json \
             --decisions reports/infrastructure_recovered_replay_decisions.jsonl
 
+      - name: Adjudicate frozen residual 219 universe
+        run: |
+          python ontology/tools/audit_infrastructure_residual_219.py \
+            --replay-decisions reports/infrastructure_recovered_replay_decisions.jsonl \
+            --report reports/infrastructure_residual_219_audit.json \
+            --decisions reports/infrastructure_final_8475_decisions.jsonl
+
+      - name: Audit EBAS source universe and manifestations
+        run: |
+          python ontology/tools/audit_ebas_manifestations.py \
+            --seed ontology/ebas_manifestation_seed.v0.1.json \
+            --registry ontology/ebas_source_registry.v0.1.json \
+            --report reports/ebas_source_universe_audit.json \
+            --manifestations reports/ebas_manifestations.jsonl
+
       - name: Freeze audit artifact hashes
         run: |
           sha256sum \
             ontology/infrastructure_terms.v0.1.json \
+            ontology/infrastructure_residual_terms.v0.1.json \
             ontology/source_aware_crosswalk.v0.1.json \
             ontology/recovered_hydro_sources.v0.1.json \
+            ontology/ebas_source_registry.v0.1.json \
+            ontology/ebas_manifestation_seed.v0.1.json \
             ontology/legacy_projection_rules.v0.1.json \
             schemas/infrastructure_classification.schema.json \
             schemas/infrastructure_source_assertion.schema.json \
@@ -89,9 +109,13 @@ jobs:
             reports/infrastructure_source_aware_decisions.jsonl \
             reports/infrastructure_recovered_replay_audit.json \
             reports/infrastructure_recovered_replay_decisions.jsonl \
+            reports/infrastructure_residual_219_audit.json \
+            reports/infrastructure_final_8475_decisions.jsonl \
+            reports/ebas_source_universe_audit.json \
+            reports/ebas_manifestations.jsonl \
             > reports/infrastructure_ontology_SHA256SUMS.txt
 
-      - name: Assert arithmetic closure and monotonic improvement
+      - name: Assert arithmetic closure and bounded denominator states
         run: |
           python - <<'PY'
           import json
@@ -100,6 +124,8 @@ jobs:
           source_aware = json.loads(Path("reports/infrastructure_source_aware_audit.json").read_text())
           recovery = json.loads(Path("ontology/recovered_hydro_sources.v0.1.json").read_text())
           replay = json.loads(Path("reports/infrastructure_recovered_replay_audit.json").read_text())
+          residual = json.loads(Path("reports/infrastructure_residual_219_audit.json").read_text())
+          ebas = json.loads(Path("reports/ebas_source_universe_audit.json").read_text())
           for report in (baseline, source_aware):
               assert report["arithmetic"]["pass"] is True, report["arithmetic"]
               assert report["arithmetic"]["source_rows"] == report["summary"]["row_count"]
@@ -112,28 +138,40 @@ jobs:
           assert source_aware["overlay_expected_counts"]["pass"] is True
           projection = recovery["bounded_reclassification_projection"]
           assert projection["primary_classified"] + projection["duplicate_derived_manifestations"] + projection["excluded"] + projection["unresolved"] == projection["starting_source_rows"] == 8475
-          assert projection["class_known_source_rows"] == 8245
           assert replay["arithmetic_pass"] is True
           assert replay["source_rows"] == 8475
           assert replay["primary_classified"] == 5058
           assert replay["duplicate_derived_manifestations"] == 3187
-          assert replay["class_known_source_rows"] == 8245
           assert replay["excluded"] == 11
           assert replay["unresolved"] == 219
-          assert replay["identity_effect"] == "none"
-          assert replay["physical_asset_count_claimed"] is False
-          assert replay["pr_wide_exhaustion_claimed"] is False
+          assert residual["arithmetic_pass"] is True
+          assert residual["source_rows"] == 8475
+          assert residual["residual_explicit_state_count"] == 219
+          assert residual["residual_final_states"] == {"CLASSIFIED_SOURCE_ROW": 196, "EXCLUDED_PARSER_ARTIFACT": 2, "UNRESOLVED": 21}
+          assert residual["primary_classified"] == 5254
+          assert residual["duplicate_derived_manifestations"] == 3187
+          assert residual["excluded"] == 13
+          assert residual["unresolved"] == 21
+          assert residual["identity_effect"] == "none"
+          assert residual["physical_asset_count_claimed"] is False
+          assert ebas["manifestation_count"] == 44
+          assert ebas["identity_candidate_key_count"] == 42
+          assert ebas["candidate_not_identity_count"] == 44
+          assert ebas["certified_enumerators"] == 0
+          assert ebas["aaa_bounded_current_denominator"] == "OPEN"
+          assert ebas["aaa_bounded_historical_denominator"] == "OPEN"
+          assert ebas["pr_wide_denominator"] == "OPEN"
+          assert ebas["physical_asset_count_claimed"] is False
           print(json.dumps({
-              "source_rows": replay["source_rows"],
-              "baseline_classified": baseline["arithmetic"]["classified"],
-              "source_aware_classified": source_aware["arithmetic"]["classified"],
-              "source_aware_unresolved": source_aware["arithmetic"]["unresolved"],
-              "replay_primary_classified": replay["primary_classified"],
-              "replay_duplicate_derived": replay["duplicate_derived_manifestations"],
-              "replay_class_known": replay["class_known_source_rows"],
-              "replay_excluded": replay["excluded"],
-              "replay_unresolved": replay["unresolved"],
-              "unique_raw_pairs": source_aware["summary"]["unique_raw_pairs"]
+              "source_rows": residual["source_rows"],
+              "final_primary_classified": residual["primary_classified"],
+              "duplicate_derived": residual["duplicate_derived_manifestations"],
+              "excluded": residual["excluded"],
+              "unresolved": residual["unresolved"],
+              "ebas_manifestations": ebas["manifestation_count"],
+              "ebas_candidate_keys": ebas["identity_candidate_key_count"],
+              "aaa_denominator": ebas["aaa_bounded_current_denominator"],
+              "pr_wide_denominator": ebas["pr_wide_denominator"]
           }, sort_keys=True))
           PY
 
@@ -150,4 +188,8 @@ jobs:
             reports/infrastructure_source_aware_decisions.jsonl
             reports/infrastructure_recovered_replay_audit.json
             reports/infrastructure_recovered_replay_decisions.jsonl
+            reports/infrastructure_residual_219_audit.json
+            reports/infrastructure_final_8475_decisions.jsonl
+            reports/ebas_source_universe_audit.json
+            reports/ebas_manifestations.jsonl
             reports/infrastructure_ontology_SHA256SUMS.txt
