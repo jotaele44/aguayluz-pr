@@ -235,6 +235,7 @@ def test_integration_report_minimal_valid():
 
 def test_every_schema_loads_and_validates_itself(schemas_dir):
     from jsonschema import Draft202012Validator
+
     schemas = list(schemas_dir.glob("*.schema.json"))
     assert len(schemas) == 32, f"expected 32 schemas, found {len(schemas)}"
     for p in schemas:
@@ -259,7 +260,7 @@ def test_natural_feature_dataset_valid_and_hydro_only():
 
 
 def test_natural_feature_rejects_out_of_pr_bbox():
-    bad = {**_first_natural_feature(), "lat": 40.7128, "lon": -66.9}
+    bad = {**_first_natural_feature(), "lat": 40.7128, "lon": -74.0060}
     with pytest.raises(ValidationError):
         validate_against_schema("pr_natural_feature", bad)
 
