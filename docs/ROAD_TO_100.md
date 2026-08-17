@@ -1,7 +1,7 @@
 # Road to 100 — normalized federation score
 
-**Audit date:** 2026-08-04  
-**Current main:** `cda1aa1b42f5bd13ab61db9d78a302cd6e953c23`
+**Audit date:** 2026-08-17  
+**Current main:** `1047c9b186017b0fdb715d81af843ddf17c45735`  
 **Scoring model:** code completeness 20%; main-branch availability 15%; CI enforcement 15%; data materialization 15%; operator verification 15%; GUI completeness 10%; federation readiness 10%.
 
 ## Current normalized score: 81.55 / 100
@@ -16,6 +16,44 @@
 | GUI completeness | 10 | 82 | 8.20 |
 | Federation readiness | 10 | 82 | 8.20 |
 
+## Second-domain candidate: real-data partial export
+
+Development branch `gpt/real-data-partial-export-v0-1` implements the bounded
+`VALIDATE_AGUAYLUZ_REAL_DATA_PARTIAL_EXPORT` contract without changing this score
+until the implementation is merged to `main`.
+
+The candidate adds strict outage/recovery/continuity/source-registry/partial-manifest
+schemas, a recurring source registry, a proxy-safe continuity taxonomy, and an
+offline deterministic builder for a small `PRODUCTION_REAL_DATA_PARTIAL` package.
+The package selects whole committed asset/event/project rows and may validly emit
+zero recovery-project rows when no canonical recovery-project corpus exists.
+Continuity rows derived from `EDGE-WP-*` or explicit fuel tokens remain
+`candidate|provisional`, `identity_binding=proxy`, and `evidence_required=true`.
+
+Machine-readable caveats preserve the current evidence boundary:
+
+- EPA WATERS/NHDPlus hydro enrichment is `PROVISIONAL_PARTIAL`, bounded to VPU-21;
+  off-network and no-waterbody outcomes remain explicit and are not extrapolated.
+- MiLUMA outage acquisition is WAF/permission constrained and disabled by default;
+  no missing live outage data is fabricated.
+- PREPS requires an operator-frozen public-portal snapshot.
+- EPA SDWIS is an authoritative regulatory water-quality source, not a complete
+  operational water-outage denominator.
+- Power↔water proximity never proves feeder/circuit identity.
+- An explicit fuel token identifies only a fuel-sensitive candidate; current fuel
+  stock, supplier, route, and outage cause remain unproven.
+
+Exact offline verification commands for the candidate:
+
+```bash
+python -m pytest -q tests/test_real_data_partial_export.py tests/test_schemas.py
+python scripts/build_real_data_partial_export.py \
+  --generated-at 2026-08-17T01:15:00Z \
+  --out /tmp/aguayluz-real-data-partial
+python scripts/validate_repo.py
+python scripts/federation_export.py --mode test
+```
+
 ## Score adjudication after PR #120
 
 PR #120 landed design authority for provider-agnostic regulatory observations, source receipts, conservative entity-link candidates, provider protocols and activation gates. It adds no live providers, persistence, scheduler, GUI/API surface or automatic entity promotion. No dimension changes: the landed design authority improves architectural definition, while the newly recognized implementation scope remains unfinished; data materialization and operator verification receive no credit.
@@ -23,6 +61,7 @@ PR #120 landed design authority for provider-agnostic regulatory observations, s
 ## State reconciliation
 
 - Core utility, water, alert, export, dashboard and desktop capabilities are on `main`.
+- The real-data partial export candidate is development-lineage evidence only until separately merged; this roadmap does not infer main-lineage completion from branch CI.
 - PR #120 is merged design authority only. Live provider adapters, durable persistence, scheduling, GUI/API exposure and adjudicated entity promotion remain implementation gaps.
 - PR #116 is the current-main authority for auditable USGS water-category coverage. Live verification remains an operator task.
 - Cave/karst core and read-only surface are current-main capabilities.
@@ -43,11 +82,13 @@ level, but the roadmap score should change only after the branch lands on
 
 ## Priority exit sequence
 
-1. Implement the PR #120 regulatory framework through separately reviewed provider, persistence, scheduler, API/GUI and promotion increments.
-2. Reconcile #109's non-overlapping NHC/NEON work without duplicating the merged USGS authority.
-3. Preserve the merged #118 direct-versus-context boundaries until eligible direct measurements exist.
-4. Decompose mycelial Phase 1 by approved ballots.
-5. Acquire authorized outage provenance.
+1. Certify the bounded real-data partial-export candidate; if merged separately,
+   re-freeze main before changing score or closing its issue manifestation.
+2. Implement the PR #120 regulatory framework through separately reviewed provider, persistence, scheduler, API/GUI and promotion increments.
+3. Reconcile #109's non-overlapping NHC/NEON work without duplicating the merged USGS authority.
+4. Preserve the merged #118 direct-versus-context boundaries until eligible direct measurements exist.
+5. Decompose mycelial Phase 1 by approved ballots.
+6. Acquire authorized outage provenance.
 
 ## Machine-readable authority
 
