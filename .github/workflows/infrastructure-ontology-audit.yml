@@ -35,6 +35,7 @@ jobs:
             tests/test_infrastructure_ontology.py \
             tests/test_infrastructure_source_aware.py \
             tests/test_infrastructure_source_assertions.py \
+            tests/test_infrastructure_recovered_hydro.py \
             tests/test_ebas_vertical_slice.py \
             tests/test_infrastructure_v7_v10.py \
             tests/test_infrastructure_sidecar_invariants.py
@@ -62,9 +63,11 @@ jobs:
           sha256sum \
             ontology/infrastructure_terms.v0.1.json \
             ontology/source_aware_crosswalk.v0.1.json \
+            ontology/recovered_hydro_sources.v0.1.json \
             ontology/legacy_projection_rules.v0.1.json \
             schemas/infrastructure_classification.schema.json \
             schemas/infrastructure_source_assertion.schema.json \
+            schemas/infrastructure_source_replay_decision.schema.json \
             schemas/infrastructure_object.schema.json \
             schemas/infrastructure_relation.schema.json \
             schemas/infrastructure_geometry.schema.json \
@@ -86,6 +89,7 @@ jobs:
           from pathlib import Path
           baseline = json.loads(Path("reports/infrastructure_vocabulary_audit.json").read_text())
           source_aware = json.loads(Path("reports/infrastructure_source_aware_audit.json").read_text())
+          recovery = json.loads(Path("ontology/recovered_hydro_sources.v0.1.json").read_text())
           for report in (baseline, source_aware):
               assert report["arithmetic"]["pass"] is True, report["arithmetic"]
               assert report["arithmetic"]["source_rows"] == report["summary"]["row_count"]
@@ -96,12 +100,19 @@ jobs:
           assert source_aware["arithmetic"]["unresolved"] < baseline["arithmetic"]["unresolved"]
           assert source_aware["classification_is_identity"] is False
           assert source_aware["overlay_expected_counts"]["pass"] is True
+          projection = recovery["bounded_reclassification_projection"]
+          assert projection["projected_classified"] + projection["projected_excluded"] + projection["projected_unresolved"] == projection["starting_source_rows"] == 8475
+          assert projection["physical_asset_count_claimed"] is False
+          assert projection["pr_wide_exhaustion_claimed"] is False
           print(json.dumps({
               "source_rows": source_aware["arithmetic"]["source_rows"],
               "baseline_classified": baseline["arithmetic"]["classified"],
               "source_aware_classified": source_aware["arithmetic"]["classified"],
               "baseline_unresolved": baseline["arithmetic"]["unresolved"],
               "source_aware_unresolved": source_aware["arithmetic"]["unresolved"],
+              "recovery_projected_classified": projection["projected_classified"],
+              "recovery_projected_excluded": projection["projected_excluded"],
+              "recovery_projected_unresolved": projection["projected_unresolved"],
               "unique_raw_pairs": source_aware["summary"]["unique_raw_pairs"],
               "certification_state": source_aware["certification_state"],
           }, sort_keys=True))
