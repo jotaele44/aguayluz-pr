@@ -1,7 +1,7 @@
 # Road to 100 — normalized federation score
 
 **Audit date:** 2026-08-17  
-**Current main:** `1047c9b186017b0fdb715d81af843ddf17c45735`  
+**Current main:** `96c2b6f6718515fa84fe2a665a5243cc4ce36f81`  
 **Scoring model:** code completeness 20%; main-branch availability 15%; CI enforcement 15%; data materialization 15%; operator verification 15%; GUI completeness 10%; federation readiness 10%.
 
 ## Current normalized score: 81.55 / 100
@@ -24,10 +24,10 @@ until the implementation is merged to `main`.
 
 The candidate adds strict outage/recovery/continuity/source-registry/partial-manifest
 schemas, a recurring source registry, a proxy-safe continuity taxonomy, and an
-offline deterministic builder for a small `PRODUCTION_REAL_DATA_PARTIAL` package.
-The package selects whole committed asset/event/project rows and may validly emit
-zero recovery-project rows when no canonical recovery-project corpus exists.
-Continuity rows derived from `EDGE-WP-*` or explicit fuel tokens remain
+offline deterministic internal tool for a small `PRODUCTION_REAL_DATA_PARTIAL`
+package. The package selects whole committed asset/event/project rows and may
+validly emit zero recovery-project rows when no canonical recovery-project corpus
+exists. Continuity rows derived from `EDGE-WP-*` or explicit fuel tokens remain
 `candidate|provisional`, `identity_binding=proxy`, and `evidence_required=true`.
 
 Machine-readable caveats preserve the current evidence boundary:
@@ -47,7 +47,7 @@ Exact offline verification commands for the candidate:
 
 ```bash
 python -m pytest -q tests/test_real_data_partial_export.py tests/test_schemas.py
-python scripts/build_real_data_partial_export.py \
+python tools/build_real_data_partial_export.py \
   --generated-at 2026-08-17T01:15:00Z \
   --out /tmp/aguayluz-real-data-partial
 python scripts/validate_repo.py
