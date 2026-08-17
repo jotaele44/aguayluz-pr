@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/continuity_risk_edge.schema.json",
+  "title": "ContinuityRiskEdge",
+  "description": "Evidence-bounded continuity-risk relationship. Discovery/proxy relationships never establish infrastructure identity.",
+  "type": "object",
+  "required": [
+    "edge_id",
+    "from_id",
+    "to_id",
+    "risk_type",
+    "relationship_status",
+    "identity_binding",
+    "source_ref",
+    "confidence",
+    "review_status",
+    "evidence_required"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "edge_id": {"type": "string", "minLength": 1},
+    "from_id": {"type": "string", "minLength": 1},
+    "to_id": {"type": "string", "minLength": 1},
+    "risk_type": {
+      "enum": [
+        "water_asset_power_dependency_candidate",
+        "service_event_affects_asset",
+        "outage_affects_municipio",
+        "recovery_project_targets_asset",
+        "fuel_sensitive_candidate",
+        "unknown"
+      ]
+    },
+    "relationship_status": {"enum": ["candidate", "provisional", "verified", "rejected"]},
+    "identity_binding": {"enum": ["none", "proxy", "authoritative"]},
+    "source_ref": {"type": "string", "minLength": 1},
+    "confidence": {"type": "integer", "minimum": 0, "maximum": 100},
+    "review_status": {"enum": ["accepted", "needs_review", "rejected", "blocked"]},
+    "evidence_required": {"type": "boolean"},
+    "distance_km": {"type": ["number", "null"], "minimum": 0},
+    "notes": {"type": ["string", "null"]}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "risk_type": {"enum": ["water_asset_power_dependency_candidate", "fuel_sensitive_candidate"]}
+        },
+        "required": ["risk_type"]
+      },
+      "then": {
+        "properties": {
+          "relationship_status": {"enum": ["candidate", "provisional"]},
+          "identity_binding": {"const": "proxy"},
+          "evidence_required": {"const": true},
+          "review_status": {"enum": ["needs_review", "blocked"]}
+        }
+      }
+    }
+  ]
+}
