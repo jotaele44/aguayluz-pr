@@ -1,0 +1,118 @@
+{
+  "schema_version": "aguayluz.ebas-source-registry/v0.1",
+  "status": "provisional",
+  "scope": "Public-source registry for sanitary sewer pump-station (EBAS) discovery. Source eligibility is distinct from facility identity and denominator completeness.",
+  "canonical_term_id": "AYL_TERM_SANITARY_SEWER_PUMP_STATION",
+  "identity_effect": "none",
+  "pr_wide_denominator_claimed": false,
+  "sources": [
+    {
+      "source_id": "EBAS_SRC_SIGE_CALIDAD_AMBIENTE_L5",
+      "authority": "Puerto Rico Planning Board / SIGE",
+      "source_type": "arcgis_feature_layer",
+      "url": "https://sige.pr.gov/server/rest/services/MIPR/CalidadAmbiente/MapServer/5",
+      "name": "Estaciones de Bomba de Aguas Usadas",
+      "service_item_id": "005245d06ed4489b9ddd7f6982c4f8f8",
+      "geometry_type": "esriGeometryPoint",
+      "display_field": "PUMP_NAME",
+      "identifier_fields": ["OBJECTID", "GEO_ID", "NPID"],
+      "coordinate_fields": ["POINT_X", "POINT_Y"],
+      "max_record_count": 2000,
+      "supports_pagination": true,
+      "eligibility": "AUTHORITATIVE_BOUNDED_ENUMERATOR_CANDIDATE",
+      "query_completeness": "BLOCKED_QUERY_ENDPOINT_NOT_RETRIEVED",
+      "temporal_scope": "UNRESOLVED",
+      "operator_scope": "UNRESOLVED",
+      "denominator_effect": "NOT_CERTIFIED",
+      "reason": "Object-level official GIS layer explicitly names wastewater pump stations and exposes facility-name and identifier fields, but complete feature retrieval/count and temporal/operator scope are not yet certified."
+    },
+    {
+      "source_id": "EBAS_SRC_GISPR_AAA_2015_GDB",
+      "authority": "Autoridad de Acueductos y Alcantarillados via Puerto Rico GIS download portal",
+      "source_type": "file_geodatabase_archive",
+      "url": "https://gis.pr.gov/descargaGeodatos/Infraestructuras/Pages/Agua.aspx",
+      "name": "Infraestructura Acueductos y Sanitaria",
+      "nominal_snapshot": "2015",
+      "eligibility": "AUTHORITATIVE_ARCHIVE_CANDIDATE",
+      "query_completeness": "BLOCKED_ARCHIVE_BYTES_NOT_RECOVERED",
+      "temporal_scope": "2015 snapshot",
+      "operator_scope": "AAA/PRASA",
+      "denominator_effect": "NOT_CERTIFIED",
+      "reason": "Official portal describes a 2015 AAA sanitary and potable infrastructure file geodatabase; archive bytes/layer inventory are not available in the bounded repository/library surfaces used by this execution."
+    },
+    {
+      "source_id": "EBAS_SRC_SIGE_AAA_V10_N",
+      "authority": "Puerto Rico Planning Board / SIGE",
+      "source_type": "arcgis_map_service",
+      "url": "https://sige.pr.gov/server/rest/services/MIPR/AAA_v10_N/MapServer",
+      "name": "AAA_v10_N",
+      "eligibility": "AUTHORITATIVE_PARTIAL",
+      "query_completeness": "METADATA_EXHAUSTED",
+      "temporal_scope": "UNRESOLVED",
+      "operator_scope": "AAA/PRASA",
+      "denominator_effect": "INELIGIBLE_AS_EBAS_ENUMERATOR",
+      "reason": "Exposed sanitary layers are gravity sewer and pumping/force-main lines; no sanitary pump-station point layer is exposed in this service."
+    },
+    {
+      "source_id": "EBAS_SRC_SIGE_INFRAESTRUCTURA_PUMP_PARK",
+      "authority": "Puerto Rico Planning Board / SIGE",
+      "source_type": "arcgis_feature_layer",
+      "url": "https://sige.pr.gov/server/rest/services/MIPR/Infraestructura/FeatureServer/4",
+      "name": "Parque de Bomba",
+      "eligibility": "NONCANONICAL_DISCOVERY",
+      "query_completeness": "METADATA_ONLY",
+      "temporal_scope": "UNRESOLVED",
+      "operator_scope": "UNRESOLVED",
+      "denominator_effect": "INELIGIBLE_AS_EBAS_ENUMERATOR",
+      "reason": "Generic pump infrastructure cannot be equated with sanitary sewer pump stations without wastewater-specific source semantics."
+    },
+    {
+      "source_id": "EBAS_SRC_PRIDCO_TENENCIA",
+      "authority": "Puerto Rico Planning Board / SIGE",
+      "source_type": "arcgis_feature_layer",
+      "url": "https://sige.pr.gov/server/rest/services/MIPR/Tenencia/FeatureServer/6",
+      "name": "PRIDCO",
+      "eligibility": "SECONDARY_DISCOVERY",
+      "query_completeness": "METADATA_ONLY",
+      "temporal_scope": "UNRESOLVED",
+      "operator_scope": "industrial-site context",
+      "denominator_effect": "INELIGIBLE_AS_EBAS_ENUMERATOR",
+      "reason": "AAA_bomba and related fields describe utility context for PRIDCO features, not a facility-level sanitary-pump-station registry."
+    },
+    {
+      "source_id": "EBAS_SRC_PRASA_FY2024_CER_NORTH_CIP",
+      "authority": "PRASA / FY2024 Consulting Engineer's Report",
+      "source_type": "capital_improvement_project_table",
+      "name": "PRASA FY2024 North Region CIP Projects",
+      "eligibility": "AUTHORITATIVE_PROJECT_ONLY",
+      "query_completeness": "BOUNDED_PAGES_218_222_EXTRACTED",
+      "temporal_scope": "FY2024 report with project completion dates through 2026",
+      "operator_scope": "AAA/PRASA North Region projects",
+      "denominator_effect": "INELIGIBLE_AS_EBAS_ENUMERATOR",
+      "reason": "Explicitly names real EBAS in rehabilitation/generator projects but project selection is not an all-facility denominator."
+    },
+    {
+      "source_id": "EBAS_SRC_PRASA_2025_FISCAL_PLAN",
+      "authority": "AAA/PRASA",
+      "source_type": "certified_fiscal_plan",
+      "name": "Plan Fiscal Certificado de 2025 para la AAA",
+      "eligibility": "AUTHORITATIVE_PROJECT_ONLY",
+      "query_completeness": "EBAS_MENTIONS_EXTRACTED",
+      "temporal_scope": "2025 plan / projected through FY2030",
+      "operator_scope": "AAA/PRASA",
+      "denominator_effect": "INELIGIBLE_AS_EBAS_ENUMERATOR",
+      "reason": "Defines EBAS as sanitary sewer pumping station and explicitly references Maunabo and Guardarrayas, but it is a strategic/project document, not an asset registry."
+    }
+  ],
+  "enumerator_certification": {
+    "aaa_bounded_current_denominator": "OPEN",
+    "aaa_bounded_historical_denominator": "OPEN",
+    "pr_wide_denominator": "OPEN",
+    "blocking_conditions": [
+      "Complete query/count of EBAS_SRC_SIGE_CALIDAD_AMBIENTE_L5 not retrieved in this execution environment.",
+      "Temporal currency and operator scope of the SIGE wastewater-pump layer are unresolved.",
+      "Official 2015 AAA geodatabase bytes/layer inventory were not recovered from bounded file surfaces.",
+      "No proof that AAA/PRASA alone covers every sanitary-sewer pump-station operator and historical facility in Puerto Rico."
+    ]
+  }
+}
