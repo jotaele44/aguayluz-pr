@@ -11,9 +11,9 @@ from jsonschema import ValidationError
 from aguayluz.models import validate_against_schema
 
 REPO = Path(__file__).resolve().parents[1]
-SCRIPT_PATH = REPO / "scripts" / "build_real_data_partial_export.py"
+TOOL_PATH = REPO / "tools" / "build_real_data_partial_export.py"
 
-_spec = importlib.util.spec_from_file_location("build_real_data_partial_export", SCRIPT_PATH)
+_spec = importlib.util.spec_from_file_location("build_real_data_partial_export", TOOL_PATH)
 assert _spec and _spec.loader
 _builder = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_builder)
