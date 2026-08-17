@@ -1,0 +1,22 @@
+{
+  "schema_version": "aguayluz.infrastructure-residual-terms/v0.1",
+  "ontology_version": "0.1.1-residual",
+  "status": "provisional",
+  "scope": "Additive canonical terms needed to adjudicate the frozen 219-row residual universe. This overlay does not modify infrastructure_terms.v0.1.json and does not establish physical identity.",
+  "identity_effect": "none",
+  "terms": [
+    {"term_id":"AYL_TERM_SURFACE_WATER_MONITORING_SITE","canonical_label":"surface_water_monitoring_site","domain":"water","asset_family":"monitoring","asset_class":"monitoring_site","feature_kind":"observation_point"},
+    {"term_id":"AYL_TERM_TIDE_GAUGE","canonical_label":"tide_gauge","domain":"water","asset_family":"monitoring","asset_class":"tide_gauge","feature_kind":"observation_point"},
+    {"term_id":"AYL_TERM_ENVIRONMENTAL_RESEARCH_STATION","canonical_label":"environmental_research_station","domain":"environmental","asset_family":"research","asset_class":"research_station","feature_kind":"site"},
+    {"term_id":"AYL_TERM_WATER_QUALITY_SAMPLE_SITE","canonical_label":"water_quality_sample_site","domain":"environmental","asset_family":"monitoring","asset_class":"sample_site","feature_kind":"observation_point"},
+    {"term_id":"AYL_TERM_SURFACE_WATER_OUTFALL","canonical_label":"surface_water_outfall","domain":"environmental","asset_family":"discharge","asset_class":"outfall","feature_kind":"observation_point"},
+    {"term_id":"AYL_TERM_ELECTRIC_SUBSTATION","canonical_label":"electric_substation","domain":"power_support","asset_family":"transmission_distribution","asset_class":"substation","feature_kind":"asset"},
+    {"term_id":"AYL_TERM_ELECTRIC_TRANSMISSION_CORRIDOR","canonical_label":"electric_transmission_corridor","domain":"power_support","asset_family":"transmission","asset_class":"transmission_corridor","feature_kind":"linear_asset"},
+    {"term_id":"AYL_TERM_COAL_GENERATION_FACILITY","canonical_label":"coal_generation_facility","domain":"power_support","asset_family":"generation","asset_class":"generation_facility","feature_kind":"asset"},
+    {"term_id":"AYL_TERM_FUEL_OIL_GENERATION_FACILITY","canonical_label":"fuel_oil_generation_facility","domain":"power_support","asset_family":"generation","asset_class":"generation_facility","feature_kind":"asset"},
+    {"term_id":"AYL_TERM_DUAL_FUEL_GENERATION_FACILITY","canonical_label":"dual_fuel_generation_facility","domain":"power_support","asset_family":"generation","asset_class":"generation_facility","feature_kind":"asset"},
+    {"term_id":"AYL_TERM_NATURAL_GAS_GENERATION_FACILITY","canonical_label":"natural_gas_generation_facility","domain":"power_support","asset_family":"generation","asset_class":"generation_facility","feature_kind":"asset"},
+    {"term_id":"AYL_TERM_SOLAR_PV_GENERATION_FACILITY","canonical_label":"solar_pv_generation_facility","domain":"power_support","asset_family":"generation","asset_class":"generation_facility","feature_kind":"asset"},
+    {"term_id":"AYL_TERM_SOLAR_BATTERY_GENERATION_FACILITY","canonical_label":"solar_battery_generation_facility","domain":"power_support","asset_family":"generation","asset_class":"generation_facility","feature_kind":"asset"}
+  ]
+}
