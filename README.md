@@ -108,3 +108,40 @@ installs dependencies, later runs work offline):
 `manifest.json` validated against the vendored hub schema
 `schemas/federation_export_manifest.schema.json`
 (`tests/test_federation_contract_compat.py`).
+
+## Bounded real-data partial export
+
+`scripts/build_real_data_partial_export.py` builds a small deterministic package
+from committed real/public-derived data without network access or credentials.
+The package is explicitly marked `PRODUCTION_REAL_DATA_PARTIAL`; it is not a
+Puerto Rico-wide completeness claim.
+
+```bash
+python scripts/build_real_data_partial_export.py \
+  --generated-at 2026-08-17T01:15:00Z \
+  --out /tmp/aguayluz-real-data-partial
+python -m pytest -q tests/test_real_data_partial_export.py tests/test_schemas.py
+```
+
+The output contains whole-row `utility_assets.jsonl` and `outage_events.jsonl`,
+a `recovery_projects.jsonl` stream that may validly be empty when no canonical
+project corpus exists, evidence-gated `continuity_risk_edges.jsonl`, and a
+machine-readable `manifest.json` with source hashes, counts, coverage limitations,
+and caveats.
+
+Recurring source access semantics are frozen in
+`registry/utility_source_registry.v1.json`. In particular, EPA SDWIS and USGS
+NWIS are keyless public federal sources; EPA WATERS/NHDPlus enrichment requires
+an API key; PREPS ingestion requires an operator-frozen public-portal snapshot;
+and MiLUMA is WAF/permission constrained and disabled by default.
+
+Continuity semantics are frozen in `config/continuity_risk_taxonomy.v1.json`.
+Existing `EDGE-WP-*` power↔water relationships remain spatial discovery proxies,
+not feeder/circuit identity. An explicit fuel token already preserved in a
+source-derived asset subtype may create only a `fuel_sensitive_candidate`; it
+does not establish current fuel stock, supplier, delivery route, or outage cause.
+
+EPA WATERS/NHDPlus caveats are exported machine-readably as
+`PROVISIONAL_PARTIAL`, bounded to the repository's validated VPU-21 evidence.
+Off-network and no-waterbody outcomes remain explicit, and no VPU-21 result is
+extrapolated to Puerto Rico-wide hydro completeness.
