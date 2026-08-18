@@ -1,0 +1,82 @@
+name: EBAS authoritative source acquisition
+
+on:
+  pull_request:
+    paths:
+      - "ontology/tools/acquire_ebas_authoritative_sources.py"
+      - ".github/workflows/ebas-authoritative-acquisition.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install geodatabase inspection dependency
+        run: python -m pip install --disable-pip-version-check fiona
+
+      - name: Acquire SIGE EBAS enumerator and official 2015 AAA geodatabase
+        run: |
+          mkdir -p reports/ebas-authoritative
+          python ontology/tools/acquire_ebas_authoritative_sources.py \
+            --out reports/ebas-authoritative
+
+      - name: Assert fail-closed acquisition contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("reports/ebas-authoritative/ebas_authoritative_acquisition.json").read_text())
+          assert report["identity_effect"] == "none"
+          assert report["physical_asset_count_claimed"] is False
+          assert report["current_denominator_claimed"] is False
+          assert report["pr_wide_denominator_claimed"] is False
+          sige = report["sige"]
+          if sige["complete"]:
+              assert sige["state"] == "RETRIEVED_COMPLETE"
+              assert sige["count"] == sige["object_id_count"] == sige["feature_count"]
+          aaa = report["aaa_2015"]
+          if aaa["complete"]:
+              assert aaa["state"] == "ARCHIVE_RETRIEVED_LAYERS_ENUMERATED"
+              assert aaa["archive"]["sha256"]
+              assert aaa["inspection"]["layers"]
+          print(json.dumps({
+              "sige_state": sige["state"],
+              "sige_count": sige.get("count"),
+              "aaa_2015_state": aaa["state"],
+              "aaa_2015_sha256": (aaa.get("archive") or {}).get("sha256"),
+              "aaa_2015_layers": len((aaa.get("inspection") or {}).get("layers", [])),
+          }, sort_keys=True))
+          PY
+
+      - name: Freeze acquisition hashes
+        run: |
+          find reports/ebas-authoritative -type f -not -path '*/aaa_2015_gdb_extracted/*' -print0 \
+            | sort -z \
+            | xargs -0 sha256sum \
+            > reports/ebas-authoritative/SHA256SUMS.txt
+
+      - name: Upload authoritative acquisition evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ebas-authoritative-acquisition
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            reports/ebas-authoritative/ebas_authoritative_acquisition.json
+            reports/ebas-authoritative/SHA256SUMS.txt
+            reports/ebas-authoritative/sige_raw/*.json
+            reports/ebas-authoritative/sige_ebas_features.jsonl
+            reports/ebas-authoritative/GDB_NAD83_2011.gdb.zip
