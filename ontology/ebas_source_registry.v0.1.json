@@ -1,7 +1,7 @@
 {
   "schema_version": "aguayluz.ebas-source-registry/v0.1",
-  "status": "provisional",
-  "scope": "Public-source registry for sanitary sewer pump-station (EBAS) discovery. Source eligibility is distinct from facility identity and denominator completeness.",
+  "status": "bounded",
+  "scope": "Public-source registry for sanitary sewer pump-station (EBAS) discovery and denominator certification. Source eligibility is distinct from facility identity and PR-wide completeness.",
   "canonical_term_id": "AYL_TERM_SANITARY_SEWER_PUMP_STATION",
   "identity_effect": "none",
   "pr_wide_denominator_claimed": false,
@@ -19,12 +19,16 @@
       "coordinate_fields": ["POINT_X", "POINT_Y"],
       "max_record_count": 2000,
       "supports_pagination": true,
-      "eligibility": "AUTHORITATIVE_BOUNDED_ENUMERATOR_CANDIDATE",
-      "query_completeness": "BLOCKED_QUERY_ENDPOINT_NOT_RETRIEVED",
-      "temporal_scope": "UNRESOLVED",
+      "query_completeness": "RETRIEVED_COMPLETE",
+      "retrieved_count": 155,
+      "retrieved_object_id_count": 155,
+      "retrieved_feature_count": 155,
+      "feature_sha256": "6ad2c2f11289dd2bde40d164db40821c93a7d834fba2de3853970d49d0120a5e",
+      "eligibility": "AUTHORITATIVE_COMPLETE_SOURCE_UNIVERSE",
+      "temporal_scope": "retrieved 2026-08; source snapshot date unresolved",
       "operator_scope": "UNRESOLVED",
-      "denominator_effect": "NOT_CERTIFIED",
-      "reason": "Object-level official GIS layer explicitly names wastewater pump stations and exposes facility-name and identifier fields, but complete feature retrieval/count and temporal/operator scope are not yet certified."
+      "denominator_effect": "INELIGIBLE_AS_AAA_CURRENT_DENOMINATOR",
+      "reason": "Complete official wastewater-pump layer retrieval is certified, but the layer has no owner/operator/lifecycle fields and sits in the CalidadAmbiente service. No source bridge establishes its 155 rows as the complete current AAA owned-and-operated WWPS universe."
     },
     {
       "source_id": "EBAS_SRC_GISPR_AAA_2015_GDB",
@@ -34,12 +38,18 @@
       "download_url": "https://gis.otg.pr.gov/Downloads/AAA/GDB_NAD83_2011.gdb.zip",
       "name": "Infraestructura Acueductos y Sanitaria",
       "nominal_snapshot": "2015",
-      "eligibility": "AUTHORITATIVE_ARCHIVE_CANDIDATE",
-      "query_completeness": "BLOCKED_ARCHIVE_BYTES_NOT_RECOVERED",
+      "query_completeness": "ARCHIVE_RETRIEVED_LAYERS_ENUMERATED",
+      "archive_size": 55676807,
+      "archive_sha256": "6afe70c8cc96f2b7d3f73a0976f4bd5d422dff74ba7071281f9c1262be851d8e",
+      "layer_count": 29,
+      "ww_pump_station_layer_count": 1066,
+      "ww_pump_station_owner_counts": {"PRASA": 969, "PRV": 91, "GOV": 5, "UNK": 1},
+      "ww_pump_station_unique_nonblank_facility_ids": 1065,
+      "eligibility": "AUTHORITATIVE_HISTORICAL_ROW_LEVEL_ENUMERATOR",
       "temporal_scope": "2015 snapshot",
-      "operator_scope": "AAA/PRASA",
-      "denominator_effect": "NOT_CERTIFIED",
-      "reason": "Official portal describes a 2015 AAA sanitary and potable infrastructure file geodatabase; the exact ZIP endpoint is now frozen, but archive bytes/layer inventory were not retrievable in this execution environment."
+      "operator_scope": "AAA geodatabase with mixed Owner codes",
+      "denominator_effect": "CERTIFIED_2015_WASTEWATER_PUMP_LAYER_1066",
+      "reason": "The recovered official geodatabase contains an explicit ww_Pump_Station point feature class with 1,066 rows, distinct from potable w_Pump_Station. Owner=PRASA occurs on 969 rows, while 97 rows use other or unknown owner codes. The 1,066 layer count is therefore not automatically equivalent to PRASA-owned-and-operated count."
     },
     {
       "source_id": "EBAS_SRC_PRASA_FY2024_CER_SYSTEM_INVENTORY",
@@ -54,10 +64,8 @@
       "reported_wwps_count": 835,
       "reported_class": "Wastewater Pump Station (WWPS)",
       "canonical_binding": "AYL_TERM_SANITARY_SEWER_PUMP_STATION",
-      "binding_basis": "The CER defines WWPS as Wastewater Pump Station, states PRASA owns and operates 835 WWPSs, and describes them by pumping capacity and proximity to receiving WWTPs. AAA's Spanish fiscal-plan terminology defines EBAS as Estación de bombeo de alcantarillado sanitario and uses EBAS for the same wastewater-pump facility class. This supports class equivalence for the bounded PRASA snapshot without asserting row-level facility identities.",
       "computed_from_retrieved_enumerator": false,
-      "physical_identity_rows_retrieved": false,
-      "reason": "Authoritative consulting-engineer report provides a system-wide PRASA GIS count of 835 WWPSs for the June 2024 snapshot. The count is certified as a reported historical denominator, not as a recomputation from retrieved feature rows."
+      "physical_identity_rows_retrieved": false
     },
     {
       "source_id": "EBAS_SRC_SIGE_AAA_V10_N",
@@ -69,8 +77,7 @@
       "query_completeness": "METADATA_EXHAUSTED",
       "temporal_scope": "UNRESOLVED",
       "operator_scope": "AAA/PRASA",
-      "denominator_effect": "INELIGIBLE_AS_EBAS_ENUMERATOR",
-      "reason": "Exposed sanitary layers are gravity sewer and pumping/force-main lines; no sanitary pump-station point layer is exposed in this service."
+      "denominator_effect": "INELIGIBLE_AS_EBAS_ENUMERATOR"
     },
     {
       "source_id": "EBAS_SRC_SIGE_INFRAESTRUCTURA_PUMP_PARK",
@@ -80,10 +87,7 @@
       "name": "Parque de Bomba",
       "eligibility": "NONCANONICAL_DISCOVERY",
       "query_completeness": "METADATA_ONLY",
-      "temporal_scope": "UNRESOLVED",
-      "operator_scope": "UNRESOLVED",
-      "denominator_effect": "INELIGIBLE_AS_EBAS_ENUMERATOR",
-      "reason": "Generic pump infrastructure cannot be equated with sanitary sewer pump stations without wastewater-specific source semantics."
+      "denominator_effect": "INELIGIBLE_AS_EBAS_ENUMERATOR"
     },
     {
       "source_id": "EBAS_SRC_PRIDCO_TENENCIA",
@@ -93,10 +97,7 @@
       "name": "PRIDCO",
       "eligibility": "SECONDARY_DISCOVERY",
       "query_completeness": "METADATA_ONLY",
-      "temporal_scope": "UNRESOLVED",
-      "operator_scope": "industrial-site context",
-      "denominator_effect": "INELIGIBLE_AS_EBAS_ENUMERATOR",
-      "reason": "AAA_bomba and related fields describe utility context for PRIDCO features, not a facility-level sanitary-pump-station registry."
+      "denominator_effect": "INELIGIBLE_AS_EBAS_ENUMERATOR"
     },
     {
       "source_id": "EBAS_SRC_PRASA_FY2024_CER_NORTH_CIP",
@@ -105,10 +106,7 @@
       "name": "PRASA FY2024 North Region CIP Projects",
       "eligibility": "AUTHORITATIVE_PROJECT_ONLY",
       "query_completeness": "BOUNDED_PAGES_218_222_EXTRACTED",
-      "temporal_scope": "FY2024 report with project completion dates through 2026",
-      "operator_scope": "AAA/PRASA North Region projects",
-      "denominator_effect": "INELIGIBLE_AS_EBAS_ENUMERATOR",
-      "reason": "Explicitly names real EBAS in rehabilitation/generator projects but project selection is not an all-facility denominator."
+      "denominator_effect": "INELIGIBLE_AS_EBAS_ENUMERATOR"
     },
     {
       "source_id": "EBAS_SRC_PRASA_2025_FISCAL_PLAN",
@@ -117,10 +115,7 @@
       "name": "Plan Fiscal Certificado de 2025 para la AAA",
       "eligibility": "AUTHORITATIVE_PROJECT_ONLY",
       "query_completeness": "EBAS_MENTIONS_EXTRACTED",
-      "temporal_scope": "2025 plan / projected through FY2030",
-      "operator_scope": "AAA/PRASA",
-      "denominator_effect": "INELIGIBLE_AS_EBAS_ENUMERATOR",
-      "reason": "Defines EBAS as sanitary sewer pumping station and explicitly references Maunabo and Guardarrayas, but it is a strategic/project document, not an asset registry."
+      "denominator_effect": "INELIGIBLE_AS_EBAS_ENUMERATOR"
     }
   ],
   "enumerator_certification": {
@@ -130,13 +125,17 @@
     "aaa_bounded_historical_state": "CERTIFIED_REPORTED_SNAPSHOT",
     "aaa_bounded_historical_basis": "PRASA GIS count reported in FY2024 Consulting Engineer's Report",
     "aaa_bounded_historical_computed_from_enumerator": false,
+    "aaa_2015_ww_pump_station_layer_denominator": 1066,
+    "aaa_2015_owner_prasa_rows": 969,
+    "aaa_2015_row_level_state": "CERTIFIED_HISTORICAL_WASTEWATER_PUMP_LAYER",
+    "sige_complete_layer_denominator": 155,
+    "sige_denominator_state": "CERTIFIED_SOURCE_LAYER_COUNT_NOT_AAA_CURRENT_DENOMINATOR",
     "pr_wide_denominator": "OPEN",
     "blocking_conditions": [
-      "Complete query/count and feature retrieval of EBAS_SRC_SIGE_CALIDAD_AMBIENTE_L5 remain unavailable in this execution environment.",
-      "Temporal currency and operator scope of the SIGE wastewater-pump layer are unresolved.",
-      "Official 2015 AAA geodatabase ZIP endpoint is frozen, but archive bytes/layer inventory were not recovered.",
-      "The June 2024 value 835 is source-reported from PRASA GIS, not independently recomputed from row-level enumerator output.",
-      "No proof that AAA/PRASA alone covers every sanitary-sewer pump-station operator and historical facility in Puerto Rico."
+      "The SIGE 155-row CalidadAmbiente layer lacks owner/operator/lifecycle fields, so it cannot yet replace the PRASA-owned-and-operated denominator.",
+      "The 2015 ww_Pump_Station layer contains mixed Owner codes and lifecycle codes whose source domains have not been recovered; 1,066 and 969 are not directly comparable to the 2024 owned-and-operated count 835.",
+      "No authoritative 2026 AAA owned-and-operated WWPS inventory has been recovered.",
+      "No proof that AAA/PRASA alone covers every current or historical sanitary-sewer pump-station operator in Puerto Rico."
     ]
   }
 }
