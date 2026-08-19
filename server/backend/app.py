@@ -31,6 +31,7 @@ from server.backend.monitoring_quality import (
     series_policy,
     series_quality,
 )
+from server.backend.regulatory_api import router as regulatory_router
 from server.backend.water_disruption_api import router as water_disruption_router
 
 
@@ -46,6 +47,7 @@ for middleware in reversed(legacy.app.user_middleware):
     app.add_middleware(middleware.cls, *middleware.args, **middleware.kwargs)
 app.include_router(water_disruption_router)
 app.include_router(cave_karst_router)
+app.include_router(regulatory_router)
 
 READING_VECTOR_REGISTRY: dict[str, dict[str, Any]] = {
     "reservoir": {"path": legacy.DATA / "reservoir_levels.jsonl", "metrics": {"reservoir_elevation": {"units": {"ft"}}, "reservoir_storage_pct": {"units": {"%"}}, "streamflow": {"units": {"ft3/s", "ft³/s"}}, "gage_height": {"units": {"ft"}}}, "metric_required": True},
