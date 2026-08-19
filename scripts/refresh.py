@@ -20,6 +20,11 @@ PY = sys.executable
 _NOW_TS = "__NOW_ISO__"
 
 STEP_NWS = ("NWS active alerts → service_events", ["scripts/ingest_nws_alerts.py"], False)
+STEP_NHC = (
+    "NHC Atlantic tropical cyclones → service_events",
+    ["scripts/ingest_nhc_storms.py"],
+    True,
+)
 STEP_USGS_QUAKES = (
     "USGS earthquakes → service_events",
     ["scripts/ingest_usgs_quakes.py"],
@@ -50,6 +55,8 @@ STEP_USGS_FIELD_MEASUREMENTS = (
     ["scripts/ingest_usgs_field_measurements.py"],
     True,
 )
+# Backward-compatible name used by the Laguna/GUI-facing refresh-plan regressions.
+STEP_USGS_FIELD_MEAS = STEP_USGS_FIELD_MEASUREMENTS
 STEP_USGS_PEAKS = (
     "USGS OGC annual peaks → usgs_peaks_readings",
     ["scripts/ingest_usgs_peaks.py"],
@@ -164,6 +171,7 @@ _DERIVE = [STEP_WATER_POWER, STEP_ALERTS, STEP_ALERT_SYSTEM]
 PLANS: dict[str, list[tuple]] = {
     "fast": [
         STEP_NWS,
+        STEP_NHC,
         STEP_USGS_QUAKES,
         STEP_USGS_CONTINUOUS,
         STEP_USGS_RTFI,
@@ -173,6 +181,7 @@ PLANS: dict[str, list[tuple]] = {
     ],
     "daily": [
         STEP_NWS,
+        STEP_NHC,
         STEP_USGS_QUAKES,
         STEP_USGS_LEVELS,
         STEP_USGS_GW,
@@ -189,6 +198,7 @@ PLANS: dict[str, list[tuple]] = {
     ],
     "weekly": [
         STEP_NWS,
+        STEP_NHC,
         STEP_USGS_QUAKES,
         STEP_USGS_ASSETS,
         STEP_USGS_LEVELS,
@@ -215,6 +225,7 @@ PLANS: dict[str, list[tuple]] = {
     ],
     "all": [
         STEP_NWS,
+        STEP_NHC,
         STEP_USGS_QUAKES,
         STEP_USGS_ASSETS,
         STEP_USGS_LEVELS,

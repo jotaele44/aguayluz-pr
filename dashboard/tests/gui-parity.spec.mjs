@@ -107,6 +107,48 @@ for (const route of routes) {
     expect(runtimeFailures, runtimeFailures.join("\n")).toEqual([]);
   });
 }
+
+// ── monitoring vectors ────────────────────────────────────────────────────────
+//
+// The manifest-driven tests above only prove a route loads. They cannot notice that a
+// newly registered reading vector is unselectable, or that selecting it throws — the
+// dropdown defaults to `reservoir_elevation` and never touches the rest.
+//
+// Known limit, stated rather than papered over: the webServer above boots
+// `server.backend.main:app` (the legacy app, whose /readings returns a bare array), and
+// every data/*_readings.jsonl file is gitignored, so CI serves empty series. These tests
+// therefore prove reachability, selectability and no-crash — not that data renders.
+// Data correctness lives in tests/test_backend_readings_api.py against the canonical app.
+const MONITORING_SERIES_LABELS = [
+  "Groundwater depth (discrete)",
+  "Annual peak streamflow",
+  "Annual peak stage",
+];
+
+for (const label of MONITORING_SERIES_LABELS) {
+  test(`monitoring series "${label}" is selectable and renders`, async ({ page }) => {
+    const runtimeFailures = [];
+    page.on("pageerror", (error) => { runtimeFailures.push(`page error: ${error.message}`); });
+    page.on("response", (response) => {
+      if (response.status() >= 500) { runtimeFailures.push(`${response.status()} ${response.url()}`); }
+    });
+
+    await page.goto("/monitoring", { waitUntil: "domcontentloaded" });
+    const picker = page.getByLabel("Monitoring series");
+    await expect(picker).toBeVisible();
+    await picker.click();
+
+    const option = page.getByRole("option", { name: label });
+    await expect(option, `"${label}" is not offered in the monitoring series picker`).toBeVisible();
+    await option.click();
+
+    // The series header echoes the label once the selection has taken effect.
+    await expect(page.locator("#root")).toContainText(label);
+    await page.waitForTimeout(500);
+    expect(runtimeFailures, runtimeFailures.join("\n")).toEqual([]);
+  });
+}
+
 // ── Severity rendering on /review ────────────────────────────────────────────
 //
 // Everything above is generated from the manifest and asserts reachability: the

@@ -22,11 +22,12 @@ This is not an access problem to escalate. It is a coverage gap to document.
 |---|---|---|---|
 | `50129899` Laguna Cartagena | lake | 33 discrete water-quality series. One sampling campaign, 2011-11 → 2012-08. **No daily values.** | `USGS_50129899` (reservoir) |
 | `50129900` Outflow | stream | Discharge daily values **1984-06-05 → 1985-11-12, 518 points**, then nothing for 40 years. Plus 36 discrete WQ series from the same 2011-12 campaign. | `USGS_50129900` (stream_gage) |
-| `180046067053700` Laguna Cartagena Well | well | 4 series, all one-off: water level (`62610`, `72019`) 1985-08-19; specific conductance (`00095`) 1986-03-25. **Zero daily values.** | `USGSWQ_180046067053700` (added by this work, `needs_review`) |
+| `180046067053700` Laguna Cartagena Well | well | 4 series, all one-off: water level (`62610`, `72019`) 1985-08-19; specific conductance (`00095`) 1986-03-25. **Zero daily values.** | `USGSWQ_180046067053700` (chemistry, `needs_review`) and `USGSFM_180046067053700` (water levels) |
 
 Sources: `waterservices.usgs.gov/nwis/site/?seriesCatalogOutput=true` for the series
 inventory; `waterservices.usgs.gov/nwis/dv/` for the discharge record;
-`api.waterdata.usgs.gov/samples-data/results/narrow` for the sample results.
+`api.waterdata.usgs.gov/samples-data/results/narrow` for the sample results;
+`api.waterdata.usgs.gov/ogcapi/v0/collections/field-measurements` for the water levels.
 
 The well was measured twice, forty years ago. That is consistent with the letter's own
 closing hypothesis — that it may never have been fully activated beyond construction.
@@ -80,11 +81,40 @@ than a caution.
 The replacement is **`api.waterdata.usgs.gov/samples-data`**, keyless, HTTP 200. That is
 what `scripts/ingest_usgs_samples.py` reads.
 
-One limitation to be aware of when reading the table above: samples-data serves the
-*chemistry*, not the water levels. It returns exactly **one row** for the well — the 1986
-specific conductance, 2350 µS/cm. The 1985 water-level measurements appear only in the
-site series catalogue and are not retrievable through the new API. If those matter, they
-need a separate route.
+samples-data serves the *chemistry*, not the water levels. It returns exactly **one row**
+for the well — the 1986 specific conductance, 2350 µS/cm.
+
+### Correction, 2026-08-02: the water levels are retrievable after all
+
+An earlier version of this document said the 1985 water-level measurements "appear only in
+the site series catalogue and are not retrievable through the new API." **That was wrong,
+and it was wrong in a specific way worth naming:** samples-data is one of ~36 collections
+on `api.waterdata.usgs.gov`, and it is not the one that replaced `gwlevels`. Discrete
+field measurements moved to the OGC API's `field-measurements` collection. Checking a
+single successor service and generalising from it is what produced the error.
+
+```
+GET api.waterdata.usgs.gov/ogcapi/v0/collections/field-measurements/items
+    ?monitoring_location_id=USGS-180046067053700&f=json
+```
+
+returns both records, keyless:
+
+| pcode | value | datum | date | approval | qualifier |
+|---|---|---|---|---|---|
+| `62610` groundwater level above NGVD29 | 31.50 ft | NGVD29 | 1985-08-19 | Approved | `Above`, `Pumping` |
+| `72019` depth to water below land surface | 11.20 ft | Local Assumed Datum | 1985-08-19 | Approved | `Above`, `Pumping` |
+
+Both are now ingested by `scripts/ingest_usgs_field_measurements.py` as
+`groundwater_level` readings against `USGSFM_180046067053700`. Both carry
+`review_status: needs_review` — the `Pumping` qualifier means the level was measured while
+the well was drawing, which is drawdown at the pump, not a static water table.
+
+The correction is larger than one well. That collection holds **4,392 measurements across
+82 PR wells** in the last ten years, against the 36 wells
+`scripts/ingest_usgs_groundwater.py` can see — it reads the Daily Values service, so a
+well without a continuous series is invisible to it no matter how recently it was
+measured. 48 of those 82 wells were absent from this corpus entirely.
 
 ## What the ingest actually recovered
 
@@ -126,9 +156,36 @@ scope here — tracked as a follow-up rather than claimed as done.
 - Whether unpublished records exist in USGS internal systems. The APIs can only show
   what is published; the letter's questions about lithological logs, instrumentation
   records and site schematics are not answerable from here.
-- The well's aquifer assignment, which the letter specifically asked for. It is absent
-  from both the site service and samples-data.
 - Anything about *why* monitoring stopped. The record shows when, not why.
+
+## The aquifer assignment: answered, and the answer is "none"
+
+The letter asked specifically for the well's aquifer assignment. An earlier version of
+this document recorded it as "absent from both the site service and samples-data," which
+left open whether USGS holds one and does not expose it.
+
+The OGC `monitoring-locations` collection settles it. USGS **publishes** the field and
+leaves it empty:
+
+```
+GET api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items
+    ?id=USGS-180046067053700&f=json
+→ aquifer_code: null, national_aquifer_code: null, aquifer_type_code: null,
+  well_constructed_depth: null, hole_constructed_depth: null, construction_date: null
+→ altitude: 42.7 ft (NGVD29), hydrologic_unit_code: 21010003, county: Lajas
+```
+
+So the site is georeferenced and assigned to a hydrologic unit, but has **no aquifer
+assignment, no constructed depth and no construction date** in the published record. That
+is consistent with the letter's own closing hypothesis that the well was never fully
+activated beyond construction — and it means the question is answered rather than blocked:
+there is nothing to release.
+
+For contrast, this is not a gap in USGS's schema. Wells that *are* assigned come back
+populated — `175711066143600` (Piezómetro JBNERR East 1, Salinas) carries
+`aquifer_code: 110SCPL` and `well_constructed_depth: 74.0`. `ingest_usgs_field_measurements.py`
+records either outcome verbatim in the asset's `source_ref`, so an empty assignment reads
+as a finding rather than as missing data.
 
 ## Related
 
@@ -136,3 +193,7 @@ scope here — tracked as a follow-up rather than claimed as done.
   the island and do carry current data, including groundwater chemistry at `GUIL`.
 - `scripts/ingest_usgs_groundwater.py` — the daily-values groundwater ingest whose
   scoping rule is discussed above.
+- `scripts/ingest_usgs_field_measurements.py` — the discrete-measurement ingest added by
+  the correction above; it recovers the well's water levels and 82 PR wells besides.
+- `scripts/ingest_usgs_samples.py` — the discrete-chemistry ingest that recovered the
+  basin's 2011-12 sampling campaign.

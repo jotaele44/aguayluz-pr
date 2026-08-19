@@ -25,7 +25,12 @@ from server.backend.monitoring_incident_ledger import (
     timeline,
     verify_chain,
 )
-from server.backend.monitoring_quality import SERIES_METADATA_REGISTRY, series_quality
+from server.backend.monitoring_quality import (
+    SERIES_METADATA_REGISTRY,
+    series_keys_for_metric,
+    series_policy,
+    series_quality,
+)
 from server.backend.water_disruption_api import router as water_disruption_router
 
 
@@ -46,6 +51,13 @@ READING_VECTOR_REGISTRY: dict[str, dict[str, Any]] = {
     "reservoir": {"path": legacy.DATA / "reservoir_levels.jsonl", "metrics": {"reservoir_elevation": {"units": {"ft"}}, "reservoir_storage_pct": {"units": {"%"}}, "streamflow": {"units": {"ft3/s", "ft³/s"}}, "gage_height": {"units": {"ft"}}}, "metric_required": True},
     "groundwater": {"path": legacy.DATA / "groundwater_levels.jsonl", "metrics": {"groundwater_level": {"units": {"ft"}}}, "metric_required": False},
     "coastal": {"path": legacy.DATA / "coastal_levels.jsonl", "metrics": {"coastal_water_level": {"units": {"ft"}}}, "metric_required": False},
+    # Discrete USGS field measurements — the wells the Daily Values service cannot see.
+    "usgs_field_measurements": {"path": legacy.DATA / "usgs_field_measurements_readings.jsonl", "metrics": {"groundwater_level": {"units": {"ft"}}}, "metric_required": False},
+    # Annual peak flow, 1899->. `ft^3/s` is load-bearing and NOT a typo: the USGS OGC API
+    # publishes `unit_of_measure: "ft^3/s"` and ingest_usgs_peaks.py stores it verbatim, so
+    # a whitelist of only {"ft3/s","ft³/s"} silently drops all 4,104 streamflow peaks —
+    # _series_rows filters on exact unit membership. Regression-tested.
+    "usgs_peaks": {"path": legacy.DATA / "usgs_peaks_readings.jsonl", "metrics": {"streamflow": {"units": {"ft^3/s", "ft3/s", "ft³/s"}}, "gage_height": {"units": {"ft"}}}, "metric_required": True},
 }
 
 
@@ -85,11 +97,11 @@ def _series_rows(kind: str, metric: str) -> list[dict[str, Any]]:
     return [row for row in legacy._load_jsonl(Path(vector["path"])) if row.get("metric") == metric and row.get("unit") in allowed_units]
 
 
-def _all_incidents(metrics: list[str]) -> list[dict[str, Any]]:
+def _all_incidents(series_keys: list[tuple[str, str]]) -> list[dict[str, Any]]:
+    """Lifecycle incidents across the given ``(kind, metric)`` series."""
     incidents: list[dict[str, Any]] = []
-    for metric in metrics:
-        metadata = SERIES_METADATA_REGISTRY[metric]
-        incidents.extend(lifecycle_alerts(metric, _series_rows(metadata["kind"], metric), legacy._parse_dt))
+    for kind, metric in series_keys:
+        incidents.extend(lifecycle_alerts(kind, metric, _series_rows(kind, metric), legacy._parse_dt))
     return incidents
 
 
@@ -114,15 +126,17 @@ def readings(kind: str = Query(default="reservoir"), metric: str | None = Query(
     units = sorted({str(row.get("unit")) for row in rows if row.get("unit") not in (None, "")})
     parameter_codes = sorted({str(row.get("parameter_code")) for row in rows if row.get("parameter_code") not in (None, "")})
     sites = Counter(str(row.get("site_no") or "unknown") for row in rows)
-    return JSONResponse({"kind": kind, "metric": metric, "parameter_code": parameter_code, "site_no": site_no, "since": since, "until": until, "record_count": len(rows), "site_count": len(sites), "units": units, "parameter_codes": parameter_codes, "mixed_units": len(units) > 1, "provenance": SERIES_METADATA_REGISTRY[metric], "quality": series_quality(metric, rows, legacy._parse_dt), "items": rows})
+    return JSONResponse({"kind": kind, "metric": metric, "parameter_code": parameter_code, "site_no": site_no, "since": since, "until": until, "record_count": len(rows), "site_count": len(sites), "units": units, "parameter_codes": parameter_codes, "mixed_units": len(units) > 1, "provenance": series_policy(kind, metric), "quality": series_quality(kind, metric, rows, legacy._parse_dt), "items": rows})
 
 
 @app.get("/monitoring/health")
 def monitoring_health() -> JSONResponse:
     vectors = {}
-    for metric, metadata in SERIES_METADATA_REGISTRY.items():
-        rows = _series_rows(metadata["kind"], metric)
-        vectors[metric] = {"kind": metadata["kind"], "record_count": len(rows), "quality": series_quality(metric, rows, legacy._parse_dt), "threshold_provenance": metadata["threshold"]["provenance"]}
+    for (kind, metric), metadata in SERIES_METADATA_REGISTRY.items():
+        rows = _series_rows(kind, metric)
+        threshold = metadata["threshold"]
+        # Key on kind:metric — a metric alone is no longer unique across corpora.
+        vectors[f"{kind}:{metric}"] = {"kind": kind, "metric": metric, "record_count": len(rows), "quality": series_quality(kind, metric, rows, legacy._parse_dt), "threshold_provenance": threshold["provenance"] if threshold else None}
     events = read_events()
     chain_valid = True
     try:
@@ -133,14 +147,22 @@ def monitoring_health() -> JSONResponse:
 
 
 @app.get("/monitoring/alerts")
-def monitoring_alerts(metric: str | None = Query(default=None), state: str = Query(default="active")) -> JSONResponse:
-    metrics = [metric] if metric else list(SERIES_METADATA_REGISTRY)
-    unknown = [name for name in metrics if name not in SERIES_METADATA_REGISTRY]
-    if unknown:
-        raise HTTPException(status_code=400, detail={"error": "unknown_reading_metric", "metric": unknown[0]})
+def monitoring_alerts(metric: str | None = Query(default=None), kind: str | None = Query(default=None), state: str = Query(default="active")) -> JSONResponse:
+    # `metric` alone stays supported and now spans every corpus publishing it, so existing
+    # callers keep working; `kind` narrows to one series when that matters.
+    if metric and kind:
+        keys = [(kind, metric)] if (kind, metric) in SERIES_METADATA_REGISTRY else []
+    elif metric:
+        keys = series_keys_for_metric(metric)
+    elif kind:
+        keys = [key for key in SERIES_METADATA_REGISTRY if key[0] == kind]
+    else:
+        keys = list(SERIES_METADATA_REGISTRY)
+    if (metric or kind) and not keys:
+        raise HTTPException(status_code=400, detail={"error": "unknown_reading_metric", "metric": metric, "kind": kind})
     if state not in {"active", "resolved", "all"}:
         raise HTTPException(status_code=400, detail={"error": "unknown_alert_state", "state": state})
-    incidents = _all_incidents(metrics)
+    incidents = _all_incidents(keys)
     if state != "all":
         incidents = [item for item in incidents if item["state"] == state]
     return JSONResponse({"total": len(incidents), "state": state, "items": incidents})
@@ -209,10 +231,10 @@ def monitoring_notification_outbox() -> JSONResponse:
 @app.get("/export/monitoring.json")
 def export_monitoring() -> JSONResponse:
     series = []
-    for metric, metadata in SERIES_METADATA_REGISTRY.items():
-        rows = _series_rows(metadata["kind"], metric)
+    for (kind, metric), metadata in SERIES_METADATA_REGISTRY.items():
+        rows = _series_rows(kind, metric)
         certified = [row for row in rows if not row.get("provisional")]
-        series.append({"metric": metric, "kind": metadata["kind"], "unit": metadata["unit"], "provenance": metadata, "quality": series_quality(metric, rows, legacy._parse_dt), "certified_record_count": len(certified), "items": certified})
+        series.append({"metric": metric, "kind": kind, "unit": metadata["unit"], "provenance": metadata, "quality": series_quality(kind, metric, rows, legacy._parse_dt), "certified_record_count": len(certified), "items": certified})
     return JSONResponse({"schema_version": "1.0.0", "series": series})
 
 

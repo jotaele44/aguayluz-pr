@@ -53,6 +53,30 @@ export const MONITORING_SERIES = [
     unit: 'ft',
     note: 'NOAA CO-OPS daily tide-gauge observations used as a coastal high-water signal.',
   },
+  {
+    key: 'field_groundwater_level',
+    label: 'Groundwater depth (discrete)',
+    sourceKind: 'usgs_field_measurements',
+    metric: 'groundwater_level',
+    unit: 'ft',
+    note: 'USGS discrete field measurements — hydrographer visits, a few times a year per well. These are the wells the Daily Values feed cannot see, so this series complements rather than duplicates "Groundwater depth". No alert threshold: 62610 (level above datum) runs opposite to 72019 (depth below surface), and there are no per-site baselines.',
+  },
+  {
+    key: 'peak_streamflow',
+    label: 'Annual peak streamflow',
+    sourceKind: 'usgs_peaks',
+    metric: 'streamflow',
+    unit: 'ft³/s',
+    note: 'USGS annual peak flow: one instantaneous maximum per water year, 1899 onward. A historical baseline for ranking a current reading against the record — not a live feed, and deliberately not an alerting series.',
+  },
+  {
+    key: 'peak_gage_height',
+    label: 'Annual peak stage',
+    sourceKind: 'usgs_peaks',
+    metric: 'gage_height',
+    unit: 'ft',
+    note: 'USGS annual peak stage. Two rows can share a water year: the stage at peak discharge and the year’s maximum stage, which need not coincide. Historical baseline, not an alerting series.',
+  },
 ]
 
 export const MONITORING_SERIES_BY_KEY = Object.fromEntries(
@@ -74,9 +98,14 @@ export function filterSeriesReadings(readings, series) {
 }
 
 function normalizeUnit(unit) {
+  // `ft^3/s` is what the USGS OGC peaks API publishes and what
+  // scripts/ingest_usgs_peaks.py stores verbatim. Without it every peak-streamflow row is
+  // dropped client-side by filterSeriesReadings even after the backend returns them.
+  // Order matters: normalize the caret form BEFORE the bare `ft3/s` rule.
   return String(unit)
     .trim()
     .toLowerCase()
+    .replace('ft^3/s', 'ft³/s')
     .replace('ft3/s', 'ft³/s')
     .replace('cfs', 'ft³/s')
 }
