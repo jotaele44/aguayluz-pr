@@ -37,13 +37,13 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # No `cache: pip` here on purpose. This job never runs pip install — it
       # audits via `pipx run pip-audit` — so ~/.cache/pip is never created, and
       # setup-python's post-job step fails hard when asked to save a cache
       # directory that does not exist.
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
 
@@ -63,10 +63,9 @@ jobs:
             echo "::error::no lock artifact (uv.lock / requirements.lock / constraints.txt)"
             exit 1
           fi
-          # Drop editable and local-path entries: these are sibling federation
-          # packages (e.g. -e ../thehub-pr/packages/prii_maintenance) that have
-          # no PyPI advisories and would fail resolution without the sibling
-          # checkout. Their own repo's audit covers them.
+          # Drop editable and local-path entries: these local federation
+          # packages have no PyPI advisories and would fail resolution outside
+          # their checkout context. Their own repo's audit covers them.
           grep -vE '^\s*(-e |\.\./|/)' /tmp/locked.txt > /tmp/audit.txt
           echo "auditing $(grep -cE '^[A-Za-z0-9]' /tmp/audit.txt || echo 0) pinned packages"
 
