@@ -11,8 +11,19 @@ export default function globalTeardown() {
   const result = spawnSync("python", [path.join(here, "gui_parity_teardown.py")], {
     stdio: "inherit",
   });
-  // Never fail the run on teardown — the tests have already reported.
+
+  // Never fail the run on teardown — the tests have already reported. But do
+  // say something in every failure mode: a silent teardown that did not run
+  // leaves the seeded fixture on disk, where a later backend run would serve
+  // SEED-* records as real review data. Both the "could not start" and the
+  // "started and exited non-zero" cases have to surface.
   if (result.error) {
     console.warn(`gui-parity teardown could not run: ${result.error.message}`);
+  } else if (result.status !== 0) {
+    console.warn(
+      `gui-parity teardown exited ${result.status}${
+        result.signal ? ` (signal ${result.signal})` : ""
+      } — the seeded fixture may still be on disk.`,
+    );
   }
 }

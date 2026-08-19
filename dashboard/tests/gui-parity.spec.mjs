@@ -200,28 +200,27 @@ test("review queue serves real records to the page, unstubbed", async ({ page })
   // guarantee in CI. It is written against record *count*, not against SEED-*
   // ids, because a developer's checkout has a real export and the seed no-ops
   // there — asserting on fixture ids would pass in CI and fail locally.
-  const payloads = [];
-  page.on("response", async (response) => {
-    if (!response.url().includes("/review-queue")) return;
-    try {
-      payloads.push(await response.json());
-    } catch {
-      // Non-JSON or already-consumed body; the assertions below still apply.
-    }
-  });
+  //
+  // Waits on the response itself rather than a fixed delay: a hard-coded pause
+  // is simultaneously too long on a fast machine and too short on a loaded CI
+  // runner, which is how a real regression turns into an intermittent one.
+  const responsePromise = page.waitForResponse(
+    (response) => response.url().includes("/review-queue") && response.status() === 200,
+  );
 
   await page.goto("/review", { waitUntil: "domcontentloaded" });
-  await page.waitForTimeout(750);
 
-  const served = payloads.find((p) => Array.isArray(p?.items));
-  expect(served, "GET /review-queue returned nothing usable").toBeTruthy();
+  const served = await (await responsePromise).json();
+  expect(Array.isArray(served?.items), "GET /review-queue returned nothing usable").toBe(true);
   expect(
     served.items.length,
     "the backend served an empty review queue — the seed did not run, or it wrote nothing",
   ).toBeGreaterThan(0);
 
-  // And the records reached the DOM, not just the network tab. The first record
-  // is on page one, since ReviewPage renders backend order sliced to PAGE_SIZE.
+  // And the records reached the DOM, not just the network tab. expect() retries
+  // until the render lands, so this needs no timeout of its own. The first
+  // record is on page one, since ReviewPage renders backend order sliced to
+  // PAGE_SIZE.
   await expect(page.getByText(served.items[0].record_ref)).toBeVisible();
 });
 

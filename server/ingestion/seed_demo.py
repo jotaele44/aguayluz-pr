@@ -3,7 +3,7 @@
 `dashboard/gui-parity.playwright.config.mjs` already looks for this file and, when
 it exists, runs it before uvicorn::
 
-    python server/ingestion/seed_demo.py && python -m uvicorn server.backend.main:app ...
+    python server/ingestion/seed_demo.py && python -m uvicorn server.backend.app:app ...
 
 That branch had never fired, because the file did not exist. The consequence is
 easy to miss and worth stating plainly: ``outputs/`` is gitignored apart from
