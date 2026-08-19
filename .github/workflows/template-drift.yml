@@ -17,7 +17,7 @@ jobs:
     env:
       PRII_TEMPLATE_REF: 4611327f5f1503fafd7ae2a03edffdb636cedc27
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Fetch pinned canonical templates outside workspace
         run: |
           template_root="$RUNNER_TEMP/prii-thehub-templates"
