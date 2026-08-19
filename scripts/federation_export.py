@@ -98,6 +98,12 @@ def _load_geo(path: Path) -> dict[str, dict]:
     return {_geo_key(m["name"]): m for m in doc.get("municipios", [])}
 
 
+def _geo_lookup(geo: dict[str, dict], name: str) -> dict | None:
+    """Resolve a municipio centroid from canonical or slugged geo indexes."""
+    key = _geo_key(name)
+    return geo.get(key) or geo.get(key.lower().replace(" ", "_"))
+
+
 def _conf(value: Any) -> float:
     try:
         c = float(value)
@@ -235,7 +241,7 @@ def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], no
             entities.setdefault(m_id, _entity(m_id, sid, muni, "municipality", 0.95, inputs, now))
             ev_src = ["data/aee_incidents.jsonl"] if e.get("evidence_tier") == "T2" else ["data/service_events.jsonl"]
             relationships.update(_rel_kv(ev_id, "located_in", m_id, sid, conf, now, source_inputs=ev_src))
-            centroid = geo.get(_geo_key(muni))
+            centroid = _geo_lookup(geo, muni)
             if centroid:
                 entities[ev_id]["location"] = {
                     "lat": round(float(centroid["lat"]), 6),
@@ -409,7 +415,11 @@ def _summary_id(now: str) -> str:
     return f"AYL_SUM_{now[:10].replace('-', '')}_export"
 
 
-def _compute_aggregates(assets: list[dict[str, Any]], events: list[dict[str, Any]]) -> dict[str, Any]:
+def _compute_aggregates(
+    assets: list[dict[str, Any]],
+    events: list[dict[str, Any]],
+    geo: dict[str, dict] | None = None,
+) -> dict[str, Any]:
     """Aggregate counts + averages for the hub_export/bridge_summary envelopes."""
     all_records = list(assets) + list(events)
     review = sum(1 for r in all_records if r.get("review_status") == "needs_review")
@@ -421,6 +431,25 @@ def _compute_aggregates(assets: list[dict[str, Any]], events: list[dict[str, Any
         if r.get("municipality") and r.get("municipality") != "unknown"
     })
     located = sum(1 for r in all_records if isinstance(r.get("lat"), (int, float)))
+    # `located` is point-precision only. But the entity graph `build_streams` writes
+    # (exports/federation/entities.jsonl) also carries a resolvable municipio centroid
+    # for events with a `municipality` — the exact fallback in the "Per-municipality
+    # outage attribution" block above — so plenty of records are spatial-join-capable
+    # at municipio granularity without their own lat/lon. `located` alone understates
+    # that; report both tiers rather than silently collapsing them into one number.
+    # Assets get no such fallback in build_streams today, so their `located_any` tier
+    # equals their point tier.
+    if geo:
+        located_any = (
+            sum(1 for a in assets if isinstance(a.get("lat"), (int, float)))
+            + sum(
+                1 for e in events
+                if isinstance(e.get("lat"), (int, float))
+                or (e.get("municipality") and _geo_lookup(geo, e["municipality"]))
+            )
+        )
+    else:
+        located_any = located
     return {
         "records_total": len(all_records),
         "records_review": review,
@@ -428,6 +457,7 @@ def _compute_aggregates(assets: list[dict[str, Any]], events: list[dict[str, Any
         "confidence_avg": conf_avg,
         "municipalities_covered": munis,
         "located": located,
+        "located_any": located_any,
     }
 
 
@@ -637,16 +667,27 @@ def build_outputs(
     _validate_and_write(outputs_dir / "hub_export.json", "hub_export", envelope)
 
     # Coverage ledger: `unresolved` and `gaps` must reflect REAL state, not
-    # constants. Without coords means the record can't participate in spatial
-    # joins downstream (PRIIS scoring, spiderweb correlate_spatial), so each
-    # such record is a measurable coverage gap.
+    # constants. Without coords means the record can't participate in a POINT
+    # spatial join downstream (PRIIS scoring, spiderweb correlate_spatial), so
+    # each such record is a measurable coverage gap at that precision.
+    #
+    # `located`/`coverage_pct` stay point-precision-only (unchanged meaning, so
+    # existing consumers keyed on this field aren't affected). `located_any`/
+    # `coverage_pct_any_location` add the coarser tier: records that resolve to
+    # SOME location — their own point, or (events only) the municipio-centroid
+    # `build_streams` already injects onto the exported entity. Reporting only
+    # the point tier understates real spatial-join capability; reporting only
+    # the "any" tier would overstate precision. Both, honestly.
     unresolved = aggregates["records_total"] - aggregates["located"]
+    unresolved_any = aggregates["records_total"] - aggregates["located_any"]
+    coverage_pct_any_location = _coverage_pct(aggregates["located_any"], aggregates["records_total"])
     coverage_gaps: list[str] = []
     if unresolved > 0:
         coverage_gaps.append(
-            f"{unresolved} record(s) lack lat/lon and cannot anchor spatial joins "
-            "(typically: PREPS island-wide events + AEE incidents whose geo "
-            "centroid is injected at stream-build time, not input ingest)"
+            f"{unresolved} record(s) lack a point coordinate (own lat/lon); "
+            f"{unresolved_any} of those also lack a resolvable municipality and "
+            "cannot anchor even a municipio-level spatial join (typically: PREPS "
+            "island-wide events with no municipality attribution)"
         )
     integration = {
         "module_id": "aguayluz-pr",
@@ -656,11 +697,13 @@ def build_outputs(
         "coverage": {
             "expected": aggregates["records_total"],
             "located": aggregates["located"],
+            "located_any": aggregates["located_any"],
             "ingested": aggregates["records_total"],
             "deduped": 0,
             "unresolved": unresolved,
             "gaps": coverage_gaps,
             "coverage_pct": coverage_pct,
+            "coverage_pct_any_location": coverage_pct_any_location,
         },
         "gates": gate_ledger,
     }
@@ -730,7 +773,7 @@ def main(argv: list[str] | None = None) -> int:
             + sorted(str(p) for p in DATA_ROOT.glob("*_readings.jsonl"))
         )
         readings = [r for p in reading_paths for r in _load_jsonl(Path(p))]
-        aggregates = _compute_aggregates(assets, events)
+        aggregates = _compute_aggregates(assets, events, geo)
         outputs_counts = build_outputs(assets, events, aggregates, now, Path(args.outputs), readings)
         print(f"wrote outputs/* — {outputs_counts}")
         # outputs/alert_events.json: operator-facing alert snapshot, validated

@@ -199,7 +199,12 @@ def gate_g05_coverage_ledger() -> GateResult:
         validate_against_schema("integration_report", data)
     except Exception as exc:  # noqa: BLE001
         return GateResult("G05_COVERAGE_LEDGER", "FAIL", str(exc))
-    return GateResult("G05_COVERAGE_LEDGER", "PASS", f"coverage_pct={data.get('coverage', {}).get('coverage_pct')}")
+    cov = data.get("coverage", {})
+    return GateResult(
+        "G05_COVERAGE_LEDGER", "PASS",
+        f"coverage_pct(point)={cov.get('coverage_pct')} "
+        f"coverage_pct(any_location)={cov.get('coverage_pct_any_location')}",
+    )
 
 
 # ---------------------------------------------------------------------------
