@@ -13,6 +13,9 @@ import {
   severityTone,
   statusTone,
   typeMeta,
+  eventPill,
+  eventTone,
+  tierBadge,
 } from '@/lib/format';
 
 // format.js is mostly lookup tables, and the interesting behaviour is almost all
@@ -207,5 +210,53 @@ describe('lookup fallbacks', () => {
     // does not recognise renders the same green as no gap at all.
     expect(gapBadge('unrecognised')).toBe(gapBadge('none'));
     expect(gapBadge('blocking')).not.toBe(gapBadge('none'));
+  });
+});
+
+describe('inherited keys do not leak through the lookup tables', () => {
+  // Every helper here indexes a plain object literal. A bare `MAP[key] ?? fallback`
+  // resolves these five strings through Object.prototype to something truthy, so
+  // the fallback never fires and the caller gets an object or a function where it
+  // expected a class string. All of them are server-supplied keys.
+  //
+  // Without these cases the switch to lookup() would be unverified: reverting any
+  // single helper to a bare index passes every other test in this file.
+  const INHERITED = ['__proto__', 'constructor', 'toString', 'valueOf', 'hasOwnProperty'];
+
+  it.each(INHERITED)('severityTone(%s) falls back to the slate class', (key) => {
+    expect(severityTone(key)).toBe('text-slate-400');
+  });
+
+  it.each(INHERITED)('tierBadge(%s) falls back to the T4 badge', (key) => {
+    expect(tierBadge(key)).toBe(tierBadge('T4'));
+  });
+
+  it.each(INHERITED)('eventTone(%s) and eventPill(%s) fall back to strings', (key) => {
+    expect(typeof eventTone(key)).toBe('string');
+    expect(typeof eventPill(key)).toBe('string');
+  });
+
+  it.each(INHERITED)('statusTone(%s) resolves to the neutral role', (key) => {
+    expect(statusTone(key)['data-status']).toBe('neutral');
+  });
+
+  it.each(INHERITED)('typeMeta(%s) returns a plain meta object, not a prototype', (key) => {
+    const meta = typeMeta(key);
+    expect(typeof meta.hex).toBe('string');
+    expect(typeof meta.badge).toBe('string');
+  });
+
+  it.each(INHERITED)('alertModuleMeta(%s) returns a label and a badge', (key) => {
+    const meta = alertModuleMeta(key);
+    expect(typeof meta.label).toBe('string');
+    expect(typeof meta.badge).toBe('string');
+  });
+
+  it.each(INHERITED)('alertSeverityMeta(%s) falls back to the em-dash meta', (key) => {
+    expect(alertSeverityMeta(key).label).toBe('\u2014');
+  });
+
+  it.each(INHERITED)('gapBadge(%s) falls back to the "none" badge', (key) => {
+    expect(gapBadge(key)).toBe(gapBadge('none'));
   });
 });

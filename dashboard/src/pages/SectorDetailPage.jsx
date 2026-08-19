@@ -5,12 +5,18 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { ArrowLeft } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { statusTone, CHART_TOOLTIP_STYLE } from '@/lib/format'
+import { lookup } from '@/lib/utils'
 import { SECTOR_META } from '@/lib/sectors'
 import Panel from '@/components/common/Panel'
 
 export default function SectorDetailPage() {
   const { sector } = useParams()
-  const meta = SECTOR_META[sector]
+  // lookup(), not SECTOR_META[sector]: this key comes straight from the URL, and
+  // a bare index resolves "__proto__" / "constructor" / "toString" through the
+  // prototype chain to a truthy object. That slipped past the `if (!meta)` guard
+  // below and crashed on meta.types.some(...) — a blank page from a hand-typed
+  // path.
+  const meta = lookup(SECTOR_META, sector, undefined)
   const { data: assets = [], isLoading: aLoad } = useAssets()
   const { data: events = [], isLoading: eLoad } = useEvents()
   const { data: sectors } = useSummarySectors()
@@ -37,7 +43,7 @@ export default function SectorDetailPage() {
 
   if (!meta) return <div className="p-6 text-slate-400">Unknown sector: {sector}</div>
 
-  const s = sectors?.[sector] ?? {}
+  const s = sectors ? lookup(sectors, sector, {}) : {}
 
   return (
     <div className="p-6 space-y-6 max-w-[1400px]">
