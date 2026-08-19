@@ -28,6 +28,9 @@ RECEIPTS_PATH = DATA_DIR / "regulatory_source_receipts.jsonl"
 LINKS_PATH = DATA_DIR / "regulatory_entity_links.jsonl"
 CHECKPOINTS_DIR = DATA_DIR / "regulatory_checkpoints"
 
+#: Matches contracts.py's Provider StrEnum and every schema's closed provider enum.
+PROVIDERS = frozenset({"EPA", "FDA", "USGS", "DRNA", "PRASA_AAA", "PREQB"})
+
 _OBSERVATION_COLUMNS = (
     "observation_id", "record_family", "provider", "provider_record_id",
     "provider_parent_record_id", "observed_at", "valid_from", "valid_until",
@@ -111,18 +114,32 @@ def merge_links(existing: list[dict], new: list[dict]) -> list[dict]:
 
 
 def write_regulatory_observations(rows: list[dict], path: Path = OBSERVATIONS_PATH) -> None:
-    _write_jsonl(path, merge_observations(_read_jsonl(path), rows))
+    """Validate ``rows`` against the schema, then merge and persist.
+
+    Existing on-disk rows are re-validated too (via :func:`load_regulatory_observations`)
+    rather than read raw, so a hand-edited or otherwise corrupted file is caught here
+    instead of silently propagating into the merge.
+    """
+    for r in rows:
+        validate_against_schema("regulatory_observation", r)
+    _write_jsonl(path, merge_observations(load_regulatory_observations(path), rows))
 
 
 def write_regulatory_receipts(rows: list[dict], path: Path = RECEIPTS_PATH) -> None:
-    _write_jsonl(path, merge_receipts(_read_jsonl(path), rows))
+    for r in rows:
+        validate_against_schema("regulatory_source_receipt", r)
+    _write_jsonl(path, merge_receipts(load_regulatory_receipts(path), rows))
 
 
 def write_regulatory_links(rows: list[dict], path: Path = LINKS_PATH) -> None:
-    _write_jsonl(path, merge_links(_read_jsonl(path), rows))
+    for r in rows:
+        validate_against_schema("regulatory_entity_link", r)
+    _write_jsonl(path, merge_links(load_regulatory_links(path), rows))
 
 
 def _checkpoint_path(provider: str, root: Path) -> Path:
+    if provider not in PROVIDERS:
+        raise ValueError(f"unknown regulatory provider: {provider!r}")
     return root / f"{provider}.json"
 
 
@@ -131,7 +148,10 @@ def load_checkpoint(provider: str, root: Path = CHECKPOINTS_DIR) -> dict[str, An
     path = _checkpoint_path(provider, root)
     if not path.is_file():
         return None
-    return json.loads(path.read_text(encoding="utf-8"))
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError(f"checkpoint for {provider!r} is not a JSON object: {path}")
+    return data
 
 
 def save_checkpoint(provider: str, checkpoint: dict[str, Any], root: Path = CHECKPOINTS_DIR) -> None:
@@ -141,8 +161,9 @@ def save_checkpoint(provider: str, checkpoint: dict[str, Any], root: Path = CHEC
     as opaque cursor/watermark state only, the same boundary the source receipts and
     the design doc's runtime activation gates require.
     """
+    path = _checkpoint_path(provider, root)
     root.mkdir(parents=True, exist_ok=True)
-    _checkpoint_path(provider, root).write_text(
+    path.write_text(
         json.dumps(checkpoint, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
         encoding="utf-8",
     )

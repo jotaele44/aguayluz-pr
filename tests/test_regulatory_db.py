@@ -186,6 +186,26 @@ def test_write_regulatory_receipts_creates_parent_dir(tmp_path):
     assert path.is_file()
 
 
+def test_write_regulatory_observations_rejects_invalid_row_before_writing(tmp_path):
+    path = tmp_path / "observations.jsonl"
+    malformed = next(
+        case["record"] for case in _cases()["invalid_observations"]
+        if case["case"] == "malformed_provider"
+    )
+    with pytest.raises(ValidationError):
+        write_regulatory_observations([malformed], path)
+    # Nothing should have been written on a rejected batch.
+    assert not path.is_file()
+
+
+def test_write_regulatory_links_rejects_invalid_row_before_writing(tmp_path):
+    path = tmp_path / "links.jsonl"
+    bad = {**_links()["approved"], "decided_by": None}  # fails schema's approved-state rule
+    with pytest.raises(ValidationError):
+        write_regulatory_links([bad], path)
+    assert not path.is_file()
+
+
 # ---------------- checkpoint store ----------------
 
 def test_checkpoint_roundtrip(tmp_path):
@@ -202,6 +222,26 @@ def test_save_checkpoint_creates_directory(tmp_path):
     root = tmp_path / "nested" / "checkpoints"
     save_checkpoint("EPA", {"cursor": "x"}, root=root)
     assert (root / "EPA.json").is_file()
+
+
+def test_checkpoint_rejects_unknown_provider(tmp_path):
+    with pytest.raises(ValueError):
+        save_checkpoint("MYSTERY_AGENCY", {"cursor": "x"}, root=tmp_path)
+    with pytest.raises(ValueError):
+        load_checkpoint("MYSTERY_AGENCY", root=tmp_path)
+
+
+def test_checkpoint_provider_cannot_escape_root_via_path_traversal(tmp_path):
+    # A provider string is never allowed to reach filesystem path construction
+    # unvalidated: only the closed PROVIDERS set may name a checkpoint file.
+    with pytest.raises(ValueError):
+        save_checkpoint("../../etc/passwd", {"cursor": "x"}, root=tmp_path)
+
+
+def test_load_checkpoint_rejects_non_object_json(tmp_path):
+    (tmp_path / "USGS.json").write_text("[1, 2, 3]", encoding="utf-8")
+    with pytest.raises(ValueError):
+        load_checkpoint("USGS", root=tmp_path)
 
 
 def test_checkpoint_never_serializes_secret_shaped_keys(tmp_path):
