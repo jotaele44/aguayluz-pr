@@ -1,0 +1,43 @@
+{
+  "schema_version": "aguayluz.infrastructure-ontology-token-accounting/v0.2",
+  "repository": "jotaele44/aguayluz-pr",
+  "pinned_main_sha": "4a1c400c3f6288c97a7226c4fa4adaffabcc4388",
+  "certification_main_sha": "d42a7611c2f6fbdd55c37b2d460d5cadbe764618",
+  "extraction_scope": "design_fixture_seed_only",
+  "global_current_main_inventory_complete": false,
+  "completion_claim": false,
+  "completion_blocker": "The connected GitHub interface can inspect repository files and CI but cannot execute a repository-wide deterministic token extractor. This manifest freezes the adjudicated seed vocabulary only and does not claim 100 percent current-main vocabulary coverage.",
+  "canonicalization": "UTF-8 JSON; token_records sorted by existing array order; object keys sorted; separators comma and colon; ensure_ascii=false",
+  "token_records_sha256": "2ca6ef9d2326c51fe79c959769a6989ba78d49edb6a08af73922d252e1839f41",
+  "accounting": {
+    "source_count": 1,
+    "document_count": 1,
+    "token_count": 12,
+    "mapped_count": 9,
+    "ambiguous_count": 3,
+    "unmapped_count": 0,
+    "deprecated_count": 0,
+    "duplicate_count": 0,
+    "receipt_count": 12,
+    "accounted_count": 12,
+    "accounting_complete_for_frozen_seed": true
+  },
+  "token_records": [
+    {"token":"EB Tk los alvarez","category":"facility_label","source":"design_fixture","disposition":"mapped","concept_ids":["AYL.WATER.PUMP_STATION","AYL.WATER.STORAGE_TANK"]},
+    {"token":"EBAS","category":"abbreviation","source":"design_fixture","disposition":"mapped","concept_ids":["AYL.WASTEWATER.LIFT_STATION"]},
+    {"token":"PTA","category":"abbreviation","source":"design_fixture","disposition":"ambiguous","concept_ids":[]},
+    {"token":"PF","category":"abbreviation","source":"design_fixture","disposition":"mapped","concept_ids":["AYL.WATER.TREATMENT_PLANT"]},
+    {"token":"Toma Rancheras","category":"facility_label","source":"design_fixture","disposition":"mapped","concept_ids":["AYL.WATER.INTAKE"]},
+    {"token":"Represa","category":"asset_term","source":"design_fixture","disposition":"ambiguous","concept_ids":[]},
+    {"token":"Embalse","category":"asset_term","source":"design_fixture","disposition":"mapped","concept_ids":["AYL.HYDROLOGY.RESERVOIR"]},
+    {"token":"Pozo","category":"asset_term","source":"design_fixture","disposition":"ambiguous","concept_ids":[]},
+    {"token":"Línea matriz","category":"asset_term","source":"design_fixture","disposition":"mapped","concept_ids":["AYL.WATER.TRANSMISSION_MAIN"]},
+    {"token":"Ventosa","category":"asset_term","source":"design_fixture","disposition":"mapped","concept_ids":["AYL.WATER.AIR_RELEASE_VALVE"]},
+    {"token":"VRP","category":"abbreviation","source":"design_fixture","disposition":"mapped","concept_ids":["AYL.WATER.PRESSURE_REDUCING_VALVE"]},
+    {"token":"SCADA","category":"abbreviation","source":"design_fixture","disposition":"mapped","concept_ids":["AYL.CONTROL_SCADA.SYSTEM"]}
+  ],
+  "allowed_dispositions": ["mapped","ambiguous","unmapped","deprecated","duplicate"],
+  "runtime_activation": false,
+  "data_rewrite": false,
+  "migration": false
+}

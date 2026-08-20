@@ -1,0 +1,24 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://aguayluz.local/schemas/infrastructure-ontology/v0.1/normalization-receipt.schema.json",
+  "title":"AguaYLuz Ontology Normalization Receipt v0.1",
+  "type":"object","additionalProperties":false,
+  "required":["schema_version","receipt_id","ontology_version","source_record_id","raw_value","normalized_concept_ids","status","mapping_ids","deterministic","idempotency_key","raw_value_preserved","asset_merge_performed","edge_created","evidence_promoted"],
+  "properties":{
+    "schema_version":{"const":"aguayluz.infrastructure-ontology-normalization-receipt/v0.1"},
+    "receipt_id":{"type":"string","minLength":1},
+    "ontology_version":{"const":"aguayluz.infrastructure-ontology/v0.1"},
+    "source_record_id":{"type":"string","minLength":1},
+    "raw_value":{"type":"string"},
+    "normalized_concept_ids":{"type":"array","uniqueItems":true,"items":{"type":"string","pattern":"^AYL\\."}},
+    "status":{"enum":["resolved","composite","ambiguous","unmapped","deprecated","rejected"]},
+    "mapping_ids":{"type":"array","uniqueItems":true,"items":{"type":"string"}},
+    "deterministic":{"const":true},
+    "idempotency_key":{"type":"string","minLength":1},
+    "raw_value_preserved":{"const":true},
+    "asset_merge_performed":{"const":false},
+    "edge_created":{"const":false},
+    "evidence_promoted":{"const":false},
+    "provenance":{"type":"array","minItems":1,"items":{"type":"object"}}
+  }
+}

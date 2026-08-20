@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aguayluz.local/schemas/infrastructure-ontology/v0.1/concept.schema.json",
+  "title": "AguaYLuz Infrastructure Ontology Concept v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version","concept_id","preferred_label_es","preferred_label_en","definition","domain","status","provenance"],
+  "properties": {
+    "schema_version": {"const": "aguayluz.infrastructure-ontology-concept/v0.1"},
+    "concept_id": {"type": "string", "pattern": "^AYL\\.[A-Z0-9_.-]+$"},
+    "preferred_label_es": {"type": "string", "minLength": 1},
+    "preferred_label_en": {"type": "string", "minLength": 1},
+    "definition": {"type": "string", "minLength": 1},
+    "domain": {"enum": ["water","wastewater","stormwater","hydrology","hydrogeology","electrical","control_scada","monitoring","administrative","operational_state","quality_provenance"]},
+    "broader_concept_id": {"type": ["string","null"]},
+    "status": {"enum": ["active","deprecated","provisional"]},
+    "crosswalks": {"type": "array", "items": {"type": "object"}},
+    "provenance": {"type": "array", "minItems": 1, "items": {"type": "object"}}
+  }
+}
