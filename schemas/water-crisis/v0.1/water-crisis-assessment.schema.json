@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/water-crisis/v0.1/water-crisis-assessment.schema.json",
+  "title": "WaterCrisisAssessmentV0_1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["assessment_id", "assessment_code", "operational_state", "observed_at", "valid_until", "affected_municipalities", "evidence_tier", "confidence", "review_status", "promotion_status", "source_receipts", "likely_causes", "contradictions", "restoration_criteria", "recommended_immediate_mitigation", "official_vs_derived"],
+  "properties": {
+    "assessment_id": {"type":"string","pattern":"^AYL_WCA_[0-9]{8}_[A-Za-z0-9_-]+$"},
+    "assessment_code": {"enum":["CARRAIZO_RATIONING_RISK","CUPEY_DISTRIBUTION_RECOVERY_FAILURE","ISLANDWIDE_RESERVOIR_DECLINE","LOCO_RESERVOIR_OBSERVATION","CONTAMINATION_EVENT"]},
+    "operational_state": {"enum":["watch","observation","adjustment","control","rationing","restoring","stable","closed","unknown"]},
+    "observed_at": {"type":"string","format":"date-time"},
+    "valid_until": {"type":"string","format":"date-time"},
+    "affected_municipalities": {"type":"array","minItems":1,"items":{"type":"string","minLength":1},"uniqueItems":true},
+    "affected_asset_ids": {"type":"array","items":{"type":"string"},"uniqueItems":true,"default":[]},
+    "evidence_tier": {"enum":["T1","T2","T3","T4"]},
+    "confidence": {"type":"integer","minimum":0,"maximum":100},
+    "review_status": {"enum":["needs_review","accepted","rejected","blocked"]},
+    "promotion_status": {"const":"candidate"},
+    "official_vs_derived": {"enum":["official","derived","mixed","unverified"]},
+    "source_receipts": {"type":"array","minItems":1,"items":{"type":"object","additionalProperties":false,"required":["source_ref","retrieved_at","sha256"],"properties":{"source_ref":{"type":"string","minLength":1},"retrieved_at":{"type":"string","format":"date-time"},"sha256":{"type":"string","pattern":"^[a-f0-9]{64}$"},"published_at":{"type":["string","null"],"format":"date-time"}}}},
+    "likely_causes": {"type":"array","items":{"type":"object","additionalProperties":false,"required":["cause","basis","confidence"],"properties":{"cause":{"type":"string","minLength":1},"basis":{"type":"string","minLength":1},"confidence":{"type":"integer","minimum":0,"maximum":100}}}},
+    "contradictions": {"type":"array","items":{"type":"object","additionalProperties":false,"required":["claim_a","claim_b","status"],"properties":{"claim_a":{"type":"string"},"claim_b":{"type":"string"},"status":{"enum":["open","resolved","superseded"]},"resolution":{"type":["string","null"]}}}},
+    "restoration_criteria": {"type":"array","items":{"type":"object","additionalProperties":false,"required":["criterion","state"],"properties":{"criterion":{"type":"string"},"state":{"enum":["unmet","partial","met","unknown"]},"evidence_ref":{"type":["string","null"]}}}},
+    "recommended_immediate_mitigation": {"type":"array","items":{"type":"string","minLength":1}},
+    "retraction_of": {"type":["string","null"]},
+    "supersedes": {"type":"array","items":{"type":"string"},"default":[]},
+    "stale": {"type":"boolean","default":false},
+    "normalization_version": {"const":"water-crisis-assessment-v0.1"}
+  }
+}
