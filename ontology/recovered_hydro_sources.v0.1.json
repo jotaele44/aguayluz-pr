@@ -1,0 +1,88 @@
+{
+  "manifest_version": "0.1",
+  "identity_effect": "none",
+  "production_mutation": false,
+  "archive": {
+    "name": "Acueductos & Canales de Riego.zip",
+    "library_path": "/GIS/Acueductos & Canales de Riego.zip",
+    "size_bytes": 717634,
+    "sha256": "1b051646535f15a5bdf96ef08be6ea8b999be56f91aead86d5e651da76bff07a"
+  },
+  "members": {
+    "Waterworks_Integrated_v2.csv": {
+      "size_bytes": 655466,
+      "sha256": "ffb72ed1d6b9900c6807e37e5320bccb0d1fb3ece0afc07b961da030678d7dc7",
+      "encoding": "utf-8-sig",
+      "delimiter": ",",
+      "header_physical_row": 1,
+      "header_width": 31,
+      "source_data_rows": 3202,
+      "row_width_mismatches": 0,
+      "dispositions": {
+        "blank_source_residue": 10,
+        "irrigation_canal_derived_manifestation": 3187,
+        "surface_water_gage": 4,
+        "water_quality_sample_site_unresolved": 1
+      },
+      "row_ranges": {
+        "blank_source_residue": [1, 10],
+        "irrigation_canal_derived_manifestation": [11, 3197],
+        "usgs_observation_rows": [3198, 3202]
+      }
+    },
+    "Canal_de_Riego_features_summary.csv": {
+      "size_bytes": 604887,
+      "sha256": "eb06b3d3b2fbea1504cb5c6204d80458604bd4bd8baff3b24a243b7f9f0fbea8",
+      "encoding": "utf-8-sig",
+      "delimiter": ",",
+      "leading_blank_physical_rows": 1,
+      "header_physical_row": 2,
+      "header": ["OBJECTID", "canal", "length_m", "centroid_lon", "centroid_lat"],
+      "source_data_rows": 3187,
+      "legacy_import_rows": 3188,
+      "legacy_parser_artifacts": 1,
+      "dispositions": {
+        "irrigation_canal_source_feature": 3187,
+        "header_as_data_parser_artifact": 1
+      }
+    }
+  },
+  "cross_manifestation_binding": {
+    "raw_member": "Canal_de_Riego_features_summary.csv",
+    "derived_member": "Waterworks_Integrated_v2.csv",
+    "raw_feature_count": 3187,
+    "derived_feature_count": 3187,
+    "join_rule": "Waterworks Asset_ID == 'SW-CAN-' + zero_pad(Canal OBJECTID, 5)",
+    "numeric_checks": ["centroid_lon==Longitude", "centroid_lat~=Latitude", "length_m~=Segment_Length_m"],
+    "latitude_abs_tolerance_degrees": 1e-12,
+    "length_abs_tolerance_m": 1e-9,
+    "longitude_abs_tolerance_degrees": 0.0,
+    "observed_max_latitude_abs_delta_degrees": 7.105427357601002e-15,
+    "observed_max_length_abs_delta_m": 9.094947017729282e-13,
+    "observed_max_longitude_abs_delta_degrees": 0.0,
+    "substantive_mismatch_count": 0,
+    "relationship": "SAME_SOURCE_FEATURE_DERIVED_MANIFESTATION",
+    "independent_corroboration": false
+  },
+  "legacy_importer_defect": {
+    "source": "Canal_de_Riego_features_summary.csv",
+    "cause": "csv.DictReader consumes the leading blank physical row as an empty header, then emits the true header as data",
+    "source_features": 3187,
+    "legacy_rows": 3188,
+    "artifact_count": 1,
+    "identity_effect": "none"
+  },
+  "bounded_reclassification_projection": {
+    "starting_source_rows": 8475,
+    "starting_classified": 1867,
+    "starting_unresolved": 6608,
+    "primary_classified": 5058,
+    "duplicate_derived_manifestations": 3187,
+    "class_known_source_rows": 8245,
+    "excluded": 11,
+    "unresolved": 219,
+    "arithmetic_closure": 8475,
+    "physical_asset_count_claimed": false,
+    "pr_wide_exhaustion_claimed": false
+  }
+}

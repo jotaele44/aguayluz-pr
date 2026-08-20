@@ -1,0 +1,35 @@
+{
+  "schema_version": "aguayluz.infrastructure-legacy-projection-rules/v0.1",
+  "status": "provisional",
+  "source_of_truth": "canonical_infrastructure_model",
+  "compatibility_only": true,
+  "identity_effect": "none",
+  "domain_to_legacy_asset_type": {
+    "water": "water",
+    "groundwater": "water",
+    "hydraulic_infrastructure": "water",
+    "wastewater": "wastewater",
+    "power_support": "power",
+    "stormwater": "water",
+    "environmental": "unknown",
+    "operational_support": "unknown",
+    "unknown": "unknown"
+  },
+  "rules": [
+    {"canonical_term_id": "AYL_TERM_SANITARY_SEWER_PUMP_STATION", "legacy_asset_type": "wastewater", "legacy_asset_subtype": "pump_station"},
+    {"canonical_term_id": "AYL_TERM_WASTEWATER_TREATMENT_PLANT", "legacy_asset_type": "wastewater", "legacy_asset_subtype": "wastewater_plant"},
+    {"canonical_term_id": "AYL_TERM_WATER_TREATMENT_PLANT", "legacy_asset_type": "water", "legacy_asset_subtype": "treatment_plant"},
+    {"canonical_term_id": "AYL_TERM_PRODUCTION_WELL", "legacy_asset_type": "water", "legacy_asset_subtype": "water_well"},
+    {"canonical_term_id": "AYL_TERM_RAW_WATER_RESERVOIR", "legacy_asset_type": "water", "legacy_asset_subtype": "reservoir"},
+    {"canonical_term_id": "AYL_TERM_IRRIGATION_CANAL", "legacy_asset_type": "water", "legacy_asset_subtype": "irrigation_canal"},
+    {"canonical_term_id": "AYL_TERM_AQUEDUCT", "legacy_asset_type": "water", "legacy_asset_subtype": "historic_aqueduct"},
+    {"canonical_term_id": "AYL_TERM_HYDROELECTRIC_GENERATOR", "legacy_asset_type": "power", "legacy_asset_subtype": "Generation_(Water)"}
+  ],
+  "fallback_policy": "domain_only_with_null_subtype",
+  "prohibitions": [
+    "projection_must_not_be_written_to_data/utility_assets.jsonl",
+    "projection_must_not_create_or_merge_canonical_identity",
+    "untyped_sites_must_not_inherit_child_asset_type",
+    "aliases_must_not_drive_projection_without_canonical_classification"
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "fixture_state": "NONCANONICAL_FIXTURE_ONLY",
+  "objects": [
+    {
+      "object_id": "AYL_FIX_SITE_EBAS_001",
+      "canonical_term_id": null,
+      "feature_kind": "site",
+      "identity_state": "noncanonical_fixture",
+      "public_label": "Synthetic EBAS site",
+      "site_id": null,
+      "parent_object_id": null,
+      "municipality": null,
+      "geometry_ref": null,
+      "lifecycle_status": null,
+      "source_assertion_ids": [],
+      "classification_decision_ids": [],
+      "confidence": null,
+      "review_status": "fixture_only",
+      "notes": "Fixture exercises independent site identity without forcing the asset's canonical type onto the site."
+    },
+    {
+      "object_id": "AYL_FIX_ASSET_EBAS_001",
+      "canonical_term_id": "AYL_TERM_SANITARY_SEWER_PUMP_STATION",
+      "feature_kind": "asset",
+      "identity_state": "noncanonical_fixture",
+      "public_label": "Synthetic sanitary sewer pump station",
+      "site_id": "AYL_FIX_SITE_EBAS_001",
+      "parent_object_id": null,
+      "municipality": null,
+      "geometry_ref": null,
+      "lifecycle_status": null,
+      "source_assertion_ids": [],
+      "classification_decision_ids": [],
+      "confidence": null,
+      "review_status": "fixture_only",
+      "notes": "EBAS is represented canonically as sanitary_sewer_pump_station; fixture only."
+    },
+    {
+      "object_id": "AYL_FIX_COMPONENT_WET_WELL_001",
+      "canonical_term_id": "AYL_TERM_WET_WELL",
+      "feature_kind": "component",
+      "identity_state": "noncanonical_fixture",
+      "public_label": "Synthetic wet well",
+      "site_id": "AYL_FIX_SITE_EBAS_001",
+      "parent_object_id": "AYL_FIX_ASSET_EBAS_001",
+      "municipality": null,
+      "geometry_ref": null,
+      "lifecycle_status": null,
+      "source_assertion_ids": [],
+      "classification_decision_ids": [],
+      "confidence": null,
+      "review_status": "fixture_only",
+      "notes": "Wet well remains a component and is never collapsed into EBAS identity."
+    }
+  ],
+  "relations": [
+    {
+      "relation_id": "AYL_FIX_REL_EBAS_LOCATED_AT_001",
+      "from_object_id": "AYL_FIX_ASSET_EBAS_001",
+      "relation_type": "located_at",
+      "to_object_id": "AYL_FIX_SITE_EBAS_001",
+      "evidence_refs": ["FIXTURE_ONLY"],
+      "identity_effect": "none",
+      "confidence": null,
+      "review_status": "fixture_only",
+      "notes": "Location relation does not merge site and asset identity."
+    },
+    {
+      "relation_id": "AYL_FIX_REL_WET_WELL_COMPONENT_001",
+      "from_object_id": "AYL_FIX_COMPONENT_WET_WELL_001",
+      "relation_type": "component_of",
+      "to_object_id": "AYL_FIX_ASSET_EBAS_001",
+      "evidence_refs": ["FIXTURE_ONLY"],
+      "identity_effect": "none",
+      "confidence": null,
+      "review_status": "fixture_only",
+      "notes": "Component relation preserves distinct identities."
+    }
+  ]
+}

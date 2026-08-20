@@ -1,0 +1,148 @@
+{
+  "schema_version": "aguayluz.ebas-non-aaa-operator-universe/v0.1",
+  "status": "bounded",
+  "identity_effect": "none",
+  "physical_asset_count_claimed": false,
+  "pr_wide_denominator_claimed": false,
+  "source_snapshot_2015": {
+    "archive_sha256": "6afe70c8cc96f2b7d3f73a0976f4bd5d422dff74ba7071281f9c1262be851d8e",
+    "layer": "ww_Pump_Station",
+    "row_count": 1066,
+    "owner_domain": {
+      "PRASA": "AAA",
+      "PRV": "Privado",
+      "GOV": "Gobierno",
+      "UNK": "Desconocido"
+    },
+    "lifecycle_domain": {
+      "-1": "Otro",
+      "0": "Desconocido",
+      "1": "Propuestos",
+      "2": "En Uso",
+      "3": "Fuera de Operación Temporera",
+      "4": "Fuera de Operación Permanente",
+      "5": "A Eliminarse",
+      "6": "Stand-by (Emergencia)",
+      "7": "Ampliar"
+    },
+    "owner_counts": {
+      "PRASA": 969,
+      "PRV": 91,
+      "GOV": 5,
+      "UNK": 1
+    },
+    "en_uso_counts": {
+      "PRASA": 792,
+      "PRV": 87,
+      "GOV": 4,
+      "UNK": 0
+    },
+    "non_aaa_owned_en_uso": 91,
+    "non_aaa_owned_en_uso_breakdown": {
+      "private": 87,
+      "government": 4
+    },
+    "government_en_uso_manifestations": [
+      {"facility_id": "WWPS0001214AAA0204", "name": "Aeropuerto", "municipality_code": "MAY", "owner": "GOV"},
+      {"facility_id": "WWPS0001037RMD0612", "name": null, "municipality_code": "MRV", "owner": "GOV"},
+      {"facility_id": "WWPS0002258RAK0318", "name": "DNER de Diego", "municipality_code": "SJN", "owner": "GOV"},
+      {"facility_id": "WWPS0002259RAK0318", "name": "DNER Baldorioty de Castro", "municipality_code": "SJN", "owner": "GOV"}
+    ],
+    "operator_inference_rule": "Owner and LifecycleStatus establish historical ownership/status only. They do not identify the operator unless an independent source explicitly does so."
+  },
+  "current_operator_classes": [
+    {
+      "class": "AAA_PRASA",
+      "owner_state": "AAA_OWNED",
+      "operator_state": "AAA_OPERATED",
+      "evidence": "PRASA FY2024 Consulting Engineer's Report states PRASA owns and operates 835 WWPSs at the June 2024 GIS snapshot.",
+      "ebas_denominator_effect": "CERTIFIED_REPORTED_HISTORICAL_835_AT_2024_06"
+    },
+    {
+      "class": "PUBLIC_CORPORATION_NON_AAA",
+      "entity": "Local Redevelopment Authority for Roosevelt Roads",
+      "owner_state": "NON_AAA_OWNED",
+      "operator_state": "NON_AAA_OPERATED",
+      "system_scope": "existing sanitary sewer system at former Naval Station Roosevelt Roads",
+      "current_status": "CONFIRMED_CURRENT_SYSTEM_OPERATOR",
+      "source_url": "https://docs.pr.gov/files/RooseveltRoads/2025/RFP/RFP%20%232025-002/LRA%20RFP%202025-002_20260109.pdf",
+      "source_claim": "LRA owns, operates, repairs, and maintains the existing sanitary sewer system; sanitary utility issues are addressed through LRA, not PRASA.",
+      "ebas_count_effect": "OPEN_NO_CURRENT_PUMP_STATION_ENUMERATOR_RECOVERED"
+    },
+    {
+      "class": "PRIVATE_FRANCHISED_UTILITY",
+      "entity": "PDM Utility Corporation",
+      "owner_state": "NON_AAA_OWNED_OR_CONTROLLED_SYSTEM",
+      "operator_state": "NON_AAA_OPERATED",
+      "system_scope": "Palmas del Mar private water/sewer utility",
+      "current_status": "CONFIRMED_CURRENT_SYSTEM_OPERATOR",
+      "source_url": "https://99129e46-889e-42f7-ad86-4d6065fd0f36.filesusr.com/ugd/6ebff8_0ec3e60af0a84987bdec3a6b9bae0855.pdf",
+      "source_claim": "April 2025 president's report states PDMU is responsible for water service and treatment of wastewater and continues operations under Franchise No. 386.",
+      "ebas_count_effect": "OPEN_NO_CURRENT_PUMP_STATION_ENUMERATOR_RECOVERED"
+    },
+    {
+      "class": "PRIVATE_FRANCHISED_UTILITY",
+      "entity": "Coco Beach Utility Company, Inc.",
+      "owner_state": "NON_AAA_OWNED_OR_CONTROLLED_SYSTEM",
+      "operator_state": "NON_AAA_OPERATED",
+      "system_scope": "Coco Beach / Grand Reserve wastewater utility",
+      "current_status": "CONFIRMED_CURRENT_WASTEWATER_OPERATOR",
+      "source_url": "https://www.epa.gov/npdes-permits/final-npdes-permit-coco-beach-wastewater-treatment-plant-puerto-rico",
+      "source_claim": "EPA final NPDES permit is effective 2025-12-01 through 2030-11-30; EPA fact sheet states Coco Beach Utility Company operates the WWTP treating sanitary wastewater from the development.",
+      "ebas_count_effect": "OPEN_NO_AUTHORITATIVE_CURRENT_PUMP_STATION_COUNT_BOUND"
+    },
+    {
+      "class": "PRIVATE_FRANCHISED_UTILITY",
+      "entity": "Caguas Real Utility Corp.",
+      "owner_state": "NON_AAA_OWNED_OR_CONTROLLED_SYSTEM",
+      "operator_state": "UNKNOWN",
+      "system_scope": "Caguas Real private aqueduct/sewer franchise",
+      "current_status": "CURRENT_2026_SEWER_OPERATION_UNRESOLVED",
+      "source_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2020/0060-2024.pdf",
+      "source_claim": "Act 60-2024 identifies Caguas Real Utility Corp. as one of the three private aqueduct/sewer systems and notes the then-current franchise expiration in 2025; no authoritative 2026 sewer-franchise renewal was recovered in the bounded search.",
+      "ebas_count_effect": "OPEN"
+    },
+    {
+      "class": "FEDERAL_INSTALLATION_NEGATIVE_CONTROL",
+      "entity": "Fort Buchanan",
+      "owner_state": "FEDERAL_SITE",
+      "operator_state": "AAA_OPERATED_SANITARY_SERVICE",
+      "system_scope": "installation sanitary wastewater",
+      "current_status": "NOT_CERTIFIED_AS_NON_AAA_SANITARY_OPERATOR",
+      "source_url": "https://aec.army.mil/Portals/115/PFAS/Fort_Buchanan_PFAS_PA_SI.pdf",
+      "source_claim": "Army report states Fort Buchanan wastewater is serviced by PRASA and PRASA is responsible for inspection and maintenance of sewer lines.",
+      "ebas_count_effect": "NONE"
+    }
+  ],
+  "private_franchise_universe": {
+    "source_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2020/0060-2024.pdf",
+    "bounded_count": 3,
+    "entities": ["PDM Utility Corporation", "Coco Beach Utility Company", "Caguas Real Utility Corp."],
+    "scope": "Private aqueduct and sewer systems operating under Puerto Rico public-service franchises as described by Act 60-2024 legislative findings.",
+    "not_equivalent_to_ebas_denominator": true
+  },
+  "municipal_operator_test": {
+    "state": "NO_INDEPENDENT_MUNICIPAL_POTW_OPERATOR_CERTIFIED_IN_BOUNDED_SEARCH",
+    "source_url": "https://www.epa.gov/npdes-permits/npdes-pretreatment-program-region-2",
+    "source_claim": "EPA states PRASA operates all POTWs on the island and has Puerto Rico's only approved pretreatment program.",
+    "caveat": "This does not prove that no municipality owns isolated collection assets; it only blocks promotion of municipalities to independent POTW/operator class without stronger facility-specific evidence."
+  },
+  "final_partition_policy": {
+    "AAA_OWNED": "Use only where authoritative source explicitly attributes ownership to AAA/PRASA.",
+    "AAA_OPERATED": "Use only where authoritative source explicitly attributes operation/service/maintenance to AAA/PRASA.",
+    "NON_AAA_OWNED": "Use where source explicitly attributes ownership/control to private, governmental, or other non-AAA entity.",
+    "NON_AAA_OPERATED": "Use only where source explicitly attributes operation/maintenance/service responsibility to a non-AAA entity.",
+    "UNKNOWN": "Use whenever owner/operator cannot be independently resolved or where historical ownership is being improperly used as an operator proxy."
+  },
+  "terminal_state": {
+    "non_aaa_sanitary_systems_current_exist": true,
+    "non_aaa_current_system_operators_confirmed": [
+      "Local Redevelopment Authority for Roosevelt Roads",
+      "PDM Utility Corporation",
+      "Coco Beach Utility Company, Inc."
+    ],
+    "current_non_aaa_ebas_denominator": "OPEN",
+    "pr_wide_ebas_denominator": "OPEN",
+    "reason": "Current non-AAA sanitary-system operation is proven, but no complete current row-level pump-station universe exists across AAA plus public-corporation/private/federal/municipal classes."
+  }
+}

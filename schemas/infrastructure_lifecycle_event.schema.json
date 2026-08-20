@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/infrastructure_lifecycle_event.schema.json",
+  "title": "InfrastructureLifecycleEvent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_id", "object_id", "state", "source_assertion_ids", "identity_effect", "certification_state"],
+  "properties": {
+    "event_id": {"type": "string", "pattern": "^AYL_LIFE_[A-Z0-9_]+$"},
+    "object_id": {"type": "string", "minLength": 1},
+    "state": {"enum": ["PROPOSED", "PLANNED", "DESIGN", "PERMITTED", "UNDER_CONSTRUCTION", "COMMISSIONED", "ACTIVE", "STANDBY", "SEASONAL", "TEMPORARILY_OUT_OF_SERVICE", "INACTIVE", "ABANDONED", "DEMOLISHED", "SUPERSEDED", "HISTORICAL", "UNKNOWN"]},
+    "valid_from": {"type": ["string", "null"], "format": "date-time"},
+    "valid_to": {"type": ["string", "null"], "format": "date-time"},
+    "source_assertion_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
+    "identity_effect": {"const": "none"},
+    "certification_state": {"enum": ["PASS", "FAIL", "OPEN", "BLOCKED", "PROVISIONAL", "AUDIT_ONLY", "NONCANONICAL", "CANDIDATE_NOT_IDENTITY", "UNRESOLVED", "SUPERSEDED"]},
+    "notes": {"type": ["string", "null"]}
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aguayluz.local/schemas/infrastructure_source_replay_decision.schema.json",
+  "title": "Infrastructure Source Replay Decision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "decision_id", "legacy_asset_id", "source_member", "source_row_number",
+    "disposition", "identity_effect", "certification_state"
+  ],
+  "properties": {
+    "decision_id": {"type": "string", "minLength": 1},
+    "legacy_asset_id": {"type": "string", "minLength": 1},
+    "source_member": {"type": "string", "minLength": 1},
+    "source_row_number": {"type": ["integer", "null"], "minimum": 1},
+    "source_member_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "raw_asset_type": {"type": ["string", "null"]},
+    "raw_asset_subtype": {"type": ["string", "null"]},
+    "canonical_term_id": {"type": ["string", "null"]},
+    "disposition": {
+      "enum": [
+        "CLASSIFIED_SOURCE_ROW",
+        "DUPLICATE_DERIVED_MANIFESTATION",
+        "EXCLUDED_SOURCE_FORMAT_RESIDUE",
+        "EXCLUDED_PARSER_ARTIFACT",
+        "UNRESOLVED"
+      ]
+    },
+    "manifestation_relation": {
+      "enum": ["NONE", "SAME_SOURCE_FEATURE_DERIVED_MANIFESTATION"]
+    },
+    "related_source_member": {"type": ["string", "null"]},
+    "related_source_row_number": {"type": ["integer", "null"], "minimum": 1},
+    "evidence": {"type": ["array", "string", "null"], "items": {"type": "string"}},
+    "identity_effect": {"const": "none"},
+    "certification_state": {
+      "enum": ["PASS", "PROVISIONAL", "OPEN", "BLOCKED", "UNRESOLVED", "SUPERSEDED"]
+    }
+  }
+}

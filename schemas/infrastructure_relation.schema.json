@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/infrastructure_relation.schema.json",
+  "title": "InfrastructureRelation",
+  "description": "Evidence-backed typed and temporally bounded relation between infrastructure objects; relation presence never collapses object identities.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["relation_id", "from_object_id", "relation_type", "to_object_id", "evidence_refs", "identity_effect", "review_status"],
+  "properties": {
+    "relation_id": {"type": "string", "minLength": 1},
+    "from_object_id": {"type": "string", "minLength": 1},
+    "relation_type": {
+      "enum": [
+        "located_at",
+        "component_of",
+        "feeds",
+        "receives_from",
+        "pumps_to",
+        "discharges_to",
+        "treats",
+        "stores_for",
+        "connected_to",
+        "upstream_of",
+        "downstream_of",
+        "serves",
+        "serves_area",
+        "colocated_with",
+        "backed_up_by",
+        "powered_by",
+        "controlled_by",
+        "monitored_by",
+        "supplies",
+        "replaced_by",
+        "supersedes",
+        "historical_predecessor_of"
+      ]
+    },
+    "to_object_id": {"type": "string", "minLength": 1},
+    "valid_from": {"type": ["string", "null"], "format": "date-time"},
+    "valid_to": {"type": ["string", "null"], "format": "date-time"},
+    "evidence_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
+    "source_assertion_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "identity_effect": {"const": "none"},
+    "confidence": {"type": ["integer", "null"], "minimum": 0, "maximum": 100},
+    "certification_state": {"enum": ["PASS", "FAIL", "OPEN", "BLOCKED", "PROVISIONAL", "AUDIT_ONLY", "NONCANONICAL", "CANDIDATE_NOT_IDENTITY", "UNRESOLVED", "SUPERSEDED"]},
+    "review_status": {"enum": ["accepted", "needs_review", "blocked", "rejected", "fixture_only"]},
+    "notes": {"type": ["string", "null"]}
+  },
+  "not": {
+    "properties": {
+      "from_object_id": {"const": "__SELF_LOOP_SENTINEL__"},
+      "to_object_id": {"const": "__SELF_LOOP_SENTINEL__"}
+    },
+    "required": ["from_object_id", "to_object_id"]
+  }
+}
