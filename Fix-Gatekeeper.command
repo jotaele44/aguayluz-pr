@@ -31,3 +31,4 @@ xattr -dr com.apple.quarantine *.command *.sh 2>/dev/null || true
 
 echo
 echo "Done. Double-click the app (or its .command launcher) to start it."
+[ -t 0 ] && read -r -p "Press Enter to close…" _ || true
