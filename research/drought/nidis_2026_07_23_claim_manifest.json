@@ -1,0 +1,101 @@
+{
+  "schema_version": "aguayluz.drought-claim-manifest/v0.1",
+  "report": {
+    "source_id": "NOAA_NIDIS",
+    "report_date": "2026-07-23",
+    "conditions_data_cutoff": "2026-07-21T17:00:00-04:00",
+    "url": "https://www.drought.gov/drought-status-updates/drought-update-puerto-rico-and-us-virgin-islands-2026-07-23",
+    "evidence_tier": "T2",
+    "canonical_observation_authority": false
+  },
+  "claims": [
+    {
+      "claim_id": "NIDIS_PR_20260723_001",
+      "claim_type": "precipitation_anomaly",
+      "reported_value": {"qualifier": "upper_bound", "value": 60, "unit": "percent_of_normal"},
+      "geography": "most Puerto Rico regions",
+      "valid_period": "preceding_60_days",
+      "candidate_authority": "NOAA_NWS_NWPS",
+      "promotion_status": "source_resolution_required"
+    },
+    {
+      "claim_id": "NIDIS_PR_20260723_002",
+      "claim_type": "precipitation_deficit",
+      "reported_value": {"qualifier": "range", "minimum": 3, "maximum": 6, "unit": "inch"},
+      "geography": "southern and southwestern Puerto Rico",
+      "candidate_authority": "NOAA_NWS_NWPS",
+      "promotion_status": "source_resolution_required"
+    },
+    {
+      "claim_id": "NIDIS_PR_20260723_003",
+      "claim_type": "precipitation_deficit",
+      "reported_value": {"qualifier": "range", "minimum": 8, "maximum": 14, "unit": "inch"},
+      "geography": "El Yunque area",
+      "candidate_authority": "NOAA_NWS_NWPS",
+      "promotion_status": "source_resolution_required"
+    },
+    {
+      "claim_id": "NIDIS_PR_20260723_004",
+      "claim_type": "drought_classification",
+      "reported_value": {"qualifier": "exact", "value": "D2", "unit": null},
+      "geography": "southern plains from Cabo Rojo to Cidra",
+      "valid_at": "2026-07-21T07:00:00-04:00",
+      "candidate_authority": "US_DROUGHT_MONITOR",
+      "promotion_status": "authoritative_geometry_required"
+    },
+    {
+      "claim_id": "NIDIS_PR_20260723_005",
+      "claim_type": "water_restriction",
+      "reported_value": {"qualifier": "exact", "value": 3, "unit": "days_per_week"},
+      "geography": "Southwest Irrigation District",
+      "candidate_authority": "PR_OPERATIONAL_IRRIGATION_RECORD",
+      "promotion_status": "operator_record_required"
+    },
+    {
+      "claim_id": "NIDIS_PR_20260723_006",
+      "claim_type": "water_restriction",
+      "reported_value": {"qualifier": "approximate", "value": 5, "unit": "percent_reduction"},
+      "geography": "Juana Diaz Irrigation District",
+      "candidate_authority": "PR_OPERATIONAL_IRRIGATION_RECORD",
+      "promotion_status": "operator_record_required"
+    },
+    {
+      "claim_id": "NIDIS_PR_20260723_007",
+      "claim_type": "stream_contribution",
+      "reported_value": {"qualifier": "exact", "value": 25, "unit": "percent_of_normal"},
+      "geography": "Patillas Irrigation District",
+      "candidate_authority": "PR_OPERATIONAL_IRRIGATION_RECORD",
+      "promotion_status": "operator_record_required"
+    },
+    {
+      "claim_id": "NIDIS_PR_20260723_008",
+      "claim_type": "wildfire_report_count",
+      "reported_value": {"qualifier": "approximate", "value": 300, "unit": "reports"},
+      "geography": "Puerto Rico",
+      "candidate_authority": "PR_FIRE_OPERATIONAL_RECORD",
+      "promotion_status": "incident_registry_required"
+    },
+    {
+      "claim_id": "NIDIS_PR_20260723_009",
+      "claim_type": "seasonal_outlook_probability",
+      "reported_value": {"qualifier": "lower_bound", "value": 70, "unit": "percent_probability"},
+      "geography": "Puerto Rico and US Virgin Islands",
+      "forecast_window": {"start": "2026-08-01", "end": "2026-10-31"},
+      "candidate_authority": "NOAA_CPC_NMME",
+      "promotion_status": "forecast_product_required"
+    },
+    {
+      "claim_id": "NIDIS_PR_20260723_010",
+      "claim_type": "source_date_typo",
+      "raw_text": "Valid July 210, 2026",
+      "candidate_authority": "PRAGWATER",
+      "promotion_status": "unresolved_do_not_normalize"
+    }
+  ],
+  "invariants": {
+    "observations_impacts_and_outlooks_are_separate": true,
+    "narrative_values_do_not_replace_first_party_records": true,
+    "approximate_values_retain_qualifiers": true,
+    "malformed_dates_fail_closed": true
+  }
+}

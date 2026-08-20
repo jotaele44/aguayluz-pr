@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prii.example/schemas/aguayluz/drought-record/v0.1",
+  "title": "AguaYLuz drought federation record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "record_id", "kind", "source_id", "source_record_id",
+    "observed_at", "issued_at", "retrieved_at", "evidence_tier", "payload",
+    "quality", "uncertainty", "lineage", "content_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": "aguayluz.drought-record/v0.1"},
+    "record_id": {"type": "string", "pattern": "^AYL_DROUGHT_[A-Z_]+_[0-9a-f]{20}$"},
+    "kind": {
+      "enum": [
+        "classification_observation", "hydrologic_indicator", "impact_event",
+        "water_restriction", "outlook", "source_document"
+      ]
+    },
+    "source_id": {"type": "string", "minLength": 1},
+    "source_record_id": {"type": "string", "minLength": 1},
+    "observed_at": {"type": ["string", "null"], "format": "date-time"},
+    "issued_at": {"type": "string", "format": "date-time"},
+    "retrieved_at": {"type": "string", "format": "date-time"},
+    "evidence_tier": {"enum": ["T1", "T2", "T3", "T4"]},
+    "payload": {"type": "object"},
+    "quality": {"type": "object"},
+    "uncertainty": {"type": "object"},
+    "lineage": {"type": "object"},
+    "content_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"kind": {"const": "outlook"}}},
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "required": ["forecast_window_start", "forecast_window_end"],
+            "properties": {
+              "forecast_window_start": {"type": "string", "format": "date"},
+              "forecast_window_end": {"type": "string", "format": "date"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"kind": {"const": "source_document"}}},
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "required": ["source_sha256", "canonical_observation_authority"],
+            "properties": {
+              "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "canonical_observation_authority": {"const": false}
+            }
+          }
+        }
+      }
+    }
+  ]
+}
