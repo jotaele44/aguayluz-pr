@@ -216,6 +216,72 @@ def test_system_status_supersets_auth_status(client, monkeypatch):
     assert "federation_manifest" in body["artifacts"]
 
 
+def test_email_configuration_requires_smtp_host(client, monkeypatch):
+    monkeypatch.setenv("NOTIFY_EMAIL_FROM", "alerts@example.test")
+    monkeypatch.setenv("NOTIFY_EMAIL_TO", "operator@example.test")
+    monkeypatch.delenv("SMTP_HOST", raising=False)
+    assert client.get("/auth/status").json()["email_configured"] is False
+
+    monkeypatch.setenv("SMTP_HOST", "smtp.example.test")
+    assert client.get("/auth/status").json()["email_configured"] is True
+
+
+def test_notify_reports_confirmed_full_success(client, monkeypatch):
+    monkeypatch.setenv("SLACK_WEBHOOK_URL", "https://example.test/slack")
+    monkeypatch.setenv("NTFY_TOPIC", "operator-topic")
+    monkeypatch.delenv("NOTIFY_EMAIL_FROM", raising=False)
+    monkeypatch.setattr(backend, "_send_slack", lambda *_: None)
+    monkeypatch.setattr(backend, "_send_ntfy", lambda *_: None)
+
+    body = client.post("/notify", json={"title": "Status", "message": "All clear"}).json()
+
+    assert body == {
+        "ok": True,
+        "channels_active": True,
+        "errors": [],
+        "attempted_channels": ["slack", "ntfy"],
+        "succeeded_channels": ["slack", "ntfy"],
+        "failed_channels": [],
+    }
+
+
+def test_notify_reports_partial_delivery(client, monkeypatch):
+    monkeypatch.setenv("SLACK_WEBHOOK_URL", "https://example.test/slack")
+    monkeypatch.setenv("NTFY_TOPIC", "operator-topic")
+    monkeypatch.delenv("NOTIFY_EMAIL_FROM", raising=False)
+    monkeypatch.setattr(backend, "_send_slack", lambda *_: None)
+
+    def fail_ntfy(*_):
+        raise RuntimeError("push rejected")
+
+    monkeypatch.setattr(backend, "_send_ntfy", fail_ntfy)
+    body = client.post("/notify", json={"message": "Check system"}).json()
+
+    assert body["ok"] is False
+    assert body["attempted_channels"] == ["slack", "ntfy"]
+    assert body["succeeded_channels"] == ["slack"]
+    assert body["failed_channels"] == [{"channel": "ntfy", "error": "push rejected"}]
+    assert body["errors"] == ["ntfy: push rejected"]
+
+
+def test_notify_reports_failed_only_delivery(client, monkeypatch):
+    monkeypatch.setenv("SLACK_WEBHOOK_URL", "https://example.test/slack")
+    monkeypatch.delenv("NTFY_TOPIC", raising=False)
+    monkeypatch.delenv("NOTIFY_EMAIL_FROM", raising=False)
+
+    def fail_slack(*_):
+        raise RuntimeError("webhook unavailable")
+
+    monkeypatch.setattr(backend, "_send_slack", fail_slack)
+    body = client.post("/notify", json={"message": "Check system"}).json()
+
+    assert body["ok"] is False
+    assert body["channels_active"] is True
+    assert body["attempted_channels"] == ["slack"]
+    assert body["succeeded_channels"] == []
+    assert body["failed_channels"] == [{"channel": "slack", "error": "webhook unavailable"}]
+
+
 def test_system_status_reports_missing_artifacts_without_failing(client):
     artifacts = client.get("/system/status").json()["artifacts"]
     for entry in artifacts.values():

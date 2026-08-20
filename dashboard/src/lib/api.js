@@ -1,12 +1,17 @@
 // REST client for the AguaYLuz-PR FastAPI backend.
 // Backend: server/backend/main.py  (uvicorn server.backend.main:app --port 8000)
 // Reads the module's REAL canonical JSONL + GeoJSON + outputs.
-import snapshot from './snapshot.json' // {} in normal builds; populated for VITE_OFFLINE exports
 export const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000'
 
 // Offline export build: resolve from an embedded data snapshot instead of fetching.
 // (A file:// page cannot fetch at all, so standalone exports bake the data in.)
 const OFFLINE = import.meta.env.VITE_OFFLINE === '1'
+let offlineSnapshotPromise
+
+const getOfflineSnapshot = async () => {
+  offlineSnapshotPromise ??= import('./snapshot.json').then((module) => module.default ?? {})
+  return offlineSnapshotPromise
+}
 
 // ── Write credential ────────────────────────────────────────────────────────
 // The backend's mutating routes are guarded by `_require_key` when API_SECRET_KEY
@@ -57,15 +62,21 @@ const authFailureMessage = () =>
 
 async function getJSON(path, fallback = null) {
   if (OFFLINE) {
+    const snapshot = await getOfflineSnapshot()
     const key = path.split('?')[0] // server-side filters degrade to the unfiltered snapshot
     return key in snapshot ? snapshot[key] : fallback
   }
   try {
     const res = await fetch(`${API_BASE}${path}`, { signal: AbortSignal.timeout(8000) })
-    if (!res.ok) return fallback
+    if (!res.ok) {
+      throw new Error(`GET ${path} failed (HTTP ${res.status})`)
+    }
     return await res.json()
-  } catch {
-    return fallback
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith(`GET ${path} failed`)) {
+      throw error
+    }
+    throw new Error(`GET ${path} failed: ${error instanceof Error ? error.message : String(error)}`)
   }
 }
 

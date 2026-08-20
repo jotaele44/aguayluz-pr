@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0.0",
+  "previous_audit_date": "2026-08-04",
+  "audit_date": "2026-08-19",
+  "previous_main_sha": "cda1aa1b42f5bd13ab61db9d78a302cd6e953c23",
+  "current_main_sha": "a498dbac266eb28e4115ea6ceae5e6d7c7d3cd71",
+  "previous_score": 81.55,
+  "current_score": 81.55,
+  "score_delta": 0.0,
+  "dimension_deltas": {
+    "code_completeness": 0,
+    "main_branch_availability": 0,
+    "ci_enforcement": 0,
+    "data_materialization": 0,
+    "operator_verification": 0,
+    "gui_completeness": 0,
+    "federation_readiness": 0
+  },
+  "adjudication": [
+    "Operational refresh commits changed canonical corpora but did not add a scored capability.",
+    "Cave and karst PR states were corrected from open to closed_merged; the capability was already included in the previous score narrative.",
+    "No secret-safe ten-category live USGS receipt was available.",
+    "No authorized outage lifecycle feed or direct Laguna current-condition observation was available.",
+    "Regulatory ingestion remains design authority without reviewed runtime increments."
+  ]
+}

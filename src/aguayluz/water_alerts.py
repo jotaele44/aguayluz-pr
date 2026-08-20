@@ -33,10 +33,11 @@ from __future__ import annotations
 
 import unicodedata
 from collections.abc import Iterable
-from typing import Any
+from typing import Any, cast
 
-from .alerts import AlertEvent
+from .alerts import AlertEvent, AlertStatus
 from .impact import MODULE_RADIUS_KM, AssetIndex, link_impact, merge_asset_ids
+from .models import ReviewStatus
 
 # Contamination severities on the workbook's 0-5 operational floor. The
 # CONTAMINATION module's default floor is 3 (see config/alert_modules.yaml); an
@@ -169,12 +170,12 @@ def contamination_alert(
         alert_id=alert_id,
         module_id="CONTAMINATION",
         event_type="quality",
-        status=status,
+        status=cast(AlertStatus, status),
         source_title=f"{title} @ {area}".strip(),
         source_ref=event.get("source_ref") or "EPA SDWIS",
         source_hash=event.get("source_hash"),
         published_at=None,
-        start_at=event.get("start_time"),
+        start_at=cast(str, event.get("start_time")),
         end_at=event.get("end_time"),
         asset_name=area or (munis[0] if munis else "PR public water system"),
         asset_id=None,
@@ -189,7 +190,7 @@ def contamination_alert(
         ilap_score=None,
         covert_flags=[],
         gap_status="none",
-        review_status=review_status,
+        review_status=cast(ReviewStatus, review_status),
         evidence_tier=event.get("evidence_tier") or "T1",
         linked_asset_ids=merge_asset_ids(event.get("linked_asset_ids"), linked),
         validation_notes="Derived from EPA SDWIS violation record; health-based/acute filter applied.",
@@ -252,7 +253,8 @@ def _tail_anomaly_alerts(
         if metric not in metric_set:
             continue
         try:
-            val = float(r.get("value"))
+            raw_value = r.get("value")
+            val = float(raw_value) if raw_value is not None else float("nan")
         except (TypeError, ValueError):
             continue
         key = (str(r.get("asset_id")), str(metric))
@@ -269,7 +271,8 @@ def _tail_anomaly_alerts(
         threshold = _percentile(sorted(vals), pct)
         cur = latest[key]
         try:
-            cur_val = float(cur.get("value"))
+            raw_value = cur.get("value")
+            cur_val = float(raw_value) if raw_value is not None else float("nan")
         except (TypeError, ValueError):
             continue
         if (cur_val < threshold) if high else (cur_val > threshold):
@@ -304,7 +307,7 @@ def _tail_anomaly_alerts(
                 source_ref=cur.get("source_ref") or f"USGS NWIS {asset_id}",
                 source_hash=None,
                 published_at=None,
-                start_at=observed,
+                start_at=cast(str, observed),
                 end_at=None,
                 asset_name=str(name),
                 asset_id=asset_id,

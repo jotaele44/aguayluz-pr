@@ -18,9 +18,9 @@ Pure functions only (no I/O, no wall-clock). Real T1 OSHA data in, real alert ou
 from __future__ import annotations
 
 import re
-from typing import Any
+from typing import Any, Literal, cast
 
-from ..alerts import AlertEvent
+from ..alerts import AlertEvent, AlertStatus
 from ..impact import MODULE_RADIUS_KM, AssetIndex, link_impact, merge_asset_ids
 from ..water_alerts import _centroid, _geo_key, _slug
 
@@ -144,13 +144,13 @@ def osha_alert(
     return AlertEvent(
         alert_id=f"AYL_ALR_{date}{OSHA_MARKER}{_slug(activity_nr)}",
         module_id="INDUSTRIAL",
-        event_type=event_type,
-        status=status,
+        event_type=cast(Literal["maintenance", "outage", "failure", "quality", "hazard", "inspection", "unknown"], event_type),
+        status=cast(AlertStatus, status),
         source_title=f"OSHA {_insp_label(insp_type)} — {estab}",
         source_ref=event.get("source_ref") or _OSHA_SOURCE_PREFIX,
         source_hash=event.get("source_hash"),
         published_at=None,
-        start_at=event.get("start_time"),
+        start_at=cast(str, event.get("start_time")),
         end_at=close_at,
         asset_name=estab,
         asset_id=None,

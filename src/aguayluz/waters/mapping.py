@@ -19,7 +19,7 @@ Conventions per AGUAYLUZ_PR_SKILL.md:
 from __future__ import annotations
 
 import hashlib
-from typing import Any, Literal
+from typing import Any, Literal, cast
 from urllib.parse import urlencode
 
 from ..confidence import score as confidence_score
@@ -201,7 +201,19 @@ def service_event_from_owld(
 
     return ServiceEvent(
         event_id=event_id,
-        event_type=event_type,  # validated by the Literal in models.py
+        event_type=cast(
+            Literal[
+                "outage",
+                "restoration",
+                "boil_water",
+                "service_interruption",
+                "water_quality_violation",
+                "contamination_incident",
+                "project_update",
+                "unknown",
+            ],
+            event_type,
+        ),
         affected_area=affected_area,
         start_time=None,
         end_time=None,

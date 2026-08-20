@@ -57,7 +57,7 @@ export default function LiveLogsPage() {
           </div>
         </div>
         <div className="flex items-center gap-2 ml-auto">
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filter area / municipio…" className="h-7 w-44 text-xs bg-slate-950 border-slate-800" />
+          <Input aria-label="Filter event logs" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filter area / municipio…" className="h-7 w-44 text-xs bg-slate-950 border-slate-800" />
           <Select value={type} onValueChange={setType}>
             <SelectTrigger className="h-7 w-[150px] text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>{EVENT_TYPES.map((t) => <SelectItem key={t} value={t} className="text-xs capitalize">{t.replace(/_/g, ' ')}</SelectItem>)}</SelectContent>
