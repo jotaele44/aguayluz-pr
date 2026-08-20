@@ -16,7 +16,6 @@ import os
 import shutil
 import subprocess
 import sys
-import venv
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -44,12 +43,50 @@ def is_complete() -> bool:
     return MARKER.exists() and venv_python().exists() and (DIST_DIR / "index.html").exists()
 
 
+def supported_python_candidates() -> list[str]:
+    return ["python3.12", "python3.11", "python3.10", "python3", "python"]
+
+
+def resolve_python_executable() -> str:
+    for candidate in supported_python_candidates():
+        executable = shutil.which(candidate)
+        if not executable:
+            continue
+        try:
+            version = subprocess.check_output(
+                [executable, "-c", "import sys; print(f'{sys.version_info[0]}.{sys.version_info[1]}')"],
+                stderr=subprocess.DEVNULL,
+                text=True,
+            ).strip()
+        except Exception:
+            continue
+        if version.startswith("3."):
+            major, minor = map(int, version.split(".")[:2])
+            if major == 3 and minor in (10, 11, 12):
+                return executable
+    raise SystemExit(
+        "A supported Python 3.10–3.12 interpreter is required. "
+        "Install Python 3.12 or 3.11 and re-run the launcher."
+    )
+
+
 def setup_python() -> None:
-    if sys.version_info < MIN_PYTHON:
-        raise SystemExit(f"Python 3.10+ required, found {sys.version.split()[0]}")
+    python_executable = resolve_python_executable()
+    if venv_python().exists():
+        try:
+            venv_version = subprocess.check_output(
+                [str(venv_python()), "-c", "import sys; print(f'{sys.version_info[0]}.{sys.version_info[1]}')"],
+                stderr=subprocess.DEVNULL,
+                text=True,
+            ).strip()
+            if not venv_version.startswith("3.10") and not venv_version.startswith("3.11") and not venv_version.startswith("3.12"):
+                print(f"Resetting incompatible virtual environment ({venv_version}) …")
+                shutil.rmtree(VENV_DIR)
+        except Exception:
+            pass
     if not venv_python().exists():
-        print(f"Creating virtual environment at {VENV_DIR} …")
-        venv.EnvBuilder(with_pip=True, clear=False).create(VENV_DIR)
+        print(f"Creating virtual environment at {VENV_DIR} using {python_executable} …")
+        subprocess.run([python_executable, "-m", "venv", str(VENV_DIR)], check=True)
     pip = [str(venv_python()), "-m", "pip", "install", "--upgrade", "pip", "--quiet"]
     run(pip)
     install = [str(venv_python()), "-m", "pip", "install", "--quiet"]

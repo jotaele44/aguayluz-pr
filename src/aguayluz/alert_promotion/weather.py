@@ -20,7 +20,7 @@ Pure functions only (no I/O, no wall-clock). Real T1 NWS data in, real alert out
 from __future__ import annotations
 
 import re
-from typing import Any
+from typing import Any, cast
 
 from ..alerts import AlertEvent
 from ..impact import MODULE_RADIUS_KM, AssetIndex, link_impact, merge_asset_ids
@@ -125,7 +125,7 @@ def weather_alert(
         source_ref=event.get("source_ref") or "NWS",
         source_hash=event.get("source_hash"),
         published_at=None,
-        start_at=event.get("start_time"),
+        start_at=cast(str, event.get("start_time")),
         end_at=event.get("end_time"),
         asset_name=areas[0],
         asset_id=None,

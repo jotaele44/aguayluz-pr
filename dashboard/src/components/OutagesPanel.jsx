@@ -62,7 +62,7 @@ export default function OutagesPanel() {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 px-2 py-1.5 shrink-0 border-b border-slate-800">
-        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search area / municipio…" className="h-7 flex-1 text-xs bg-slate-950 border-slate-800" />
+        <Input aria-label="Search outages" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search area / municipio…" className="h-7 flex-1 text-xs bg-slate-950 border-slate-800" />
         <Select value={type} onValueChange={setType}>
           <SelectTrigger className="h-7 w-[130px] text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>{EVENT_TYPES.map((t) => <SelectItem key={t} value={t} className="text-xs capitalize">{t.replace(/_/g, ' ')}</SelectItem>)}</SelectContent>

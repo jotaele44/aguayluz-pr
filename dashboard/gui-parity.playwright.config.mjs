@@ -16,8 +16,10 @@ function findRepositoryRoot(start) {
 
 const frontendRoot = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = findRepositoryRoot(frontendRoot);
-const frontendUrl = "http://127.0.0.1:5173";
-const backendUrl = "http://127.0.0.1:8000";
+const frontendPort = process.env.GUI_PARITY_FRONTEND_PORT ?? "5173";
+const backendPort = process.env.GUI_PARITY_BACKEND_PORT ?? "8000";
+const frontendUrl = `http://127.0.0.1:${frontendPort}`;
+const backendUrl = `http://127.0.0.1:${backendPort}`;
 const seedScript = path.join(repositoryRoot, "server", "ingestion", "seed_demo.py");
 const backendCommand = fs.existsSync(seedScript)
   ? "python server/ingestion/seed_demo.py && python -m uvicorn server.backend.app:app --host 127.0.0.1 --port 8000"
@@ -49,10 +51,11 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: backendCommand,
+      command: backendCommand.replace("--port 8000", `--port ${backendPort}`),
       cwd: repositoryRoot,
       env: {
         ...process.env,
+        ALLOWED_ORIGINS: frontendUrl,
         PYTHONPATH: [
           path.join(repositoryRoot, "src"),
           repositoryRoot,
@@ -66,7 +69,7 @@ export default defineConfig({
       timeout: 120_000,
     },
     {
-      command: "npm run dev -- --host 127.0.0.1 --port 5173 --strictPort",
+      command: `npm run dev -- --host 127.0.0.1 --port ${frontendPort} --strictPort`,
       cwd: frontendRoot,
       env: {
         ...process.env,

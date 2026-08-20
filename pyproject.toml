@@ -40,10 +40,12 @@ prii-export-utils = { git = "https://github.com/jotaele44/thehub-pr.git", rev = 
 
 [project.optional-dependencies]
 dev = [
+  "fastapi>=0.111.0",
   "pytest>=8",
   "pytest-httpx>=0.30",
   "pytest-cov>=5",
   "ruff>=0.5",
+  "uvicorn[standard]>=0.29.0",
 ]
 # Heavy geospatial stack used only by scripts/build_pr_geo_boundaries.py (GDAL-backed).
 # Kept out of the default install so `pip install -e .[dev]` and CI stay lightweight.

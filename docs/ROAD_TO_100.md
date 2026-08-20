@@ -1,10 +1,16 @@
 # Road to 100 — normalized federation score
 
-**Audit date:** 2026-08-04  
-**Current main:** `cda1aa1b42f5bd13ab61db9d78a302cd6e953c23`
+**Audit date:** 2026-08-19
+**Current main:** `a498dbac266eb28e4115ea6ceae5e6d7c7d3cd71`
 **Scoring model:** code completeness 20%; main-branch availability 15%; CI enforcement 15%; data materialization 15%; operator verification 15%; GUI completeness 10%; federation readiness 10%.
 
 ## Current normalized score: 81.55 / 100
+
+The score is unchanged from 2026-08-04. Commits through the current-main SHA
+refresh operational corpora and reconcile roadmap authority, but do not provide
+new live-provider, durable-runtime, authorized-outage, or operator-verification
+evidence that earns credit under this model. The machine-readable delta log is
+`docs/road_to_100_score_delta.v1.json`.
 
 | Dimension | Weight | Score | Weighted |
 |---|---:|---:|---:|
@@ -25,10 +31,11 @@ PR #120 landed design authority for provider-agnostic regulatory observations, s
 - Core utility, water, alert, export, dashboard and desktop capabilities are on `main`.
 - PR #120 is merged design authority only. Live provider adapters, durable persistence, scheduling, GUI/API exposure and adjudicated entity promotion remain implementation gaps.
 - PR #116 is the current-main authority for auditable USGS water-category coverage. Live verification remains an operator task.
-- Cave/karst core and read-only surface are current-main capabilities.
+- Cave/karst core and read-only surface from PRs #114/#115 are current-main capabilities; their former open/stacked ledger states are superseded.
 - PR #118 is current-main context-only control-plane evidence and preserves direct current observations `0`, `current_condition.status = unknown`, no automatic leakage finding and no root-cause claim.
 - Mycelial Phase 1 remains independently balloted and unimplemented.
 - Authorized live outage provenance remains externally constrained.
+- Draft/export work observed in the 2026-08-19 planning snapshot remains non-authoritative until merged: ontology/drought (#167), bounded partial export (#168), and dependency/refresh audit (#169). Issues #10/#11 remain one duplicated continuity-risk request and must use one canonical taxonomy.
 
 ### PR #109 live-data evidence to adjudicate
 

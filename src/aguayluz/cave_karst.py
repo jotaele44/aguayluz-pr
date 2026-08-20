@@ -340,7 +340,7 @@ def build_alerts(
 
 
 def _duplicates(rows: list[dict[str, Any]], field: str) -> list[str]:
-    values = [row.get(field) for row in rows]
+    values = [str(row[field]) for row in rows if row.get(field) is not None]
     return [
         f"duplicate {field}: {value}"
         for value in sorted({value for value in values if values.count(value) > 1})

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:export": "VITE_OFFLINE=1 vite build",
+    "snapshot": "python ../scripts/gen_dashboard_snapshot.py",
+    "build:export": "npm run snapshot && VITE_OFFLINE=1 vite build",
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
     "test": "vitest run",

@@ -212,7 +212,7 @@ def _default_streamcat_fetch(comid: int, metric: str) -> float | None:
     """Default StreamCat fetcher using pynhd."""
     from pynhd import streamcat
 
-    df = streamcat(comid_ids=[comid], metric_names=[metric])
+    df = streamcat(comids=[comid], metric_names=[metric])
     if df is None or len(df) == 0:
         return None
     row = df.iloc[0]

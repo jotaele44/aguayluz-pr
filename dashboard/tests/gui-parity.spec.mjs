@@ -16,7 +16,8 @@ function findRepositoryRoot(start) {
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = findRepositoryRoot(here);
-const backendUrl = "http://127.0.0.1:8000";
+const backendPort = process.env.GUI_PARITY_BACKEND_PORT ?? "8000";
+const backendUrl = `http://127.0.0.1:${backendPort}`;
 const manifest = JSON.parse(
   fs.readFileSync(
     path.join(repositoryRoot, ".federation", "gui-capabilities.json"),
@@ -102,6 +103,44 @@ for (const route of routes) {
           )
         ).status(),
       ).toBe(405);
+    }
+
+    if (route === "/system") {
+        await expect(page.getByRole("heading", { name: "System & Tools" })).toBeVisible();
+        await expect(page.getByRole("heading", { name: "Compose notification" })).toBeVisible();
+        await expect(page.getByLabel("Title")).toBeVisible();
+        await expect(page.getByLabel("Message")).toBeVisible();
+        await expect(page.getByRole("button", { name: "Run federation export" })).toBeVisible();
+        await expect(page.getByRole("button", { name: "Refresh export status" })).toBeVisible();
+        await expect(page.getByText(/never reads or displays their values/i)).toBeVisible();
+    }
+
+    const unnamedControls = await page.locator("button, a[href], input, select, textarea").evaluateAll(
+      (controls) => controls
+        .filter((control) => {
+          const labelledBy = control.getAttribute("aria-labelledby");
+          const labelled = labelledBy && labelledBy
+            .split(/\s+/)
+            .some((id) => document.getElementById(id)?.textContent?.trim());
+          return !(
+            control.getAttribute("aria-label")?.trim()
+            || control.getAttribute("title")?.trim()
+            || control.textContent?.trim()
+            || labelled
+            || (control.id && document.querySelector(`label[for="${CSS.escape(control.id)}"]`))
+          );
+        })
+        .map((control) => control.outerHTML.slice(0, 180)),
+    );
+    expect(unnamedControls, `Unnamed controls on ${route}`).toEqual([]);
+
+    const focusableCount = await page.locator("button, a[href], input, select, textarea, [tabindex]:not([tabindex='-1'])").evaluateAll(
+      (controls) => controls.filter((control) => control.getClientRects().length > 0).length,
+    );
+    if (focusableCount > 0) {
+      await page.keyboard.press("Tab");
+      const focusedTag = await page.evaluate(() => document.activeElement?.tagName);
+      expect(focusedTag, `Keyboard focus did not enter ${route}`).not.toBe("BODY");
     }
 
     expect(runtimeFailures, runtimeFailures.join("\n")).toEqual([]);

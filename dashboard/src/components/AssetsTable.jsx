@@ -181,6 +181,7 @@ export default function AssetsTable({ assets = [], isLoading, selectedId, onSele
         <div className="flex items-center gap-2">
           <div className="w-12 shrink-0 text-xs text-slate-400">{rows.length}</div>
           <Input
+            aria-label="Search assets"
             value={q}
             onChange={(e) => setFilters({ q: e.target.value })}
             ref={searchRef}
