@@ -110,3 +110,31 @@ def test_non_aaa_owner_operator_universe_is_fail_closed() -> None:
     assert federal["entity"] == "Fort Buchanan"
     assert federal["operator_state"] == "AAA_OPERATED_SANITARY_SERVICE"
     assert universe["municipal_operator_test"]["state"] == "NO_INDEPENDENT_MUNICIPAL_POTW_OPERATOR_CERTIFIED_IN_BOUNDED_SEARCH"
+
+
+def test_current_non_aaa_asset_enumeration_is_bounded_and_fail_closed() -> None:
+    data = json.loads(Path("ontology/ebas_non_aaa_current_asset_enumeration.v0.1.json").read_text(encoding="utf-8"))
+    assert data["current_non_aaa_ebas_denominator"] == "OPEN"
+    assert data["current_non_aaa_operational_ebas_denominator"] == "OPEN"
+    assert data["certified_current_non_aaa_operational_lower_bound"] == 5
+    assert data["cross_source_named_station_manifestations"] == 12
+    operators = {row["operator"]: row for row in data["operators"]}
+    pdmu = operators["PDM Utility Corporation"]
+    assert pdmu["current_station_count"] == 5
+    assert pdmu["current_station_count_state"] == "CERTIFIED_CURRENT_OPERATOR_BOUND_DENOMINATOR"
+    assert [x["station_id"] for x in pdmu["named_station_assets"]] == ["PS-1", "PS-2", "PS-3", "PS-10", "PS-12"]
+    lra = operators["Local Redevelopment Authority for Roosevelt Roads"]
+    assert lra["named_asset_count"] == 5
+    assert lra["current_operational_count"] == "OPEN"
+    coco = operators["Coco Beach Utility Company, Inc."]
+    assert coco["recent_operational_station_count"] == 2
+    assert coco["current_station_count"] == "OPEN"
+    assert coco["same_name_exclusion"]["facility_id"] == "WWPS0000166AAA0329"
+    assert coco["same_name_exclusion"]["owner"] == "PRASA"
+    caguas = operators["Caguas Real Utility Corp."]
+    assert caguas["current_water_system_state"] == "CONFIRMED"
+    assert caguas["sewer_operator_state"] == "CURRENT_2026_UNRESOLVED"
+    assert caguas["current_station_count"] == "OPEN"
+    assert data["aaa_combination_gate"]["aaa_current_2026_denominator"] == "OPEN"
+    assert data["aaa_combination_gate"]["combination_state"] == "NOT_EXECUTED"
+    assert data["pr_wide_closure"]["state"] == "OPEN"
