@@ -85,3 +85,28 @@ def test_maunabo_conversion_is_not_current_station_identity() -> None:
     row = next(row for row in manifestations if row["name_raw"] == "PTAR y EBAS de Maunabo")
     assert row["manifestation_kind"] == "PLANNED_WWTP_TO_EBAS_CONVERSION"
     assert row["identity_state"] == "CANDIDATE_NOT_IDENTITY"
+
+
+def test_non_aaa_owner_operator_universe_is_fail_closed() -> None:
+    universe = json.loads(Path("ontology/ebas_non_aaa_operator_universe.v0.1.json").read_text(encoding="utf-8"))
+    snap = universe["source_snapshot_2015"]
+    assert snap["owner_domain"] == {"PRASA": "AAA", "PRV": "Privado", "GOV": "Gobierno", "UNK": "Desconocido"}
+    assert snap["lifecycle_domain"]["2"] == "En Uso"
+    assert snap["en_uso_counts"] == {"PRASA": 792, "PRV": 87, "GOV": 4, "UNK": 0}
+    assert snap["non_aaa_owned_en_uso"] == 91
+    assert len(snap["government_en_uso_manifestations"]) == 4
+    terminal = universe["terminal_state"]
+    assert terminal["non_aaa_sanitary_systems_current_exist"] is True
+    assert terminal["current_non_aaa_ebas_denominator"] == "OPEN"
+    assert terminal["pr_wide_ebas_denominator"] == "OPEN"
+    assert set(terminal["non_aaa_current_system_operators_confirmed"]) == {
+        "Local Redevelopment Authority for Roosevelt Roads",
+        "PDM Utility Corporation",
+        "Coco Beach Utility Company, Inc.",
+    }
+    assert universe["private_franchise_universe"]["bounded_count"] == 3
+    assert universe["private_franchise_universe"]["not_equivalent_to_ebas_denominator"] is True
+    federal = next(x for x in universe["current_operator_classes"] if x["class"] == "FEDERAL_INSTALLATION_NEGATIVE_CONTROL")
+    assert federal["entity"] == "Fort Buchanan"
+    assert federal["operator_state"] == "AAA_OPERATED_SANITARY_SERVICE"
+    assert universe["municipal_operator_test"]["state"] == "NO_INDEPENDENT_MUNICIPAL_POTW_OPERATOR_CERTIFIED_IN_BOUNDED_SEARCH"
