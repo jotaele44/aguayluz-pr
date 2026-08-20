@@ -1,0 +1,776 @@
+{
+  "fixture_version": "2.1.0",
+  "authority": {
+    "design_ballot_receipt": 5175521569,
+    "research_ingest_hold_review": 4851413154,
+    "adr": "ADR-0002",
+    "classification": "design_only",
+    "approve_research_ingest": "HOLD",
+    "ready_transition_authorized": false,
+    "merge_authorized": false,
+    "auto_merge_authorized": false
+  },
+  "valid_cases": [
+    {
+      "name": "source_registry_positive",
+      "schema": "source-license-provenance.schema.json",
+      "record": {
+        "record_type": "source_registry_entry",
+        "schema_version": "2.1.0",
+        "source_id": "MYC_SRC_DEMO_001",
+        "source_title": "Synthetic design fixture",
+        "authority": "Fixture authority",
+        "stable_source_record_id_rule": "Use provider-issued immutable identifier.",
+        "acquisition_design": {
+          "method_class": "offline_fixture",
+          "locator_template": "fixture://mycelial/{record_id}",
+          "content_hash_algorithm": "sha256",
+          "receipt_required": true
+        },
+        "license": {
+          "license_id": "FIXTURE-ONLY",
+          "license_url": null,
+          "redistribution": "prohibited",
+          "derivative_use": "prohibited",
+          "terms_verified_at": "2026-08-04T20:00:00-04:00"
+        },
+        "retention": {
+          "raw_bytes": "do_not_retain",
+          "normalized_records": "do_not_retain",
+          "minimum_days": null,
+          "deletion_authority": "Design fixture only"
+        },
+        "attribution": "Synthetic design fixture; no external dataset.",
+        "coordinate_retention_policy": "opaque_ballot_d_policy_reference_required"
+      }
+    },
+    {
+      "name": "provenance_positive",
+      "schema": "source-license-provenance.schema.json",
+      "record": {
+        "record_type": "provenance_record",
+        "schema_version": "2.1.0",
+        "provenance_id": "MYC_PROV_DEMO_001",
+        "source_id": "MYC_SRC_DEMO_001",
+        "source_record_id": "fixture-record-001",
+        "acquired_at": "2026-08-04T20:00:00-04:00",
+        "content_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "media_type": "application/json",
+        "evidence_tier": "T4",
+        "review_state": "needs_review",
+        "exact_replay_key": "MYC_SRC_DEMO_001:fixture-record-001:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "duplicate_candidate_key": "fixture-morphotype:2026-08-04:municipality-demo",
+        "coordinate_representation": {
+          "mode": "withheld",
+          "policy_reference": "BALLOT_D_NOT_APPROVED"
+        }
+      }
+    },
+    {
+      "name": "negative_survey_nonabsence",
+      "schema": "sampling-effort.schema.json",
+      "record": {
+        "record_type": "survey_effort",
+        "schema_version": "2.1.0",
+        "survey_id": "MYC_SUR_DEMO_001",
+        "protocol_id": "fixture-protocol",
+        "protocol_version": "1.0.0",
+        "started_at": "2026-08-04T13:00:00-04:00",
+        "ended_at": "2026-08-04T14:00:00-04:00",
+        "timezone": "America/Puerto_Rico",
+        "search_geometry": {
+          "kind": "bounded_area",
+          "generalized_reference": "municipality:DEMO",
+          "exact_coordinates_included": false
+        },
+        "person_minutes": 60,
+        "observer_count": 1,
+        "observer_pseudonyms": [
+          "observer-001"
+        ],
+        "qualification_classes": [
+          "field_observer"
+        ],
+        "target_scope": {
+          "kind": "guild",
+          "value": "saprotrophic fungi"
+        },
+        "coverage": {
+          "substrates": [
+            "soil"
+          ],
+          "hosts": [],
+          "deadwood": [
+            "fallen-log"
+          ],
+          "microsites": [
+            "shaded-ground"
+          ]
+        },
+        "constraints": [
+          "intermittent rain"
+        ],
+        "equipment": [
+          "camera",
+          "field notebook"
+        ],
+        "outcome": "negative",
+        "completed": true,
+        "non_detection_interpretation": "documented non-detection under stated effort; not proof of absence",
+        "outcome_reason": null
+      }
+    },
+    {
+      "name": "taxonomic_media_supported",
+      "schema": "taxonomic-evidence.schema.json",
+      "record": {
+        "record_type": "taxonomic_evidence",
+        "schema_version": "2.1.0",
+        "assertion_id": "MYC_TAX_DEMO_001",
+        "identification_rank": "morphotype",
+        "asserted_name": "brown shelf morphotype",
+        "verification_class": "media_supported",
+        "determiner_id": "observer-001",
+        "determination_date": "2026-08-04",
+        "taxonomic_authority": "fixture taxonomy",
+        "taxonomic_authority_version": "1.0",
+        "synonym_resolution": {
+          "input_name": null,
+          "accepted_name": null,
+          "status": "not_applicable",
+          "basis": "Morphotype-only fixture"
+        },
+        "voucher_ids": [],
+        "media_sha256": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        ],
+        "evidence_summary": "Synthetic image-hash-backed morphotype fixture.",
+        "confidence_basis": "media_morphology"
+      }
+    },
+    {
+      "name": "temporal_match_positive",
+      "schema": "temporal-environmental-evidence.schema.json",
+      "record": {
+        "record_type": "temporal_match",
+        "schema_version": "2.1.0",
+        "match_id": "MYC_TMP_DEMO_001",
+        "biological_observed_at": "2026-08-04T13:30:00-04:00",
+        "observation_timezone": "America/Puerto_Rico",
+        "normalization_rule": "Normalize all timestamps to UTC before comparison.",
+        "source_observed_at": "2026-08-04T16:00:00Z",
+        "source_acquired_at": "2026-08-04T20:00:00Z",
+        "aggregation_window": "PT1H",
+        "lag_window": "P1D",
+        "lead_window": "PT0S",
+        "publication_latency": "PT4H",
+        "missing_period_behavior": "preserve_missing",
+        "temporal_role": "antecedent",
+        "future_data_allowed": false,
+        "leakage_guard": "Reject source observations after the biological cutoff."
+      }
+    },
+    {
+      "name": "environmental_sheet_positive",
+      "schema": "temporal-environmental-evidence.schema.json",
+      "record": {
+        "record_type": "environmental_evidence_sheet",
+        "schema_version": "2.1.0",
+        "predictor_id": "MYC_ENV_DEMO_RAIN",
+        "scientific_rationale": "Rainfall may provide descriptive antecedent moisture context.",
+        "interpretation": "correlational_context",
+        "source_authority": "Fixture authority",
+        "product_name": "Synthetic rainfall",
+        "product_version": "1.0",
+        "units": "mm",
+        "scale": "hourly",
+        "resolution": "coarse fixture",
+        "crs": "EPSG:4326",
+        "datum": "WGS84",
+        "spatial_support": "municipality-generalized fixture",
+        "puerto_rico_coverage": "fixture only",
+        "known_gaps": [
+          "not an operational source"
+        ],
+        "temporal_cadence": "hourly",
+        "latency": "four hours",
+        "processing_steps": [
+          "none"
+        ],
+        "uncertainty": "synthetic fixture, not scientific evidence",
+        "quality_flags": [
+          "fixture_only"
+        ],
+        "missing_data_behavior": "preserve_missing",
+        "license_id": "FIXTURE-ONLY",
+        "redistribution": "prohibited",
+        "reproducible_receipt_design": "Hash exact fixture bytes and record metadata.",
+        "required_fixture_classes": [
+          "positive",
+          "missing",
+          "stale",
+          "contradictory"
+        ]
+      }
+    },
+    {
+      "name": "lifecycle_site_withheld",
+      "schema": "lifecycle-evidence.schema.json",
+      "record": {
+        "record_type": "lifecycle_site",
+        "schema_version": "2.1.0",
+        "site_id": "MYC_SITE_DEMO_001",
+        "stable_site_key": "fixture-site-001",
+        "location": {
+          "mode": "withheld",
+          "municipality": "Demo",
+          "precision_tier": "withheld",
+          "policy_reference": "BALLOT_D_NOT_APPROVED",
+          "latitude": null,
+          "longitude": null
+        },
+        "habitat_description": "Synthetic fixture habitat.",
+        "created_from_provenance_id": "MYC_PROV_DEMO_001",
+        "review_state": "needs_review"
+      }
+    },
+    {
+      "name": "lifecycle_observation_contradictory",
+      "schema": "lifecycle-evidence.schema.json",
+      "record": {
+        "record_type": "lifecycle_observation",
+        "schema_version": "2.1.0",
+        "observation_id": "MYC_OBS_DEMO_001",
+        "site_id": "MYC_SITE_DEMO_001",
+        "survey_id": "MYC_SUR_DEMO_001",
+        "episode_id": "MYC_EPI_DEMO_001",
+        "observed_at": "2026-08-04T13:30:00-04:00",
+        "visible_fruiting_state": "unresolved",
+        "state_basis": "Synthetic fixture only.",
+        "taxonomic_assertion_id": "MYC_TAX_DEMO_001",
+        "provenance_id": "MYC_PROV_DEMO_001",
+        "contradiction_state": "potential",
+        "review_state": "needs_review"
+      }
+    },
+    {
+      "name": "environmental_missing_preserved",
+      "schema": "lifecycle-evidence.schema.json",
+      "record": {
+        "record_type": "environmental_snapshot",
+        "schema_version": "2.1.0",
+        "snapshot_id": "MYC_SNP_DEMO_001",
+        "observation_id": "MYC_OBS_DEMO_001",
+        "predictor_id": "MYC_ENV_DEMO_RAIN",
+        "temporal_match_id": "MYC_TMP_DEMO_001",
+        "value": null,
+        "unit": "mm",
+        "quality_flags": [
+          "missing"
+        ],
+        "provenance_id": "MYC_PROV_DEMO_001",
+        "review_state": "needs_review"
+      }
+    },
+    {
+      "name": "transition_review_required",
+      "schema": "lifecycle-evidence.schema.json",
+      "record": {
+        "record_type": "lifecycle_transition",
+        "schema_version": "2.1.0",
+        "transition_id": "MYC_TRN_DEMO_001",
+        "site_id": "MYC_SITE_DEMO_001",
+        "episode_id": "MYC_EPI_DEMO_001",
+        "from_observation_id": "MYC_OBS_DEMO_001",
+        "to_observation_id": "MYC_OBS_DEMO_002",
+        "scientific_basis_reference": "review-required:fixture-transition-basis",
+        "effective_at": "2026-08-04T14:00:00-04:00",
+        "contradiction_state": "potential",
+        "supersedes_transition_id": null,
+        "review_state": "needs_review"
+      }
+    },
+    {
+      "name": "rollback_plan_positive",
+      "schema": "receipt-accounting.schema.json",
+      "record": {
+        "record_type": "rollback_plan_design",
+        "schema_version": "2.1.0",
+        "rollback_plan_id": "MYC_RBK_DEMO_001",
+        "trigger_conditions": [
+          "accounting mismatch",
+          "schema version mismatch"
+        ],
+        "scope": "Future bounded fixture batch only.",
+        "expected_restored_state": "No admitted rows from rejected batch; immutable receipt remains.",
+        "history_preserved": true,
+        "destructive_delete_allowed": false
+      }
+    },
+    {
+      "name": "partial_receipt_accounted",
+      "schema": "receipt-accounting.schema.json",
+      "record": {
+        "record_type": "import_receipt_design",
+        "schema_version": "2.1.0",
+        "receipt_id": "MYC_RCP_DEMO_001",
+        "source_id": "MYC_SRC_DEMO_001",
+        "batch_id": "fixture-batch-001",
+        "started_at": "2026-08-04T20:00:00-04:00",
+        "completed_at": "2026-08-04T20:01:00-04:00",
+        "status": "partial",
+        "attempted": 5,
+        "accepted": 1,
+        "rejected": 1,
+        "review_queue": 1,
+        "exact_replays": 2,
+        "duplicate_candidates": 1,
+        "row_rejections": [
+          {
+            "row_index": 1,
+            "source_record_id": "fixture-record-002",
+            "reason_code": "provenance_missing",
+            "details": "Required source hash absent."
+          }
+        ],
+        "rollback_plan_id": "MYC_RBK_DEMO_001",
+        "deterministic_accounting_rule": "attempted = accepted + rejected + review_queue + exact_replays"
+      }
+    },
+    {
+      "name": "relationship_correction",
+      "schema": "receipt-accounting.schema.json",
+      "record": {
+        "record_type": "record_relationship_design",
+        "schema_version": "2.1.0",
+        "relationship_id": "MYC_REL_CORRECTION_001",
+        "relationship_type": "correction",
+        "predecessor_record_id": "record-001",
+        "successor_record_id": "record-002",
+        "basis": "Synthetic relationship fixture.",
+        "adjudication_id": null,
+        "effective_at": "2026-08-04T20:00:00-04:00"
+      }
+    },
+    {
+      "name": "relationship_retraction",
+      "schema": "receipt-accounting.schema.json",
+      "record": {
+        "record_type": "record_relationship_design",
+        "schema_version": "2.1.0",
+        "relationship_id": "MYC_REL_RETRACTION_001",
+        "relationship_type": "retraction",
+        "predecessor_record_id": "record-003",
+        "successor_record_id": null,
+        "basis": "Synthetic relationship fixture.",
+        "adjudication_id": null,
+        "effective_at": "2026-08-04T20:00:00-04:00"
+      }
+    },
+    {
+      "name": "relationship_duplicate_candidate",
+      "schema": "receipt-accounting.schema.json",
+      "record": {
+        "record_type": "record_relationship_design",
+        "schema_version": "2.1.0",
+        "relationship_id": "MYC_REL_DUPLICATE_001",
+        "relationship_type": "duplicate_candidate",
+        "predecessor_record_id": "record-004",
+        "successor_record_id": "record-005",
+        "basis": "Synthetic relationship fixture.",
+        "adjudication_id": null,
+        "effective_at": "2026-08-04T20:00:00-04:00"
+      }
+    },
+    {
+      "name": "relationship_exact_replay",
+      "schema": "receipt-accounting.schema.json",
+      "record": {
+        "record_type": "record_relationship_design",
+        "schema_version": "2.1.0",
+        "relationship_id": "MYC_REL_REPLAY_001",
+        "relationship_type": "exact_replay",
+        "predecessor_record_id": "record-006",
+        "successor_record_id": "record-006",
+        "basis": "Synthetic relationship fixture.",
+        "adjudication_id": null,
+        "effective_at": "2026-08-04T20:00:00-04:00"
+      }
+    },
+    {
+      "name": "relationship_supersession",
+      "schema": "receipt-accounting.schema.json",
+      "record": {
+        "record_type": "record_relationship_design",
+        "schema_version": "2.1.0",
+        "relationship_id": "MYC_REL_SUPERSESSION_001",
+        "relationship_type": "supersession",
+        "predecessor_record_id": "record-007",
+        "successor_record_id": "record-008",
+        "basis": "Synthetic relationship fixture.",
+        "adjudication_id": null,
+        "effective_at": "2026-08-04T20:00:00-04:00"
+      }
+    }
+  ],
+  "invalid_cases": [
+    {
+      "name": "reject_exact_public_coordinate_policy",
+      "schema": "source-license-provenance.schema.json",
+      "record": {
+        "record_type": "source_registry_entry",
+        "schema_version": "2.1.0",
+        "source_id": "MYC_SRC_DEMO_001",
+        "source_title": "Synthetic design fixture",
+        "authority": "Fixture authority",
+        "stable_source_record_id_rule": "Use provider-issued immutable identifier.",
+        "acquisition_design": {
+          "method_class": "offline_fixture",
+          "locator_template": "fixture://mycelial/{record_id}",
+          "content_hash_algorithm": "sha256",
+          "receipt_required": true
+        },
+        "license": {
+          "license_id": "FIXTURE-ONLY",
+          "license_url": null,
+          "redistribution": "prohibited",
+          "derivative_use": "prohibited",
+          "terms_verified_at": "2026-08-04T20:00:00-04:00"
+        },
+        "retention": {
+          "raw_bytes": "do_not_retain",
+          "normalized_records": "do_not_retain",
+          "minimum_days": null,
+          "deletion_authority": "Design fixture only"
+        },
+        "attribution": "Synthetic design fixture; no external dataset.",
+        "coordinate_retention_policy": "exact_public"
+      }
+    },
+    {
+      "name": "reject_bad_content_hash",
+      "schema": "source-license-provenance.schema.json",
+      "record": {
+        "record_type": "provenance_record",
+        "schema_version": "2.1.0",
+        "provenance_id": "MYC_PROV_DEMO_001",
+        "source_id": "MYC_SRC_DEMO_001",
+        "source_record_id": "fixture-record-001",
+        "acquired_at": "2026-08-04T20:00:00-04:00",
+        "content_sha256": "not-a-hash",
+        "media_type": "application/json",
+        "evidence_tier": "T4",
+        "review_state": "needs_review",
+        "exact_replay_key": "MYC_SRC_DEMO_001:fixture-record-001:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "duplicate_candidate_key": "fixture-morphotype:2026-08-04:municipality-demo",
+        "coordinate_representation": {
+          "mode": "withheld",
+          "policy_reference": "BALLOT_D_NOT_APPROVED"
+        }
+      }
+    },
+    {
+      "name": "reject_negative_as_incomplete",
+      "schema": "sampling-effort.schema.json",
+      "record": {
+        "record_type": "survey_effort",
+        "schema_version": "2.1.0",
+        "survey_id": "MYC_SUR_DEMO_001",
+        "protocol_id": "fixture-protocol",
+        "protocol_version": "1.0.0",
+        "started_at": "2026-08-04T13:00:00-04:00",
+        "ended_at": "2026-08-04T14:00:00-04:00",
+        "timezone": "America/Puerto_Rico",
+        "search_geometry": {
+          "kind": "bounded_area",
+          "generalized_reference": "municipality:DEMO",
+          "exact_coordinates_included": false
+        },
+        "person_minutes": 60,
+        "observer_count": 1,
+        "observer_pseudonyms": [
+          "observer-001"
+        ],
+        "qualification_classes": [
+          "field_observer"
+        ],
+        "target_scope": {
+          "kind": "guild",
+          "value": "saprotrophic fungi"
+        },
+        "coverage": {
+          "substrates": [
+            "soil"
+          ],
+          "hosts": [],
+          "deadwood": [
+            "fallen-log"
+          ],
+          "microsites": [
+            "shaded-ground"
+          ]
+        },
+        "constraints": [
+          "intermittent rain"
+        ],
+        "equipment": [
+          "camera",
+          "field notebook"
+        ],
+        "outcome": "negative",
+        "completed": false,
+        "non_detection_interpretation": "documented non-detection under stated effort; not proof of absence",
+        "outcome_reason": null
+      }
+    },
+    {
+      "name": "reject_voucher_verified_without_voucher",
+      "schema": "taxonomic-evidence.schema.json",
+      "record": {
+        "record_type": "taxonomic_evidence",
+        "schema_version": "2.1.0",
+        "assertion_id": "MYC_TAX_DEMO_001",
+        "identification_rank": "morphotype",
+        "asserted_name": "brown shelf morphotype",
+        "verification_class": "specimen_voucher_verified",
+        "determiner_id": "observer-001",
+        "determination_date": "2026-08-04",
+        "taxonomic_authority": "fixture taxonomy",
+        "taxonomic_authority_version": "1.0",
+        "synonym_resolution": {
+          "input_name": null,
+          "accepted_name": null,
+          "status": "not_applicable",
+          "basis": "Morphotype-only fixture"
+        },
+        "voucher_ids": [],
+        "media_sha256": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        ],
+        "evidence_summary": "Synthetic image-hash-backed morphotype fixture.",
+        "confidence_basis": "media_morphology"
+      }
+    },
+    {
+      "name": "reject_future_data_leakage",
+      "schema": "temporal-environmental-evidence.schema.json",
+      "record": {
+        "record_type": "temporal_match",
+        "schema_version": "2.1.0",
+        "match_id": "MYC_TMP_DEMO_001",
+        "biological_observed_at": "2026-08-04T13:30:00-04:00",
+        "observation_timezone": "America/Puerto_Rico",
+        "normalization_rule": "Normalize all timestamps to UTC before comparison.",
+        "source_observed_at": "2026-08-04T16:00:00Z",
+        "source_acquired_at": "2026-08-04T20:00:00Z",
+        "aggregation_window": "PT1H",
+        "lag_window": "P1D",
+        "lead_window": "PT0S",
+        "publication_latency": "PT4H",
+        "missing_period_behavior": "preserve_missing",
+        "temporal_role": "antecedent",
+        "future_data_allowed": true,
+        "leakage_guard": "Reject source observations after the biological cutoff."
+      }
+    },
+    {
+      "name": "reject_environmental_sheet_missing_contradictory",
+      "schema": "temporal-environmental-evidence.schema.json",
+      "record": {
+        "record_type": "environmental_evidence_sheet",
+        "schema_version": "2.1.0",
+        "predictor_id": "MYC_ENV_DEMO_RAIN",
+        "scientific_rationale": "Rainfall may provide descriptive antecedent moisture context.",
+        "interpretation": "correlational_context",
+        "source_authority": "Fixture authority",
+        "product_name": "Synthetic rainfall",
+        "product_version": "1.0",
+        "units": "mm",
+        "scale": "hourly",
+        "resolution": "coarse fixture",
+        "crs": "EPSG:4326",
+        "datum": "WGS84",
+        "spatial_support": "municipality-generalized fixture",
+        "puerto_rico_coverage": "fixture only",
+        "known_gaps": [
+          "not an operational source"
+        ],
+        "temporal_cadence": "hourly",
+        "latency": "four hours",
+        "processing_steps": [
+          "none"
+        ],
+        "uncertainty": "synthetic fixture, not scientific evidence",
+        "quality_flags": [
+          "fixture_only"
+        ],
+        "missing_data_behavior": "preserve_missing",
+        "license_id": "FIXTURE-ONLY",
+        "redistribution": "prohibited",
+        "reproducible_receipt_design": "Hash exact fixture bytes and record metadata.",
+        "required_fixture_classes": [
+          "positive",
+          "missing",
+          "stale"
+        ]
+      }
+    },
+    {
+      "name": "reject_exact_coordinate_in_site",
+      "schema": "lifecycle-evidence.schema.json",
+      "record": {
+        "record_type": "lifecycle_site",
+        "schema_version": "2.1.0",
+        "site_id": "MYC_SITE_DEMO_001",
+        "stable_site_key": "fixture-site-001",
+        "location": {
+          "mode": "withheld",
+          "municipality": "Demo",
+          "precision_tier": "withheld",
+          "policy_reference": "BALLOT_D_NOT_APPROVED",
+          "latitude": 18.1,
+          "longitude": null
+        },
+        "habitat_description": "Synthetic fixture habitat.",
+        "created_from_provenance_id": "MYC_PROV_DEMO_001",
+        "review_state": "needs_review"
+      }
+    },
+    {
+      "name": "reject_destructive_rollback",
+      "schema": "receipt-accounting.schema.json",
+      "record": {
+        "record_type": "rollback_plan_design",
+        "schema_version": "2.1.0",
+        "rollback_plan_id": "MYC_RBK_DEMO_001",
+        "trigger_conditions": [
+          "accounting mismatch",
+          "schema version mismatch"
+        ],
+        "scope": "Future bounded fixture batch only.",
+        "expected_restored_state": "No admitted rows from rejected batch; immutable receipt remains.",
+        "history_preserved": true,
+        "destructive_delete_allowed": true
+      }
+    },
+    {
+      "name": "semantic_receipt_accounting_mismatch",
+      "schema": "receipt-accounting.schema.json",
+      "record": {
+        "record_type": "import_receipt_design",
+        "schema_version": "2.1.0",
+        "receipt_id": "MYC_RCP_DEMO_001",
+        "source_id": "MYC_SRC_DEMO_001",
+        "batch_id": "fixture-batch-001",
+        "started_at": "2026-08-04T20:00:00-04:00",
+        "completed_at": "2026-08-04T20:01:00-04:00",
+        "status": "partial",
+        "attempted": 4,
+        "accepted": 1,
+        "rejected": 1,
+        "review_queue": 1,
+        "exact_replays": 2,
+        "duplicate_candidates": 1,
+        "row_rejections": [
+          {
+            "row_index": 1,
+            "source_record_id": "fixture-record-002",
+            "reason_code": "provenance_missing",
+            "details": "Required source hash absent."
+          }
+        ],
+        "rollback_plan_id": "MYC_RBK_DEMO_001",
+        "deterministic_accounting_rule": "attempted = accepted + rejected + review_queue + exact_replays"
+      }
+    }
+  ],
+  "scenario_classes": [
+    "positive",
+    "negative",
+    "missing",
+    "stale",
+    "contradictory",
+    "partial",
+    "failed",
+    "rejected",
+    "correction",
+    "retraction",
+    "duplicate",
+    "replay",
+    "supersession",
+    "rollback"
+  ],
+  "scenario_contracts": {
+    "stale": {
+      "expected_action": "preserve quality flag; never silently refresh"
+    },
+    "contradictory": {
+      "expected_action": "preserve both assertions pending adjudication"
+    },
+    "failed": {
+      "expected_action": "account every attempted row in an immutable failed receipt"
+    },
+    "rejected": {
+      "expected_action": "record row-level reason; never silently impute"
+    },
+    "missing": {
+      "expected_action": "preserve null value and quality flag; never impute"
+    },
+    "positive": {
+      "expected_action": "validate as evidence assertion only; never produce ranking or calibrated analytics"
+    }
+  },
+  "forbidden_capabilities": [
+    "network acquisition",
+    "executable importer",
+    "database DDL",
+    "database write",
+    "ASGI route",
+    "GUI",
+    "scheduler",
+    "notification",
+    "export",
+    "federation",
+    "calibrated analytics",
+    "location ranking",
+    "connectivity output",
+    "public exact sensitive coordinates",
+    "infrastructure inference"
+  ],
+  "package_id": "BUILD_AGUAYLUZ_PHASE1_A_DESIGN_ONLY_PR_v2_1",
+  "package_version": "2.1.0",
+  "staging_expiry": "2026-12-31",
+  "production_protection": {
+    "synthetic_fixture_only": true,
+    "production_admission_allowed": false,
+    "feature_flag_default": "disabled",
+    "fixture_provenance_paths_forbidden_in_production": true,
+    "calibrated_analytics_allowed": false,
+    "location_ranking_allowed": false,
+    "connectivity_output_allowed": false,
+    "public_exact_sensitive_coordinates_allowed": false,
+    "infrastructure_inference_allowed": false
+  },
+  "boundary_assertions": {
+    "data_ingestion": "prohibited",
+    "persistence": "prohibited",
+    "runtime_or_gui_admission": "prohibited",
+    "api": "prohibited",
+    "scheduler": "prohibited",
+    "notification": "prohibited",
+    "export": "prohibited",
+    "federation": "prohibited"
+  },
+  "final_head_certification_requirements": [
+    "schema inventory exact",
+    "all positive fixtures validate",
+    "all structurally invalid fixtures fail",
+    "receipt accounting deterministic",
+    "negative survey is non-detection, not proof of absence",
+    "missing values remain missing",
+    "no exact coordinate or request-controlled disclosure boolean",
+    "scenario classes complete",
+    "package declarative only",
+    "diff contains no executable ingestion, persistence, runtime, API, GUI, scheduler, notification, export, or federation files"
+  ]
+}

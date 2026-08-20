@@ -1,0 +1,65 @@
+{
+  "certification_id": "MYCELIAL_PHASE1_BALLOT_A_DESIGN_V2_1_FINAL_HEAD",
+  "package_id": "BUILD_AGUAYLUZ_PHASE1_A_DESIGN_ONLY_PR_v2_1",
+  "package_version": "2.1.0",
+  "repository": "jotaele44/aguayluz-pr",
+  "base_ref": "origin/main",
+  "base_sha": "70db651834a7f2cf3d11dfa35b6e29db851b7e46",
+  "authority": {
+    "design_ballot_receipt": 5175521569,
+    "research_ingest_hold_review": 4851413154,
+    "approve_research_ingest": "HOLD",
+    "classification": "design_only"
+  },
+  "staging": {
+    "feature_flag_default": "disabled",
+    "staging_expiry": "2026-12-31",
+    "ready_transition_authorized": false,
+    "merge_authorized": false,
+    "auto_merge_authorized": false
+  },
+  "allowed_changed_paths": [
+    "docs/MYCELIAL_PHASE1_BALLOT_A_DESIGN_V2_1.md",
+    "reports/mycelial_phase1_design/ballot_a_v2_1_final_head_certification.json",
+    "schemas/mycelial-phase1/v2.1/",
+    "tests/fixtures/mycelial_phase1_design/v2.1/",
+    "tests/test_mycelial_phase1_design_v2_1.py"
+  ],
+  "expected_changed_files": [
+    "docs/MYCELIAL_PHASE1_BALLOT_A_DESIGN_V2_1.md",
+    "reports/mycelial_phase1_design/ballot_a_v2_1_final_head_certification.json",
+    "schemas/mycelial-phase1/v2.1/lifecycle-evidence.schema.json",
+    "schemas/mycelial-phase1/v2.1/receipt-accounting.schema.json",
+    "schemas/mycelial-phase1/v2.1/sampling-effort.schema.json",
+    "schemas/mycelial-phase1/v2.1/source-license-provenance.schema.json",
+    "schemas/mycelial-phase1/v2.1/taxonomic-evidence.schema.json",
+    "schemas/mycelial-phase1/v2.1/temporal-environmental-evidence.schema.json",
+    "tests/fixtures/mycelial_phase1_design/v2.1/cases.json",
+    "tests/test_mycelial_phase1_design_v2_1.py"
+  ],
+  "prohibited_capabilities": {
+    "data_ingestion": true,
+    "persistence": true,
+    "api": true,
+    "gui": true,
+    "scheduler": true,
+    "notification": true,
+    "export": true,
+    "federation_wiring": true,
+    "calibrated_analytics": true,
+    "location_ranking": true,
+    "connectivity_output": true,
+    "public_exact_sensitive_coordinates": true,
+    "infrastructure_inference": true
+  },
+  "synthetic_production_protection": {
+    "synthetic_fixtures_only": true,
+    "production_admission_allowed": false,
+    "fixture_provenance_paths_forbidden_in_production": true
+  },
+  "certification_commands": [
+    "python -m pytest -q tests/test_mycelial_phase1_design_v2_1.py",
+    "git diff --name-only origin/main...HEAD"
+  ],
+  "expected_result": "draft_pr_only"
+}
