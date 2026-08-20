@@ -26,8 +26,8 @@
       ],
       "named_asset_count": 5,
       "current_operational_count": "OPEN",
-      "operational_status_source": "https://docs.pr.gov/files/RooseveltRoads/2025/RFP/RFP%20%232025-001/Preguntas%20y%20Respuestas%20RFP%202025-001%20(29abril2025).pdf",
-      "reason": "A current LRA procurement establishes LRA ownership/operator responsibility for the sanitary system and the USDA project enumerates five lift stations for rehabilitation. LRA's 2025 Q&A states existing sanitary discharges were being removed by vacuum trucks to PRASA and no active WWTP was operating, so the five rehabilitation assets are not promoted to current operational stations."
+      "operational_status_source": "https://docs.pr.gov/files/RooseveltRoads/2024/RFP/RFP-2024-004/Q%26A/LRA_Response_RFP_2024-004%20FINAL%20%232.pdf",
+      "reason": "LRA source material establishes LRA ownership/operator responsibility for the sanitary system and USDA enumerates five lift stations for rehabilitation. LRA also states the sanitary sewer system was not in operation / sanitary discharges were being removed by vacuum trucks, so the five rehabilitation assets are not promoted to current operational stations."
     },
     {
       "operator": "PDM Utility Corporation",
@@ -88,15 +88,31 @@
       "reason": "Current public-water-system evidence does not establish current sewer operation. No authoritative post-2025 franchise-renewal instrument or current sewer pump-station inventory was recovered in the bounded search."
     }
   ],
+  "additional_non_franchised_private_system_candidates": [
+    {
+      "system": "Punta Picuas WWTP",
+      "municipality": "Rio Grande",
+      "class": "PRIVATE_DECENTRALIZED_NON_PRASA_WASTEWATER_SYSTEM",
+      "evidence_source": "https://www.scirp.org/journal/paperinformation?paperid=144351",
+      "evidence_snapshot": "sampling 2023-12 through 2024-01; publication 2025",
+      "system_state": "RECENT_NON_PRASA_OPERATION_CONFIRMED",
+      "pumping_evidence": "Study states 2/3 of seven coastal walk-up complexes contribute by pumping flow while Hillside Village contributes by gravity.",
+      "legal_operator_entity": "UNRESOLVED",
+      "pump_station_count": "OPEN",
+      "denominator_effect": "COMPLETENESS_BLOCKER_NOT_COUNTED",
+      "reason": "This system is outside the three franchised private aqueduct/sewer utilities identified by Act 60-2024, proving that the franchise universe is not equivalent to the complete private sanitary-system universe."
+    }
+  ],
   "arithmetic": {
     "lra_current_rehabilitation_station_assets": 5,
     "pdmu_current_operator_bound_station_denominator": 5,
     "coco_beach_recent_operational_station_snapshot": 2,
     "caguas_real_current_station_denominator": "OPEN",
+    "punta_picuas_current_station_denominator": "OPEN",
     "cross_source_named_station_manifestations": "5 + 5 + 2 = 12",
     "current_non_aaa_exact_denominator": "OPEN",
     "certified_current_non_aaa_operational_lower_bound": 5,
-    "reason": "Only PDMU currently provides both current operator scope and an explicit current pump-station count. The other operator branches have unresolved current station status or count."
+    "reason": "Only PDMU currently provides both current operator scope and an explicit current pump-station count. LRA, Coco Beach, Caguas Real, and the newly identified Punta Picuas decentralized system retain unresolved current station status or count."
   },
   "aaa_combination_gate": {
     "aaa_current_2026_denominator": "OPEN",
@@ -108,6 +124,7 @@
   "pr_wide_closure": {
     "state": "OPEN",
     "rejected_claim": "PR_WIDE_EQUALS_AAA_ONLY",
-    "reason": "Current non-AAA sanitary operators are proven, but the exact current non-AAA EBAS denominator and the exact current AAA denominator are both incomplete."
+    "private_franchise_universe_is_complete_private_system_universe": false,
+    "reason": "Current non-AAA sanitary operators are proven; the exact current non-AAA and AAA EBAS denominators are incomplete; and Punta Picuas proves additional non-franchised decentralized private sanitary systems exist outside the three-system franchise universe."
   }
 }
