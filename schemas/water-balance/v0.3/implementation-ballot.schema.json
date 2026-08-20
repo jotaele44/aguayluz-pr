@@ -1,0 +1,249 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/water-balance/v0.3/implementation-ballot.schema.json",
+  "title": "AguaYLuz water-balance implementation ballot v0.3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "ballot_id",
+    "parent_pr",
+    "parent_head_sha",
+    "design_only",
+    "decision",
+    "reviewed_prs",
+    "edge_classification",
+    "usgs_acquisition_decision",
+    "laguna_cartagena_decision",
+    "components",
+    "selected_pilot",
+    "prohibitions"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "aguayluz.water-balance-implementation-ballot/v0.3"
+    },
+    "ballot_id": {
+      "type": "string",
+      "pattern": "^AYL_WBIB_"
+    },
+    "parent_pr": {
+      "const": 119
+    },
+    "parent_head_sha": {
+      "const": "5c3fcb3a5803773ad388b91afc5bc288d4fd4c80"
+    },
+    "design_only": {
+      "const": true
+    },
+    "decision": {
+      "const": "bounded_implementation_design_approved_runtime_held"
+    },
+    "reviewed_prs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "asset_graph",
+        "usgs_hardened_parsers",
+        "usgs_provider_framework",
+        "laguna_control_plane"
+      ],
+      "properties": {
+        "asset_graph": {"$ref": "#/$defs/ReviewedPr"},
+        "usgs_hardened_parsers": {"$ref": "#/$defs/ReviewedPr"},
+        "usgs_provider_framework": {"$ref": "#/$defs/ReviewedPr"},
+        "laguna_control_plane": {"$ref": "#/$defs/ReviewedPr"}
+      }
+    },
+    "edge_classification": {
+      "type": "array",
+      "minItems": 10,
+      "maxItems": 10,
+      "items": {"$ref": "#/$defs/EdgeDecision"}
+    },
+    "usgs_acquisition_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "producer_rule",
+        "framework_source",
+        "field_measurement_semantics_source",
+        "annual_peak_semantics_source",
+        "source_asset_prefixes",
+        "canonical_source_equivalence_key",
+        "field_measurement_rules",
+        "annual_peak_rules",
+        "rejected"
+      ],
+      "properties": {
+        "producer_rule": {"const": "exactly_one_producer_per_collection"},
+        "framework_source": {"const": "PR116"},
+        "field_measurement_semantics_source": {"const": "PR109"},
+        "annual_peak_semantics_source": {"const": "PR109"},
+        "source_asset_prefixes": {
+          "type": "object",
+          "required": ["surface_water", "groundwater_daily_values", "groundwater_field_measurements"],
+          "additionalProperties": false,
+          "properties": {
+            "surface_water": {"const": "USGS_"},
+            "groundwater_daily_values": {"const": "USGSGW_"},
+            "groundwater_field_measurements": {"const": "USGSFM_"}
+          }
+        },
+        "canonical_source_equivalence_key": {
+          "const": "usgs:monitoring-location:<bare_site_number>"
+        },
+        "field_measurement_rules": {"$ref": "#/$defs/NonEmptyStrings"},
+        "annual_peak_rules": {"$ref": "#/$defs/NonEmptyStrings"},
+        "rejected": {"$ref": "#/$defs/NonEmptyStrings"}
+      }
+    },
+    "laguna_cartagena_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "operational_balance_state", "adapt", "missing_for_parent_contract"],
+      "properties": {
+        "role": {"const": "secondary_contract_and_missing_data_pilot"},
+        "operational_balance_state": {"const": "hold"},
+        "adapt": {"$ref": "#/$defs/NonEmptyStrings"},
+        "missing_for_parent_contract": {"$ref": "#/$defs/NonEmptyStrings"}
+      }
+    },
+    "components": {
+      "type": "array",
+      "minItems": 20,
+      "items": {"$ref": "#/$defs/ComponentDecision"}
+    },
+    "selected_pilot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pilot_id",
+        "name",
+        "state",
+        "initial_balance_type",
+        "selection_basis",
+        "required_entry_gates",
+        "permitted_pre_entry_result",
+        "public_output",
+        "incident_promotion",
+        "alert_promotion"
+      ],
+      "properties": {
+        "pilot_id": {"const": "carraizo_lago_loiza_hydrologic_reservoir_shadow"},
+        "name": {"type": "string", "minLength": 1},
+        "state": {"const": "selected_blocked"},
+        "initial_balance_type": {"const": "reservoir"},
+        "selection_basis": {"$ref": "#/$defs/NonEmptyStrings"},
+        "required_entry_gates": {"$ref": "#/$defs/NonEmptyStrings"},
+        "permitted_pre_entry_result": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {"enum": ["underdetermined", "not_evaluated"]}
+        },
+        "public_output": {"const": false},
+        "incident_promotion": {"const": false},
+        "alert_promotion": {"const": false}
+      }
+    },
+    "prohibitions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "merge_reviewed_prs",
+        "live_polling",
+        "database_migration",
+        "source_data_mutation",
+        "scheduler_change",
+        "api_activation",
+        "gui_activation",
+        "alert_activation",
+        "incident_promotion",
+        "notification_activation",
+        "public_export",
+        "federation_export",
+        "automatic_control_action"
+      ],
+      "properties": {
+        "merge_reviewed_prs": {"const": false},
+        "live_polling": {"const": false},
+        "database_migration": {"const": false},
+        "source_data_mutation": {"const": false},
+        "scheduler_change": {"const": false},
+        "api_activation": {"const": false},
+        "gui_activation": {"const": false},
+        "alert_activation": {"const": false},
+        "incident_promotion": {"const": false},
+        "notification_activation": {"const": false},
+        "public_export": {"const": false},
+        "federation_export": {"const": false},
+        "automatic_control_action": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "NonEmptyStrings": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "ReviewedPr": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pr", "head_sha", "decision"],
+      "properties": {
+        "pr": {"enum": [101, 109, 116, 118]},
+        "head_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "decision": {"type": "string", "minLength": 1}
+      }
+    },
+    "EdgeDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["relationship_type", "default_class", "balance_eligible_by_default", "promotion_requirements"],
+      "properties": {
+        "relationship_type": {
+          "enum": [
+            "UPSTREAM_OF",
+            "DOWNSTREAM_OF",
+            "SUPPLIES",
+            "DEPENDS_ON",
+            "POWERED_BY",
+            "BACKUP_FOR",
+            "LOCATED_IN",
+            "SERVES",
+            "MONITORED_BY",
+            "UNKNOWN"
+          ]
+        },
+        "default_class": {
+          "enum": ["hydraulic_eligible", "dependency_only", "inferred", "restricted", "unresolved"]
+        },
+        "balance_eligible_by_default": {"const": false},
+        "promotion_requirements": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "ComponentDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["component", "category", "decision", "source", "runtime_activation"],
+      "properties": {
+        "component": {"type": "string", "minLength": 1},
+        "category": {
+          "enum": ["adapter", "projector", "ledger_store", "balance_engine", "quality_gate", "reference_data", "api", "gui", "alert", "incident", "export"]
+        },
+        "decision": {
+          "enum": ["reuse", "adapt", "new", "hold", "external_data_dependency"]
+        },
+        "source": {"type": "string", "minLength": 1},
+        "runtime_activation": {"const": false}
+      }
+    }
+  }
+}
