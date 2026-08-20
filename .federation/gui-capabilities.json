@@ -699,35 +699,49 @@
       "classification": "analysis",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Read-only, diagnostic-only surface (per docs/adr/0001, this repo's own dashboard is diagnostic, not the supported product surface) for the regulatory framework's third implementation increment (docs/unfinished_implementation_ledger.v1.json's AYL-008): browsing RegulatoryObservation and RegulatorySourceReceipt rows written by live provider adapters (currently just USGS, src/aguayluz/regulatory_adapters/usgs.py). It exposes only what the persistence layer already validated and stored -- no entity linkage, no adjudication, no facility-identity claim. Entity-link candidates and their adjudicated decisions are a separate, later increment; nothing in this capability writes anything.",
+      "rationale": "Diagnostic-only surface (per docs/adr/0001, this repo's own dashboard is diagnostic, not the supported product surface) for the regulatory framework's third and fourth implementation increments (docs/unfinished_implementation_ledger.v1.json's AYL-008): browsing RegulatoryObservation/RegulatorySourceReceipt rows written by live provider adapters (currently just USGS, src/aguayluz/regulatory_adapters/usgs.py), and adjudicating the RegulatoryEntityLink candidates scripts/build_regulatory_links.py proposes against data/utility_assets.jsonl (src/aguayluz/regulatory_links.py -- hard-identifier USGS site-number matching only so far). The one write path this capability exposes -- POST /regulatory/links/{candidate_id}/decide -- is fail-closed at the API layer, not just the JSON-schema layer: it refuses to record decision_state=approved while the candidate still carries open contradictions, so a client cannot route around that rule by skipping its own validation. Every decision records an actor, timestamp, and rationale a human supplied through this endpoint; nothing here performs automatic entity promotion, and generation itself (scripts/build_regulatory_links.py, registered separately as regulatory-links-generator) never emits approved and never overwrites an existing human decision on rerun.",
       "backend": {
         "files": [
           "server/backend/regulatory_api.py",
-          "server/backend/app.py"
+          "server/backend/app.py",
+          "src/aguayluz/regulatory_links.py"
         ],
         "endpoints": [
           "GET /regulatory/summary",
           "GET /regulatory/observations",
           "GET /regulatory/observations/{observation_id}",
-          "GET /regulatory/receipts/{receipt_id}"
+          "GET /regulatory/receipts/{receipt_id}",
+          "GET /regulatory/links",
+          "GET /regulatory/links/{candidate_id}",
+          "POST /regulatory/links/{candidate_id}/decide"
         ],
         "symbols": [
           "server/backend/regulatory_api.py:regulatory_summary",
           "server/backend/regulatory_api.py:regulatory_observations",
           "server/backend/regulatory_api.py:regulatory_observation",
-          "server/backend/regulatory_api.py:regulatory_receipt"
+          "server/backend/regulatory_api.py:regulatory_receipt",
+          "server/backend/regulatory_api.py:regulatory_links",
+          "server/backend/regulatory_api.py:regulatory_link",
+          "server/backend/regulatory_api.py:regulatory_link_decide",
+          "server/backend/regulatory_api.py:RegulatoryLinkDecision",
+          "src/aguayluz/regulatory_links.py:build_asset_link_index",
+          "src/aguayluz/regulatory_links.py:generate_candidates",
+          "src/aguayluz/regulatory_links.py:generate_all_candidates"
         ]
       },
       "frontend": {
         "routes": [
-          "/regulatory"
+          "/regulatory",
+          "/regulatory/review"
         ],
         "e2e_routes": [
-          "/regulatory"
+          "/regulatory",
+          "/regulatory/review"
         ],
         "components": [
           "dashboard/src/lib/regulatory-api.js",
           "dashboard/src/pages/RegulatoryPage.jsx",
+          "dashboard/src/pages/RegulatoryReviewPage.jsx",
           "dashboard/src/components/layout/Sidebar.jsx"
         ],
         "discoverability": [
@@ -736,10 +750,12 @@
       },
       "tests": {
         "backend": [
-          "tests/test_regulatory_api.py"
+          "tests/test_regulatory_api.py",
+          "tests/test_regulatory_links.py"
         ],
         "unit": [
-          "dashboard/src/pages/RegulatoryPage.test.jsx"
+          "dashboard/src/pages/RegulatoryPage.test.jsx",
+          "dashboard/src/pages/RegulatoryReviewPage.test.jsx"
         ],
         "e2e": [
           "dashboard/tests/gui-parity.spec.mjs"
@@ -922,6 +938,27 @@
       "tests": {
         "contract": [
           "tests/test_regulatory_adapter_usgs.py",
+          "tests/test_refresh_plans.py"
+        ]
+      }
+    },
+    {
+      "id": "regulatory-links-generator",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Scheduled producer, not an operator workflow. Invoked by the weekly/all cron cadences in .github/workflows/refresh.yml via scripts/refresh.py (STEP_REGULATORY_LINKS, placed right after STEP_REGULATORY_USGS so utility_assets.jsonl and the observation store it reads are both current), never by a person. Fourth implementation increment for the PR #120 regulatory framework (docs/ROAD_TO_100.md's AYL-008): proposes RegulatoryEntityLink candidates connecting a RegulatoryObservation to an already-materialized data/utility_assets.jsonl row, currently via hard-identifier matching on USGS site numbers only (src/aguayluz/regulatory_links.py) -- the design doc's other evidence classes and other providers are later increments. Never emits decision_state=approved (the design doc is explicit that generators must not perform entity promotion) and, critically, never overwrites a candidate a human has already decided on: candidate_id is a deterministic hash of (observation_id, candidate_asset_id) only, so this script diffs against what is already on record and writes only genuinely new candidates -- live-verified by approving a candidate, rerunning the generator, and confirming the approval was untouched. The one place a human can act on what this produces is the adjudicated decide endpoint registered under regulatory-observations-monitor.",
+      "analysis": {
+        "files": [
+          "scripts/build_regulatory_links.py"
+        ],
+        "symbols": [
+          "scripts/build_regulatory_links.py:main"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_regulatory_links.py",
           "tests/test_refresh_plans.py"
         ]
       }
