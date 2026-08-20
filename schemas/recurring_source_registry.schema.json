@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/recurring_source_registry.schema.json",
+  "title": "RecurringSourceRegistry",
+  "description": "Machine-readable acquisition contract for recurring AguaYLuz public utility sources. Access constraints are explicit and never inferred from URL reachability alone.",
+  "type": "object",
+  "required": ["schema_version", "module_id", "reviewed_at_utc", "sources"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "aguayluz_recurring_source_registry_v1"},
+    "module_id": {"const": "aguayluz-pr"},
+    "reviewed_at_utc": {"type": "string", "format": "date-time"},
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "source_id",
+          "domain",
+          "signal_type",
+          "authority_tier",
+          "endpoint",
+          "adapter",
+          "acquisition_mode",
+          "cadence",
+          "access_state",
+          "snapshot_strategy",
+          "enabled_by_default",
+          "coverage_state"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "source_id": {"type": "string", "pattern": "^[a-z0-9_]+$"},
+          "domain": {"enum": ["power", "water", "cross_domain"]},
+          "signal_type": {
+            "enum": [
+              "outage",
+              "service_interruption",
+              "water_quality",
+              "monitoring",
+              "recovery_project",
+              "asset_registry",
+              "hydro_enrichment"
+            ]
+          },
+          "authority_tier": {"enum": ["T1", "T2", "T3", "T4"]},
+          "endpoint": {"type": "string", "minLength": 1},
+          "adapter": {"type": "string", "minLength": 1},
+          "acquisition_mode": {"enum": ["live_http", "offline_snapshot", "live_or_offline"]},
+          "cadence": {"type": "string", "minLength": 1},
+          "access_state": {
+            "enum": [
+              "keyless_public",
+              "api_key_required",
+              "permission_constrained",
+              "operator_snapshot_required"
+            ]
+          },
+          "snapshot_strategy": {"type": "string", "minLength": 1},
+          "enabled_by_default": {"type": "boolean"},
+          "coverage_state": {"enum": ["current", "partial", "point_in_time", "blocked", "provisional"]},
+          "notes": {"type": ["string", "null"]},
+          "caveats": {"type": "array", "items": {"type": "string"}, "default": []}
+        }
+      }
+    }
+  }
+}
