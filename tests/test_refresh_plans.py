@@ -126,6 +126,8 @@ def test_readings_producers_are_scheduled():
         "neon": "scripts/ingest_neon_products.py",
         "usgs_field_measurements": "scripts/ingest_usgs_field_measurements.py",
         "usgs_peaks": "scripts/ingest_usgs_peaks.py",
+        "drought": "scripts/ingest_drought_usdm.py",
+        "precipitation": "scripts/ingest_precip_ncei.py",
     }
     assert set(READINGS_FILES) == set(producers), (
         "a reading kind with no producer script is a phantom feed in the UI"
