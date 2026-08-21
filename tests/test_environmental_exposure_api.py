@@ -43,13 +43,18 @@ def client(monkeypatch):
         lambda: {
             "environmental_entity_count": 1,
             "external_entity_count": 0,
+            "observation_count": 0,
+            "geometry_count": 0,
+            "event_count": 0,
             "relationship_count": 0,
             "state_counts": {},
             "state_count_sum": 0,
             "arithmetic_closes": True,
+            "duplicate_ids": {},
             "error_count": 0,
             "errors": [],
-            "certification_state": "PASS",
+            "structural_integrity_state": "PASS",
+            "corpus_certification_state": "OPEN",
         },
     )
     with TestClient(app) as test_client:
@@ -66,7 +71,8 @@ def test_summary_is_read_only_and_fail_closed(client):
         "relationships": 0,
         "events": 0,
     }
-    assert body["integrity"]["certification_state"] == "PASS"
+    assert body["integrity"]["structural_integrity_state"] == "PASS"
+    assert body["integrity"]["corpus_certification_state"] == "OPEN"
     assert client.post("/environmental-exposure/summary").status_code == 405
 
 

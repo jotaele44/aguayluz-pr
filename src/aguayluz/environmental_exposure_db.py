@@ -71,17 +71,20 @@ def graph_integrity(
     observations_path: Path = OBSERVATIONS_PATH,
     geometries_path: Path = GEOMETRIES_PATH,
     relationships_path: Path = RELATIONSHIPS_PATH,
+    events_path: Path = EVENTS_PATH,
     utility_assets_path: Path = UTILITY_ASSETS_PATH,
 ) -> dict[str, Any]:
     entities = load("environmental_entity", entities_path)
     observations = load("environmental_observation", observations_path)
     geometries = load("environmental_geometry", geometries_path)
     relationships = load("exposure_relationship", relationships_path)
+    events = load("environmental_exposure_event", events_path)
     utility_assets = _read(utility_assets_path)
     return integrity_report(
         entity_ids=(row["entity_id"] for row in entities),
-        observation_ids=(row["observation_id"] for row in observations),
-        geometry_ids=(row["geometry_id"] for row in geometries),
+        observations=observations,
+        geometries=geometries,
+        events=events,
         relationships=relationships,
         external_entity_ids=(
             str(row["asset_id"]) for row in utility_assets if row.get("asset_id")

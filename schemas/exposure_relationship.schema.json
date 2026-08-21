@@ -7,11 +7,11 @@
   "properties": {
     "relationship_id": {"type": "string", "minLength": 1},
     "subject_id": {"type": "string", "minLength": 1},
-    "predicate": {"type": "string", "minLength": 1},
+    "predicate": {"enum": ["LOCATED_AT", "RELEASED", "DISCHARGED_TO", "CONTAMINATED", "IMPAIRED", "MIGRATES_THROUGH", "HYDRAULICALLY_CONNECTED_TO", "INTERSECTS_CAPTURE_ZONE", "DETECTED_AT", "ATTRIBUTED_TO", "POTENTIALLY_AFFECTS", "AFFECTS", "SUPPLIES", "TREATED_BY", "SHUT_DOWN_BECAUSE_OF", "REACTIVATED_AFTER", "REPLACED_BY", "UPSTREAM_OF", "DOWNGRADIENT_OF", "MONITORED_BY", "REGULATED_AS", "LISTED_AS", "REMEDIATED_BY"]},
     "object_id": {"type": "string", "minLength": 1},
     "causal_state": {"enum": ["NOT_TESTED", "DISCOVERY_CANDIDATE", "SPATIALLY_PLAUSIBLE", "HYDROLOGICALLY_PLAUSIBLE", "ANALYTICALLY_SUPPORTED", "ATTRIBUTION_SUPPORTED", "AUTHORITATIVELY_ATTRIBUTED", "CONTRADICTED", "EXCLUDED", "UNRESOLVED"]},
     "evidence_classes": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
-    "geometry_relation": {"type": ["string", "null"]},
+    "geometry_relation": {"type": ["string", "null"], "enum": ["FULLY_WITHIN", "PARTIAL", "TOUCH_ONLY", "OUTSIDE", "NULL_EMPTY", "UNRESOLVED", "INTERSECTS", "NEAR", null]},
     "valid_from": {"type": ["string", "null"]},
     "valid_until": {"type": ["string", "null"]},
     "observed_at": {"type": ["string", "null"]},

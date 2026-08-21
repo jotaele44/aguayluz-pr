@@ -59,7 +59,6 @@ function App() {
               <Route path="/alerts" element={<AlertsPage />} />
               <Route path="/alerts/:id" element={<AlertDetailPage />} />
               <Route path="/outages" element={<OutagesPage />} />
-              <Route path="/water-disruption" element={<WaterDisruption />} />
               <Route path="/monitoring" element={<MonitoringPage />} />
               <Route path="/cave-karst" element={<CaveKarstPage />} />
               <Route path="/regulatory" element={<RegulatoryPage />} />
@@ -69,6 +68,7 @@ function App() {
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/logs" element={<LiveLogsPage />} />
               <Route path="/system" element={<SystemPage />} />
+              <Route path="/water-disruption" element={<WaterDisruption />} />
               <Route path="/sector/:sector" element={<SectorDetailPage />} />
               <Route path="/events/:id" element={<EventDetailPage />} />
               <Route path="/municipios/:name" element={<MunicipioDetailPage />} />

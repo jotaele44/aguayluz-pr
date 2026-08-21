@@ -34,6 +34,36 @@ def edge(**overrides):
     return row
 
 
+def observation(**overrides):
+    row = {"observation_id": "OBS_1", "entity_ids": ["SOURCE"]}
+    row.update(overrides)
+    return row
+
+
+def geometry(**overrides):
+    row = {"geometry_id": "GEO_1", "entity_id": "SOURCE"}
+    row.update(overrides)
+    return row
+
+
+def event(**overrides):
+    row = {"event_id": "EVT_1", "entity_ids": ["SOURCE"]}
+    row.update(overrides)
+    return row
+
+
+def report(**overrides):
+    values = {
+        "entity_ids": ["SOURCE", "WELL"],
+        "observations": [],
+        "geometries": [],
+        "events": [],
+        "relationships": [edge()],
+    }
+    values.update(overrides)
+    return integrity_report(**values)
+
+
 def test_ids_are_deterministic_and_authority_bound():
     assert derive_entity_id("LUST_SITE", "EPA", "X") == derive_entity_id("LUST_SITE", "EPA", "X")
     assert derive_entity_id("LUST_SITE", "EPA", "X") != derive_entity_id("LUST_SITE", "DRNA", "X")
@@ -64,34 +94,56 @@ def test_authoritative_attribution_rejects_open_contradictions():
         ))
 
 
-def test_integrity_reports_orphans_and_closes_arithmetic():
-    report = integrity_report(
-        entity_ids=["SOURCE", "WELL"],
-        observation_ids=[],
-        geometry_ids=[],
-        relationships=[edge()],
-    )
-    assert report["arithmetic_closes"] is True
-    assert report["relationship_count"] == report["state_count_sum"]
-    assert report["certification_state"] == "PASS"
+def test_structural_integrity_pass_is_not_corpus_certification():
+    result = report()
+    assert result["arithmetic_closes"] is True
+    assert result["relationship_count"] == result["state_count_sum"]
+    assert result["structural_integrity_state"] == "PASS"
+    assert result["corpus_certification_state"] == "OPEN"
 
-    bad = integrity_report(
-        entity_ids=["SOURCE"],
-        observation_ids=[],
-        geometry_ids=[],
-        relationships=[edge()],
-    )
-    assert bad["certification_state"] == "FAIL"
-    assert any("orphan object_id" in item for item in bad["errors"])
+
+def test_integrity_reports_orphan_relationship_endpoint():
+    result = report(entity_ids=["SOURCE"])
+    assert result["structural_integrity_state"] == "FAIL"
+    assert any("orphan object_id" in item for item in result["errors"])
 
 
 def test_integrity_accepts_existing_utility_asset_as_graph_endpoint():
-    report = integrity_report(
+    result = report(
         entity_ids=["SOURCE"],
         external_entity_ids=["UTILITY_1"],
-        observation_ids=[],
-        geometry_ids=[],
         relationships=[edge(object_id="UTILITY_1")],
     )
-    assert report["certification_state"] == "PASS"
-    assert report["external_entity_count"] == 1
+    assert result["structural_integrity_state"] == "PASS"
+    assert result["external_entity_count"] == 1
+
+
+def test_integrity_rejects_orphans_from_observations_geometries_and_events():
+    result = report(
+        observations=[observation(entity_ids=["MISSING_OBS_ENTITY"])],
+        geometries=[geometry(entity_id="MISSING_GEO_ENTITY")],
+        events=[event(entity_ids=["MISSING_EVENT_ENTITY"])],
+    )
+    assert result["structural_integrity_state"] == "FAIL"
+    assert any("OBS_1: orphan entity_id MISSING_OBS_ENTITY" == item for item in result["errors"])
+    assert any("GEO_1: orphan entity_id MISSING_GEO_ENTITY" == item for item in result["errors"])
+    assert any("EVT_1: orphan entity_id MISSING_EVENT_ENTITY" == item for item in result["errors"])
+
+
+def test_duplicate_ids_and_identity_collision_fail_closed():
+    duplicate_edge = edge(relationship_id="AYL_EDGE_TEST")
+    result = report(
+        entity_ids=["SOURCE", "WELL", "SOURCE"],
+        external_entity_ids=["WELL"],
+        observations=[observation(), observation()],
+        geometries=[geometry(), geometry()],
+        events=[event(), event()],
+        relationships=[edge(), duplicate_edge],
+    )
+    assert result["structural_integrity_state"] == "FAIL"
+    assert result["duplicate_ids"]["entity_id"] == ["SOURCE"]
+    assert result["duplicate_ids"]["observation_id"] == ["OBS_1"]
+    assert result["duplicate_ids"]["geometry_id"] == ["GEO_1"]
+    assert result["duplicate_ids"]["event_id"] == ["EVT_1"]
+    assert result["duplicate_ids"]["relationship_id"] == ["AYL_EDGE_TEST"]
+    assert any("environmental/external identity collision: WELL" == item for item in result["errors"])

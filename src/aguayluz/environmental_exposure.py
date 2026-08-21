@@ -128,25 +128,80 @@ def validate_relationship(edge: dict[str, Any]) -> None:
         raise ValueError("valid_from must not be after valid_until")
 
 
+def _duplicate_values(values: Iterable[str]) -> list[str]:
+    counts = Counter(str(value) for value in values)
+    return sorted(value for value, count in counts.items() if count > 1)
+
+
 def integrity_report(
     *,
     entity_ids: Iterable[str],
-    observation_ids: Iterable[str],
-    geometry_ids: Iterable[str],
+    observations: Iterable[dict[str, Any]],
+    geometries: Iterable[dict[str, Any]],
+    events: Iterable[dict[str, Any]],
     relationships: Iterable[dict[str, Any]],
     external_entity_ids: Iterable[str] = (),
 ) -> dict[str, Any]:
-    """Return arithmetic and referential-integrity diagnostics for certification gates."""
-    entities = set(entity_ids)
-    external_entities = set(external_entity_ids)
+    """Return structural arithmetic and referential-integrity diagnostics.
+
+    This is deliberately not a corpus-certification result. A structurally valid
+    empty graph can PASS while the public-source denominator remains OPEN.
+    """
+    entity_values = [str(value) for value in entity_ids]
+    external_values = [str(value) for value in external_entity_ids]
+    observation_rows = list(observations)
+    geometry_rows = list(geometries)
+    event_rows = list(events)
+    relationship_rows = list(relationships)
+
+    entities = set(entity_values)
+    external_entities = set(external_values)
     endpoint_ids = entities | external_entities
-    observations = set(observation_ids)
-    geometries = set(geometry_ids)
-    rows = list(relationships)
+    observation_ids = [str(row.get("observation_id") or "") for row in observation_rows]
+    geometry_ids = [str(row.get("geometry_id") or "") for row in geometry_rows]
+    event_ids = [str(row.get("event_id") or "") for row in event_rows]
+    relationship_ids = [str(row.get("relationship_id") or "") for row in relationship_rows]
+    observation_id_set = set(observation_ids)
+    geometry_id_set = set(geometry_ids)
+
     errors: list[str] = []
     states: Counter[str] = Counter()
 
-    for edge in rows:
+    duplicate_groups = {
+        "entity_id": _duplicate_values(entity_values),
+        "external_entity_id": _duplicate_values(external_values),
+        "observation_id": _duplicate_values(observation_ids),
+        "geometry_id": _duplicate_values(geometry_ids),
+        "event_id": _duplicate_values(event_ids),
+        "relationship_id": _duplicate_values(relationship_ids),
+    }
+    for label, values in duplicate_groups.items():
+        for value in values:
+            errors.append(f"duplicate {label}: {value}")
+
+    overlap = sorted(entities & external_entities)
+    for value in overlap:
+        errors.append(f"environmental/external identity collision: {value}")
+
+    for row in observation_rows:
+        oid = row.get("observation_id")
+        for entity_id in row.get("entity_ids", []):
+            if entity_id not in endpoint_ids:
+                errors.append(f"{oid}: orphan entity_id {entity_id}")
+
+    for row in geometry_rows:
+        gid = row.get("geometry_id")
+        entity_id = row.get("entity_id")
+        if entity_id not in endpoint_ids:
+            errors.append(f"{gid}: orphan entity_id {entity_id}")
+
+    for row in event_rows:
+        event_id = row.get("event_id")
+        for entity_id in row.get("entity_ids", []):
+            if entity_id not in endpoint_ids:
+                errors.append(f"{event_id}: orphan entity_id {entity_id}")
+
+    for edge in relationship_rows:
         try:
             validate_relationship(edge)
         except ValueError as exc:
@@ -159,20 +214,26 @@ def integrity_report(
             errors.append(f"{edge.get('relationship_id')}: orphan object_id {edge.get('object_id')}")
 
         for oid in edge.get("supporting_observation_ids", []):
-            if oid not in observations:
+            if oid not in observation_id_set:
                 errors.append(f"{edge.get('relationship_id')}: orphan observation_id {oid}")
         for gid in edge.get("supporting_geometry_ids", []):
-            if gid not in geometries:
+            if gid not in geometry_id_set:
                 errors.append(f"{edge.get('relationship_id')}: orphan geometry_id {gid}")
 
+    arithmetic_closes = sum(states.values()) == len(relationship_rows)
     return {
-        "environmental_entity_count": len(entities),
-        "external_entity_count": len(external_entities),
-        "relationship_count": len(rows),
+        "environmental_entity_count": len(entity_values),
+        "external_entity_count": len(external_values),
+        "observation_count": len(observation_rows),
+        "geometry_count": len(geometry_rows),
+        "event_count": len(event_rows),
+        "relationship_count": len(relationship_rows),
         "state_counts": dict(sorted(states.items())),
         "state_count_sum": sum(states.values()),
-        "arithmetic_closes": sum(states.values()) == len(rows),
+        "arithmetic_closes": arithmetic_closes,
+        "duplicate_ids": duplicate_groups,
         "error_count": len(errors),
         "errors": errors,
-        "certification_state": "PASS" if not errors and sum(states.values()) == len(rows) else "FAIL",
+        "structural_integrity_state": "PASS" if not errors and arithmetic_closes else "FAIL",
+        "corpus_certification_state": "OPEN",
     }

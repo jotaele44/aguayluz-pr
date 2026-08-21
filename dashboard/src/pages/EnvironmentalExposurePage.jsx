@@ -97,9 +97,9 @@ export default function EnvironmentalExposurePage() {
                 />
                 <MetricCard
                   icon={ShieldCheck}
-                  label="Integrity"
-                  value={integrity.certification_state}
-                  detail={`${integrity.error_count} validation errors`}
+                  label="Structural integrity"
+                  value={integrity.structural_integrity_state}
+                  detail={`${integrity.error_count} validation errors · corpus ${String(integrity.corpus_certification_state || 'OPEN').toLowerCase()}`}
                 />
               </section>
 
@@ -107,7 +107,7 @@ export default function EnvironmentalExposurePage() {
                 <div className="border-b border-slate-800 px-4 py-3">
                   <h2 className="text-sm font-semibold text-slate-100">Temporal relationships</h2>
                   <p className="mt-1 text-xs text-slate-500">
-                    Empty is a valid state: source-family registration is not evidence that a relationship exists.
+                    Empty is a valid state: structural integrity is not a claim that the public-source corpus is complete.
                   </p>
                 </div>
                 {relationships.length === 0 ? (
