@@ -1,0 +1,193 @@
+{
+  "schema_version": "aguayluz.ebas-non-aaa-decentralized-universe/v0.1",
+  "status": "bounded_open",
+  "as_of": "2026-08-21",
+  "identity_effect": "none",
+  "physical_asset_count_claimed": false,
+  "non_aaa_current_operator_denominator": "OPEN",
+  "non_aaa_current_operator_lower_bound": 4,
+  "non_aaa_current_operational_ebas_lower_bound": 5,
+  "non_aaa_current_ebas_denominator": "OPEN",
+  "pr_wide_ebas_denominator": "OPEN",
+  "role_policy": {
+    "npdes_permittee_is_operator": false,
+    "facility_owner_is_operator": false,
+    "sanitary_system_operator_is_ebas_operator": false,
+    "rule": "Permittee, owner, system operator, facility operator, and pump-station operator are independent roles unless an authoritative source explicitly binds them."
+  },
+  "source_family_status": {
+    "epa_puerto_rico_npdes_table": "BOUNDED_CURRENT_PUBLIC_TABLE_EXHAUSTED_FOR_IDENTIFIED_NON_AAA_SANITARY_MANIFESTATIONS",
+    "drna_cwsrf_transition_projects": "BOUNDED_PROJECT_MANIFESTATIONS_EXTRACTED",
+    "ogpe_environmental_review_register": "BOUNDED_PROJECT_MANIFESTATIONS_EXTRACTED",
+    "aaa_2015_non_aaa_seed": "CERTIFIED_HISTORICAL_ROW_LEVEL_SEED_91_EN_USO_NON_AAA_OWNED",
+    "universal_private_decentralized_census": "NOT_AVAILABLE_FROM_SINGLE_SOURCE"
+  },
+  "confirmed_current_non_aaa_system_operator_or_permittee_lower_bound": [
+    {
+      "system": "Roosevelt Roads sanitary sewer system",
+      "entity": "Local Redevelopment Authority for Roosevelt Roads",
+      "class": "PUBLIC_CORPORATION_NON_AAA",
+      "state": "CURRENT_SYSTEM_OPERATOR_CONFIRMED",
+      "ebas_state": "FIVE_REHABILITATION_ASSETS_OPERATIONAL_COUNT_OPEN"
+    },
+    {
+      "system": "Palmas del Mar sanitary sewer system",
+      "entity": "PDM Utility Corporation",
+      "class": "PRIVATE_FRANCHISED_UTILITY",
+      "state": "CURRENT_SYSTEM_OPERATOR_CONFIRMED",
+      "ebas_state": "CURRENT_OPERATOR_BOUND_DENOMINATOR_5"
+    },
+    {
+      "system": "Coco Beach wastewater system",
+      "entity": "Coco Beach Utility Company, Inc.",
+      "class": "PRIVATE_FRANCHISED_UTILITY",
+      "state": "CURRENT_WASTEWATER_OPERATOR_CONFIRMED",
+      "npdes": "PR0026425",
+      "permit_period": "2025-12-01/2030-11-30",
+      "ebas_state": "RECENT_2_CURRENT_2026_COUNT_OPEN"
+    },
+    {
+      "system": "Villas del Gigante Development WWTP",
+      "entity": "Public Works Department of Carolina Municipality",
+      "class": "MUNICIPAL_NON_AAA_POTW",
+      "state": "CURRENT_ADMIN_CONTINUED_NPDES_PERMITTEE",
+      "npdes": "PR0026042",
+      "owner_context": "Municipality of Carolina / Municipal Aqueduct Department",
+      "ebas_state": "OPEN_NO_PUMP_STATION_ENUMERATOR"
+    }
+  ],
+  "epa_current_table_non_aaa_sanitary_manifestations": [
+    {
+      "npdes": "PR0021539",
+      "facility": "Asociacion de Condomines Isleta Marina WWTP",
+      "class": "CONDOMINIUM_PRIVATE",
+      "table_state": "FINAL_LISTED_2026",
+      "nominal_expiration": "2025-08-31",
+      "current_operator_state": "TRANSITION_UNRESOLVED",
+      "transition": "DRNA/OGPe project will eliminate existing WWTP and transfer wastewater by pumping/force main to PRASA",
+      "ebas_state": "OPEN_FUTURE_PUMPED_TRANSFER_NOT_CURRENT_STATION_DENOMINATOR"
+    },
+    {
+      "npdes": "PR0021317",
+      "facility": "Hoyamala Ward Secondary School WWTP",
+      "class": "INSTITUTIONAL_PUBLIC_SCHOOL",
+      "table_state": "FINAL_LISTED_2026",
+      "nominal_expiration": "2023-09-30",
+      "current_operator_state": "UNRESOLVED",
+      "ebas_state": "OPEN"
+    },
+    {
+      "npdes": "PR0026042",
+      "facility": "Villas del Gigante Development WWTP",
+      "class": "MUNICIPAL_NON_AAA_POTW",
+      "table_state": "FINAL_LISTED_2026_ADMIN_CONTINUED",
+      "nominal_expiration": "2020-10-31",
+      "permittee": "Public Works Department of Carolina Municipality",
+      "facility_contact_context": "Director of Municipal Aqueduct Department of Carolina",
+      "ebas_state": "OPEN"
+    },
+    {
+      "npdes": "PR0026310",
+      "facility": "Consejo de Condominios Costeros / El Yunque Treatment Plant lineage",
+      "class": "CONDOMINIUM_PRIVATE_DECENTRALIZED",
+      "table_state": "FINAL_LISTED_2026",
+      "nominal_expiration": "2024-07-31",
+      "historical_owner": "El Yunque Treatment Plant Corporation",
+      "current_operator_state": "TRANSITION_UNRESOLVED",
+      "transition": "Las Picuas WWTP elimination project includes two future sanitary pump stations and force mains",
+      "ebas_state": "TWO_PLANNED_FUTURE_STATIONS_NOT_CURRENT_DENOMINATOR"
+    },
+    {
+      "npdes": "PR0026425",
+      "facility": "Coco Beach Wastewater Treatment Plant",
+      "class": "PRIVATE_RESORT_UTILITY",
+      "table_state": "FINAL_ACTIVE",
+      "permit_period": "2025-12-01/2030-11-30",
+      "operator": "Coco Beach Utility Company, Inc.",
+      "ebas_state": "RECENT_OPERATIONAL_2_CURRENT_2026_COUNT_OPEN"
+    }
+  ],
+  "additional_non_npdes_or_nonfranchise_current_systems": [
+    {
+      "system": "Palmas del Mar",
+      "entity": "PDM Utility Corporation",
+      "reason": "Current non-AAA wastewater operator with five pump stations is not represented as a current individual sanitary NPDES facility in the bounded EPA table search."
+    },
+    {
+      "system": "Roosevelt Roads",
+      "entity": "Local Redevelopment Authority for Roosevelt Roads",
+      "reason": "Current sanitary-system owner/operator is independently documented outside the individual NPDES permit table."
+    },
+    {
+      "system": "Punta Picuas WWTP",
+      "entity": "UNRESOLVED",
+      "class": "PRIVATE_DECENTRALIZED_NON_PRASA",
+      "recent_state": "RECENT_OPERATION_SUPPORTED_2023_12_TO_2024_01",
+      "collection": "Two-thirds of seven coastal walk-up complexes contribute by pumped flow; Hillside Village contributes by gravity.",
+      "ebas_state": "OPEN_PUMP_STATION_COUNT_AND_LEGAL_OPERATOR_UNRESOLVED"
+    },
+    {
+      "system": "Caguas Real",
+      "entity": "Caguas Real Utility Corp.",
+      "class": "PRIVATE_FRANCHISED_UTILITY",
+      "current_water_state": "CONFIRMED",
+      "current_sewer_state": "UNRESOLVED_POST_2025",
+      "ebas_state": "OPEN"
+    }
+  ],
+  "transition_projects": [
+    {
+      "system": "Isleta Marina",
+      "source_family": "DRNA_CWSRF_AND_OGPE",
+      "project_state": "CURRENT_ELIMINATION_PROJECT",
+      "effect": "Existing decentralized WWTP planned for demolition; wastewater planned for pumped force-main transfer to PRASA Maternillo sewer.",
+      "identity_effect": "none",
+      "current_ebas_count_effect": "none"
+    },
+    {
+      "system": "Las Picuas / PR0026310 lineage",
+      "source_family": "PRASA_CIP_AND_ENGINEERING_PROJECT",
+      "project_state": "CURRENT_ELIMINATION_PROJECT",
+      "planned_future_ebas": 2,
+      "identity_effect": "none",
+      "current_ebas_count_effect": "none"
+    }
+  ],
+  "historical_seed": {
+    "source": "2015 AAA GDB ww_Pump_Station",
+    "non_aaa_owned_en_uso_rows": 91,
+    "private_en_uso": 87,
+    "government_en_uso": 4,
+    "current_identity_effect": "none",
+    "reason": "Historical owner/status rows are a discovery denominator only and cannot be promoted to current operators or stations without continuity evidence."
+  },
+  "gravity_vs_pumped_policy": {
+    "EBAS_BEARING": "Requires explicit pump/lift station or pumped/force-main collection evidence.",
+    "GRAVITY_ONLY": "Requires affirmative gravity-only source evidence; source silence is not sufficient.",
+    "UNKNOWN": "Default where collection hydraulics are not explicitly documented."
+  },
+  "denominator_adjudication": {
+    "epa_listed_non_aaa_sanitary_manifestation_count": 5,
+    "epa_listed_count_is_operator_denominator": false,
+    "confirmed_current_non_aaa_system_operator_or_permittee_lower_bound": 4,
+    "exact_current_non_aaa_operator_denominator": "OPEN",
+    "exact_current_non_aaa_ebas_denominator": "OPEN",
+    "certified_current_non_aaa_operational_ebas_lower_bound": 5,
+    "blocking_conditions": [
+      "The EPA individual NPDES table is not a complete sanitary-operator census; known current PDMU and LRA systems are independently documented outside it.",
+      "Several EPA-listed non-AAA sanitary permits are past nominal expiration and current operating/continuation status is not uniformly resolved.",
+      "DRNA/OGPe/PRASA project records document systems in transition to PRASA and must not be double-counted across pre/post-transfer states.",
+      "Punta Picuas proves non-franchised private decentralized systems exist outside the three private utility franchises, while its legal operator and station count remain unresolved.",
+      "The 91-row 2015 non-AAA En Uso seed is historical and lacks complete current continuity adjudication."
+    ]
+  },
+  "terminal_state": {
+    "non_franchised_decentralized_universe_exhausted": false,
+    "bounded_public_source_expansion_pass": true,
+    "non_aaa_operator_denominator": "OPEN",
+    "non_aaa_ebas_denominator": "OPEN",
+    "aaa_current_2026_denominator": "OPEN",
+    "pr_wide_denominator": "OPEN",
+    "pr_wide_equals_aaa_only": false
+  }
+}
