@@ -125,9 +125,9 @@ def test_integrity_rejects_orphans_from_observations_geometries_and_events():
         events=[event(entity_ids=["MISSING_EVENT_ENTITY"])],
     )
     assert result["structural_integrity_state"] == "FAIL"
-    assert any("OBS_1: orphan entity_id MISSING_OBS_ENTITY" == item for item in result["errors"])
-    assert any("GEO_1: orphan entity_id MISSING_GEO_ENTITY" == item for item in result["errors"])
-    assert any("EVT_1: orphan entity_id MISSING_EVENT_ENTITY" == item for item in result["errors"])
+    assert any(item == "OBS_1: orphan entity_id MISSING_OBS_ENTITY" for item in result["errors"])
+    assert any(item == "GEO_1: orphan entity_id MISSING_GEO_ENTITY" for item in result["errors"])
+    assert any(item == "EVT_1: orphan entity_id MISSING_EVENT_ENTITY" for item in result["errors"])
 
 
 def test_duplicate_ids_and_identity_collision_fail_closed():
@@ -146,4 +146,4 @@ def test_duplicate_ids_and_identity_collision_fail_closed():
     assert result["duplicate_ids"]["geometry_id"] == ["GEO_1"]
     assert result["duplicate_ids"]["event_id"] == ["EVT_1"]
     assert result["duplicate_ids"]["relationship_id"] == ["AYL_EDGE_TEST"]
-    assert any("environmental/external identity collision: WELL" == item for item in result["errors"])
+    assert any(item == "environmental/external identity collision: WELL" for item in result["errors"])
