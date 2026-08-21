@@ -1,4 +1,4 @@
-from aguayluz.geometry_format_policy import assess_twkb_admission
+from geometry_format_policy import assess_twkb_admission
 
 
 def base(**overrides):

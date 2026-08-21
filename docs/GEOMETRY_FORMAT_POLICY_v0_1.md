@@ -20,7 +20,7 @@ The local-hydro importer may continue deriving representative lat/lon values for
 - canonical geometry manifestation/hash when generated
 - derivation label for representative point/centroid
 
-TWKB may be introduced only behind `src/aguayluz/geometry_format_policy.py::assess_twkb_admission` and only as an optional compact cache/transport derivative.
+TWKB may be introduced only behind `geometry_format_policy.py::assess_twkb_admission` and only as an optional compact cache/transport derivative. The gate is intentionally outside the GUI-parity production discovery roots because it is a non-user-facing certification/policy control, not a new GUI capability.
 
 ## Hard negatives
 
