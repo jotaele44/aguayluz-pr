@@ -1,0 +1,157 @@
+{
+  "schema_version": "1.0.0",
+  "benchmark_id": "AYL_ENV_BENCH_DORADO_GW_20260821",
+  "as_of": "2026-08-21",
+  "classification": "NEGATIVE_ATTRIBUTION_CONTROL",
+  "production_promotion_allowed": false,
+  "target": {
+    "label": "Espinosa target coordinate",
+    "latitude": 18.4123624,
+    "longitude": -66.2809414,
+    "identity_state": "GEOGRAPHIC_TARGET_ONLY"
+  },
+  "authoritative_site": {
+    "name": "Dorado Ground Water Contamination",
+    "authority": "EPA",
+    "epa_id": "PRN000201872",
+    "site_reference_point": {
+      "name": "Maguayo 6 public supply well",
+      "latitude": 18.42975602,
+      "longitude": -66.27832042,
+      "target_distance_km_derived": 1.95375,
+      "distance_role": "DISCOVERY_CONTEXT_ONLY"
+    },
+    "source_attribution_state": "UNKNOWN",
+    "source_attribution_rule": "No candidate source may be promoted from distance, road-kilometer context, name similarity, municipality, or co-occurrence."
+  },
+  "authoritative_findings": [
+    {
+      "finding_id": "EPA_HRS_2016_REFERENCE_POINT",
+      "state": "FACT",
+      "statement": "EPA defines Maguayo 6 as a reference point near the center of observed groundwater contamination and states that the plume has no identified source; HRS coordinates are not precise site boundaries.",
+      "source_locator": "https://semspub.epa.gov/work/02/363667.pdf"
+    },
+    {
+      "finding_id": "EPA_2021_NO_SOURCE",
+      "state": "FACT",
+      "statement": "EPA reported that its investigation did not identify a source of the groundwater contamination and selected monitored natural attenuation plus groundwater-use restrictions.",
+      "source_locator": "https://www.epa.gov/newsreleases/epa-finalizes-plan-address-dorado-groundwater-contamination-superfund-site-puerto-rico"
+    },
+    {
+      "finding_id": "EPA_2026_SOURCE_SEARCH",
+      "state": "FACT",
+      "statement": "EPA's July 2026 community update says EPA evaluated 21 facilities in 2011 and 2013 and reevaluated five facilities in 2015 without finding a contamination source.",
+      "source_locator": "https://semspub.epa.gov/work/02/778593.pdf"
+    },
+    {
+      "finding_id": "EPA_2026_MONITORING_WELLS",
+      "state": "FACT",
+      "statement": "EPA's July 2026 community update announced monitoring-well installation at Maguayo 4, the former Marcelino Canino school, and Higuillar.",
+      "source_locator": "https://semspub.epa.gov/work/02/778593.pdf"
+    },
+    {
+      "finding_id": "EPA_CVOC",
+      "state": "FACT",
+      "statement": "The site contaminants addressed by EPA include chlorinated VOCs PCE and TCE; contaminated public-supply wells were removed from drinking-water service.",
+      "source_locator": "https://cumulis.epa.gov/supercpad/SiteProfiles/index.cfm?fuseaction=second.cleanup&id=0201872"
+    },
+    {
+      "finding_id": "EPA_FFS_18_WELLS",
+      "state": "FACT",
+      "statement": "EPA's focused feasibility study reports CVOCs at low levels in all 18 sampled Dorado wells, with drinking-water-standard exceedances limited to PCE in Maguayo 3, 4, 5, and 7 and USGS Maguayo 2; the relative concentrations indicate a higher-concentration plume core within a wider dilute plume.",
+      "source_locator": "https://semspub.epa.gov/work/02/616888.pdf"
+    },
+    {
+      "finding_id": "EPA_FFS_RIO_DE_LA_PLATA",
+      "state": "FACT",
+      "statement": "EPA's focused feasibility study states that Rio de la Plata receives some groundwater discharge from the dilute Dorado plume.",
+      "source_locator": "https://semspub.epa.gov/work/02/616888.pdf"
+    },
+    {
+      "finding_id": "EPA_2021_MAGUAYO_RECEPTORS",
+      "state": "FACT",
+      "statement": "EPA's 2021 proposed plan identified Nevarez and Santa Rosa as the two active supply wells in the Maguayo Urbano system at that time and stated the remaining system wells had been disconnected because of contamination.",
+      "source_locator": "https://semspub.epa.gov/work/02/609893.pdf"
+    },
+    {
+      "finding_id": "USGS_UPPER_AQUIFER_FRAMEWORK",
+      "state": "FACT",
+      "statement": "USGS describes the North Coast Limestone upper aquifer as primarily Aymamon and Aguada (Los Puertos) Limestones, with partially saturated alluvium in major river valleys hydraulically connected to the rivers and upper aquifer.",
+      "source_locator": "https://pubs.usgs.gov/ha/ha730/ch_n/N-PR_VItext4.html"
+    },
+    {
+      "finding_id": "USGS_KARST_FLOW_UNCERTAINTY",
+      "state": "FACT",
+      "statement": "USGS states that groundwater flow in the North Coast Limestone aquifer system is not well documented because of karst-flow complexity, observation-well limitations, and lateral geologic variability.",
+      "source_locator": "https://pubs.usgs.gov/ha/ha730/ch_n/N-PR_VItext4.html"
+    }
+  ],
+  "pathway_receptor_state": {
+    "aquifer_family": "NORTH_COAST_LIMESTONE_UPPER_AQUIFER",
+    "aquifer_binding_state": "REGIONAL_FRAMEWORK_SUPPORTED_SITE_SPECIFIC_FLOW_OPEN",
+    "surface_water_receptor": "RIO_DE_LA_PLATA",
+    "surface_water_relation": "EPA_REPORTED_GROUNDWATER_DISCHARGE_FROM_DILUTE_PLUME",
+    "public_supply_receptors": ["MAGUAYO", "DORADO_URBANO"],
+    "target_hydraulic_connection_state": "UNRESOLVED",
+    "nearest_well_rule": "NEAREST_WELL_IS_NOT_ASSUMED_MOST_HYDROLOGICALLY_CONNECTED"
+  },
+  "discovery_candidates": [
+    {
+      "candidate_id": "DRNA_LUST_86-1944",
+      "authority": "PR_DRNA",
+      "record_family": "UST_LUST",
+      "name": "Caribbean Petroleum Corporation",
+      "location_raw": "PR-2 Km. 26.7, Bo. Espinosa, Dorado",
+      "list_state": "INACTIVE_LUST_2024",
+      "release_date_raw": "1-Aug-95",
+      "source_locator": "https://www.drna.pr.gov/wp-content/uploads/2025/01/INACTIVE-LUST-LIST-2024.pdf",
+      "causal_state": "DISCOVERY_CANDIDATE",
+      "adjudication_state": "CANDIDATE_NOT_IDENTITY",
+      "attributed_to_dorado_plume": false
+    },
+    {
+      "candidate_id": "DRNA_LUST_86-0896",
+      "authority": "PR_DRNA",
+      "record_family": "UST_LUST",
+      "name": "Golden Hills",
+      "location_raw": "Carr. 2 Km. 27.7, Dorado",
+      "list_state": "INACTIVE_LUST_2024",
+      "release_date_raw": "2-Jul-95",
+      "source_locator": "https://www.drna.pr.gov/wp-content/uploads/2025/01/INACTIVE-LUST-LIST-2024.pdf",
+      "causal_state": "DISCOVERY_CANDIDATE",
+      "adjudication_state": "CANDIDATE_NOT_IDENTITY",
+      "attributed_to_dorado_plume": false
+    }
+  ],
+  "document_denominator": {
+    "epa_site_documents_page": "https://cumulis.epa.gov/supercpad/SiteProfiles/index.cfm?fuseaction=second.docdata&id=0201872",
+    "key_documents_advertised": 1,
+    "spp_public_available_documents_advertised": 4,
+    "individual_document_enumeration_state": "OPEN",
+    "administrative_record_enumeration_state": "OPEN"
+  },
+  "promotion_gate": {
+    "required_before_source_attribution": [
+      "AUTHORITATIVE_SOURCE_BINDING_OR_EQUIVALENT",
+      "HYDROGEOLOGIC_FLOW_SUPPORT",
+      "CONTAMINANT_OR_SOURCE_FINGERPRINT_SUPPORT",
+      "NO_OPEN_CONTRADICTIONS"
+    ],
+    "current_state": "BLOCKED_BY_UNKNOWN_SOURCE"
+  },
+  "terminal_case_states": {
+    "site_identity": "PASS",
+    "contaminant_presence": "PASS",
+    "historical_public_supply_impact": "PASS",
+    "regional_hydrogeologic_framework": "PASS",
+    "target_to_plume_hydraulic_connection": "OPEN",
+    "specific_source_attribution": "AUTHORITATIVELY_UNKNOWN",
+    "candidate_source_promotion": "BLOCKED"
+  },
+  "falsification_conditions": [
+    "EPA or DRNA evidence excludes a candidate from the plume's hydraulic pathway.",
+    "Groundwater-flow evidence places the candidate outside the relevant capture or migration pathway.",
+    "Analytical fingerprinting is inconsistent with the Dorado CVOC plume.",
+    "Authoritative records identify a different source or retain source attribution as unknown."
+  ]
+}
