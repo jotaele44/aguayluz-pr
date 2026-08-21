@@ -54,8 +54,47 @@
       "state": "FACT",
       "statement": "The site contaminants addressed by EPA include chlorinated VOCs PCE and TCE; contaminated public-supply wells were removed from drinking-water service.",
       "source_locator": "https://cumulis.epa.gov/supercpad/SiteProfiles/index.cfm?fuseaction=second.cleanup&id=0201872"
+    },
+    {
+      "finding_id": "EPA_FFS_18_WELLS",
+      "state": "FACT",
+      "statement": "EPA's focused feasibility study reports CVOCs at low levels in all 18 sampled Dorado wells, with drinking-water-standard exceedances limited to PCE in Maguayo 3, 4, 5, and 7 and USGS Maguayo 2; the relative concentrations indicate a higher-concentration plume core within a wider dilute plume.",
+      "source_locator": "https://semspub.epa.gov/work/02/616888.pdf"
+    },
+    {
+      "finding_id": "EPA_FFS_RIO_DE_LA_PLATA",
+      "state": "FACT",
+      "statement": "EPA's focused feasibility study states that Rio de la Plata receives some groundwater discharge from the dilute Dorado plume.",
+      "source_locator": "https://semspub.epa.gov/work/02/616888.pdf"
+    },
+    {
+      "finding_id": "EPA_2021_MAGUAYO_RECEPTORS",
+      "state": "FACT",
+      "statement": "EPA's 2021 proposed plan identified Nevarez and Santa Rosa as the two active supply wells in the Maguayo Urbano system at that time and stated the remaining system wells had been disconnected because of contamination.",
+      "source_locator": "https://semspub.epa.gov/work/02/609893.pdf"
+    },
+    {
+      "finding_id": "USGS_UPPER_AQUIFER_FRAMEWORK",
+      "state": "FACT",
+      "statement": "USGS describes the North Coast Limestone upper aquifer as primarily Aymamon and Aguada (Los Puertos) Limestones, with partially saturated alluvium in major river valleys hydraulically connected to the rivers and upper aquifer.",
+      "source_locator": "https://pubs.usgs.gov/ha/ha730/ch_n/N-PR_VItext4.html"
+    },
+    {
+      "finding_id": "USGS_KARST_FLOW_UNCERTAINTY",
+      "state": "FACT",
+      "statement": "USGS states that groundwater flow in the North Coast Limestone aquifer system is not well documented because of karst-flow complexity, observation-well limitations, and lateral geologic variability.",
+      "source_locator": "https://pubs.usgs.gov/ha/ha730/ch_n/N-PR_VItext4.html"
     }
   ],
+  "pathway_receptor_state": {
+    "aquifer_family": "NORTH_COAST_LIMESTONE_UPPER_AQUIFER",
+    "aquifer_binding_state": "REGIONAL_FRAMEWORK_SUPPORTED_SITE_SPECIFIC_FLOW_OPEN",
+    "surface_water_receptor": "RIO_DE_LA_PLATA",
+    "surface_water_relation": "EPA_REPORTED_GROUNDWATER_DISCHARGE_FROM_DILUTE_PLUME",
+    "public_supply_receptors": ["MAGUAYO", "DORADO_URBANO"],
+    "target_hydraulic_connection_state": "UNRESOLVED",
+    "nearest_well_rule": "NEAREST_WELL_IS_NOT_ASSUMED_MOST_HYDROLOGICALLY_CONNECTED"
+  },
   "discovery_candidates": [
     {
       "candidate_id": "DRNA_LUST_86-1944",
@@ -99,6 +138,15 @@
       "NO_OPEN_CONTRADICTIONS"
     ],
     "current_state": "BLOCKED_BY_UNKNOWN_SOURCE"
+  },
+  "terminal_case_states": {
+    "site_identity": "PASS",
+    "contaminant_presence": "PASS",
+    "historical_public_supply_impact": "PASS",
+    "regional_hydrogeologic_framework": "PASS",
+    "target_to_plume_hydraulic_connection": "OPEN",
+    "specific_source_attribution": "AUTHORITATIVELY_UNKNOWN",
+    "candidate_source_promotion": "BLOCKED"
   },
   "falsification_conditions": [
     "EPA or DRNA evidence excludes a candidate from the plume's hydraulic pathway.",
