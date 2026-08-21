@@ -29,8 +29,12 @@ modules:
     priority: critical
     hydro_dependency_relevance: direct
     default_severity_floor: 2
-    primary_sources: NWS San Juan, NHC, USGS gauges, DRNA
-    notes: Flood, drought, rainfall, landslide risk, reservoir operations.
+    primary_sources: NWS San Juan, NHC, USGS gauges, DRNA, USDM (NDMC/UNL), NOAA NCEI
+    notes: Flood, drought, rainfall, landslide risk, reservoir operations. Drought
+      activated by the USDM weekly classification feed (scripts/ingest_drought_usdm.py,
+      D2+ Severe alerts) and corroborated by the NCEI percent-of-normal precipitation
+      feed (scripts/ingest_precip_ncei.py, needs_review shortfall proxy) — the same
+      pattern SEISMIC_GEO was activated by the USGS earthquake ingest.
   - module_id: CONTAMINATION
     module_name: Contamination / Water Quality Alerts
     sector: Public health/environment

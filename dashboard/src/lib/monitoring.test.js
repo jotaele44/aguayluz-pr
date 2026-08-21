@@ -61,8 +61,38 @@ describe('metric reuse across corpora', () => {
   it('gives every series a unique key even where metrics repeat', () => {
     const keys = MONITORING_SERIES.map((s) => s.key)
     expect(new Set(keys).size).toBe(keys.length)
-    const pairs = MONITORING_SERIES.map((s) => `${s.sourceKind}:${s.metric}`)
+    // parameterCode joins sourceKind/metric as an identity component for series that
+    // share both (precipitation_pct_normal's 30d/90d windows) — mirrors
+    // config/monitoring_capabilities.json's series_identity, which lists
+    // parameter_code alongside metric/unit for the same reason.
+    const pairs = MONITORING_SERIES.map((s) => `${s.sourceKind}:${s.metric}:${s.parameterCode ?? ''}`)
     expect(new Set(pairs).size).toBe(pairs.length)
+  })
+})
+
+describe('parameter-code-scoped series', () => {
+  it('separates the two precipitation windows by parameterCode, not just metric', () => {
+    const p30 = MONITORING_SERIES_BY_KEY.precipitation_pct_normal_30d
+    const p90 = MONITORING_SERIES_BY_KEY.precipitation_pct_normal_90d
+    expect(p30.metric).toBe(p90.metric)
+    expect(p30.sourceKind).toBe(p90.sourceKind)
+    expect(p30.parameterCode).toBe('30d')
+    expect(p90.parameterCode).toBe('90d')
+
+    const readings = [
+      { site_no: 'S1', metric: 'precipitation_pct_normal', parameter_code: '30d', unit: '%', value: 40 },
+      { site_no: 'S1', metric: 'precipitation_pct_normal', parameter_code: '90d', unit: '%', value: 60 },
+    ]
+    expect(filterSeriesReadings(readings, p30)).toEqual([readings[0]])
+    expect(filterSeriesReadings(readings, p90)).toEqual([readings[1]])
+  })
+
+  it('does not filter by parameterCode for series that do not declare one', () => {
+    const drought = MONITORING_SERIES_BY_KEY.drought_category
+    const readings = [
+      { site_no: 'M1', metric: 'drought_category', parameter_code: 'D2', unit: 'category', value: 2 },
+    ]
+    expect(filterSeriesReadings(readings, drought)).toEqual(readings)
   })
 })
 

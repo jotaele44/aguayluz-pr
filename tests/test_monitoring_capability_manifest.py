@@ -18,6 +18,9 @@ EXPECTED = {
     "field_groundwater_level": ("groundwater_level", "ft"),
     "peak_streamflow": ("streamflow", "ft^3/s"),
     "peak_gage_height": ("gage_height", "ft"),
+    "drought_category": ("drought_category", "category"),
+    "precipitation_pct_normal_30d": ("precipitation_pct_normal", "%"),
+    "precipitation_pct_normal_90d": ("precipitation_pct_normal", "%"),
 }
 
 

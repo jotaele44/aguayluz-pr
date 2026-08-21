@@ -10,6 +10,8 @@ events into operational alerts —
   * WEATHER_HAZARD             — NWS active hazard alerts (data/service_events.jsonl)
   * CONTAMINATION / HYDRO_OPS / WEATHER_HAZARD / TELECOM_SCADA
                                — NEON publication events (data/neon_publication_events.jsonl)
+  * WEATHER_HAZARD             — USDM drought classification (data/drought_conditions.jsonl)
+                                  + NCEI precipitation shortfall (data/precipitation_conditions.jsonl)
 
 Idempotent merge: hand-authored seed alerts and any non-generated rows are kept;
 previously-generated rows (alert_id containing any GENERATED_MARKERS substring —
@@ -72,6 +74,10 @@ def main() -> int:
                     help="USGS groundwater readings (HYDRO_OPS aquifer-drawdown proxy); optional")
     ap.add_argument("--coastal", default="data/coastal_levels.jsonl",
                     help="NOAA tide-gauge readings (HYDRO_OPS coastal high-water proxy); optional")
+    ap.add_argument("--drought", default="data/drought_conditions.jsonl",
+                    help="USDM weekly drought classification (WEATHER_HAZARD drought alert); optional")
+    ap.add_argument("--precip", default="data/precipitation_conditions.jsonl",
+                    help="NCEI percent-of-normal precipitation (WEATHER_HAZARD shortfall proxy); optional")
     ap.add_argument("--neon-events", default="data/neon_publication_events.jsonl",
                     help="NEON publication events (scripts/ingest_neon.py); optional")
     ap.add_argument("--geo", default="data/geo/pr_municipios.json",
@@ -84,12 +90,15 @@ def main() -> int:
     args = ap.parse_args()
 
     events = _read_jsonl(REPO_ROOT / args.events)
-    # One combined readings list across every water time-series; each HYDRO_OPS proxy
-    # filters to the metrics it owns (reservoir/river, groundwater, coastal).
+    # One combined readings list across every water/weather time-series; each promoter
+    # filters to the metrics it owns (reservoir/river, groundwater, coastal, drought,
+    # precipitation).
     readings = (
         _read_jsonl(REPO_ROOT / args.reservoir)
         + _read_jsonl(REPO_ROOT / args.groundwater)
         + _read_jsonl(REPO_ROOT / args.coastal)
+        + _read_jsonl(REPO_ROOT / args.drought)
+        + _read_jsonl(REPO_ROOT / args.precip)
     )
     assets = _read_jsonl(REPO_ROOT / args.assets)
     neon_events = _read_jsonl(REPO_ROOT / args.neon_events)

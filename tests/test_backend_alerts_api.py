@@ -229,7 +229,7 @@ def test_readings_kinds_match_registered_producers(client):
     """A kind with no file yields an empty series; an unregistered kind yields []."""
     assert set(backend.READINGS_FILES) == {
         "reservoir", "groundwater", "coastal", "neon",
-        "usgs_field_measurements", "usgs_peaks",
+        "usgs_field_measurements", "usgs_peaks", "drought", "precipitation",
     }
     assert client.get("/readings?kind=coastal").json() == []
     assert client.get("/readings?kind=generation").json() == []
