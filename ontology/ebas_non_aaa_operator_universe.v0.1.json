@@ -8,40 +8,12 @@
     "archive_sha256": "6afe70c8cc96f2b7d3f73a0976f4bd5d422dff74ba7071281f9c1262be851d8e",
     "layer": "ww_Pump_Station",
     "row_count": 1066,
-    "owner_domain": {
-      "PRASA": "AAA",
-      "PRV": "Privado",
-      "GOV": "Gobierno",
-      "UNK": "Desconocido"
-    },
-    "lifecycle_domain": {
-      "-1": "Otro",
-      "0": "Desconocido",
-      "1": "Propuestos",
-      "2": "En Uso",
-      "3": "Fuera de Operación Temporera",
-      "4": "Fuera de Operación Permanente",
-      "5": "A Eliminarse",
-      "6": "Stand-by (Emergencia)",
-      "7": "Ampliar"
-    },
-    "owner_counts": {
-      "PRASA": 969,
-      "PRV": 91,
-      "GOV": 5,
-      "UNK": 1
-    },
-    "en_uso_counts": {
-      "PRASA": 792,
-      "PRV": 87,
-      "GOV": 4,
-      "UNK": 0
-    },
+    "owner_domain": {"PRASA": "AAA", "PRV": "Privado", "GOV": "Gobierno", "UNK": "Desconocido"},
+    "lifecycle_domain": {"-1": "Otro", "0": "Desconocido", "1": "Propuestos", "2": "En Uso", "3": "Fuera de Operación Temporera", "4": "Fuera de Operación Permanente", "5": "A Eliminarse", "6": "Stand-by (Emergencia)", "7": "Ampliar"},
+    "owner_counts": {"PRASA": 969, "PRV": 91, "GOV": 5, "UNK": 1},
+    "en_uso_counts": {"PRASA": 792, "PRV": 87, "GOV": 4, "UNK": 0},
     "non_aaa_owned_en_uso": 91,
-    "non_aaa_owned_en_uso_breakdown": {
-      "private": 87,
-      "government": 4
-    },
+    "non_aaa_owned_en_uso_breakdown": {"private": 87, "government": 4},
     "government_en_uso_manifestations": [
       {"facility_id": "WWPS0001214AAA0204", "name": "Aeropuerto", "municipality_code": "MAY", "owner": "GOV"},
       {"facility_id": "WWPS0001037RMD0612", "name": null, "municipality_code": "MRV", "owner": "GOV"},
@@ -76,9 +48,9 @@
       "operator_state": "NON_AAA_OPERATED",
       "system_scope": "Palmas del Mar private water/sewer utility",
       "current_status": "CONFIRMED_CURRENT_SYSTEM_OPERATOR",
-      "source_url": "https://99129e46-889e-42f7-ad86-4d6065fd0f36.filesusr.com/ugd/6ebff8_0ec3e60af0a84987bdec3a6b9bae0855.pdf",
-      "source_claim": "April 2025 president's report states PDMU is responsible for water service and treatment of wastewater and continues operations under Franchise No. 386.",
-      "ebas_count_effect": "OPEN_NO_CURRENT_PUMP_STATION_ENUMERATOR_RECOVERED"
+      "source_url": "https://www.pdmutility.org/services",
+      "source_claim": "PDMU currently operates the sanitary sewer system and reports five pumping stations in the wastewater system.",
+      "ebas_count_effect": "CERTIFIED_CURRENT_OPERATOR_BOUND_DENOMINATOR_5"
     },
     {
       "class": "PRIVATE_FRANCHISED_UTILITY",
@@ -88,8 +60,20 @@
       "system_scope": "Coco Beach / Grand Reserve wastewater utility",
       "current_status": "CONFIRMED_CURRENT_WASTEWATER_OPERATOR",
       "source_url": "https://www.epa.gov/npdes-permits/final-npdes-permit-coco-beach-wastewater-treatment-plant-puerto-rico",
-      "source_claim": "EPA final NPDES permit is effective 2025-12-01 through 2030-11-30; EPA fact sheet states Coco Beach Utility Company operates the WWTP treating sanitary wastewater from the development.",
-      "ebas_count_effect": "OPEN_NO_AUTHORITATIVE_CURRENT_PUMP_STATION_COUNT_BOUND"
+      "source_claim": "EPA final NPDES permit is effective 2025-12-01 through 2030-11-30; EPA fact sheet identifies Coco Beach Utility Company as the wastewater operator.",
+      "ebas_count_effect": "OPEN_NO_AUTHORITATIVE_CURRENT_2026_PUMP_STATION_COUNT_BOUND"
+    },
+    {
+      "class": "MUNICIPAL_NON_AAA_POTW",
+      "entity": "Villas del Gigante / Public Works Department of Carolina Municipality",
+      "owner_state": "MUNICIPAL_OWNED",
+      "operator_state": "CURRENT_NPDES_PERMITTEE_ROLE_CONFIRMED_OPERATOR_SCOPE_NOT_PROMOTED_BEYOND_SOURCE",
+      "system_scope": "Villas del Gigante Development WWTP",
+      "current_status": "ADMIN_CONTINUED",
+      "npdes": "PR0026042",
+      "source_url": "https://www.epa.gov/npdes-permits/final-npdes-permit-villas-del-gigante-development-puerto-rico",
+      "source_claim": "EPA permit materials identify the Public Works Department of Carolina Municipality as permittee and the Municipal Aqueduct Department of Carolina as facility contact; current EPA/ECHO evidence retains PR0026042 as administratively continued.",
+      "ebas_count_effect": "OPEN_NO_PUMP_STATION_ENUMERATOR"
     },
     {
       "class": "PRIVATE_FRANCHISED_UTILITY",
@@ -119,30 +103,32 @@
     "bounded_count": 3,
     "entities": ["PDM Utility Corporation", "Coco Beach Utility Company", "Caguas Real Utility Corp."],
     "scope": "Private aqueduct and sewer systems operating under Puerto Rico public-service franchises as described by Act 60-2024 legislative findings.",
-    "not_equivalent_to_ebas_denominator": true
+    "not_equivalent_to_ebas_denominator": true,
+    "not_equivalent_to_complete_private_sanitary_system_universe": true
   },
   "municipal_operator_test": {
-    "state": "NO_INDEPENDENT_MUNICIPAL_POTW_OPERATOR_CERTIFIED_IN_BOUNDED_SEARCH",
-    "source_url": "https://www.epa.gov/npdes-permits/npdes-pretreatment-program-region-2",
-    "source_claim": "EPA states PRASA operates all POTWs on the island and has Puerto Rico's only approved pretreatment program.",
-    "caveat": "This does not prove that no municipality owns isolated collection assets; it only blocks promotion of municipalities to independent POTW/operator class without stronger facility-specific evidence."
+    "state": "INDEPENDENT_MUNICIPAL_POTW_MANIFESTATION_CONFIRMED",
+    "entity": "Villas del Gigante Development WWTP / Carolina Municipality",
+    "npdes": "PR0026042",
+    "permit_state": "ADMIN_CONTINUED",
+    "source_claim": "EPA permit materials identify the Public Works Department of Carolina Municipality as permittee, with the Municipal Aqueduct Department of Carolina as facility contact. This supersedes the earlier bounded no-municipal-POTW finding.",
+    "ebas_count_effect": "OPEN",
+    "caveat": "Municipal POTW/permittee evidence does not imply any pump-station count or permittee-to-EBAS-operator identity."
   },
   "final_partition_policy": {
     "AAA_OWNED": "Use only where authoritative source explicitly attributes ownership to AAA/PRASA.",
     "AAA_OPERATED": "Use only where authoritative source explicitly attributes operation/service/maintenance to AAA/PRASA.",
-    "NON_AAA_OWNED": "Use where source explicitly attributes ownership/control to private, governmental, or other non-AAA entity.",
+    "NON_AAA_OWNED": "Use where source explicitly attributes ownership/control to private, governmental, municipal, or other non-AAA entity.",
     "NON_AAA_OPERATED": "Use only where source explicitly attributes operation/maintenance/service responsibility to a non-AAA entity.",
+    "NPDES_PERMITTEE": "Preserve as a distinct regulatory role and do not automatically equate with owner, system operator, or EBAS operator.",
     "UNKNOWN": "Use whenever owner/operator cannot be independently resolved or where historical ownership is being improperly used as an operator proxy."
   },
   "terminal_state": {
     "non_aaa_sanitary_systems_current_exist": true,
-    "non_aaa_current_system_operators_confirmed": [
-      "Local Redevelopment Authority for Roosevelt Roads",
-      "PDM Utility Corporation",
-      "Coco Beach Utility Company, Inc."
-    ],
+    "non_aaa_current_system_operators_confirmed": ["Local Redevelopment Authority for Roosevelt Roads", "PDM Utility Corporation", "Coco Beach Utility Company, Inc."],
+    "current_non_aaa_system_operator_or_permittee_lower_bound": 4,
     "current_non_aaa_ebas_denominator": "OPEN",
     "pr_wide_ebas_denominator": "OPEN",
-    "reason": "Current non-AAA sanitary-system operation is proven, but no complete current row-level pump-station universe exists across AAA plus public-corporation/private/federal/municipal classes."
+    "reason": "Current non-AAA sanitary-system operation/permittee roles are proven across private, public-corporation, and municipal classes, but no complete current operator census or row-level pump-station universe exists across all classes."
   }
 }
