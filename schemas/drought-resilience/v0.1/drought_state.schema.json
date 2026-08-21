@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/drought-resilience/v0.1/drought_state.schema.json",
+  "title": "DroughtState",
+  "description": "One evidence-bound drought classification for one geography and date. Meteorological, hydrological, agricultural, and socioeconomic states remain independent; no cross-class inference is permitted by this contract.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["drought_state_id", "drought_class", "state", "observed_date", "geography_id", "source_ref", "evidence_tier", "confidence", "review_status", "indicators"],
+  "properties": {
+    "drought_state_id": {"type": "string", "pattern": "^AYL_DST_[0-9a-f]{16}$"},
+    "drought_class": {"enum": ["meteorological", "hydrological", "agricultural", "socioeconomic"]},
+    "state": {"enum": ["normal", "watch", "rapid_decline", "drought", "severe", "unknown"]},
+    "observed_date": {"type": "string", "format": "date"},
+    "geography_id": {"type": "string", "minLength": 1},
+    "source_ref": {"type": "string", "minLength": 1},
+    "evidence_tier": {"enum": ["T1", "T2", "T3", "T4"]},
+    "confidence": {"type": "integer", "minimum": 0, "maximum": 100},
+    "review_status": {"enum": ["accepted", "needs_review", "rejected", "blocked"]},
+    "methodology_ref": {"type": ["string", "null"]},
+    "indicators": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["metric", "value", "unit", "source_ref"],
+        "properties": {
+          "metric": {"type": "string", "minLength": 1},
+          "value": {"type": "number"},
+          "unit": {"type": "string", "minLength": 1},
+          "source_ref": {"type": "string", "minLength": 1},
+          "reading_id": {"type": ["string", "null"]},
+          "qualifier": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "notes": {"type": ["string", "null"]}
+  }
+}
