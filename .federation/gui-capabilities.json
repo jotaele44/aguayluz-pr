@@ -28,7 +28,8 @@
     ],
     "frontend_api_roots": [
       "dashboard/src/lib/api.js",
-      "dashboard/src/lib/cave-karst-api.js"
+      "dashboard/src/lib/cave-karst-api.js",
+      "dashboard/src/lib/environmental-exposure-api.js"
     ],
     "route_files": [
       "dashboard/src/App.jsx"
@@ -1067,6 +1068,72 @@
         ]
       },
       "tests": {
+        "e2e": [
+          "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "environmental-exposure-graph",
+      "classification": "analysis",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Read-only, fail-closed environmental source→pathway→receptor graph. It preserves existing utility/regulatory identities, exposes provenance and causal state, and prohibits proximity/name-only evidence from becoming causal attribution.",
+      "backend": {
+        "files": [
+          "server/backend/environmental_exposure_api.py",
+          "server/backend/app.py",
+          "src/aguayluz/environmental_exposure.py",
+          "src/aguayluz/environmental_exposure_db.py"
+        ],
+        "endpoints": [
+          "GET /environmental-exposure/summary",
+          "GET /environmental-exposure/entities",
+          "GET /environmental-exposure/entities/{entity_id}",
+          "GET /environmental-exposure/relationships",
+          "GET /environmental-exposure/integrity"
+        ],
+        "symbols": [
+          "server/backend/environmental_exposure_api.py:environmental_exposure_summary",
+          "server/backend/environmental_exposure_api.py:environmental_exposure_entities",
+          "server/backend/environmental_exposure_api.py:environmental_exposure_entity",
+          "server/backend/environmental_exposure_api.py:environmental_exposure_relationships",
+          "server/backend/environmental_exposure_api.py:environmental_exposure_integrity",
+          "src/aguayluz/environmental_exposure.py:stable_id",
+          "src/aguayluz/environmental_exposure.py:derive_entity_id",
+          "src/aguayluz/environmental_exposure.py:derive_relationship_id",
+          "src/aguayluz/environmental_exposure.py:validate_relationship",
+          "src/aguayluz/environmental_exposure.py:integrity_report",
+          "src/aguayluz/environmental_exposure_db.py:load",
+          "src/aguayluz/environmental_exposure_db.py:merge",
+          "src/aguayluz/environmental_exposure_db.py:write",
+          "src/aguayluz/environmental_exposure_db.py:graph_integrity"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/environmental-exposure"
+        ],
+        "e2e_routes": [
+          "/environmental-exposure"
+        ],
+        "components": [
+          "dashboard/src/lib/environmental-exposure-api.js",
+          "dashboard/src/pages/EnvironmentalExposurePage.jsx",
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_environmental_exposure_api.py"
+        ],
+        "contract": [
+          "tests/test_environmental_exposure.py",
+          "tests/test_gui_parity.py"
+        ],
         "e2e": [
           "dashboard/tests/gui-parity.spec.mjs"
         ]
