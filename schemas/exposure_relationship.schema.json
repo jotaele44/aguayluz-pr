@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AguaYLuz Environmental Exposure Relationship",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["relationship_id", "subject_id", "predicate", "object_id", "causal_state", "evidence_classes", "geometry_relation", "valid_from", "valid_until", "observed_at", "asserted_at", "source_record_ids", "supporting_observation_ids", "supporting_geometry_ids", "contradictions", "falsification_condition", "adjudication_state"],
+  "properties": {
+    "relationship_id": {"type": "string", "minLength": 1},
+    "subject_id": {"type": "string", "minLength": 1},
+    "predicate": {"type": "string", "minLength": 1},
+    "object_id": {"type": "string", "minLength": 1},
+    "causal_state": {"enum": ["NOT_TESTED", "DISCOVERY_CANDIDATE", "SPATIALLY_PLAUSIBLE", "HYDROLOGICALLY_PLAUSIBLE", "ANALYTICALLY_SUPPORTED", "ATTRIBUTION_SUPPORTED", "AUTHORITATIVELY_ATTRIBUTED", "CONTRADICTED", "EXCLUDED", "UNRESOLVED"]},
+    "evidence_classes": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "geometry_relation": {"type": ["string", "null"]},
+    "valid_from": {"type": ["string", "null"]},
+    "valid_until": {"type": ["string", "null"]},
+    "observed_at": {"type": ["string", "null"]},
+    "asserted_at": {"type": "string", "minLength": 1},
+    "source_record_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "supporting_observation_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "supporting_geometry_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "contradictions": {"type": "array", "items": {"type": "string"}},
+    "falsification_condition": {"type": ["string", "null"]},
+    "adjudication_state": {"enum": ["PASS", "FAIL", "OPEN", "BLOCKED", "PROVISIONAL", "AUDIT_ONLY", "NONCANONICAL", "CANDIDATE_NOT_IDENTITY", "UNRESOLVED", "SUPERSEDED"]}
+  }
+}

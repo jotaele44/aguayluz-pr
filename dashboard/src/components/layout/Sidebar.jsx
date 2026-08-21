@@ -20,6 +20,7 @@ const NAV = [
   { to: '/cave-karst', icon: Mountain, label: 'Cave & Karst' },
   { to: '/regulatory', icon: Landmark, label: 'Regulatory', end: true },
   { to: '/regulatory/review', icon: ClipboardCheck, label: 'Regulatory Review' },
+  { to: '/environmental-exposure', icon: Activity, label: 'Exposure Graph' },
   { to: '/review', icon: ClipboardList, label: 'Review Queue' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
   { to: '/logs', icon: ScrollText, label: 'Live Logs' },

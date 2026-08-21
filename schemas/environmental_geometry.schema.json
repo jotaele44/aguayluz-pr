@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AguaYLuz Environmental Geometry Manifestation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["geometry_id", "entity_id", "geometry_role", "geometry", "source_crs", "valid_from", "valid_until", "source_record_ids", "review_status"],
+  "properties": {
+    "geometry_id": {"type": "string", "minLength": 1},
+    "entity_id": {"type": "string", "minLength": 1},
+    "geometry_role": {"enum": ["SOURCE_SITE_GEOMETRY", "PLUME_GEOMETRY", "SAMPLE_POINT_GEOMETRY", "WELL_GEOMETRY", "CAPTURE_ZONE_GEOMETRY", "ASSESSMENT_UNIT_GEOMETRY", "PARCEL_GEOMETRY", "OTHER"]},
+    "geometry": {"type": ["object", "null"]},
+    "source_crs": {"type": ["string", "null"]},
+    "canonical_crs": {"type": ["string", "null"]},
+    "valid_from": {"type": ["string", "null"]},
+    "valid_until": {"type": ["string", "null"]},
+    "transformation_notes": {"type": ["string", "null"]},
+    "source_record_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "review_status": {"enum": ["accepted", "needs_review", "rejected", "blocked", "unresolved"]}
+  }
+}
