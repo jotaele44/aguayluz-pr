@@ -71,3 +71,23 @@ CREATE TABLE IF NOT EXISTS regulatory_entity_links (
 
 CREATE INDEX IF NOT EXISTS idx_regulatory_entity_links_decision ON regulatory_entity_links(decision_state);
 CREATE INDEX IF NOT EXISTS idx_regulatory_entity_links_asset ON regulatory_entity_links(candidate_asset_id);
+
+-- One row per approved regulatory_entity_links candidate. Written only by
+-- scripts/promote_regulatory_links.py, which consumes decision_state='approved'
+-- rows -- it never sets that state itself. decided_at/decided_by/decision_rationale
+-- are NOT NULL here (unlike the nullable columns on regulatory_entity_links) because
+-- every crosswalk row's own schema requires them: a row only exists because a human
+-- already approved it.
+CREATE TABLE IF NOT EXISTS regulatory_entity_crosswalk (
+  crosswalk_id TEXT PRIMARY KEY,
+  candidate_id TEXT NOT NULL REFERENCES regulatory_entity_links(candidate_id),
+  observation_id TEXT NOT NULL REFERENCES regulatory_observations(observation_id),
+  asset_id TEXT NOT NULL,
+  provider TEXT NOT NULL CHECK (provider IN ('EPA','FDA','USGS','DRNA','PRASA_AAA','PREQB')),
+  match_strength TEXT CHECK (match_strength IN ('hard_identifier','strong_composite','spatial_composite','weak_lexical')),
+  decided_at TEXT NOT NULL,
+  decided_by TEXT NOT NULL,
+  decision_rationale TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_regulatory_entity_crosswalk_asset ON regulatory_entity_crosswalk(asset_id);
