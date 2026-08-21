@@ -1,0 +1,61 @@
+{
+  "schema_version": "2.0.0",
+  "as_of": "2026-08-21",
+  "supersedes_progress_manifest": "source_denominator_progress.v1.json",
+  "overall_state": "OPEN",
+  "completeness_claimed": false,
+  "dorado_subscope_updates": [
+    {
+      "family": "UST_LUST",
+      "state": "PARTIAL_BOUNDED_DORADO",
+      "newly_closed": [
+        "DRNA 2024 ACTIVE list CITY=Dorado denominator: 2 manifestations",
+        "DRNA 2024 INACTIVE list CITY=Dorado denominator: 8 manifestations",
+        "2024 list union: 10 manifestations / 9 unique UST IDs",
+        "cross-list duplicate UST ID 86-0353 preserved as OPEN lineage contradiction"
+      ],
+      "remaining_open": [
+        "case-level corrective-action files",
+        "closure/remediation files",
+        "historical pre-2024 list manifestations",
+        "authoritative facility geometry",
+        "source-to-plume attribution"
+      ],
+      "evidence_manifest": "dorado_lust_2024_denominator.v1.json"
+    },
+    {
+      "family": "SEMS_SUPERFUND",
+      "state": "PARTIAL_BOUNDED_DORADO",
+      "newly_closed": [
+        "EPA final 2021 administrative-record index row denominator: 14 of 14 document IDs"
+      ],
+      "remaining_open": [
+        "acquire/hash all 14 document byte manifestations",
+        "enumerate document attachments/embedded files",
+        "reconcile site-page Key Documents and SPP Public Available Documents manifestations against administrative record",
+        "enumerate post-ROD remedial-design/remedial-action record manifestations"
+      ],
+      "evidence_manifest": "dorado_epa_administrative_record_2021.v1.json"
+    }
+  ],
+  "negative_attribution_controls": {
+    "epa_site_source_state": "UNKNOWN",
+    "lust_candidates_may_be_promoted": false,
+    "target_hydraulic_connection_state": "UNRESOLVED",
+    "proximity_promotion_forbidden": true
+  },
+  "next_terminalization_order": [
+    "EPA_14_DOCUMENT_BYTE_ACQUISITION",
+    "EPA_POST_ROD_REMEDIAL_RECORDS",
+    "DRNA_LUST_CASE_LEVEL_RECORDS",
+    "PRASA_AAA_DORADO_WELL_HISTORY",
+    "USGS_DORADO_SITE_SPECIFIC_HYDROGEOLOGY",
+    "RCRA_TRI_DORADO_CANDIDATES",
+    "SDWIS_DORADO_SYSTEM_HISTORY",
+    "ATTAINS_RIO_DE_LA_PLATA",
+    "ECHO_NPDES_DORADO",
+    "UIC_PR",
+    "PR_DRNA_CONTAMINATED_SITES",
+    "PR_SOLID_WASTE"
+  ]
+}
