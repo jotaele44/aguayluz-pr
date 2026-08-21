@@ -1,0 +1,40 @@
+{
+  "reference_time": "2026-08-08T22:30:00Z",
+  "cases": {
+    "valid": {
+      "status": 200,
+      "document": {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {"monitoring_location_id": "USGS-50014800", "parameter_code": "00060", "value": 42.5, "unit_of_measure": "ft3/s", "time": "2026-08-08T22:15:00Z", "approval_status": ["Approved"], "qualifier": ["A"]}}], "links": []}
+    },
+    "empty": {
+      "status": 200,
+      "document": {"type": "FeatureCollection", "features": [], "links": []}
+    },
+    "stale": {
+      "status": 200,
+      "document": {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {"monitoring_location_id": "USGS-50014800", "parameter_code": "00065", "value": 4.2, "unit_of_measure": "ft", "time": "2026-08-08T18:00:00Z", "approval_status": ["Approved"], "qualifier": ["A"]}}], "links": []}
+    },
+    "partial": {
+      "status": 200,
+      "document": {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {"monitoring_location_id": "USGS-50014800", "parameter_code": "72365", "unit_of_measure": "ft", "time": "2026-08-08T22:15:00Z"}}], "links": []}
+    },
+    "paginated_first": {
+      "status": 200,
+      "document": {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {"monitoring_location_id": "USGS-50014800", "parameter_code": "00060", "value": 40.0, "unit_of_measure": "ft3/s", "time": "2026-08-08T22:00:00Z", "approval_status": ["Approved"]}}], "links": [{"rel": "next", "href": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/latest-continuous/items?cursor=page2"}]}
+    },
+    "paginated_second": {
+      "status": 200,
+      "document": {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {"monitoring_location_id": "USGS-50014800", "parameter_code": "00060", "value": 41.0, "unit_of_measure": "ft3/s", "time": "2026-08-08T22:15:00Z", "approval_status": ["Approved"]}}], "links": []}
+    },
+    "rate_limited": {"status": 429, "document": {"detail": "rate limit"}},
+    "upstream_5xx": {"status": 503, "document": {"detail": "service unavailable"}},
+    "schema_drift": {"status": 200, "document": {"items": []}},
+    "unknown_parameter": {
+      "status": 200,
+      "document": {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {"monitoring_location_id": "USGS-50014800", "parameter_code": "99999", "value": 1.0, "unit_of_measure": "unit", "time": "2026-08-08T22:15:00Z"}}], "links": []}
+    },
+    "out_of_scope_site": {
+      "status": 200,
+      "document": {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {"monitoring_location_id": "USGS-50000000", "parameter_code": "00060", "value": 1.0, "unit_of_measure": "ft3/s", "time": "2026-08-08T22:15:00Z"}}], "links": []}
+    }
+  }
+}

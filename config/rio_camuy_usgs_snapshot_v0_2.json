@@ -1,0 +1,102 @@
+{
+  "schema_version": "aguayluz.rio-camuy-usgs-snapshot/v0.2",
+  "adapter_id": "RIO_CAMUY_READ_ONLY_USGS_SNAPSHOT_V0_2",
+  "operator_invoked_only": true,
+  "scheduler_enabled": false,
+  "public_notifications_enabled": false,
+  "automatic_public_reopening_enabled": false,
+  "retired_sensor_things_dependency": false,
+  "credential": {
+    "environment_variable": "USGS_API_KEY",
+    "transport": "X-Api-Key header",
+    "required": true,
+    "persisted": false,
+    "query_parameter_allowed": false
+  },
+  "api": {
+    "root": "https://api.waterdata.usgs.gov/ogcapi/v0/collections",
+    "collections": [
+      "latest-continuous",
+      "continuous",
+      "monitoring-locations",
+      "time-series-metadata"
+    ],
+    "method": "GET",
+    "page_limit": 500,
+    "timeout_seconds": 60
+  },
+  "site_policy": {
+    "50014800": {
+      "monitoring_location_id": "USGS-50014800",
+      "source_id": "SRC_KARST_USGS_50014800",
+      "evidence_tier": "T1",
+      "privacy_class": "P0_PUBLIC",
+      "current_operational_admission": true,
+      "current_parameters": ["00060", "00065", "72365"],
+      "historical_only_parameters": ["00045"]
+    },
+    "50014600": {
+      "monitoring_location_id": "USGS-50014600",
+      "source_id": "SRC_KARST_USGS_50014600",
+      "evidence_tier": "T1",
+      "privacy_class": "P0_PUBLIC",
+      "current_operational_admission": false,
+      "historical_only": true,
+      "current_parameters": [],
+      "historical_only_parameters": ["00060"]
+    }
+  },
+  "parameter_crosswalk": {
+    "00060": {"observed_property": "discharge", "expected_unit": "ft3/s", "datum": null},
+    "00065": {"observed_property": "gage_height", "expected_unit": "ft", "datum": "time_series_metadata_required"},
+    "72365": {"observed_property": "stream_level_elevation", "expected_unit": "ft", "datum": "PRVD02"},
+    "00045": {"observed_property": "precipitation", "expected_unit": "in", "datum": null}
+  },
+  "normalization_required": [
+    "source_id",
+    "monitoring_location",
+    "parameter_code",
+    "observed_property",
+    "value",
+    "unit",
+    "datum",
+    "observed_at",
+    "qualifier",
+    "approval_status",
+    "received_at",
+    "request_receipt_sha256",
+    "evidence_tier",
+    "quality_flag",
+    "privacy_class",
+    "operational_admission"
+  ],
+  "fail_closed": {
+    "empty": "unknown",
+    "stale": "unknown",
+    "partial": "unknown",
+    "rate_limited": "unknown",
+    "upstream_5xx": "unknown",
+    "schema_drift": "unknown",
+    "unknown_parameter": "rejected",
+    "out_of_scope_site": "rejected",
+    "missing_data_can_imply_safe": false,
+    "failed_request_can_imply_safe": false,
+    "safe_open_reopen_actions_allowed": false
+  },
+  "local_sensor_boundary": {
+    "commissioned_count": 0,
+    "p2_p3_sensor_identifiers_public": false,
+    "emergency_geometry_public": false
+  },
+  "threshold_boundary": {
+    "stage_rain_authority": "pilot_provisional",
+    "operational_authority": false,
+    "promotion_requires": [
+      "surveyed_camuy_stage_elevations",
+      "hydraulic_response_characterization",
+      "operator_evacuation_time_study",
+      "authorized_sensor_commissioning_records",
+      "calibration_and_qc_provenance"
+    ]
+  }
+}

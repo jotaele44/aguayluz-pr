@@ -1,0 +1,102 @@
+{
+  "schema_version": "aguayluz.rio-camuy-monitoring-public/v0.1",
+  "integration_id": "RIO_CAMUY_OPERATIONAL_HYDRO_SENSOR_V0_1",
+  "asset_id": "AYL_KARST_CAMUY_PARK",
+  "projection_mode": "read_only",
+  "operational_status_authority": false,
+  "public_notifications_enabled": false,
+  "automatic_public_reopening_enabled": false,
+  "threshold_policy": {
+    "stage_rain_authority": "pilot_provisional",
+    "stage_rain_operational_authority": false,
+    "surveyed_stage_required_before_operational_promotion": true,
+    "hydraulic_response_required_before_operational_promotion": true,
+    "operator_evacuation_time_required_before_operational_promotion": true
+  },
+  "modern_usgs": {
+    "api_family": "USGS Water Data OGC API",
+    "root": "https://api.waterdata.usgs.gov/ogcapi/v0/collections",
+    "current_collection": "latest-continuous",
+    "history_collection": "continuous",
+    "retired_sensor_things_dependency": false
+  },
+  "public_sources": [
+    {
+      "source_id": "SRC_KARST_USGS_50014800",
+      "monitoring_location_id": "USGS-50014800",
+      "site_number": "50014800",
+      "site_name": "RIO CAMUY NR BAYANEY, PR",
+      "privacy_class": "P0_PUBLIC",
+      "evidence_tier": "T1",
+      "role": "operational_surface_hydrologic_context",
+      "current_operational_admission": true,
+      "datastreams": [
+        {
+          "observed_property": "discharge",
+          "parameter_code": "00060",
+          "unit": "ft3/s",
+          "datum": null,
+          "quality_flag": "source_approval_and_qualifier_required",
+          "sampling_cadence": "source_time_series_metadata_required",
+          "provenance": "USGS continuous/latest-continuous"
+        },
+        {
+          "observed_property": "gage_height",
+          "parameter_code": "00065",
+          "unit": "ft",
+          "datum": "source_time_series_metadata_required",
+          "quality_flag": "source_approval_and_qualifier_required",
+          "sampling_cadence": "source_time_series_metadata_required",
+          "provenance": "USGS continuous/latest-continuous"
+        },
+        {
+          "observed_property": "stream_level_elevation",
+          "parameter_code": "72365",
+          "unit": "ft",
+          "datum": "PRVD02",
+          "quality_flag": "source_approval_and_qualifier_required",
+          "sampling_cadence": "source_time_series_metadata_required",
+          "provenance": "USGS continuous/latest-continuous"
+        }
+      ]
+    },
+    {
+      "source_id": "SRC_KARST_USGS_50014600",
+      "monitoring_location_id": "USGS-50014600",
+      "site_number": "50014600",
+      "site_name": "RIO CAMUY AT TRES PUEBLOS SINKHOLE, LARES PR",
+      "privacy_class": "P0_PUBLIC",
+      "evidence_tier": "T1",
+      "role": "historical_upstream_hydrologic_context",
+      "current_operational_admission": false,
+      "historical_period": "1990-06-01/1996-09-30",
+      "datastreams": [
+        {
+          "observed_property": "discharge",
+          "parameter_code": "00060",
+          "unit": "ft3/s",
+          "datum": null,
+          "quality_flag": "source_approval_and_qualifier_required",
+          "sampling_cadence": "historical_record_only",
+          "provenance": "USGS historical instantaneous record"
+        }
+      ]
+    }
+  ],
+  "restricted_contracts": {
+    "count": 6,
+    "identifiers_exposed": false,
+    "sensor_identifiers_exposed": false,
+    "monitoring_site_identifiers_exposed": false,
+    "emergency_geometry_exposed": false,
+    "commissioned_sensor_count": 0,
+    "message": "Local rain, stage, O2, CO2, heartbeat, and calibration contracts remain uncommissioned P2/P3 design records and are not included in this public projection."
+  },
+  "current_interpretation": {
+    "camuy_public_access_state": "closed",
+    "monitoring_can_reopen_asset": false,
+    "missing_data_interpretation": "unknown_or_degraded_never_safe",
+    "stale_data_interpretation": "unknown_or_degraded_never_safe",
+    "historical_50014600_can_be_promoted_to_current": false
+  }
+}
