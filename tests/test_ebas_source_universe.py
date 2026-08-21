@@ -104,12 +104,17 @@ def test_non_aaa_owner_operator_universe_is_fail_closed() -> None:
         "PDM Utility Corporation",
         "Coco Beach Utility Company, Inc.",
     }
+    assert terminal["current_non_aaa_system_operator_or_permittee_lower_bound"] == 4
     assert universe["private_franchise_universe"]["bounded_count"] == 3
     assert universe["private_franchise_universe"]["not_equivalent_to_ebas_denominator"] is True
+    assert universe["private_franchise_universe"]["not_equivalent_to_complete_private_sanitary_system_universe"] is True
     federal = next(x for x in universe["current_operator_classes"] if x["class"] == "FEDERAL_INSTALLATION_NEGATIVE_CONTROL")
     assert federal["entity"] == "Fort Buchanan"
     assert federal["operator_state"] == "AAA_OPERATED_SANITARY_SERVICE"
-    assert universe["municipal_operator_test"]["state"] == "NO_INDEPENDENT_MUNICIPAL_POTW_OPERATOR_CERTIFIED_IN_BOUNDED_SEARCH"
+    municipal = universe["municipal_operator_test"]
+    assert municipal["state"] == "INDEPENDENT_MUNICIPAL_POTW_MANIFESTATION_CONFIRMED"
+    assert municipal["npdes"] == "PR0026042"
+    assert municipal["ebas_count_effect"] == "OPEN"
 
 
 def test_current_non_aaa_asset_enumeration_is_bounded_and_fail_closed() -> None:
@@ -138,3 +143,35 @@ def test_current_non_aaa_asset_enumeration_is_bounded_and_fail_closed() -> None:
     assert data["aaa_combination_gate"]["aaa_current_2026_denominator"] == "OPEN"
     assert data["aaa_combination_gate"]["combination_state"] == "NOT_EXECUTED"
     assert data["pr_wide_closure"]["state"] == "OPEN"
+
+
+def test_decentralized_non_aaa_universe_preserves_source_denominators_and_transitions() -> None:
+    data = json.loads(Path("ontology/ebas_non_aaa_decentralized_universe.v0.1.json").read_text(encoding="utf-8"))
+    assert data["identity_effect"] == "none"
+    assert data["physical_asset_count_claimed"] is False
+    assert data["non_aaa_current_operator_denominator"] == "OPEN"
+    assert data["non_aaa_current_operator_lower_bound"] == 4
+    assert data["non_aaa_current_operational_ebas_lower_bound"] == 5
+    assert data["non_aaa_current_ebas_denominator"] == "OPEN"
+    assert data["pr_wide_ebas_denominator"] == "OPEN"
+    assert data["denominator_adjudication"]["epa_listed_non_aaa_sanitary_manifestation_count"] == 5
+    assert data["denominator_adjudication"]["epa_listed_count_is_operator_denominator"] is False
+    assert data["historical_seed"]["non_aaa_owned_en_uso_rows"] == 91
+    assert data["historical_seed"]["private_en_uso"] == 87
+    assert data["historical_seed"]["government_en_uso"] == 4
+    assert data["historical_seed"]["current_identity_effect"] == "none"
+    manifests = {x["npdes"]: x for x in data["epa_current_table_non_aaa_sanitary_manifestations"]}
+    assert set(manifests) == {"PR0021539", "PR0021317", "PR0026042", "PR0026310", "PR0026425"}
+    assert manifests["PR0026042"]["class"] == "MUNICIPAL_NON_AAA_POTW"
+    assert manifests["PR0026310"]["ebas_state"] == "TWO_PLANNED_FUTURE_STATIONS_NOT_CURRENT_DENOMINATOR"
+    assert manifests["PR0026425"]["permit_period"] == "2025-12-01/2030-11-30"
+    transitions = {x["system"]: x for x in data["transition_projects"]}
+    assert transitions["Isleta Marina"]["current_ebas_count_effect"] == "none"
+    assert transitions["Las Picuas / PR0026310 lineage"]["planned_future_ebas"] == 2
+    assert transitions["Las Picuas / PR0026310 lineage"]["current_ebas_count_effect"] == "none"
+    terminal = data["terminal_state"]
+    assert terminal["non_franchised_decentralized_universe_exhausted"] is False
+    assert terminal["bounded_public_source_expansion_pass"] is True
+    assert terminal["non_aaa_operator_denominator"] == "OPEN"
+    assert terminal["non_aaa_ebas_denominator"] == "OPEN"
+    assert terminal["pr_wide_equals_aaa_only"] is False
