@@ -53,10 +53,27 @@ def _receipts() -> list[dict]:
     return receipts
 
 
+def _links() -> list[dict]:
+    cases = _cases()
+    return [cases["links"]["approved"], cases["links"]["unverified"]]
+
+
 @pytest.fixture
 def client(monkeypatch):
     monkeypatch.setattr(regulatory_api, "load_regulatory_observations", _observations)
     monkeypatch.setattr(regulatory_api, "load_regulatory_receipts", _receipts)
+
+    store = {c["candidate_id"]: c for c in _links()}
+
+    def _load() -> list[dict]:
+        return list(store.values())
+
+    def _write(rows: list[dict]) -> None:
+        for row in rows:
+            store[row["candidate_id"]] = row
+
+    monkeypatch.setattr(regulatory_api, "load_regulatory_links", _load)
+    monkeypatch.setattr(regulatory_api, "write_regulatory_links", _write)
     with TestClient(app) as test_client:
         yield test_client
 
@@ -136,3 +153,93 @@ def test_receipt_detail_never_leaks_secret_shaped_fields(client):
     serialized = json.dumps(body).lower()
     assert "authorization" not in serialized
     assert "bearer " not in serialized
+
+
+# ---------------- entity links ----------------
+
+def test_links_list_is_unfiltered_by_default(client):
+    body = client.get("/regulatory/links").json()
+    assert body["total"] == len(_links())
+
+
+def test_links_filter_by_decision_state(client):
+    body = client.get("/regulatory/links", params={"decision_state": "approved"}).json()
+    assert body["total"] == 1
+    assert body["items"][0]["decision_state"] == "approved"
+
+
+def test_link_detail_includes_observation(client):
+    candidate_id = _links()[0]["candidate_id"]
+    body = client.get(f"/regulatory/links/{candidate_id}").json()
+    assert body["candidate_id"] == candidate_id
+    assert body["observation"]["observation_id"] == body["observation_id"]
+
+
+def test_link_detail_404_for_unknown_id(client):
+    resp = client.get("/regulatory/links/AYL_REGLINK_DOES_NOT_EXIST")
+    assert resp.status_code == 404
+    assert resp.json()["detail"]["error"] == "regulatory_link_not_found"
+
+
+def test_decide_approve_clean_candidate_succeeds(client):
+    candidate_id = next(c["candidate_id"] for c in _links() if c["decision_state"] == "needs_review")
+    resp = client.post(
+        f"/regulatory/links/{candidate_id}/decide",
+        json={"decision_state": "approved", "actor": "operator-1", "rationale": "Confirmed match."},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["decision_state"] == "approved"
+    assert body["decided_by"] == "operator-1"
+    assert body["decision_rationale"] == "Confirmed match."
+    assert body["decided_at"]
+
+    refetched = client.get(f"/regulatory/links/{candidate_id}").json()
+    assert refetched["decision_state"] == "approved"
+
+
+def test_decide_approve_with_open_contradictions_is_rejected(client):
+    conflicting = {
+        **_links()[1],
+        "candidate_id": "AYL_REGLINK_CONFLICTING_001",
+        "contradictions": [{"kind": "municipality", "detail": "Source says Arecibo; asset is in Dorado."}],
+    }
+    regulatory_api.write_regulatory_links([conflicting])
+
+    resp = client.post(
+        "/regulatory/links/AYL_REGLINK_CONFLICTING_001/decide",
+        json={"decision_state": "approved", "actor": "operator-1", "rationale": "Trying anyway."},
+    )
+    assert resp.status_code == 422
+    assert resp.json()["detail"]["error"] == "cannot_approve_with_open_contradictions"
+
+    # Fail-closed: the store must not have recorded the rejected approval attempt.
+    refetched = client.get("/regulatory/links/AYL_REGLINK_CONFLICTING_001").json()
+    assert refetched["decision_state"] != "approved"
+
+
+def test_decide_rejects_invalid_decision_state(client):
+    candidate_id = _links()[0]["candidate_id"]
+    resp = client.post(
+        f"/regulatory/links/{candidate_id}/decide",
+        json={"decision_state": "superseded", "actor": "operator-1", "rationale": "n/a"},
+    )
+    assert resp.status_code == 400
+    assert resp.json()["detail"]["error"] == "invalid_decision_state"
+
+
+def test_decide_requires_actor_and_rationale(client):
+    candidate_id = _links()[0]["candidate_id"]
+    resp = client.post(
+        f"/regulatory/links/{candidate_id}/decide",
+        json={"decision_state": "rejected", "actor": "", "rationale": ""},
+    )
+    assert resp.status_code == 422  # pydantic min_length validation
+
+
+def test_decide_404_for_unknown_candidate(client):
+    resp = client.post(
+        "/regulatory/links/AYL_REGLINK_DOES_NOT_EXIST/decide",
+        json={"decision_state": "rejected", "actor": "operator-1", "rationale": "n/a"},
+    )
+    assert resp.status_code == 404

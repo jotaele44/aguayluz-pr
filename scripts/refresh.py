@@ -97,6 +97,11 @@ STEP_REGULATORY_USGS = (
     ["scripts/ingest_regulatory_usgs.py"],
     True,
 )
+STEP_REGULATORY_LINKS = (
+    "regulatory observations → entity-link candidates (never overwrites a decision)",
+    ["scripts/build_regulatory_links.py"],
+    True,
+)
 STEP_NOAA_TIDES = (
     "NOAA CO-OPS tides → coastal_levels",
     ["scripts/ingest_noaa_tides.py", "--days", "90"],
@@ -221,6 +226,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_NEON_PRODUCTS,
         STEP_USGS_SAMPLES,
         STEP_REGULATORY_USGS,
+        STEP_REGULATORY_LINKS,
         STEP_SDWIS,
         STEP_ECHO,
         STEP_FEMA,
@@ -249,6 +255,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_NEON_PRODUCTS,
         STEP_USGS_SAMPLES,
         STEP_REGULATORY_USGS,
+        STEP_REGULATORY_LINKS,
         STEP_SDWIS,
         STEP_ECHO,
         STEP_FEMA,
