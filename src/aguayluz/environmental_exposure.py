@@ -12,7 +12,8 @@ from __future__ import annotations
 import hashlib
 import json
 from collections import Counter
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 ENTITY_KINDS = frozenset({
     "CONTAMINATED_SITE", "SUPERFUND_SITE", "UST_SITE", "LUST_SITE",
@@ -123,9 +124,8 @@ def validate_relationship(edge: dict[str, Any]) -> None:
     if predicate == "AFFECTS" and causal_state in {"NOT_TESTED", "DISCOVERY_CANDIDATE"}:
         raise ValueError("AFFECTS cannot be asserted while relationship remains untested/discovery-only")
 
-    if edge.get("valid_from") and edge.get("valid_until"):
-        if str(edge["valid_from"]) > str(edge["valid_until"]):
-            raise ValueError("valid_from must not be after valid_until")
+    if edge.get("valid_from") and edge.get("valid_until") and str(edge["valid_from"]) > str(edge["valid_until"]):
+        raise ValueError("valid_from must not be after valid_until")
 
 
 def integrity_report(
