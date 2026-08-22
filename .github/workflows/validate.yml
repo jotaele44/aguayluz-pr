@@ -66,9 +66,11 @@ jobs:
           import faulthandler
           import pytest
 
+          # Verbose node IDs are intentional: if the fail-closed watchdog trips,
+          # hosted logs preserve the exact in-flight test instead of only a dot count.
           faulthandler.dump_traceback_later(1200, exit=True)
           raise SystemExit(pytest.main([
-              "-q",
+              "-vv",
               "--ignore=tests/test_backend_readings_api.py",
               "--ignore=tests/test_cave_karst_monitor.py",
               "--ignore=tests/test_federation_export_e2e.py",
