@@ -41,6 +41,11 @@
     "vpuid": { "type": ["string", "null"], "description": "NHDPlus V2.1 VPU id resolved by follow-up call; '21' for Puerto Rico." },
     "comid": { "type": ["integer", "null"], "description": "NHDPlus V2.1 COMID this asset snaps to, when applicable." },
     "reachcode": { "type": ["string", "null"] },
-    "measure": { "type": ["number", "null"], "minimum": 0, "maximum": 100 }
+    "measure": { "type": ["number", "null"], "minimum": 0, "maximum": 100 },
+    "soil_mukey": { "type": ["string", "null"], "description": "NRCS SSURGO map unit key at the asset's point, resolved by scripts/enrich_drought_soil.py." },
+    "soil_series_name": { "type": ["string", "null"], "description": "Dominant SSURGO map unit name at the asset's point (e.g. 'Humatas clay, 40 to 60 percent slopes')." },
+    "soil_drainage_class": { "type": ["string", "null"], "description": "NRCS dominant-condition drainage class (muaggatt.drclassdcd), e.g. 'Well drained'." },
+    "soil_awc_cm": { "type": ["number", "null"], "minimum": 0, "description": "Available water storage 0-150cm depth, in cm (muaggatt.aws0150wta) — how much plant-available water the soil column can hold; the drought-vulnerability-relevant figure." },
+    "soil_hydrologic_group": { "type": ["string", "null"], "description": "NRCS hydrologic soil group (muaggatt.hydgrpdcd), A-D (dual classes like 'A/D' possible)." }
   }
 }

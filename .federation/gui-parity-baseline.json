@@ -1,5 +1,5 @@
 {
-  "candidate_count": 539,
+  "candidate_count": 547,
   "candidates": [
     {
       "id": "analysis_module:scripts/build_alert_system.py",
@@ -35,6 +35,12 @@
       "id": "analysis_module:scripts/build_water_power_crosswalk.py",
       "kind": "analysis_module",
       "path": "scripts/build_water_power_crosswalk.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_module:scripts/enrich_drought_soil.py",
+      "kind": "analysis_module",
+      "path": "scripts/enrich_drought_soil.py",
       "signal": "ANALYSIS_NOT_GUI_RENDERED"
     },
     {
@@ -302,6 +308,42 @@
       "path": "scripts/build_water_power_crosswalk.py",
       "signal": "ANALYSIS_NOT_GUI_RENDERED",
       "symbol": "merge_edges"
+    },
+    {
+      "id": "analysis_symbol:scripts/enrich_drought_soil.py:fetch_mukey_for_point_live",
+      "kind": "analysis_symbol",
+      "path": "scripts/enrich_drought_soil.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_symbol:scripts/enrich_drought_soil.py:fetch_soil_attributes_live",
+      "kind": "analysis_symbol",
+      "path": "scripts/enrich_drought_soil.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_symbol:scripts/enrich_drought_soil.py:main",
+      "kind": "analysis_symbol",
+      "path": "scripts/enrich_drought_soil.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_symbol:scripts/enrich_drought_soil.py:merge_soil_onto_asset",
+      "kind": "analysis_symbol",
+      "path": "scripts/enrich_drought_soil.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_symbol:scripts/enrich_drought_soil.py:parse_muaggatt_response",
+      "kind": "analysis_symbol",
+      "path": "scripts/enrich_drought_soil.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_symbol:scripts/enrich_drought_soil.py:parse_mukey_response",
+      "kind": "analysis_symbol",
+      "path": "scripts/enrich_drought_soil.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
     },
     {
       "id": "analysis_symbol:scripts/enrich_waters_nhd.py:enrich_asset",
@@ -1601,6 +1643,12 @@
       "id": "cli_surface:scripts/build_water_power_crosswalk.py",
       "kind": "cli_surface",
       "path": "scripts/build_water_power_crosswalk.py",
+      "signal": "TERMINAL_REQUIRED"
+    },
+    {
+      "id": "cli_surface:scripts/enrich_drought_soil.py",
+      "kind": "cli_surface",
+      "path": "scripts/enrich_drought_soil.py",
       "signal": "TERMINAL_REQUIRED"
     },
     {
