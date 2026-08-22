@@ -361,6 +361,8 @@
           "/system"
         ],
         "components": [
+          "dashboard/src/lib/api.js",
+          "dashboard/src/lib/hooks.js",
           "dashboard/src/pages/SystemPage.jsx",
           "dashboard/src/components/AiQueryPanel.jsx"
         ],
@@ -373,8 +375,53 @@
           "tests/test_validate_repo.py",
           "tests/test_gui_parity.py"
         ],
+        "unit": [
+          "dashboard/src/pages/SystemPage.test.jsx"
+        ],
         "e2e": [
           "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "desktop-runtime-bootstrap",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "The shipped launchers call this bootstrap automatically before opening the desktop GUI. Interpreter selection is setup infrastructure, not a separate operator workflow.",
+      "backend": {
+        "files": [
+          "desktop/setup.py"
+        ],
+        "symbols": [
+          "desktop/setup.py:resolve_python_executable",
+          "desktop/setup.py:supported_python_candidates"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_desktop_setup.py"
+        ]
+      }
+    },
+    {
+      "id": "offline-dashboard-snapshot-build",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Build-time infrastructure deterministically embeds the same read-only API data used by the discoverable dashboard. Users consume the generated single-file GUI; they never invoke this script as a normal workflow.",
+      "analysis": {
+        "files": [
+          "scripts/gen_dashboard_snapshot.py"
+        ],
+        "symbols": [
+          "scripts/gen_dashboard_snapshot.py:generate_snapshot",
+          "scripts/gen_dashboard_snapshot.py:main"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_dashboard_snapshot.py"
         ]
       }
     },

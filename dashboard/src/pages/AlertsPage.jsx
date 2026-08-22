@@ -195,6 +195,7 @@ export default function AlertsPage() {
       <div className="shrink-0 space-y-2 border-b border-slate-800 px-4 py-2.5">
         <div className="flex items-center gap-2">
           <Input
+            aria-label="Search alerts"
             value={filters.q}
             onChange={(e) => setFilters({ q: e.target.value })}
             placeholder="Search alert title, asset, or id…"

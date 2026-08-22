@@ -214,13 +214,21 @@ def asset_events(asset_id: str) -> JSONResponse:
     return JSONResponse(related)
 
 
+def _configured_env(name: str) -> str:
+    return (_os.getenv(name) or "").strip()
+
+
 def auth_status_payload() -> dict[str, Any]:
     """Whether API key auth is enabled and which notification channels are configured."""
+    email_ready = all(
+        _configured_env(name)
+        for name in ("NOTIFY_EMAIL_FROM", "NOTIFY_EMAIL_TO", "SMTP_HOST")
+    )
     return {
         "auth_enabled": bool(_API_KEY),
-        "slack_configured": bool(_os.getenv("SLACK_WEBHOOK_URL")),
-        "ntfy_configured": bool(_os.getenv("NTFY_TOPIC")),
-        "email_configured": bool(_os.getenv("NOTIFY_EMAIL_FROM") and _os.getenv("NOTIFY_EMAIL_TO")),
+        "slack_configured": bool(_configured_env("SLACK_WEBHOOK_URL")),
+        "ntfy_configured": bool(_configured_env("NTFY_TOPIC")),
+        "email_configured": email_ready,
         "sentry_dsn_set": bool(_os.getenv("SENTRY_DSN")),
         "ai_enabled": bool(_os.getenv("ANTHROPIC_API_KEY")),
     }
@@ -923,30 +931,48 @@ async def notify(request: Request, _=_Depends(_require_key)) -> JSONResponse:  #
     if not message:
         raise HTTPException(status_code=400, detail="message field required")
 
-    errors: list[str] = []
+    attempted_channels: list[str] = []
+    succeeded_channels: list[str] = []
+    failed_channels: list[dict[str, str]] = []
 
-    slack_url = _os.getenv("SLACK_WEBHOOK_URL")
+    slack_url = _configured_env("SLACK_WEBHOOK_URL")
     if slack_url:
+        attempted_channels.append("slack")
         try:
             _send_slack(slack_url, f"*{title}*\n{message}")
+            succeeded_channels.append("slack")
         except Exception as e:
-            errors.append(f"slack: {e}")
+            failed_channels.append({"channel": "slack", "error": str(e)})
 
-    ntfy_topic = _os.getenv("NTFY_TOPIC")
+    ntfy_topic = _configured_env("NTFY_TOPIC")
     if ntfy_topic:
+        attempted_channels.append("ntfy")
         try:
             _send_ntfy(ntfy_topic, message, title)
+            succeeded_channels.append("ntfy")
         except Exception as e:
-            errors.append(f"ntfy: {e}")
+            failed_channels.append({"channel": "ntfy", "error": str(e)})
 
-    email_from = _os.getenv("NOTIFY_EMAIL_FROM")
-    email_to = _os.getenv("NOTIFY_EMAIL_TO")
-    smtp_host = _os.getenv("SMTP_HOST")
+    email_from = _configured_env("NOTIFY_EMAIL_FROM")
+    email_to = _configured_env("NOTIFY_EMAIL_TO")
+    smtp_host = _configured_env("SMTP_HOST")
     if email_from and email_to and smtp_host:
+        attempted_channels.append("email")
         try:
             _send_email(email_from, email_to, smtp_host, title, message)
+            succeeded_channels.append("email")
         except Exception as e:
-            errors.append(f"email: {e}")
+            failed_channels.append({"channel": "email", "error": str(e)})
 
-    channels_active = bool(slack_url or ntfy_topic or (email_from and email_to and smtp_host))
-    return JSONResponse({"ok": True, "channels_active": channels_active, "errors": errors})
+    errors = [
+        f"{failure['channel']}: {failure['error']}"
+        for failure in failed_channels
+    ]
+    return JSONResponse({
+        "ok": bool(succeeded_channels) and not failed_channels,
+        "channels_active": bool(attempted_channels),
+        "errors": errors,
+        "attempted_channels": attempted_channels,
+        "succeeded_channels": succeeded_channels,
+        "failed_channels": failed_channels,
+    })

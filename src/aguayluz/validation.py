@@ -250,7 +250,7 @@ def gate_g07_no_secrets() -> GateResult:
             return GateResult("G07_NO_SECRETS", "FAIL", f"{len(hits)} file(s): " + ", ".join(hits[:3]))
         return GateResult("G07_NO_SECRETS", "PASS")
 
-    hits: list[str] = []
+    fallback_hits: list[str] = []
     for root, dirs, files in os.walk(REPO_ROOT):
         dirs[:] = [d for d in dirs if d not in _SCAN_EXCLUDE_DIRS]
         base = Path(root)
@@ -268,10 +268,14 @@ def gate_g07_no_secrets() -> GateResult:
                 continue
             for pat in _SECRET_PATTERNS:
                 if pat.search(text):
-                    hits.append(str(path.relative_to(REPO_ROOT)))
+                    fallback_hits.append(str(path.relative_to(REPO_ROOT)))
                     break
-    if hits:
-        return GateResult("G07_NO_SECRETS", "FAIL", f"{len(hits)} file(s): " + ", ".join(hits[:3]))
+    if fallback_hits:
+        return GateResult(
+            "G07_NO_SECRETS",
+            "FAIL",
+            f"{len(fallback_hits)} file(s): " + ", ".join(fallback_hits[:3]),
+        )
     return GateResult("G07_NO_SECRETS", "PASS")
 
 

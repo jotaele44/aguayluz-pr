@@ -62,7 +62,7 @@ export default function ReviewQueue() {
           </Select>
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-2 top-2 h-3.5 w-3.5 text-slate-500" />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search reason/source…" className="h-8 border-slate-800 bg-slate-950 pl-7 text-xs" />
+            <Input aria-label="Search review queue" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search reason/source…" className="h-8 border-slate-800 bg-slate-950 pl-7 text-xs" />
           </div>
         </div>
       </div>

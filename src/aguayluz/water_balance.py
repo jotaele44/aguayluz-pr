@@ -122,8 +122,9 @@ def admit_reading(
         quarantines.append(quarantine_record(reading, "MISSING_SOURCE_HASH"))
     if reading.get("confidence") is None:
         quarantines.append(quarantine_record(reading, "MISSING_CONFIDENCE"))
+    confidence_value = reading.get("confidence")
     try:
-        confidence = int(reading.get("confidence"))
+        confidence = int(confidence_value) if confidence_value is not None else -1
     except (TypeError, ValueError):
         quarantines.append(quarantine_record(reading, "INVALID_CONFIDENCE"))
     else:

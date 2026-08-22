@@ -18,9 +18,9 @@ Pure functions only (no I/O, no wall-clock). Real T1 USGS data in, real alert ou
 from __future__ import annotations
 
 import re
-from typing import Any
+from typing import Any, cast
 
-from ..alerts import AlertEvent
+from ..alerts import AlertEvent, CoordConfidence
 from ..impact import (
     MODULE_RADIUS_KM,
     AssetIndex,
@@ -105,8 +105,8 @@ def seismic_alert(
     # municipality centroid rather than clamping to a misleading on-land point.
     ev_lat, ev_lon = event.get("lat"), event.get("lon")
     if in_alert_bounds(ev_lat, ev_lon):
-        lat: float | None = round(float(ev_lat), 6)
-        lon: float | None = round(float(ev_lon), 6)
+        lat: float | None = round(float(cast(float, ev_lat)), 6)
+        lon: float | None = round(float(cast(float, ev_lon)), 6)
         coord_confidence = "exact"
     else:
         lat, lon = _centroid(muni, geo) if muni else (None, None)
@@ -131,7 +131,7 @@ def seismic_alert(
         source_ref=event.get("source_ref") or "USGS-EQ",
         source_hash=event.get("source_hash"),
         published_at=None,
-        start_at=event.get("start_time"),
+        start_at=cast(str, event.get("start_time")),
         end_at=None,
         asset_name=place,
         asset_id=None,
@@ -140,7 +140,7 @@ def seismic_alert(
         sectors_impacted=sectors,
         latitude=lat if isinstance(lat, (int, float)) else None,
         longitude=lon if isinstance(lon, (int, float)) else None,
-        coord_confidence=coord_confidence,
+        coord_confidence=cast(CoordConfidence, coord_confidence),
         severity=severity,
         confidence=int(event.get("confidence") or 85),
         ilap_score=None,

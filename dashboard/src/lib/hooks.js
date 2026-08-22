@@ -102,6 +102,7 @@ export const useRunExport = () => {
       qc.invalidateQueries({ queryKey: ['health'] })
       qc.invalidateQueries({ queryKey: ['review'] })
       qc.invalidateQueries({ queryKey: ['summary'] })
+      qc.invalidateQueries({ queryKey: ['system/status'] })
     },
   })
 }
