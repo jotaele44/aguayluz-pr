@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import {
-  LayoutDashboard, Map, Database, Zap, Activity, ClipboardList,
+  LayoutDashboard, Map, Database, Zap, Activity, ClipboardList, ClipboardCheck,
   BarChart3, ScrollText, ShieldAlert, SlidersHorizontal, Droplets, Mountain, Landmark,
   ChevronLeft, ChevronRight, X,
 } from 'lucide-react'
@@ -18,7 +18,9 @@ const NAV = [
   { to: '/water-disruption', icon: Droplets, label: 'Water Validation' },
   { to: '/monitoring', icon: Activity, label: 'Monitoring' },
   { to: '/cave-karst', icon: Mountain, label: 'Cave & Karst' },
-  { to: '/regulatory', icon: Landmark, label: 'Regulatory' },
+  { to: '/regulatory', icon: Landmark, label: 'Regulatory', end: true },
+  { to: '/regulatory/review', icon: ClipboardCheck, label: 'Regulatory Review' },
+  { to: '/environmental-exposure', icon: Activity, label: 'Exposure Graph' },
   { to: '/review', icon: ClipboardList, label: 'Review Queue' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
   { to: '/logs', icon: ScrollText, label: 'Live Logs' },

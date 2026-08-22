@@ -1,0 +1,175 @@
+{
+  "schema_version": "1.0.0",
+  "as_of": "2026-08-21",
+  "scope": "Dorado Ground Water Contamination public-supply well and hydrogeology lineage",
+  "site_id": "PRN000201872",
+  "classification": "TEMPORAL_RECEPTOR_PATHWAY_LINEAGE",
+  "production_promotion_allowed": false,
+  "temporal_snapshots": [
+    {
+      "snapshot_id": "EPA_HRS_2015_WELL_STATUS",
+      "effective_period": "2015",
+      "source_locator": "https://semspub.epa.gov/work/02/363667.pdf",
+      "system_assignments": [
+        {
+          "system_label_raw": "Maguayo",
+          "population_raw": 36630,
+          "supply_context_raw": "Maguayo 2, Maguayo 6, Maguayo 7 plus Superaqueduct",
+          "state": "HISTORICAL_SNAPSHOT_ONLY"
+        },
+        {
+          "system_label_raw": "Dorado Urbano",
+          "population_raw": 31061,
+          "supply_context_raw": "Santa Rosa, Nevarez plus Superaqueduct",
+          "state": "HISTORICAL_SNAPSHOT_ONLY"
+        }
+      ],
+      "wells": [
+        {"name_raw":"Maguayo 2","status_raw":"active","status_state":"HISTORICAL_2015"},
+        {"name_raw":"Maguayo 6","status_raw":"active","status_state":"HISTORICAL_2015"},
+        {"name_raw":"Maguayo 7","status_raw":"active","status_state":"HISTORICAL_2015"},
+        {"name_raw":"Nevarez","status_raw":"active","status_state":"HISTORICAL_2015"},
+        {"name_raw":"Santa Rosa","status_raw":"active","status_state":"HISTORICAL_2015"},
+        {"name_raw":"Water Bottling Plant","status_raw":"active","status_state":"HISTORICAL_2015"},
+        {"name_raw":"Maguayo 3","status_raw":"inactive_pump_intact","status_state":"HISTORICAL_2015"},
+        {"name_raw":"Maguayo 5","status_raw":"inactive_pump_intact","status_state":"HISTORICAL_2015"},
+        {"name_raw":"Maguayo 4","status_raw":"inactive_pump_removed_or_inoperable","status_state":"HISTORICAL_2015"},
+        {"name_raw":"San Antonio 3","status_raw":"inactive_pump_removed_or_inoperable","status_state":"HISTORICAL_2015"}
+      ]
+    },
+    {
+      "snapshot_id": "EPA_PROPOSED_PLAN_2021",
+      "effective_period": "2021",
+      "source_locator": "https://semspub.epa.gov/work/02/609893.pdf",
+      "system_label_raw": "Maguayo Urbano",
+      "active_supply_wells_raw": ["Nevarez", "Santa Rosa"],
+      "other_relevant_wells_state_raw": "disconnected because of contamination",
+      "state": "HISTORICAL_SNAPSHOT_ONLY",
+      "label_conflict_with_2015_snapshot": true
+    }
+  ],
+  "temporal_conflicts": [
+    {
+      "conflict_id": "MAGUAYO_DORADO_SYSTEM_LABEL_NEVAREZ_SANTA_ROSA",
+      "state": "OPEN",
+      "2015_manifestation": "EPA HRS assigns Santa Rosa and Nevarez to Dorado Urbano supply context.",
+      "2021_manifestation": "EPA Proposed Plan describes Nevarez and Santa Rosa as the two active wells in Maguayo Urbano.",
+      "adjudication_rule": "Preserve both dated source labels; do not normalize system membership without an authoritative identifier-level reconciliation."
+    }
+  ],
+  "epa_ri_ffs_well_universe": {
+    "source_locators": [
+      "https://semspub.epa.gov/work/02/615863.pdf",
+      "https://semspub.epa.gov/work/02/616888.pdf",
+      "https://semspub.epa.gov/work/02/630396.pdf"
+    ],
+    "named_wells_and_sites": [
+      "San Antonio 1", "San Antonio 2", "San Antonio 3", "Higuillar", "San Carlos",
+      "Maguayo 2", "Maguayo 3", "Maguayo 4", "Maguayo 5", "Maguayo 6", "Maguayo 7",
+      "USGS Maguayo 2", "Dorado Ice and Water Co.", "USGS Santa Rosa 1", "USGS Santa Rosa 2",
+      "Nevarez", "Santa Rosa", "Dorado Dairy 1", "Dorado Dairy 2", "Ext. Santa Ana"
+    ],
+    "ri_sampled_well_count": 18,
+    "cvoc_detection_scope": "LOW_LEVEL_CVOC_REPORTED_IN_ALL_18_SAMPLED_WELLS",
+    "pce_mcl_exceedance_wells": ["Maguayo 3", "Maguayo 4", "Maguayo 5", "Maguayo 7", "USGS Maguayo 2"],
+    "plume_interpretation": "HIGHER_CONCENTRATION_CORE_AROUND_MAGUAYO_WITH_WIDER_DILUTE_PLUME",
+    "vertical_extent_state": "OPEN_NOT_DEFINED_BY_EXISTING_WELL_OPEN_INTERVAL_SAMPLING"
+  },
+  "usgs_stable_identities": [
+    {
+      "usgs_site_no": "182548066164401",
+      "name": "PIEZOMETER MAGUAYO 2 DORADO, PR",
+      "identity_state": "AUTHORITATIVE_USGS_SITE_ID",
+      "current_status_claimed": false
+    },
+    {
+      "usgs_site_no": "182548066164400",
+      "name": "PIEZOMETER MAGUAYO USGS 1 WELL, DORADO, PR",
+      "identity_state": "AUTHORITATIVE_USGS_SITE_ID",
+      "current_status_claimed": false
+    },
+    {
+      "usgs_site_no": "182526066165000",
+      "name": "PIEZOMETER SANTA ROSA USGS 1 WELL, DORADO, PR",
+      "latitude": 18.4218919333567,
+      "longitude": -66.2801686052553,
+      "construction_date_raw": "19941207",
+      "national_aquifer_code": "N400NCSTLM",
+      "local_aquifer_code": "122NRCSU",
+      "well_depth_ft": 330,
+      "hole_depth_ft": 406,
+      "identity_state": "AUTHORITATIVE_USGS_SITE_ID",
+      "current_status_claimed": false
+    },
+    {
+      "usgs_site_no": "50047300",
+      "name": "RIO DE LA PLATA AT DORADO, PR",
+      "asset_role": "SURFACE_WATER_RECEPTOR_MONITORING_IDENTITY",
+      "identity_state": "AUTHORITATIVE_USGS_SITE_ID",
+      "current_status_claimed": false
+    }
+  ],
+  "hydrogeologic_framework": {
+    "source_locator": "https://pubs.usgs.gov/wri/1998/4030/report.pdf",
+    "regional_unit": "NORTH_COAST_LIMESTONE_UPPER_AQUIFER",
+    "principal_materials": ["Aguada Limestone", "Aymamon Limestone", "permeable unconsolidated deposits"],
+    "public_supply_role": "MAJOR_PUBLIC_AND_PRIVATE_WATER_SOURCE_NEAR_DORADO",
+    "pumping_effect_raw": "Historical industrial and public-supply pumping lowered the water table to near sea level in some areas.",
+    "saline_intrusion_concern": true,
+    "reported_net_recharge_mm_per_year": [
+      {"location":"Santa Rosa","year":1995,"value":160},
+      {"location":"Maguayo","year":1996,"value":260}
+    ],
+    "site_specific_flow_direction_state": "OPEN",
+    "karst_flow_complexity_control": true
+  },
+  "vertical_profile_evidence": {
+    "source_locator": "https://semspub.epa.gov/work/02/616888.pdf",
+    "paired_site": "USGS Santa Rosa 1 and USGS Santa Rosa 2",
+    "deeper_well": {
+      "name":"USGS Santa Rosa 1",
+      "well_depth_ft_approx":321,
+      "sample_interval_ft_tic_approx":"198-200",
+      "pce_ug_l_two_rounds":[4.3,4.4]
+    },
+    "shallower_well": {
+      "name":"USGS Santa Rosa 2",
+      "well_depth_ft_approx":140,
+      "sample_interval_ft_tic_approx":"132-134",
+      "pce_ug_l_two_rounds":[1.9,1.4]
+    },
+    "inference_state": "LIMITED_DEPTH_COMPARISON_ONLY",
+    "full_vertical_plume_extent_claimed": false
+  },
+  "receptor_relationships": [
+    {
+      "receptor": "Rio de la Plata",
+      "relationship": "EPA_REPORTED_RECEIVES_SOME_GROUNDWATER_DISCHARGE_FROM_DILUTE_PLUME",
+      "causal_scope": "PLUME_TO_SURFACE_WATER_RECEPTOR_ONLY",
+      "source_attribution_implication": "NONE"
+    },
+    {
+      "receptor": "Maguayo and Dorado public-supply systems",
+      "relationship": "HISTORICAL_CONTAMINATION_IMPACT_DOCUMENTED",
+      "causal_scope": "PLUME_TO_SUPPLY_WELL_RECEPTORS",
+      "source_attribution_implication": "NONE"
+    }
+  ],
+  "target_adjudication": {
+    "target_coordinate": [18.4123624, -66.2809414],
+    "nearest_well_is_hydrologic_connection": false,
+    "same_regional_aquifer_is_hydrologic_connection": false,
+    "target_to_plume_hydraulic_connection_state": "UNRESOLVED",
+    "target_to_specific_source_state": "UNRESOLVED",
+    "specific_plume_source_state": "AUTHORITATIVELY_UNKNOWN",
+    "production_relationship_promotion": "BLOCKED"
+  },
+  "next_required_evidence": [
+    "current and historical PRASA well master identifiers for every named well",
+    "well construction/screen/open-interval records",
+    "dated potentiometric surfaces bracketing source-search and RI periods",
+    "site-specific groundwater-flow or tracer evidence",
+    "current well operating states from authoritative records",
+    "authoritative reconciliation of Nevarez/Santa Rosa system membership labels"
+  ]
+}

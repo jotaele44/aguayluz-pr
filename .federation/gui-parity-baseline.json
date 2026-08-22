@@ -1,5 +1,5 @@
 {
-  "candidate_count": 547,
+  "candidate_count": 550,
   "candidates": [
     {
       "id": "analysis_module:scripts/build_alert_system.py",
@@ -3692,6 +3692,14 @@
       "signal": "BACKEND_NOT_GUI_SURFACED"
     },
     {
+      "id": "python_symbol:src/aguayluz/regulatory_db.py:load_regulatory_crosswalk",
+      "kind": "python_symbol",
+      "path": "src/aguayluz/regulatory_db.py",
+      "symbol": "load_regulatory_crosswalk",
+      "line": 96,
+      "signal": "BACKEND_NOT_GUI_SURFACED"
+    },
+    {
       "id": "python_symbol:src/aguayluz/regulatory_db.py:load_regulatory_links",
       "kind": "python_symbol",
       "path": "src/aguayluz/regulatory_db.py",
@@ -3713,6 +3721,14 @@
       "path": "src/aguayluz/regulatory_db.py",
       "symbol": "load_regulatory_receipts",
       "line": 74,
+      "signal": "BACKEND_NOT_GUI_SURFACED"
+    },
+    {
+      "id": "python_symbol:src/aguayluz/regulatory_db.py:merge_crosswalk",
+      "kind": "python_symbol",
+      "path": "src/aguayluz/regulatory_db.py",
+      "symbol": "merge_crosswalk",
+      "line": 128,
       "signal": "BACKEND_NOT_GUI_SURFACED"
     },
     {
@@ -3745,6 +3761,14 @@
       "path": "src/aguayluz/regulatory_db.py",
       "symbol": "save_checkpoint",
       "line": 137,
+      "signal": "BACKEND_NOT_GUI_SURFACED"
+    },
+    {
+      "id": "python_symbol:src/aguayluz/regulatory_db.py:write_regulatory_crosswalk",
+      "kind": "python_symbol",
+      "path": "src/aguayluz/regulatory_db.py",
+      "symbol": "write_regulatory_crosswalk",
+      "line": 162,
       "signal": "BACKEND_NOT_GUI_SURFACED"
     },
     {
@@ -4098,7 +4122,7 @@
   "schema_version": "prii.gui-parity-baseline/v1",
   "signal_counts": {
     "ANALYSIS_NOT_GUI_RENDERED": 158,
-    "BACKEND_NOT_GUI_SURFACED": 198,
+    "BACKEND_NOT_GUI_SURFACED": 201,
     "DEAD_CONTROL": 1,
     "GUI_NOT_BACKEND_WIRED": 125,
     "TERMINAL_REQUIRED": 30

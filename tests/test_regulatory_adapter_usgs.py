@@ -11,14 +11,17 @@ from __future__ import annotations
 
 import hashlib
 import json
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from aguayluz.regulatory_adapters.usgs import (
+    DEFAULT_STALE_AFTER_DAYS,
     MAX_PAGES,
     NORMALIZATION_VERSION,
     PROVIDER,
     capabilities,
     discover,
+    mark_stale,
     normalize,
 )
 from aguayluz.regulatory_db import load_regulatory_observations, load_regulatory_receipts
@@ -131,3 +134,46 @@ def test_normalize_rejects_would_be_invalid_payload_via_loader(tmp_path):
     path = tmp_path / "observations.jsonl"
     path.write_text(json.dumps(observations[0]) + "\n", encoding="utf-8")
     load_regulatory_observations(path)  # raises ValidationError on failure
+
+
+# ---------------- freshness re-check (mark_stale) ----------------
+
+NOW = datetime(2026, 8, 20, tzinfo=timezone.utc)
+
+
+def _observation(*, retrieved_at: datetime, freshness_state: str = "current") -> dict:
+    receipt = _fixture_receipt()
+    obs = normalize(_fixture_bytes(), receipt)[0]
+    return {**obs, "retrieved_at": retrieved_at.isoformat().replace("+00:00", "Z"), "freshness_state": freshness_state}
+
+
+def test_mark_stale_flags_current_observations_past_the_window():
+    old = _observation(retrieved_at=NOW - timedelta(days=DEFAULT_STALE_AFTER_DAYS + 1))
+    updated = mark_stale([old], as_of=NOW)
+    assert len(updated) == 1
+    assert updated[0]["freshness_state"] == "stale"
+    assert updated[0]["observation_id"] == old["observation_id"]
+
+
+def test_mark_stale_leaves_recent_observations_untouched():
+    recent = _observation(retrieved_at=NOW - timedelta(days=1))
+    assert mark_stale([recent], as_of=NOW) == []
+
+
+def test_mark_stale_ignores_non_current_states():
+    already_historical = _observation(
+        retrieved_at=NOW - timedelta(days=DEFAULT_STALE_AFTER_DAYS + 1), freshness_state="historical"
+    )
+    assert mark_stale([already_historical], as_of=NOW) == []
+
+
+def test_mark_stale_does_not_mutate_input():
+    old = _observation(retrieved_at=NOW - timedelta(days=DEFAULT_STALE_AFTER_DAYS + 1))
+    mark_stale([old], as_of=NOW)
+    assert old["freshness_state"] == "current"
+
+
+def test_mark_stale_respects_custom_window():
+    borderline = _observation(retrieved_at=NOW - timedelta(days=10))
+    assert mark_stale([borderline], as_of=NOW, stale_after_days=90) == []
+    assert len(mark_stale([borderline], as_of=NOW, stale_after_days=5)) == 1

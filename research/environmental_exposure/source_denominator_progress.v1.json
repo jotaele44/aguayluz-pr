@@ -1,0 +1,141 @@
+{
+  "schema_version": "1.0.0",
+  "as_of": "2026-08-21",
+  "scope": "Puerto Rico environmental exposure public-source denominator progress",
+  "overall_state": "OPEN",
+  "completeness_claimed": false,
+  "terminal_states": ["EXHAUSTED", "ZERO", "UNAVAILABLE", "BLOCKED", "SUPERSEDED"],
+  "rules": [
+    "A registered source family is not exhausted until every in-scope service, layer, query manifestation, downloadable dataset, and bounded document collection has a terminal state.",
+    "Search-engine absence is never a ZERO result.",
+    "Distance and co-location are discovery evidence only and cannot establish a source-pathway-receptor relationship.",
+    "Source-family acquisition must preserve the provider record identifier, retrieval timestamp, request locator, and content hash when bytes are obtainable."
+  ],
+  "families": [
+    {
+      "family": "SEMS_SUPERFUND",
+      "authority": "EPA",
+      "state": "PARTIAL_BOUNDED_DORADO",
+      "authoritative_locators": [
+        "https://cumulis.epa.gov/supercpad/cursites/csitinfo.cfm?id=0201872",
+        "https://cumulis.epa.gov/supercpad/SiteProfiles/index.cfm?fuseaction=second.docdata&id=0201872",
+        "https://semspub.epa.gov/work/02/363667.pdf",
+        "https://semspub.epa.gov/work/02/778593.pdf"
+      ],
+      "closed_subscopes": [
+        "Dorado site identity PRN000201872",
+        "2016 HRS reference-point identity",
+        "2026 community-update manifestation"
+      ],
+      "open_subscopes": [
+        "enumerate every individual Key Document manifestation",
+        "enumerate every SPP Public Available Document manifestation",
+        "enumerate every administrative-record document and attachment",
+        "freeze bytes and SHA256 for each downloadable manifestation"
+      ]
+    },
+    {
+      "family": "UST_LUST",
+      "authority": "PR_DRNA",
+      "state": "PARTIAL_BOUNDED_DORADO",
+      "authoritative_locators": [
+        "https://www.drna.pr.gov/wp-content/uploads/2025/01/INACTIVE-LUST-LIST-2024.pdf"
+      ],
+      "closed_subscopes": [
+        "2024 inactive-list presence of UST 86-1944 Caribbean Petroleum Corporation at PR-2 Km. 26.7 Bo. Espinosa",
+        "2024 inactive-list presence of UST 86-0896 Golden Hills at Carr. 2 Km. 27.7"
+      ],
+      "open_subscopes": [
+        "enumerate all Dorado active LUST records",
+        "enumerate all Dorado inactive LUST records",
+        "recover case-level corrective-action and closure manifestations where publicly available",
+        "bind record geometry without using road-kilometer proximity as causal evidence"
+      ]
+    },
+    {
+      "family": "RCRA",
+      "authority": "EPA",
+      "state": "REGISTERED_NOT_EXHAUSTED",
+      "authoritative_locators": ["https://echo.epa.gov/tools/web-services"],
+      "open_subscopes": ["freeze Puerto Rico facility/query denominator", "enumerate Dorado benchmark candidates"]
+    },
+    {
+      "family": "TRI",
+      "authority": "EPA",
+      "state": "REGISTERED_NOT_EXHAUSTED",
+      "authoritative_locators": ["https://data.epa.gov/"],
+      "open_subscopes": ["freeze Puerto Rico reporting-facility denominator", "enumerate Dorado benchmark candidates"]
+    },
+    {
+      "family": "ECHO_NPDES",
+      "authority": "EPA",
+      "state": "REGISTERED_NOT_EXHAUSTED",
+      "authoritative_locators": ["https://echo.epa.gov/tools/web-services"],
+      "open_subscopes": ["freeze ICIS-NPDES service/query denominator", "bind receiving-water manifestations"]
+    },
+    {
+      "family": "ATTAINS_303D",
+      "authority": "EPA_PREQB",
+      "state": "REGISTERED_NOT_EXHAUSTED",
+      "authoritative_locators": ["https://www.epa.gov/data/application-programming-interface-api"],
+      "open_subscopes": ["freeze assessment-unit service/query denominator", "bind Dorado and Rio de la Plata assessment units"]
+    },
+    {
+      "family": "SDWIS",
+      "authority": "EPA_PRASA_AAA",
+      "state": "REGISTERED_NOT_EXHAUSTED",
+      "authoritative_locators": ["https://echo.epa.gov/tools/web-services"],
+      "open_subscopes": ["enumerate Maguayo and Dorado Urbano system manifestations", "bind wells only through authoritative identifiers"]
+    },
+    {
+      "family": "UIC",
+      "authority": "EPA",
+      "state": "REGISTERED_NOT_EXHAUSTED",
+      "authoritative_locators": [],
+      "open_subscopes": ["discover and freeze Puerto Rico UIC public denominator"]
+    },
+    {
+      "family": "PR_DRNA_CONTAMINATED_SITES",
+      "authority": "PR_DRNA",
+      "state": "REGISTERED_NOT_EXHAUSTED",
+      "authoritative_locators": [],
+      "open_subscopes": ["discover contaminated-site and remediation manifestations beyond LUST"]
+    },
+    {
+      "family": "PR_SOLID_WASTE",
+      "authority": "PR_DRNA",
+      "state": "REGISTERED_NOT_EXHAUSTED",
+      "authoritative_locators": [],
+      "open_subscopes": ["discover landfill and solid-waste facility denominator"]
+    },
+    {
+      "family": "USGS_GROUNDWATER",
+      "authority": "USGS",
+      "state": "PARTIAL_BOUNDED_DORADO",
+      "authoritative_locators": [],
+      "closed_subscopes": ["EPA HRS bibliography confirms the USGS Dorado hydrogeologic framework as an authoritative pathway source family"],
+      "open_subscopes": ["freeze relevant well identifiers and hydrostratigraphic manifestations", "recover potentiometric and groundwater-flow evidence for benchmark adjudication"]
+    },
+    {
+      "family": "PRASA_AAA_ASSETS",
+      "authority": "PRASA_AAA",
+      "state": "PARTIAL_BOUNDED_DORADO",
+      "authoritative_locators": [],
+      "closed_subscopes": ["EPA identifies Maguayo and Dorado Urbano as PRASA-managed public water systems affected historically by the site"],
+      "open_subscopes": ["enumerate every historical/current well manifestation", "bind shutdown, blending, replacement, treatment, and reactivation chronology"]
+    }
+  ],
+  "next_terminalization_order": [
+    "SEMS_SUPERFUND_DORADO_DOCUMENTS",
+    "UST_LUST_DORADO_UNIVERSE",
+    "PRASA_AAA_DORADO_WELL_HISTORY",
+    "USGS_DORADO_HYDROGEOLOGY",
+    "RCRA_TRI_DORADO_CANDIDATES",
+    "SDWIS_DORADO_SYSTEM_HISTORY",
+    "ATTAINS_RIO_DE_LA_PLATA",
+    "ECHO_NPDES_DORADO",
+    "UIC_PR",
+    "PR_DRNA_CONTAMINATED_SITES",
+    "PR_SOLID_WASTE"
+  ]
+}
