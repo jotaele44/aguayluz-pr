@@ -122,6 +122,11 @@ STEP_DROUGHT_USDM = (
     ["scripts/ingest_drought_usdm.py", "--weeks", "52"],
     True,
 )
+STEP_SOIL_ENRICH = (
+    "NRCS Soil Data Access → drought-monitoring-area soil enrichment",
+    ["scripts/enrich_drought_soil.py"],
+    True,
+)
 STEP_PRECIP_NCEI = (
     "NCEI precipitation percent-of-normal → precipitation_conditions",
     ["scripts/ingest_precip_ncei.py", "--days", "120"],
@@ -251,6 +256,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_REGULATORY_PROMOTE,
         STEP_DROUGHT_USDM,
         STEP_PRECIP_NCEI,
+        STEP_SOIL_ENRICH,
         STEP_SDWIS,
         STEP_ECHO,
         STEP_FEMA,
@@ -284,6 +290,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_REGULATORY_PROMOTE,
         STEP_DROUGHT_USDM,
         STEP_PRECIP_NCEI,
+        STEP_SOIL_ENRICH,
         STEP_SDWIS,
         STEP_ECHO,
         STEP_FEMA,
