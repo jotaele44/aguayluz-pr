@@ -61,9 +61,11 @@ jobs:
       - name: Lint
         run: ruff check .
       - name: Tests with coverage
-        run: pytest -q --ignore=tests/test_backend_readings_api.py --ignore=tests/test_federation_export_e2e.py --cov --cov-report=term-missing:skip-covered
+        run: pytest -q --ignore=tests/test_backend_readings_api.py --ignore=tests/test_cave_karst_monitor.py --ignore=tests/test_federation_export_e2e.py --cov --cov-report=term-missing:skip-covered
       - name: Backend readings API contract
         run: pytest -q tests/test_backend_readings_api.py
+      - name: Cave karst monitor contract
+        run: pytest -q tests/test_cave_karst_monitor.py
       - name: Real-corpus federation export E2E
         run: pytest -q tests/test_federation_export_e2e.py
       - name: Validation gates
