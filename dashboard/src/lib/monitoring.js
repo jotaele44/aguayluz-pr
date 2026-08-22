@@ -54,6 +54,32 @@ export const MONITORING_SERIES = [
     note: 'NOAA CO-OPS daily tide-gauge observations used as a coastal high-water signal.',
   },
   {
+    key: 'drought_category',
+    label: 'Drought category',
+    sourceKind: 'drought',
+    metric: 'drought_category',
+    unit: 'category',
+    note: 'U.S. Drought Monitor (USDM) weekly classification, D0 (abnormally dry) through D4 (exceptional drought); -1 means no drought designation. Official NDMC/USDM severity band per municipio, not a derived proxy.',
+  },
+  {
+    key: 'precipitation_pct_normal_30d',
+    label: 'Precipitation, 30-day (% of normal)',
+    sourceKind: 'precipitation',
+    metric: 'precipitation_pct_normal',
+    parameterCode: '30d',
+    unit: '%',
+    note: 'NOAA NCEI rolling 30-day rainfall vs. the 1991-2020 climatological normal for that station. A corroborating signal for the drought classification above, not an official index. Kept separate from the 90-day window below — different accumulation periods are not comparable in one series.',
+  },
+  {
+    key: 'precipitation_pct_normal_90d',
+    label: 'Precipitation, 90-day (% of normal)',
+    sourceKind: 'precipitation',
+    metric: 'precipitation_pct_normal',
+    parameterCode: '90d',
+    unit: '%',
+    note: 'NOAA NCEI rolling 90-day rainfall vs. the 1991-2020 climatological normal for that station. A corroborating signal for the drought classification above, not an official index.',
+  },
+  {
     key: 'field_groundwater_level',
     label: 'Groundwater depth (discrete)',
     sourceKind: 'usgs_field_measurements',
@@ -93,6 +119,11 @@ export function filterSeriesReadings(readings, series) {
   return readings.filter((reading) => {
     if (reading.metric !== series.metric) return false
     if (reading.unit && series.unit && normalizeUnit(reading.unit) !== normalizeUnit(series.unit)) return false
+    // Some metrics (e.g. precipitation_pct_normal) share one metric/unit across
+    // multiple incomparable windows distinguished only by parameter_code — mirrors
+    // config/monitoring_capabilities.json's series_identity, which lists
+    // parameter_code alongside metric/unit for exactly this reason.
+    if (series.parameterCode && reading.parameter_code !== series.parameterCode) return false
     return true
   })
 }

@@ -117,6 +117,16 @@ STEP_NOAA_TIDES = (
     ["scripts/ingest_noaa_tides.py", "--days", "90"],
     True,
 )
+STEP_DROUGHT_USDM = (
+    "USDM weekly drought classification → drought_conditions",
+    ["scripts/ingest_drought_usdm.py", "--weeks", "52"],
+    True,
+)
+STEP_PRECIP_NCEI = (
+    "NCEI precipitation percent-of-normal → precipitation_conditions",
+    ["scripts/ingest_precip_ncei.py", "--days", "120"],
+    True,
+)
 STEP_NEON = (
     "NEON D04 availability → neon_availability + utility_assets",
     ["scripts/ingest_neon.py"],
@@ -239,6 +249,8 @@ PLANS: dict[str, list[tuple]] = {
         STEP_REGULATORY_LINKS,
         STEP_REGULATORY_RECHECK,
         STEP_REGULATORY_PROMOTE,
+        STEP_DROUGHT_USDM,
+        STEP_PRECIP_NCEI,
         STEP_SDWIS,
         STEP_ECHO,
         STEP_FEMA,
@@ -270,6 +282,8 @@ PLANS: dict[str, list[tuple]] = {
         STEP_REGULATORY_LINKS,
         STEP_REGULATORY_RECHECK,
         STEP_REGULATORY_PROMOTE,
+        STEP_DROUGHT_USDM,
+        STEP_PRECIP_NCEI,
         STEP_SDWIS,
         STEP_ECHO,
         STEP_FEMA,

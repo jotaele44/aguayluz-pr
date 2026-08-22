@@ -101,6 +101,41 @@
       "alert": "HYDRO_OPS coastal high-water proxy"
     },
     {
+      "key": "drought_category",
+      "source_kind": "drought",
+      "metric": "drought_category",
+      "unit": "category",
+      "source": "USDM Data Services CountyStatistics API (NDMC/UNL, NOAA/USDA partnership)",
+      "storage": "data/drought_conditions.jsonl",
+      "api": "/readings?kind=drought&metric=drought_category",
+      "gui": "Monitoring",
+      "alert": "WEATHER_HAZARD drought classification-band alert"
+    },
+    {
+      "key": "precipitation_pct_normal_30d",
+      "source_kind": "precipitation",
+      "metric": "precipitation_pct_normal",
+      "parameter_code": "30d",
+      "unit": "%",
+      "source": "NOAA NCEI GHCN-Daily vs 1991-2020 monthly normals",
+      "storage": "data/precipitation_conditions.jsonl",
+      "api": "/readings?kind=precipitation&parameter_code=30d&metric=precipitation_pct_normal",
+      "gui": "Monitoring",
+      "alert": "WEATHER_HAZARD precipitation-shortfall proxy"
+    },
+    {
+      "key": "precipitation_pct_normal_90d",
+      "source_kind": "precipitation",
+      "metric": "precipitation_pct_normal",
+      "parameter_code": "90d",
+      "unit": "%",
+      "source": "NOAA NCEI GHCN-Daily vs 1991-2020 monthly normals",
+      "storage": "data/precipitation_conditions.jsonl",
+      "api": "/readings?kind=precipitation&parameter_code=90d&metric=precipitation_pct_normal",
+      "gui": "Monitoring",
+      "alert": "WEATHER_HAZARD precipitation-shortfall proxy"
+    },
+    {
       "key": "field_groundwater_level",
       "source_kind": "usgs_field_measurements",
       "metric": "groundwater_level",
