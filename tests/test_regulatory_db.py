@@ -18,17 +18,21 @@ from jsonschema.exceptions import ValidationError
 from aguayluz.regulatory_db import (
     build_sqlite,
     load_checkpoint,
+    load_regulatory_crosswalk,
     load_regulatory_links,
     load_regulatory_observations,
     load_regulatory_receipts,
+    merge_crosswalk,
     merge_links,
     merge_observations,
     merge_receipts,
     save_checkpoint,
+    write_regulatory_crosswalk,
     write_regulatory_links,
     write_regulatory_observations,
     write_regulatory_receipts,
 )
+from aguayluz.regulatory_promotion import promote_approved_links
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "tests/fixtures/regulatory/framework_cases_v0_2.json"
@@ -327,3 +331,52 @@ def test_build_sqlite_persists_to_file_path(tmp_path):
     finally:
         conn2.close()
     assert count == len(_observations())
+
+
+# ---------------- entity crosswalk ----------------
+
+def _crosswalk_rows() -> list[dict]:
+    return promote_approved_links([_links()["approved"]], _observations())
+
+
+def test_load_regulatory_crosswalk_validates_against_schema(tmp_path):
+    path = tmp_path / "crosswalk.jsonl"
+    rows = _crosswalk_rows()
+    assert rows  # the fixture's approved link must actually promote to something
+    path.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+    assert len(load_regulatory_crosswalk(path)) == len(rows)
+
+
+def test_merge_crosswalk_replaces_by_id():
+    row = _crosswalk_rows()[0]
+    revised = {**row, "decision_rationale": "Updated rationale."}
+    merged = merge_crosswalk([row], [revised])
+    assert len(merged) == 1
+    assert merged[0]["decision_rationale"] == "Updated rationale."
+
+
+def test_write_regulatory_crosswalk_persists_and_merges(tmp_path):
+    path = tmp_path / "crosswalk.jsonl"
+    rows = _crosswalk_rows()
+    write_regulatory_crosswalk(rows, path)
+    assert len(load_regulatory_crosswalk(path)) == len(rows)
+
+    # Rerunning promotion over the same approved link reproduces the same
+    # crosswalk_id, so a second write must not duplicate the row.
+    write_regulatory_crosswalk(rows, path)
+    assert len(load_regulatory_crosswalk(path)) == len(rows)
+
+
+def test_build_sqlite_includes_crosswalk_table():
+    conn = build_sqlite(
+        ":memory:",
+        observations=_observations(),
+        receipts=_receipts(),
+        links=[_links()["approved"]],
+        crosswalk=_crosswalk_rows(),
+    )
+    try:
+        count = conn.execute("SELECT count(*) FROM regulatory_entity_crosswalk").fetchone()[0]
+    finally:
+        conn.close()
+    assert count == len(_crosswalk_rows())

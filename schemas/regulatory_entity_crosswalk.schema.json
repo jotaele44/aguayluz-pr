@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/regulatory_entity_crosswalk.schema.json",
+  "title": "RegulatoryEntityCrosswalk",
+  "description": "One row per approved RegulatoryEntityLink: an audited, human-adjudicated mapping from a regulatory observation to an AguaLuz asset. Every field traces back to the human decision that produced it (decided_at/decided_by/decision_rationale) -- this is consumption of an already-approved decision, never a promotion in its own right. Written only by scripts/promote_regulatory_links.py, which only reads decision_state=approved rows (fail-closed at the API layer per server/backend/regulatory_api.py, and schema-guaranteed by regulatory_entity_link.schema.json to already carry decided_at/decided_by/decision_rationale and empty contradictions).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "crosswalk_id",
+    "candidate_id",
+    "observation_id",
+    "asset_id",
+    "provider",
+    "decided_at",
+    "decided_by",
+    "decision_rationale"
+  ],
+  "properties": {
+    "crosswalk_id": {"type": "string", "pattern": "^AYL_REGXWALK_[A-Za-z0-9._:-]+$"},
+    "candidate_id": {"type": "string", "pattern": "^AYL_REGLINK_[A-Za-z0-9._:-]+$"},
+    "observation_id": {"type": "string", "pattern": "^AYL_REGOBS_[A-Za-z0-9._:-]+$"},
+    "asset_id": {"type": "string", "minLength": 1},
+    "provider": {"enum": ["EPA", "FDA", "USGS", "DRNA", "PRASA_AAA", "PREQB"]},
+    "match_strength": {"enum": ["hard_identifier", "strong_composite", "spatial_composite", "weak_lexical"]},
+    "decided_at": {"type": "string", "format": "date-time"},
+    "decided_by": {"type": "string", "minLength": 1},
+    "decision_rationale": {"type": "string", "minLength": 1}
+  }
+}
