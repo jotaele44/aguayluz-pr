@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
-"""Run the federation validation gates and report PASS/WARN/FAIL/SKIP."""
+"""Run the federation validation gates and report PASS/WARN/FAIL/SKIP.
+
+``--json`` exposes the existing validation surface to TheHub's typed GUI action
+without introducing a second CLI framework/discovery identity.
+"""
 
 from __future__ import annotations
 
-import argparse
 import json
 import sys
 from pathlib import Path
@@ -30,10 +33,23 @@ def _payload(report) -> dict[str, object]:
     }
 
 
+def _parse_args(argv: list[str]) -> bool:
+    json_output = False
+    for token in argv:
+        if token == "--json":
+            json_output = True
+        else:
+            raise ValueError(f"unknown argument: {token}")
+    return json_output
+
+
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--json", action="store_true", help="emit machine-readable JSON")
-    args = parser.parse_args(argv)
+    raw_args = list(sys.argv[1:] if argv is None else argv)
+    try:
+        json_output = _parse_args(raw_args)
+    except ValueError as exc:
+        print(f"FAIL — {exc}", file=sys.stderr)
+        return 2
 
     try:
         assert_schemas_resolvable()
@@ -46,13 +62,13 @@ def main(argv: list[str] | None = None) -> int:
             "gates": [],
             "error": f"{type(exc).__name__}: {exc}",
         }
-        if args.json:
+        if json_output:
             print(json.dumps(payload, sort_keys=True))
         else:
             print(f"FAIL — {payload['error']}", file=sys.stderr)
         return 1
 
-    if args.json:
+    if json_output:
         print(json.dumps(payload, sort_keys=True))
     else:
         rows = report.as_rows()
