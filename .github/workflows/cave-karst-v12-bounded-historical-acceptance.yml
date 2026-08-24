@@ -111,13 +111,16 @@ jobs:
               if line.strip():
                   x=json.loads(line)
                   if x.get("asset_id")=="AYL_KARST_CAMUY_PARK": park=x
-          if not park or park.get("operational_status")!="closed": raise SystemExit("Camuy park no longer closed")
+          if not park or (park.get("operational") or {}).get("status")!="closed": raise SystemExit("Camuy park no longer closed")
           public=json.loads(Path("data/rio_camuy_monitoring_public_v0_1.json").read_text()); blob=json.dumps(public,sort_keys=True)
-          if public.get("local_sensor_commissioned_count")!=0 or public.get("stage_rain_thresholds_authority")!="pilot_provisional": raise SystemExit("operational boundary changed")
+          if (public.get("restricted_contracts") or {}).get("commissioned_sensor_count")!=0: raise SystemExit("commissioned sensor count changed")
+          if (public.get("threshold_policy") or {}).get("stage_rain_authority")!="pilot_provisional": raise SystemExit("threshold authority changed")
           if public.get("public_notifications_enabled") is not False or public.get("automatic_public_reopening_enabled") is not False: raise SystemExit("notification/reopen policy changed")
+          if (public.get("current_interpretation") or {}).get("camuy_public_access_state")!="closed": raise SystemExit("public Camuy state changed")
+          if (public.get("current_interpretation") or {}).get("historical_50014600_can_be_promoted_to_current") is not False: raise SystemExit("historical upstream promotion policy changed")
           for forbidden in ("sensor_id","monitoring_site_id","emergency_geometry","evacuation_route","muster_point"):
               if f'"{forbidden}"' in blob: raise SystemExit(f"forbidden public field: {forbidden}")
-          result["invariants"]={"current_admission_policy":["USGS-50014800:00060","USGS-50014800:00065","USGS-50014800:72365"],"camuy_park_status":"closed","local_sensor_commissioned_count":0,"stage_rain_thresholds_authority":"pilot_provisional","public_notifications_enabled":False,"automatic_public_reopening_enabled":False,"historical_rows_operational_admission":False,"credential_persisted":False,"raw_payload_uploaded":False,"p2_p3_or_emergency_leakage":False}
+          result["invariants"]={"current_admission_policy":["USGS-50014800:00060","USGS-50014800:00065","USGS-50014800:72365"],"camuy_park_status":"closed","local_sensor_commissioned_count":0,"stage_rain_thresholds_authority":"pilot_provisional","public_notifications_enabled":False,"automatic_public_reopening_enabled":False,"historical_rows_operational_admission":False,"historical_50014600_can_be_promoted_to_current":False,"credential_persisted":False,"raw_payload_uploaded":False,"p2_p3_or_emergency_leakage":False}
           redacted=OUT/"cave-karst-v12-bounded-historical-redacted.json"; redacted.write_text(json.dumps(result,indent=2,sort_keys=True)+"\n")
           print(json.dumps({k:{"windows":v["metadata_windows"],"rows":v["row_count"],"pages":v["continuous_page_count"],"min":v["observed_min_utc"],"max":v["observed_max_utc"]} for k,v in result["targets"].items()},sort_keys=True)); print("receipt_sha256="+h(redacted.read_bytes()))
           PY
