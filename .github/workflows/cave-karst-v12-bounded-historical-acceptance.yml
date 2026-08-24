@@ -102,24 +102,26 @@ jobs:
                       if p.get("monitoring_location_id")!=site or str(p.get("parameter_code"))!=pcode: continue
                       if p.get("computation_identifier") not in (None,"", "Instantaneous"): continue
                       if p.get("computation_period_identifier") not in (None,"", "Points"): continue
-                      if not p.get("begin_utc") or not p.get("end_utc") or not p.get("id"): continue
-                      matched.append(p)
+                      tsid=p.get("id") or f.get("id")
+                      if not p.get("begin_utc") or not p.get("end_utc") or not tsid: continue
+                      matched.append({**p,"_time_series_id":str(tsid)})
                   if not matched: raise SystemExit(f"no metadata period for {site}:{pcode}")
 
                   series_receipts=[]; observations={}; series_windows=[]
                   for p in matched:
+                      tsid=p["_time_series_id"]
                       begin,end=dt(p["begin_utc"]),dt(p["end_utc"])
                       if end < begin: raise SystemExit("metadata period inverted")
-                      series_windows.append({"begin_utc":iso(begin),"end_utc":iso(end),"time_series_id_sha256":h(str(p["id"]).encode())})
+                      series_windows.append({"begin_utc":iso(begin),"end_utc":iso(end),"time_series_id_sha256":h(tsid.encode())})
                       for a,b in chunks(begin,end):
                           rows,recs=fetch_pages(client,"continuous",{
-                              "time_series_id":p["id"],"datetime":f"{iso(a)}/{iso(b)}","limit":10000,"f":"json"})
+                              "time_series_id":tsid,"datetime":f"{iso(a)}/{iso(b)}","limit":10000,"f":"json"})
                           series_receipts.extend(recs)
                           for f in rows:
                               props=f.get("properties") or {}
                               if props.get("monitoring_location_id")!=site or str(props.get("parameter_code"))!=pcode:
                                   raise SystemExit(f"out-of-scope historical row {site}:{pcode}")
-                              if str(props.get("time_series_id"))!=str(p["id"]): raise SystemExit("time-series identity drift")
+                              if str(props.get("time_series_id"))!=tsid: raise SystemExit("time-series identity drift")
                               t=props.get("time")
                               if not t or not (begin <= dt(t) <= end): raise SystemExit("observation outside metadata period")
                               key=str(f.get("id") or h(canon(f)))
