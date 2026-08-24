@@ -36,4 +36,52 @@ jobs:
       - name: Bounded NEON-only live health smoke
         env:
           NEON_API_TOKEN: ${{ secrets.NEON_API_TOKEN }}
-        run: python scripts/smoke_neon_live.py
+        run: |
+          python - <<'PY'
+          import json
+          import httpx
+
+          from aguayluz.neon.client import TOKEN_HEADER, USER_AGENT, resolve_token
+          from aguayluz.neon.endpoints import DEFAULT_BASE_URL
+          from aguayluz.neon.mapping import PR_DOMAIN_CODE, PR_SITE_CODES
+
+          expected = {"CUPE", "GUAN", "GUIL", "LAJA"}
+          token = resolve_token()
+          if not token:
+              raise SystemExit("FAIL: NEON_API_TOKEN is not configured")
+
+          response = httpx.get(
+              f"{DEFAULT_BASE_URL}/sites",
+              headers={
+                  "Accept": "application/json",
+                  "User-Agent": USER_AGENT,
+                  TOKEN_HEADER: token,
+              },
+              timeout=60.0,
+          )
+          if response.status_code != 200:
+              raise SystemExit(f"FAIL: NEON /sites returned HTTP {response.status_code}")
+
+          rows = (response.json().get("data") or [])
+          observed = {
+              str(row.get("siteCode"))
+              for row in rows
+              if isinstance(row, dict) and row.get("domainCode") == PR_DOMAIN_CODE
+          }
+          if PR_SITE_CODES != expected:
+              raise SystemExit("FAIL: canonical Puerto Rico NEON registry changed")
+          if observed != expected:
+              raise SystemExit("FAIL: live Puerto Rico NEON denominator differs from canonical registry")
+
+          print(json.dumps({
+              "schema_version": "aguayluz.neon-live-smoke/v1",
+              "provider": "neon",
+              "status": "ok",
+              "http_status": response.status_code,
+              "authenticated": True,
+              "site_codes": sorted(observed),
+              "persisted": False,
+              "notifications_enabled": False,
+              "certified_series_promoted": False,
+          }, sort_keys=True))
+          PY
