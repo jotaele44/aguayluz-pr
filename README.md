@@ -56,6 +56,21 @@ corpus is real public data, with some sources external or point-in-time.
   and the Lajas well, recovered from the `samples-data` API that replaced the
   decommissioned `nwis/gwlevels` service. The basin has no daily-values record at all;
   see [`docs/LAGUNA_CARTAGENA_GAP.md`](docs/LAGUNA_CARTAGENA_GAP.md).
+- USGS discrete groundwater **field measurements**
+  (`scripts/ingest_usgs_field_measurements.py`, keyless) — ~6,900 water-level readings
+  across 89 `USGSFM_*` wells from the OGC API `field-measurements` collection, the actual
+  successor to `nwis/gwlevels`. `scripts/ingest_usgs_groundwater.py` reads Daily Values
+  and therefore carries only the 36 PR wells with a continuous series; this adds the 48
+  that are visited a few times a year and have no series at all.
+- USGS **annual peak streamflow** (`scripts/ingest_usgs_peaks.py`, keyless) — 8,317 peaks
+  across 244 sites, water years **1899–2025**, giving a flood baseline the 14-day and
+  1-year windows elsewhere in the corpus cannot supply. The record maximum is
+  284,000 ft³/s at Río Grande de Arecibo, 2017-09-20 (María).
+- NOAA **NHC** active Atlantic tropical cyclones (`scripts/ingest_nhc_storms.py`, keyless)
+  into `data/service_events.jsonl`, filtered to the Puerto Rico approach corridor. Named a
+  `WEATHER_HAZARD` primary source in `config/alert_modules.yaml`; its value over the NWS
+  feed is lead time — NWS publishes a watch ~48 h out, NHC publishes position and
+  intensity from genesis.
 - Operational alert events (`docs/ALERT_SYSTEM.md`) and the 78-municipio /
   901-barrio geo layer under `data/geo/` (U.S. Census cartographic boundaries).
 

@@ -8,9 +8,12 @@ WARN-only override never blocks deploy even if the underlying check fails.
 from __future__ import annotations
 
 import json
+import os
 import re
+import subprocess
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Literal
 
 import yaml
@@ -229,28 +232,80 @@ _SCAN_EXCLUDE_DIRS = {
     "node_modules", "outputs", "data", "reports",
     ".venv", "venv", "env", ".tox", ".nox", "build", "dist", ".eggs", "site-packages",
 }
+_SCAN_PATHSPECS = [
+    "*.py",
+    "*.json",
+    "*.yaml",
+    "*.yml",
+    "*.md",
+    "*.toml",
+    *[f":(exclude){name}/**" for name in _SCAN_EXCLUDE_DIRS],
+]
 
 
 def gate_g07_no_secrets() -> GateResult:
+    hits = _git_grep_secret_hits()
+    if hits is not None:
+        if hits:
+            return GateResult("G07_NO_SECRETS", "FAIL", f"{len(hits)} file(s): " + ", ".join(hits[:3]))
+        return GateResult("G07_NO_SECRETS", "PASS")
+
     hits: list[str] = []
-    for path in REPO_ROOT.rglob("*"):
-        if not path.is_file():
+    for root, dirs, files in os.walk(REPO_ROOT):
+        dirs[:] = [d for d in dirs if d not in _SCAN_EXCLUDE_DIRS]
+        base = Path(root)
+        if any(part in _SCAN_EXCLUDE_DIRS for part in base.parts):
             continue
-        if any(part in _SCAN_EXCLUDE_DIRS for part in path.parts):
-            continue
-        if path.suffix not in _SCAN_EXTENSIONS:
-            continue
-        try:
-            text = path.read_text(encoding="utf-8", errors="ignore")
-        except OSError:
-            continue
-        for pat in _SECRET_PATTERNS:
-            if pat.search(text):
-                hits.append(str(path.relative_to(REPO_ROOT)))
-                break
+        for name in files:
+            path = base / name
+            if path.suffix not in _SCAN_EXTENSIONS:
+                continue
+            if any(part in _SCAN_EXCLUDE_DIRS for part in path.parts):
+                continue
+            try:
+                text = path.read_text(encoding="utf-8", errors="ignore")
+            except OSError:
+                continue
+            for pat in _SECRET_PATTERNS:
+                if pat.search(text):
+                    hits.append(str(path.relative_to(REPO_ROOT)))
+                    break
     if hits:
         return GateResult("G07_NO_SECRETS", "FAIL", f"{len(hits)} file(s): " + ", ".join(hits[:3]))
     return GateResult("G07_NO_SECRETS", "PASS")
+
+
+def _git_grep_secret_hits() -> list[str] | None:
+    """Fast path for the tracked-file secret gate.
+
+    The gate is named "no secrets in tracked files"; using git's index-aware
+    scanner avoids descending into local virtualenvs, caches and generated
+    working files before Python can exclude them.
+    """
+    if not (REPO_ROOT / ".git").exists():
+        return None
+    hits: set[str] = set()
+    for pattern in _SECRET_PATTERNS:
+        expr = pattern.pattern
+        flags = ["-I", "-n", "-E"]
+        if expr.startswith("(?i)"):
+            expr = expr.removeprefix("(?i)")
+            flags.append("-i")
+        proc = subprocess.run(
+            ["git", "-C", str(REPO_ROOT), "grep", *flags, expr, "--", *_SCAN_PATHSPECS],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if proc.returncode == 1:
+            continue
+        if proc.returncode != 0:
+            return None
+        for line in proc.stdout.splitlines():
+            path = line.split(":", 1)[0]
+            if path:
+                hits.add(path)
+    return sorted(hits)
 
 
 # ---------------------------------------------------------------------------

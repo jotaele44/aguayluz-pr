@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0.0",
+  "scope": "Puerto Rico public environmental exposure source-family denominator",
+  "certification_state": "OPEN",
+  "completeness_claimed": false,
+  "product_capability_id": "environmental-exposure-graph",
+  "product_route": "/environmental-exposure",
+  "families": [
+    {"family":"SEMS_SUPERFUND","authority":"EPA","role":["source_site","regulatory_manifestation","remediation"],"public_class":"DIGITAL_PUBLIC","discovery_locator":"https://data.epa.gov/"},
+    {"family":"UST_LUST","authority":"EPA/PR_DRNA","role":["source_site","release"],"public_class":"DIGITAL_PUBLIC"},
+    {"family":"RCRA","authority":"EPA","role":["industrial_facility","waste_management"],"public_class":"DIGITAL_PUBLIC","discovery_locator":"https://echo.epa.gov/tools/web-services"},
+    {"family":"TRI","authority":"EPA","role":["industrial_facility","release"],"public_class":"DIGITAL_PUBLIC","discovery_locator":"https://data.epa.gov/"},
+    {"family":"ECHO_NPDES","authority":"EPA","role":["wastewater_asset","outfall","compliance"],"public_class":"DIGITAL_PUBLIC","discovery_locator":"https://echo.epa.gov/tools/web-services"},
+    {"family":"ATTAINS_303D","authority":"EPA/PREQB","role":["surface_water_impairment"],"public_class":"DIGITAL_PUBLIC","discovery_locator":"https://www.epa.gov/data/application-programming-interface-api"},
+    {"family":"SDWIS","authority":"EPA/PRASA_AAA","role":["drinking_water_asset","water_quality"],"public_class":"DIGITAL_PUBLIC","discovery_locator":"https://echo.epa.gov/tools/web-services"},
+    {"family":"UIC","authority":"EPA","role":["injection_disposal"],"public_class":"DIGITAL_PUBLIC"},
+    {"family":"PR_DRNA_CONTAMINATED_SITES","authority":"PR_DRNA","role":["source_site","groundwater","remediation"],"public_class":"DIGITAL_PUBLIC"},
+    {"family":"PR_SOLID_WASTE","authority":"PR_DRNA","role":["landfill","solid_waste_facility"],"public_class":"DIGITAL_PUBLIC"},
+    {"family":"USGS_GROUNDWATER","authority":"USGS","role":["well","aquifer_observation","pathway"],"public_class":"DIGITAL_PUBLIC"},
+    {"family":"PRASA_AAA_ASSETS","authority":"PRASA_AAA","role":["drinking_water_asset","wastewater_asset","treatment_consequence"],"public_class":"MIXED_PUBLIC"}
+  ],
+  "terminal_states": ["EXHAUSTED","ZERO","UNAVAILABLE","BLOCKED","SUPERSEDED"],
+  "note": "Family presence is not source exhaustion. Every service/layer/query/manifestation must be frozen before bounded completeness can be certified."
+}

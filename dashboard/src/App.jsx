@@ -22,6 +22,9 @@ const SystemPage = lazy(() => import('./pages/SystemPage'))
 const OutagesPage = lazy(() => import('./pages/OutagesPage'))
 const MonitoringPage = lazy(() => import('./pages/MonitoringPage'))
 const CaveKarstPage = lazy(() => import('./pages/CaveKarstPage'))
+const RegulatoryPage = lazy(() => import('./pages/RegulatoryPage'))
+const RegulatoryReviewPage = lazy(() => import('./pages/RegulatoryReviewPage'))
+const EnvironmentalExposurePage = lazy(() => import('./pages/EnvironmentalExposurePage'))
 const ReviewPage = lazy(() => import('./pages/ReviewPage'))
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'))
 const LiveLogsPage = lazy(() => import('./pages/LiveLogsPage'))
@@ -58,6 +61,9 @@ function App() {
               <Route path="/outages" element={<OutagesPage />} />
               <Route path="/monitoring" element={<MonitoringPage />} />
               <Route path="/cave-karst" element={<CaveKarstPage />} />
+              <Route path="/regulatory" element={<RegulatoryPage />} />
+              <Route path="/regulatory/review" element={<RegulatoryReviewPage />} />
+              <Route path="/environmental-exposure" element={<EnvironmentalExposurePage />} />
               <Route path="/review" element={<ReviewPage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/logs" element={<LiveLogsPage />} />

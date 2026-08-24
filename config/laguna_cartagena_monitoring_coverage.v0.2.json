@@ -1,0 +1,323 @@
+{
+  "schema_version": "aguayluz.laguna-cartagena-monitoring-coverage/v0.2",
+  "target": {
+    "target_id": "LAGUNA_CARTAGENA",
+    "name": "Laguna Cartagena",
+    "municipalities": [
+      "Lajas",
+      "Cabo Rojo"
+    ],
+    "condition_status": "unknown",
+    "condition_basis": "No current direct public lake, outflow, groundwater, or water-quality series.",
+    "coordinate_policy": "public_generalized",
+    "shadow_mode": true
+  },
+  "synchronization_policy": {
+    "max_skew_hours": 24,
+    "balance_tolerance_fraction": 0.15,
+    "required_balance_metrics": [
+      "canal_release",
+      "treatment_withdrawal",
+      "agricultural_turnout",
+      "terminal_flow"
+    ],
+    "optional_balance_metrics": [
+      "known_leak_flow",
+      "gate_position"
+    ]
+  },
+  "required_current_metrics": [
+    "lagoon_stage",
+    "outflow_discharge",
+    "groundwater_level",
+    "specific_conductance",
+    "water_temperature",
+    "dissolved_oxygen",
+    "ph",
+    "turbidity",
+    "nitrate",
+    "ammonia",
+    "phosphorus",
+    "fecal_indicator"
+  ],
+  "coverage": [
+    {
+      "coverage_id": "LC-COV-USGS-50129899",
+      "provider": "USGS",
+      "source_type": "lake_monitoring_location",
+      "location_ids": [
+        "50129899",
+        "USGS-50129899",
+        "USGS_50129899"
+      ],
+      "name": "Laguna Cartagena near Boquerón",
+      "role": "direct_lagoon_quantity_and_quality",
+      "direct_or_proxy": "direct",
+      "hydrologic_representativeness": "direct",
+      "historical_baseline": true,
+      "record_start": "2011-11",
+      "record_end": "2012-08",
+      "current_public_series": false,
+      "current_condition_eligible": false,
+      "metrics": [
+        "specific_conductance",
+        "water_temperature",
+        "dissolved_oxygen",
+        "ph",
+        "turbidity",
+        "nitrate",
+        "ammonia",
+        "phosphorus",
+        "fecal_indicator"
+      ],
+      "gap": "No current lake-stage or direct water-quality series."
+    },
+    {
+      "coverage_id": "LC-COV-USGS-50129900",
+      "provider": "USGS",
+      "source_type": "outflow_monitoring_location",
+      "location_ids": [
+        "50129900",
+        "USGS-50129900",
+        "USGS_50129900"
+      ],
+      "name": "Laguna Cartagena outflow near Boquerón",
+      "role": "direct_outflow",
+      "direct_or_proxy": "direct",
+      "hydrologic_representativeness": "direct",
+      "historical_baseline": true,
+      "record_start": "1984-06-05",
+      "record_end": "1985-11-12",
+      "water_quality_record_end": "2012-08",
+      "current_public_series": false,
+      "current_condition_eligible": false,
+      "metrics": [
+        "outflow_discharge",
+        "specific_conductance",
+        "nutrients",
+        "fecal_indicator"
+      ],
+      "gap": "Continuous discharge ended in 1985; no current outflow series."
+    },
+    {
+      "coverage_id": "LC-COV-USGS-180046067053700",
+      "provider": "USGS",
+      "source_type": "groundwater_well",
+      "location_ids": [
+        "180046067053700",
+        "USGS-180046067053700",
+        "USGSWQ_180046067053700",
+        "USGSFM_180046067053700"
+      ],
+      "name": "Laguna Cartagena well",
+      "role": "direct_local_groundwater",
+      "direct_or_proxy": "direct",
+      "hydrologic_representativeness": "direct",
+      "historical_baseline": true,
+      "water_level_record_end": "1985-08-19",
+      "chemistry_record_end": "1986-03-25",
+      "current_public_series": false,
+      "current_condition_eligible": false,
+      "metrics": [
+        "groundwater_level",
+        "specific_conductance"
+      ],
+      "gap": "No current local groundwater-level or chemistry series."
+    },
+    {
+      "coverage_id": "LC-COV-USGS-50128905",
+      "provider": "USGS",
+      "source_type": "irrigation_canal_gage",
+      "location_ids": [
+        "50128905",
+        "USGS-50128905",
+        "USGS_50128905"
+      ],
+      "name": "Lajas irrigation canal below Lago Loco Dam",
+      "role": "canal_release",
+      "direct_or_proxy": "proxy",
+      "hydrologic_representativeness": "medium",
+      "historical_baseline": false,
+      "current_public_series": true,
+      "current_condition_eligible": false,
+      "metrics": [
+        "canal_release"
+      ],
+      "gap": "Operational canal context only; cannot establish lagoon stage or chemistry."
+    },
+    {
+      "coverage_id": "LC-COV-USGS-50128933",
+      "provider": "USGS",
+      "source_type": "irrigation_canal_gage",
+      "location_ids": [
+        "50128933",
+        "USGS-50128933",
+        "USGS_50128933"
+      ],
+      "name": "Lajas irrigation canal above Majinas filtration plant",
+      "role": "canal_flow_context",
+      "direct_or_proxy": "proxy",
+      "hydrologic_representativeness": "medium",
+      "historical_baseline": false,
+      "current_public_series": true,
+      "current_condition_eligible": false,
+      "metrics": [
+        "canal_release"
+      ],
+      "gap": "Requires synchronized treatment-withdrawal and turnout records."
+    },
+    {
+      "coverage_id": "LC-COV-USGS-50128940",
+      "provider": "USGS",
+      "source_type": "irrigation_canal_gage",
+      "location_ids": [
+        "50128940",
+        "USGS-50128940",
+        "USGS_50128940"
+      ],
+      "name": "Lajas irrigation canal downstream operational gage",
+      "role": "terminal_flow_context",
+      "direct_or_proxy": "proxy",
+      "hydrologic_representativeness": "medium",
+      "historical_baseline": false,
+      "current_public_series": true,
+      "current_condition_eligible": false,
+      "metrics": [
+        "terminal_flow"
+      ],
+      "gap": "Station observations must be synchronized before water-balance use."
+    },
+    {
+      "coverage_id": "LC-COV-NEON-LAJA",
+      "provider": "NEON",
+      "source_type": "terrestrial_research_site",
+      "location_ids": [
+        "LAJA",
+        "NEON_LAJA"
+      ],
+      "name": "Lajas Experimental Station",
+      "role": "regional_meteorology_and_soil_context",
+      "direct_or_proxy": "context",
+      "hydrologic_representativeness": "low",
+      "historical_baseline": false,
+      "current_public_series": true,
+      "current_condition_eligible": false,
+      "metrics": [
+        "precipitation",
+        "soil_moisture"
+      ],
+      "gap": "Useful drought context; not an aquatic Laguna Cartagena station."
+    },
+    {
+      "coverage_id": "LC-COV-NEON-GUIL-EXCLUDED",
+      "provider": "NEON",
+      "source_type": "aquatic_research_site",
+      "location_ids": [
+        "GUIL",
+        "NEON_GUIL"
+      ],
+      "name": "Río Yahuecas",
+      "role": "excluded_groundwater_chemistry_proxy",
+      "direct_or_proxy": "proxy",
+      "hydrologic_representativeness": "none",
+      "historical_baseline": false,
+      "current_public_series": true,
+      "current_condition_eligible": false,
+      "metrics": [
+        "specific_conductance"
+      ],
+      "gap": "Different hydrologic setting; prohibited as a Lajas groundwater substitute."
+    },
+    {
+      "coverage_id": "LC-COV-USFWS",
+      "provider": "USFWS",
+      "source_type": "refuge_manager",
+      "location_ids": [
+        "USFWS-LAGUNA-CARTAGENA"
+      ],
+      "name": "Laguna Cartagena National Wildlife Refuge",
+      "role": "site_access_and_management_context",
+      "direct_or_proxy": "context",
+      "hydrologic_representativeness": "low",
+      "historical_baseline": false,
+      "current_public_series": false,
+      "current_condition_eligible": false,
+      "metrics": [],
+      "gap": "No machine-readable current hydrologic telemetry identified."
+    },
+    {
+      "coverage_id": "LC-COV-DRNA",
+      "provider": "DRNA",
+      "source_type": "water_resource_and_environmental_authority",
+      "location_ids": [
+        "DRNA-LAGUNA-CARTAGENA"
+      ],
+      "name": "Puerto Rico DRNA",
+      "role": "regulatory_and_field_measurement_source",
+      "direct_or_proxy": "direct",
+      "hydrologic_representativeness": "direct",
+      "historical_baseline": false,
+      "current_public_series": false,
+      "current_condition_eligible": false,
+      "metrics": [
+        "lagoon_stage",
+        "groundwater_level",
+        "water_quality"
+      ],
+      "gap": "No current machine-readable direct series materialized."
+    },
+    {
+      "coverage_id": "LC-COV-AAA",
+      "provider": "AAA",
+      "source_type": "drinking_water_operator",
+      "location_ids": [
+        "AAA-LAJAS-SYSTEM"
+      ],
+      "name": "Autoridad de Acueductos y Alcantarillados",
+      "role": "treatment_withdrawal_and_operational_records",
+      "direct_or_proxy": "proxy",
+      "hydrologic_representativeness": "medium",
+      "historical_baseline": false,
+      "current_public_series": false,
+      "current_condition_eligible": false,
+      "metrics": [
+        "treatment_withdrawal",
+        "gate_position",
+        "known_leak_flow"
+      ],
+      "gap": "Synchronized plant withdrawals and operational records not materialized."
+    },
+    {
+      "coverage_id": "LC-COV-SOUTHWEST-IRRIGATION",
+      "provider": "Southwest Irrigation District operator",
+      "source_type": "irrigation_operator",
+      "location_ids": [
+        "SOUTHWEST-IRRIGATION-DISTRICT"
+      ],
+      "name": "Southwest irrigation operations",
+      "role": "turnouts_gates_leaks_and_terminal_flow",
+      "direct_or_proxy": "proxy",
+      "hydrologic_representativeness": "high",
+      "historical_baseline": false,
+      "current_public_series": false,
+      "current_condition_eligible": false,
+      "metrics": [
+        "agricultural_turnout",
+        "gate_position",
+        "known_leak_flow",
+        "terminal_flow"
+      ],
+      "gap": "Synchronized operational records not materialized."
+    }
+  ],
+  "preserve": {
+    "no_stale_to_current_promotion": true,
+    "no_guil_to_lajas_groundwater_substitution": true,
+    "no_unsynchronized_mass_balance_claims": true,
+    "explicit_unknown_states": true,
+    "append_only_receipts": true,
+    "no_contamination_or_low_lake_alert_without_current_direct_measurement": true,
+    "no_automatic_control_actions": true,
+    "no_foia_until_direct_provider_and_field_paths_exhausted": true
+  }
+}

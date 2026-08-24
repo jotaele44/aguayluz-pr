@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/access_condition.v1.schema.json",
+  "title": "AguaYLuz Access Condition v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "kind", "condition_id", "alert_id", "authority", "forest",
+    "source_listing_url", "source_url", "source_hash", "evidence_tier", "scope_type",
+    "scope_name", "status", "observed_at", "status_basis", "semantic_hash", "confidence"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "kind": {"const": "access_condition"},
+    "condition_id": {"type": "string", "minLength": 1},
+    "alert_id": {"type": "string", "minLength": 1},
+    "authority": {"const": "USDA Forest Service"},
+    "forest": {"const": "el_yunque"},
+    "source_listing_url": {"type": "string", "format": "uri"},
+    "source_url": {"type": "string", "format": "uri"},
+    "source_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "forest_order_identifier": {"type": ["string", "null"]},
+    "published_at": {"type": ["string", "null"], "format": "date-time"},
+    "last_source_update": {"type": ["string", "null"], "format": "date-time"},
+    "effective_start": {"type": ["string", "null"], "format": "date-time"},
+    "effective_end": {"type": ["string", "null"], "format": "date-time"},
+    "observed_at": {"type": "string", "format": "date-time"},
+    "evidence_tier": {"const": "T1"},
+    "scope_type": {"enum": ["trail", "trail_segment", "facility", "road", "site", "forest", "unknown"]},
+    "scope_name": {"type": "string", "minLength": 1},
+    "asset_key": {"type": ["string", "null"]},
+    "status": {"enum": ["scheduled", "closed", "restricted", "closure_ended", "unknown"]},
+    "status_basis": {"enum": ["explicit_official_text", "effective_time", "removal_unconfirmed", "monitor_failure"]},
+    "semantic_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "restriction_text": {"type": "string"},
+    "corroboration": {"type": "object"}
+  }
+}
