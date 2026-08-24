@@ -28,7 +28,8 @@
     ],
     "frontend_api_roots": [
       "dashboard/src/lib/api.js",
-      "dashboard/src/lib/cave-karst-api.js"
+      "dashboard/src/lib/cave-karst-api.js",
+      "dashboard/src/lib/environmental-exposure-api.js"
     ],
     "route_files": [
       "dashboard/src/App.jsx"
@@ -206,41 +207,43 @@
           "GET /export/federation/monitoring-incident-events.json"
         ],
         "symbols": [
-          "server/backend/app.py:readings",
-          "server/backend/app.py:monitoring_health",
-          "server/backend/app.py:monitoring_alerts",
-          "server/backend/app.py:monitoring_alert_operations",
-          "server/backend/app.py:export_monitoring",
-          "server/backend/app.py:export_federation_monitoring_alerts",
-          "server/backend/app.py:IncidentTransition",
           "server/backend/app.py:BootstrapRequest",
+          "server/backend/app.py:IncidentTransition",
           "server/backend/app.py:bootstrap_incident_ledger",
-          "server/backend/app.py:monitoring_incidents",
+          "server/backend/app.py:export_federation_monitoring_alerts",
+          "server/backend/app.py:export_federation_monitoring_incident_events",
+          "server/backend/app.py:export_monitoring",
+          "server/backend/app.py:monitoring_alert_operations",
+          "server/backend/app.py:monitoring_alerts",
+          "server/backend/app.py:monitoring_escalation_candidates",
+          "server/backend/app.py:monitoring_health",
           "server/backend/app.py:monitoring_incident_timeline",
           "server/backend/app.py:monitoring_incident_transition",
-          "server/backend/app.py:monitoring_escalation_candidates",
+          "server/backend/app.py:monitoring_incidents",
           "server/backend/app.py:monitoring_notification_outbox",
-          "server/backend/app.py:export_federation_monitoring_incident_events",
+          "server/backend/app.py:readings",
+          "server/backend/monitoring_alert_operations.py:federation_alert_export",
+          "server/backend/monitoring_alert_operations.py:lifecycle_alerts",
           "server/backend/monitoring_alert_operations.py:load_site_thresholds",
           "server/backend/monitoring_alert_operations.py:resolve_threshold",
           "server/backend/monitoring_alert_operations.py:threshold_tripped",
-          "server/backend/monitoring_alert_operations.py:lifecycle_alerts",
-          "server/backend/monitoring_alert_operations.py:federation_alert_export",
-          "server/backend/monitoring_quality.py:observation_time",
-          "server/backend/monitoring_quality.py:series_quality",
-          "server/backend/monitoring_quality.py:native_alerts",
-          "server/backend/monitoring_incident_ledger.py:read_events",
-          "server/backend/monitoring_incident_ledger.py:validate_event",
           "server/backend/monitoring_incident_ledger.py:append_event",
-          "server/backend/monitoring_incident_ledger.py:verify_chain",
-          "server/backend/monitoring_incident_ledger.py:replay",
-          "server/backend/monitoring_incident_ledger.py:materialized_state",
-          "server/backend/monitoring_incident_ledger.py:timeline",
+          "server/backend/monitoring_incident_ledger.py:escalation_candidates",
+          "server/backend/monitoring_incident_ledger.py:federation_delta",
           "server/backend/monitoring_incident_ledger.py:load_json",
           "server/backend/monitoring_incident_ledger.py:maintenance_active",
-          "server/backend/monitoring_incident_ledger.py:escalation_candidates",
+          "server/backend/monitoring_incident_ledger.py:materialized_state",
           "server/backend/monitoring_incident_ledger.py:notification_outbox",
-          "server/backend/monitoring_incident_ledger.py:federation_delta"
+          "server/backend/monitoring_incident_ledger.py:read_events",
+          "server/backend/monitoring_incident_ledger.py:replay",
+          "server/backend/monitoring_incident_ledger.py:timeline",
+          "server/backend/monitoring_incident_ledger.py:validate_event",
+          "server/backend/monitoring_incident_ledger.py:verify_chain",
+          "server/backend/monitoring_quality.py:native_alerts",
+          "server/backend/monitoring_quality.py:observation_time",
+          "server/backend/monitoring_quality.py:series_keys_for_metric",
+          "server/backend/monitoring_quality.py:series_policy",
+          "server/backend/monitoring_quality.py:series_quality"
         ]
       },
       "frontend": {
@@ -274,7 +277,9 @@
         "backend": [
           "tests/test_alert_impact.py",
           "tests/test_refresh_plans.py",
-          "tests/test_monitoring_phase3.py"
+          "tests/test_monitoring_phase3.py",
+          "tests/test_backend_readings_api.py",
+          "tests/test_monitoring_phase1.py"
         ],
         "contract": [
           "tests/test_gui_parity.py",
@@ -559,6 +564,7 @@
           "scripts/ingest_neon_products.py:build_readings",
           "scripts/ingest_neon_products.py:download_file",
           "scripts/ingest_neon_products.py:fetch_manifest",
+          "scripts/ingest_neon_products.py:inspect_columns",
           "scripts/ingest_neon_products.py:main",
           "scripts/ingest_neon_products.py:merge_readings",
           "scripts/ingest_neon_products.py:select_files",
@@ -640,10 +646,6 @@
           "src/aguayluz/cave_karst.py:validate_records",
           "src/aguayluz/cave_karst.py:validate_registry",
           "src/aguayluz/cave_karst.py:verify_event_chain",
-          "server/backend/cave_karst_api.py:evaluate_replay_sample",
-          "server/backend/cave_karst_api.py:materialize_v11_status",
-          "server/backend/cave_karst_api.py:public_asset_projection",
-          "server/backend/cave_karst_api.py:validate_public_projection",
           "server/backend/cave_karst_api.py:cave_karst_summary",
           "server/backend/cave_karst_api.py:cave_karst_assets",
           "server/backend/cave_karst_api.py:cave_karst_asset",
@@ -687,6 +689,450 @@
         ],
         "unit": [
           "dashboard/src/pages/CaveKarstPage.test.jsx"
+        ],
+        "e2e": [
+          "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "regulatory-observations-monitor",
+      "classification": "analysis",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Diagnostic-only surface (per docs/adr/0001, this repo's own dashboard is diagnostic, not the supported product surface) for the regulatory framework's third and fourth implementation increments (docs/unfinished_implementation_ledger.v1.json's AYL-008): browsing RegulatoryObservation/RegulatorySourceReceipt rows written by live provider adapters (currently just USGS, src/aguayluz/regulatory_adapters/usgs.py), and adjudicating the RegulatoryEntityLink candidates scripts/build_regulatory_links.py proposes against data/utility_assets.jsonl (src/aguayluz/regulatory_links.py -- hard-identifier USGS site-number matching only so far). The one write path this capability exposes -- POST /regulatory/links/{candidate_id}/decide -- is fail-closed at the API layer, not just the JSON-schema layer: it refuses to record decision_state=approved while the candidate still carries open contradictions, so a client cannot route around that rule by skipping its own validation. Every decision records an actor, timestamp, and rationale a human supplied through this endpoint; nothing here performs automatic entity promotion, and generation itself (scripts/build_regulatory_links.py, registered separately as regulatory-links-generator) never emits approved and never overwrites an existing human decision on rerun.",
+      "backend": {
+        "files": [
+          "server/backend/regulatory_api.py",
+          "server/backend/app.py",
+          "src/aguayluz/regulatory_links.py"
+        ],
+        "endpoints": [
+          "GET /regulatory/summary",
+          "GET /regulatory/observations",
+          "GET /regulatory/observations/{observation_id}",
+          "GET /regulatory/receipts/{receipt_id}",
+          "GET /regulatory/links",
+          "GET /regulatory/links/{candidate_id}",
+          "POST /regulatory/links/{candidate_id}/decide"
+        ],
+        "symbols": [
+          "server/backend/regulatory_api.py:regulatory_summary",
+          "server/backend/regulatory_api.py:regulatory_observations",
+          "server/backend/regulatory_api.py:regulatory_observation",
+          "server/backend/regulatory_api.py:regulatory_receipt",
+          "server/backend/regulatory_api.py:regulatory_links",
+          "server/backend/regulatory_api.py:regulatory_link",
+          "server/backend/regulatory_api.py:regulatory_link_decide",
+          "server/backend/regulatory_api.py:RegulatoryLinkDecision",
+          "src/aguayluz/regulatory_links.py:build_asset_link_index",
+          "src/aguayluz/regulatory_links.py:generate_candidates",
+          "src/aguayluz/regulatory_links.py:generate_all_candidates"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/regulatory",
+          "/regulatory/review"
+        ],
+        "e2e_routes": [
+          "/regulatory",
+          "/regulatory/review"
+        ],
+        "components": [
+          "dashboard/src/lib/regulatory-api.js",
+          "dashboard/src/pages/RegulatoryPage.jsx",
+          "dashboard/src/pages/RegulatoryReviewPage.jsx",
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_regulatory_api.py",
+          "tests/test_regulatory_links.py"
+        ],
+        "unit": [
+          "dashboard/src/pages/RegulatoryPage.test.jsx",
+          "dashboard/src/pages/RegulatoryReviewPage.test.jsx"
+        ],
+        "e2e": [
+          "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "water-balance-fail-closed-builder",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Backend evidence gate for Agua Ilos-style balance monitoring, not a standalone operator workflow. It refuses to infer inflow/outflow/storage roles and produces quarantines for missing lineage, source hashes, confidence, units or synthetic production inputs. Accepted or degraded intervals can be promoted later through the existing monitoring/export capability once site-specific role maps are available.",
+      "analysis": {
+        "files": [
+          "src/aguayluz/water_balance.py",
+          "scripts/build_water_balance.py",
+          "docs/WATER_BALANCE_MONITORING.md"
+        ],
+        "symbols": [
+          "src/aguayluz/water_balance.py:BalanceInput",
+          "src/aguayluz/water_balance.py:build_balance_intervals",
+          "src/aguayluz/water_balance.py:admit_reading",
+          "src/aguayluz/water_balance.py:quarantine_record",
+          "src/aguayluz/water_balance.py:role_for",
+          "src/aguayluz/water_balance.py:stable_digest",
+          "scripts/build_water_balance.py:read_jsonl",
+          "scripts/build_water_balance.py:main"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_water_balance.py",
+          "tests/test_schemas.py"
+        ]
+      }
+    },
+    {
+      "id": "usgs-water-api-category-ingestion",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Scheduled evidence-ingestion and coverage-governance surfaces, not a separate user workflow. The producers run through scripts/refresh.py and feed existing asset, reading, export, alert, and provenance surfaces. Newly added modern endpoints remain implemented_unverified_live until an operator reviews network receipts; no provider-registration record alone can satisfy the coverage gate.",
+      "backend": {
+        "files": [
+          "src/aguayluz/usgs_water_api.py"
+        ],
+        "symbols": [
+          "src/aguayluz/usgs_water_api.py:ContractError",
+          "src/aguayluz/usgs_water_api.py:api_headers",
+          "src/aguayluz/usgs_water_api.py:utc_now",
+          "src/aguayluz/usgs_water_api.py:bare_site",
+          "src/aguayluz/usgs_water_api.py:safe_float",
+          "src/aguayluz/usgs_water_api.py:iso_day",
+          "src/aguayluz/usgs_water_api.py:timestamp_token",
+          "src/aguayluz/usgs_water_api.py:stable_hash",
+          "src/aguayluz/usgs_water_api.py:flatten_features",
+          "src/aguayluz/usgs_water_api.py:next_link",
+          "src/aguayluz/usgs_water_api.py:iter_ogc_pages",
+          "src/aguayluz/usgs_water_api.py:read_json_documents",
+          "src/aguayluz/usgs_water_api.py:read_jsonl",
+          "src/aguayluz/usgs_water_api.py:merge_by_key",
+          "src/aguayluz/usgs_water_api.py:write_jsonl",
+          "src/aguayluz/usgs_water_api.py:metric_for_parameter",
+          "src/aguayluz/usgs_water_api.py:reading_row",
+          "src/aguayluz/usgs_water_api.py:source_receipt"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/ingest_usgs_continuous.py",
+          "scripts/ingest_usgs_field_measurements.py",
+          "scripts/ingest_usgs_time_series_metadata.py",
+          "scripts/ingest_usgs_peaks.py",
+          "scripts/ingest_usgs_water_quality.py",
+          "scripts/ingest_usgs_rtfi.py",
+          "scripts/ingest_usgs_nims.py",
+          "scripts/ingest_usgs_statistics.py",
+          "scripts/validate_usgs_api_coverage.py"
+        ],
+        "symbols": [
+          "scripts/ingest_usgs_continuous.py:rows_from_documents",
+          "scripts/ingest_usgs_continuous.py:fetch_live",
+          "scripts/ingest_usgs_continuous.py:main",
+          "scripts/ingest_usgs_field_measurements.py:year_slices",
+          "scripts/ingest_usgs_field_measurements.py:rows_from_documents",
+          "scripts/ingest_usgs_field_measurements.py:fetch_live",
+          "scripts/ingest_usgs_field_measurements.py:main",
+          "scripts/ingest_usgs_time_series_metadata.py:location_rows",
+          "scripts/ingest_usgs_time_series_metadata.py:metadata_rows",
+          "scripts/ingest_usgs_time_series_metadata.py:fetch_collection",
+          "scripts/ingest_usgs_time_series_metadata.py:main",
+          "scripts/ingest_usgs_peaks.py:rows_from_documents",
+          "scripts/ingest_usgs_peaks.py:fetch_live",
+          "scripts/ingest_usgs_peaks.py:main",
+          "scripts/ingest_usgs_water_quality.py:parse_csv",
+          "scripts/ingest_usgs_water_quality.py:station_rows",
+          "scripts/ingest_usgs_water_quality.py:asset_id_for",
+          "scripts/ingest_usgs_water_quality.py:asset_rows",
+          "scripts/ingest_usgs_water_quality.py:result_rows",
+          "scripts/ingest_usgs_water_quality.py:fetch_text",
+          "scripts/ingest_usgs_water_quality.py:fetch_statewide",
+          "scripts/ingest_usgs_water_quality.py:main",
+          "scripts/ingest_usgs_rtfi.py:parse",
+          "scripts/ingest_usgs_rtfi.py:main",
+          "scripts/ingest_usgs_nims.py:site_ids_from_assets",
+          "scripts/ingest_usgs_nims.py:camera_rows",
+          "scripts/ingest_usgs_nims.py:image_rows",
+          "scripts/ingest_usgs_nims.py:main",
+          "scripts/ingest_usgs_statistics.py:site_ids_from_assets",
+          "scripts/ingest_usgs_statistics.py:normalize",
+          "scripts/ingest_usgs_statistics.py:fetch_endpoint",
+          "scripts/ingest_usgs_statistics.py:main",
+          "scripts/validate_usgs_api_coverage.py:validate_document",
+          "scripts/validate_usgs_api_coverage.py:main"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_usgs_water_api_coverage.py",
+          "tests/test_refresh_plans.py"
+        ]
+      }
+    },
+    {
+      "id": "usgs-field-measurements-ingest",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Scheduled producer, not an operator workflow. Invoked by the daily/weekly/all cron cadences in .github/workflows/refresh.yml via scripts/refresh.py, never by a person, so no normal user path requires a terminal. It complements scripts/ingest_usgs_groundwater.py, which reads the NWIS Daily Values service and therefore keeps only the 36 PR wells carrying a continuous series; the OGC API field-measurements collection (api.waterdata.usgs.gov/ogcapi/v0, keyless, the successor to the decommissioned waterservices.usgs.gov/nwis/gwlevels/) adds the discrete-measurement wells that service structurally cannot see -- 82 wells and 4,392 measurements over ten years, against 36 wells today. The wells are rendered as utility_asset rows on the existing assets and map views. The groundwater_level readings reach the PRII hub through the canonical federation export (scripts/federation_export.py globs data/*_readings.jsonl), which per docs/adr/0001 is this producer's supported product surface -- this repo's own dashboard is diagnostic-only. They are deliberately NOT wired into scripts/build_alerts.py, which names its three reading files explicitly and does not glob: parameter 62610 (level above NGVD29) has the opposite concerning direction from 72019 (depth below land surface), and src/aguayluz/water_alerts.py drives _AQUIFER_METRICS with direction='high', so routing this file into that proxy would invert the aquifer-drawdown signal. They are ALSO now selectable on the diagnostic dashboard at /monitoring as 'Groundwater depth (discrete)': server/backend/app.py registers a usgs_field_measurements vector and monitoring_quality.py a ('usgs_field_measurements', 'groundwater_level') policy covering parameter codes 72019 and 62610, with a 90-day freshness limit because a hydrographer visits a well a few times a year. It is declared a REFERENCE series (threshold null): 89 wells have no per-site baselines, and 62610 runs opposite to 72019, so no single number means drawdown for both. That GUI surface belongs to the monitoring-analytics-and-system-state capability; this entry stays internal because the PRODUCER is cron-only.",
+      "analysis": {
+        "files": [
+          "scripts/ingest_usgs_field_measurements.py"
+        ],
+        "symbols": [
+          "scripts/ingest_usgs_field_measurements.py:asset_id_for",
+          "scripts/ingest_usgs_field_measurements.py:build_assets",
+          "scripts/ingest_usgs_field_measurements.py:build_readings",
+          "scripts/ingest_usgs_field_measurements.py:fetch_field_measurements_live",
+          "scripts/ingest_usgs_field_measurements.py:fetch_locations_live",
+          "scripts/ingest_usgs_field_measurements.py:main",
+          "scripts/ingest_usgs_field_measurements.py:merge_assets",
+          "scripts/ingest_usgs_field_measurements.py:merge_readings",
+          "scripts/ingest_usgs_field_measurements.py:parse_features",
+          "scripts/ingest_usgs_field_measurements.py:parse_locations"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_ingest_usgs_field_measurements.py",
+          "tests/test_refresh_plans.py"
+        ]
+      }
+    },
+    {
+      "id": "regulatory-usgs-ingest",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Scheduled producer, not an operator workflow. Invoked by the weekly/all cron cadences in .github/workflows/refresh.yml via scripts/refresh.py (STEP_REGULATORY_USGS for full discovery, STEP_REGULATORY_RECHECK for --recheck-stale), never by a person, so no normal user path requires a terminal. This is the first live provider for the PR #120 regulatory ingestion framework (docs/ROAD_TO_100.md's AYL-008, docs/regulatory_ingestion_framework_v0_1.md): USGS monitoring-location site metadata only, matching research/regulatory/contracts.py's PROVIDER_BASELINE_CAPABILITIES scoping USGS to RecordFamily.ENTITY (no permit/inspection/enforcement authority claimed). It writes RegulatoryObservation and RegulatorySourceReceipt rows via src/aguayluz/regulatory_db.py into data/regulatory_observations.jsonl and data/regulatory_source_receipts.jsonl, read (but not entity-promoted -- see regulatory-links-generator and regulatory-links-promoter) through the regulatory-observations-monitor capability's read-only API/GUI. Idempotent by design: src/aguayluz/regulatory_adapters/usgs.py's normalize() hashes each site's own properties (not the page envelope, which carries a per-request timeStamp the live USGS OGC API always varies) into the observation_id, so unchanged sites replay to the same id across runs -- live-verified by running the ingest twice and confirming the observation count stayed flat while receipts (retrieval-event provenance, which legitimately differ per fetch) accumulated. mark_stale()/fetch_site() (fifth increment, freshness refresh) flag a current observation stale after 90 days and reconfirm it by a single-ID site lookup rather than a full bbox re-crawl -- live-verified by aging one observation, running --recheck-stale, and confirming it flipped back to current with the same observation_id (unchanged content) and a refreshed retrieved_at.",
+      "analysis": {
+        "files": [
+          "scripts/ingest_regulatory_usgs.py"
+        ],
+        "symbols": [
+          "scripts/ingest_regulatory_usgs.py:main"
+        ]
+      },
+      "backend": {
+        "files": [
+          "src/aguayluz/regulatory_adapters/__init__.py",
+          "src/aguayluz/regulatory_adapters/usgs.py"
+        ],
+        "symbols": [
+          "src/aguayluz/regulatory_adapters/usgs.py:capabilities",
+          "src/aguayluz/regulatory_adapters/usgs.py:discover",
+          "src/aguayluz/regulatory_adapters/usgs.py:fetch",
+          "src/aguayluz/regulatory_adapters/usgs.py:fetch_site",
+          "src/aguayluz/regulatory_adapters/usgs.py:mark_stale",
+          "src/aguayluz/regulatory_adapters/usgs.py:normalize"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_regulatory_adapter_usgs.py",
+          "tests/test_refresh_plans.py"
+        ]
+      }
+    },
+    {
+      "id": "regulatory-links-generator",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Scheduled producer, not an operator workflow. Invoked by the weekly/all cron cadences in .github/workflows/refresh.yml via scripts/refresh.py (STEP_REGULATORY_LINKS, placed right after STEP_REGULATORY_USGS so utility_assets.jsonl and the observation store it reads are both current), never by a person. Fourth implementation increment for the PR #120 regulatory framework (docs/ROAD_TO_100.md's AYL-008): proposes RegulatoryEntityLink candidates connecting a RegulatoryObservation to an already-materialized data/utility_assets.jsonl row, currently via hard-identifier matching on USGS site numbers only (src/aguayluz/regulatory_links.py) -- the design doc's other evidence classes and other providers are later increments. Never emits decision_state=approved (the design doc is explicit that generators must not perform entity promotion) and, critically, never overwrites a candidate a human has already decided on: candidate_id is a deterministic hash of (observation_id, candidate_asset_id) only, so this script diffs against what is already on record and writes only genuinely new candidates -- live-verified by approving a candidate, rerunning the generator, and confirming the approval was untouched. The one place a human can act on what this produces is the adjudicated decide endpoint registered under regulatory-observations-monitor.",
+      "analysis": {
+        "files": [
+          "scripts/build_regulatory_links.py"
+        ],
+        "symbols": [
+          "scripts/build_regulatory_links.py:main"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_regulatory_links.py",
+          "tests/test_refresh_plans.py"
+        ]
+      }
+    },
+    {
+      "id": "regulatory-links-promoter",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Scheduled producer, not an operator workflow. Invoked by the weekly/all cron cadences in .github/workflows/refresh.yml via scripts/refresh.py (STEP_REGULATORY_PROMOTE, placed after STEP_REGULATORY_LINKS and STEP_REGULATORY_RECHECK so the candidates and observations it reads are current), never by a person. Fifth and final implementation increment for the PR #120 regulatory framework (docs/ROAD_TO_100.md's AYL-008): projects every decision_state=approved RegulatoryEntityLink (src/aguayluz/regulatory_promotion.py) into a durable RegulatoryEntityCrosswalk row -- an audited, human-adjudicated observation-to-asset mapping. Never sets decision_state=approved itself; it only consumes rows the decide endpoint (registered under regulatory-observations-monitor) already fail-closed approved. A link whose observation cannot be found is skipped rather than guessed at. Idempotent: crosswalk_id derives deterministically from candidate_id, so rerunning after no new approvals writes nothing new -- live-verified by approving a candidate, promoting it, and confirming a second run of this script left the one crosswalk row unchanged.",
+      "analysis": {
+        "files": [
+          "scripts/promote_regulatory_links.py"
+        ],
+        "symbols": [
+          "scripts/promote_regulatory_links.py:main"
+        ]
+      },
+      "backend": {
+        "files": [
+          "src/aguayluz/regulatory_promotion.py"
+        ],
+        "symbols": [
+          "src/aguayluz/regulatory_promotion.py:promote_approved_links"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_regulatory_promotion.py",
+          "tests/test_refresh_plans.py"
+        ]
+      }
+    },
+    {
+      "id": "nhc-tropical-cyclone-ingest",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Scheduled hazard producer, not an operator workflow. Invoked by every cron cadence in .github/workflows/refresh.yml via scripts/refresh.py, never by a person, so no normal user path requires a terminal. config/alert_modules.yaml has named NHC a primary source for WEATHER_HAZARD since the module registry was written, alongside NWS San Juan and USGS gauges; those were wired up and NHC never was. It emits service_event rows, which reach the PRII hub through the canonical federation export, AND promotes them to WEATHER_HAZARD AlertEvents via src/aguayluz/alert_promotion/nhc.py -- so a storm surfaces on the existing alerts list, alert map and critical push/SMS path with no new GUI surface. The promoter is separate from alert_promotion/weather.py because severity here must scale by distance as well as classification: NWS issues a watch only once PR is inside the forecast envelope, while NHC publishes every storm from genesis, so a Category 4 off Cabo Verde and one six hours out carry the same classification string and must not carry the same severity. Only a storm that is both strong and within ~500 km clears CRITICAL_SEVERITY. Note the dashboard renders ALERT coordinates directly (AssetMap.jsx reads alert geometry from the promoter) while event geometry is derived only from a linked asset or municipality; a cyclone has neither, so the alert layer is what puts it on the map. A storm still at sea reports coord_confidence=unknown because alert_event bounds lat/lon to Puerto Rico -- the same treatment the seismic promoter gives an offshore epicentre. Its value over scripts/ingest_nws_alerts.py is lead time: api.weather.gov publishes a watch once PR is inside the forecast envelope (~48h), while NHC publishes position and intensity from genesis, days earlier. Known limitation recorded rather than hidden: service_event.event_type is a closed enum with no member for an approaching hazard, so rows are emitted as service_interruption with the real classification and intensity preserved in status_text and source_ref. Adding a hazard_advisory member is a schema change requiring hub coordination and is out of scope; the same precedent already exists in scripts/ingest_osha.py, which emits event_type=unknown.",
+      "analysis": {
+        "files": [
+          "scripts/ingest_nhc_storms.py",
+          "src/aguayluz/alert_promotion/nhc.py"
+        ],
+        "symbols": [
+          "scripts/ingest_nhc_storms.py:build_events",
+          "scripts/ingest_nhc_storms.py:fetch_live",
+          "scripts/ingest_nhc_storms.py:is_atlantic",
+          "scripts/ingest_nhc_storms.py:main",
+          "scripts/ingest_nhc_storms.py:merge",
+          "scripts/ingest_nhc_storms.py:threatens_pr",
+          "src/aguayluz/alert_promotion/nhc.py:nhc_alert",
+          "src/aguayluz/alert_promotion/nhc.py:nhc_alerts",
+          "src/aguayluz/alert_promotion/nhc.py:storm_severity"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_ingest_nhc_storms.py",
+          "tests/test_refresh_plans.py",
+          "tests/test_alert_promotion_nhc.py"
+        ]
+      }
+    },
+    {
+      "id": "usgs-annual-peaks-ingest",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Scheduled archival producer, not an operator workflow. Invoked by the weekly/all cron cadences in .github/workflows/refresh.yml via scripts/refresh.py, never by a person, so no normal user path requires a terminal. It adds the flood baseline the corpus otherwise lacks: every existing hydrology vector is recent (ingest_usgs_levels runs a 14-day window, ingest_usgs_groundwater a year), which can say a river is high against its own recent tail but not against the historical record. The OGC API peaks collection supplies 244 PR sites from 1899 to 2025, one instantaneous maximum per water year -- including the 284,000 ft3/s Hurricane Maria peak of 2017-09-20. It emits NO assets and therefore adds no map or asset surface: the peaks belong to stream sites scripts/ingest_usgs_water.py already owns as USGS_* rows, so the readings are plain foreign keys into them. The streamflow and gage_height readings reach the PRII hub through the canonical federation export (scripts/federation_export.py globs data/*_readings.jsonl), which per docs/adr/0001 is this producer's supported product surface -- The readings are ALSO now inspectable on the diagnostic dashboard: server/backend/app.py registers a usgs_peaks vector and monitoring_quality.py a ('usgs_peaks', streamflow|gage_height) policy, so GET /readings?kind=usgs_peaks&metric=... serves them and they are selectable at /monitoring as 'Annual peak streamflow' and 'Annual peak stage' (covered by dashboard/tests/gui-parity.spec.mjs). They are declared REFERENCE series -- threshold null, freshness_hours null -- because an annual maximum is the historical record rather than a live signal: the reservoir streamflow threshold of 5,000 ft3/s is exceeded by 46% of the 1899-2025 record, so reusing it would manufacture 1,898 incidents. That GUI surface belongs to the monitoring-analytics-and-system-state capability; this entry stays internal because the PRODUCER is cron-only.",
+      "analysis": {
+        "files": [
+          "scripts/ingest_usgs_peaks.py"
+        ],
+        "symbols": [
+          "scripts/ingest_usgs_peaks.py:asset_id_for",
+          "scripts/ingest_usgs_peaks.py:build_readings",
+          "scripts/ingest_usgs_peaks.py:fetch_peaks_live",
+          "scripts/ingest_usgs_peaks.py:main",
+          "scripts/ingest_usgs_peaks.py:merge_readings"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_ingest_usgs_peaks.py",
+          "tests/test_refresh_plans.py"
+        ]
+      }
+    },
+    {
+      "id": "gui-parity-review-fixture",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Test fixture for the GUI parity gate, not a user capability. outputs/ is gitignored and the E2E job runs no exporter, so /review-queue returned an empty list in CI and the reachability spec passed over a blank page. seed_demo.py writes a minimal review queue only when none exists, and the teardown removes it only when seed_demo.py created it, so neither a real export nor a developer checkout is ever altered. Both run from the Playwright config; no operator invokes them and neither has a GUI surface. The capability they serve is review-queue, whose GUI path is unchanged.",
+      "analysis": {
+        "files": [
+          "server/ingestion/seed_demo.py",
+          "server/ingestion/gui_parity_teardown.py"
+        ],
+        "symbols": [
+          "server/ingestion/seed_demo.py:main",
+          "server/ingestion/gui_parity_teardown.py:main"
+        ]
+      },
+      "tests": {
+        "e2e": [
+          "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "environmental-exposure-graph",
+      "classification": "analysis",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Read-only, fail-closed environmental source→pathway→receptor graph. It preserves existing utility/regulatory identities, exposes provenance and causal state, and prohibits proximity/name-only evidence from becoming causal attribution.",
+      "backend": {
+        "files": [
+          "server/backend/environmental_exposure_api.py",
+          "server/backend/app.py",
+          "src/aguayluz/environmental_exposure.py",
+          "src/aguayluz/environmental_exposure_db.py"
+        ],
+        "endpoints": [
+          "GET /environmental-exposure/summary",
+          "GET /environmental-exposure/entities",
+          "GET /environmental-exposure/entities/{entity_id}",
+          "GET /environmental-exposure/relationships",
+          "GET /environmental-exposure/integrity"
+        ],
+        "symbols": [
+          "server/backend/environmental_exposure_api.py:environmental_exposure_summary",
+          "server/backend/environmental_exposure_api.py:environmental_exposure_entities",
+          "server/backend/environmental_exposure_api.py:environmental_exposure_entity",
+          "server/backend/environmental_exposure_api.py:environmental_exposure_relationships",
+          "server/backend/environmental_exposure_api.py:environmental_exposure_integrity",
+          "src/aguayluz/environmental_exposure.py:stable_id",
+          "src/aguayluz/environmental_exposure.py:derive_entity_id",
+          "src/aguayluz/environmental_exposure.py:derive_relationship_id",
+          "src/aguayluz/environmental_exposure.py:validate_relationship",
+          "src/aguayluz/environmental_exposure.py:integrity_report",
+          "src/aguayluz/environmental_exposure_db.py:load",
+          "src/aguayluz/environmental_exposure_db.py:merge",
+          "src/aguayluz/environmental_exposure_db.py:write",
+          "src/aguayluz/environmental_exposure_db.py:graph_integrity"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/environmental-exposure"
+        ],
+        "e2e_routes": [
+          "/environmental-exposure"
+        ],
+        "components": [
+          "dashboard/src/lib/environmental-exposure-api.js",
+          "dashboard/src/pages/EnvironmentalExposurePage.jsx",
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_environmental_exposure_api.py"
+        ],
+        "contract": [
+          "tests/test_environmental_exposure.py",
+          "tests/test_gui_parity.py"
         ],
         "e2e": [
           "dashboard/tests/gui-parity.spec.mjs"
