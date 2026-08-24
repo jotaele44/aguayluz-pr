@@ -55,6 +55,8 @@ READING_VECTOR_REGISTRY: dict[str, dict[str, Any]] = {
     "reservoir": {"path": legacy.DATA / "reservoir_levels.jsonl", "metrics": {"reservoir_elevation": {"units": {"ft"}}, "reservoir_storage_pct": {"units": {"%"}}, "streamflow": {"units": {"ft3/s", "ft³/s"}}, "gage_height": {"units": {"ft"}}}, "metric_required": True},
     "groundwater": {"path": legacy.DATA / "groundwater_levels.jsonl", "metrics": {"groundwater_level": {"units": {"ft"}}}, "metric_required": False},
     "coastal": {"path": legacy.DATA / "coastal_levels.jsonl", "metrics": {"coastal_water_level": {"units": {"ft"}}}, "metric_required": False},
+    "drought": {"path": legacy.DATA / "drought_conditions.jsonl", "metrics": {"drought_category": {"units": {"category"}}}, "metric_required": False},
+    "precipitation": {"path": legacy.DATA / "precipitation_conditions.jsonl", "metrics": {"precipitation_pct_normal": {"units": {"%"}}}, "metric_required": False},
     # Discrete USGS field measurements — the wells the Daily Values service cannot see.
     "usgs_field_measurements": {"path": legacy.DATA / "usgs_field_measurements_readings.jsonl", "metrics": {"groundwater_level": {"units": {"ft"}}}, "metric_required": False},
     # Annual peak flow, 1899->. `ft^3/s` is load-bearing and NOT a typo: the USGS OGC API
