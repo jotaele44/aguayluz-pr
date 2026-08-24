@@ -1,0 +1,118 @@
+{
+  "schema_version": "1.0.0",
+  "as_of": "2026-08-21",
+  "scope": "Public access/service manifestations supporting the AguaYLuz environmental exposure source families",
+  "classification": "SOURCE_ACCESS_DENOMINATOR",
+  "completeness_claimed": false,
+  "rules": [
+    "Closing a service-manifestation denominator does not close its Puerto Rico or Dorado record/query denominator.",
+    "A service may be available even when an interactive documentation page reports a client-side Swagger/CORS failure.",
+    "Dataset reporting-year freshness is recorded exactly as stated by the authoritative provider and is not extrapolated.",
+    "Facility presence, permit presence, assessment-unit presence, or injection-well inventory presence does not establish Dorado plume source attribution."
+  ],
+  "services": [
+    {
+      "family": "ECHO_ALL_MEDIA",
+      "authority": "EPA",
+      "service_manifestation": "ECHO public GET/query-only REST-like web services",
+      "locator": "https://echo.epa.gov/tools/web-services",
+      "formats": ["XML", "JSON", "JSONP"],
+      "access_state": "PUBLIC_SERVICE_CONFIRMED",
+      "service_manifestation_state": "EXHAUSTED_FOR_DOCUMENTED_TOP_LEVEL_SERVICE_CLASS",
+      "record_query_state": "OPEN"
+    },
+    {
+      "family": "SDWIS",
+      "authority": "EPA",
+      "service_manifestation": "ECHO Drinking Water System Search",
+      "source_system": "SDWIS/Fed",
+      "locator": "https://echo.epa.gov/tools/web-services/facility-search-drinking-water",
+      "access_state": "PUBLIC_SERVICE_CONFIRMED_DOC_UI_SWAGGER_FETCH_ERROR_OBSERVED",
+      "service_manifestation_state": "EXHAUSTED_FOR_ECHO_SEARCH_SERVICE_IDENTITY",
+      "dorado_system_query_state": "OPEN"
+    },
+    {
+      "family": "RCRA",
+      "authority": "EPA",
+      "service_manifestation": "ECHO Hazardous Waste Facility Search",
+      "source_system": "RCRAInfo",
+      "locator": "https://echo.epa.gov/tools/web-services",
+      "access_state": "PUBLIC_SERVICE_CONFIRMED",
+      "service_manifestation_state": "EXHAUSTED_FOR_ECHO_SEARCH_SERVICE_IDENTITY",
+      "dorado_facility_query_state": "OPEN"
+    },
+    {
+      "family": "ECHO_NPDES",
+      "authority": "EPA",
+      "service_manifestation": "ECHO Wastewater/Stormwater/Biosolids Facility Search",
+      "source_system": "ICIS-NPDES",
+      "receiving_water_source_system": "ATTAINS_WHEN_AVAILABLE",
+      "locator": "https://echo.epa.gov/tools/web-services/facility-search-water",
+      "access_state": "PUBLIC_SERVICE_CONFIRMED_DOC_UI_SWAGGER_FETCH_ERROR_OBSERVED",
+      "service_manifestation_state": "EXHAUSTED_FOR_ECHO_SEARCH_SERVICE_IDENTITY",
+      "dorado_facility_query_state": "OPEN"
+    },
+    {
+      "family": "ATTAINS_303D",
+      "authority": "EPA",
+      "service_manifestation": "ATTAINS public REST/JSON web services",
+      "locator": "https://www.epa.gov/waterdata/how-access-and-use-attains-web-services",
+      "documentation_update_date": "2026-05-27",
+      "api_instruction_document_date": "2026-05-08",
+      "api_key_transition_documented": true,
+      "known_service_classes": ["summary", "domain_values", "assessment_units", "assessments", "actions"],
+      "access_state": "PUBLIC_SERVICE_CONFIRMED_API_KEY_REQUIREMENT_DOCUMENTED",
+      "service_manifestation_state": "EXHAUSTED_FOR_CURRENT_PUBLIC_DOCUMENTATION_IDENTITY",
+      "puerto_rico_assessment_unit_query_state": "OPEN",
+      "dorado_rio_de_la_plata_query_state": "OPEN"
+    },
+    {
+      "family": "TRI",
+      "authority": "EPA",
+      "service_manifestation": "TRI public search and downloadable Basic/Basic Plus data files",
+      "locators": [
+        "https://www.epa.gov/toxics-release-inventory-tri-program/current-status-and-planned-updates-tri-tools",
+        "https://www.epa.gov/toxics-release-inventory-tri-program/tri-basic-data-files-calendar-years-1987-present",
+        "https://www.epa.gov/toxics-release-inventory-tri-program/tri-basic-plus-data-files-calendar-years-1987-present"
+      ],
+      "provider_status_page_last_updated": "2026-06-23",
+      "latest_reporting_year_explicitly_observed_on_status_page": 2024,
+      "forms_processed_through_explicitly_observed": "2025-11-05",
+      "basic_file_coverage_start_year": 1987,
+      "access_state": "PUBLIC_SEARCH_AND_DOWNLOAD_CONFIRMED",
+      "service_manifestation_state": "EXHAUSTED_FOR_CURRENT_DOCUMENTED_ACCESS_CLASSES",
+      "dorado_facility_query_state": "OPEN",
+      "freshness_note": "Do not infer that RY2025 facility data are published merely because RY2025 forms were due July 1, 2026; the authoritative tool-status page observed here still explicitly reports RY2024."
+    },
+    {
+      "family": "UIC",
+      "authority": "EPA_AND_PR_EQB_DRNA",
+      "service_manifestation": "FY 2024 State UIC Inventory",
+      "locator": "https://www.epa.gov/uic/uic-injection-well-inventory",
+      "inventory_reporting_period": "FY2024",
+      "provider_page_last_updated": "2026-02-05",
+      "inventory_scope": "STATE_SPECIFIC_COUNTS_FOR_PROPOSED_UNDER_CONSTRUCTION_ACTIVE_AND_TEMPORARILY_ABANDONED_WELLS",
+      "puerto_rico_regulatory_authority": {
+        "classes_I_to_V": "Puerto Rico Environmental Quality Board / DRNA",
+        "class_VI": "US EPA Region 2",
+        "locator": "https://www.epa.gov/uic/underground-injection-control-epa-region-2-nj-ny-pr-and-vi"
+      },
+      "access_state": "PUBLIC_STATE_INVENTORY_AND_REGULATOR_IDENTITY_CONFIRMED",
+      "service_manifestation_state": "EXHAUSTED_FOR_FY2024_STATE_INVENTORY_IDENTITY",
+      "dorado_well_level_query_state": "OPEN"
+    }
+  ],
+  "global_terminal_state": "OPEN",
+  "open_record_denominators": [
+    "DORADO_SDWIS_SYSTEMS",
+    "DORADO_RCRA_HANDLERS",
+    "DORADO_ICIS_NPDES_FACILITIES_AND_OUTFALLS",
+    "PUERTO_RICO_ATTAINS_ASSESSMENT_UNIT_UNIVERSE",
+    "DORADO_RIO_DE_LA_PLATA_ATTAINS_BINDING",
+    "DORADO_TRI_REPORTING_FACILITIES",
+    "PUERTO_RICO_UIC_CLASS_COUNTS_FROM_FY2024_XLSX",
+    "DORADO_UIC_WELL_LEVEL_UNIVERSE"
+  ],
+  "causal_state": "NOT_TESTED",
+  "source_attribution_implication": "NONE"
+}
