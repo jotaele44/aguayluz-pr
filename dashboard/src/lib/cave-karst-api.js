@@ -20,17 +20,35 @@ const qs = (params) => {
   return pairs.length ? `?${new URLSearchParams(pairs).toString()}` : ''
 }
 
+export const safeCaveKarstStatus = (asset) => {
+  if (!asset || typeof asset !== 'object') return asset
+  const unsafeOpen = asset.current_status === 'open' && (
+    asset.freshness?.stale === true
+    || asset.conflict_hold === true
+    || asset.status_quality === 'conflicting'
+    || asset.status_quality === 'stale'
+  )
+  return unsafeOpen
+    ? { ...asset, current_status: 'unknown' }
+    : asset
+}
+
+const safeAssetCollection = (payload) => {
+  if (!payload || !Array.isArray(payload.items)) return payload
+  return { ...payload, items: payload.items.map(safeCaveKarstStatus) }
+}
+
 export const getCaveKarstSummary = () => getJSON('/cave-karst/summary', null)
 
-export const getCaveKarstAssets = (filters = {}) => getJSON(
+export const getCaveKarstAssets = async (filters = {}) => safeAssetCollection(await getJSON(
   `/cave-karst/assets${qs(filters)}`,
   { total: 0, items: [] },
-)
+))
 
-export const getCaveKarstAsset = (assetId) => getJSON(
+export const getCaveKarstAsset = async (assetId) => safeCaveKarstStatus(await getJSON(
   `/cave-karst/assets/${encodeURIComponent(assetId)}`,
   null,
-)
+))
 
 export const getCaveKarstStatusHistory = (assetId) => getJSON(
   `/cave-karst/assets/${encodeURIComponent(assetId)}/status-history`,
