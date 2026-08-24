@@ -27,8 +27,6 @@ _SCOPE_STATEMENT = (
 _STALE_AFTER_DAYS = 30
 RULESET_VERSION = "KARST_ALERTS_1.1.0"
 
-# Pilot engineering thresholds. These are acceptance-fixture defaults, not
-# Puerto Rico regulatory standards or final Río Camuy operating thresholds.
 PILOT_STAGE_RISE_15M_M = 0.15
 PILOT_STAGE_RISE_30M_M = 0.30
 PILOT_RAIN_1H_MM = 25.0
@@ -111,9 +109,11 @@ def _unresolved_tie_assets(
     for asset_id, rows in _active_status_events(events, cutoff).items():
         ranked: list[tuple[tuple[datetime, datetime], dict[str, Any]]] = []
         for event in rows:
-            effective = _parse_dt(event.get("effective_from")) or _parse_dt(
-                event.get("observed_at")
-            ) or distant_past
+            effective = (
+                _parse_dt(event.get("effective_from"))
+                or _parse_dt(event.get("observed_at"))
+                or distant_past
+            )
             recorded = _parse_dt(event.get("recorded_at")) or distant_past
             ranked.append(((effective, recorded), event))
         if not ranked:
@@ -125,7 +125,7 @@ def _unresolved_tie_assets(
     return tied
 
 
-def materialize_v11_status(
+def _materialize_v11_status(
     assets: Iterable[dict[str, Any]],
     events: Iterable[dict[str, Any]],
     *,
@@ -170,12 +170,11 @@ def materialize_v11_status(
     return snapshots
 
 
-def public_asset_projection(asset: dict[str, Any]) -> dict[str, Any]:
+def _public_asset_projection(asset: dict[str, Any]) -> dict[str, Any]:
     """Return a server-side redacted public projection of one v1.1 asset."""
     payload = deepcopy(asset)
     privacy_class = str(payload.get("privacy_class") or "P3_RESTRICTED")
     disclosure = str(payload.get("location_disclosure") or "restricted")
-
     exact_public = privacy_class == "P0_PUBLIC" and disclosure == "public_exact"
     payload["coordinates_redacted"] = not exact_public
     if not exact_public:
@@ -189,7 +188,6 @@ def public_asset_projection(asset: dict[str, Any]) -> dict[str, Any]:
     culture = payload.get("culture") or {}
     monitoring = payload.get("monitoring") or {}
     emergency = payload.get("emergency") or {}
-
     legal["parcel_refs"] = []
     culture["heritage_registry_refs"] = []
     emergency["plan_ref"] = None
@@ -213,7 +211,7 @@ def public_asset_projection(asset: dict[str, Any]) -> dict[str, Any]:
     return payload
 
 
-def public_observation_projection(observation: dict[str, Any]) -> dict[str, Any]:
+def _public_observation_projection(observation: dict[str, Any]) -> dict[str, Any]:
     """Strip controlled identifiers from one public observation projection."""
     return {
         key: deepcopy(value)
@@ -222,7 +220,7 @@ def public_observation_projection(observation: dict[str, Any]) -> dict[str, Any]
     }
 
 
-def validate_public_projection(asset: dict[str, Any]) -> list[str]:
+def _validate_public_projection(asset: dict[str, Any]) -> list[str]:
     """Return privacy-policy diagnostics for a public asset payload."""
     errors: list[str] = []
     privacy_class = str(asset.get("privacy_class") or "P3_RESTRICTED")
@@ -235,7 +233,11 @@ def validate_public_projection(asset: dict[str, Any]) -> list[str]:
     if (asset.get("culture") or {}).get("heritage_registry_refs"):
         errors.append("public payload exposes heritage_registry_refs")
     emergency = asset.get("emergency") or {}
-    if emergency.get("plan_ref") or emergency.get("evacuation_route_ref") or emergency.get("muster_point_ref"):
+    if (
+        emergency.get("plan_ref")
+        or emergency.get("evacuation_route_ref")
+        or emergency.get("muster_point_ref")
+    ):
         errors.append("public payload exposes emergency references")
     monitoring = asset.get("monitoring") or {}
     if monitoring.get("sensor_ids") or monitoring.get("site_ids"):
@@ -243,7 +245,7 @@ def validate_public_projection(asset: dict[str, Any]) -> list[str]:
     return errors
 
 
-def evaluate_replay_sample(sample: dict[str, Any]) -> list[dict[str, Any]]:
+def _evaluate_replay_sample(sample: dict[str, Any]) -> list[dict[str, Any]]:
     """Evaluate one normalized synthetic/pilot telemetry acceptance sample."""
     alerts: list[dict[str, Any]] = []
 
@@ -263,7 +265,6 @@ def evaluate_replay_sample(sample: dict[str, Any]) -> list[dict[str, Any]]:
     rain_3h = sample.get("rain_3h_mm")
     o2 = sample.get("o2_pct")
     co2 = sample.get("co2_ppm")
-
     if sample.get("surveyed_evacuation_stage_exceeded") is True:
         emit("surveyed_evacuation_stage", 5, "close_and_evict")
     if (stage_15 is not None and float(stage_15) >= PILOT_STAGE_RISE_15M_M) or (
@@ -288,8 +289,16 @@ def evaluate_replay_sample(sample: dict[str, Any]) -> list[dict[str, Any]]:
         emit("communications_loss", 2, "mark_telemetry_degraded")
     if sample.get("calibration_overdue") is True:
         emit("sensor_calibration_overdue", 2, "mark_observations_provisional")
-
     return sorted(alerts, key=lambda item: (-item["severity"], item["alert_type"]))
+
+
+# Compatibility aliases preserve the certified v1.1 import surface while the
+# implementations remain internal helpers rather than independent GUI actions.
+materialize_v11_status = _materialize_v11_status
+public_asset_projection = _public_asset_projection
+public_observation_projection = _public_observation_projection
+validate_public_projection = _validate_public_projection
+evaluate_replay_sample = _evaluate_replay_sample
 
 
 def _validation_report(registry: dict[str, list[dict[str, Any]]]) -> dict[str, Any]:
@@ -357,7 +366,6 @@ def _unresolved_gaps(asset: dict[str, Any]) -> list[str]:
     hydrologic = asset.get("hydrologic") or {}
     environmental = asset.get("environmental") or {}
     infrastructure = asset.get("infrastructure") or {}
-
     if asset.get("review_status") != "accepted":
         gaps.append("record_requires_human_review")
     if not operational.get("status_as_of"):
@@ -380,12 +388,10 @@ def _unresolved_gaps(asset: dict[str, Any]) -> list[str]:
 def _safe_alerts(registry: dict[str, list[dict[str, Any]]]) -> list[dict[str, Any]]:
     statuses = {
         item["asset_id"]: item["current_status"]
-        for item in materialize_v11_status(registry["assets"], registry["events"])
+        for item in _materialize_v11_status(registry["assets"], registry["events"])
     }
     alerts = build_alerts(
-        registry["assets"],
-        registry["events"],
-        stale_after_days=_STALE_AFTER_DAYS,
+        registry["assets"], registry["events"], stale_after_days=_STALE_AFTER_DAYS
     )
     return [
         alert
@@ -402,11 +408,10 @@ def _materialized_assets(
     alerts_by_asset: dict[str, list[dict[str, Any]]] = {}
     for alert in _safe_alerts(registry):
         alerts_by_asset.setdefault(str(alert["asset_id"]), []).append(alert)
-
     items: list[dict[str, Any]] = []
-    for asset in materialize_v11_status(registry["assets"], registry["events"]):
-        payload = public_asset_projection(asset)
-        errors = validate_public_projection(payload)
+    for asset in _materialize_v11_status(registry["assets"], registry["events"]):
+        payload = _public_asset_projection(asset)
+        errors = _validate_public_projection(payload)
         if errors:
             raise HTTPException(
                 status_code=503,
@@ -452,9 +457,7 @@ def _related_sources(
     )
 
 
-def _statewide_complete(
-    scopes: Counter[str], validation: dict[str, Any]
-) -> bool:
+def _statewide_complete(scopes: Counter[str], validation: dict[str, Any]) -> bool:
     """A valid scope literal is necessary but not sufficient for statewide completion."""
     return bool(scopes) and validation["ok"] and set(scopes) == {"statewide_validated"}
 
@@ -472,7 +475,6 @@ def cave_karst_summary() -> JSONResponse:
     review_counts = Counter(str(item.get("review_status") or "unknown") for item in assets)
     evidence_counts = Counter(str(item.get("evidence_tier") or "unknown") for item in assets)
     gap_count = sum(len(item["unresolved_gaps"]) for item in assets)
-
     return JSONResponse(
         {
             "scope": {
@@ -533,7 +535,7 @@ def cave_karst_asset(asset_id: str) -> JSONResponse:
     )
     asset["observations"] = sorted(
         (
-            public_observation_projection(item)
+            _public_observation_projection(item)
             for item in registry["observations"]
             if item.get("asset_id") == asset_id
         ),
