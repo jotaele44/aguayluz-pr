@@ -1,7 +1,7 @@
 """Read-only cave and karst registry API for the AguaYLuz dashboard."""
 from __future__ import annotations
 
-from collections import Counter
+from collections import Counter, defaultdict
 from collections.abc import Iterable
 from copy import deepcopy
 from datetime import datetime, timezone
@@ -37,6 +37,25 @@ O2_DEFICIENT_PCT = 19.5
 CO2_ELEVATED_PPM = 5_000.0
 CO2_CRITICAL_PPM = 30_000.0
 _RESTRICTED_PRIVACY = {"P2_CONTROLLED", "P3_RESTRICTED"}
+_STATUS_EVENT_TYPES = {
+    "status_transition",
+    "status_observation",
+    "closure_notice",
+    "reopening_notice",
+    "restriction_notice",
+    "maintenance_update",
+}
+_OBSERVATION_PUBLIC_DENYLIST = {
+    "sensor_id",
+    "monitoring_site_id",
+    "emergency_geometry",
+    "evacuation_route",
+    "muster_point",
+}
+
+
+def _now_utc() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 def _load_registry() -> dict[str, list[dict[str, Any]]]:
@@ -56,6 +75,56 @@ def _parse_dt(value: str | None) -> datetime | None:
     return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
 
 
+def _active_status_events(
+    events: Iterable[dict[str, Any]], cutoff: datetime
+) -> dict[str, list[dict[str, Any]]]:
+    rows = [
+        event
+        for event in events
+        if event.get("review_status") == "accepted"
+        and event.get("event_type") in _STATUS_EVENT_TYPES
+    ]
+    superseded = {
+        event["supersedes_event_id"]
+        for event in rows
+        if event.get("supersedes_event_id")
+    }
+    grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for event in rows:
+        if event.get("event_id") in superseded:
+            continue
+        effective = _parse_dt(event.get("effective_from")) or _parse_dt(
+            event.get("observed_at")
+        )
+        effective_to = _parse_dt(event.get("effective_to"))
+        if effective and effective <= cutoff and (not effective_to or cutoff <= effective_to):
+            grouped[str(event.get("asset_id"))].append(event)
+    return grouped
+
+
+def _unresolved_tie_assets(
+    events: Iterable[dict[str, Any]], cutoff: datetime
+) -> set[str]:
+    """Return assets whose highest-ranked current assertions are an unresolved tie."""
+    tied: set[str] = set()
+    distant_past = datetime.min.replace(tzinfo=timezone.utc)
+    for asset_id, rows in _active_status_events(events, cutoff).items():
+        ranked: list[tuple[tuple[datetime, datetime], dict[str, Any]]] = []
+        for event in rows:
+            effective = _parse_dt(event.get("effective_from")) or _parse_dt(
+                event.get("observed_at")
+            ) or distant_past
+            recorded = _parse_dt(event.get("recorded_at")) or distant_past
+            ranked.append(((effective, recorded), event))
+        if not ranked:
+            continue
+        max_rank = max(rank for rank, _ in ranked)
+        winners = [event for rank, event in ranked if rank == max_rank]
+        if len({str(event.get("to_status")) for event in winners}) > 1:
+            tied.add(asset_id)
+    return tied
+
+
 def materialize_v11_status(
     assets: Iterable[dict[str, Any]],
     events: Iterable[dict[str, Any]],
@@ -63,12 +132,13 @@ def materialize_v11_status(
     as_of: datetime | None = None,
     stale_after_days: int = _STALE_AFTER_DAYS,
 ) -> list[dict[str, Any]]:
-    """Materialize fail-closed v1.1 state without mutating source records."""
-    cutoff = as_of or datetime.now(timezone.utc)
+    """Materialize fail-closed v1.1/v1.2 state without mutating source records."""
+    cutoff = as_of or _now_utc()
     event_rows = list(events)
     conflict_assets = {
         item["asset_id"] for item in detect_status_contradictions(event_rows)
     }
+    conflict_assets.update(_unresolved_tie_assets(event_rows, cutoff))
     snapshots = materialize_status(assets, event_rows, as_of=cutoff)
 
     for snapshot in snapshots:
@@ -94,6 +164,9 @@ def materialize_v11_status(
             quality = operational.get("status_quality") or "verified"
             snapshot["status_quality"] = quality
             snapshot["conflict_hold"] = bool(operational.get("conflict_hold", False))
+            if snapshot["conflict_hold"]:
+                snapshot["current_status"] = "unknown"
+                snapshot["status_quality"] = "conflicting"
     return snapshots
 
 
@@ -140,6 +213,15 @@ def public_asset_projection(asset: dict[str, Any]) -> dict[str, Any]:
     return payload
 
 
+def public_observation_projection(observation: dict[str, Any]) -> dict[str, Any]:
+    """Strip controlled identifiers from one public observation projection."""
+    return {
+        key: deepcopy(value)
+        for key, value in observation.items()
+        if key not in _OBSERVATION_PUBLIC_DENYLIST
+    }
+
+
 def validate_public_projection(asset: dict[str, Any]) -> list[str]:
     """Return privacy-policy diagnostics for a public asset payload."""
     errors: list[str] = []
@@ -153,8 +235,8 @@ def validate_public_projection(asset: dict[str, Any]) -> list[str]:
     if (asset.get("culture") or {}).get("heritage_registry_refs"):
         errors.append("public payload exposes heritage_registry_refs")
     emergency = asset.get("emergency") or {}
-    if emergency.get("evacuation_route_ref") or emergency.get("muster_point_ref"):
-        errors.append("public payload exposes emergency geometry references")
+    if emergency.get("plan_ref") or emergency.get("evacuation_route_ref") or emergency.get("muster_point_ref"):
+        errors.append("public payload exposes emergency references")
     monitoring = asset.get("monitoring") or {}
     if monitoring.get("sensor_ids") or monitoring.get("site_ids"):
         errors.append("public payload exposes controlled sensor identifiers")
@@ -202,10 +284,38 @@ def evaluate_replay_sample(sample: dict[str, Any]) -> list[dict[str, Any]]:
         emit("emergency_route_blocked", 4, "close_dependent_zone")
     if sample.get("sensor_heartbeats_missed", 0) >= 2:
         emit("sensor_loss", 2, "mark_telemetry_degraded")
+    if sample.get("comms_loss") is True:
+        emit("communications_loss", 2, "mark_telemetry_degraded")
     if sample.get("calibration_overdue") is True:
         emit("sensor_calibration_overdue", 2, "mark_observations_provisional")
 
     return sorted(alerts, key=lambda item: (-item["severity"], item["alert_type"]))
+
+
+def _validation_report(registry: dict[str, list[dict[str, Any]]]) -> dict[str, Any]:
+    return validate_registry(
+        registry["assets"],
+        registry["sources"],
+        registry["edges"],
+        registry["events"],
+        registry["observations"],
+    )
+
+
+def _require_valid_operational_registry(
+    registry: dict[str, list[dict[str, Any]]],
+) -> dict[str, Any]:
+    report = _validation_report(registry)
+    if not report["ok"]:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error": "cave_karst_registry_invalid",
+                "operational_state": "unknown",
+                "error_count": len(report["errors"]),
+            },
+        )
+    return report
 
 
 def _asset_or_404(
@@ -223,16 +333,6 @@ def _asset_or_404(
     return asset
 
 
-def _redact_coordinates(asset: dict[str, Any]) -> dict[str, Any]:
-    payload = dict(asset)
-    disclosure = str(asset.get("location_disclosure") or "nonpublic")
-    payload["coordinates_redacted"] = disclosure != "public_exact"
-    if disclosure != "public_exact":
-        payload["lat"] = None
-        payload["lon"] = None
-    return payload
-
-
 def _freshness(status_as_of: str | None) -> dict[str, Any]:
     observed = _parse_dt(status_as_of)
     if observed is None:
@@ -242,7 +342,7 @@ def _freshness(status_as_of: str | None) -> dict[str, Any]:
             "stale": True,
             "stale_after_days": _STALE_AFTER_DAYS,
         }
-    age_days = max(0, (datetime.now(timezone.utc) - observed).days)
+    age_days = max(0, (_now_utc() - observed).days)
     return {
         "status_as_of": status_as_of,
         "age_days": age_days,
@@ -277,20 +377,45 @@ def _unresolved_gaps(asset: dict[str, Any]) -> list[str]:
     return gaps
 
 
-def _materialized_assets(
-    registry: dict[str, list[dict[str, Any]]]
-) -> list[dict[str, Any]]:
-    alerts_by_asset: dict[str, list[dict[str, Any]]] = {}
-    for alert in build_alerts(
+def _safe_alerts(registry: dict[str, list[dict[str, Any]]]) -> list[dict[str, Any]]:
+    statuses = {
+        item["asset_id"]: item["current_status"]
+        for item in materialize_v11_status(registry["assets"], registry["events"])
+    }
+    alerts = build_alerts(
         registry["assets"],
         registry["events"],
         stale_after_days=_STALE_AFTER_DAYS,
-    ):
+    )
+    return [
+        alert
+        for alert in alerts
+        if alert.get("alert_type") != "hydrologic_access_risk"
+        or statuses.get(str(alert.get("asset_id"))) in {"open", "partially_open"}
+    ]
+
+
+def _materialized_assets(
+    registry: dict[str, list[dict[str, Any]]]
+) -> list[dict[str, Any]]:
+    _require_valid_operational_registry(registry)
+    alerts_by_asset: dict[str, list[dict[str, Any]]] = {}
+    for alert in _safe_alerts(registry):
         alerts_by_asset.setdefault(str(alert["asset_id"]), []).append(alert)
 
     items: list[dict[str, Any]] = []
     for asset in materialize_v11_status(registry["assets"], registry["events"]):
         payload = public_asset_projection(asset)
+        errors = validate_public_projection(payload)
+        if errors:
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "error": "cave_karst_public_projection_invalid",
+                    "operational_state": "unknown",
+                    "error_count": len(errors),
+                },
+            )
         payload["freshness"] = _freshness(payload.get("status_as_of"))
         payload["unresolved_gaps"] = _unresolved_gaps(payload)
         payload["active_alert_count"] = len(alerts_by_asset.get(payload["asset_id"], []))
@@ -327,23 +452,22 @@ def _related_sources(
     )
 
 
+def _statewide_complete(
+    scopes: Counter[str], validation: dict[str, Any]
+) -> bool:
+    """A valid scope literal is necessary but not sufficient for statewide completion."""
+    return bool(scopes) and validation["ok"] and set(scopes) == {"statewide_validated"}
+
+
 @router.get("/cave-karst/summary")
 def cave_karst_summary() -> JSONResponse:
     registry = _load_registry()
+    validation = _require_valid_operational_registry(registry)
     assets = _materialized_assets(registry)
-    validation = validate_registry(
-        registry["assets"],
-        registry["sources"],
-        registry["edges"],
-        registry["events"],
-        registry["observations"],
+    alerts = _safe_alerts(registry)
+    scopes: Counter[str] = Counter(
+        str(item.get("registry_scope") or "unknown") for item in assets
     )
-    alerts = build_alerts(
-        registry["assets"],
-        registry["events"],
-        stale_after_days=_STALE_AFTER_DAYS,
-    )
-    scopes = Counter(str(item.get("registry_scope") or "unknown") for item in assets)
     status_counts = Counter(str(item.get("current_status") or "unknown") for item in assets)
     review_counts = Counter(str(item.get("review_status") or "unknown") for item in assets)
     evidence_counts = Counter(str(item.get("evidence_tier") or "unknown") for item in assets)
@@ -353,7 +477,7 @@ def cave_karst_summary() -> JSONResponse:
         {
             "scope": {
                 "statement": _SCOPE_STATEMENT,
-                "statewide_complete": bool(assets) and set(scopes) == {"statewide"},
+                "statewide_complete": _statewide_complete(scopes, validation),
                 "registry_scope": dict(sorted(scopes.items())),
                 "pilot_asset_id": "AYL_KARST_CAMUY_PARK",
             },
@@ -402,17 +526,14 @@ def cave_karst_assets(
 @router.get("/cave-karst/assets/{asset_id}")
 def cave_karst_asset(asset_id: str) -> JSONResponse:
     registry = _load_registry()
+    _require_valid_operational_registry(registry)
     _asset_or_404(registry, asset_id)
     asset = next(
         item for item in _materialized_assets(registry) if item["asset_id"] == asset_id
     )
     asset["observations"] = sorted(
         (
-            {
-                key: value
-                for key, value in item.items()
-                if key not in {"sensor_id", "monitoring_site_id"}
-            }
+            public_observation_projection(item)
             for item in registry["observations"]
             if item.get("asset_id") == asset_id
         ),
@@ -420,13 +541,7 @@ def cave_karst_asset(asset_id: str) -> JSONResponse:
         reverse=True,
     )
     asset["alerts"] = [
-        item
-        for item in build_alerts(
-            registry["assets"],
-            registry["events"],
-            stale_after_days=_STALE_AFTER_DAYS,
-        )
-        if item.get("asset_id") == asset_id
+        item for item in _safe_alerts(registry) if item.get("asset_id") == asset_id
     ]
     asset["edge_count"] = len(_related_edges(registry, asset_id))
     asset["source_count"] = len(_related_sources(registry, asset_id))
@@ -460,7 +575,8 @@ def cave_karst_provenance(asset_id: str) -> JSONResponse:
             "items": sources,
             "evidence_policy": (
                 "Sources are shown as recorded. Current operational claims remain "
-                "bounded by review status, evidence tier, and supersession history."
+                "bounded by review status, evidence tier, supersession history, "
+                "registry validation, freshness, and conflict holds."
             ),
         }
     )
@@ -480,13 +596,10 @@ def cave_karst_alerts(
     alert_type: str | None = Query(default=None),
 ) -> JSONResponse:
     registry = _load_registry()
+    _require_valid_operational_registry(registry)
     items = [
         item
-        for item in build_alerts(
-            registry["assets"],
-            registry["events"],
-            stale_after_days=_STALE_AFTER_DAYS,
-        )
+        for item in _safe_alerts(registry)
         if int(item.get("severity") or 0) >= severity_min
     ]
     if alert_type:
