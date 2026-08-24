@@ -58,6 +58,9 @@ a = Analysis(
         # src-layout application package reached transitively from
         # server.backend.cave_karst_api in the frozen backend.
         "aguayluz.cave_karst",
+        # src-layout application package reached transitively from
+        # server.backend.regulatory_api in the frozen backend.
+        "aguayluz.regulatory_db",
         # Shared desktop-wrapper runtime (thehub-pr/packages/prii_desktop),
         # imported by the desktop/ shims — bundle it into the frozen build.
         "prii_desktop",

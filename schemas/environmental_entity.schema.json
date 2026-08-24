@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AguaYLuz Environmental Entity",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["entity_id", "entity_kind", "name_raw", "authority", "authority_id", "valid_from", "valid_until", "source_record_ids", "review_status"],
+  "properties": {
+    "entity_id": {"type": "string", "minLength": 1},
+    "entity_kind": {"enum": ["CONTAMINATED_SITE", "SUPERFUND_SITE", "UST_SITE", "LUST_SITE", "INDUSTRIAL_FACILITY", "LANDFILL", "SOLID_WASTE_FACILITY", "INJECTION_WELL_SITE", "DISPOSAL_SITE", "WASTEWATER_RELEASE_SITE", "SPILL_SITE", "UNKNOWN_SOURCE_SITE", "GROUNDWATER", "SURFACE_WATER", "SEDIMENT", "SOIL", "AIR", "GROUNDWATER_PLUME", "SURFACE_WATER_IMPAIRMENT", "CONTAMINATED_SEDIMENT", "SOIL_CONTAMINATION", "WELLHEAD_PROTECTION_AREA", "CAPTURE_ZONE", "MODELED_EXPOSURE_ZONE", "DRINKING_WATER_WELL", "WELLFIELD", "INTAKE", "RESERVOIR", "SPRING", "TREATMENT_PLANT", "DISTRIBUTION_SYSTEM", "WASTEWATER_PLANT", "NPDES_OUTFALL", "PUMP_STATION", "WATERBODY", "ECOLOGICAL_RECEPTOR", "REGULATORY_MANIFESTATION"]},
+    "name_raw": {"type": "string"},
+    "name_normalized": {"type": ["string", "null"]},
+    "canonical_name": {"type": ["string", "null"]},
+    "authority": {"type": "string", "minLength": 1},
+    "authority_id": {"type": "string", "minLength": 1},
+    "utility_asset_id": {"type": ["string", "null"]},
+    "municipality": {"type": ["string", "null"]},
+    "valid_from": {"type": ["string", "null"]},
+    "valid_until": {"type": ["string", "null"]},
+    "source_record_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "review_status": {"enum": ["accepted", "needs_review", "rejected", "blocked", "unresolved"]}
+  }
+}

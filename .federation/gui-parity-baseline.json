@@ -1,5 +1,5 @@
 {
-  "candidate_count": 512,
+  "candidate_count": 550,
   "candidates": [
     {
       "id": "analysis_module:scripts/build_alert_system.py",
@@ -35,6 +35,12 @@
       "id": "analysis_module:scripts/build_water_power_crosswalk.py",
       "kind": "analysis_module",
       "path": "scripts/build_water_power_crosswalk.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_module:scripts/enrich_drought_soil.py",
+      "kind": "analysis_module",
+      "path": "scripts/enrich_drought_soil.py",
       "signal": "ANALYSIS_NOT_GUI_RENDERED"
     },
     {
@@ -80,6 +86,12 @@
       "signal": "ANALYSIS_NOT_GUI_RENDERED"
     },
     {
+      "id": "analysis_module:scripts/ingest_drought_usdm.py",
+      "kind": "analysis_module",
+      "path": "scripts/ingest_drought_usdm.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
       "id": "analysis_module:scripts/ingest_echo.py",
       "kind": "analysis_module",
       "path": "scripts/ingest_echo.py",
@@ -119,6 +131,12 @@
       "id": "analysis_module:scripts/ingest_power.py",
       "kind": "analysis_module",
       "path": "scripts/ingest_power.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_module:scripts/ingest_precip_ncei.py",
+      "kind": "analysis_module",
+      "path": "scripts/ingest_precip_ncei.py",
       "signal": "ANALYSIS_NOT_GUI_RENDERED"
     },
     {
@@ -290,6 +308,42 @@
       "path": "scripts/build_water_power_crosswalk.py",
       "signal": "ANALYSIS_NOT_GUI_RENDERED",
       "symbol": "merge_edges"
+    },
+    {
+      "id": "analysis_symbol:scripts/enrich_drought_soil.py:fetch_mukey_for_point_live",
+      "kind": "analysis_symbol",
+      "path": "scripts/enrich_drought_soil.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_symbol:scripts/enrich_drought_soil.py:fetch_soil_attributes_live",
+      "kind": "analysis_symbol",
+      "path": "scripts/enrich_drought_soil.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_symbol:scripts/enrich_drought_soil.py:main",
+      "kind": "analysis_symbol",
+      "path": "scripts/enrich_drought_soil.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_symbol:scripts/enrich_drought_soil.py:merge_soil_onto_asset",
+      "kind": "analysis_symbol",
+      "path": "scripts/enrich_drought_soil.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_symbol:scripts/enrich_drought_soil.py:parse_muaggatt_response",
+      "kind": "analysis_symbol",
+      "path": "scripts/enrich_drought_soil.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_symbol:scripts/enrich_drought_soil.py:parse_mukey_response",
+      "kind": "analysis_symbol",
+      "path": "scripts/enrich_drought_soil.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
     },
     {
       "id": "analysis_symbol:scripts/enrich_waters_nhd.py:enrich_asset",
@@ -652,6 +706,60 @@
       "symbol": "write_receipt"
     },
     {
+      "id": "analysis_symbol:scripts/ingest_drought_usdm.py:build_asset",
+      "kind": "analysis_symbol",
+      "path": "scripts/ingest_drought_usdm.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_symbol:scripts/ingest_drought_usdm.py:build_reading",
+      "kind": "analysis_symbol",
+      "path": "scripts/ingest_drought_usdm.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_symbol:scripts/ingest_drought_usdm.py:dominant_class",
+      "kind": "analysis_symbol",
+      "path": "scripts/ingest_drought_usdm.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_symbol:scripts/ingest_drought_usdm.py:fetch_live",
+      "kind": "analysis_symbol",
+      "path": "scripts/ingest_drought_usdm.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_symbol:scripts/ingest_drought_usdm.py:load_municipio_geo",
+      "kind": "analysis_symbol",
+      "path": "scripts/ingest_drought_usdm.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_symbol:scripts/ingest_drought_usdm.py:main",
+      "kind": "analysis_symbol",
+      "path": "scripts/ingest_drought_usdm.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_symbol:scripts/ingest_drought_usdm.py:merge_assets",
+      "kind": "analysis_symbol",
+      "path": "scripts/ingest_drought_usdm.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_symbol:scripts/ingest_drought_usdm.py:merge_readings",
+      "kind": "analysis_symbol",
+      "path": "scripts/ingest_drought_usdm.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_symbol:scripts/ingest_drought_usdm.py:parse_rows",
+      "kind": "analysis_symbol",
+      "path": "scripts/ingest_drought_usdm.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
       "id": "analysis_symbol:scripts/ingest_echo.py:build_events",
       "kind": "analysis_symbol",
       "line": 113,
@@ -842,6 +950,72 @@
       "path": "scripts/ingest_power.py",
       "signal": "ANALYSIS_NOT_GUI_RENDERED",
       "symbol": "main"
+    },
+    {
+      "id": "analysis_symbol:scripts/ingest_precip_ncei.py:build_asset",
+      "kind": "analysis_symbol",
+      "path": "scripts/ingest_precip_ncei.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_symbol:scripts/ingest_precip_ncei.py:build_readings",
+      "kind": "analysis_symbol",
+      "path": "scripts/ingest_precip_ncei.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_symbol:scripts/ingest_precip_ncei.py:fetch_daily_live",
+      "kind": "analysis_symbol",
+      "path": "scripts/ingest_precip_ncei.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_symbol:scripts/ingest_precip_ncei.py:fetch_normals_live",
+      "kind": "analysis_symbol",
+      "path": "scripts/ingest_precip_ncei.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_symbol:scripts/ingest_precip_ncei.py:main",
+      "kind": "analysis_symbol",
+      "path": "scripts/ingest_precip_ncei.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_symbol:scripts/ingest_precip_ncei.py:merge_assets",
+      "kind": "analysis_symbol",
+      "path": "scripts/ingest_precip_ncei.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_symbol:scripts/ingest_precip_ncei.py:merge_readings",
+      "kind": "analysis_symbol",
+      "path": "scripts/ingest_precip_ncei.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_symbol:scripts/ingest_precip_ncei.py:parse_daily",
+      "kind": "analysis_symbol",
+      "path": "scripts/ingest_precip_ncei.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_symbol:scripts/ingest_precip_ncei.py:parse_normals",
+      "kind": "analysis_symbol",
+      "path": "scripts/ingest_precip_ncei.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_symbol:scripts/ingest_precip_ncei.py:window_normal_mm",
+      "kind": "analysis_symbol",
+      "path": "scripts/ingest_precip_ncei.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
+    },
+    {
+      "id": "analysis_symbol:scripts/ingest_precip_ncei.py:window_observed_mm",
+      "kind": "analysis_symbol",
+      "path": "scripts/ingest_precip_ncei.py",
+      "signal": "ANALYSIS_NOT_GUI_RENDERED"
     },
     {
       "id": "analysis_symbol:scripts/ingest_preps.py:build_events",
@@ -1472,6 +1646,12 @@
       "signal": "TERMINAL_REQUIRED"
     },
     {
+      "id": "cli_surface:scripts/enrich_drought_soil.py",
+      "kind": "cli_surface",
+      "path": "scripts/enrich_drought_soil.py",
+      "signal": "TERMINAL_REQUIRED"
+    },
+    {
       "id": "cli_surface:scripts/enrich_waters_nhd.py",
       "kind": "cli_surface",
       "path": "scripts/enrich_waters_nhd.py",
@@ -1514,6 +1694,12 @@
       "signal": "TERMINAL_REQUIRED"
     },
     {
+      "id": "cli_surface:scripts/ingest_drought_usdm.py",
+      "kind": "cli_surface",
+      "path": "scripts/ingest_drought_usdm.py",
+      "signal": "TERMINAL_REQUIRED"
+    },
+    {
       "id": "cli_surface:scripts/ingest_echo.py",
       "kind": "cli_surface",
       "path": "scripts/ingest_echo.py",
@@ -1553,6 +1739,12 @@
       "id": "cli_surface:scripts/ingest_power.py",
       "kind": "cli_surface",
       "path": "scripts/ingest_power.py",
+      "signal": "TERMINAL_REQUIRED"
+    },
+    {
+      "id": "cli_surface:scripts/ingest_precip_ncei.py",
+      "kind": "cli_surface",
+      "path": "scripts/ingest_precip_ncei.py",
       "signal": "TERMINAL_REQUIRED"
     },
     {
@@ -2668,6 +2860,12 @@
       "signal": "BACKEND_NOT_GUI_SURFACED"
     },
     {
+      "id": "python_module:src/aguayluz/alert_promotion/drought.py",
+      "kind": "python_module",
+      "path": "src/aguayluz/alert_promotion/drought.py",
+      "signal": "BACKEND_NOT_GUI_SURFACED"
+    },
+    {
       "id": "python_module:src/aguayluz/alert_promotion/osha.py",
       "kind": "python_module",
       "path": "src/aguayluz/alert_promotion/osha.py",
@@ -3186,6 +3384,18 @@
       "symbol": "is_critical"
     },
     {
+      "id": "python_symbol:src/aguayluz/alert_promotion/drought.py:drought_alerts",
+      "kind": "python_symbol",
+      "path": "src/aguayluz/alert_promotion/drought.py",
+      "signal": "BACKEND_NOT_GUI_SURFACED"
+    },
+    {
+      "id": "python_symbol:src/aguayluz/alert_promotion/drought.py:precipitation_shortfall_alerts",
+      "kind": "python_symbol",
+      "path": "src/aguayluz/alert_promotion/drought.py",
+      "signal": "BACKEND_NOT_GUI_SURFACED"
+    },
+    {
       "id": "python_symbol:src/aguayluz/alert_promotion/osha.py:osha_alert",
       "kind": "python_symbol",
       "line": 108,
@@ -3482,6 +3692,14 @@
       "signal": "BACKEND_NOT_GUI_SURFACED"
     },
     {
+      "id": "python_symbol:src/aguayluz/regulatory_db.py:load_regulatory_crosswalk",
+      "kind": "python_symbol",
+      "path": "src/aguayluz/regulatory_db.py",
+      "symbol": "load_regulatory_crosswalk",
+      "line": 96,
+      "signal": "BACKEND_NOT_GUI_SURFACED"
+    },
+    {
       "id": "python_symbol:src/aguayluz/regulatory_db.py:load_regulatory_links",
       "kind": "python_symbol",
       "path": "src/aguayluz/regulatory_db.py",
@@ -3503,6 +3721,14 @@
       "path": "src/aguayluz/regulatory_db.py",
       "symbol": "load_regulatory_receipts",
       "line": 74,
+      "signal": "BACKEND_NOT_GUI_SURFACED"
+    },
+    {
+      "id": "python_symbol:src/aguayluz/regulatory_db.py:merge_crosswalk",
+      "kind": "python_symbol",
+      "path": "src/aguayluz/regulatory_db.py",
+      "symbol": "merge_crosswalk",
+      "line": 128,
       "signal": "BACKEND_NOT_GUI_SURFACED"
     },
     {
@@ -3535,6 +3761,14 @@
       "path": "src/aguayluz/regulatory_db.py",
       "symbol": "save_checkpoint",
       "line": 137,
+      "signal": "BACKEND_NOT_GUI_SURFACED"
+    },
+    {
+      "id": "python_symbol:src/aguayluz/regulatory_db.py:write_regulatory_crosswalk",
+      "kind": "python_symbol",
+      "path": "src/aguayluz/regulatory_db.py",
+      "symbol": "write_regulatory_crosswalk",
+      "line": 162,
       "signal": "BACKEND_NOT_GUI_SURFACED"
     },
     {
@@ -3888,7 +4122,7 @@
   "schema_version": "prii.gui-parity-baseline/v1",
   "signal_counts": {
     "ANALYSIS_NOT_GUI_RENDERED": 158,
-    "BACKEND_NOT_GUI_SURFACED": 198,
+    "BACKEND_NOT_GUI_SURFACED": 201,
     "DEAD_CONTROL": 1,
     "GUI_NOT_BACKEND_WIRED": 125,
     "TERMINAL_REQUIRED": 30

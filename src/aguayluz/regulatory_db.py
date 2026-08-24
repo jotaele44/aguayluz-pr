@@ -26,6 +26,7 @@ DDL_PATH = SCHEMAS_DIR / "sql" / "regulatory_system.sql"
 OBSERVATIONS_PATH = DATA_DIR / "regulatory_observations.jsonl"
 RECEIPTS_PATH = DATA_DIR / "regulatory_source_receipts.jsonl"
 LINKS_PATH = DATA_DIR / "regulatory_entity_links.jsonl"
+CROSSWALK_PATH = DATA_DIR / "regulatory_entity_crosswalk.jsonl"
 CHECKPOINTS_DIR = DATA_DIR / "regulatory_checkpoints"
 
 #: Matches contracts.py's Provider StrEnum and every schema's closed provider enum.
@@ -51,6 +52,10 @@ _LINK_COLUMNS = (
     "decided_at", "decided_by", "decision_rationale", "supersedes_candidate_id",
 )
 _LINK_JSON_FIELDS = ("match_features", "contradictions")
+_CROSSWALK_COLUMNS = (
+    "crosswalk_id", "candidate_id", "observation_id", "asset_id", "provider",
+    "match_strength", "decided_at", "decided_by", "decision_rationale",
+)
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -88,6 +93,13 @@ def load_regulatory_links(path: Path = LINKS_PATH) -> list[dict[str, Any]]:
     return rows
 
 
+def load_regulatory_crosswalk(path: Path = CROSSWALK_PATH) -> list[dict[str, Any]]:
+    rows = _read_jsonl(path)
+    for r in rows:
+        validate_against_schema("regulatory_entity_crosswalk", r)
+    return rows
+
+
 def merge_observations(existing: list[dict], new: list[dict]) -> list[dict]:
     """Merge by ``observation_id``; a re-normalized row replaces its prior version."""
     by_id = {r["observation_id"]: r for r in existing}
@@ -113,6 +125,16 @@ def merge_links(existing: list[dict], new: list[dict]) -> list[dict]:
     return sorted(by_id.values(), key=lambda r: r["candidate_id"])
 
 
+def merge_crosswalk(existing: list[dict], new: list[dict]) -> list[dict]:
+    """Merge by ``crosswalk_id``. In practice a crosswalk row is never re-derived with
+    different content (it is a fixed snapshot of one approval), but merge-by-id keeps
+    this consistent with every other write path in this module."""
+    by_id = {r["crosswalk_id"]: r for r in existing}
+    for r in new:
+        by_id[r["crosswalk_id"]] = r
+    return sorted(by_id.values(), key=lambda r: r["crosswalk_id"])
+
+
 def write_regulatory_observations(rows: list[dict], path: Path = OBSERVATIONS_PATH) -> None:
     """Validate ``rows`` against the schema, then merge and persist.
 
@@ -135,6 +157,12 @@ def write_regulatory_links(rows: list[dict], path: Path = LINKS_PATH) -> None:
     for r in rows:
         validate_against_schema("regulatory_entity_link", r)
     _write_jsonl(path, merge_links(load_regulatory_links(path), rows))
+
+
+def write_regulatory_crosswalk(rows: list[dict], path: Path = CROSSWALK_PATH) -> None:
+    for r in rows:
+        validate_against_schema("regulatory_entity_crosswalk", r)
+    _write_jsonl(path, merge_crosswalk(load_regulatory_crosswalk(path), rows))
 
 
 def _checkpoint_path(provider: str, root: Path) -> Path:
@@ -190,6 +218,10 @@ def _link_row(link: dict[str, Any]) -> tuple:
     )
 
 
+def _crosswalk_row(row: dict[str, Any]) -> tuple:
+    return tuple(row.get(c) for c in _CROSSWALK_COLUMNS)
+
+
 def _insert(conn: sqlite3.Connection, table: str, columns: tuple[str, ...], row: tuple) -> None:
     placeholders = ", ".join("?" for _ in columns)
     conn.execute(
@@ -203,6 +235,7 @@ def build_sqlite(
     observations: list[dict] | None = None,
     receipts: list[dict] | None = None,
     links: list[dict] | None = None,
+    crosswalk: list[dict] | None = None,
 ) -> sqlite3.Connection:
     """Create the regulatory SQLite DB from the DDL and load the given (or on-disk) rows.
 
@@ -213,6 +246,7 @@ def build_sqlite(
     observations = load_regulatory_observations() if observations is None else observations
     receipts = load_regulatory_receipts() if receipts is None else receipts
     links = load_regulatory_links() if links is None else links
+    crosswalk = load_regulatory_crosswalk() if crosswalk is None else crosswalk
 
     if db_path != ":memory:":
         Path(db_path).parent.mkdir(parents=True, exist_ok=True)
@@ -220,12 +254,15 @@ def build_sqlite(
     conn.execute("PRAGMA foreign_keys = ON")
     conn.executescript(DDL_PATH.read_text(encoding="utf-8"))
 
-    # Receipts first: observations reference them by foreign key.
+    # Receipts first: observations reference them by foreign key. Links reference
+    # observations; crosswalk rows reference links.
     for r in receipts:
         _insert(conn, "regulatory_source_receipts", _RECEIPT_COLUMNS, _receipt_row(r))
     for o in observations:
         _insert(conn, "regulatory_observations", _OBSERVATION_COLUMNS, _observation_row(o))
     for link in links:
         _insert(conn, "regulatory_entity_links", _LINK_COLUMNS, _link_row(link))
+    for row in crosswalk:
+        _insert(conn, "regulatory_entity_crosswalk", _CROSSWALK_COLUMNS, _crosswalk_row(row))
     conn.commit()
     return conn

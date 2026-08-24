@@ -32,6 +32,14 @@ Stages, mirroring the design doc's discover/fetch/normalize/checkpoint split:
   when a site's actual data hasn't changed). Replaying an unchanged site reproduces
   the same id, so the merge in ``regulatory_db`` replaces rather than duplicates it.
 
+Freshness re-check (fifth increment, docs/ROAD_TO_100.md's AYL-008):
+:func:`mark_stale` is a pure function flagging ``current`` observations older than
+``DEFAULT_STALE_AFTER_DAYS`` as ``stale`` (the design doc's freshness model: "expected
+refresh interval has elapsed without confirmation"). :func:`fetch_site` then lets the
+CLI (``--recheck-stale``) reconfirm exactly those specific sites by their own site
+number — a single-ID lookup, not a full bbox re-crawl — reusing the fetch/receipt logic
+:func:`fetch` already implements for whole pages.
+
 Pure functions, no module-level state — the CLI (``scripts/ingest_regulatory_usgs.py``)
 owns checkpoint load/save and persistence, the same split ``scripts/build_alerts.py``
 keeps between promoters and I/O.
@@ -41,7 +49,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 PROVIDER = "USGS"
@@ -52,6 +60,11 @@ DEFAULT_LIMIT = 1000
 #: Bound on page locators discover() emits per call — a resumable ceiling, not a
 #: claim that PR's whole monitoring-locations catalogue fits in one run.
 MAX_PAGES = 20
+#: Site metadata changes rarely, but 90 days matches the existing
+#: usgs_field_measurements GUI capability's own freshness policy
+#: (server/backend/monitoring_quality.py), so a reviewer sees a consistent
+#: staleness meaning across both surfaces.
+DEFAULT_STALE_AFTER_DAYS = 90
 
 
 def capabilities() -> dict[str, Any]:
@@ -104,23 +117,24 @@ def discover(
     return locators, next_checkpoint
 
 
-def fetch(locator: dict[str, Any]) -> tuple[bytes, dict[str, Any]]:
-    """Retrieve one page's raw bytes and build its source receipt."""
+def _fetch_url(url: str) -> tuple[bytes, dict[str, Any]]:
+    """Shared GET + receipt-building logic for both a page locator and a single-site
+    recheck lookup — the receipt shape does not care which URL was fetched."""
     import httpx
 
     with httpx.Client(timeout=180, follow_redirects=True) as client:
-        r = client.get(locator["locator"])
+        r = client.get(url)
         r.raise_for_status()
         content = r.content
         status = r.status_code
         media_type = r.headers.get("content-type", "application/json").split(";")[0].strip()
 
     digest = hashlib.sha256(content).hexdigest()
-    receipt = {
+    receipt: dict[str, Any] = {
         "receipt_id": f"AYL_REGRCPT_USGS_{digest[:24]}",
         "provider": PROVIDER,
         "retrieved_at": _now_iso(),
-        "request_locator": locator["locator"],
+        "request_locator": url,
         "http_status": status,
         "sha256": digest,
         "byte_count": len(content),
@@ -129,6 +143,18 @@ def fetch(locator: dict[str, Any]) -> tuple[bytes, dict[str, Any]]:
         "redactions": [],
     }
     return content, receipt
+
+
+def fetch(locator: dict[str, Any]) -> tuple[bytes, dict[str, Any]]:
+    """Retrieve one page's raw bytes and build its source receipt."""
+    return _fetch_url(locator["locator"])
+
+
+def fetch_site(site_no: str) -> tuple[bytes, dict[str, Any]]:
+    """Retrieve one site's current record by site number (single-ID lookup, not a
+    page) and build its receipt. Used by ``--recheck-stale`` to reconfirm one
+    specific stale observation without re-crawling the whole bbox."""
+    return _fetch_url(f"{MONITORING_LOCATIONS_URL}?f=json&id=USGS-{site_no}")
 
 
 def normalize(raw: bytes, receipt: dict[str, Any]) -> list[dict[str, Any]]:
@@ -180,3 +206,39 @@ def normalize(raw: bytes, receipt: dict[str, Any]) -> list[dict[str, Any]]:
             },
         })
     return observations
+
+
+def _parse_iso(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def mark_stale(
+    observations: list[dict[str, Any]],
+    *,
+    as_of: datetime,
+    stale_after_days: int = DEFAULT_STALE_AFTER_DAYS,
+) -> list[dict[str, Any]]:
+    """Copies of the ``current`` observations in ``observations`` whose
+    ``retrieved_at`` is older than ``stale_after_days``, with ``freshness_state``
+    flipped to ``"stale"``. Only observations already in ``current`` transition — a
+    record already ``historical``/``conflicting``/``unknown`` is not this function's
+    business to touch (the design doc: freshness is computed independently from
+    evidence tier).
+
+    Pure: ``as_of`` is passed in rather than read from the wall clock, so this stays
+    testable and the caller controls exactly what "now" means for one run.
+    """
+    cutoff = as_of - timedelta(days=stale_after_days)
+    updated: list[dict[str, Any]] = []
+    for obs in observations:
+        if obs.get("freshness_state") != "current":
+            continue
+        retrieved_at = _parse_iso(obs.get("retrieved_at"))
+        if retrieved_at is not None and retrieved_at < cutoff:
+            updated.append({**obs, "freshness_state": "stale"})
+    return updated

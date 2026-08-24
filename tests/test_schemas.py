@@ -236,7 +236,9 @@ def test_integration_report_minimal_valid():
 def test_every_schema_loads_and_validates_itself(schemas_dir):
     from jsonschema import Draft202012Validator
     schemas = list(schemas_dir.glob("*.schema.json"))
-    assert len(schemas) == 27, f"expected 27 schemas, found {len(schemas)}"
+    # Bumped by five environmental-exposure contracts: entity, observation, geometry,
+    # temporal relationship, and exposure event. Root schema count is an explicit gate.
+    assert len(schemas) == 33, f"expected 33 schemas, found {len(schemas)}"
     for p in schemas:
         s = json.loads(p.read_text(encoding="utf-8"))
         Draft202012Validator.check_schema(s)

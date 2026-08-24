@@ -42,6 +42,8 @@ READINGS_FILES: dict[str, Path] = {
     "reservoir": DATA / "reservoir_levels.jsonl",       # scripts/ingest_usgs_levels.py
     "groundwater": DATA / "groundwater_levels.jsonl",   # scripts/ingest_usgs_groundwater.py
     "coastal": DATA / "coastal_levels.jsonl",           # scripts/ingest_noaa_tides.py
+    "drought": DATA / "drought_conditions.jsonl",       # scripts/ingest_drought_usdm.py
+    "precipitation": DATA / "precipitation_conditions.jsonl",  # scripts/ingest_precip_ncei.py
     "neon": DATA / "neon_readings.jsonl",               # scripts/ingest_neon_products.py
     "usgs_field_measurements": DATA / "usgs_field_measurements_readings.jsonl",  # scripts/ingest_usgs_field_measurements.py
     "usgs_peaks": DATA / "usgs_peaks_readings.jsonl",   # scripts/ingest_usgs_peaks.py
