@@ -45,7 +45,26 @@ jobs:
               NeonServerError,
           )
 
-          def classify(exc):
+          SHARED_STATES = {
+              "AUTH_ABSENT",
+              "AUTH_REJECTED",
+              "ACCESS_DENIED",
+              "RATE_LIMIT",
+              "NETWORK",
+              "BAD_RESPONSE",
+              "DENOMINATOR_MISMATCH",
+          }
+          NEON_TO_SHARED = {
+              "SECRET_ABSENT": "AUTH_ABSENT",
+              "CREDENTIAL_REJECTED": "AUTH_REJECTED",
+              "ACCESS_DENIED": "ACCESS_DENIED",
+              "RATE_LIMIT": "RATE_LIMIT",
+              "NETWORK_FAILURE": "NETWORK",
+              "BAD_RESPONSE": "BAD_RESPONSE",
+              "SITE_DENOMINATOR_MISMATCH": "DENOMINATOR_MISMATCH",
+          }
+
+          def classify_neon(exc):
               if isinstance(exc, NeonAuthError):
                   return "CREDENTIAL_REJECTED"
               if isinstance(exc, NeonAccessDenied):
@@ -61,19 +80,22 @@ jobs:
           request = httpx.Request("GET", "https://example.invalid")
           response = httpx.Response(418, request=request)
           cases = [
-              (NeonAuthError("sentinel-body-must-not-be-emitted"), "CREDENTIAL_REJECTED"),
-              (NeonAccessDenied("sentinel-body-must-not-be-emitted"), "ACCESS_DENIED"),
-              (NeonRateLimitExceeded("sentinel-body-must-not-be-emitted", attempts=4), "RATE_LIMIT"),
-              (httpx.ConnectError("sentinel-body-must-not-be-emitted", request=request), "NETWORK_FAILURE"),
-              (NeonServerError("sentinel-body-must-not-be-emitted", status_code=503, body="secret-like-body"), "BAD_RESPONSE"),
-              (httpx.HTTPStatusError("sentinel-body-must-not-be-emitted", request=request, response=response), "BAD_RESPONSE"),
-              (ValueError("sentinel-body-must-not-be-emitted"), "BAD_RESPONSE"),
+              (NeonAuthError("sentinel-body-must-not-be-emitted"), "CREDENTIAL_REJECTED", "AUTH_REJECTED"),
+              (NeonAccessDenied("sentinel-body-must-not-be-emitted"), "ACCESS_DENIED", "ACCESS_DENIED"),
+              (NeonRateLimitExceeded("sentinel-body-must-not-be-emitted", attempts=4), "RATE_LIMIT", "RATE_LIMIT"),
+              (httpx.ConnectError("sentinel-body-must-not-be-emitted", request=request), "NETWORK_FAILURE", "NETWORK"),
+              (NeonServerError("sentinel-body-must-not-be-emitted", status_code=503, body="secret-like-body"), "BAD_RESPONSE", "BAD_RESPONSE"),
+              (httpx.HTTPStatusError("sentinel-body-must-not-be-emitted", request=request, response=response), "BAD_RESPONSE", "BAD_RESPONSE"),
+              (ValueError("sentinel-body-must-not-be-emitted"), "BAD_RESPONSE", "BAD_RESPONSE"),
           ]
-          observed = [classify(exc) for exc, _ in cases]
-          expected = [expected for _, expected in cases]
-          if observed != expected:
-              raise SystemExit("FAIL: NEON failure-classification regression")
-          print("NEON failure-classification regression: PASS")
+          for exc, expected_neon, expected_shared in cases:
+              observed_neon = classify_neon(exc)
+              observed_shared = NEON_TO_SHARED[observed_neon]
+              if observed_neon != expected_neon or observed_shared != expected_shared:
+                  raise SystemExit("FAIL: provider failure-state regression")
+          if set(NEON_TO_SHARED.values()) != SHARED_STATES:
+              raise SystemExit("FAIL: shared failure-state denominator mismatch")
+          print("Provider failure-state regression: PASS")
           PY
       - name: Bounded NEON-only live health smoke
         env:
@@ -81,12 +103,11 @@ jobs:
         run: |
           python - <<'PY'
           import json
-          import sys
 
           import httpx
 
           from aguayluz.neon.client import NeonClient, resolve_token
-          from aguayluz.neon.endpoints import sites
+          from aguayluz.neon.endpoints import SITES
           from aguayluz.neon.errors import (
               NeonAccessDenied,
               NeonAuthError,
@@ -96,13 +117,23 @@ jobs:
           from aguayluz.neon.mapping import PR_DOMAIN_CODE, PR_SITE_CODES
 
           EXPECTED = {"CUPE", "GUAN", "GUIL", "LAJA"}
+          NEON_TO_SHARED = {
+              "SECRET_ABSENT": "AUTH_ABSENT",
+              "CREDENTIAL_REJECTED": "AUTH_REJECTED",
+              "ACCESS_DENIED": "ACCESS_DENIED",
+              "RATE_LIMIT": "RATE_LIMIT",
+              "NETWORK_FAILURE": "NETWORK",
+              "BAD_RESPONSE": "BAD_RESPONSE",
+              "SITE_DENOMINATOR_MISMATCH": "DENOMINATOR_MISMATCH",
+          }
 
           def emit_failure(failure_class):
               print(json.dumps({
-                  "schema_version": "aguayluz.neon-live-smoke/v2",
+                  "schema_version": "aguayluz.neon-live-smoke/v3",
                   "provider": "neon",
                   "status": "blocked",
                   "failure_class": failure_class,
+                  "shared_failure_state": NEON_TO_SHARED[failure_class],
                   "persisted": False,
                   "notifications_enabled": False,
                   "certified_series_promoted": False,
@@ -115,7 +146,7 @@ jobs:
 
           try:
               with NeonClient(token=token, max_retries=0) as client:
-                  payload = client.get(sites())
+                  payload = client.get(SITES)
           except NeonAuthError:
               emit_failure("CREDENTIAL_REJECTED")
           except NeonAccessDenied:
@@ -143,7 +174,7 @@ jobs:
               emit_failure("SITE_DENOMINATOR_MISMATCH")
 
           print(json.dumps({
-              "schema_version": "aguayluz.neon-live-smoke/v2",
+              "schema_version": "aguayluz.neon-live-smoke/v3",
               "provider": "neon",
               "status": "ok",
               "http_status": 200,
