@@ -60,21 +60,13 @@ jobs:
           def iso(x): return x.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
           def sanitized_receipt(resp):
               u = urlparse(str(resp.request.url))
-              material = {
-                  "method": resp.request.method,
-                  "path": u.path,
-                  "query": sorted((k, v) for k, v in resp.request.url.params.multi_items() if k != "api_key"),
-                  "status_code": resp.status_code,
-                  "response_sha256": h(resp.content),
-              }
+              material = {"method": resp.request.method,"path": u.path,"query": sorted((k, v) for k, v in resp.request.url.params.multi_items() if k != "api_key"),"status_code": resp.status_code,"response_sha256": h(resp.content)}
               return {**material, "request_receipt_sha256": h(canon(material))}
           def fetch_pages(client, collection, params):
               url = f"{ROOT}/{collection}/items"; p = params; seen=set(); features=[]; receipts=[]
               while url:
                   if url in seen: raise SystemExit(f"pagination loop: {collection}")
-                  seen.add(url)
-                  r = client.get(url, params=p)
-                  rec = sanitized_receipt(r); receipts.append(rec)
+                  seen.add(url); r = client.get(url, params=p); rec = sanitized_receipt(r); receipts.append(rec)
                   if r.status_code != 200: raise SystemExit(f"{collection} HTTP {r.status_code}")
                   doc = r.json()
                   if not isinstance(doc, dict) or not isinstance(doc.get("features"), list): raise SystemExit(f"{collection} schema drift")
@@ -85,8 +77,7 @@ jobs:
           def chunks(begin, end):
               cur=begin
               while cur <= end:
-                  stop=min(cur+timedelta(days=730), end)
-                  yield cur, stop
+                  stop=min(cur+timedelta(days=730), end); yield cur, stop
                   if stop >= end: break
                   cur=stop+timedelta(seconds=1)
 
@@ -94,8 +85,7 @@ jobs:
           result={"schema_version":"aguayluz.cave-karst-v12-bounded-historical-acceptance/v1","targets":{},"invariants":{}}
           with httpx.Client(headers=headers, timeout=120, follow_redirects=True) as client:
               for site,pcode in TARGETS:
-                  meta, mrec = fetch_pages(client,"time-series-metadata",{
-                      "monitoring_location_id":site,"parameter_code":pcode,"limit":10000,"f":"json"})
+                  meta, mrec = fetch_pages(client,"time-series-metadata",{"monitoring_location_id":site,"limit":10000,"f":"json"})
                   matched=[]
                   for f in meta:
                       p=f.get("properties") or {}
@@ -105,28 +95,29 @@ jobs:
                       tsid=p.get("id") or f.get("id")
                       if not p.get("begin_utc") or not p.get("end_utc") or not tsid: continue
                       matched.append({**p,"_time_series_id":str(tsid)})
-                  if not matched: raise SystemExit(f"no metadata period for {site}:{pcode}")
+                  if not matched:
+                      summaries=[]
+                      for f in meta[:20]:
+                          p=f.get("properties") or {}
+                          summaries.append({"parameter_code":p.get("parameter_code"),"computation_identifier":p.get("computation_identifier"),"computation_period_identifier":p.get("computation_period_identifier"),"has_begin_utc":bool(p.get("begin_utc")),"has_end_utc":bool(p.get("end_utc")),"has_feature_id":bool(f.get("id") or p.get("id"))})
+                      print("metadata_diagnostic="+json.dumps({"site":site,"feature_count":len(meta),"summaries":summaries},sort_keys=True))
+                      raise SystemExit(f"no metadata period for {site}:{pcode}")
 
                   series_receipts=[]; observations={}; series_windows=[]
                   for p in matched:
-                      tsid=p["_time_series_id"]
-                      begin,end=dt(p["begin_utc"]),dt(p["end_utc"])
+                      tsid=p["_time_series_id"]; begin,end=dt(p["begin_utc"]),dt(p["end_utc"])
                       if end < begin: raise SystemExit("metadata period inverted")
                       series_windows.append({"begin_utc":iso(begin),"end_utc":iso(end),"time_series_id_sha256":h(tsid.encode())})
                       for a,b in chunks(begin,end):
-                          rows,recs=fetch_pages(client,"continuous",{
-                              "time_series_id":tsid,"datetime":f"{iso(a)}/{iso(b)}","limit":10000,"f":"json"})
+                          rows,recs=fetch_pages(client,"continuous",{"time_series_id":tsid,"datetime":f"{iso(a)}/{iso(b)}","limit":10000,"f":"json"})
                           series_receipts.extend(recs)
                           for f in rows:
                               props=f.get("properties") or {}
-                              if props.get("monitoring_location_id")!=site or str(props.get("parameter_code"))!=pcode:
-                                  raise SystemExit(f"out-of-scope historical row {site}:{pcode}")
+                              if props.get("monitoring_location_id")!=site or str(props.get("parameter_code"))!=pcode: raise SystemExit(f"out-of-scope historical row {site}:{pcode}")
                               if str(props.get("time_series_id"))!=tsid: raise SystemExit("time-series identity drift")
                               t=props.get("time")
                               if not t or not (begin <= dt(t) <= end): raise SystemExit("observation outside metadata period")
-                              key=str(f.get("id") or h(canon(f)))
-                              observations[key]=f
-
+                              observations[str(f.get("id") or h(canon(f)))]=f
                   if not observations: raise SystemExit(f"bounded historical stream empty {site}:{pcode}")
                   times=[]; approvals=Counter(); qualifiers=Counter(); normalizable=0
                   dummy=RequestReceipt("https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items",200,"2000-01-01T00:00:00Z","0"*64,"1"*64)
@@ -136,15 +127,7 @@ jobs:
                       if row is not None:
                           normalizable += 1
                           if row.get("operational_admission") is not False: raise SystemExit("historical row admitted operationally")
-                  result["targets"][f"{site}:{pcode}"]={
-                      "metadata_series_count":len(matched),"metadata_windows":series_windows,
-                      "metadata_page_count":len(mrec),"continuous_page_count":len(series_receipts),
-                      "row_count":len(observations),"normalizable_row_count":normalizable,
-                      "observed_min_utc":iso(min(times)),"observed_max_utc":iso(max(times)),
-                      "metadata_request_receipts":mrec,"continuous_request_receipts":series_receipts,
-                      "approval_status_counts":dict(approvals),"qualifier_counts":dict(qualifiers),
-                      "operational_admission":False,
-                  }
+                  result["targets"][f"{site}:{pcode}"]={"metadata_series_count":len(matched),"metadata_windows":series_windows,"metadata_page_count":len(mrec),"continuous_page_count":len(series_receipts),"row_count":len(observations),"normalizable_row_count":normalizable,"observed_min_utc":iso(min(times)),"observed_max_utc":iso(max(times)),"metadata_request_receipts":mrec,"continuous_request_receipts":series_receipts,"approval_status_counts":dict(approvals),"qualifier_counts":dict(qualifiers),"operational_admission":False}
 
           if SITE_POLICY["50014800"]["current"] != {"00060","00065","72365"}: raise SystemExit("current policy changed")
           if "00045" not in SITE_POLICY["50014800"]["historical"] or SITE_POLICY["50014600"]["current"]: raise SystemExit("historical policy changed")
@@ -154,24 +137,15 @@ jobs:
                   x=json.loads(line)
                   if x.get("asset_id")=="AYL_KARST_CAMUY_PARK": park=x
           if not park or park.get("operational_status")!="closed": raise SystemExit("Camuy park no longer closed")
-          public=json.loads(Path("data/rio_camuy_monitoring_public_v0_1.json").read_text())
-          blob=json.dumps(public,sort_keys=True)
+          public=json.loads(Path("data/rio_camuy_monitoring_public_v0_1.json").read_text()); blob=json.dumps(public,sort_keys=True)
           if public.get("local_sensor_commissioned_count") != 0: raise SystemExit("commissioned sensor count changed")
           if public.get("stage_rain_thresholds_authority") != "pilot_provisional": raise SystemExit("threshold authority changed")
           if public.get("public_notifications_enabled") is not False or public.get("automatic_public_reopening_enabled") is not False: raise SystemExit("notification/reopen policy changed")
           for forbidden in ("sensor_id","monitoring_site_id","emergency_geometry","evacuation_route","muster_point"):
               if f'"{forbidden}"' in blob: raise SystemExit(f"forbidden public field: {forbidden}")
-          result["invariants"]={
-              "current_admission_policy":["USGS-50014800:00060","USGS-50014800:00065","USGS-50014800:72365"],
-              "camuy_park_status":"closed","local_sensor_commissioned_count":0,
-              "stage_rain_thresholds_authority":"pilot_provisional","public_notifications_enabled":False,
-              "automatic_public_reopening_enabled":False,"historical_rows_operational_admission":False,
-              "credential_persisted":False,"raw_payload_uploaded":False,"p2_p3_or_emergency_leakage":False,
-          }
-          redacted=OUT/"cave-karst-v12-bounded-historical-redacted.json"
-          redacted.write_text(json.dumps(result,indent=2,sort_keys=True)+"\n")
-          print(json.dumps({k:{"windows":v["metadata_windows"],"rows":v["row_count"],"pages":v["continuous_page_count"],"min":v["observed_min_utc"],"max":v["observed_max_utc"]} for k,v in result["targets"].items()},sort_keys=True))
-          print("receipt_sha256="+h(redacted.read_bytes()))
+          result["invariants"]={"current_admission_policy":["USGS-50014800:00060","USGS-50014800:00065","USGS-50014800:72365"],"camuy_park_status":"closed","local_sensor_commissioned_count":0,"stage_rain_thresholds_authority":"pilot_provisional","public_notifications_enabled":False,"automatic_public_reopening_enabled":False,"historical_rows_operational_admission":False,"credential_persisted":False,"raw_payload_uploaded":False,"p2_p3_or_emergency_leakage":False}
+          redacted=OUT/"cave-karst-v12-bounded-historical-redacted.json"; redacted.write_text(json.dumps(result,indent=2,sort_keys=True)+"\n")
+          print(json.dumps({k:{"windows":v["metadata_windows"],"rows":v["row_count"],"pages":v["continuous_page_count"],"min":v["observed_min_utc"],"max":v["observed_max_utc"]} for k,v in result["targets"].items()},sort_keys=True)); print("receipt_sha256="+h(redacted.read_bytes()))
           PY
       - name: Upload redacted historical receipt only
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
