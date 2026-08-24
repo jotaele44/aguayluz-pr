@@ -1,0 +1,218 @@
+name: Cave Karst v1.2 consolidated live acceptance
+
+on:
+  push:
+    branches: ["agent/cave-karst-consolidation-v1-2"]
+    paths:
+      - ".github/workflows/cave-karst-v12-live-acceptance.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  accept:
+    runs-on: ubuntu-latest
+    env:
+      USGS_API_KEY: ${{ secrets.USGS_API_KEY }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Require repository secret before network I/O
+        shell: bash
+        run: |
+          if [ -z "$USGS_API_KEY" ]; then
+            echo "USGS_API_KEY repository secret is not configured" >&2
+            exit 78
+          fi
+          echo "USGS_API_KEY presence confirmed; value remains masked"
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+
+      - name: Install bounded runtime
+        run: python -m pip install httpx==0.28.1
+
+      - name: Execute certified read-only adapter
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/cave-karst-v12-acceptance"
+          mkdir -p "$root"
+          python tools/rio_camuy_usgs_snapshot.py \
+            --out "$root/projection.json" \
+            --receipt "$root/request-receipt.json"
+
+      - name: Build and validate redacted acceptance receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/cave-karst-v12-acceptance"
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from collections import Counter
+          from pathlib import Path
+          from urllib.parse import parse_qsl, urlencode, urlparse
+
+          root = Path(os.environ["RUNNER_TEMP"]) / "cave-karst-v12-acceptance"
+          projection = json.loads((root / "projection.json").read_text())
+          receipt = json.loads((root / "request-receipt.json").read_text())
+
+          allowed_collections = {
+              "latest-continuous",
+              "continuous",
+              "monitoring-locations",
+              "time-series-metadata",
+          }
+          allowed_sites = {"USGS-50014800", "USGS-50014600"}
+          current_expected = {
+              ("USGS-50014800", "00060"),
+              ("USGS-50014800", "00065"),
+              ("USGS-50014800", "72365"),
+          }
+
+          collection_counts = Counter()
+          status_counts = Counter()
+          site_query_counts = Counter()
+          parameter_query_counts = Counter()
+          request_receipt_sha256 = []
+          response_sha256 = []
+
+          sanitized_receipts = []
+          for item in receipt.get("request_receipts", []):
+              parsed = urlparse(item["url"])
+              parts = [part for part in parsed.path.split("/") if part]
+              try:
+                  idx = parts.index("collections")
+                  collection = parts[idx + 1]
+              except (ValueError, IndexError):
+                  raise SystemExit(f"unexpected receipt URL path: {parsed.path}")
+              if collection not in allowed_collections:
+                  raise SystemExit(f"out-of-scope collection: {collection}")
+              collection_counts[collection] += 1
+              status_counts[str(item["status_code"])] += 1
+              request_receipt_sha256.append(item["request_receipt_sha256"])
+              response_sha256.append(item["response_sha256"])
+              sanitized_receipts.append({
+                  "collection": collection,
+                  "status_code": item["status_code"],
+                  "request_receipt_sha256": item["request_receipt_sha256"],
+                  "response_sha256": item["response_sha256"],
+              })
+
+          if set(collection_counts) != allowed_collections:
+              raise SystemExit(f"required collection coverage incomplete: {dict(collection_counts)}")
+          if any(code != "200" for code in status_counts):
+              raise SystemExit(f"non-200 live response present: {dict(status_counts)}")
+
+          observations = projection.get("observations", [])
+          admitted = Counter()
+          historical_rejections = Counter()
+          privacy_classes = Counter()
+          for row in observations:
+              site = row.get("monitoring_location")
+              pcode = row.get("parameter_code")
+              if site not in allowed_sites:
+                  raise SystemExit(f"out-of-scope site in projection: {site}")
+              privacy_classes[str(row.get("privacy_class"))] += 1
+              if row.get("operational_admission"):
+                  admitted[(site, pcode)] += 1
+              elif (site, pcode) in {
+                  ("USGS-50014800", "00045"),
+                  ("USGS-50014600", "00060"),
+              }:
+                  historical_rejections[(site, pcode)] += 1
+
+          if set(admitted) != current_expected:
+              raise SystemExit(f"current admission set mismatch: {dict(admitted)}")
+          if any(count != 1 for count in admitted.values()):
+              raise SystemExit(f"current admission multiplicity mismatch: {dict(admitted)}")
+          if any(row.get("operational_admission") for row in observations if row.get("parameter_code") == "00045"):
+              raise SystemExit("historical precipitation admitted current")
+          if any(row.get("operational_admission") for row in observations if row.get("monitoring_location") == "USGS-50014600"):
+              raise SystemExit("historical upstream site admitted current")
+          if any(cls != "P0_PUBLIC" for cls in privacy_classes):
+              raise SystemExit(f"non-P0 observation leaked into projection: {dict(privacy_classes)}")
+
+          diagnostics = projection.get("diagnostics", [])
+          if diagnostics and projection.get("operational_state") != "unknown":
+              raise SystemExit("diagnostics present without fail-closed unknown state")
+          if projection.get("safe_open_reopen_inference") is not False:
+              raise SystemExit("safe/open/reopen inference unexpectedly enabled")
+          if projection.get("public_notifications_enabled") is not False:
+              raise SystemExit("public notifications unexpectedly enabled")
+          if projection.get("automatic_public_reopening_enabled") is not False:
+              raise SystemExit("automatic public reopening unexpectedly enabled")
+          if projection.get("local_sensor_commissioned_count") != 0:
+              raise SystemExit("local sensor commissioned count changed")
+          if projection.get("stage_rain_thresholds_authority") != "pilot_provisional":
+              raise SystemExit("stage/rain threshold authority changed")
+
+          forbidden = {
+              "sensor_id", "monitoring_site_id", "emergency_geometry",
+              "evacuation_route", "muster_point", "plan_ref",
+          }
+          def walk(value):
+              if isinstance(value, dict):
+                  for key, child in value.items():
+                      if key in forbidden:
+                          raise SystemExit(f"forbidden public field present: {key}")
+                      walk(child)
+              elif isinstance(value, list):
+                  for child in value:
+                      walk(child)
+          walk(projection)
+
+          raw_projection = (root / "projection.json").read_bytes()
+          acceptance = {
+              "schema_version": "aguayluz.cave-karst-v12-live-acceptance/v1",
+              "head_sha": os.environ.get("GITHUB_SHA"),
+              "collection_counts": dict(sorted(collection_counts.items())),
+              "http_status_counts": dict(sorted(status_counts.items())),
+              "current_admission_counts": {
+                  f"{site}:{pcode}": count
+                  for (site, pcode), count in sorted(admitted.items())
+              },
+              "historical_only_observation_counts": {
+                  f"{site}:{pcode}": count
+                  for (site, pcode), count in sorted(historical_rejections.items())
+              },
+              "diagnostics": diagnostics,
+              "operational_state": projection.get("operational_state"),
+              "snapshot_sha256": hashlib.sha256(raw_projection).hexdigest(),
+              "adapter_projection_hash": receipt.get("snapshot_sha256"),
+              "request_receipt_sha256": request_receipt_sha256,
+              "response_sha256": response_sha256,
+              "request_receipts": sanitized_receipts,
+              "invariants": {
+                  "safe_open_reopen_inference": False,
+                  "public_notifications_enabled": False,
+                  "automatic_public_reopening_enabled": False,
+                  "local_sensor_commissioned_count": 0,
+                  "stage_rain_thresholds_authority": "pilot_provisional",
+                  "credential_persisted": False,
+                  "raw_payload_uploaded": False,
+                  "p2_p3_identifier_leakage": False,
+                  "emergency_identifier_leakage": False,
+              },
+          }
+          out = root / "cave-karst-v12-redacted-acceptance.json"
+          out.write_text(json.dumps(acceptance, indent=2, sort_keys=True) + "\n")
+          print(json.dumps({
+              "collections": acceptance["collection_counts"],
+              "statuses": acceptance["http_status_counts"],
+              "admitted": acceptance["current_admission_counts"],
+              "operational_state": acceptance["operational_state"],
+              "diagnostics": acceptance["diagnostics"],
+          }, sort_keys=True))
+          PY
+
+      - name: Upload redacted receipt only
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: cave-karst-v12-redacted-live-acceptance
+          path: ${{ runner.temp }}/cave-karst-v12-acceptance/cave-karst-v12-redacted-acceptance.json
+          if-no-files-found: error
+          retention-days: 7
