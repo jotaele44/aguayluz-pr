@@ -10,9 +10,10 @@ pytest.importorskip("fastapi")
 pytest.importorskip("httpx")
 
 import server.backend.cave_karst_api as cave_api
-from aguayluz.cave_karst import compute_record_hash, load_default_registry
 from server.backend.app import app
 from starlette.testclient import TestClient
+
+from aguayluz.cave_karst import compute_record_hash, load_default_registry
 
 AS_OF = datetime(2026, 8, 8, 12, 0, tzinfo=timezone.utc)
 
@@ -102,7 +103,10 @@ def test_comms_loss_never_emits_safe_or_open_action() -> None:
             "ruleset_version": cave_api.RULESET_VERSION,
         }
     ]
-    assert all("safe" not in item["action"] and "open" not in item["action"] for item in alerts)
+    assert all(
+        "safe" not in item["action"] and "open" not in item["action"]
+        for item in alerts
+    )
 
 
 def test_camuy_v12_operational_boundary_remains_closed_and_noncommissioned() -> None:
