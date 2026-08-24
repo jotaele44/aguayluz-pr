@@ -5,12 +5,17 @@ on:
     branches: ["agent/cave-karst-consolidation-v1-2"]
     paths:
       - ".github/workflows/cave-karst-v12-live-acceptance.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/cave-karst-v12-live-acceptance.yml"
 
 permissions:
   contents: read
 
 jobs:
   accept:
+    if: github.event_name == 'push' || github.head_ref == 'agent/cave-karst-consolidation-v1-2'
     runs-on: ubuntu-latest
     env:
       USGS_API_KEY: ${{ secrets.USGS_API_KEY }}
@@ -47,14 +52,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          root="$RUNNER_TEMP/cave-karst-v12-acceptance"
           python - <<'PY'
           import hashlib
           import json
           import os
           from collections import Counter
           from pathlib import Path
-          from urllib.parse import parse_qsl, urlencode, urlparse
+          from urllib.parse import urlparse
 
           root = Path(os.environ["RUNNER_TEMP"]) / "cave-karst-v12-acceptance"
           projection = json.loads((root / "projection.json").read_text())
@@ -75,12 +79,10 @@ jobs:
 
           collection_counts = Counter()
           status_counts = Counter()
-          site_query_counts = Counter()
-          parameter_query_counts = Counter()
           request_receipt_sha256 = []
           response_sha256 = []
-
           sanitized_receipts = []
+
           for item in receipt.get("request_receipts", []):
               parsed = urlparse(item["url"])
               parts = [part for part in parsed.path.split("/") if part]
