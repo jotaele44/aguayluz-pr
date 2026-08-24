@@ -33,51 +33,120 @@ jobs:
         run: git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr
       - name: Install runtime
         run: python -m pip install uv && uv pip install --system -e ".[dev]"
+      - name: Failure-classification regression gate
+        run: |
+          python - <<'PY'
+          import httpx
+
+          from aguayluz.neon.errors import (
+              NeonAccessDenied,
+              NeonAuthError,
+              NeonRateLimitExceeded,
+              NeonServerError,
+          )
+
+          def classify(exc):
+              if isinstance(exc, NeonAuthError):
+                  return "CREDENTIAL_REJECTED"
+              if isinstance(exc, NeonAccessDenied):
+                  return "ACCESS_DENIED"
+              if isinstance(exc, NeonRateLimitExceeded):
+                  return "RATE_LIMIT"
+              if isinstance(exc, (httpx.TimeoutException, httpx.NetworkError, httpx.TransportError)):
+                  return "NETWORK_FAILURE"
+              if isinstance(exc, (NeonServerError, httpx.HTTPStatusError, ValueError, TypeError, KeyError)):
+                  return "BAD_RESPONSE"
+              return "BAD_RESPONSE"
+
+          request = httpx.Request("GET", "https://example.invalid")
+          response = httpx.Response(418, request=request)
+          cases = [
+              (NeonAuthError("sentinel-body-must-not-be-emitted"), "CREDENTIAL_REJECTED"),
+              (NeonAccessDenied("sentinel-body-must-not-be-emitted"), "ACCESS_DENIED"),
+              (NeonRateLimitExceeded("sentinel-body-must-not-be-emitted", attempts=4), "RATE_LIMIT"),
+              (httpx.ConnectError("sentinel-body-must-not-be-emitted", request=request), "NETWORK_FAILURE"),
+              (NeonServerError("sentinel-body-must-not-be-emitted", status_code=503, body="secret-like-body"), "BAD_RESPONSE"),
+              (httpx.HTTPStatusError("sentinel-body-must-not-be-emitted", request=request, response=response), "BAD_RESPONSE"),
+              (ValueError("sentinel-body-must-not-be-emitted"), "BAD_RESPONSE"),
+          ]
+          observed = [classify(exc) for exc, _ in cases]
+          expected = [expected for _, expected in cases]
+          if observed != expected:
+              raise SystemExit("FAIL: NEON failure-classification regression")
+          print("NEON failure-classification regression: PASS")
+          PY
       - name: Bounded NEON-only live health smoke
         env:
           NEON_API_TOKEN: ${{ secrets.NEON_API_TOKEN }}
         run: |
           python - <<'PY'
           import json
+          import sys
+
           import httpx
 
-          from aguayluz.neon.client import TOKEN_HEADER, USER_AGENT, resolve_token
-          from aguayluz.neon.endpoints import DEFAULT_BASE_URL
+          from aguayluz.neon.client import NeonClient, resolve_token
+          from aguayluz.neon.endpoints import sites
+          from aguayluz.neon.errors import (
+              NeonAccessDenied,
+              NeonAuthError,
+              NeonRateLimitExceeded,
+              NeonServerError,
+          )
           from aguayluz.neon.mapping import PR_DOMAIN_CODE, PR_SITE_CODES
 
-          expected = {"CUPE", "GUAN", "GUIL", "LAJA"}
+          EXPECTED = {"CUPE", "GUAN", "GUIL", "LAJA"}
+
+          def emit_failure(failure_class):
+              print(json.dumps({
+                  "schema_version": "aguayluz.neon-live-smoke/v2",
+                  "provider": "neon",
+                  "status": "blocked",
+                  "failure_class": failure_class,
+                  "persisted": False,
+                  "notifications_enabled": False,
+                  "certified_series_promoted": False,
+              }, sort_keys=True))
+              raise SystemExit(1)
+
           token = resolve_token()
           if not token:
-              raise SystemExit("FAIL: NEON_API_TOKEN is not configured")
+              emit_failure("SECRET_ABSENT")
 
-          response = httpx.get(
-              f"{DEFAULT_BASE_URL}/sites",
-              headers={
-                  "Accept": "application/json",
-                  "User-Agent": USER_AGENT,
-                  TOKEN_HEADER: token,
-              },
-              timeout=60.0,
-          )
-          if response.status_code != 200:
-              raise SystemExit(f"FAIL: NEON /sites returned HTTP {response.status_code}")
+          try:
+              with NeonClient(token=token, max_retries=0) as client:
+                  payload = client.get(sites())
+          except NeonAuthError:
+              emit_failure("CREDENTIAL_REJECTED")
+          except NeonAccessDenied:
+              emit_failure("ACCESS_DENIED")
+          except NeonRateLimitExceeded:
+              emit_failure("RATE_LIMIT")
+          except (httpx.TimeoutException, httpx.NetworkError, httpx.TransportError):
+              emit_failure("NETWORK_FAILURE")
+          except (NeonServerError, httpx.HTTPStatusError, ValueError, TypeError, KeyError):
+              emit_failure("BAD_RESPONSE")
 
-          rows = (response.json().get("data") or [])
-          observed = {
-              str(row.get("siteCode"))
-              for row in rows
-              if isinstance(row, dict) and row.get("domainCode") == PR_DOMAIN_CODE
-          }
-          if PR_SITE_CODES != expected:
-              raise SystemExit("FAIL: canonical Puerto Rico NEON registry changed")
-          if observed != expected:
-              raise SystemExit("FAIL: live Puerto Rico NEON denominator differs from canonical registry")
+          try:
+              rows = payload.get("data") or []
+              if not isinstance(rows, list):
+                  emit_failure("BAD_RESPONSE")
+              observed = {
+                  str(row.get("siteCode"))
+                  for row in rows
+                  if isinstance(row, dict) and row.get("domainCode") == PR_DOMAIN_CODE
+              }
+          except (AttributeError, TypeError, ValueError):
+              emit_failure("BAD_RESPONSE")
+
+          if PR_SITE_CODES != EXPECTED or observed != EXPECTED:
+              emit_failure("SITE_DENOMINATOR_MISMATCH")
 
           print(json.dumps({
-              "schema_version": "aguayluz.neon-live-smoke/v1",
+              "schema_version": "aguayluz.neon-live-smoke/v2",
               "provider": "neon",
               "status": "ok",
-              "http_status": response.status_code,
+              "http_status": 200,
               "authenticated": True,
               "site_codes": sorted(observed),
               "persisted": False,
