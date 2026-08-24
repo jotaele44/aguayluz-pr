@@ -1,8 +1,14 @@
 from __future__ import annotations
 
 import json
+import sys
+from pathlib import Path
 
-from scripts.gen_dashboard_snapshot import ENDPOINTS, OUT, generate_snapshot
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from scripts.gen_dashboard_snapshot import ENDPOINTS, OUT, generate_snapshot  # noqa: E402
 
 
 def test_snapshot_covers_every_declared_endpoint() -> None:

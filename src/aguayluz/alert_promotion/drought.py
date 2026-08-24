@@ -80,8 +80,11 @@ def drought_alerts(
 
     alerts: list[AlertEvent] = []
     for aid, r in sorted(latest.items()):
+        raw_value = r.get("value")
+        if raw_value is None:
+            continue
         try:
-            ordinal = int(float(r.get("value")))
+            ordinal = int(float(raw_value))
         except (TypeError, ValueError):
             continue
         if ordinal < DROUGHT_ALERT_FLOOR:
@@ -93,8 +96,8 @@ def drought_alerts(
         if not isinstance(lat, (int, float)) or not isinstance(lon, (int, float)):
             lat, lon = _centroid(munis[0], geo) if munis[0] != "(unscoped)" else (None, None)
 
-        observed = r.get("observed_date")
-        date = "".join(ch for ch in str(observed or "")[:10] if ch.isdigit())[:8] or "00000000"
+        observed = str(r.get("observed_date") or "")
+        date = "".join(ch for ch in observed[:10] if ch.isdigit())[:8] or "00000000"
         label = str(r.get("parameter_code") or _DROUGHT_LABELS.get(ordinal, f"D{ordinal}"))
         name = asset.get("asset_name") or munis[0]
 
@@ -156,8 +159,11 @@ def precipitation_shortfall_alerts(
 
     alerts: list[AlertEvent] = []
     for aid, r in sorted(latest.items()):
+        raw_value = r.get("value")
+        if raw_value is None:
+            continue
         try:
-            pct = float(r.get("value"))
+            pct = float(raw_value)
         except (TypeError, ValueError):
             continue
         if pct >= PRECIP_SHORTFALL_FLOOR:
@@ -167,8 +173,8 @@ def precipitation_shortfall_alerts(
         munis = [muni] if muni and muni.lower() not in {"unknown", ""} else ["(unscoped)"]
         lat, lon = asset.get("lat"), asset.get("lon")
 
-        observed = r.get("observed_date")
-        date = "".join(ch for ch in str(observed or "")[:10] if ch.isdigit())[:8] or "00000000"
+        observed = str(r.get("observed_date") or "")
+        date = "".join(ch for ch in observed[:10] if ch.isdigit())[:8] or "00000000"
         name = asset.get("asset_name") or aid
 
         linked_ids, sectors = link_impact(
