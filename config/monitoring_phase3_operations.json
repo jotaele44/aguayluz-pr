@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0.0",
+  "phase": 3,
+  "append_only_ledger": true,
+  "raw_readings_mutable": false,
+  "destructive_incident_delete": false,
+  "notification_outbox": {
+    "enabled": false,
+    "delivery_enabled": false
+  },
+  "escalation": {
+    "unacknowledged_hours": 2,
+    "level": 1
+  },
+  "authorized_transitions": [
+    "acknowledged",
+    "assigned",
+    "suppressed",
+    "resolved",
+    "reopened",
+    "threshold_migrated"
+  ],
+  "federation_delta_contract": "aguayluz.monitoring.incident-events",
+  "replay_must_equal_materialized_state": true
+}

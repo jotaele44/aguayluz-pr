@@ -28,20 +28,15 @@ dependencies = [
   "pyyaml>=6.0",
   "jsonschema>=4.21",
   "typer>=0.12",
-  # Shared federation libraries hosted in thehub-pr/packages. Resolved via a
-  # local path source (see [tool.uv.sources]) instead of a pinned git SHA, so a
-  # change to the shared code is picked up with no per-repo dependency bump.
-  # Requires thehub-pr to be checked out as a sibling of this repo.
+  # Shared federation libraries are resolved from immutable Git sources below
+  # so this project installs from an isolated clone.
   "prii-maintenance",
   "prii-export-utils",
 ]
 
 [tool.uv.sources]
-# Editable local path sources for the shared federation libraries. thehub-pr is
-# always checked out as a sibling of this repo (locally and in CI); editing the
-# package under thehub-pr/packages is reflected here immediately, no SHA bump.
-prii-maintenance = { path = "../thehub-pr/packages/prii_maintenance", editable = true }
-prii-export-utils = { path = "../thehub-pr/packages/prii_export_utils", editable = true }
+prii-maintenance = { git = "https://github.com/jotaele44/thehub-pr.git", rev = "f2b81769924689b4d959554928810b1d7b7ef3d6", subdirectory = "packages/prii_maintenance" }
+prii-export-utils = { git = "https://github.com/jotaele44/thehub-pr.git", rev = "f2b81769924689b4d959554928810b1d7b7ef3d6", subdirectory = "packages/prii_export_utils" }
 
 [project.optional-dependencies]
 dev = [
@@ -49,6 +44,7 @@ dev = [
   "pytest-httpx>=0.30",
   "pytest-cov>=5",
   "ruff>=0.5",
+  "fastapi>=0.111.0",
 ]
 # Heavy geospatial stack used only by scripts/build_pr_geo_boundaries.py (GDAL-backed).
 # Kept out of the default install so `pip install -e .[dev]` and CI stay lightweight.
@@ -86,8 +82,14 @@ src = ["src", "tests", "scripts"]
 select = ["E", "F", "I", "B", "UP", "SIM", "W"]
 ignore = ["E501"]
 
+[tool.ruff.lint.isort]
+known-first-party = ["research"]
+
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["B011"]
+"server/backend/water_disruption.py" = ["E731", "I001"]
+"tests/test_laguna_cartagena_control_plane.py" = ["I001"]
+"tests/test_laguna_cartagena_control_plane_api.py" = ["I001"]
 
 # ── mypy ─────────────────────────────────────────────────────────────────────
 # Gradually-typed baseline, matching spiderweb-pr and moneysweep-pr. Scoped to

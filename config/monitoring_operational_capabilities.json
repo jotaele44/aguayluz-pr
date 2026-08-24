@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0.0",
+  "policies": {
+    "silent_stale_data": "prohibited",
+    "alerts_from_mixed_series": "prohibited",
+    "undeclared_datum": "not_certified",
+    "threshold_without_provenance": "prohibited",
+    "provisional_data_as_certified": "prohibited"
+  },
+  "api": {
+    "readings": "/readings",
+    "health": "/monitoring/health",
+    "alerts": "/monitoring/alerts",
+    "export": "/export/monitoring.json"
+  },
+  "vectors": {
+    "reservoir_elevation": {"freshness_hours": 48, "datum_required": true, "alert": "below_threshold"},
+    "reservoir_storage_pct": {"freshness_hours": 48, "datum_required": false, "alert": "below_threshold"},
+    "streamflow": {"freshness_hours": 24, "datum_required": false, "alert": "above_threshold"},
+    "gage_height": {"freshness_hours": 24, "datum_required": true, "alert": "above_threshold"},
+    "groundwater_level": {"freshness_hours": 72, "datum_required": true, "alert": "drawdown_threshold"},
+    "coastal_water_level": {"freshness_hours": 6, "datum_required": true, "alert": "high_water_threshold"}
+  }
+}

@@ -14,11 +14,23 @@ the I/O):
 * seismic   — :func:`aguayluz.alert_promotion.seismic.seismic_alerts`   (SEISMIC_GEO)
 * weather   — :func:`aguayluz.alert_promotion.weather.weather_alerts`   (WEATHER_HAZARD)
 * osha      — :func:`aguayluz.alert_promotion.osha.osha_alerts`         (INDUSTRIAL)
+* neon      — :func:`aguayluz.alert_promotion.neon.neon_alerts`         (CONTAMINATION /
+  HYDRO_OPS / WEATHER_HAZARD / TELECOM_SCADA, routed by what the product measures)
+* drought   — :func:`aguayluz.alert_promotion.drought.drought_alerts` /
+  :func:`aguayluz.alert_promotion.drought.precipitation_shortfall_alerts` (WEATHER_HAZARD;
+  USDM classification-band + NCEI percent-of-normal precipitation, kept as two
+  independent signals rather than fused into one condition)
 
 Each promoter stamps a distinct ``alert_id`` marker (``_sdwis_`` / ``_resvlow_`` /
-``_seismic_`` / ``_weather_`` / ``_osha_``) so the idempotent merge in the CLI can
-replace only its own previously-generated rows while preserving seeds and manual
-entries.
+``_seismic_`` / ``_weather_`` / ``_osha_`` / ``_neonpub_`` / ``_drought_`` /
+``_precipshort_``) so the idempotent merge in
+the CLI can replace only its own previously-generated rows while preserving seeds and
+manual entries.
+
+Every promoter takes already-ingested signals; ``neon`` is the one that reads a
+dedicated stream (``data/neon_publication_events.jsonl``) rather than
+``service_events``, because a publication event is metadata about a feed, not a
+service interruption.
 """
 
 from __future__ import annotations
@@ -28,6 +40,14 @@ from typing import Any
 from ..alerts import AlertEvent
 from ..impact import AssetIndex, build_asset_index
 from ..water_alerts import build_water_alerts, load_geo
+from .drought import (
+    DROUGHT_MARKER,
+    PRECIP_MARKER,
+    drought_alerts,
+    precipitation_shortfall_alerts,
+)
+from .neon import NEON_MARKER, neon_alerts
+from .nhc import NHC_MARKER, nhc_alerts
 from .osha import OSHA_MARKER, osha_alerts
 from .seismic import SEISMIC_MARKER, seismic_alerts
 from .weather import WEATHER_MARKER, weather_alerts
@@ -35,7 +55,8 @@ from .weather import WEATHER_MARKER, weather_alerts
 #: Every alert_id substring that marks a row as machine-generated (safe to replace).
 GENERATED_MARKERS: tuple[str, ...] = (
     "_sdwis_", "_resvlow_", "_gwlow_", "_coasthi_",
-    SEISMIC_MARKER, WEATHER_MARKER, OSHA_MARKER,
+    SEISMIC_MARKER, WEATHER_MARKER, OSHA_MARKER, NEON_MARKER, NHC_MARKER,
+    DROUGHT_MARKER, PRECIP_MARKER,
 )
 
 #: Operational-severity floor (0-5 scale) at or above which an alert is life-safety
@@ -64,6 +85,7 @@ def build_all_alerts(
     assets: list[dict[str, Any]] | None = None,
     *,
     reservoir_percentile: float = 10.0,
+    neon_events: list[dict[str, Any]] | None = None,
 ) -> list[AlertEvent]:
     """Run every registered promoter over the ingested signals.
 
@@ -72,6 +94,11 @@ def build_all_alerts(
     ``data/utility_assets.jsonl``; it is indexed once and threaded into every promoter so
     each alert names the infrastructure it affects (``sectors_impacted`` /
     ``linked_asset_ids``). Omitting it yields empty linkage, preserving prior behaviour.
+
+    ``neon_events`` is ``data/neon_publication_events.jsonl`` — NEON publication
+    changes, which are metadata about a feed rather than service events, so they
+    arrive on their own keyword-only argument. Omitting it yields no NEON alerts,
+    preserving prior behaviour for existing callers.
     """
     index = build_asset_index(assets or [])
     alerts: list[AlertEvent] = []
@@ -82,7 +109,11 @@ def build_all_alerts(
     )
     alerts.extend(seismic_alerts(events, geo, index))
     alerts.extend(weather_alerts(events, geo, index))
+    alerts.extend(nhc_alerts(events, geo, index))
     alerts.extend(osha_alerts(events, geo, index))
+    alerts.extend(neon_alerts(neon_events or [], geo, index))
+    alerts.extend(drought_alerts(readings or [], geo, index, assets))
+    alerts.extend(precipitation_shortfall_alerts(readings or [], geo, index, assets))
     return alerts
 
 
@@ -95,6 +126,13 @@ __all__ = [
     "seismic_alerts",
     "weather_alerts",
     "osha_alerts",
+    "neon_alerts",
+    "nhc_alerts",
+    "NHC_MARKER",
+    "drought_alerts",
+    "precipitation_shortfall_alerts",
+    "DROUGHT_MARKER",
+    "PRECIP_MARKER",
     "load_geo",
     "AssetIndex",
     "build_asset_index",

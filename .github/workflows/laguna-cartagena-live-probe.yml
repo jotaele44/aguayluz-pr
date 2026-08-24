@@ -1,0 +1,91 @@
+name: Laguna Cartagena live probe
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/laguna-cartagena-control-plane-v0-2
+    paths:
+      - operators/laguna_cartagena_live_probe.py
+      - operators/laguna_cartagena_probe/**
+      - tests/test_laguna_cartagena_live_probe.py
+      - .github/workflows/laguna-cartagena-live-probe.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: laguna-cartagena-live-probe-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch shared federation packages (thehub-pr sibling)
+        run: |
+          git clone --depth 1 https://github.com/jotaele44/thehub-pr.git ../thehub-pr
+
+      - name: Install test dependencies
+        run: python -m pip install uv && uv pip install --system -e ".[dev]"
+
+      - name: Offline contract and contradiction tests
+        run: pytest -q tests/test_laguna_cartagena_live_probe.py
+
+      - name: Bounded read-only provider probe
+        env:
+          NEON_API_TOKEN: ${{ secrets.NEON_API_TOKEN }}
+        run: >-
+          python operators/laguna_cartagena_live_probe.py
+          --output-dir artifacts/laguna_cartagena_live_probe
+
+      - name: Verify artifact contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path("artifacts/laguna_cartagena_live_probe")
+          receipt = json.loads((root / "final_receipt.json").read_text())
+          assert receipt["shadow_mode"] is True
+          assert receipt["notifications_enabled"] is False
+          assert receipt["automatic_control_actions_enabled"] is False
+          assert receipt["production_promotion_enabled"] is False
+          assert receipt["replay_failures"] == []
+          assert receipt["outcome"] in {
+              "populated_complete_direct_window",
+              "partial_direct_current_window",
+              "context_only",
+              "blocked_no_current_direct_window",
+          }
+          required = {
+              "acquisition_manifest.json",
+              "candidate_observations.json",
+              "intake_receipts.json",
+              "control_plane_summary.json",
+              "replay_matrix.json",
+              "final_receipt.json",
+          }
+          assert required <= {path.name for path in root.iterdir()}
+          print(json.dumps({
+              "outcome": receipt["outcome"],
+              "eligible": receipt["eligible_observation_count"],
+              "direct_current": receipt["direct_current_observation_count"],
+              "missing": receipt["missing_required_metrics"],
+          }, sort_keys=True))
+          PY
+
+      - name: Upload provenance artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: laguna-cartagena-live-probe-${{ github.sha }}
+          path: artifacts/laguna_cartagena_live_probe/
+          if-no-files-found: error
+          retention-days: 30

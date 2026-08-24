@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AguaYLuz Environmental Exposure Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_id", "event_type", "entity_ids", "effective_at", "source_record_ids", "review_status"],
+  "properties": {
+    "event_id": {"type": "string", "minLength": 1},
+    "event_type": {"enum": ["DETECTION", "EXCEEDANCE", "SHUTDOWN", "TREATMENT_REQUIRED", "TREATMENT_STARTED", "REACTIVATION", "REPLACEMENT", "REMEDIATION", "LISTING_CHANGE", "PERMIT_CHANGE", "OTHER"]},
+    "entity_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "effective_at": {"type": ["string", "null"]},
+    "ended_at": {"type": ["string", "null"]},
+    "reason_raw": {"type": ["string", "null"]},
+    "source_record_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "review_status": {"enum": ["accepted", "needs_review", "rejected", "blocked", "unresolved"]}
+  }
+}

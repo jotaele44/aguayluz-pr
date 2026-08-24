@@ -42,6 +42,35 @@ corpus is real public data, with some sources external or point-in-time.
 - PR-region seismic events (`scripts/ingest_usgs_quakes.py`, keyless USGS FDSN
   earthquake feed) into `data/service_events.jsonl`, backing the `SEISMIC_GEO`
   alert module.
+- NSF NEON Domain D04 — the four Puerto Rico sites (`CUPE` Río Cupeyes, `GUAN`
+  Guánica Forest, `GUIL` Río Yahuecas, `LAJA` Lajas Experimental Station) as
+  `NEON_*` assets, plus 328 site×product publication-state rows in
+  `data/neon_availability.jsonl` (`scripts/ingest_neon.py`, keyless). Publication
+  changes promote to alerts and activate the `TELECOM_SCADA` module. Stream
+  discharge / surface-water chemistry readings
+  (`scripts/ingest_neon_products.py`) need `NEON_API_TOKEN` — NEON's `/api/v0/data`
+  endpoint returns 403 anonymously, so that step skips and exits 0 without one.
+  See [`docs/NEON_INTEGRATION.md`](docs/NEON_INTEGRATION.md).
+- USGS discrete water-quality samples for the Laguna Cartagena basin
+  (`scripts/ingest_usgs_samples.py`, keyless) — 120 results across the lake, its outflow
+  and the Lajas well, recovered from the `samples-data` API that replaced the
+  decommissioned `nwis/gwlevels` service. The basin has no daily-values record at all;
+  see [`docs/LAGUNA_CARTAGENA_GAP.md`](docs/LAGUNA_CARTAGENA_GAP.md).
+- USGS discrete groundwater **field measurements**
+  (`scripts/ingest_usgs_field_measurements.py`, keyless) — ~6,900 water-level readings
+  across 89 `USGSFM_*` wells from the OGC API `field-measurements` collection, the actual
+  successor to `nwis/gwlevels`. `scripts/ingest_usgs_groundwater.py` reads Daily Values
+  and therefore carries only the 36 PR wells with a continuous series; this adds the 48
+  that are visited a few times a year and have no series at all.
+- USGS **annual peak streamflow** (`scripts/ingest_usgs_peaks.py`, keyless) — 8,317 peaks
+  across 244 sites, water years **1899–2025**, giving a flood baseline the 14-day and
+  1-year windows elsewhere in the corpus cannot supply. The record maximum is
+  284,000 ft³/s at Río Grande de Arecibo, 2017-09-20 (María).
+- NOAA **NHC** active Atlantic tropical cyclones (`scripts/ingest_nhc_storms.py`, keyless)
+  into `data/service_events.jsonl`, filtered to the Puerto Rico approach corridor. Named a
+  `WEATHER_HAZARD` primary source in `config/alert_modules.yaml`; its value over the NWS
+  feed is lead time — NWS publishes a watch ~48 h out, NHC publishes position and
+  intensity from genesis.
 - Operational alert events (`docs/ALERT_SYSTEM.md`) and the 78-municipio /
   901-barrio geo layer under `data/geo/` (U.S. Census cartographic boundaries).
 

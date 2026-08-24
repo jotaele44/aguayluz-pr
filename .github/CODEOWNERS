@@ -1,0 +1,21 @@
+# Rendered from thehub-pr/federation-templates/baseline/CODEOWNERS.
+# Edit the template there and re-render (tools/render_federation_templates.py);
+# do not hand-edit this file — template-drift.yml fails the build if you do.
+#
+# The maintainer is requested for review on every PR, formalizing the single-
+# maintainer gate these repos already operate under. Add more specific rules
+# below the catch-all to delegate areas as the team grows; the last matching
+# pattern wins, so ordering matters.
+
+# Default owner for everything in the repo.
+*                       @jotaele44
+
+# Cross-repo federation contract. Changes here ripple to sibling repos that
+# consume the exported streams, so they always need maintainer sign-off.
+/schemas/               @jotaele44
+/federation.json        @jotaele44
+
+# CI, supply-chain and dependency policy.
+/.github/               @jotaele44
+/pyproject.toml         @jotaele44
+/.pre-commit-config.yaml @jotaele44

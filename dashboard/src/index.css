@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Semantic design tokens tuned to the slate/sky palette used throughout the app,
+/* Semantic design tokens tuned to the cyan lighthouse artwork,
    so the shadcn primitives (button, badge, select, sheet, table, tabs) blend with
    the hand-styled slate surfaces. Fonts use the system stack — self-contained so
    the offline single-file export has no external dependency. */
@@ -14,23 +14,23 @@
     --card-foreground: 210 40% 96%;
     --popover: 222 47% 11%;
     --popover-foreground: 210 40% 96%;
-    --primary: 199 89% 48%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 176.7 78.5% 54.3%;
+    --primary-foreground: 180 70% 7%;
     --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 96%;
     --muted: 217 33% 17%;
     --muted-foreground: 215 16% 57%;
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 96%;
+    --accent: 177 35% 16%;
+    --accent-foreground: 177 78% 82%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
     --border: 217 33% 17%;
     --input: 217 33% 17%;
-    --ring: 199 89% 48%;
+    --ring: 176.7 78.5% 54.3%;
     --radius: 0.5rem;
     /* Chart ramp for recharts — reference as hsl(var(--chart-N)) so series colors
        track the slate/sky theme instead of hardcoded hex. */
-    --chart-1: 199 89% 55%;
+    --chart-1: 176.9 89.2% 47.1%;
     --chart-2: 160 60% 50%;
     --chart-3: 38 90% 60%;
     --chart-4: 270 60% 65%;

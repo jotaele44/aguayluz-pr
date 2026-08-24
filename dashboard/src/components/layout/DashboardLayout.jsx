@@ -5,6 +5,7 @@ import AiQueryPanel from '@/components/AiQueryPanel'
 import { SidebarProvider, useSidebar } from '@/contexts/SidebarContext'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { Menu } from 'lucide-react'
+import brandMark from "@/assets/icon-64.png?inline";
 
 function Inner() {
   const { collapsed, setCollapsed } = useSidebar()
@@ -38,6 +39,7 @@ function Inner() {
             >
               <Menu className="h-5 w-5" />
             </button>
+            <img src={brandMark} alt="" aria-hidden="true" className="h-6 w-6 rounded-md" />
             <span className="text-sm font-semibold text-slate-100">AguaYLuz-PR</span>
           </div>
         )}

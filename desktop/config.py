@@ -11,10 +11,18 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 # Window title of the desktop app.
-APP_TITLE = "AguaYLuz — PRII Water & Grid Monitor"
+APP_TITLE = "AguaYLuz"
+APP_ID = "AguaYLuz"
+BRAND_ACCENT = "#0de3d8"
+BRAND_ACCENT_STRONG = "#087d77"
+ICON_PATH = REPO_ROOT / "assets" / "branding" / "icon-256.png"
+SETUP_VERSION = 1
+DATA_ENV_VAR = "AGUAYLUZ_DATA_HOME"
+SETUP_ACTION = "desktop.setup_actions:prepare_workspace"
 
-# Dotted import path of the FastAPI application object.
-APP_IMPORT = "server.backend.main:app"
+# Dotted import path of the FastAPI application object.  app.py imports the
+# established backend and replaces only /readings with the metric-safe contract.
+APP_IMPORT = "server.backend.app:app"
 
 # Directory containing the Vite frontend (with package.json).
 FRONTEND_DIR = REPO_ROOT / "dashboard"

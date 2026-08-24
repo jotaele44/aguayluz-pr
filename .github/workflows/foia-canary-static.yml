@@ -1,0 +1,26 @@
+name: FOIA canary static validation
+on:
+  pull_request:
+    paths:
+      - .github/workflows/foia-canary-*.yml
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Validate workflow contract and receipt idempotency
+        run: |
+          python - <<'PY'
+          import hashlib, pathlib, tempfile, json
+          text=pathlib.Path('.github/workflows/foia-canary-intake.yml').read_text()
+          required=['repository_dispatch','foia-canary','canary_branch','canary_receipt_namespace','no_production_promotion','artifacts/foia_canary_receipts','prii.foia.finding','0.2.0','foia-canary-ack','aguayluz-pr','extraction_confidence']
+          for token in required: assert token in text, token
+          for token in ['data/service_events.jsonl','ingest_centinelas_dispatch','payload_to_event']: assert token not in text, token
+          key='synthetic-key'; digest=hashlib.sha256(key.encode()).hexdigest()
+          with tempfile.TemporaryDirectory() as td:
+              out=pathlib.Path(td)/f'{digest}.json'; rid=f'aguayluz-canary-{digest[:20]}'
+              out.write_text(json.dumps({'record_id':rid})); assert json.loads(out.read_text())['record_id']==rid
+              assert len(list(pathlib.Path(td).glob('*.json')))==1
+          PY

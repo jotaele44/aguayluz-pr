@@ -9,10 +9,12 @@ Run from repo root:
 from __future__ import annotations
 
 import asyncio
+import contextlib
+import importlib.util
+import io
 import json
 import os as _os
 import smtplib as _smtplib
-import subprocess
 import sys
 import urllib.request as _notify_urllib
 from collections import Counter
@@ -27,8 +29,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-DATA = REPO_ROOT / "data"
-OUTPUTS = REPO_ROOT / "outputs"
+_workspace = _os.getenv("AGUAYLUZ_DATA_HOME", "").strip()
+DATA = Path(_workspace) / "data" if _workspace else REPO_ROOT / "data"
+OUTPUTS = Path(_workspace) / "exports" if _workspace else REPO_ROOT / "outputs"
 SCRIPTS = REPO_ROOT / "scripts"
 
 # Monitoring reading kinds -> their canonical JSONL. Every kind here has a producer
@@ -39,7 +42,16 @@ READINGS_FILES: dict[str, Path] = {
     "reservoir": DATA / "reservoir_levels.jsonl",       # scripts/ingest_usgs_levels.py
     "groundwater": DATA / "groundwater_levels.jsonl",   # scripts/ingest_usgs_groundwater.py
     "coastal": DATA / "coastal_levels.jsonl",           # scripts/ingest_noaa_tides.py
+    "drought": DATA / "drought_conditions.jsonl",       # scripts/ingest_drought_usdm.py
+    "precipitation": DATA / "precipitation_conditions.jsonl",  # scripts/ingest_precip_ncei.py
+    "neon": DATA / "neon_readings.jsonl",               # scripts/ingest_neon_products.py
+    "usgs_field_measurements": DATA / "usgs_field_measurements_readings.jsonl",  # scripts/ingest_usgs_field_measurements.py
+    "usgs_peaks": DATA / "usgs_peaks_readings.jsonl",   # scripts/ingest_usgs_peaks.py
 }
+# NOTE: this dict and app.py's READING_VECTOR_REGISTRY are maintained by hand and have
+# drifted — `neon` lives only here, so GET /readings?kind=neon 400s on the canonical app
+# that is actually served (desktop/config.py points at server.backend.app). Unifying them
+# is a tracked follow-up, deliberately not bundled into this change.
 
 # Default page size for GET /events. The service_events corpus includes the full
 # EPA SDWIS violation history (tens of thousands of rows, ~13 MB), so an unbounded
@@ -484,12 +496,20 @@ def summary_coverage() -> JSONResponse:
 
 def _artifact_status(path: Path) -> dict[str, Any]:
     """Presence + last-write time of a canonical output, for the System page."""
+    def display_path() -> str:
+        if _workspace:
+            with contextlib.suppress(ValueError):
+                return str(Path("Workspace") / path.relative_to(Path(_workspace)))
+        with contextlib.suppress(ValueError):
+            return str(path.relative_to(REPO_ROOT))
+        return str(path)
+
     if not path.exists():
-        return {"present": False, "path": str(path.relative_to(REPO_ROOT))}
+        return {"present": False, "path": display_path()}
     stat = path.stat()
     return {
         "present": True,
-        "path": str(path.relative_to(REPO_ROOT)),
+        "path": display_path(),
         "bytes": stat.st_size,
         "modified_at": datetime.fromtimestamp(stat.st_mtime, timezone.utc).isoformat(),
     }
@@ -503,7 +523,7 @@ def system_status() -> JSONResponse:
     each depend on backend configuration the browser cannot see, so they were failing
     at click time. This lets the UI disable a tool with a reason instead.
     """
-    exports = REPO_ROOT / "exports" / "federation"
+    exports = OUTPUTS / "federation"
     return JSONResponse({
         **auth_status_payload(),
         "artifacts": {
@@ -679,23 +699,45 @@ async def run_export(request: Request, _=_Depends(_require_key)) -> JSONResponse
     script = SCRIPTS / "federation_export.py"
     if not script.exists():
         raise HTTPException(status_code=404, detail="federation_export.py not found")
-    result = subprocess.run(
-        [sys.executable, str(script)],
-        capture_output=True,
-        text=True,
-        cwd=str(REPO_ROOT),
-        timeout=120,
-    )
-    if result.returncode != 0:
-        raise HTTPException(status_code=500, detail=result.stderr[-2000:] or "Export failed")
-    return JSONResponse({"ok": True, "stdout": result.stdout[-2000:]})
+    if str(SCRIPTS) not in sys.path:
+        sys.path.insert(0, str(SCRIPTS))
+    source = REPO_ROOT / "src"
+    if str(source) not in sys.path:
+        sys.path.insert(0, str(source))
+
+    output = io.StringIO()
+    errors = io.StringIO()
+    try:
+        spec = importlib.util.spec_from_file_location(
+            "aguayluz_desktop_federation_export", script
+        )
+        if spec is None or spec.loader is None:
+            raise RuntimeError("Unable to load the bundled federation exporter")
+        module = importlib.util.module_from_spec(spec)
+        with contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+            spec.loader.exec_module(module)
+            return_code = module.main([])
+    except Exception as exc:  # noqa: BLE001 - converted to a user-facing API failure
+        detail = errors.getvalue()[-1600:] or str(exc)
+        raise HTTPException(status_code=500, detail=detail) from exc
+    if return_code != 0:
+        raise HTTPException(
+            status_code=500,
+            detail=errors.getvalue()[-1600:] or "Export failed",
+        )
+    return JSONResponse({"ok": True, "stdout": output.getvalue()[-2000:]})
 
 
 @app.post("/ai/query")
-async def ai_query(request: Request) -> JSONResponse:
+async def ai_query(request: Request, _=_Depends(_require_key)) -> JSONResponse:  # noqa: B008
     """Send a plain-language question about the data to Claude.
 
     Requires ANTHROPIC_API_KEY env var. Gracefully returns 503 if not set.
+
+    Key-guarded like the other mutating routes, and for a sharper reason: this one
+    spends money. It forwards the caller's prompt to api.anthropic.com on the
+    operator's ANTHROPIC_API_KEY, so an unguarded route on a reachable port is a
+    spendable credential rather than just a write surface.
     """
     import os
     import urllib.request as _urllib

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useHealth, useSystemStatus, useRunExport } from '@/lib/hooks'
-import { getReportUrl, postNotify } from '@/lib/api'
+import { getApiKey, getReportUrl, postNotify, setApiKey } from '@/lib/api'
 import { useToast } from '@/components/ui/use-toast'
 import { Button } from '@/components/ui/button'
 import PageHeader from '@/components/common/PageHeader'
@@ -87,17 +87,19 @@ export default function SystemPage() {
   const { data: health, isError: healthError } = useHealth()
   const { mutate: runExport, isPending: exporting } = useRunExport()
   const [notifying, setNotifying] = useState(false)
+  const [apiKey, setApiKeyState] = useState(getApiKey)
+  const [keyDraft, setKeyDraft] = useState('')
   const { toast } = useToast()
 
   const up = health?.status === 'ok' && !healthError
+  // Every mutating route is key-gated when API_SECRET_KEY is set. The dashboard can
+  // now supply that key (see the panel below), so the blocker is no longer "this
+  // dashboard sends no token" — it is "no key has been entered yet".
+  const authNeedsKey = Boolean(status?.auth_enabled) && !apiKey
   const notifyReady = Boolean(
     status?.slack_configured || status?.ntfy_configured || status?.email_configured,
-  )
-  // /admin/run-export is key-gated when API_SECRET_KEY is set, and this dashboard
-  // holds no token — so the call would 401. State that up front rather than letting
-  // the operator click into a failure.
-  const exportBlockedByAuth = Boolean(status?.auth_enabled)
-  const exportReady = up && !exportBlockedByAuth
+  ) && !authNeedsKey
+  const exportReady = up && !authNeedsKey
 
   const handleNotify = async () => {
     setNotifying(true)
@@ -141,8 +143,8 @@ export default function SystemPage() {
             <p className="mt-1.5 text-[10px] text-slate-500">
               {!up
                 ? 'Unavailable — the backend is unreachable.'
-                : exportBlockedByAuth
-                  ? 'Unavailable — API_SECRET_KEY is set and this dashboard sends no bearer token. Run scripts/federation_export.py directly.'
+                : authNeedsKey
+                  ? 'Unavailable — API_SECRET_KEY is set on the backend. Enter the key below to enable.'
                   : 'Regenerates outputs/ and exports/federation from the current corpus.'}
             </p>
           </div>
@@ -163,7 +165,9 @@ export default function SystemPage() {
             <p className="mt-1.5 text-[10px] text-slate-500">
               {notifyReady
                 ? 'Pushes the current alert counts to every configured channel.'
-                : 'Unavailable — set SLACK_WEBHOOK_URL, NTFY_TOPIC, or SMTP email vars.'}
+                : authNeedsKey
+                  ? 'Unavailable — API_SECRET_KEY is set on the backend. Enter the key below to enable.'
+                  : 'Unavailable — set SLACK_WEBHOOK_URL, NTFY_TOPIC, or SMTP email vars.'}
             </p>
           </div>
 
@@ -182,6 +186,66 @@ export default function SystemPage() {
           </div>
         </div>
       </Panel>
+
+      {status?.auth_enabled && (
+        <Panel title="API key">
+          <p className="mb-3 text-[11px] text-slate-400">
+            This backend has <span className="font-mono text-slate-300">API_SECRET_KEY</span> set,
+            so every write — asset and event edits, review decisions, the federation export,
+            status alerts, and AI queries — needs it. The key is held in this tab&apos;s
+            session storage and is cleared when the tab closes. It is never written into a
+            build, so offline exports do not carry it.
+          </p>
+          <form
+            className="flex flex-wrap items-center gap-2"
+            onSubmit={(e) => {
+              e.preventDefault()
+              setApiKey(keyDraft)
+              setApiKeyState(keyDraft)
+              setKeyDraft('')
+              toast({ title: 'API key set', description: 'Write actions are enabled for this tab.' })
+            }}
+          >
+            <input
+              type="password"
+              value={keyDraft}
+              onChange={(e) => setKeyDraft(e.target.value)}
+              placeholder={apiKey ? 'Key set — enter a new one to replace' : 'Paste API_SECRET_KEY'}
+              aria-label="API secret key"
+              autoComplete="off"
+              className="h-8 min-w-[260px] flex-1 rounded-md border border-slate-700 bg-slate-950 px-2.5 font-mono text-xs text-slate-200 placeholder:text-slate-600"
+            />
+            <Button
+              type="submit"
+              size="sm"
+              variant="outline"
+              disabled={!keyDraft}
+              className="h-8 border-slate-700 bg-slate-950 text-xs text-slate-300 hover:text-slate-100"
+            >
+              {apiKey ? 'Replace key' : 'Set key'}
+            </Button>
+            {apiKey && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setApiKey('')
+                  setApiKeyState('')
+                  toast({ title: 'API key cleared' })
+                }}
+                className="h-8 text-xs text-slate-400 hover:text-slate-200"
+              >
+                Clear
+              </Button>
+            )}
+            <span className={cn('text-[10px] uppercase tracking-wide',
+              apiKey ? 'text-emerald-400' : 'text-amber-400')}>
+              {apiKey ? 'key set' : 'no key'}
+            </span>
+          </form>
+        </Panel>
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Panel title="Backend configuration">

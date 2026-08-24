@@ -1,0 +1,55 @@
+{
+  "availability": {
+    "precipitation_start": "2016-10-01",
+    "reservoir_elevation_start": "2007-10-01"
+  },
+  "capture_kind": "canonical_extract",
+  "notes": [
+    "Gate-opening values are temporary operational data and are not archival scientific discharge measurements.",
+    "Reservoir elevation cannot be treated as storage volume or storage change without a validated stage-storage relation."
+  ],
+  "observations": [
+    {
+      "metric": "reservoir_elevation",
+      "observed_at": "2026-07-28T04:45:00-04:00",
+      "parameter_code": "72379",
+      "unit": "ft_PRVD02",
+      "value": 209.7
+    },
+    {
+      "metric": "precipitation_total",
+      "observed_at": "2026-07-24T17:45:00-04:00",
+      "parameter_code": "00045",
+      "unit": "in",
+      "value": 0.0
+    },
+    {
+      "metric": "gate_opening_1",
+      "observed_at": "2026-07-24T17:45:00-04:00",
+      "parameter_code": "45592-G1",
+      "unit": "ft",
+      "value": 0.0
+    },
+    {
+      "metric": "gate_opening_2",
+      "observed_at": "2026-07-24T17:45:00-04:00",
+      "parameter_code": "45592-G2",
+      "unit": "ft",
+      "value": 0.03
+    },
+    {
+      "metric": "gate_opening_3",
+      "observed_at": "2026-07-24T17:45:00-04:00",
+      "parameter_code": "45592-G3",
+      "unit": "ft",
+      "value": 0.03
+    }
+  ],
+  "provisional": true,
+  "retrieved_at": "2026-08-04T21:32:00Z",
+  "schema_version": "aguayluz.frozen-source-snapshot/v0.2",
+  "source_id": "USGS_50093045",
+  "source_tier": "T1",
+  "source_url": "https://waterdata.usgs.gov/nwis/uv?legacy=1&site_no=50093045",
+  "title": "USGS 50093045 Lago Patillas at Damsite near Patillas, PR"
+}

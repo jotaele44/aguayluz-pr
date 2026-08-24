@@ -3,7 +3,7 @@
 // shadcn <Badge>.
 
 import { federationTone } from '@pr-federation/react'
-import { cn } from '@/lib/utils'
+import { cn, lookup } from '@/lib/utils'
 
 // Evidence tier T1 (strongest) → T4 (weakest).
 const TIER = {
@@ -12,7 +12,7 @@ const TIER = {
   T3: 'bg-violet-500/15 text-violet-300 border-violet-500/30',
   T4: 'bg-slate-500/15 text-slate-300 border-slate-500/30',
 }
-export const tierBadge = (tier) => TIER[tier] ?? TIER.T4
+export const tierBadge = (tier) => lookup(TIER, tier, TIER.T4)
 
 // Review-queue filter options — shared by the Review page and the map-rail panel.
 export const SEVERITIES = ['all', 'block', 'warn', 'info']
@@ -37,7 +37,7 @@ const TYPE = {
   fuel: { label: 'Fuel', hex: '#fb7185', badge: 'bg-rose-500/15 text-rose-300 border-rose-500/30' },
 }
 export function typeMeta(t) {
-  return TYPE[t] ?? { label: t ?? '—', hex: '#64748b', badge: 'bg-slate-500/15 text-slate-300 border-slate-500/30' }
+  return lookup(TYPE, t, { label: t ?? '—', hex: '#64748b', badge: 'bg-slate-500/15 text-slate-300 border-slate-500/30' })
 }
 export const typeHex = (t) => typeMeta(t).hex
 
@@ -52,7 +52,7 @@ const STATUS_ROLE = {
   planned: 'warning',
 }
 export const statusTone = (s, extra) => {
-  const { className, ...toneAttrs } = federationTone(STATUS_ROLE[s] ?? 'neutral')
+  const { className, ...toneAttrs } = federationTone(lookup(STATUS_ROLE, s, 'neutral'))
   return { className: cn(className, extra), ...toneAttrs }
 }
 
@@ -66,10 +66,17 @@ export const READING_KINDS = [
   { key: 'coastal', label: 'Coastal water levels', unit: 'ft', metricField: 'coastal_water_level' },
 ]
 
+// Two vocabularies land here. `high`/`critical`/`medium`/`low` is the descriptive
+// scale; `block`/`warn`/`info` is what scripts/federation_export.py actually writes
+// into review_queue.json ("warn" if review_status == needs_review, else "block")
+// and what SEVERITIES below offers as filter options. Only the first set used to be
+// mapped, so every real review record fell through to the slate fallback and a
+// blocking record was indistinguishable from a warning one.
 const SEVERITY = {
-  high: 'text-red-300', critical: 'text-red-400', medium: 'text-amber-300', low: 'text-slate-400',
+  critical: 'text-red-400', high: 'text-red-300', medium: 'text-amber-300', low: 'text-slate-400',
+  block: 'text-red-300', warn: 'text-amber-300', info: 'text-sky-300',
 }
-export const severityTone = (s) => SEVERITY[s] ?? 'text-slate-400'
+export const severityTone = (s) => lookup(SEVERITY, s, 'text-slate-400')
 
 // ── Event-type tones (shared by outages panel, asset detail, live logs) ──
 
@@ -80,7 +87,7 @@ const EVENT_TONE = {
   boil_water: 'text-sky-300',
   project_update: 'text-violet-300',
 }
-export const eventTone = (t) => EVENT_TONE[t] ?? 'text-slate-400'
+export const eventTone = (t) => lookup(EVENT_TONE, t, 'text-slate-400')
 
 const EVENT_PILL = {
   outage: 'bg-red-950/60 text-red-300 border-red-900',
@@ -89,7 +96,7 @@ const EVENT_PILL = {
   boil_water: 'bg-sky-950/60 text-sky-300 border-sky-900',
   project_update: 'bg-violet-950/60 text-violet-300 border-violet-900',
 }
-export const eventPill = (t) => EVENT_PILL[t] ?? 'bg-slate-900 border-slate-800 text-slate-400'
+export const eventPill = (t) => lookup(EVENT_PILL, t, 'bg-slate-900 border-slate-800 text-slate-400')
 
 export const EVENT_TYPES = ['all', 'outage', 'service_interruption', 'restoration', 'boil_water', 'project_update']
 
@@ -111,10 +118,10 @@ const ALERT_MODULE = {
   INDUSTRIAL: { label: 'Industrial', badge: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
 }
 export function alertModuleMeta(id) {
-  return ALERT_MODULE[id] ?? {
+  return lookup(ALERT_MODULE, id, {
     label: id ?? 'Unclassified',
     badge: 'bg-slate-500/15 text-slate-300 border-slate-500/30',
-  }
+  })
 }
 
 // The workbook's 0–5 operational severity floor. 4 is the life-safety threshold the
@@ -130,7 +137,7 @@ const ALERT_SEVERITY = {
   5: { label: 'Extreme', tone: 'text-red-400', dot: '#dc2626' },
 }
 export function alertSeverityMeta(severity) {
-  return ALERT_SEVERITY[severity] ?? { label: '—', tone: 'text-slate-400', dot: '#64748b' }
+  return lookup(ALERT_SEVERITY, severity, { label: '—', tone: 'text-slate-400', dot: '#64748b' })
 }
 
 // Retired lifecycle states. Mirrors INACTIVE_ALERT_STATUS in the backend and
@@ -152,7 +159,7 @@ const GAP_STATUS = {
   major: 'bg-orange-500/15 text-orange-300 border-orange-500/30',
   blocking: 'bg-red-500/15 text-red-300 border-red-500/30',
 }
-export const gapBadge = (g) => GAP_STATUS[g] ?? GAP_STATUS.none
+export const gapBadge = (g) => lookup(GAP_STATUS, g, GAP_STATUS.none)
 
 // Canonical Recharts tooltip style — one source of truth for every chart.
 export const CHART_TOOLTIP_STYLE = {

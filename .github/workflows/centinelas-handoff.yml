@@ -4,9 +4,6 @@ on:
     types: [centinelas-handoff]
 permissions:
   contents: write
-# Serialise runs on the same ref without cancelling. This workflow can
-# publish, write data, or hand off to another repo, and killing it
-# mid-flight risks leaving that work half-done.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
@@ -15,19 +12,19 @@ jobs:
   intake:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - id: ingest
         env:
           CENTINELAS_CLIENT_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
           EXPECTED_TARGET: aguayluz-pr
         run: python3 scripts/ingest_centinelas_handoff.py
-      - name: Persist receipt + promoted event
+      - name: Persist receipt + promoted record
         run: |
           git config user.name centinelas-handoff-bot
           git config user.email actions@users.noreply.github.com
-          # The ingest step writes the receipt AND promotes the envelope's signal into
-          # service_events.jsonl, so both paths are committed together.
-          git add data/centinelas_handoffs data/service_events.jsonl
+          # Environmental signals write service_events; access-condition handoffs
+          # write access_conditions. The receipt is committed atomically with either.
+          git add data/centinelas_handoffs data/service_events.jsonl data/access_conditions.jsonl 2>/dev/null || true
           git diff --cached --quiet || git commit -m "data: ingest Centinelas handoff [skip ci]"
           git push
       - name: Acknowledge
@@ -38,6 +35,8 @@ jobs:
           DUPLICATE: ${{ steps.ingest.outputs.duplicate }}
         run: |
           test -n "$TOKEN"
+          body=$(jq -nc --arg item "$ITEM" --arg key "$KEY" --argjson duplicate "$DUPLICATE" \
+            '{event_type:"centinelas-handoff-ack",client_payload:{item_id:$item,target:"aguayluz-pr",idempotency_key:$key,status:"acknowledged",duplicate:$duplicate}}')
           curl -sSf -X POST -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/jotaele44/centinelas-pr/dispatches \
-            -d "{\"event_type\":\"centinelas-handoff-ack\",\"client_payload\":{\"item_id\":\"$ITEM\",\"target\":\"aguayluz-pr\",\"idempotency_key\":\"$KEY\",\"status\":\"acknowledged\",\"duplicate\":$DUPLICATE}}"
+            -d "$body"

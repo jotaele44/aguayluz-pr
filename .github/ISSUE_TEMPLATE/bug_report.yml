@@ -1,0 +1,59 @@
+# Rendered from thehub-pr/federation-templates/baseline/ISSUE_TEMPLATE/bug_report.yml.
+# Edit the template there and re-render; do not hand-edit — template-drift.yml
+# fails the build if you do.
+name: Bug report
+description: A defect, regression, or incorrect behavior.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do **not** use this form for a suspected security vulnerability — use a
+        [private advisory](https://github.com/jotaele44/aguayluz-pr/security/advisories/new) instead.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What is broken?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Commands, modules, or data sources involved. A minimal case helps most.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs actual behavior
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - ingest / acquisition
+        - processing / pipeline
+        - export / federation contract
+        - server / API
+        - frontend / dashboard
+        - desktop launcher
+        - CI / repo governance
+        - docs
+        - other / unsure
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS and Python version (`python -V`).
+  - type: input
+    id: tests
+    attributes:
+      label: Test baseline
+      description: Output of `pytest -q --tb=no`, if available.

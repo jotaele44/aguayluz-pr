@@ -97,7 +97,14 @@ function averageCoordinates(features) {
   return [pts.reduce((sum, c) => sum + c[0], 0) / pts.length, pts.reduce((sum, c) => sum + c[1], 0) / pts.length]
 }
 
-function eventFeatureCollection(events, assetRows, assetFeatures) {
+function directEventCoordinates(event) {
+  const lat = Number(event?.lat)
+  const lon = Number(event?.lon)
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null
+  return [lon, lat]
+}
+
+export function eventFeatureCollection(events, assetRows, assetFeatures) {
   const byAsset = new Map(assetFeatures.map((f) => [featureId(f), f]))
   const byMunicipio = new Map()
   for (const f of assetFeatures) {
@@ -110,17 +117,25 @@ function eventFeatureCollection(events, assetRows, assetFeatures) {
 
   const features = []
   for (const event of events || []) {
-    let coords = null
-    const linked = event.linked_asset_ids || []
-    for (const id of linked) {
-      const f = byAsset.get(id) || byAsset.get(rowsByAsset.get(id)?.asset_id)
-      if (f?.geometry?.coordinates) {
-        coords = f.geometry.coordinates
-        break
+    let coords = directEventCoordinates(event)
+    let coordinateSource = coords ? 'direct_event_coordinates' : null
+    let coordConfidence = coords ? 'exact' : null
+    if (!coords) {
+      const linked = event.linked_asset_ids || []
+      for (const id of linked) {
+        const f = byAsset.get(id) || byAsset.get(rowsByAsset.get(id)?.asset_id)
+        if (f?.geometry?.coordinates) {
+          coords = f.geometry.coordinates
+          coordinateSource = 'linked_asset'
+          coordConfidence = 'approximate'
+          break
+        }
       }
     }
     if (!coords && event.municipality && byMunicipio.has(event.municipality)) {
       coords = averageCoordinates(byMunicipio.get(event.municipality))
+      coordinateSource = coords ? 'municipality_asset_average' : null
+      coordConfidence = coords ? 'approximate' : null
     }
     if (!coords) continue
     features.push({
@@ -132,7 +147,9 @@ function eventFeatureCollection(events, assetRows, assetFeatures) {
         municipality: event.municipality,
         affected_area: event.affected_area,
         evidence_tier: event.evidence_tier,
-        derived: true,
+        coordinate_source: coordinateSource,
+        coord_confidence: coordConfidence,
+        derived: coordinateSource !== 'direct_event_coordinates',
       },
     })
   }
