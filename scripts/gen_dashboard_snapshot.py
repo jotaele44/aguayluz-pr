@@ -38,11 +38,11 @@ ENDPOINTS = (
 
 def generate_snapshot() -> dict[str, object]:
     snapshot: dict[str, object] = {}
-    with TestClient(app) as client:
-        for endpoint in ENDPOINTS:
-            response = client.get(endpoint)
-            response.raise_for_status()
-            snapshot[endpoint.split("?", 1)[0]] = response.json()
+    client = TestClient(app)
+    for endpoint in ENDPOINTS:
+        response = client.get(endpoint)
+        response.raise_for_status()
+        snapshot[endpoint.split("?", 1)[0]] = response.json()
     return snapshot
 
 

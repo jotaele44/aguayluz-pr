@@ -73,6 +73,7 @@ jobs:
               "-vv",
               "--ignore=tests/test_backend_readings_api.py",
               "--ignore=tests/test_cave_karst_monitor.py",
+              "--ignore=tests/test_dashboard_snapshot.py",
               "--ignore=tests/test_federation_export_e2e.py",
               "--ignore=tests/test_import_local_hydro_assets.py",
               "--cov",
@@ -83,6 +84,15 @@ jobs:
         run: pytest -q tests/test_backend_readings_api.py
       - name: Cave karst monitor contract
         run: pytest -q tests/test_cave_karst_monitor.py
+      - name: Dashboard snapshot contract
+        run: |
+          python - <<'PY'
+          import faulthandler
+          import pytest
+
+          faulthandler.dump_traceback_later(180, exit=True)
+          raise SystemExit(pytest.main(["-vv", "tests/test_dashboard_snapshot.py"]))
+          PY
       - name: Local hydro import contract
         run: pytest -q tests/test_import_local_hydro_assets.py
       - name: Real-corpus federation export E2E
