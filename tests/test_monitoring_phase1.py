@@ -97,18 +97,21 @@ def test_each_native_threshold_vector_can_alert(client):
 def test_health_accounts_for_every_vector(client):
     """Keyed kind:metric, not metric — the same metric now lives in more than one corpus."""
     body = client.get("/monitoring/health").json()
-    assert body["series_count"] == 9
+    assert body["series_count"] == 11
     assert set(body["vectors"]) == {
         "reservoir:reservoir_elevation", "reservoir:reservoir_storage_pct",
         "reservoir:streamflow", "reservoir:gage_height",
         "groundwater:groundwater_level", "coastal:coastal_water_level",
         "usgs_field_measurements:groundwater_level",
         "usgs_peaks:streamflow", "usgs_peaks:gage_height",
+        "drought:drought_category", "precipitation:precipitation_pct_normal",
     }
     alerting = [v for v in body["vectors"].values() if v["threshold_provenance"]]
     reference = [v for v in body["vectors"].values() if not v["threshold_provenance"]]
     assert len(alerting) == 6      # every series that declares a threshold declares its provenance
-    assert len(reference) == 3     # the reference series declare none, deliberately
+    assert len(reference) == 5     # the reference series declare none, deliberately (now
+                                    # including drought and precipitation, see
+                                    # SERIES_METADATA_REGISTRY's comment on both)
 
 
 def test_export_excludes_provisional_records(client):
@@ -118,7 +121,7 @@ def test_export_excludes_provisional_records(client):
     by_series = {f"{s['kind']}:{s['metric']}": s for s in body["series"]}
     assert by_series["reservoir:gage_height"]["certified_record_count"] == 0
     assert by_series["reservoir:gage_height"]["items"] == []
-    assert len(by_series) == len(body["series"]) == 9
+    assert len(by_series) == len(body["series"]) == 11
 
 
 def test_stale_and_missing_datum_are_explicit():
