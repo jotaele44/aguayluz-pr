@@ -83,8 +83,7 @@ booleans are `true` and `blocking_conditions` is empty.
 Commands as declared in `federation.json#hub_callable_commands`:
 
 ```bash
-[ -d ../thehub-pr ] || git clone https://github.com/jotaele44/thehub-pr.git ../thehub-pr  # shared prii-* libs live here
-python -m pip install uv && uv pip install -e .[dev]   # setup (uv reads [tool.uv.sources])
+python -m pip install uv && uv pip install -e .[dev]   # setup — pulls the shared prii-* packages via the pinned git+https reference in [tool.uv.sources]; no thehub-pr sibling checkout needed
 python -m pytest -q                          # test_suite
 python scripts/validate_repo.py              # validation gates G01-G08
 python3 scripts/federation_export.py --mode test   # export_canonical
