@@ -85,6 +85,7 @@ const EVENT_TONE = {
   service_interruption: 'text-amber-300',
   restoration: 'text-emerald-300',
   boil_water: 'text-sky-300',
+  water_quality_violation: 'text-rose-300',
   project_update: 'text-violet-300',
 }
 export const eventTone = (t) => lookup(EVENT_TONE, t, 'text-slate-400')
@@ -94,11 +95,19 @@ const EVENT_PILL = {
   service_interruption: 'bg-amber-950/60 text-amber-300 border-amber-900',
   restoration: 'bg-emerald-950/60 text-emerald-300 border-emerald-900',
   boil_water: 'bg-sky-950/60 text-sky-300 border-sky-900',
+  water_quality_violation: 'bg-rose-950/60 text-rose-300 border-rose-900',
   project_update: 'bg-violet-950/60 text-violet-300 border-violet-900',
 }
 export const eventPill = (t) => lookup(EVENT_PILL, t, 'bg-slate-900 border-slate-800 text-slate-400')
 
-export const EVENT_TYPES = ['all', 'outage', 'service_interruption', 'restoration', 'boil_water', 'project_update']
+// `water_quality_violation` is scripts/ingest_sdwis_violations.py's non-boil-water SDWIS
+// category (boil_water notices already had their own type before this ingest existed).
+export const EVENT_TYPES = ['all', 'outage', 'service_interruption', 'restoration', 'boil_water', 'water_quality_violation', 'project_update']
+
+// Contamination-adjacent event types the municipio detail page rolls into one
+// "Contamination" stat, mirroring how it already rolls outage events into "Active
+// Outages". Both are EPA SDWIS drinking-water categories from that same ingest.
+export const CONTAMINATION_EVENT_TYPES = ['boil_water', 'water_quality_violation']
 
 // ── Operational alert layer (docs/ALERT_SYSTEM.md) ───────────────────────────
 
@@ -138,6 +147,22 @@ const ALERT_SEVERITY = {
 }
 export function alertSeverityMeta(severity) {
   return lookup(ALERT_SEVERITY, severity, { label: '—', tone: 'text-slate-400', dot: '#64748b' })
+}
+
+// U.S. Drought Monitor (USDM) classification backing the `drought_category` series
+// (dashboard/src/lib/monitoring.js). Dot colors match the official NDMC scale
+// (droughtmonitor.unl.edu) so a value here reads the same as the source map. -1
+// means "no drought designation" per that series' own note.
+const DROUGHT_CATEGORY = {
+  '-1': { label: 'No drought', tone: 'text-slate-400', dot: '#64748b' },
+  0: { label: 'D0 · Abnormally dry', tone: 'text-yellow-300', dot: '#ffff00' },
+  1: { label: 'D1 · Moderate drought', tone: 'text-amber-300', dot: '#fcd37f' },
+  2: { label: 'D2 · Severe drought', tone: 'text-orange-300', dot: '#ffaa00' },
+  3: { label: 'D3 · Extreme drought', tone: 'text-red-400', dot: '#e60000' },
+  4: { label: 'D4 · Exceptional drought', tone: 'text-red-500', dot: '#730000' },
+}
+export function droughtCategoryMeta(value) {
+  return lookup(DROUGHT_CATEGORY, value, { label: '—', tone: 'text-slate-400', dot: '#64748b' })
 }
 
 // Retired lifecycle states. Mirrors INACTIVE_ALERT_STATUS in the backend and

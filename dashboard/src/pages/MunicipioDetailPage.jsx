@@ -3,9 +3,10 @@ import { Link, useParams } from 'react-router-dom'
 import { useMunicipioSummary, useAssets, useEventsPaged } from '@/lib/hooks'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, AlertTriangle, Database, MapPin } from 'lucide-react'
+import { ArrowLeft, AlertTriangle, Database, MapPin, Activity } from 'lucide-react'
 import { FederationStatCard } from '@pr-federation/react'
-import { fmtDate } from '@/lib/format'
+import { fmtDate, droughtCategoryMeta, CONTAMINATION_EVENT_TYPES } from '@/lib/format'
+import { MONITORING_SERIES, filterSeriesReadings } from '@/lib/monitoring'
 
 // Thin wrapper over the shared metric tile so the call sites below keep reading
 // the same. `tone` is now a canonical federation status role rather than a
@@ -26,6 +27,24 @@ export default function MunicipioDetailPage() {
 
   const activeAssets = useMemo(() => assets.filter((a) => a.status === 'active' || a.status === 'operational'), [assets])
   const pctActive = assets.length > 0 ? Math.round((activeAssets.length / assets.length) * 100) : null
+
+  // `summary.monitoring` is the raw per-site readings the backend joined from this
+  // municipio's stations (server/backend/app.py `_monitoring_readings_for_assets`).
+  // Reuse the same series definitions and matching logic MonitoringCharts.jsx uses,
+  // rather than re-deriving which readings belong to which series here.
+  const monitoringReadings = summary?.monitoring ?? []
+  const monitoringTiles = useMemo(() => (
+    MONITORING_SERIES
+      .map((series) => {
+        const matches = filterSeriesReadings(monitoringReadings, series)
+        if (matches.length === 0) return null
+        const latest = matches.reduce((a, b) => (
+          String(b.observed_date || '') > String(a.observed_date || '') ? b : a
+        ))
+        return { series, latest, siteCount: new Set(matches.map((m) => m.site_no)).size }
+      })
+      .filter(Boolean)
+  ), [monitoringReadings])
 
   if (summaryLoading || assetsLoading) {
     return (
@@ -55,7 +74,7 @@ export default function MunicipioDetailPage() {
         <Badge variant="outline" className="text-xs border-slate-700">Municipio</Badge>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
         <StatCard label="Total Assets" value={summary?.asset_count ?? assets.length} />
         <StatCard label="Active Assets" value={activeAssets.length} tone="success"
           sub={pctActive != null ? `${pctActive}% nominal` : undefined} />
@@ -63,6 +82,38 @@ export default function MunicipioDetailPage() {
         <StatCard label="Active Outages"
           value={events.filter((e) => e.event_type === 'outage' && !e.end_time).length}
           tone="danger" />
+        <StatCard label="Contamination"
+          value={events.filter((e) => CONTAMINATION_EVENT_TYPES.includes(e.event_type) && !e.end_time).length}
+          tone="danger" />
+      </div>
+
+      <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
+          <Activity className="h-3.5 w-3.5" /> Monitoring
+          <span className="ml-auto text-slate-600 font-normal">Water, drought &amp; precipitation conditions</span>
+        </h2>
+        {monitoringTiles.length === 0
+          ? <p className="text-sm text-slate-500 text-center py-8">No monitoring stations in this municipio</p>
+          : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {monitoringTiles.map(({ series, latest, siteCount }) => {
+                const isDrought = series.key === 'drought_category'
+                const meta = isDrought ? droughtCategoryMeta(latest.value) : null
+                return (
+                  <div key={series.key} className="rounded-lg border border-slate-800 bg-slate-950/50 p-3">
+                    <div className="text-[10px] uppercase tracking-wide text-slate-500">{series.label}</div>
+                    <div className={`mt-1 text-lg font-semibold ${meta ? meta.tone : 'text-slate-100'}`}>
+                      {isDrought ? meta.label : `${latest.value} ${series.unit}`}
+                    </div>
+                    <div className="mt-1 text-[10px] text-slate-600">
+                      {fmtDate(latest.observed_date)}{siteCount > 1 ? ` · ${siteCount} stations` : ''}
+                      {latest.provisional ? ' · provisional' : ''}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">

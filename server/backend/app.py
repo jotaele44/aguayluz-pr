@@ -40,8 +40,15 @@ def _is_legacy_readings(route: Any) -> bool:
     return getattr(route, "path", None) == "/readings" and "GET" in getattr(route, "methods", set())
 
 
+def _is_legacy_municipio_summary(route: Any) -> bool:
+    return getattr(route, "path", None) == "/municipios/{name}/summary" and "GET" in getattr(route, "methods", set())
+
+
 app = FastAPI(title=legacy.app.title)
-app.router.routes.extend(route for route in legacy.app.router.routes if not _is_legacy_readings(route))
+app.router.routes.extend(
+    route for route in legacy.app.router.routes
+    if not _is_legacy_readings(route) and not _is_legacy_municipio_summary(route)
+)
 app.exception_handlers.update(legacy.app.exception_handlers)
 app.dependency_overrides.update(legacy.app.dependency_overrides)
 for middleware in reversed(legacy.app.user_middleware):
@@ -65,6 +72,111 @@ READING_VECTOR_REGISTRY: dict[str, dict[str, Any]] = {
     # _series_rows filters on exact unit membership. Regression-tested.
     "usgs_peaks": {"path": legacy.DATA / "usgs_peaks_readings.jsonl", "metrics": {"streamflow": {"units": {"ft^3/s", "ft3/s", "ft³/s"}}, "gage_height": {"units": {"ft"}}}, "metric_required": True},
 }
+
+# `utility_asset.asset_id` prefix -> the reading `kind`(s) whose `site_no` it identifies.
+# One physical USGS stream gage backs both the daily-values `reservoir` vector
+# (ingest_usgs_levels.py) and the historical `usgs_peaks` vector — ingest_usgs_peaks.py's
+# own `asset_id_for()` docstring says it "owns no assets" and references the `USGS_*`
+# asset the levels ingest maintains, so both kinds share one prefix. Every other kind has
+# its own distinct prefix (ingest_usgs_groundwater.py: USGSGW_, ingest_usgs_field_
+# measurements.py: USGSFM_, ingest_noaa_tides.py: NOAA_, ingest_precip_ncei.py: NCEI_,
+# ingest_drought_usdm.py: USDM_ with site_no == municipio FIPS == pr_municipios.geojson's
+# `geoid`). Longer/more specific prefixes are listed first defensively, though none of
+# these actually collide as string prefixes of one another.
+ASSET_PREFIX_TO_SOURCE_KINDS: dict[str, list[str]] = {
+    "USGSGW_": ["groundwater"],
+    "USGSFM_": ["usgs_field_measurements"],
+    "USGS_": ["reservoir", "usgs_peaks"],
+    "NOAA_": ["coastal"],
+    "NCEI_": ["precipitation"],
+    "USDM_": ["drought"],
+}
+
+
+def _site_no_for_asset(asset_id: str) -> str | None:
+    for prefix in ASSET_PREFIX_TO_SOURCE_KINDS:
+        if asset_id.startswith(prefix):
+            return asset_id[len(prefix):]
+    return None
+
+
+def _source_kinds_for_asset(asset_id: str) -> list[str]:
+    for prefix, kinds in ASSET_PREFIX_TO_SOURCE_KINDS.items():
+        if asset_id.startswith(prefix):
+            return kinds
+    return []
+
+
+#: Kinds whose MONITORING_SERIES entries (dashboard/src/lib/monitoring.js) genuinely split
+#: one metric into multiple parallel, non-comparable series by `parameter_code` —
+#: precipitation's 30d vs 90d windows. Grouping by parameter_code must be scoped to just
+#: these: for every other kind, `parameter_code` is either a stable USGS constant (safe to
+#: ignore) or, for drought, the classification LABEL itself
+#: (scripts/ingest_drought_usdm.py writes "D0"/"D1"/... as parameter_code) — grouping by it
+#: there would treat every week's classification as its own "parameter" and surface stale
+#: duplicates instead of the single latest reading.
+PARAMETER_CODE_SPLIT_KINDS = frozenset({"precipitation"})
+
+
+def _monitoring_readings_for_assets(assets: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Latest reading per (site, kind, metric[, parameter_code]) for a set of municipio assets.
+
+    Returns raw rows rather than pre-mapping to the dashboard's MONITORING_SERIES keys —
+    `dashboard/src/lib/monitoring.js` already owns that mapping, so duplicating it here
+    would just be a second place to keep in sync.
+    """
+    items: list[dict[str, Any]] = []
+    for asset in assets:
+        asset_id = str(asset.get("asset_id") or "")
+        site_no = _site_no_for_asset(asset_id)
+        if site_no is None:
+            continue
+        for kind in _source_kinds_for_asset(asset_id):
+            vector = READING_VECTOR_REGISTRY.get(kind)
+            if vector is None:
+                continue
+            split_by_param = kind in PARAMETER_CODE_SPLIT_KINDS
+            for metric in vector["metrics"]:
+                rows = [row for row in _series_rows(kind, metric) if str(row.get("site_no") or "") == site_no]
+                latest_by_param: dict[str, dict[str, Any]] = {}
+                for row in rows:
+                    pcode = str(row.get("parameter_code") or "") if split_by_param else ""
+                    current = latest_by_param.get(pcode)
+                    if current is None or str(row.get("observed_date") or "") > str(current.get("observed_date") or ""):
+                        latest_by_param[pcode] = row
+                for row in latest_by_param.values():
+                    items.append({
+                        "kind": kind,
+                        "metric": metric,
+                        "parameter_code": row.get("parameter_code"),
+                        "value": row.get("value"),
+                        "unit": row.get("unit"),
+                        "observed_date": row.get("observed_date"),
+                        "provisional": row.get("provisional"),
+                        "site_no": site_no,
+                        "asset_id": asset_id,
+                    })
+    return items
+
+
+@app.get("/municipios/{name}/summary")
+def municipio_summary(name: str) -> JSONResponse:
+    name_lower = name.lower()
+    mun_assets = [a for a in legacy._assets if (a.get("municipality") or "").lower() == name_lower]
+    mun_events = [
+        e for e in legacy._events
+        if (e.get("municipality") or "").lower() == name_lower
+        or name_lower in (e.get("affected_area") or "").lower()
+    ]
+    active = sum(1 for a in mun_assets if a.get("status") == "active")
+    return JSONResponse({
+        "municipality": name,
+        "asset_count": len(mun_assets),
+        "active_assets": active,
+        "event_count": len(mun_events),
+        "asset_types": list({a.get("asset_type") for a in mun_assets if a.get("asset_type")}),
+        "monitoring": _monitoring_readings_for_assets(mun_assets),
+    })
 
 
 class IncidentTransition(BaseModel):
