@@ -7,16 +7,15 @@ confidence, built from public EIA + OSM data). Produces schema-valid rows for
 ``schemas/utility_asset.schema.json`` (additionalProperties=false), which
 ``scripts/federation_export.py`` then projects into the federation canonical streams.
 
-The source data lives outside the repo (machine-local); pass ``--src`` to override.
-The materialized ``data/utility_assets.jsonl`` IS committed (small, public-derived).
+The source data lives outside the repo (machine-local); pass ``--src`` to
+point at it. The materialized ``data/utility_assets.jsonl`` IS committed
+(small, public-derived).
 """
 from __future__ import annotations
 
 import argparse
 import json
 from pathlib import Path
-
-DEFAULT_SRC = "/Users/jotaele/Documents/Data/Energy_Sector/Geospatial/GeoJSON/Spiderweb_Power_Infrastructure_Layer.geojson"
 
 
 def _tier(conf: float) -> str:
@@ -68,7 +67,9 @@ def build_assets(features: list) -> list:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--src", default=DEFAULT_SRC)
+    ap.add_argument(
+        "--src", required=True, help="Path to Spiderweb_Power_Infrastructure_Layer.geojson"
+    )
     ap.add_argument("--out", default="data/utility_assets.jsonl")
     args = ap.parse_args()
 

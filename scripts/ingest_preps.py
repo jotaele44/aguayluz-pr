@@ -6,16 +6,15 @@ Customer-without-service + reservoir metrics become schema-valid service_event r
 (``schemas/service_event.schema.json``, additionalProperties=false). Only metrics
 with a non-zero interruption value emit an event.
 
-Source data is machine-local; pass ``--src`` to override. The materialized
-``data/service_events.jsonl`` IS committed (small, public-portal-derived).
+Source data is machine-local; pass ``--src`` to point at it.
+The materialized ``data/service_events.jsonl`` IS committed (small,
+public-portal-derived).
 """
 from __future__ import annotations
 
 import argparse
 import json
 from pathlib import Path
-
-DEFAULT_SRC = "/Users/jotaele/Documents/Data/preps_20260604_1625.json"
 
 # PREPS slug -> (service_event.event_type, human label)
 SLUG_EVENT = {
@@ -56,7 +55,7 @@ def build_events(doc: dict) -> list:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--src", default=DEFAULT_SRC)
+    ap.add_argument("--src", required=True, help="Path to the PREPS scrape JSON (preps_<ts>.json)")
     ap.add_argument("--out", default="data/service_events.jsonl")
     args = ap.parse_args()
 

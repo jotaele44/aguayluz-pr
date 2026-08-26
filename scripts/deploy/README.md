@@ -20,7 +20,7 @@ python scripts/refresh.py --weekly          # full: assets + levels + SDWIS + ex
 ## Install the launchd jobs
 
 1. Edit both plists in this folder — replace every `__ABSOLUTE_PATH_TO_REPO__`
-   with the repo's absolute path (e.g. `/Users/jotaele/Documents/GitHub/aguayluz-pr`)
+   with the repo's absolute path (e.g. `/path/to/your/aguayluz-pr`)
    and set `EPA_WATERS_API_KEY` if you have one.
 2. Create the log dir and install:
 
