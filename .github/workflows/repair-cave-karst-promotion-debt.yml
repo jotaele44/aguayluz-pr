@@ -1,0 +1,55 @@
+name: Repair Cave Karst promotion debt
+
+on:
+  push:
+    branches: ["agent/cave-karst-consolidation-v1-2"]
+    paths: [".github/workflows/repair-cave-karst-promotion-debt.yml"]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: agent/cave-karst-consolidation-v1-2
+          fetch-depth: 0
+      - name: Add internal export-helper capability and remove harness
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path('.federation/gui-capabilities.json')
+          doc = json.loads(path.read_text(encoding='utf-8'))
+          cap_id = 'prii-export-utils-internal'
+          if not any(cap.get('id') == cap_id for cap in doc.get('capabilities', [])):
+              doc['capabilities'].append({
+                  'id': cap_id,
+                  'classification': 'internal',
+                  'status': 'active',
+                  'requires_terminal': False,
+                  'rationale': 'Deterministic script-local federation export helpers used by scripts/federation_export.py; they provide stable IDs, normalization and file hashing but are not a standalone user or operator workflow.',
+                  'analysis': {
+                      'files': ['scripts/prii_export_utils.py'],
+                      'symbols': [
+                          'scripts/prii_export_utils.py:fid',
+                          'scripts/prii_export_utils.py:norm',
+                          'scripts/prii_export_utils.py:sha256',
+                      ],
+                  },
+                  'tests': {},
+              })
+          path.write_text(json.dumps(doc, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+          PY
+          python scripts/check_gui_parity.py
+          git rm .github/workflows/repair-cave-karst-promotion-debt.yml
+          git add .federation/gui-capabilities.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'ci: classify script-local federation export helper'
+          git push origin HEAD:agent/cave-karst-consolidation-v1-2
