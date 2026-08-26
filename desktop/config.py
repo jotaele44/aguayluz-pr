@@ -20,9 +20,9 @@ SETUP_VERSION = 1
 DATA_ENV_VAR = "AGUAYLUZ_DATA_HOME"
 SETUP_ACTION = "desktop.setup_actions:prepare_workspace"
 
-# Dotted import path of the FastAPI application object.  app.py imports the
-# established backend and replaces only /readings with the metric-safe contract.
-APP_IMPORT = "server.backend.app:app"
+# Dotted import path of the FastAPI application object. food_app.py wraps the
+# established canonical app and registers the read-only FOOD_SYSTEM_RESILIENCE router.
+APP_IMPORT = "server.backend.food_app:app"
 
 # Directory containing the Vite frontend (with package.json).
 FRONTEND_DIR = REPO_ROOT / "dashboard"
