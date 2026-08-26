@@ -21,6 +21,7 @@ const AlertDetailPage = lazy(() => import('./pages/AlertDetailPage'))
 const SystemPage = lazy(() => import('./pages/SystemPage'))
 const OutagesPage = lazy(() => import('./pages/OutagesPage'))
 const MonitoringPage = lazy(() => import('./pages/MonitoringPage'))
+const FoodResiliencePage = lazy(() => import('./pages/FoodResiliencePage'))
 const CaveKarstPage = lazy(() => import('./pages/CaveKarstPage'))
 const RegulatoryPage = lazy(() => import('./pages/RegulatoryPage'))
 const RegulatoryReviewPage = lazy(() => import('./pages/RegulatoryReviewPage'))
@@ -60,6 +61,7 @@ function App() {
               <Route path="/alerts/:id" element={<AlertDetailPage />} />
               <Route path="/outages" element={<OutagesPage />} />
               <Route path="/monitoring" element={<MonitoringPage />} />
+              <Route path="/food-resilience" element={<FoodResiliencePage />} />
               <Route path="/cave-karst" element={<CaveKarstPage />} />
               <Route path="/regulatory" element={<RegulatoryPage />} />
               <Route path="/regulatory/review" element={<RegulatoryReviewPage />} />
