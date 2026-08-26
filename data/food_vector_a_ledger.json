@@ -1,0 +1,136 @@
+{
+  "schema_version": "aguayluz.food-vector-a-ledger/v0.1",
+  "ledger_id": "PR_FOOD_VECTOR_A_2026Q3_V0_1",
+  "as_of": "2026-08-26",
+  "geography_id": "PR",
+  "certification_state": "OPEN",
+  "current_coverage_eligible": false,
+  "arithmetic_state": "OPEN",
+  "claim_boundary": "This ledger freezes verified structural and source-availability facts but does not yet assert a current Puerto Rico food self-reliance percentage. Commodity identities, edible-equivalent transformations, inbound/outbound reconciliation, feed and input dependencies remain open where stated.",
+  "streams": [
+    {
+      "stream_id": "LOCAL_AG_STRUCTURAL",
+      "direction": "INTERNAL_PRODUCTION",
+      "reference_period": "2022",
+      "source_id": "USDA_NASS_PR_CENSUS_2022",
+      "source_taxonomy": "USDA NASS Puerto Rico Census of Agriculture",
+      "canonical_identity_state": "SOURCE_MANIFESTATION_ONLY",
+      "evidence_state": "FACT",
+      "reconciliation_state": "STRUCTURAL_BASELINE",
+      "records": [
+        {"metric_id":"FARMS","value":7602,"unit":"count"},
+        {"metric_id":"LAND_IN_FARMS","value":494481,"unit":"cuerda"},
+        {"metric_id":"LAND_IN_FARMS_SHARE","value":21.9,"unit":"percent_of_PR_land"},
+        {"metric_id":"AVERAGE_FARM_SIZE","value":65.0,"unit":"cuerda"}
+      ],
+      "source_uri": "https://www.nass.usda.gov/Newsroom/archive/2024/07-18-2024.php"
+    },
+    {
+      "stream_id": "HISTORICAL_SELF_RELIANCE_VALIDATION",
+      "direction": "VALIDATION_ONLY",
+      "reference_period": "FY2017-FY2019",
+      "source_id": "BEZARES_2025_FOOD_SELF_RELIANCE",
+      "source_taxonomy": "Published food-group self-reliance estimates",
+      "canonical_identity_state": "HISTORICAL_VALIDATION_ONLY",
+      "evidence_state": "FACT",
+      "reconciliation_state": "NOT_CURRENT",
+      "records": [
+        {"metric_id":"FOOD_SELF_RELIANCE_ALL_FOOD_GROUPS","value":19.0,"unit":"percent"}
+      ],
+      "source_uri": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12401977/"
+    },
+    {
+      "stream_id": "US_MAINLAND_INBOUND",
+      "direction": "INBOUND_EXTERNAL_DOMESTIC",
+      "reference_period": "2025",
+      "source_id": "CENSUS_FT895_2025",
+      "source_taxonomy": "Schedule B merchandise shipped from the United States to Puerto Rico",
+      "canonical_identity_state": "CANDIDATE_NOT_IDENTITY",
+      "evidence_state": "FACT",
+      "reconciliation_state": "SOURCE_AVAILABLE_NOT_RECONCILED",
+      "quantity_value_available": true,
+      "food_subset_reconciled": false,
+      "source_uri": "https://www.census.gov/library/publications/2026/econ/ft895-25.html"
+    },
+    {
+      "stream_id": "US_MAINLAND_OUTBOUND",
+      "direction": "OUTBOUND_EXTERNAL_DOMESTIC",
+      "reference_period": "2025",
+      "source_id": "CENSUS_FT895_2025",
+      "source_taxonomy": "Schedule B merchandise shipped from Puerto Rico to the United States",
+      "canonical_identity_state": "CANDIDATE_NOT_IDENTITY",
+      "evidence_state": "FACT",
+      "reconciliation_state": "SOURCE_AVAILABLE_NOT_RECONCILED",
+      "quantity_value_available": true,
+      "food_subset_reconciled": false,
+      "source_uri": "https://www.census.gov/library/publications/2026/econ/ft895-25.html"
+    },
+    {
+      "stream_id": "FOREIGN_INBOUND",
+      "direction": "INBOUND_EXTERNAL_FOREIGN",
+      "reference_period": "CURRENT_TARGET",
+      "source_id": null,
+      "source_taxonomy": null,
+      "canonical_identity_state": "UNRESOLVED",
+      "evidence_state": "UNKNOWN",
+      "reconciliation_state": "OPEN",
+      "notes": "Must remain distinct from U.S.-mainland shipments until the foreign-trade source is frozen and commodity/time scope reconciled."
+    },
+    {
+      "stream_id": "FOREIGN_OUTBOUND",
+      "direction": "OUTBOUND_EXTERNAL_FOREIGN",
+      "reference_period": "CURRENT_TARGET",
+      "source_id": null,
+      "source_taxonomy": null,
+      "canonical_identity_state": "UNRESOLVED",
+      "evidence_state": "UNKNOWN",
+      "reconciliation_state": "OPEN"
+    },
+    {
+      "stream_id": "LIVESTOCK_FEED_INPUTS",
+      "direction": "INBOUND_CRITICAL_INPUT",
+      "reference_period": "CURRENT_TARGET",
+      "source_id": null,
+      "canonical_identity_state": "UNRESOLVED",
+      "evidence_state": "UNKNOWN",
+      "reconciliation_state": "OPEN"
+    },
+    {
+      "stream_id": "FERTILIZER_SEED_ENERGY_PACKAGING_INPUTS",
+      "direction": "INBOUND_CRITICAL_INPUT",
+      "reference_period": "CURRENT_TARGET",
+      "source_id": null,
+      "canonical_identity_state": "UNRESOLVED",
+      "evidence_state": "UNKNOWN",
+      "reconciliation_state": "OPEN"
+    },
+    {
+      "stream_id": "FISHERIES_LOCAL",
+      "direction": "INTERNAL_PRODUCTION",
+      "reference_period": "CURRENT_TARGET",
+      "source_id": "NOAA_PR_COMMERCIAL_FISHERIES",
+      "canonical_identity_state": "SOURCE_AVAILABLE_NEEDS_CANONICAL_SPECIES_CROSSWALK",
+      "evidence_state": "FACT",
+      "reconciliation_state": "OPEN",
+      "notes": "Landing location is not catch location; confidentiality and sustainable/regulatory caps remain binding."
+    }
+  ],
+  "required_arithmetic": {
+    "form": "local_edible_supply + mainland_inbound_food + foreign_inbound_food - mainland_outbound_food - foreign_outbound_food - nonfood_feed_seed_uses - losses +/- inventory_change",
+    "state": "OPEN",
+    "reason": "Current commodity and edible-equivalent crosswalks are not closed."
+  },
+  "promotion_gate": {
+    "state": "FAIL_CLOSED",
+    "requirements": [
+      "canonical commodity identities explicitly adjudicated",
+      "units and edible-equivalent transformations explicit",
+      "calendar/fiscal reference periods reconciled",
+      "mainland and foreign streams remain separate before aggregation",
+      "inbound/outbound arithmetic closes",
+      "feed/seed/nonfood uses bounded",
+      "loss and inventory treatment explicit",
+      "unresolved residue zero inside any certified current-coverage claim"
+    ]
+  }
+}
