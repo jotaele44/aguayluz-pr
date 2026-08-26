@@ -225,12 +225,17 @@ def test_system_status_reports_missing_artifacts_without_failing(client):
             assert entry["modified_at"]
 
 
-def test_readings_kinds_match_registered_producers(client):
+def test_readings_kinds_match_registered_producers(client, tmp_path, monkeypatch):
     """A kind with no file yields an empty series; an unregistered kind yields []."""
     assert set(backend.READINGS_FILES) == {
         "reservoir", "groundwater", "coastal", "neon",
         "usgs_field_measurements", "usgs_peaks", "drought", "precipitation",
     }
+    # Point at a path that doesn't exist rather than relying on the checkout's real
+    # data/coastal_levels.jsonl happening to be empty — scripts/ingest_noaa_tides.py
+    # populates that file locally (it's gitignored, so this is a real, expected dev
+    # state, not something the test should assume away).
+    monkeypatch.setitem(backend.READINGS_FILES, "coastal", tmp_path / "no_such_coastal_file.jsonl")
     assert client.get("/readings?kind=coastal").json() == []
     assert client.get("/readings?kind=generation").json() == []
 

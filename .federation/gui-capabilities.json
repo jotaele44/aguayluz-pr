@@ -59,7 +59,8 @@
       "requires_terminal": false,
       "backend": {
         "files": [
-          "server/backend/main.py"
+          "server/backend/main.py",
+          "server/backend/app.py"
         ],
         "endpoints": [
           "GET /assets",
@@ -68,6 +69,9 @@
           "GET /assets.geojson",
           "GET /municipios.geojson",
           "GET /municipios/{name}/summary"
+        ],
+        "symbols": [
+          "server/backend/app.py:municipio_summary"
         ]
       },
       "frontend": {
@@ -102,11 +106,15 @@
       "tests": {
         "backend": [
           "tests/test_backend_events_api.py",
-          "tests/test_pr_geo_boundaries.py"
+          "tests/test_pr_geo_boundaries.py",
+          "tests/test_backend_municipio_summary_api.py"
         ],
         "contract": [
           "tests/test_navigation.py",
           "tests/test_gui_parity.py"
+        ],
+        "unit": [
+          "dashboard/src/pages/MunicipioDetailPage.test.jsx"
         ],
         "e2e": [
           "dashboard/tests/gui-parity.spec.mjs"

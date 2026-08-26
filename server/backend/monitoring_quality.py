@@ -90,6 +90,30 @@ SERIES_METADATA_REGISTRY: dict[tuple[str, str], dict[str, Any]] = {
         "datum_required": True, "freshness_hours": None,
         "threshold": None,
     },
+    # `drought` and `precipitation` were missing from this registry entirely — every
+    # /readings request for either kind unconditionally called series_policy() below and
+    # raised KeyError, which FastAPI turns into a connection-level failure rather than a
+    # clean error body. Latent since 42d5d2b (2026-08-07): dashboard/src/lib/monitoring.js
+    # has always advertised drought_category and both precipitation series as selectable
+    # in MonitoringCharts.jsx, but nothing surfaced this until scripts/ingest_drought_usdm.py
+    # / ingest_precip_ncei.py were actually run and something queried the readings for them.
+    ("drought", "drought_category"): {
+        "kind": "drought", "unit": "category", "parameter_codes": ["D0", "D1", "D2", "D3", "D4", "None"],
+        # USDM publishes weekly; 10 days covers a missed release without false "stale".
+        "datum_required": False, "freshness_hours": 24 * 10,
+        # Official NDMC/USDM classification, "not a derived proxy" per monitoring.js's own
+        # note on this series — no operator-set threshold exists for it.
+        "threshold": None,
+    },
+    ("precipitation", "precipitation_pct_normal"): {
+        "kind": "precipitation", "unit": "%", "parameter_codes": ["30d", "90d"],
+        # Rolling 30/90-day comparison against a climatological normal, not a live feed —
+        # generous slack over NCEI's typical publication cadence.
+        "datum_required": False, "freshness_hours": 24 * 35,
+        # "A corroborating signal for the drought classification above, not an official
+        # index" per monitoring.js's own note — no operator threshold.
+        "threshold": None,
+    },
 }
 
 
