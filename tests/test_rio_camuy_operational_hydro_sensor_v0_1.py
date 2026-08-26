@@ -201,6 +201,10 @@ def test_current_camuy_closed_state_and_cave_surface_remain_get_only() -> None:
         }
         assert cave_paths
         assert {method for methods in cave_paths.values() for method in methods} == {"get"}
-        assert client.post("/cave-karst/summary").status_code == 405
-        assert client.patch("/cave-karst/assets/AYL_KARST_CAMUY_PARK").status_code == 405
-        assert client.delete("/cave-karst/alerts").status_code == 405
+
+        post_response = client.post("/cave-karst/summary")
+        patch_response = client.patch("/cave-karst/assets/AYL_KARST_CAMUY_PARK")
+        delete_response = client.delete("/cave-karst/alerts")
+        assert post_response.status_code == 405
+        assert patch_response.status_code == 405
+        assert delete_response.status_code == 405
