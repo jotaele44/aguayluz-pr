@@ -265,13 +265,33 @@ availability registry while raising no alerts.
   has not been exercised end-to-end against a real response. Its fixtures
   (`tests/fixtures/neon_data_manifest_sample.json`,
   `neon_continuous_discharge_sample.csv`) are **SYNTHETIC** — hand-authored from NEON's
-  published response and file formats and labelled as such in the files themselves.
+  published response and file formats and labelled as such in the files themselves. (That
+  claim was true of the JSON and not of the CSV, which was a bare header with nothing
+  marking it; the CSV now carries a trailing `_SYNTHETIC_FIXTURE_NOT_A_REAL_NEON_CAPTURE`
+  column. A leading `#` comment row would have been parsed as the header by
+  `csv.DictReader`, so the marker is a column name, and a test asserts both.)
   They exercise this repo's parsing, unit-conversion, QA-flag and md5-integrity logic
   correctly; they do **not** prove the CSV column names match a real NEON download.
   The parser fails safe — a file with no documented column is skipped with a warning
-  rather than read from a guessed column. First run with a real token should be
-  reviewed against `docs/NEON_INTEGRATION.md`'s product table before the output is
-  trusted. This gating is recorded in `federation.json#waf_blocked_sources`.
+  rather than read from a guessed column. This gating is recorded in
+  `federation.json#waf_blocked_sources`.
+
+  **How to check it, once a token has run.** `NEON_API_TOKEN` is wired into the
+  `--weekly` and `--all` steps of `.github/workflows/refresh.yml`, so the download runs
+  on the Monday cadence. Until 2026-08-02 that run left **nothing behind to inspect**:
+  `.gitignore` drops `data/*` and `outputs/*` wholesale, so the readings and the export
+  were consumed in-job and discarded, and no artifact in the tree said whether the
+  download had succeeded, been skipped, or matched a single column.
+
+  It now writes **`data/neon_ingest_receipt.json`**, committed on the same rationale as
+  `neon_availability.jsonl`. Per downloaded file it records the CSV's actual header, the
+  columns `CSV_COLUMNS` looked for, which value column matched, the unit that match
+  carried, the QA-flag columns present, and the row count. Column names and counts only —
+  no token, no URL, no measured values, and the committed `G07_NO_SECRETS` gate covers it.
+
+  Reviewing the first real run means opening that file and checking `matched_value_column`
+  against the product table above. A `null` there is the finding: the file arrived, and
+  the documented column name was wrong.
 - `asset_type` is `water` for all four sites. GUAN and LAJA are a dry forest and an
   agricultural station rather than water infrastructure, but the enum offers only
   water/wastewater/power/telecom/fuel/unknown and their hydrologic products are why

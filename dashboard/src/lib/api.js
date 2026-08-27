@@ -55,13 +55,13 @@ const authFailureMessage = () =>
     ? 'Rejected: the API key set in System & Tools is not accepted by this backend.'
     : 'Refused: API key auth is enabled on the backend. Set the key in System & Tools.'
 
-async function getJSON(path, fallback = null) {
+async function getJSON(path, fallback = null, timeoutMs = 8000) {
   if (OFFLINE) {
     const key = path.split('?')[0] // server-side filters degrade to the unfiltered snapshot
     return key in snapshot ? snapshot[key] : fallback
   }
   try {
-    const res = await fetch(`${API_BASE}${path}`, { signal: AbortSignal.timeout(8000) })
+    const res = await fetch(`${API_BASE}${path}`, { signal: AbortSignal.timeout(timeoutMs) })
     if (!res.ok) return fallback
     return await res.json()
   } catch {
@@ -75,7 +75,7 @@ const qs = (params) => {
 }
 
 export const getHealth = () => getJSON('/health', { status: 'down', counts: {}, readiness: {} })
-export const getAssets = (f = {}) => getJSON(`/assets${qs(f)}`, [])
+export const getAssets = (f = {}) => getJSON(`/assets${qs(f)}`, [], f.impact ? 60000 : 8000)
 export const getAssetsGeojson = () => getJSON('/assets.geojson', { type: 'FeatureCollection', features: [] })
 export const getMunicipiosGeojson = () => getJSON('/municipios.geojson', { type: 'FeatureCollection', features: [] })
 // /events returns {total, offset, items}; getEvents unwraps to the array for backward compat.

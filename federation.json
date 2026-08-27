@@ -48,7 +48,7 @@
     "validation_gates": "python scripts/validate_repo.py",
     "lint": "ruff check .",
     "test_suite": "python -m pytest -q",
-    "export_canonical": "python3 scripts/federation_export.py --mode test",
+    "export_canonical": "python3 scripts/federation_export.py --mode test --out exports/federation --no-outputs",
     "maintenance": "aguayluz maintenance --mode audit",
     "ingest_power": "python3 scripts/ingest_power.py",
     "ingest_preps": "python3 scripts/ingest_preps.py",

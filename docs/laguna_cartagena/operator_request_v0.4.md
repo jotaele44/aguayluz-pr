@@ -1,7 +1,7 @@
 # Solicitud directa de registros operacionales — Laguna Cartagena / Valle de Lajas
 
-**Ventana solicitada:** 4 de agosto de 2026, 12:00–23:59 UTC  
-**Modo:** investigación técnica en sombra; sin notificación pública ni acción operacional  
+**Ventana solicitada:** 4 de agosto de 2026, 12:00–23:59 UTC
+**Modo:** investigación técnica en sombra; sin notificación pública ni acción operacional
 **No es una solicitud FOIA.**
 
 Favor de remitir o canalizar al custodio operacional correspondiente los registros existentes para la ventana indicada:

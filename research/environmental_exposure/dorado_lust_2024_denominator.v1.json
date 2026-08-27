@@ -1,0 +1,201 @@
+{
+  "schema_version": "1.0.0",
+  "as_of": "2026-08-21",
+  "scope": "DRNA 2024 LUST rows with CITY exactly Dorado",
+  "authority": "PR_DRNA",
+  "classification": "SOURCE_MANIFESTATION_DENOMINATOR",
+  "causal_promotion_allowed": false,
+  "source_manifests": [
+    {
+      "manifestation_id": "DRNA_LUST_ACTIVE_2024",
+      "url": "https://www.drna.pr.gov/wp-content/uploads/2025/01/ACTIVE-LUST-LIST-2024.pdf",
+      "document_title": "ACTIVE SITES LUST LIST 2024",
+      "page_count": 22,
+      "retrieval_state": "WEB_PARSED",
+      "byte_hash_state": "BLOCKED_DOWNLOAD_FAILURE",
+      "sha256": null
+    },
+    {
+      "manifestation_id": "DRNA_LUST_INACTIVE_2024",
+      "url": "https://www.drna.pr.gov/wp-content/uploads/2025/01/INACTIVE-LUST-LIST-2024.pdf",
+      "document_title": "INACTIVE SITES LUST LIST 2024",
+      "page_count": 16,
+      "retrieval_state": "WEB_PARSED",
+      "byte_hash_state": "BLOCKED_DOWNLOAD_FAILURE",
+      "sha256": null
+    }
+  ],
+  "filter_contract": {
+    "field": "CITY",
+    "operator": "EXACT_NORMALIZED_EQUAL",
+    "value": "Dorado",
+    "name_or_owner_mentions_do_not_count": true
+  },
+  "counts": {
+    "active_manifestations": 2,
+    "inactive_manifestations": 8,
+    "manifestation_total": 10,
+    "unique_ust_ids": 9,
+    "cross_list_duplicate_ust_ids": 1
+  },
+  "active": [
+    {
+      "ust_id": "86-0321",
+      "name": "Gulf #122",
+      "city": "Dorado",
+      "address": "Carr # 699 & Carr 854",
+      "owner": "Caribbean Petroleum Corp",
+      "how_known": "Product in Well",
+      "date_known_raw": "12-Mar-99",
+      "source_manifestation": "DRNA_LUST_ACTIVE_2024",
+      "source_page": 4,
+      "source_line": 109,
+      "causal_state": "DISCOVERY_CANDIDATE"
+    },
+    {
+      "ust_id": "86-0353",
+      "name": "Doraville S/S",
+      "city": "Dorado",
+      "address": "Carr. 695 km. 1.5 Bo. Higuillar",
+      "owner": "American Petroleum Corp.",
+      "how_known": "UST Removal",
+      "date_known_raw": "14-Jul-00",
+      "source_manifestation": "DRNA_LUST_ACTIVE_2024",
+      "source_page": 4,
+      "source_line": 121,
+      "causal_state": "DISCOVERY_CANDIDATE"
+    }
+  ],
+  "inactive": [
+    {
+      "ust_id": "86-0353",
+      "name": "Iris I. Martinez",
+      "city": "Dorado",
+      "address": "Doraville Calle 695 km 1.5",
+      "owner": "Gulf/Chevron/Suc. Ramon Roig",
+      "date_known_raw": "12-junio-02",
+      "how_known": "UST Removal",
+      "release_date_raw": "31-Mar-95",
+      "source_manifestation": "DRNA_LUST_INACTIVE_2024",
+      "source_page": 2,
+      "source_line": 86,
+      "causal_state": "DISCOVERY_CANDIDATE"
+    },
+    {
+      "ust_id": "86-0618",
+      "name": "Shell Company (PR) LTD.",
+      "city": "Dorado",
+      "address": "Call Mendez Vigo # 274",
+      "owner": "Shell Company (P.R.) Limited",
+      "date_known_raw": "30-Jul-03",
+      "how_known": "Free Product",
+      "release_date_raw": "6-Sep-05",
+      "source_manifestation": "DRNA_LUST_INACTIVE_2024",
+      "source_page": 2,
+      "source_line": 113,
+      "causal_state": "DISCOVERY_CANDIDATE"
+    },
+    {
+      "ust_id": "86-0861",
+      "name": "Shell S/S #002240",
+      "city": "Dorado",
+      "address": "Calle Marginal, Urb. Martorell",
+      "owner": "Shell Company (P.R.) Limited",
+      "date_known_raw": "Unknown",
+      "how_known": "Product Spill",
+      "release_date_raw": "Unknown",
+      "source_manifestation": "DRNA_LUST_INACTIVE_2024",
+      "source_page": 4,
+      "source_line": 177,
+      "causal_state": "DISCOVERY_CANDIDATE"
+    },
+    {
+      "ust_id": "86-0896",
+      "name": "Golden Hills",
+      "city": "Dorado",
+      "address": "Carr. 2 Km. 27.7",
+      "owner": "Carlos Santiago",
+      "date_known_raw": "18-Oct-94",
+      "how_known": "UST Removal",
+      "release_date_raw": "2-Jul-95",
+      "source_manifestation": "DRNA_LUST_INACTIVE_2024",
+      "source_page": 5,
+      "source_line": 194,
+      "causal_state": "DISCOVERY_CANDIDATE"
+    },
+    {
+      "ust_id": "86-1466",
+      "name": "Benckinser de P.R",
+      "city": "Dorado",
+      "address": "Calle Estacion 92",
+      "owner": "Benckiser de P.R",
+      "date_known_raw": "6-Nov-97",
+      "how_known": "Unknown",
+      "release_date_raw": "20-Mar-97",
+      "source_manifestation": "DRNA_LUST_INACTIVE_2024",
+      "source_page": 8,
+      "source_line": 326,
+      "causal_state": "DISCOVERY_CANDIDATE"
+    },
+    {
+      "ust_id": "86-1944",
+      "name": "Caribbean Petroleum Corporation",
+      "city": "Dorado",
+      "address": "PR-2 Km. 26.7, Bo. Espinosa",
+      "owner": "Caribbean Petroleum Corporation",
+      "date_known_raw": "Unknown",
+      "how_known": "Unknown",
+      "release_date_raw": "1-Aug-95",
+      "source_manifestation": "DRNA_LUST_INACTIVE_2024",
+      "source_page": 10,
+      "source_line": 393,
+      "causal_state": "DISCOVERY_CANDIDATE"
+    },
+    {
+      "ust_id": "92-0091",
+      "name": "Pump STA. Dorado del Mar",
+      "city": "Dorado",
+      "address": "Carr 693 Calle 2, Dorado del Mar",
+      "owner": "Prasa",
+      "date_known_raw": "15-Oct-90",
+      "how_known": "UST Removal",
+      "release_date_raw": "27-Jun-03",
+      "source_manifestation": "DRNA_LUST_INACTIVE_2024",
+      "source_page": 13,
+      "source_line": 508,
+      "causal_state": "DISCOVERY_CANDIDATE"
+    },
+    {
+      "ust_id": "97-0031",
+      "name": "Municipio de Dorado",
+      "city": "Dorado",
+      "address": "Calle Gladiola, Vista del Plata",
+      "owner": "Obras Publicas",
+      "date_known_raw": "15-Jul-99",
+      "how_known": "UST Removal",
+      "release_date_raw": "20-Jan-21",
+      "source_manifestation": "DRNA_LUST_INACTIVE_2024",
+      "source_page": 15,
+      "source_line": 576,
+      "causal_state": "DISCOVERY_CANDIDATE"
+    }
+  ],
+  "cross_list_conflicts": [
+    {
+      "ust_id": "86-0353",
+      "conflict_state": "OPEN",
+      "active_name": "Doraville S/S",
+      "inactive_name": "Iris I. Martinez",
+      "active_owner": "American Petroleum Corp.",
+      "inactive_owner": "Gulf/Chevron/Suc. Ramon Roig",
+      "same_or_near_address": true,
+      "interpretation": "The same UST ID has concurrent 2024 active and inactive list manifestations with differing descriptive fields. Preserve both manifestations; do not collapse status or identity without case-level records."
+    }
+  ],
+  "closure": {
+    "city_filter_denominator_state": "EXHAUSTED_FOR_2024_LIST_MANIFESTATIONS",
+    "case_file_denominator_state": "OPEN",
+    "source_attribution_state": "NOT_TESTED",
+    "causal_claims": 0
+  }
+}

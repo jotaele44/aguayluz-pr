@@ -20,6 +20,11 @@ PY = sys.executable
 _NOW_TS = "__NOW_ISO__"
 
 STEP_NWS = ("NWS active alerts → service_events", ["scripts/ingest_nws_alerts.py"], False)
+STEP_NHC = (
+    "NHC Atlantic tropical cyclones → service_events",
+    ["scripts/ingest_nhc_storms.py"],
+    True,
+)
 STEP_USGS_QUAKES = (
     "USGS earthquakes → service_events",
     ["scripts/ingest_usgs_quakes.py"],
@@ -50,6 +55,8 @@ STEP_USGS_FIELD_MEASUREMENTS = (
     ["scripts/ingest_usgs_field_measurements.py"],
     True,
 )
+# Backward-compatible name used by the Laguna/GUI-facing refresh-plan regressions.
+STEP_USGS_FIELD_MEAS = STEP_USGS_FIELD_MEASUREMENTS
 STEP_USGS_PEAKS = (
     "USGS OGC annual peaks → usgs_peaks_readings",
     ["scripts/ingest_usgs_peaks.py"],
@@ -85,9 +92,44 @@ STEP_USGS_SAMPLES = (
     ["scripts/ingest_usgs_samples.py"],
     True,
 )
+STEP_REGULATORY_USGS = (
+    "USGS monitoring-location metadata → regulatory_observations (regulatory framework)",
+    ["scripts/ingest_regulatory_usgs.py"],
+    True,
+)
+STEP_REGULATORY_LINKS = (
+    "regulatory observations → entity-link candidates (never overwrites a decision)",
+    ["scripts/build_regulatory_links.py"],
+    True,
+)
+STEP_REGULATORY_RECHECK = (
+    "regulatory observations freshness recheck (reconfirms stale USGS sites only)",
+    ["scripts/ingest_regulatory_usgs.py", "--recheck-stale"],
+    True,
+)
+STEP_REGULATORY_PROMOTE = (
+    "approved regulatory entity links → crosswalk (consumes decisions, never writes approved)",
+    ["scripts/promote_regulatory_links.py"],
+    True,
+)
 STEP_NOAA_TIDES = (
     "NOAA CO-OPS tides → coastal_levels",
     ["scripts/ingest_noaa_tides.py", "--days", "90"],
+    True,
+)
+STEP_DROUGHT_USDM = (
+    "USDM weekly drought classification → drought_conditions",
+    ["scripts/ingest_drought_usdm.py", "--weeks", "52"],
+    True,
+)
+STEP_SOIL_ENRICH = (
+    "NRCS Soil Data Access → drought-monitoring-area soil enrichment",
+    ["scripts/enrich_drought_soil.py"],
+    True,
+)
+STEP_PRECIP_NCEI = (
+    "NCEI precipitation percent-of-normal → precipitation_conditions",
+    ["scripts/ingest_precip_ncei.py", "--days", "120"],
     True,
 )
 STEP_NEON = (
@@ -164,6 +206,7 @@ _DERIVE = [STEP_WATER_POWER, STEP_ALERTS, STEP_ALERT_SYSTEM]
 PLANS: dict[str, list[tuple]] = {
     "fast": [
         STEP_NWS,
+        STEP_NHC,
         STEP_USGS_QUAKES,
         STEP_USGS_CONTINUOUS,
         STEP_USGS_RTFI,
@@ -173,6 +216,7 @@ PLANS: dict[str, list[tuple]] = {
     ],
     "daily": [
         STEP_NWS,
+        STEP_NHC,
         STEP_USGS_QUAKES,
         STEP_USGS_LEVELS,
         STEP_USGS_GW,
@@ -189,6 +233,7 @@ PLANS: dict[str, list[tuple]] = {
     ],
     "weekly": [
         STEP_NWS,
+        STEP_NHC,
         STEP_USGS_QUAKES,
         STEP_USGS_ASSETS,
         STEP_USGS_LEVELS,
@@ -205,6 +250,13 @@ PLANS: dict[str, list[tuple]] = {
         STEP_NEON,
         STEP_NEON_PRODUCTS,
         STEP_USGS_SAMPLES,
+        STEP_REGULATORY_USGS,
+        STEP_REGULATORY_LINKS,
+        STEP_REGULATORY_RECHECK,
+        STEP_REGULATORY_PROMOTE,
+        STEP_DROUGHT_USDM,
+        STEP_PRECIP_NCEI,
+        STEP_SOIL_ENRICH,
         STEP_SDWIS,
         STEP_ECHO,
         STEP_FEMA,
@@ -215,6 +267,7 @@ PLANS: dict[str, list[tuple]] = {
     ],
     "all": [
         STEP_NWS,
+        STEP_NHC,
         STEP_USGS_QUAKES,
         STEP_USGS_ASSETS,
         STEP_USGS_LEVELS,
@@ -231,6 +284,13 @@ PLANS: dict[str, list[tuple]] = {
         STEP_NEON,
         STEP_NEON_PRODUCTS,
         STEP_USGS_SAMPLES,
+        STEP_REGULATORY_USGS,
+        STEP_REGULATORY_LINKS,
+        STEP_REGULATORY_RECHECK,
+        STEP_REGULATORY_PROMOTE,
+        STEP_DROUGHT_USDM,
+        STEP_PRECIP_NCEI,
+        STEP_SOIL_ENRICH,
         STEP_SDWIS,
         STEP_ECHO,
         STEP_FEMA,

@@ -16,9 +16,14 @@ the I/O):
 * osha      — :func:`aguayluz.alert_promotion.osha.osha_alerts`         (INDUSTRIAL)
 * neon      — :func:`aguayluz.alert_promotion.neon.neon_alerts`         (CONTAMINATION /
   HYDRO_OPS / WEATHER_HAZARD / TELECOM_SCADA, routed by what the product measures)
+* drought   — :func:`aguayluz.alert_promotion.drought.drought_alerts` /
+  :func:`aguayluz.alert_promotion.drought.precipitation_shortfall_alerts` (WEATHER_HAZARD;
+  USDM classification-band + NCEI percent-of-normal precipitation, kept as two
+  independent signals rather than fused into one condition)
 
 Each promoter stamps a distinct ``alert_id`` marker (``_sdwis_`` / ``_resvlow_`` /
-``_seismic_`` / ``_weather_`` / ``_osha_`` / ``_neonpub_``) so the idempotent merge in
+``_seismic_`` / ``_weather_`` / ``_osha_`` / ``_neonpub_`` / ``_drought_`` /
+``_precipshort_``) so the idempotent merge in
 the CLI can replace only its own previously-generated rows while preserving seeds and
 manual entries.
 
@@ -35,7 +40,14 @@ from typing import Any
 from ..alerts import AlertEvent
 from ..impact import AssetIndex, build_asset_index
 from ..water_alerts import build_water_alerts, load_geo
+from .drought import (
+    DROUGHT_MARKER,
+    PRECIP_MARKER,
+    drought_alerts,
+    precipitation_shortfall_alerts,
+)
 from .neon import NEON_MARKER, neon_alerts
+from .nhc import NHC_MARKER, nhc_alerts
 from .osha import OSHA_MARKER, osha_alerts
 from .seismic import SEISMIC_MARKER, seismic_alerts
 from .weather import WEATHER_MARKER, weather_alerts
@@ -43,7 +55,8 @@ from .weather import WEATHER_MARKER, weather_alerts
 #: Every alert_id substring that marks a row as machine-generated (safe to replace).
 GENERATED_MARKERS: tuple[str, ...] = (
     "_sdwis_", "_resvlow_", "_gwlow_", "_coasthi_",
-    SEISMIC_MARKER, WEATHER_MARKER, OSHA_MARKER, NEON_MARKER,
+    SEISMIC_MARKER, WEATHER_MARKER, OSHA_MARKER, NEON_MARKER, NHC_MARKER,
+    DROUGHT_MARKER, PRECIP_MARKER,
 )
 
 #: Operational-severity floor (0-5 scale) at or above which an alert is life-safety
@@ -96,8 +109,11 @@ def build_all_alerts(
     )
     alerts.extend(seismic_alerts(events, geo, index))
     alerts.extend(weather_alerts(events, geo, index))
+    alerts.extend(nhc_alerts(events, geo, index))
     alerts.extend(osha_alerts(events, geo, index))
     alerts.extend(neon_alerts(neon_events or [], geo, index))
+    alerts.extend(drought_alerts(readings or [], geo, index, assets))
+    alerts.extend(precipitation_shortfall_alerts(readings or [], geo, index, assets))
     return alerts
 
 
@@ -111,6 +127,12 @@ __all__ = [
     "weather_alerts",
     "osha_alerts",
     "neon_alerts",
+    "nhc_alerts",
+    "NHC_MARKER",
+    "drought_alerts",
+    "precipitation_shortfall_alerts",
+    "DROUGHT_MARKER",
+    "PRECIP_MARKER",
     "load_geo",
     "AssetIndex",
     "build_asset_index",

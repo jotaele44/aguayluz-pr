@@ -1,6 +1,6 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useAssets, useAssetsGeojson, useMunicipiosGeojson, useEvents, useAlertsGeojson, useCoverage } from '@/lib/hooks'
+import { useAssets, useAssetsGeojson, useMunicipiosGeojson, useEvents, useAlertsGeojson, useCoverage, useReadingsEnvelope } from '@/lib/hooks'
 import AssetMap from '@/components/AssetMap'
 import AssetsTable from '@/components/AssetsTable'
 import AssetDetail from '@/components/AssetDetail'
@@ -13,10 +13,27 @@ export default function MapPage() {
   const { data: events = [] } = useEvents()
   const { data: alertsGeo } = useAlertsGeojson()
   const { data: coverage } = useCoverage()
+  // drought_category's `site_no` is the municipio's FIPS, which is also
+  // pr_municipios.geojson's `geoid` (scripts/ingest_drought_usdm.py) — the one series
+  // where a real municipio-wide choropleth tint is honest rather than invented.
+  const { data: droughtEnvelope } = useReadingsEnvelope({ kind: 'drought', metric: 'drought_category' })
   const [selected, setSelected] = useState(null)
   const [selectedMunicipio, setSelectedMunicipio] = useState(null)
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+
+  const droughtByGeoid = useMemo(() => {
+    const latest = new Map()
+    for (const row of droughtEnvelope?.items ?? []) {
+      const geoid = row.site_no
+      if (!geoid) continue
+      const current = latest.get(geoid)
+      if (!current || String(row.observed_date || '') > String(current.observed_date || '')) {
+        latest.set(geoid, row)
+      }
+    }
+    return Object.fromEntries([...latest].map(([geoid, row]) => [geoid, row.value]))
+  }, [droughtEnvelope])
 
   // fly-to from ?flyTo=ASSET_ID&lat=...&lon=... (set by AssetDetail "Show on map")
   const flyToLat = parseFloat(searchParams.get('lat'))
@@ -39,10 +56,14 @@ export default function MapPage() {
           municipios={municipios}
           events={events}
           alerts={alertsGeo}
+          droughtByGeoid={droughtByGeoid}
           selectedAssetId={selected?.asset_id}
           selectedMunicipio={selectedMunicipio}
           onSelect={selectByProps}
-          onMunicipioSelect={setSelectedMunicipio}
+          onMunicipioSelect={(props) => {
+            setSelectedMunicipio(props)
+            navigate(`/municipios/${encodeURIComponent(props.name)}`)
+          }}
           onAlertSelect={(props) => navigate(`/alerts/${encodeURIComponent(props.alert_id)}`)}
           flyTo={flyToId && !isNaN(flyToLat) && !isNaN(flyToLon) ? { id: flyToId, lat: flyToLat, lon: flyToLon } : null}
         />
