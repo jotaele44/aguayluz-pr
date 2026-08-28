@@ -216,6 +216,56 @@ def test_coverage_pct_formula():
     assert _coverage_pct(7, 10) == 70.0
 
 
+def test_compute_aggregates_located_any_uses_municipio_centroid_for_events():
+    """`located_any` mirrors build_streams's own fallback: an event with no
+    lat/lon but a municipality that resolves in `geo` still counts (a
+    municipio-centroid spatial join is possible); an asset with no lat/lon
+    does NOT get that fallback, since build_streams never gives assets one.
+    Without `geo`, `located_any` degrades to exactly `located` (unchanged
+    caller behavior for the many call sites that don't pass geo)."""
+    geo = {"san_juan": {"name": "San Juan", "lat": 18.4655, "lon": -66.1057}}
+    assets = [
+        {"asset_id": "A1", "lat": 18.1, "lon": -66.1, "municipality": None},
+        {"asset_id": "A2", "lat": None, "lon": None, "municipality": "San Juan"},
+    ]
+    events = [
+        {"event_id": "E1", "lat": None, "lon": None, "municipality": "San Juan"},
+        {"event_id": "E2", "lat": None, "lon": None, "municipality": "Nowhere"},
+        {"event_id": "E3", "lat": 18.2, "lon": -66.2, "municipality": None},
+    ]
+
+    without_geo = _compute_aggregates(assets, events)
+    assert without_geo["located"] == 2          # A1 + E3, own lat/lon only
+    assert without_geo["located_any"] == without_geo["located"]
+
+    with_geo = _compute_aggregates(assets, events, geo)
+    assert with_geo["located"] == 2              # unchanged: point tier is geo-independent
+    # A1 (own point) + E1 (San Juan centroid) + E3 (own point) = 3.
+    # A2 does NOT count: assets get no municipio-centroid fallback in
+    # build_streams. E2 does NOT count: "Nowhere" isn't in `geo`.
+    assert with_geo["located_any"] == 3
+    assert with_geo["located_any"] >= with_geo["located"]
+
+
+def test_compute_aggregates_rejects_incomplete_or_invalid_points():
+    geo = {
+        "valid": {"lat": 18.4, "lon": -66.1},
+        "invalid": {"lat": 18.4, "lon": None},
+    }
+    events = [
+        {"lat": 18.1, "lon": None, "municipality": None},
+        {"lat": float("nan"), "lon": -66.1, "municipality": None},
+        {"lat": True, "lon": -66.1, "municipality": None},
+        {"lat": 91.0, "lon": -66.1, "municipality": None},
+        {"lat": None, "lon": None, "municipality": "invalid"},
+        {"lat": None, "lon": None, "municipality": "valid"},
+    ]
+
+    aggregates = _compute_aggregates([], events, geo)
+    assert aggregates["located"] == 0
+    assert aggregates["located_any"] == 1
+
+
 def test_hub_export_status_reflects_g03_warning(tmp_path, monkeypatch):
     """Synthetic-anomaly test — proves `build_outputs` actually CONSULTS the
     helper instead of hardcoding `"PASS"`.

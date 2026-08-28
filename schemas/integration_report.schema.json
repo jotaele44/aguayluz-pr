@@ -20,16 +20,21 @@
     "generated_at": { "type": "string", "format": "date-time" },
     "coverage": {
       "type": "object",
-      "required": ["expected", "located", "ingested", "deduped", "unresolved", "gaps", "coverage_pct"],
+      "required": [
+        "expected", "located", "located_any", "ingested", "deduped", "unresolved",
+        "gaps", "coverage_pct", "coverage_pct_any_location"
+      ],
       "additionalProperties": false,
       "properties": {
         "expected":     { "type": "integer", "minimum": 0 },
-        "located":      { "type": "integer", "minimum": 0 },
+        "located":      { "type": "integer", "minimum": 0, "description": "Records carrying their own point lat/lon." },
+        "located_any":  { "type": "integer", "minimum": 0, "description": "Records resolving to any location, including a municipio-centroid fallback for events (see build_streams). Always >= located." },
         "ingested":     { "type": "integer", "minimum": 0 },
         "deduped":      { "type": "integer", "minimum": 0 },
         "unresolved":   { "type": "integer", "minimum": 0 },
         "gaps":         { "type": "array", "items": { "type": "string" } },
-        "coverage_pct": { "type": "number", "minimum": 0, "maximum": 100 }
+        "coverage_pct": { "type": "number", "minimum": 0, "maximum": 100, "description": "Point-precision geolocation rate: located / expected." },
+        "coverage_pct_any_location": { "type": "number", "minimum": 0, "maximum": 100, "description": "Any-precision spatial-join-capable rate (point or municipio centroid): located_any / expected." }
       }
     },
     "gates": {
