@@ -8,11 +8,11 @@ best-evidence canonical — WITHOUT deleting anything from utility_assets.jsonl
 (the ingests are idempotent + re-run weekly, so a destructive merge would just be
 re-added; and provenance must be preserved).
 
-Match rules (cross-source only — never merges two rows from the same source):
+Identity rule (cross-source only — never merges two rows from the same source):
   * plant_code  — HIFLD_PP_<code> ↔ EIA_PLANT_<code> share an EIA plant code.
                   (Also lends the coordless EIA plant its HIFLD twin's geometry.)
-  * proximity   — same asset_class (generation/substation), both geolocated,
-                  within the class threshold (haversine).
+Proximity is corroboration/discovery only. It can annotate an exact plant-code
+cluster, but it never creates identity by itself.
 Clusters via union-find; canonical = min(evidence_tier, then has-coords, then
 source rank HIFLD>EIA>Spiderweb>OSM). Output validated against
 schemas/asset_crosswalk.schema.json.
@@ -85,12 +85,19 @@ class UF:
 
 def _coords(r: dict):
     if isinstance(r.get("lat"), (int, float)) and isinstance(r.get("lon"), (int, float)):
-        return (float(r["lat"]), float(r["lon"]))
+        lat, lon = float(r["lat"]), float(r["lon"])
+        if math.isfinite(lat) and math.isfinite(lon) and -90 <= lat <= 90 and -180 <= lon <= 180:
+            return (lat, lon)
     return None
 
 
 def build_clusters(power: list[dict], plant_m: float, sub_m: float):
-    by_id = {r["asset_id"]: r for r in power}
+    by_id: dict[str, dict] = {}
+    for row in power:
+        asset_id = row["asset_id"]
+        if asset_id in by_id:
+            raise ValueError(f"duplicate asset_id: {asset_id}")
+        by_id[asset_id] = row
     uf = UF()
     edges: dict[frozenset, str] = {}  # (a,b) -> method
 
@@ -104,7 +111,7 @@ def build_clusters(power: list[dict], plant_m: float, sub_m: float):
                 uf.union(r["asset_id"], hifld_pp[code])
                 edges[frozenset((r["asset_id"], hifld_pp[code]))] = "plant_code"
 
-    # 2) proximity: cross-source, same class, both geolocated, within threshold
+    # 2) proximity is discovery/corroboration only. Never union on distance.
     geo = [(r["asset_id"], asset_class(r), source_of(r["asset_id"]), _coords(r))
            for r in power]
     geo = [g for g in geo if g[3] is not None and g[1] in ("generation", "substation")]
@@ -117,9 +124,9 @@ def build_clusters(power: list[dict], plant_m: float, sub_m: float):
                 continue
             d = haversine_m(pi, pj)
             if d <= thr[ci]:
-                uf.union(idi, idj)
                 key = frozenset((idi, idj))
-                edges[key] = "proximity" if key not in edges else "plant_code+proximity"
+                if key in edges:
+                    edges[key] = "plant_code+proximity"
 
     # gather clusters
     clusters: dict[str, list[str]] = {}

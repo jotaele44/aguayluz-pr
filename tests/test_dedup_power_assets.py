@@ -40,15 +40,14 @@ def test_helpers():
 def test_clusters_plant_code_and_proximity():
     power = [a for a in ASSETS if a["asset_type"] == "power"]
     clusters = {c["canonical_asset_id"]: c for c in build_clusters(power, 800, 400)}
-    # plant cluster: HIFLD + EIA (code) + OSM (proximity) → canonical HIFLD (T1+coords)
+    # plant cluster: exact shared code only; nearby OSM remains independent.
     pc = clusters["HIFLD_PP_61014"]
-    assert set(pc["member_asset_ids"]) == {"HIFLD_PP_61014", "EIA_PLANT_61014", "OSMP_-17091033"}
-    assert pc["match_method"] == "plant_code+proximity"
+    assert set(pc["member_asset_ids"]) == {"HIFLD_PP_61014", "EIA_PLANT_61014"}
+    assert pc["match_method"] == "plant_code"
     assert pc["asset_class"] == "generation"
-    # substation cluster: HIFLD + OSM by proximity → canonical HIFLD
-    ss = clusters["HIFLD_SS_SS1"]
-    assert set(ss["member_asset_ids"]) == {"HIFLD_SS_SS1", "OSMS_900"}
-    assert ss["match_method"] == "proximity"
+    # proximity-only pairs are discovery candidates, never canonical identity.
+    assert "HIFLD_SS_SS1" not in clusters
+    assert all("OSMP_-17091033" not in c["member_asset_ids"] for c in clusters.values())
     # isolated Spiderweb plant is not in any cluster
     assert "PWR00099" not in clusters
     assert all("PWR00099" not in c["member_asset_ids"] for c in clusters.values())
@@ -85,3 +84,22 @@ def test_same_source_never_merged():
          "evidence_tier": "T1", "lat": 18.00005, "lon": -66.0},
     ]
     assert build_clusters(power, 800, 400) == []
+
+
+def test_proximity_only_cross_source_never_asserts_identity():
+    power = [
+        {"asset_id": "HIFLD_SS_A", "asset_type": "power", "asset_subtype": "substation",
+         "evidence_tier": "T1", "lat": 18.0, "lon": -66.0},
+        {"asset_id": "OSMS_B", "asset_type": "power", "asset_subtype": "substation",
+         "evidence_tier": "T3", "lat": 18.00001, "lon": -66.0},
+    ]
+    assert build_clusters(power, 800, 400) == []
+
+
+def test_duplicate_ids_and_nonfinite_coordinates_fail_closed():
+    row = {"asset_id": "HIFLD_PP_1", "asset_type": "power", "asset_subtype": "generation",
+           "evidence_tier": "T1", "lat": float("nan"), "lon": -66.0}
+    assert build_clusters([row], 800, 400) == []
+    import pytest
+    with pytest.raises(ValueError, match="duplicate asset_id"):
+        build_clusters([row, dict(row)], 800, 400)

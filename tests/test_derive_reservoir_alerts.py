@@ -60,6 +60,15 @@ def test_skips_reservoirs_with_insufficient_history():
     assert build_alerts(rows, ASSETS, percentile=10, min_obs=30) == []
 
 
+def test_invalid_values_do_not_count_and_conflicting_latest_ties_fail_closed():
+    rows = _readings([130 + (i % 5) for i in range(29)] + [float("nan")])
+    assert build_alerts(rows, ASSETS, percentile=10, min_obs=30) == []
+
+    rows = _readings([130 + (i % 5) for i in range(39)] + [120.0])
+    conflict = dict(rows[-1], reading_id="AYL_RDG_conflict", value=119.0)
+    assert build_alerts(rows + [conflict], ASSETS, percentile=10, min_obs=30) == []
+
+
 def test_alerts_validate_against_service_event_schema():
     import re
 

@@ -28,7 +28,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
+from datetime import date
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
@@ -97,13 +99,28 @@ def build_alerts(
     alerts: list[dict] = []
     for asset_id, by_param in _series_by_asset(readings).items():
         series = _pick_series(by_param)
-        if len(series) < min_obs:
+        valid: list[tuple[dict, float]] = []
+        for reading in series:
+            try:
+                value = float(reading["value"])
+                date.fromisoformat(str(reading["observed_date"]))
+            except (KeyError, TypeError, ValueError):
+                continue
+            if math.isfinite(value):
+                valid.append((reading, value))
+        if len(valid) < min_obs:
             continue
-        series = sorted(series, key=lambda r: r["observed_date"])
-        values = [float(r["value"]) for r in series]
-        latest = series[-1]
+        valid.sort(key=lambda item: (item[0]["observed_date"], str(item[0].get("reading_id", ""))))
+        latest_date = valid[-1][0]["observed_date"]
+        latest_values = {value for reading, value in valid if reading["observed_date"] == latest_date}
+        if len(latest_values) != 1:
+            continue
+        series = [reading for reading, _ in valid]
+        values = [value for _, value in valid]
+        latest = valid[-1][0]
+        latest_value = valid[-1][1]
         threshold = _percentile(sorted(values), percentile)
-        if float(latest["value"]) > threshold:
+        if latest_value > threshold:
             continue  # not low — no alert
 
         site = asset_id.removeprefix("USGS_")
