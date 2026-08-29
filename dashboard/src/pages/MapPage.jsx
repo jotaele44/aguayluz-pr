@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useAssets, useAssetsGeojson, useMunicipiosGeojson, useEvents, useAlertsGeojson, useCoverage, useReadingsEnvelope } from '@/lib/hooks'
+import { useAssets, useAssetsGeojson, useMunicipiosGeojson, useBarriosGeojson, useEvents, useEventDensity, useAlertsGeojson, useCoverage, useReadingsEnvelope } from '@/lib/hooks'
 import AssetMap from '@/components/AssetMap'
 import AssetsTable from '@/components/AssetsTable'
 import AssetDetail from '@/components/AssetDetail'
@@ -10,7 +10,13 @@ export default function MapPage() {
   const { data: assets = [], isLoading } = useAssets()
   const { data: assetsGeo } = useAssetsGeojson()
   const { data: municipios } = useMunicipiosGeojson()
+  const { data: barrios } = useBarriosGeojson()
   const { data: events = [] } = useEvents()
+  // Aggregated over the full, uncapped corpus (unlike `events` above, which is
+  // paginated for the map's point layer) — this is what drives the "Density"
+  // municipio fill mode, since individual events are structurally area-level.
+  const { data: eventDensity } = useEventDensity()
+  const eventDensityByGeoid = eventDensity?.by_geoid ?? {}
   const { data: alertsGeo } = useAlertsGeojson()
   const { data: coverage } = useCoverage()
   // drought_category's `site_no` is the municipio's FIPS, which is also
@@ -54,9 +60,11 @@ export default function MapPage() {
           assets={assetsGeo}
           assetRows={assets}
           municipios={municipios}
+          barrios={barrios}
           events={events}
           alerts={alertsGeo}
           droughtByGeoid={droughtByGeoid}
+          eventDensityByGeoid={eventDensityByGeoid}
           selectedAssetId={selected?.asset_id}
           selectedMunicipio={selectedMunicipio}
           onSelect={selectByProps}

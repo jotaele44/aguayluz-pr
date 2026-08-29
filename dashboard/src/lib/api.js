@@ -78,6 +78,8 @@ export const getHealth = () => getJSON('/health', { status: 'down', counts: {}, 
 export const getAssets = (f = {}) => getJSON(`/assets${qs(f)}`, [])
 export const getAssetsGeojson = () => getJSON('/assets.geojson', { type: 'FeatureCollection', features: [] })
 export const getMunicipiosGeojson = () => getJSON('/municipios.geojson', { type: 'FeatureCollection', features: [] })
+export const getBarriosGeojson = () => getJSON('/barrios.geojson', { type: 'FeatureCollection', features: [] })
+export const getEventDensity = (f = {}) => getJSON(`/municipios/event_density${qs(f)}`, { by_geoid: {}, unresolved_count: 0, total_events: 0, filters: {} })
 // /events returns {total, offset, items}; getEvents unwraps to the array for backward compat.
 export const getEvents = async (f = {}) => {
   const r = await getJSON(`/events${qs(f)}`, { items: [] })
