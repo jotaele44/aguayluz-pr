@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  getHealth, getAssets, getAssetsGeojson, getMunicipiosGeojson,
+  getHealth, getAssets, getAssetsGeojson, getMunicipiosGeojson, getBarriosGeojson, getEventDensity,
   getEvents, getEventsPaged, getAssetEvents, getEvent, getMunicipioSummary,
   getReadings, getReviewQueue, getReviewQueuePaged,
   getSummary, getSummarySectors, getCoverage, getSystemStatus,
@@ -16,6 +16,8 @@ export const useSummarySectors = () => useQuery({ queryKey: ['summary/sectors'],
 export const useAssets = (f = {}) => useQuery({ queryKey: ['assets', f], queryFn: () => getAssets(f) })
 export const useAssetsGeojson = () => useQuery({ queryKey: ['assets.geojson'], queryFn: getAssetsGeojson })
 export const useMunicipiosGeojson = () => useQuery({ queryKey: ['municipios.geojson'], queryFn: getMunicipiosGeojson })
+export const useBarriosGeojson = () => useQuery({ queryKey: ['barrios.geojson'], queryFn: getBarriosGeojson })
+export const useEventDensity = (f = {}) => useQuery({ queryKey: ['municipios/event_density', f], queryFn: () => getEventDensity(f) })
 export const DEFAULT_EVENT_LIMIT = 500
 export const useEvents = (f = {}) => {
   const params = { limit: DEFAULT_EVENT_LIMIT, ...f }

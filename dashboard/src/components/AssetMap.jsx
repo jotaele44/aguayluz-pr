@@ -5,6 +5,7 @@ import { Activity, Layers, MapPinned, Satellite } from 'lucide-react'
 // Resolve against the configured base so it works in the normal build
 // (served from '/') and the VITE_OFFLINE single-file file:// export (base './').
 const MUNICIPIOS_URL = new URL('geo/pr_municipios.geojson', document.baseURI).href
+const BARRIOS_URL = new URL('geo/pr_barrios.geojson', document.baseURI).href
 
 const BASE_STYLE = {
   version: 8,
@@ -103,6 +104,25 @@ const DROUGHT_FILL_OPACITY = [
   0.55,
 ]
 
+// Event-count choropleth for GET /municipios/event_density. Breaks are quartile-based
+// against the actual corpus (78 municipios, counts ranging 1-1851, quartiles ~78/193/445)
+// rather than round numbers, so the four buckets are roughly equal-sized rather than
+// mostly-one-color. Same null-safe pattern as DROUGHT_FILL_COLOR: a municipio with no
+// aggregate yet (endpoint not loaded, or genuinely zero events) keeps the flat wash.
+const EVENT_DENSITY_FILL_COLOR = [
+  'case', ['==', ['feature-state', 'event_count'], null], NO_DROUGHT_DATA_FILL,
+  ['step', ['feature-state', 'event_count'],
+    '#1e3a5f',
+    80, '#2563eb',
+    200, '#f59e0b',
+    450, '#dc2626',
+  ],
+]
+const EVENT_DENSITY_FILL_OPACITY = [
+  'case', ['==', ['feature-state', 'event_count'], null], 0.08,
+  0.55,
+]
+
 // MapLibre's setHTML parses its argument as HTML, and popup content comes from
 // ingested records — an alert's source_title originates in a third-party feed
 // (Centinelas/news/regulatory), so an `<img onerror=...>` in a headline would
@@ -194,7 +214,7 @@ function ControlButton({ active, children, onClick, tone }) {
   )
 }
 
-export default function AssetMap({ assets, assetRows = [], municipios, events = [], alerts, droughtByGeoid, selectedAssetId, selectedMunicipio, onSelect, onMunicipioSelect, onAlertSelect, flyTo }) {
+export default function AssetMap({ assets, assetRows = [], municipios, barrios, events = [], alerts, droughtByGeoid, eventDensityByGeoid, selectedAssetId, selectedMunicipio, onSelect, onMunicipioSelect, onAlertSelect, flyTo }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const readyRef = useRef(false)
@@ -203,7 +223,13 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
   const onAlertSelectRef = useRef(onAlertSelect); onAlertSelectRef.current = onAlertSelect
   // Alerts start off: they are the densest layer (the SDWIS-derived contamination
   // history dominates), so they are opt-in rather than burying the asset dots.
-  const [layers, setLayers] = useState({ power: true, water: true, wastewater: true, other: true, municipios: true, events: true, review: false, alerts: false, criticalAlertsOnly: false, droughtTint: true })
+  // muniFillMode replaces a boolean droughtTint: fill-color/fill-opacity are one paint
+  // property each and can't honor two independent tints at once, so the municipio fill
+  // is a single-select of 'off' | 'drought' | 'event_density' (drought stays the
+  // pre-existing default). Barrios (sub-municipal boundaries) start off: event-density
+  // data is only aggregated at municipio granularity today (see MapPage.jsx), so a
+  // barrio outline alone would only add visual noise, not more signal.
+  const [layers, setLayers] = useState({ power: true, water: true, wastewater: true, other: true, municipios: true, barrios: false, events: true, review: false, alerts: false, criticalAlertsOnly: false, muniFillMode: 'drought' })
   const [basemap, setBasemap] = useState('osm')
 
   const assetFeatures = assets?.features ?? []
@@ -264,6 +290,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
       // promoteId lets MapLibre feature-state key off geoid directly, so drought tinting
       // (below) needs no client-side geometry mutation — just setFeatureState per geoid.
       map.addSource('municipios', { type: 'geojson', data: municipios || MUNICIPIOS_URL, promoteId: 'geoid' })
+      map.addSource('barrios', { type: 'geojson', data: barrios || BARRIOS_URL })
       map.addSource('assets', { type: 'geojson', data: visibleAssets || EMPTY, cluster: true, clusterMaxZoom: 10, clusterRadius: 36 })
       map.addSource('selected-asset', { type: 'geojson', data: selectedAsset })
       map.addSource('service-events', { type: 'geojson', data: eventGeo })
@@ -276,6 +303,11 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
       map.addLayer({
         id: 'muni-line', type: 'line', source: 'municipios',
         paint: { 'line-color': '#38bdf8', 'line-width': 0.7, 'line-opacity': 0.38 },
+      })
+      map.addLayer({
+        id: 'barrios-line', type: 'line', source: 'barrios',
+        layout: { visibility: 'none' },
+        paint: { 'line-color': '#a78bfa', 'line-width': 0.5, 'line-opacity': 0.5, 'line-dasharray': [1, 1.5] },
       })
       map.addLayer({
         id: 'clusters', type: 'circle', source: 'assets', filter: ['has', 'point_count'],
@@ -393,6 +425,11 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
 
   useEffect(() => {
     if (!readyRef.current || !mapRef.current) return
+    mapRef.current.getSource('barrios')?.setData(barrios || EMPTY)
+  }, [barrios])
+
+  useEffect(() => {
+    if (!readyRef.current || !mapRef.current) return
     // Also re-run when `municipios` changes: the municipios source's own setData() effect
     // (above) can resolve after this one already applied feature-state, and MapLibre's
     // GeoJSON source rebuilds its internal feature ids on setData — any state set before
@@ -401,6 +438,14 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
       mapRef.current.setFeatureState({ source: 'municipios', id: geoid }, { drought_category: category })
     }
   }, [droughtByGeoid, municipios])
+
+  useEffect(() => {
+    if (!readyRef.current || !mapRef.current) return
+    // Same re-apply-on-municipios-change reasoning as the drought effect above.
+    for (const [geoid, count] of Object.entries(eventDensityByGeoid || {})) {
+      mapRef.current.setFeatureState({ source: 'municipios', id: geoid }, { event_count: count })
+    }
+  }, [eventDensityByGeoid, municipios])
 
   useEffect(() => {
     if (!readyRef.current || !mapRef.current) return
@@ -423,11 +468,17 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
     if (!readyRef.current || !mapRef.current) return
     const visibility = layers.municipios ? 'visible' : 'none'
     for (const id of ['muni-fill', 'muni-line']) mapRef.current.setLayoutProperty(id, 'visibility', visibility)
+    mapRef.current.setLayoutProperty('barrios-line', 'visibility', layers.barrios ? 'visible' : 'none')
     mapRef.current.setLayoutProperty('events-dot', 'visibility', layers.events ? 'visible' : 'none')
     mapRef.current.setLayoutProperty('alerts-dot', 'visibility', layers.alerts ? 'visible' : 'none')
-    mapRef.current.setPaintProperty('muni-fill', 'fill-color', layers.droughtTint ? DROUGHT_FILL_COLOR : NO_DROUGHT_DATA_FILL)
-    mapRef.current.setPaintProperty('muni-fill', 'fill-opacity', layers.droughtTint ? DROUGHT_FILL_OPACITY : 0.08)
-  }, [layers.municipios, layers.events, layers.alerts, layers.droughtTint])
+    const [fillColor, fillOpacity] = {
+      drought: [DROUGHT_FILL_COLOR, DROUGHT_FILL_OPACITY],
+      event_density: [EVENT_DENSITY_FILL_COLOR, EVENT_DENSITY_FILL_OPACITY],
+      off: [NO_DROUGHT_DATA_FILL, 0.08],
+    }[layers.muniFillMode]
+    mapRef.current.setPaintProperty('muni-fill', 'fill-color', fillColor)
+    mapRef.current.setPaintProperty('muni-fill', 'fill-opacity', fillOpacity)
+  }, [layers.municipios, layers.barrios, layers.events, layers.alerts, layers.muniFillMode])
 
   useEffect(() => {
     if (!readyRef.current || !mapRef.current) return
@@ -452,9 +503,17 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
           <ControlButton active={layers.wastewater} tone="border-emerald-500/40 text-emerald-300" onClick={() => setLayers((s) => ({ ...s, wastewater: !s.wastewater }))}>Wastewater {counts.wastewater}</ControlButton>
           <ControlButton active={layers.other} tone="border-slate-500/40 text-slate-300" onClick={() => setLayers((s) => ({ ...s, other: !s.other }))}>Other {counts.other}</ControlButton>
           <ControlButton active={layers.municipios} tone="border-cyan-500/40 text-cyan-300" onClick={() => setLayers((s) => ({ ...s, municipios: !s.municipios }))}>Municipios</ControlButton>
-          <ControlButton active={layers.droughtTint} tone="border-amber-500/40 text-amber-300" onClick={() => setLayers((s) => ({ ...s, droughtTint: !s.droughtTint }))}>Drought tint</ControlButton>
-          <ControlButton active={layers.events} tone="border-red-500/40 text-red-300" onClick={() => setLayers((s) => ({ ...s, events: !s.events }))}>Events {eventGeo.features.length}</ControlButton>
+          <ControlButton active={layers.barrios} tone="border-violet-500/40 text-violet-300" onClick={() => setLayers((s) => ({ ...s, barrios: !s.barrios }))}>Barrios</ControlButton>
+          <ControlButton active={layers.events} tone="border-red-500/40 text-red-300" onClick={() => setLayers((s) => ({ ...s, events: !s.events }))}>Events (sample) {eventGeo.features.length}</ControlButton>
           <ControlButton active={layers.alerts} tone="border-orange-500/40 text-orange-300" onClick={() => setLayers((s) => ({ ...s, alerts: !s.alerts }))}>Alerts {alertGeo.features.length}</ControlButton>
+        </div>
+        <div className="mt-1.5">
+          <div className="mb-1 text-[10px] uppercase tracking-wide text-slate-500">Municipio fill</div>
+          <div className="grid grid-cols-3 gap-1.5">
+            <ControlButton active={layers.muniFillMode === 'off'} tone="border-slate-500/40 text-slate-300" onClick={() => setLayers((s) => ({ ...s, muniFillMode: 'off' }))}>Off</ControlButton>
+            <ControlButton active={layers.muniFillMode === 'drought'} tone="border-amber-500/40 text-amber-300" onClick={() => setLayers((s) => ({ ...s, muniFillMode: 'drought' }))}>Drought</ControlButton>
+            <ControlButton active={layers.muniFillMode === 'event_density'} tone="border-blue-500/40 text-blue-300" onClick={() => setLayers((s) => ({ ...s, muniFillMode: 'event_density' }))}>Density</ControlButton>
+          </div>
         </div>
         {layers.alerts && (
           <button
@@ -522,7 +581,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
             ))}
           </>
         )}
-        {layers.droughtTint && droughtByGeoid && Object.keys(droughtByGeoid).length > 0 && (
+        {layers.muniFillMode === 'drought' && droughtByGeoid && Object.keys(droughtByGeoid).length > 0 && (
           <>
             {/* Only rendered once real drought readings exist — an empty-but-present
                 legend would imply coverage the corpus doesn't have yet. */}
@@ -534,6 +593,22 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
               { label: 'D1 · Moderate', color: '#fcd37f' },
               { label: 'D0 · Abnormally dry', color: '#ffff00' },
               { label: 'No drought', color: '#64748b' },
+            ].map(({ label, color }) => (
+              <div key={label} className="mb-0.5 flex items-center gap-1.5 text-[11px] text-slate-300 last:mb-0">
+                <span style={{ background: color }} className="inline-block h-2 w-2 rounded-full shrink-0" />
+                {label}
+              </div>
+            ))}
+          </>
+        )}
+        {layers.muniFillMode === 'event_density' && eventDensityByGeoid && Object.keys(eventDensityByGeoid).length > 0 && (
+          <>
+            <div className="mb-1.5 mt-2 border-t border-slate-800 pt-2 text-[10px] uppercase tracking-wide text-slate-500">Event density (full corpus)</div>
+            {[
+              { label: '450+ events', color: '#dc2626' },
+              { label: '200–449', color: '#f59e0b' },
+              { label: '80–199', color: '#2563eb' },
+              { label: '1–79', color: '#1e3a5f' },
             ].map(({ label, color }) => (
               <div key={label} className="mb-0.5 flex items-center gap-1.5 text-[11px] text-slate-300 last:mb-0">
                 <span style={{ background: color }} className="inline-block h-2 w-2 rounded-full shrink-0" />
@@ -554,7 +629,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, events = 
           )}
         </div>
         {eventGeo.features.length > 0 && (
-          <div className="mt-2 flex items-center gap-1.5 text-[10px] text-amber-300"><Activity className="h-3 w-3" /> Event dots are derived from asset/municipio context.</div>
+          <div className="mt-2 flex items-center gap-1.5 text-[10px] text-amber-300"><Activity className="h-3 w-3" /> Event dots are a recent/approximate sample — use the "Density" municipio fill for the full corpus.</div>
         )}
       </div>
     </div>
