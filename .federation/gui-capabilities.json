@@ -68,10 +68,14 @@
           "PATCH /assets/{asset_id}",
           "GET /assets.geojson",
           "GET /municipios.geojson",
-          "GET /municipios/{name}/summary"
+          "GET /municipios/{name}/summary",
+          "GET /barrios.geojson",
+          "GET /municipios/event_density"
         ],
         "symbols": [
-          "server/backend/app.py:municipio_summary"
+          "server/backend/app.py:municipio_summary",
+          "server/backend/main.py:barrios_geojson",
+          "server/backend/main.py:municipios_event_density"
         ]
       },
       "frontend": {
