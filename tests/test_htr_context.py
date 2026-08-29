@@ -43,11 +43,13 @@ def test_explicit_authoritative_pair_binding_can_be_connectivity_eligible():
 
 
 def test_unbound_hydraulic_label_cannot_promote():
-    r = base_row(); r["relation_type"] = "HYDRAULICALLY_CONNECTED_TO"
+    r = base_row()
+    r["relation_type"] = "HYDRAULICALLY_CONNECTED_TO"
     assert consume_htr_context([r])[0]["connectivity_eligible"] is False
 
 
 def test_discovery_only_row_rejected():
-    r = base_row(); r["state"] = "CANDIDATE_NOT_IDENTITY"
+    r = base_row()
+    r["state"] = "CANDIDATE_NOT_IDENTITY"
     with pytest.raises(HTRContextError):
         consume_htr_context([r])
