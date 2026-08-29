@@ -1,6 +1,6 @@
 import pytest
 
-from aguayluz.htr_context import HTRContextError, consume_htr_context
+from integration.htr_context import HTRContextError, consume_htr_context
 
 
 def base_row():
