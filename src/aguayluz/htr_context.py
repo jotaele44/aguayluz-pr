@@ -6,7 +6,8 @@ an authoritative source; name/fuzzy/proximity signals can never create it.
 """
 from __future__ import annotations
 
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 ALLOWED_STATES = {"CONTEXT_SUPPORTED", "ADJUDICATED"}
 CONNECTIVITY_RELATIONS = {"HYDRAULICALLY_CONNECTED_TO", "ELECTRICALLY_CONNECTED_TO"}
