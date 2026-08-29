@@ -1,5 +1,4 @@
 import pytest
-
 from integration.htr_context import HTRContextError, consume_htr_context
 
 
