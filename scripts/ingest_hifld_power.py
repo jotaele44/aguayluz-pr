@@ -194,6 +194,8 @@ def build_rows(src_dir: Path, munis: list[tuple[str, list]]) -> list[dict]:
                     if LAT_MIN <= la <= LAT_MAX and LON_MIN <= lo <= LON_MAX:
                         lat, lon = round(la, 6), round(lo, 6)
             except (TypeError, ValueError):
+                # Malformed attributes are non-authoritative; geometry below is
+                # the only permitted fallback and is independently bounds-checked.
                 pass
             if lat is None:
                 rp = representative_point(f.get("geometry") or {})

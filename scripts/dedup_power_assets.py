@@ -195,6 +195,8 @@ def main() -> int:
         for c in clusters:
             jsonschema.validate(c, schema)
     except ImportError:
+        # Validation is an optional local gate; hosted CI installs jsonschema.
+        # Generation remains deterministic when the extra is unavailable.
         pass
 
     Path(args.out).write_text("".join(json.dumps(c) + "\n" for c in clusters))
