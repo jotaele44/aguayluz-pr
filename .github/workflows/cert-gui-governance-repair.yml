@@ -1,0 +1,55 @@
+name: CERT GUI governance repair
+
+on:
+  push:
+    branches:
+      - cert/gui-governance-prii-export-utils-20260830
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+      - name: Classify deterministic export helpers as internal
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path('.federation/gui-capabilities.json')
+          doc = json.loads(path.read_text(encoding='utf-8'))
+          capability_id = 'prii-export-utils-internal'
+          if not any(c.get('id') == capability_id for c in doc.get('capabilities', [])):
+              doc['capabilities'].append({
+                  'id': capability_id,
+                  'classification': 'internal',
+                  'status': 'active',
+                  'requires_terminal': False,
+                  'rationale': 'Deterministic federation-export helper module used only by producer scripts. It provides stable identifier hashing, text normalization, and file SHA-256 calculation; it exposes no route, endpoint, control, or operator workflow of its own.',
+                  'analysis': {
+                      'files': ['scripts/prii_export_utils.py'],
+                      'symbols': ['scripts/prii_export_utils.py:fid','scripts/prii_export_utils.py:norm','scripts/prii_export_utils.py:sha256']
+                  },
+                  'tests': {'contract': ['tests/test_federation_export.py','tests/test_gui_parity.py']}
+              })
+              path.write_text(json.dumps(doc, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+          PY
+      - name: Verify GUI parity ratchet
+        run: python scripts/check_gui_parity.py --report artifacts/gui-parity-report.json
+      - name: Verify parity validator
+        run: python -m unittest tests/test_gui_parity.py
+      - name: Commit governance classification
+        run: |
+          if git diff --quiet -- .federation/gui-capabilities.json; then exit 0; fi
+          git config user.name 'aguayluz-cert-bot'
+          git config user.email 'noreply@github.com'
+          git add .federation/gui-capabilities.json
+          git commit -m 'ci: classify PRII export helpers as internal'
+          git push origin HEAD
