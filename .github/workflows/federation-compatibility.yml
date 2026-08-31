@@ -11,26 +11,110 @@ jobs:
     name: federation-compatibility
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
       - name: Validate compatibility receipt
+        shell: python
         env:
           EXPECTED_REPO: aguayluz-pr
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
         run: |
-          python - <<'PY'
-          import json, os, subprocess, sys
-          p='governance/federation_compatibility.json'
-          d=json.load(open(p))
-          allowed={'UNAFFECTED','COMPATIBLE','UPDATED','BLOCKED'}
-          if d.get('repo') != os.environ['EXPECTED_REPO']: sys.exit('wrong repo in compatibility receipt')
-          if d.get('disposition') not in allowed: sys.exit('unknown compatibility disposition')
-          if d.get('disposition') == 'BLOCKED': sys.exit('federation compatibility is BLOCKED')
-          if os.environ.get('BASE_SHA') and os.environ.get('HEAD_SHA'):
-              changed=subprocess.check_output(['git','diff','--name-only',os.environ['BASE_SHA']+'...'+os.environ['HEAD_SHA']],text=True).splitlines()
-              if 'federation.json' in changed and p not in changed:
-                  sys.exit('federation.json changed without compatibility receipt update')
-          print('FEDERATION_COMPATIBILITY_PASS')
-          PY
+          import json
+          import os
+          import re
+          import subprocess
+          from datetime import date
+          from pathlib import Path
+
+          receipt_path = Path("governance/federation_compatibility.json")
+          try:
+              receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+          except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+              raise SystemExit(f"invalid compatibility receipt: {exc}") from exc
+          if not isinstance(receipt, dict):
+              raise SystemExit("compatibility receipt root must be an object")
+
+          required = {
+              "schema_version",
+              "repo",
+              "central_baseline",
+              "central_governance_pr",
+              "disposition",
+              "contracts",
+          }
+          missing = sorted(required - receipt.keys())
+          if missing:
+              raise SystemExit(f"missing receipt keys: {missing}")
+          if receipt["schema_version"] != "prii_repo_compatibility_receipt_v1":
+              raise SystemExit("unsupported compatibility receipt schema")
+          if receipt["repo"] != os.environ["EXPECTED_REPO"]:
+              raise SystemExit("wrong repo in compatibility receipt")
+          try:
+              date.fromisoformat(receipt["central_baseline"])
+          except (TypeError, ValueError) as exc:
+              raise SystemExit("central_baseline must be an ISO date") from exc
+          governance_pr = receipt["central_governance_pr"]
+          if (
+              not isinstance(governance_pr, int)
+              or isinstance(governance_pr, bool)
+              or governance_pr <= 0
+          ):
+              raise SystemExit("central_governance_pr must be a positive integer")
+
+          allowed = {"UNAFFECTED", "COMPATIBLE", "UPDATED", "BLOCKED"}
+          if receipt["disposition"] not in allowed:
+              raise SystemExit("unknown compatibility disposition")
+          if receipt["disposition"] == "BLOCKED":
+              raise SystemExit("federation compatibility is BLOCKED")
+
+          contracts = receipt["contracts"]
+          if not isinstance(contracts, list) or not contracts:
+              raise SystemExit("contracts must be a non-empty list")
+          if len(contracts) != len(set(contracts)):
+              raise SystemExit("contracts must not contain duplicates")
+          contract_pattern = re.compile(r"^[a-z][a-z0-9_]*@[1-9][0-9]*$")
+          invalid_contracts = [
+              item
+              for item in contracts
+              if not isinstance(item, str) or not contract_pattern.fullmatch(item)
+          ]
+          if invalid_contracts:
+              raise SystemExit(f"invalid contract identifiers: {invalid_contracts}")
+
+          sha_pattern = re.compile(r"^[0-9a-f]{40}$")
+          base_sha = os.environ.get("BASE_SHA", "")
+          head_sha = os.environ.get("HEAD_SHA", "")
+          for label, value in (("BASE_SHA", base_sha), ("HEAD_SHA", head_sha)):
+              if not sha_pattern.fullmatch(value) or value == "0" * 40:
+                  raise SystemExit(f"{label} must be a nonzero 40-character SHA")
+
+          try:
+              changed = subprocess.run(
+                  [
+                      "git",
+                      "diff",
+                      "--name-only",
+                      "--diff-filter=ACDMRTUXB",
+                      f"{base_sha}...{head_sha}",
+                  ],
+                  check=True,
+                  capture_output=True,
+                  text=True,
+              ).stdout.splitlines()
+          except subprocess.CalledProcessError as exc:
+              detail = exc.stderr.strip() or exc.stdout.strip()
+              raise SystemExit(f"unable to compute compatibility diff: {detail}") from exc
+
+          if (
+              "federation.json" in changed
+              and receipt_path.as_posix() not in changed
+          ):
+              raise SystemExit(
+                  "federation.json changed without compatibility receipt update"
+              )
+          print("FEDERATION_COMPATIBILITY_PASS")
