@@ -9,20 +9,93 @@ jobs:
   haf-contract:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
       - name: Validate HAF federation contract
         shell: python
         run: |
-          import json, os, pathlib
-          p=pathlib.Path('.federation/haf_contract.json'); d=json.loads(p.read_text()) if p.exists() else (_ for _ in ()).throw(SystemExit('missing HAF contract'))
-          req=['schema_version','haf_contract_version','program_id','repository_full_name','federation_role','certification_required','raw_snapshot_policy','identity_policy','unresolved_policy','adapter_state']
-          m=[k for k in req if k not in d]
-          if m: raise SystemExit(f'missing keys: {m}')
-          assert d['schema_version']=='haf_repo_contract_v2'
-          assert d['certification_required'] is True
-          assert d['raw_snapshot_policy']=='PRESERVE_OR_IMMUTABLE_REFERENCE'
-          assert d['identity_policy']=='EVIDENCE_PRIORITY_FAIL_CLOSED' and d['unresolved_policy']=='FAIL_CLOSED'
-          assert d['repository_full_name']==os.environ['GITHUB_REPOSITORY']
-          f=pathlib.Path('federation.json')
-          if f.exists(): assert json.loads(f.read_text()).get('program_id')==d['program_id']
-          print('HAF CONTRACT PASS', d['program_id'])
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(".federation/haf_contract.json")
+          if not path.is_file():
+              raise SystemExit("missing .federation/haf_contract.json")
+          try:
+              contract = json.loads(path.read_text(encoding="utf-8"))
+          except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+              raise SystemExit(f"invalid HAF contract JSON: {exc}") from exc
+          if not isinstance(contract, dict):
+              raise SystemExit("HAF contract root must be an object")
+
+          required = {
+              "schema_version",
+              "haf_contract_version",
+              "framework_compatibility",
+              "program_id",
+              "repository_full_name",
+              "federation_role",
+              "certification_required",
+              "raw_snapshot_policy",
+              "identity_policy",
+              "unresolved_policy",
+              "canonical_export_required",
+              "adapter_state",
+              "native_contract",
+          }
+          missing = sorted(required - contract.keys())
+          if missing:
+              raise SystemExit(f"missing keys: {missing}")
+
+          expected_values = {
+              "schema_version": "haf_repo_contract_v2",
+              "haf_contract_version": "2.0.0",
+              "framework_compatibility": ">=0.4.0,<1.0.0",
+              "certification_required": True,
+              "raw_snapshot_policy": "PRESERVE_OR_IMMUTABLE_REFERENCE",
+              "identity_policy": "EVIDENCE_PRIORITY_FAIL_CLOSED",
+              "unresolved_policy": "FAIL_CLOSED",
+              "adapter_state": "COMPATIBLE_PENDING_CI",
+          }
+          for key, expected in expected_values.items():
+              if contract[key] != expected:
+                  raise SystemExit(
+                      f"{key} drift: {contract[key]!r} != {expected!r}"
+                  )
+
+          repository = os.environ.get("GITHUB_REPOSITORY")
+          if not repository:
+              raise SystemExit("GITHUB_REPOSITORY is required")
+          if contract["repository_full_name"] != repository:
+              raise SystemExit(
+                  "repository mismatch: "
+                  f"{contract['repository_full_name']!r} != {repository!r}"
+              )
+          for key in ("program_id", "federation_role", "native_contract"):
+              if not isinstance(contract[key], str) or not contract[key].strip():
+                  raise SystemExit(f"{key} must be a non-empty string")
+          if not isinstance(contract["canonical_export_required"], bool):
+              raise SystemExit("canonical_export_required must be boolean")
+
+          federation_path = Path("federation.json")
+          if federation_path.exists():
+              try:
+                  federation = json.loads(
+                      federation_path.read_text(encoding="utf-8")
+                  )
+              except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+                  raise SystemExit(f"invalid federation.json: {exc}") from exc
+              if not isinstance(federation, dict):
+                  raise SystemExit("federation.json root must be an object")
+              if federation.get("program_id") != contract["program_id"]:
+                  raise SystemExit(
+                      "program_id drift between federation.json and HAF contract"
+                  )
+
+          print(
+              "HAF CONTRACT PASS",
+              contract["program_id"],
+              contract["haf_contract_version"],
+          )
