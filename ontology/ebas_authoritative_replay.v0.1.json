@@ -1,0 +1,82 @@
+{
+  "schema_version": "aguayluz.ebas-authoritative-replay/v0.1",
+  "identity_effect": "none",
+  "physical_asset_count_claimed": false,
+  "current_aaa_denominator_claimed": false,
+  "pr_wide_denominator_claimed": false,
+  "acquisition_run_id": 32158951188,
+  "acquisition_artifact_id": 9332814551,
+  "acquisition_artifact_sha256": "f02b0e8fc74862fde78c387dc106a64f307851000af729094d67c843eee7ef1b",
+  "sige_wastewater_pump_layer": {
+    "source_id": "EBAS_SRC_SIGE_CALIDAD_AMBIENTE_L5",
+    "state": "RETRIEVED_COMPLETE",
+    "count": 155,
+    "object_id_count": 155,
+    "feature_count": 155,
+    "page_count": 1,
+    "object_id_field": "OBJECTID",
+    "feature_sha256": "6ad2c2f11289dd2bde40d164db40821c93a7d834fba2de3853970d49d0120a5e",
+    "metadata_sha256": "7051bc430d50cb654f67d591266667beda552f8a2e2b4aa8b8f46135f6f3e638",
+    "count_response_sha256": "48452767ee67314e7d49d517e7452d67551c9f9450f7e4821c71f87a413c231f",
+    "ids_response_sha256": "12a42e3eaaf7c70b5c5c5657d31716e9d59f6161fb4fadeb40173600a7bb4b85",
+    "feature_page_sha256": "f94c4091e8da0d7db9026ae9383b07044dc12deafcd95dfd9e86dc96e4ccff8c",
+    "scope_adjudication": "COMPLETE_OFFICIAL_ENVIRONMENTAL_PLANNING_LAYER_NOT_CERTIFIED_AS_AAA_CURRENT_ASSET_ENUMERATOR",
+    "scope_reason": "The official layer is completely retrievable and explicitly represents wastewater pump stations, but it exposes no owner/operator/lifecycle fields and is published under the CalidadAmbiente service. No source bridge proves that its 155 rows equal the complete current AAA owned-and-operated WWPS universe."
+  },
+  "aaa_2015_geodatabase": {
+    "source_id": "EBAS_SRC_GISPR_AAA_2015_GDB",
+    "state": "ARCHIVE_RETRIEVED_LAYERS_ENUMERATED",
+    "archive_size": 55676807,
+    "archive_sha256": "6afe70c8cc96f2b7d3f73a0976f4bd5d422dff74ba7071281f9c1262be851d8e",
+    "zip_member_count": 158,
+    "zip_members_sha256": "683b8174d7957a149eefcd6603216bef29147728e798ba667e66dcc236d90d21",
+    "layer_count": 29,
+    "ww_pump_station": {
+      "layer_name": "ww_Pump_Station",
+      "geometry": "Point",
+      "crs": "ESRI:103200",
+      "feature_count": 1066,
+      "facility_id_nonblank": 1065,
+      "facility_id_unique_nonblank": 1065,
+      "owner_counts": {
+        "PRASA": 969,
+        "PRV": 91,
+        "GOV": 5,
+        "UNK": 1
+      },
+      "lifecycle_code_counts": {
+        "0": 139,
+        "1": 8,
+        "2": 883,
+        "3": 24,
+        "4": 8,
+        "5": 4
+      },
+      "prasa_owner_lifecycle_code_counts": {
+        "0": 134,
+        "1": 8,
+        "2": 792,
+        "3": 23,
+        "4": 8,
+        "5": 4
+      },
+      "source_semantics": "Explicit wastewater network pump-station feature class; distinct from potable w_Pump_Station.",
+      "enumerator_state": "CERTIFIED_2015_ROW_LEVEL_WASTEWATER_PUMP_LAYER",
+      "aaa_owned_and_operated_denominator_effect": "NOT_EQUIVALENT_WITHOUT_OPERATOR_AND_LIFECYCLE_DOMAIN_BRIDGE"
+    },
+    "potable_pump_station_control": {
+      "layer_name": "w_Pump_Station",
+      "feature_count": 1493,
+      "classification": "NEGATIVE_CONTROL_NOT_EBAS"
+    }
+  },
+  "cross_snapshot": {
+    "aaa_2015_ww_pump_station_rows": 1066,
+    "aaa_2015_owner_prasa_rows": 969,
+    "prasa_reported_owned_and_operated_wwps_2024_06": 835,
+    "sige_complete_environmental_layer_rows_2026_08_retrieval": 155,
+    "state": "SCOPE_AND_TEMPORAL_SEMANTICS_DIFFER;_NO_DIRECT_DELTA_CERTIFIED",
+    "current_aaa_denominator": "OPEN",
+    "pr_wide_denominator": "OPEN"
+  }
+}

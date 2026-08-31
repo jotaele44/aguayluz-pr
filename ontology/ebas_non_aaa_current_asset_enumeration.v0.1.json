@@ -1,0 +1,130 @@
+{
+  "schema_version": "aguayluz.ebas-non-aaa-current-asset-enumeration/v0.1",
+  "status": "bounded",
+  "identity_effect": "none",
+  "physical_asset_count_claimed": false,
+  "current_non_aaa_ebas_denominator": "OPEN",
+  "current_non_aaa_operational_ebas_denominator": "OPEN",
+  "certified_current_non_aaa_operational_lower_bound": 5,
+  "aaa_current_2026_denominator": "OPEN",
+  "pr_wide_denominator": "OPEN",
+  "cross_source_named_station_manifestations": 12,
+  "operators": [
+    {
+      "operator": "Local Redevelopment Authority for Roosevelt Roads",
+      "operator_class": "PUBLIC_CORPORATION_NON_AAA",
+      "operator_state": "CURRENT_NON_AAA_SYSTEM_OPERATOR_CONFIRMED",
+      "system_scope": "Former Naval Station Roosevelt Roads sanitary sewer system",
+      "current_operator_source": "https://docs.pr.gov/files/RooseveltRoads/2025/RFP/RFP%20%232025-002/LRA%20RFP%202025-002_20260109.pdf",
+      "station_enumerator_source": "https://www.rd.usda.gov/sites/default/files/rd-rus-eea-roosevelt-roads-wwtp-2024.pdf",
+      "named_station_assets": [
+        {"station_id": "39", "name": "Lift Station 39", "state": "CURRENT_REHABILITATION_ASSET_NOT_CERTIFIED_OPERATIONAL"},
+        {"station_id": "1971", "name": "Lift Station 1971", "state": "CURRENT_REHABILITATION_ASSET_NOT_CERTIFIED_OPERATIONAL"},
+        {"station_id": "1471", "name": "Lift Station 1471", "state": "CURRENT_REHABILITATION_ASSET_NOT_CERTIFIED_OPERATIONAL"},
+        {"station_id": "2262", "name": "Lift Station 2262", "state": "CURRENT_REHABILITATION_ASSET_NOT_CERTIFIED_OPERATIONAL"},
+        {"station_id": "2382", "name": "Lift Station 2382", "state": "CURRENT_REHABILITATION_ASSET_NOT_CERTIFIED_OPERATIONAL"}
+      ],
+      "named_asset_count": 5,
+      "current_operational_count": "OPEN",
+      "operational_status_source": "https://docs.pr.gov/files/RooseveltRoads/2024/RFP/RFP-2024-004/Q%26A/LRA_Response_RFP_2024-004%20FINAL%20%232.pdf",
+      "reason": "LRA source material establishes LRA ownership/operator responsibility for the sanitary system and USDA enumerates five lift stations for rehabilitation. LRA also states the sanitary sewer system was not in operation / sanitary discharges were being removed by vacuum trucks, so the five rehabilitation assets are not promoted to current operational stations."
+    },
+    {
+      "operator": "PDM Utility Corporation",
+      "operator_class": "PRIVATE_FRANCHISED_UTILITY",
+      "operator_state": "CURRENT_NON_AAA_OPERATOR_CONFIRMED",
+      "system_scope": "Palmas del Mar sanitary sewer collection and wastewater treatment system",
+      "current_source": "https://www.pdmutility.org/our-company",
+      "current_service_source": "https://www.pdmutility.org/services",
+      "current_station_count": 5,
+      "current_station_count_state": "CERTIFIED_CURRENT_OPERATOR_BOUND_DENOMINATOR",
+      "current_source_claim": "PDMU currently states that it operates the sanitary sewer system and a wastewater treatment plant with five pumping stations that collect and transport effluent within Palmas del Mar.",
+      "named_station_identity_source_snapshot": "2022-06-07",
+      "named_station_identity_source": "PDMU presentation preserved in public technical proceedings",
+      "named_station_assets": [
+        {"station_id": "PS-1", "state": "CURRENT_COUNT_MEMBER_NAME_BOUND_FROM_RECENT_HISTORICAL_ENUMERATOR"},
+        {"station_id": "PS-2", "state": "CURRENT_COUNT_MEMBER_NAME_BOUND_FROM_RECENT_HISTORICAL_ENUMERATOR"},
+        {"station_id": "PS-3", "state": "CURRENT_COUNT_MEMBER_NAME_BOUND_FROM_RECENT_HISTORICAL_ENUMERATOR"},
+        {"station_id": "PS-10", "state": "CURRENT_COUNT_MEMBER_NAME_BOUND_FROM_RECENT_HISTORICAL_ENUMERATOR"},
+        {"station_id": "PS-12", "state": "CURRENT_COUNT_MEMBER_NAME_BOUND_FROM_RECENT_HISTORICAL_ENUMERATOR"}
+      ],
+      "identity_caveat": "The current official site certifies a five-station denominator but does not individually restate the station labels. The 2022 source supplies the five labels; continuity of each label is retained as a candidate binding rather than independent current identity proof."
+    },
+    {
+      "operator": "Coco Beach Utility Company, Inc.",
+      "operator_class": "PRIVATE_FRANCHISED_UTILITY",
+      "operator_state": "CURRENT_NON_AAA_WASTEWATER_OPERATOR_CONFIRMED",
+      "system_scope": "Coco Beach / Grand Reserve wastewater system",
+      "current_operator_source": "https://www.epa.gov/npdes-permits/final-npdes-permit-coco-beach-wastewater-treatment-plant-puerto-rico",
+      "current_permit_period": "2025-12-01/2030-11-30",
+      "recent_operational_station_snapshot": "2023-12/2024-01",
+      "recent_operational_station_count": 2,
+      "recent_station_assets": [
+        {"source_label": "Pump Station 1", "service_area": "hotel and villas zone", "state": "RECENT_OPERATIONAL_NOT_CURRENT_2026_REENUMERATED"},
+        {"source_label": "Pump Station 2", "service_area": "residential zone", "state": "RECENT_OPERATIONAL_NOT_CURRENT_2026_REENUMERATED"}
+      ],
+      "current_station_count": "OPEN",
+      "same_name_exclusion": {
+        "facility_id": "WWPS0000166AAA0329",
+        "sige_geo_id": "PREE0113",
+        "name": "Coco Beach Pumping Station",
+        "owner": "PRASA",
+        "classification": "AAA_ASSET_NOT_NON_AAA",
+        "reason": "The recovered 2015 AAA geodatabase and current SIGE environmental layer bind a separate PRASA-owned Coco Beach pumping station at the same source coordinate. It is excluded from the private Coco Beach Utility denominator."
+      }
+    },
+    {
+      "operator": "Caguas Real Utility Corp.",
+      "operator_class": "PRIVATE_FRANCHISED_UTILITY",
+      "sewer_operator_state": "CURRENT_2026_UNRESOLVED",
+      "private_franchise_source": "https://www.lexjuris.com/lexlex/Leyes2024/lexl2024060.htm",
+      "franchise_snapshot": "2024 law states sewer/water franchise expiration in 2025",
+      "current_water_system_source": "https://www.salud.pr.gov/CMS/DOWNLOAD/10265",
+      "current_water_system_id": "PR0613476",
+      "current_water_system_state": "CONFIRMED",
+      "current_sewer_franchise_renewal": "NOT_RECOVERED",
+      "historical_pump_station_design_manifestation": "Wastewater Pumping Station for Caguas Real Development, 2001",
+      "current_station_count": "OPEN",
+      "reason": "Current public-water-system evidence does not establish current sewer operation. No authoritative post-2025 franchise-renewal instrument or current sewer pump-station inventory was recovered in the bounded search."
+    }
+  ],
+  "additional_non_franchised_private_system_candidates": [
+    {
+      "system": "Punta Picuas WWTP",
+      "municipality": "Rio Grande",
+      "class": "PRIVATE_DECENTRALIZED_NON_PRASA_WASTEWATER_SYSTEM",
+      "evidence_source": "https://www.scirp.org/journal/paperinformation?paperid=144351",
+      "evidence_snapshot": "sampling 2023-12 through 2024-01; publication 2025",
+      "system_state": "RECENT_NON_PRASA_OPERATION_CONFIRMED",
+      "pumping_evidence": "Study states 2/3 of seven coastal walk-up complexes contribute by pumping flow while Hillside Village contributes by gravity.",
+      "legal_operator_entity": "UNRESOLVED",
+      "pump_station_count": "OPEN",
+      "denominator_effect": "COMPLETENESS_BLOCKER_NOT_COUNTED",
+      "reason": "This system is outside the three franchised private aqueduct/sewer utilities identified by Act 60-2024, proving that the franchise universe is not equivalent to the complete private sanitary-system universe."
+    }
+  ],
+  "arithmetic": {
+    "lra_current_rehabilitation_station_assets": 5,
+    "pdmu_current_operator_bound_station_denominator": 5,
+    "coco_beach_recent_operational_station_snapshot": 2,
+    "caguas_real_current_station_denominator": "OPEN",
+    "punta_picuas_current_station_denominator": "OPEN",
+    "cross_source_named_station_manifestations": "5 + 5 + 2 = 12",
+    "current_non_aaa_exact_denominator": "OPEN",
+    "certified_current_non_aaa_operational_lower_bound": 5,
+    "reason": "Only PDMU currently provides both current operator scope and an explicit current pump-station count. LRA, Coco Beach, Caguas Real, and the newly identified Punta Picuas decentralized system retain unresolved current station status or count."
+  },
+  "aaa_combination_gate": {
+    "aaa_current_2026_denominator": "OPEN",
+    "latest_authoritative_reported_snapshot": 835,
+    "latest_authoritative_reported_snapshot_date": "2024-06",
+    "combination_state": "NOT_EXECUTED",
+    "reason": "The requested combination requires a certified current AAA denominator. The June 2024 reported count of 835 cannot be promoted to August 2026 current status."
+  },
+  "pr_wide_closure": {
+    "state": "OPEN",
+    "rejected_claim": "PR_WIDE_EQUALS_AAA_ONLY",
+    "private_franchise_universe_is_complete_private_system_universe": false,
+    "reason": "Current non-AAA sanitary operators are proven; the exact current non-AAA and AAA EBAS denominators are incomplete; and Punta Picuas proves additional non-franchised decentralized private sanitary systems exist outside the three-system franchise universe."
+  }
+}

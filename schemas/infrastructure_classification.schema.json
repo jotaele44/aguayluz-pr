@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/infrastructure_classification.schema.json",
+  "title": "InfrastructureClassificationDecision",
+  "description": "Non-destructive classification decision linking one source manifestation to a canonical ontology term. Classification does not establish physical identity.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "decision_id",
+    "source_record_id",
+    "legacy_asset_type_raw",
+    "legacy_asset_subtype_raw",
+    "classification_state",
+    "ontology_version",
+    "evidence_basis"
+  ],
+  "properties": {
+    "decision_id": {"type":"string","minLength":1},
+    "source_record_id": {"type":"string","minLength":1},
+    "legacy_asset_type_raw": {"type":["string","null"]},
+    "legacy_asset_subtype_raw": {"type":["string","null"]},
+    "normalized_asset_type": {"type":["string","null"]},
+    "normalized_asset_subtype": {"type":["string","null"]},
+    "canonical_term_id": {"type":["string","null"],"pattern":"^AYL_TERM_[A-Z0-9_]+$"},
+    "feature_kind": {
+      "type":["string","null"],
+      "enum":["site","asset","component","linear_asset","area_feature","network_node","network_edge","observation_point","service_geography","administrative_geography","event",null]
+    },
+    "classification_state": {
+      "enum":["pass","provisional","candidate_not_identity","unresolved","excluded","superseded"]
+    },
+    "ontology_version": {"type":"string","pattern":"^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "evidence_basis": {
+      "type":"array",
+      "minItems":1,
+      "items":{"type":"string","minLength":1}
+    },
+    "source_ref": {"type":["string","null"]},
+    "source_hash": {"type":["string","null"]},
+    "notes": {"type":["string","null"]}
+  },
+  "allOf": [
+    {
+      "if": {"properties":{"classification_state":{"enum":["pass","provisional","candidate_not_identity"]}}},
+      "then": {"required":["canonical_term_id"]}
+    },
+    {
+      "if": {"properties":{"classification_state":{"const":"unresolved"}}},
+      "then": {"properties":{"canonical_term_id":{"type":"null"}}}
+    }
+  ]
+}

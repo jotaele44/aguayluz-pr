@@ -1,0 +1,52 @@
+{
+  "schema_version": "aguayluz.ebas-manifestation-seed/v0.1",
+  "status": "provisional",
+  "scope": "Authoritative PRASA project/plan manifestations naming EBAS. These prove source manifestations and sanitary-pump classification, not a complete facility denominator or stable physical identity.",
+  "canonical_term_id": "AYL_TERM_SANITARY_SEWER_PUMP_STATION",
+  "identity_effect": "none",
+  "aaa_bounded_denominator_claimed": false,
+  "pr_wide_denominator_claimed": false,
+  "groups": [
+    {
+      "source_id": "EBAS_SRC_PRASA_FY2024_CER_NORTH_CIP",
+      "project_id": "CIP.2009104",
+      "manifestation_kind": "REHABILITATION_PROJECT_REFERENCE",
+      "records": [
+        ["Toa Linda", "Toa Alta"], ["Piñas", "Toa Alta"], ["Jardines de Toa Alta", "Toa Alta"], ["Monte Rey", "Corozal"],
+        ["Palmas del Sol", "Lares"], ["Villa Borinquen", "Lares"], ["Unibón #2", "Morovis"], ["Unibón #4", "Morovis"],
+        ["Unibón #3", "Morovis"], ["Cruz Rosario", "Morovis"], ["Valle Barahona", "Morovis"], ["Las Vegas", "Florida"]
+      ]
+    },
+    {
+      "source_id": "EBAS_SRC_PRASA_FY2024_CER_NORTH_CIP",
+      "project_id": "CIP.0800074N",
+      "manifestation_kind": "EMERGENCY_GENERATOR_PROJECT_REFERENCE",
+      "records": [
+        ["Sabana Hoyos 3", "Arecibo"], ["Paseo Reales", "Arecibo"], ["Islote 1", "Arecibo"], ["Los Aires", "Arecibo"],
+        ["Hacienda Toledo", "Arecibo"], ["Dominguito 2", "Arecibo"], ["Carrizales", "Hatillo"], ["Hatillo Playa", "Hatillo"],
+        ["Terranova", "Quebradillas"], ["Alturas de Utuado", "Utuado"], ["Bufalo", "Barceloneta"], ["Villa del Manatí", "Manatí"],
+        ["Dos Rios", "Ciales"], ["Las Guavas", "Ciales"], ["Brisas de Jagua", "Ciales"], ["Bo. Pesas", "Ciales"],
+        ["Unibón 4", "Morovis"], ["Cruz Rosario", "Morovis"], ["Torrecillas 2", "Morovis"], ["Torrecillas 5", "Morovis"],
+        ["Valle San Luis", "Morovis"], ["Parcelas Márquez", "Vega Baja"], ["Alturas de Vega Baja", "Vega Baja"], ["Guárico Viejo", "Vega Baja"],
+        ["Villa Los Pescadores", "Vega Baja"], ["Dorado del Mar", "Dorado"], ["Costa de Oro", "Dorado"], ["Dorado Club", "Dorado"],
+        ["Treasure Point", "Vega Alta"], ["GE", "Vega Alta"]
+      ]
+    },
+    {
+      "source_id": "EBAS_SRC_PRASA_2025_FISCAL_PLAN",
+      "project_id": null,
+      "manifestation_kind": "FISCAL_PLAN_REFERENCE",
+      "records": [
+        ["PTAR y EBAS de Maunabo", "Maunabo", "PLANNED_WWTP_TO_EBAS_CONVERSION"],
+        ["EBAS de Guardarrayas", "Patillas", "EXISTING_FACILITY_PROJECT_REFERENCE"]
+      ]
+    }
+  ],
+  "binding_policy": {
+    "candidate_key": "normalized_municipality|normalized_name",
+    "candidate_key_effect": "candidate_grouping_only",
+    "exact_repeated_candidate_keys_expected": ["morovis|cruz_rosario", "morovis|unibon_4"],
+    "canonical_identity_state": "CANDIDATE_NOT_IDENTITY",
+    "reason": "Project and fiscal-plan references are authoritative manifestations of named sanitary pump stations but do not expose a stable facility ID or source-native geometry sufficient for final physical identity binding."
+  }
+}
