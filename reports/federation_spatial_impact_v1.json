@@ -1,0 +1,23 @@
+{
+  "contract_version":"federation-spatial-impact/1.0",
+  "producer_repo":"aguayluz-pr",
+  "branch":"feat/federation-gis-max-v1",
+  "base_sha":"30e83ae11f0d6be0bf71f6cf46d3c8ff8bc035c0",
+  "head_sha":null,
+  "changes":{
+    "contracts":["federation-spatial-contract/1.0","federation-map-runtime/1.0","fedgeopack/1.0","federation-spatial-manifest/1.0"],
+    "schemas":["feature","layer","map runtime","offline package","impact report","spatial sidecar"],
+    "geometry_semantics":["directed upstream/downstream topology","cycle-safe bounded tracing","formal raster metadata contract","CANDIDATE_NOT_IDENTITY default"],
+    "crs":["OGC:CRS84 canonical interchange","explicit raster CRS required","EPSG:4326 PostGIS storage","EPSG:3857 MVT rendering"],
+    "api":["additive aguayluz.spatial_analysis hydro/raster helpers"]
+  },
+  "affected_consumers":[
+    {"repo":"spiderweb-pr","impact":"OPTIONAL","reason":"can consume new hydro/raster context as spatial evidence","migration":null},
+    {"repo":"moneysweep-pr","impact":"NONE","reason":"no capital-domain API changed","migration":null},
+    {"repo":"aguayluz-pr","impact":"REQUIRED","reason":"adds authoritative hydro-network and raster contracts","migration":"bind real network/raster sources through adapters; do not infer topology absent source evidence"},
+    {"repo":"skywatcher-pr","impact":"OPTIONAL","reason":"terrain/environment overlays can share raster contract","migration":null}
+  ],
+  "backward_compatible":true,
+  "rollback":"revert branch commits; no existing asset-map API or database has been mutated",
+  "gates":{"schema":"OPEN","geometry":"OPEN","tests":"OPEN","security":"OPEN","performance":"OPEN","desktop":"OPEN","ios":"OPEN","federation":"BLOCKED"}
+}
