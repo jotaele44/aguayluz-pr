@@ -52,3 +52,11 @@ def test_discovery_only_row_rejected():
     r["state"] = "CANDIDATE_NOT_IDENTITY"
     with pytest.raises(HTRContextError):
         consume_htr_context([r])
+
+
+def test_unsupported_row_rejected():
+    r = base_row()
+    r["state"] = "UNSUPPORTED"
+    r["identity_state"] = "UNRESOLVED"
+    with pytest.raises(HTRContextError):
+        consume_htr_context([r])
