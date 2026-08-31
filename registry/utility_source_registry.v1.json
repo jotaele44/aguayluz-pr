@@ -1,0 +1,103 @@
+{
+  "schema_version": "aguayluz_recurring_source_registry_v1",
+  "module_id": "aguayluz-pr",
+  "reviewed_at_utc": "2026-08-17T01:15:00Z",
+  "sources": [
+    {
+      "source_id": "epa_sdwis_violations",
+      "domain": "water",
+      "signal_type": "water_quality",
+      "authority_tier": "T1",
+      "endpoint": "https://data.epa.gov/efservice",
+      "adapter": "scripts/ingest_sdwis_violations.py",
+      "acquisition_mode": "live_or_offline",
+      "cadence": "weekly_or_operator_refresh",
+      "access_state": "keyless_public",
+      "snapshot_strategy": "Materialize VIOLATION and GEOGRAPHIC_AREA source rows or operator-frozen JSON before idempotent service-event replacement.",
+      "enabled_by_default": true,
+      "coverage_state": "partial",
+      "notes": "Federal SDWIS violations for Puerto Rico PWSIDs; regulatory water-quality signal, not a PRASA operational outage API.",
+      "caveats": [
+        "SDWIS violations are regulatory records and do not enumerate every operational water outage.",
+        "Municipio resolution is explicit unaccented-name matching; unmatched values remain null."
+      ]
+    },
+    {
+      "source_id": "luma_miluma_outages",
+      "domain": "power",
+      "signal_type": "outage",
+      "authority_tier": "T2",
+      "endpoint": "https://api.miluma.lumapr.com/miluma-outage-api/outage/municipality/towns",
+      "adapter": "scripts/fetch_luma_live.py",
+      "acquisition_mode": "live_http",
+      "cadence": "operator_low_frequency_only",
+      "access_state": "permission_constrained",
+      "snapshot_strategy": "Operator-triggered low-frequency snapshot with fetch timestamp and source URL, followed by scripts/ingest_aee.py.",
+      "enabled_by_default": false,
+      "coverage_state": "blocked",
+      "notes": "MiLUMA is WAF/ToS constrained. The adapter treats source unavailability as a typed non-fatal condition.",
+      "caveats": [
+        "Do not schedule aggressive polling or third-party republication.",
+        "Prefer an authorized LUMA or Puerto Rico Energy Bureau data-sharing path.",
+        "Outage rows remain T2/needs_review unless independently corroborated."
+      ]
+    },
+    {
+      "source_id": "preps_public_service_snapshots",
+      "domain": "cross_domain",
+      "signal_type": "service_interruption",
+      "authority_tier": "T1",
+      "endpoint": "https://emergencias.pr.gov/",
+      "adapter": "scripts/ingest_preps.py",
+      "acquisition_mode": "offline_snapshot",
+      "cadence": "operator_snapshot_when_available",
+      "access_state": "operator_snapshot_required",
+      "snapshot_strategy": "Freeze the public portal scrape as preps_<timestamp>.json, then ingest the whole snapshot with the original scraped_at value.",
+      "enabled_by_default": false,
+      "coverage_state": "point_in_time",
+      "notes": "The committed adapter consumes a machine-local public-portal snapshot rather than performing network acquisition itself.",
+      "caveats": [
+        "A local source snapshot is required.",
+        "Island-wide metrics do not establish facility-level cause or topology."
+      ]
+    },
+    {
+      "source_id": "usgs_nwis_pr_sites",
+      "domain": "water",
+      "signal_type": "asset_registry",
+      "authority_tier": "T1",
+      "endpoint": "https://waterservices.usgs.gov/nwis/site/",
+      "adapter": "scripts/ingest_usgs_water.py",
+      "acquisition_mode": "live_or_offline",
+      "cadence": "monthly_or_operator_refresh",
+      "access_state": "keyless_public",
+      "snapshot_strategy": "Acquire the PR LK/ST/ST-CA RDB table or preserve an offline RDB snapshot, then replace only USGS_* rows.",
+      "enabled_by_default": true,
+      "coverage_state": "current",
+      "notes": "Authoritative monitoring-site backbone; not itself an outage feed.",
+      "caveats": [
+        "Point-in-polygon municipio assignment is spatial classification, not facility ownership identity."
+      ]
+    },
+    {
+      "source_id": "epa_waters_nhdplus",
+      "domain": "water",
+      "signal_type": "hydro_enrichment",
+      "authority_tier": "T1",
+      "endpoint": "https://api.epa.gov/waters",
+      "adapter": "scripts/enrich_waters_nhd.py",
+      "acquisition_mode": "live_http",
+      "cadence": "operator_rate_budgeted",
+      "access_state": "api_key_required",
+      "snapshot_strategy": "Point-index only bounded water-asset batches; no write occurs when authentication/network is unavailable.",
+      "enabled_by_default": false,
+      "coverage_state": "partial",
+      "notes": "Current validated hydro-enrichment evidence is bounded to VPU-21 and must not be extrapolated to Puerto Rico-wide completeness.",
+      "caveats": [
+        "EPA_WATERS_API_KEY or API_DATA_GOV_KEY is required for live calls.",
+        "VPU-21 validation is partial; off-network and no-waterbody outcomes remain explicit.",
+        "NHDPlus enrichment establishes hydrologic indexing, not utility ownership or power-feeder identity."
+      ]
+    }
+  ]
+}

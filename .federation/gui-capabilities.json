@@ -1169,6 +1169,37 @@
           "tests/test_gui_parity.py"
         ]
       }
+    },
+    {
+      "id": "real-data-partial-export-internal",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Offline deterministic verifier/exporter for a bounded real/public-derived package. It is an internal certification surface rather than a recurring operator workflow; emitted assets, events, and continuity candidates are consumed through existing federation and review surfaces. PRODUCTION_REAL_DATA_PARTIAL is not a completeness or identity claim.",
+      "analysis": {
+        "files": [
+          "tools/build_real_data_partial_export.py",
+          "config/continuity_risk_taxonomy.v1.json",
+          "registry/utility_source_registry.v1.json",
+          "schemas/continuity_risk_edge.schema.json",
+          "schemas/outage_event.schema.json",
+          "schemas/real_data_partial_manifest.schema.json",
+          "schemas/recovery_project.schema.json",
+          "schemas/recurring_source_registry.schema.json",
+          "README.md",
+          "docs/ROAD_TO_100.md"
+        ],
+        "symbols": [
+          "tools/build_real_data_partial_export.py:build",
+          "tools/build_real_data_partial_export.py:main"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_real_data_partial_export.py",
+          "tests/test_schemas.py"
+        ]
+      }
     }
   ],
   "exceptions": []

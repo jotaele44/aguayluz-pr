@@ -107,3 +107,32 @@ installs dependencies, later runs work offline):
 `manifest.json` validated against the vendored hub schema
 `schemas/federation_export_manifest.schema.json`
 (`tests/test_federation_contract_compat.py`).
+
+## Bounded real-data partial export
+
+`tools/build_real_data_partial_export.py` builds a deterministic package from
+committed real/public-derived data without network access or credentials. The
+package is explicitly `PRODUCTION_REAL_DATA_PARTIAL`; it is not a Puerto
+Rico-wide completeness claim.
+
+The output contains whole-row `utility_assets.jsonl` and
+`outage_events.jsonl`, a `recovery_projects.jsonl` stream that may validly be
+empty when no canonical project corpus exists, evidence-gated
+`continuity_risk_edges.jsonl`, and a manifest with source and output hashes,
+counts, limitations, and caveats.
+
+```bash
+python tools/build_real_data_partial_export.py \
+  --generated-at 2026-08-17T01:15:00Z \
+  --out /tmp/aguayluz-real-data-partial
+python -m pytest -q tests/test_real_data_partial_export.py tests/test_schemas.py
+```
+
+Recurring access semantics are frozen in
+`registry/utility_source_registry.v1.json`; continuity semantics are frozen in
+`config/continuity_risk_taxonomy.v1.json`. `EDGE-WP-*` relationships remain
+spatial discovery proxies, never feeder or circuit identity. Explicit source
+fuel tokens create only fuel-sensitive candidates and prove neither current
+stock, supplier, delivery route, nor outage cause. EPA WATERS/NHDPlus evidence
+remains `PROVISIONAL_PARTIAL` and bounded to VPU-21; off-network and
+no-waterbody outcomes are not extrapolated to Puerto Rico-wide coverage.

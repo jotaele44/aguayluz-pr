@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/real_data_partial_manifest.schema.json",
+  "title": "RealDataPartialManifest",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "module_id",
+    "data_status",
+    "generated_at",
+    "inputs",
+    "files",
+    "coverage",
+    "caveats",
+    "invariants"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "aguayluz_real_data_partial_export_v1"},
+    "module_id": {"const": "aguayluz-pr"},
+    "data_status": {"const": "PRODUCTION_REAL_DATA_PARTIAL"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "inputs": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["path", "sha256", "row_count"],
+        "additionalProperties": false,
+        "properties": {
+          "path": {"type": "string", "minLength": 1},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "row_count": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "files": {
+      "type": "object",
+      "minProperties": 4,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["sha256", "row_count", "bytes"],
+        "additionalProperties": false,
+        "properties": {
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "row_count": {"type": "integer", "minimum": 0},
+          "bytes": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "required": [
+        "scope",
+        "complete",
+        "utility_assets_selected",
+        "outage_events_selected",
+        "recovery_projects_selected",
+        "continuity_risk_edges_selected",
+        "disclaimer"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "scope": {"type": "string", "minLength": 1},
+        "complete": {"const": false},
+        "utility_assets_selected": {"type": "integer", "minimum": 0},
+        "outage_events_selected": {"type": "integer", "minimum": 0},
+        "recovery_projects_selected": {"type": "integer", "minimum": 0},
+        "continuity_risk_edges_selected": {"type": "integer", "minimum": 0},
+        "disclaimer": {"type": "string", "minLength": 1}
+      }
+    },
+    "caveats": {
+      "type": "object",
+      "required": ["vpu21_hydro_enrichment", "power_water_identity", "fuel_sensitive", "live_outage"],
+      "additionalProperties": false,
+      "properties": {
+        "vpu21_hydro_enrichment": {
+          "type": "object",
+          "required": ["status", "scope", "no_extrapolation"],
+          "additionalProperties": false,
+          "properties": {
+            "status": {"const": "PROVISIONAL_PARTIAL"},
+            "scope": {"type": "string", "minLength": 1},
+            "no_extrapolation": {"const": true}
+          }
+        },
+        "power_water_identity": {"type": "string", "minLength": 1},
+        "fuel_sensitive": {"type": "string", "minLength": 1},
+        "live_outage": {"type": "string", "minLength": 1}
+      }
+    },
+    "invariants": {
+      "type": "object",
+      "required": [
+        "whole_row_selection",
+        "no_fabricated_recovery_projects",
+        "no_network_acquisition",
+        "no_credential_requirement",
+        "proxy_edges_never_identity",
+        "deterministic_serialization"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "whole_row_selection": {"const": true},
+        "no_fabricated_recovery_projects": {"const": true},
+        "no_network_acquisition": {"const": true},
+        "no_credential_requirement": {"const": true},
+        "proxy_edges_never_identity": {"const": true},
+        "deterministic_serialization": {"const": true}
+      }
+    }
+  }
+}

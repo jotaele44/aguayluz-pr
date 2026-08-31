@@ -20,6 +20,19 @@
 
 PR #120 landed design authority for provider-agnostic regulatory observations, source receipts, conservative entity-link candidates, provider protocols and activation gates. It adds no live providers, persistence, scheduler, GUI/API surface or automatic entity promotion. No dimension changes: the landed design authority improves architectural definition, while the newly recognized implementation scope remains unfinished; data materialization and operator verification receive no credit.
 
+## PR #168 candidate: bounded real-data partial export
+
+Draft PR #168, refreshed against exact base
+`c7860f0c900756bed60bccaee6021ee18aabe3dc`, adds an offline deterministic
+`PRODUCTION_REAL_DATA_PARTIAL` package. It selects whole committed rows, permits
+an explicitly empty recovery-project stream, and emits only evidence-gated
+continuity candidates. It does not change the score while unmerged.
+
+The candidate preserves these boundaries: power-water proximity is discovery,
+not feeder identity; a fuel token does not prove stock, supplier, route, or
+outage cause; VPU-21 hydro evidence is not Puerto Rico-wide coverage; and
+permission-constrained live outage inputs are not fabricated.
+
 ## State reconciliation
 
 - Core utility, water, alert, export, dashboard and desktop capabilities are on `main`.
@@ -43,11 +56,12 @@ level, but the roadmap score should change only after the branch lands on
 
 ## Priority exit sequence
 
-1. Implement the PR #120 regulatory framework through separately reviewed provider, persistence, scheduler, API/GUI and promotion increments.
-2. Reconcile #109's non-overlapping NHC/NEON work without duplicating the merged USGS authority.
-3. Preserve the merged #118 direct-versus-context boundaries until eligible direct measurements exist.
-4. Decompose mycelial Phase 1 by approved ballots.
-5. Acquire authorized outage provenance.
+1. Certify PR #168 on current main without promoting partial data to complete coverage.
+2. Implement the PR #120 regulatory framework through separately reviewed provider, persistence, scheduler, API/GUI and promotion increments.
+3. Reconcile #109's non-overlapping NHC/NEON work without duplicating the merged USGS authority.
+4. Preserve the merged #118 direct-versus-context boundaries until eligible direct measurements exist.
+5. Decompose mycelial Phase 1 by approved ballots.
+6. Acquire authorized outage provenance.
 
 ## Machine-readable authority
 
