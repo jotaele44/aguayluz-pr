@@ -29,12 +29,14 @@ def test_explicit_authoritative_pair_binding_can_be_connectivity_eligible():
         state="ADJUDICATED",
         relation_type="HYDRAULICALLY_CONNECTED_TO",
         pair_binding_state="BOUND_RELATION_NOT_IDENTITY",
-        evidence=[{
-            "relation_type": "HYDRAULICALLY_CONNECTED_TO",
-            "binds_candidate_pair": True,
-            "authoritative": True,
-            "source_id": "authoritative:hydraulic-record",
-        }],
+        evidence=[
+            {
+                "relation_type": "HYDRAULICALLY_CONNECTED_TO",
+                "binds_candidate_pair": True,
+                "authoritative": True,
+                "source_id": "authoritative:hydraulic-record",
+            }
+        ],
     )
     out = consume_htr_context([r])[0]
     assert out["connectivity_eligible"] is True
@@ -59,4 +61,32 @@ def test_unsupported_row_rejected():
     r["state"] = "UNSUPPORTED"
     r["identity_state"] = "UNRESOLVED"
     with pytest.raises(HTRContextError):
+        consume_htr_context([r])
+
+
+@pytest.mark.parametrize("evidence", [{}, "source", [None], [{"source_id": "x"}, 1]])
+def test_malformed_evidence_rejected(evidence):
+    r = base_row()
+    r["evidence"] = evidence
+    with pytest.raises(HTRContextError, match="evidence must be a list of objects"):
+        consume_htr_context([r])
+
+
+@pytest.mark.parametrize("relation", [None, "", [], {}])
+def test_relation_type_must_be_non_empty_string(relation):
+    r = base_row()
+    r["relation_type"] = relation
+    with pytest.raises(HTRContextError, match="relation_type"):
+        consume_htr_context([r])
+
+
+def test_unknown_pair_binding_state_and_endpoint_collapse_rejected():
+    r = base_row()
+    r["pair_binding_state"] = "UNKNOWN"
+    with pytest.raises(HTRContextError, match="pair_binding_state"):
+        consume_htr_context([r])
+
+    r = base_row()
+    r["hydro_entity_id"] = r["source_observation_id"]
+    with pytest.raises(HTRContextError, match="endpoints must remain distinct"):
         consume_htr_context([r])
