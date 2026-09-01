@@ -21,6 +21,7 @@ _REPO = Path(__file__).resolve().parents[1]
 
 # ---------------- utility_asset ----------------
 
+
 def test_utility_asset_valid(utility_asset_valid):
     validate_against_schema("utility_asset", utility_asset_valid)
     UtilityAsset(**utility_asset_valid)
@@ -64,6 +65,7 @@ def test_utility_asset_rejects_bad_attribute_coverage(utility_asset_valid):
 
 # ---------------- service_event ----------------
 
+
 def test_service_event_valid(service_event_valid):
     validate_against_schema("service_event", service_event_valid)
     ServiceEvent(**service_event_valid)
@@ -91,6 +93,7 @@ def test_service_event_accepts_optional_epicenter_coords(service_event_valid):
 
 # ---------------- monitoring_reading ----------------
 
+
 def _reading(metric):
     return {
         "reading_id": "AYL_RDG_20260114_X_gw",
@@ -117,6 +120,7 @@ def test_monitoring_reading_rejects_unknown_metric():
 
 
 # ---------------- bridge_summary ----------------
+
 
 def test_bridge_summary_valid():
     s = {
@@ -154,6 +158,7 @@ def test_bridge_summary_rejects_wrong_module_id():
 
 # ---------------- hub_export ----------------
 
+
 def test_hub_export_valid(hub_export_valid):
     validate_against_schema("hub_export", hub_export_valid)
     HubExport(**hub_export_valid)
@@ -172,6 +177,7 @@ def test_hub_export_rejects_bad_run_id(hub_export_valid):
 
 
 # ---------------- source_manifest / review_queue / integration_report (sanity) ----------------
+
 
 def test_source_manifest_minimal_valid():
     data = {
@@ -233,18 +239,21 @@ def test_integration_report_minimal_valid():
 
 # ---------------- schema files themselves are valid JSON Schema ----------------
 
+
 def test_every_schema_loads_and_validates_itself(schemas_dir):
     from jsonschema import Draft202012Validator
+
     schemas = list(schemas_dir.glob("*.schema.json"))
-    # Bumped by five environmental-exposure contracts: entity, observation, geometry,
-    # temporal relationship, and exposure event. Root schema count is an explicit gate.
-    assert len(schemas) == 33, f"expected 33 schemas, found {len(schemas)}"
+    # The GIS sidecar adds six contracts: feature, layer, runtime, package,
+    # impact report, and manifest. Root schema count is an explicit gate.
+    assert len(schemas) == 39, f"expected 39 schemas, found {len(schemas)}"
     for p in schemas:
         s = json.loads(p.read_text(encoding="utf-8"))
         Draft202012Validator.check_schema(s)
 
 
 # ---------------- pr_natural_feature (hydro slice) ----------------
+
 
 def _first_natural_feature() -> dict:
     data = json.loads((_REPO / "data" / "geo" / "pr_natural_features.json").read_text("utf-8"))

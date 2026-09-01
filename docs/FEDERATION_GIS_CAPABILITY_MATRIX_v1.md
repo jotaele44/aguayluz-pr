@@ -1,6 +1,6 @@
 # Federation GIS Capability / Duplication Matrix v1
 
-Frozen baseline: spiderweb-pr `533fdde554e11b486a4ddb7a3fbe8127ed3fa2b2`; moneysweep-pr `ffdc781bc2196fc5e35903573f3948137e18bb1b`; aguayluz-pr `30e83ae11f0d6be0bf71f6cf46d3c8ff8bc035c0`; skywatcher-pr `b7b153fc64988ad62873841a3a61b75eab7721dd`.
+Frozen baseline: spiderweb-pr `02169e73bf7ae110eeccb8cfaf47a4f7dfa2989f`; moneysweep-pr `b5661dd29b5905015016041057136b6c945ddf5a`; aguayluz-pr `d46758886a40a290c15a3b138e131910163b0d1e`; skywatcher-pr `6d7831c1cc665ad3080c9cab92a673cc5eb8e2e9`.
 
 Authoritative boundaries: Spiderweb = cross-domain investigation/fusion GIS; MoneySweep = capital/contracts/ownership/project geography; AguaYLuz = water/power/environmental infrastructure; Skywatcher = aviation/airspace/terrain/4D trajectories.
 
