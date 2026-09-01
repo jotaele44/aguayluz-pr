@@ -8,6 +8,7 @@ import {
 import { SEVERITIES, TIERS } from '@/lib/format'
 import { AlertTriangle, Search } from 'lucide-react'
 import ReviewRecordCard from '@/components/ReviewRecordCard'
+import { lookup } from '@/lib/utils'
 
 const SEVERITY_RANK = { block: 0, warn: 1, info: 2 }
 
@@ -22,7 +23,7 @@ export default function ReviewQueue() {
   const [tier, setTier] = useState('all')
 
   const rows = useMemo(() => [...queue]
-    .sort((a, b) => (SEVERITY_RANK[a.severity] ?? 9) - (SEVERITY_RANK[b.severity] ?? 9) || normalized(a.record_ref).localeCompare(normalized(b.record_ref)))
+    .sort((a, b) => (lookup(SEVERITY_RANK, a.severity, 9)) - (lookup(SEVERITY_RANK, b.severity, 9)) || normalized(a.record_ref).localeCompare(normalized(b.record_ref)))
     .filter((r) => {
       const haystack = [r.record_ref, r.reason, r.severity, r.evidence_tier, r.source_ref, r.record_type]
         .map(normalized).join(' ')

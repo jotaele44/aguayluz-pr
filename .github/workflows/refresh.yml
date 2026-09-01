@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
 
@@ -96,6 +96,21 @@ jobs:
             git push
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
+
+      # The refresh commit itself carries [skip ci], so dispatch Floot from this
+      # already-running producer workflow instead of relying on a second push workflow.
+      # The Floot endpoint is commit-gated and idempotent: retries cannot roll back
+      # the current snapshot or duplicate a completed promotion.
+      - name: Promote refreshed snapshot to Floot
+        if: steps.commit.outputs.changed == 'true'
+        run: |
+          SYNC_COMMIT="$(git rev-parse HEAD)"
+          curl --fail-with-body --show-error --silent \
+            --retry 3 --retry-all-errors --retry-delay 2 \
+            -X POST \
+            -H "Content-Type: application/json" \
+            https://aguayluz-pr.floot.app/_api/sync/github \
+            --data "{\"commitSha\":\"${SYNC_COMMIT}\",\"trigger\":\"github_action\"}"
 
       # Producer -> Hub push: tell thehub-pr to re-aggregate as soon as a new export
       # lands, instead of waiting for the Hub's own schedule. No-op unless the

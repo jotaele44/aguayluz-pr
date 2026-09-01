@@ -25,6 +25,9 @@ const backendCommand = fs.existsSync(seedScript)
 
 export default defineConfig({
   testDir: "./tests",
+  // Removes the seeded review-queue fixture, and only ever a fixture — the
+  // teardown refuses to delete anything that seed_demo.py did not create.
+  globalTeardown: path.join(repositoryRoot, "server", "ingestion", "playwright.teardown.mjs"),
   testMatch: "gui-parity.spec.mjs",
   fullyParallel: false,
   retries: process.env.CI ? 1 : 0,

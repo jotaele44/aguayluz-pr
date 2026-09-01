@@ -1,0 +1,32 @@
+{
+  "schema_version": "aguayluz.laguna-cartagena-operator-request-routes/v0.4",
+  "verified_on": "2026-08-04",
+  "requests_are_not_foia": true,
+  "routes": [
+    {
+      "provider": "Autoridad de Acueductos y Alcantarillados",
+      "region": "Oeste",
+      "recipient": "lisandra.morales@acueductospr.com",
+      "role_evidence": "Public West-region AAA contact; request asks routing to operations/data custodian.",
+      "requested_metrics": [
+        "treatment_withdrawal",
+        "known_leak_flow"
+      ],
+      "source": "https://training.acueductospr.com/moodle/mod/page/view.php?id=26"
+    },
+    {
+      "provider": "Autoridad de Energía Eléctrica de Puerto Rico",
+      "region": "Southwest irrigation system",
+      "recipient": "info@prepa.pr.gov",
+      "role_evidence": "Official general PREPA contact; request asks routing to irrigation operations/data custodian.",
+      "requested_metrics": [
+        "canal_release",
+        "agricultural_turnout",
+        "gate_position",
+        "known_leak_flow",
+        "terminal_flow"
+      ],
+      "source": "https://aeepr.com/"
+    }
+  ]
+}

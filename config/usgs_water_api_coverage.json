@@ -1,0 +1,212 @@
+{
+  "version": "0.1.0",
+  "scope": "Puerto Rico",
+  "generated_by": "CLOSE_USGS_WATER_API_CATEGORY_GAPS_v0_1",
+  "policy": {
+    "registered_provider_is_not_observation_monitoring": true,
+    "active_requires_existing_producer": true,
+    "active_requires_scheduled_execution": true,
+    "live_verification_is_separate_from_implementation": true
+  },
+  "categories": [
+    {
+      "id": "continuous_values",
+      "title": "Continuous Values",
+      "provider_registered": true,
+      "observation_monitoring": true,
+      "implementation_status": "implemented_unverified_live",
+      "producers": [
+        "scripts/ingest_usgs_continuous.py"
+      ],
+      "artifacts": [
+        "data/usgs_continuous_readings.jsonl",
+        "data/usgs_continuous_receipt.json"
+      ],
+      "cadences": [
+        "fast",
+        "daily",
+        "weekly",
+        "all"
+      ],
+      "live_verified": false
+    },
+    {
+      "id": "daily_values",
+      "title": "Daily Values",
+      "provider_registered": true,
+      "observation_monitoring": true,
+      "implementation_status": "operational_legacy_endpoint",
+      "producers": [
+        "scripts/ingest_usgs_levels.py",
+        "scripts/ingest_usgs_groundwater.py"
+      ],
+      "artifacts": [
+        "data/reservoir_levels.jsonl",
+        "data/groundwater_levels.jsonl"
+      ],
+      "cadences": [
+        "daily",
+        "weekly",
+        "all"
+      ],
+      "live_verified": true
+    },
+    {
+      "id": "monitoring_locations",
+      "title": "Monitoring Locations",
+      "provider_registered": true,
+      "observation_monitoring": true,
+      "implementation_status": "implemented_unverified_live",
+      "producers": [
+        "scripts/ingest_usgs_time_series_metadata.py"
+      ],
+      "artifacts": [
+        "data/usgs_monitoring_locations.jsonl"
+      ],
+      "cadences": [
+        "weekly",
+        "all"
+      ],
+      "live_verified": false
+    },
+    {
+      "id": "time_series_metadata",
+      "title": "Time Series Metadata",
+      "provider_registered": true,
+      "observation_monitoring": true,
+      "implementation_status": "implemented_unverified_live",
+      "producers": [
+        "scripts/ingest_usgs_time_series_metadata.py"
+      ],
+      "artifacts": [
+        "data/usgs_time_series_metadata.jsonl"
+      ],
+      "cadences": [
+        "daily",
+        "weekly",
+        "all"
+      ],
+      "live_verified": false
+    },
+    {
+      "id": "ogc_apis",
+      "title": "OGC-Compliant APIs",
+      "provider_registered": true,
+      "observation_monitoring": true,
+      "implementation_status": "implemented_unverified_live",
+      "producers": [
+        "scripts/ingest_usgs_field_measurements.py",
+        "scripts/ingest_usgs_peaks.py"
+      ],
+      "artifacts": [
+        "data/usgs_field_measurements_readings.jsonl",
+        "data/usgs_peaks_readings.jsonl"
+      ],
+      "cadences": [
+        "daily",
+        "weekly",
+        "all"
+      ],
+      "live_verified": false
+    },
+    {
+      "id": "water_quality_portal",
+      "title": "Water Quality Portal",
+      "provider_registered": true,
+      "observation_monitoring": true,
+      "implementation_status": "implemented_unverified_live",
+      "producers": [
+        "scripts/ingest_usgs_water_quality.py"
+      ],
+      "artifacts": [
+        "data/usgs_water_quality_locations.jsonl",
+        "data/usgs_water_quality_readings.jsonl"
+      ],
+      "cadences": [
+        "weekly",
+        "all"
+      ],
+      "live_verified": false
+    },
+    {
+      "id": "samples_api",
+      "title": "USGS Water Samples API",
+      "provider_registered": true,
+      "observation_monitoring": true,
+      "implementation_status": "operational_basin_plus_statewide_discovery",
+      "producers": [
+        "scripts/ingest_usgs_samples.py",
+        "scripts/ingest_usgs_water_quality.py"
+      ],
+      "artifacts": [
+        "data/usgs_samples_readings.jsonl",
+        "data/usgs_water_quality_censored.jsonl"
+      ],
+      "cadences": [
+        "daily",
+        "weekly",
+        "all"
+      ],
+      "live_verified": true
+    },
+    {
+      "id": "statistics_api",
+      "title": "USGS Water Data Statistics",
+      "provider_registered": true,
+      "observation_monitoring": true,
+      "implementation_status": "implemented_unverified_live",
+      "producers": [
+        "scripts/ingest_usgs_statistics.py"
+      ],
+      "artifacts": [
+        "data/usgs_statistics_baselines.jsonl"
+      ],
+      "cadences": [
+        "weekly",
+        "all"
+      ],
+      "live_verified": false
+    },
+    {
+      "id": "rtfi",
+      "title": "Real-Time Flood Impacts",
+      "provider_registered": true,
+      "observation_monitoring": true,
+      "implementation_status": "implemented_unverified_live",
+      "producers": [
+        "scripts/ingest_usgs_rtfi.py"
+      ],
+      "artifacts": [
+        "data/usgs_rtfi_locations.jsonl",
+        "data/usgs_rtfi_gage_edges.jsonl"
+      ],
+      "cadences": [
+        "fast",
+        "daily",
+        "weekly",
+        "all"
+      ],
+      "live_verified": false
+    },
+    {
+      "id": "nims",
+      "title": "National Imagery Management System",
+      "provider_registered": true,
+      "observation_monitoring": true,
+      "implementation_status": "implemented_unverified_live",
+      "producers": [
+        "scripts/ingest_usgs_nims.py"
+      ],
+      "artifacts": [
+        "data/usgs_nims_cameras.jsonl",
+        "data/usgs_nims_images.jsonl"
+      ],
+      "cadences": [
+        "daily",
+        "weekly",
+        "all"
+      ],
+      "live_verified": false
+    }
+  ]
+}

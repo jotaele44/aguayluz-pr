@@ -1,0 +1,51 @@
+{
+  "repo": "aguayluz-pr",
+  "federationPackage": {
+    "spec": "https://github.com/jotaele44/thehub-pr/releases/download/federation-design-v0.4.0/pr-federation-react-0.4.0.tgz",
+    "resolvedVersion": "0.4.0",
+    "shipsTestHarnessContract": true,
+    "importedSymbols": {
+      "FederationStatCard": 2,
+      "FederationEmptyState": 1,
+      "FederationPanel": 1,
+      "federationTone": 1
+    }
+  },
+  "shadcn": {
+    "componentsJsonPresent": true,
+    "style": "new-york",
+    "localUiPrimitives": [
+      "badge.jsx",
+      "button.jsx",
+      "input.jsx",
+      "select.jsx",
+      "sheet.jsx",
+      "skeleton.jsx",
+      "table.jsx",
+      "tabs.jsx",
+      "toast.jsx",
+      "toaster.jsx",
+      "use-toast.jsx"
+    ]
+  },
+  "controlSourceMap": {
+    "button": "local shadcn primitive (components/ui/button.jsx, 8 import sites) — @pr-federation/react's FederationButton/FederationIconButton are exported but never imported anywhere in dashboard/src",
+    "dialog": "local shadcn primitive (components/ui/sheet.jsx, the only Radix-Dialog-based surface in the app — wraps @radix-ui/react-dialog directly; used once, for AssetDetail). No dashboard/src/components/ui/dialog.jsx exists and @radix-ui/react-dialog is never imported outside sheet.jsx",
+    "badge": "local shadcn primitive (components/ui/badge.jsx, 9 import sites: AssetDetail, AssetsTable, OutagesPanel, ReviewRecordCard, ReviewPage, AlertDetailPage, MunicipioDetailPage, AlertsPage, EventDetailPage) — @pr-federation/react's FederationSemanticBadge/FederationStatusBadge/FederationEvidenceTierBadge/etc. are exported but never imported",
+    "toggle": "bespoke — a plain shadcn <Button variant=\"outline\"> with manual aria-pressed state (e.g. AssetsTable's \"Needs review\"/\"Unmapped\" filters, AlertsPage's \"Critical\" filter, AssetMap's layer/basemap toggles). No @radix-ui/react-toggle usage found despite it being a declared dependency, and no @pr-federation/react toggle primitive exists to use",
+    "emptyState": "federation package (FederationEmptyState, imported once in components/common/PanelState.jsx and reused as the shared empty/loading/error state wrapper across data panels)"
+  },
+  "themeSupport": {
+    "light": false,
+    "dark": true,
+    "toggleFound": false
+  },
+  "screenshots": [
+    "docs/a11y-evidence/assets-button-desktop.png",
+    "docs/a11y-evidence/assets-button-mobile-compact.png",
+    "docs/a11y-evidence/assets-badge-desktop.png",
+    "docs/a11y-evidence/assets-badge-mobile-compact.png",
+    "docs/a11y-evidence/assets-dialog-desktop.png",
+    "docs/a11y-evidence/assets-dialog-mobile-compact.png"
+  ]
+}

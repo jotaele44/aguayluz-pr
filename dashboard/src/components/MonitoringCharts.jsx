@@ -19,10 +19,20 @@ const axis = { fill: '#94a3b8', fontSize: 11 }
 
 function QualityBadge({ quality }) {
   if (!quality) return null
-  const stale = quality.freshness !== 'fresh'
+  // 'not_applicable' is a historical reference series (annual peaks): its newest point
+  // being years old is correct, so it must not read as a stale live feed.
+  const historical = quality.freshness === 'not_applicable'
+  const stale = !historical && quality.freshness !== 'fresh'
+  const tone = stale
+    ? 'border-amber-800 bg-amber-950/30 text-amber-300'
+    : historical
+      ? 'border-slate-700 bg-slate-900/60 text-slate-300'
+      : 'border-emerald-900 bg-emerald-950/30 text-emerald-300'
   return (
-    <div className={`rounded border px-2 py-1 text-[10px] ${stale ? 'border-amber-800 bg-amber-950/30 text-amber-300' : 'border-emerald-900 bg-emerald-950/30 text-emerald-300'}`}>
-      {quality.freshness} · {quality.age_hours == null ? 'age unknown' : `${quality.age_hours}h old`} · datum {quality.datum_status}
+    <div className={`rounded border px-2 py-1 text-[10px] ${tone}`}>
+      {historical ? 'historical record' : quality.freshness}
+      {historical ? '' : ` · ${quality.age_hours == null ? 'age unknown' : `${quality.age_hours}h old`}`}
+      {' · datum '}{quality.datum_status}
       {quality.provisional_count > 0 ? ` · ${quality.provisional_count} provisional` : ''}
     </div>
   )
@@ -141,7 +151,11 @@ export default function MonitoringCharts() {
           <div>
             <div className="text-xs uppercase tracking-wide text-slate-400">{series.label}{activeSite ? ` · site ${activeSite}` : ''} · {readings.length} readings ({series.unit})</div>
             <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{series.note}</p>
-            <p className="mt-1 text-[10px] text-slate-600">Threshold source: {provenance?.threshold?.provenance ?? 'undeclared'}</p>
+            <p className="mt-1 text-[10px] text-slate-600">{provenance?.threshold
+              ? `Threshold source: ${provenance.threshold.provenance}`
+              : provenance
+                ? 'Reference series — no alert threshold by design; inspect only.'
+                : 'Threshold source: undeclared'}</p>
           </div>
           <div className="flex flex-col items-end gap-1"><QualityBadge quality={quality} /><div className="rounded border border-slate-800 bg-slate-950 px-2 py-1 text-[10px] text-slate-400">{chart.length} plotted</div></div>
         </div>

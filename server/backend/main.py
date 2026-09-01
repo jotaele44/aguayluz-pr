@@ -42,8 +42,16 @@ READINGS_FILES: dict[str, Path] = {
     "reservoir": DATA / "reservoir_levels.jsonl",       # scripts/ingest_usgs_levels.py
     "groundwater": DATA / "groundwater_levels.jsonl",   # scripts/ingest_usgs_groundwater.py
     "coastal": DATA / "coastal_levels.jsonl",           # scripts/ingest_noaa_tides.py
+    "drought": DATA / "drought_conditions.jsonl",       # scripts/ingest_drought_usdm.py
+    "precipitation": DATA / "precipitation_conditions.jsonl",  # scripts/ingest_precip_ncei.py
     "neon": DATA / "neon_readings.jsonl",               # scripts/ingest_neon_products.py
+    "usgs_field_measurements": DATA / "usgs_field_measurements_readings.jsonl",  # scripts/ingest_usgs_field_measurements.py
+    "usgs_peaks": DATA / "usgs_peaks_readings.jsonl",   # scripts/ingest_usgs_peaks.py
 }
+# NOTE: this dict and app.py's READING_VECTOR_REGISTRY are maintained by hand and have
+# drifted — `neon` lives only here, so GET /readings?kind=neon 400s on the canonical app
+# that is actually served (desktop/config.py points at server.backend.app). Unifying them
+# is a tracked follow-up, deliberately not bundled into this change.
 
 # Default page size for GET /events. The service_events corpus includes the full
 # EPA SDWIS violation history (tens of thousands of rows, ~13 MB), so an unbounded

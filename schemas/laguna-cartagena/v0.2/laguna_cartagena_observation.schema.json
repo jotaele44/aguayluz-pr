@@ -1,0 +1,228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/laguna-cartagena/v0.2/laguna_cartagena_observation.schema.json",
+  "title": "Laguna Cartagena current-condition observation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "observation_id",
+    "observation_window_id",
+    "observed_at",
+    "source_id",
+    "source_record_id",
+    "source_hash",
+    "provider",
+    "location_id",
+    "location_name",
+    "metric",
+    "value",
+    "unit",
+    "evidence_tier",
+    "direct_or_proxy",
+    "hydrologic_representativeness",
+    "historical_baseline",
+    "qa_status",
+    "evidence_ids",
+    "shadow_mode"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "aguayluz.laguna-cartagena-observation/v0.2"
+    },
+    "observation_id": {
+      "type": "string",
+      "pattern": "^AYL_LC_OBS_[A-Za-z0-9_-]+$"
+    },
+    "observation_window_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "observed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "valid_until": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "source_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_record_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_hash": {
+      "type": "string",
+      "pattern": "^[a-fA-F0-9]{64}$"
+    },
+    "provider": {
+      "type": "string",
+      "minLength": 1
+    },
+    "location_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "location_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "municipality": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "metric": {
+      "enum": [
+        "agricultural_turnout",
+        "ammonia",
+        "canal_release",
+        "dissolved_oxygen",
+        "fecal_indicator",
+        "gate_position",
+        "groundwater_level",
+        "known_leak_flow",
+        "lagoon_stage",
+        "nitrate",
+        "outflow_discharge",
+        "ph",
+        "phosphorus",
+        "precipitation",
+        "soil_moisture",
+        "specific_conductance",
+        "terminal_flow",
+        "treatment_withdrawal",
+        "turbidity",
+        "water_temperature"
+      ]
+    },
+    "value": {
+      "type": [
+        "number",
+        "string",
+        "boolean"
+      ]
+    },
+    "unit": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evidence_tier": {
+      "enum": [
+        "T1",
+        "T2",
+        "T3",
+        "T4"
+      ]
+    },
+    "direct_or_proxy": {
+      "enum": [
+        "direct",
+        "proxy",
+        "context"
+      ]
+    },
+    "distance_from_target_km": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "hydrologic_representativeness": {
+      "enum": [
+        "direct",
+        "high",
+        "medium",
+        "low",
+        "none"
+      ]
+    },
+    "historical_baseline": {
+      "type": "boolean"
+    },
+    "qa_status": {
+      "enum": [
+        "accepted",
+        "provisional",
+        "needs_review",
+        "rejected"
+      ]
+    },
+    "provisional": {
+      "type": "boolean",
+      "default": false
+    },
+    "condition": {
+      "enum": [
+        "normal",
+        "below_operational_threshold",
+        "above_operational_threshold",
+        "unknown"
+      ],
+      "default": "unknown"
+    },
+    "threshold_provenance": {
+      "enum": [
+        "operator_authoritative",
+        "statistical_proxy",
+        "none"
+      ],
+      "default": "none"
+    },
+    "method": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "notes": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "evidence_ids": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "shadow_mode": {
+      "const": true
+    }
+  },
+  "allOf": [
+    {
+      "not": {
+        "required": [
+          "current_condition_eligible"
+        ]
+      }
+    },
+    {
+      "not": {
+        "required": [
+          "stale"
+        ]
+      }
+    },
+    {
+      "not": {
+        "required": [
+          "eligibility_reasons"
+        ]
+      }
+    }
+  ]
+}

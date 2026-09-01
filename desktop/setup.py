@@ -55,6 +55,9 @@ def setup_python() -> None:
     install = [str(venv_python()), "-m", "pip", "install", "--quiet"]
     for req in REQUIREMENT_FILES:
         install += ["-r", str(req)]
+    constraints = REPO_ROOT / "constraints-desktop.txt"
+    if constraints.exists():
+        install += ["-c", str(constraints)]
     run(install)
     extra = list(getattr(config, "EXTRA_PIP_SPECS", []))
     if extra:

@@ -1,0 +1,173 @@
+{
+  "schema_version": "aguayluz.laguna-cartagena-field-operator-packet/v0.4",
+  "packet_mode": "shadow_only",
+  "timezone_contract": "UTC",
+  "max_synchronization_hours": 24,
+  "coordinate_tolerance_km": 0.5,
+  "field_access": {
+    "authorization_required": true,
+    "land_manager": "U.S. Fish and Wildlife Service",
+    "facility": "Laguna Cartagena National Wildlife Refuge",
+    "authorized_qualified_adult_crew_only": true,
+    "no_unsupervised_entry": true,
+    "no_water_entry_without_site_specific_safety_plan": true
+  },
+  "fixed_locations": {
+    "50129899": {
+      "name": "Laguna Cartagena near Boqueron",
+      "municipality": "Lajas",
+      "latitude": 18.0124634301021,
+      "longitude": -67.1087894817786,
+      "horizontal_datum": "WGS84",
+      "metrics": [
+        "lagoon_stage",
+        "specific_conductance",
+        "water_temperature",
+        "dissolved_oxygen",
+        "ph",
+        "turbidity",
+        "nitrate",
+        "ammonia",
+        "phosphorus",
+        "fecal_indicator"
+      ]
+    },
+    "50129900": {
+      "name": "Laguna Cartagena outflow near Boqueron",
+      "municipality": "Cabo Rojo",
+      "latitude": 18.01246343,
+      "longitude": -67.1090673,
+      "horizontal_datum": "NAD83",
+      "metrics": [
+        "outflow_discharge"
+      ]
+    },
+    "180046067053700": {
+      "name": "Laguna Cartagena well",
+      "municipality": "Lajas",
+      "latitude": 18.01079699,
+      "longitude": -67.0932338,
+      "horizontal_datum": "NAD83",
+      "metrics": [
+        "groundwater_level"
+      ]
+    },
+    "50128905": {
+      "name": "Lajas irrigation canal below Lago Loco Dam",
+      "municipality": "Lajas",
+      "metrics": [
+        "canal_release",
+        "treatment_withdrawal",
+        "agricultural_turnout",
+        "gate_position",
+        "known_leak_flow"
+      ]
+    },
+    "50128940": {
+      "name": "Lajas irrigation canal downstream operational gage",
+      "municipality": "Lajas",
+      "metrics": [
+        "terminal_flow"
+      ]
+    }
+  },
+  "required_direct_metrics": [
+    "lagoon_stage",
+    "outflow_discharge",
+    "groundwater_level",
+    "specific_conductance",
+    "water_temperature",
+    "dissolved_oxygen",
+    "ph",
+    "turbidity",
+    "nitrate",
+    "ammonia",
+    "phosphorus",
+    "fecal_indicator"
+  ],
+  "required_operational_metrics": [
+    "canal_release",
+    "treatment_withdrawal",
+    "agricultural_turnout",
+    "terminal_flow"
+  ],
+  "optional_operational_metrics": [
+    "gate_position",
+    "known_leak_flow"
+  ],
+  "accepted_units": {
+    "lagoon_stage": [
+      "ft",
+      "m"
+    ],
+    "outflow_discharge": [
+      "ft3/s",
+      "m3/s"
+    ],
+    "groundwater_level": [
+      "ft",
+      "m"
+    ],
+    "specific_conductance": [
+      "uS/cm"
+    ],
+    "water_temperature": [
+      "degC"
+    ],
+    "dissolved_oxygen": [
+      "mg/L"
+    ],
+    "ph": [
+      "standard_units"
+    ],
+    "turbidity": [
+      "NTU"
+    ],
+    "nitrate": [
+      "mg/L"
+    ],
+    "ammonia": [
+      "mg/L"
+    ],
+    "phosphorus": [
+      "mg/L"
+    ],
+    "fecal_indicator": [
+      "count/100mL"
+    ],
+    "canal_release": [
+      "ft3/s"
+    ],
+    "treatment_withdrawal": [
+      "ft3/s"
+    ],
+    "agricultural_turnout": [
+      "ft3/s"
+    ],
+    "terminal_flow": [
+      "ft3/s"
+    ],
+    "known_leak_flow": [
+      "ft3/s"
+    ],
+    "gate_position": [
+      "percent_open",
+      "state"
+    ]
+  },
+  "required_packet_files": [
+    "packet_manifest.json",
+    "field_observations.csv",
+    "operator_observations.csv",
+    "instrument_calibrations.csv",
+    "chain_of_custody.csv",
+    "file_manifest.csv"
+  ],
+  "preserve": {
+    "shadow_mode": true,
+    "notifications_enabled": false,
+    "automatic_control_actions_enabled": false,
+    "production_promotion_enabled": false,
+    "automatic_leakage_claim_enabled": false
+  }
+}

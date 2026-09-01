@@ -1,0 +1,102 @@
+# Version pins for desktop/setup.py's `pip install -c` step, derived from
+# uv.lock (the equivalent-but-not-byte-identical source is
+# `uv export --no-hashes --no-editable`; uv's output additionally carries
+# `# via` annotations and environment markers that this file omits).
+#
+# Omitted on purpose:
+# - the bare "." project self-entry and any direct git/url references
+#   (prii-maintenance, prii-export-utils) -- pip constraints files reject
+#   both editable/self entries and direct references.
+# - packages uv.lock resolves to more than one version across its
+#   supported Python versions/platforms (see the list below). pip
+#   combines repeated `name==version` constraint lines for the same
+#   package by intersecting specifiers -- it does not evaluate markers
+#   first -- so listing every version here would produce an
+#   unsatisfiable pin on every install. These stay bounded by the
+#   regular (floor-pinned) requirement files instead.
+# Multi-version packages excluded: netcdf4, networkx, numpy, owslib, pandas, pyproj, rasterio, rioxarray, rpds-py, scipy, xarray
+#
+affine==2.4.0
+aiodns==4.0.4
+aiofiles==25.1.0
+aiohappyeyeballs==2.7.1
+aiohttp==3.14.3
+aiohttp-client-cache==0.14.3
+aiosignal==1.4.0
+aiosqlite==0.22.1
+annotated-doc==0.0.4
+annotated-types==0.8.0
+anyio==4.14.2
+async-retriever==0.19.3
+async-timeout==5.0.1
+attrs==26.1.0
+brotli==1.2.0
+cattrs==26.1.0
+certifi==2026.7.22
+cffi==2.1.0
+cftime==1.6.5
+charset-normalizer==3.4.9
+click==8.4.2
+click-plugins==1.1.1.2
+cligj==0.7.2
+colorama==0.4.6
+coverage==7.15.2
+cytoolz==1.1.0
+defusedxml==0.7.1
+exceptiongroup==1.3.1
+fastapi==0.141.1
+frozenlist==1.8.0
+geopandas==1.1.4
+h11==0.16.0
+httpcore==1.0.9
+httpx==0.28.1
+idna==3.18
+iniconfig==2.3.0
+itsdangerous==2.2.0
+joblib==1.5.3
+jsonschema==4.26.0
+jsonschema-specifications==2025.9.1
+lxml==6.1.1
+markdown-it-py==4.2.0
+mdurl==0.1.2
+multidict==6.7.1
+orjson==3.11.9
+packaging==26.2
+platformdirs==4.11.0
+pluggy==1.6.0
+propcache==0.5.2
+pyarrow==25.0.0
+pycares==5.0.1
+pycparser==3.0
+pydantic==2.13.4
+pydantic-core==2.46.4
+pygeoogc==0.19.4
+pygeoutils==0.19.5
+pygments==2.20.0
+pynhd==0.20.0
+pyogrio==0.13.0
+pyparsing==3.3.2
+pytest==9.1.1
+pytest-cov==7.1.0
+pytest-httpx==0.36.2
+python-dateutil==2.9.0.post0
+pytz==2026.3.post1
+pyyaml==6.0.3
+referencing==0.37.0
+requests==2.34.2
+requests-cache==1.3.3
+rich==15.0.0
+ruff==0.16.0
+shapely==2.1.2
+shellingham==1.5.4
+six==1.17.0
+starlette==1.6.0
+tomli==2.4.1
+toolz==1.1.0
+typer==0.27.0
+typing-extensions==4.16.0
+typing-inspection==0.4.2
+tzdata==2026.3
+url-normalize==3.0.0
+urllib3==2.7.0
+yarl==1.24.5
