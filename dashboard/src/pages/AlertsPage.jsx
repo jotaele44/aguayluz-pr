@@ -76,7 +76,7 @@ function AlertRow({ alert }) {
       to={`/alerts/${encodeURIComponent(alert.alert_id)}`}
       className={cn(
         'flex items-start gap-3 border-b border-slate-800/70 px-4 py-2.5 transition-colors',
-        'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-sky-500/50',
+        'focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-sky-500/50',
         critical ? 'bg-red-950/20 hover:bg-red-950/30' : 'hover:bg-slate-800/40',
       )}
     >
