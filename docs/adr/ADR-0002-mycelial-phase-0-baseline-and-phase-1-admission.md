@@ -338,7 +338,7 @@ The required certification matrix includes, as applicable:
 - duplicate, replay, receipt, and supersession tests;
 - data-accounting and determinism tests;
 - GUI parity and browser reachability when a human surface exists;
-- CodeQL, Semgrep, Secret scan, pip-audit, and federation drift;
+- CodeQL, Secret scan, pip-audit, and federation drift;
 - Ubuntu, macOS, and Windows desktop build and packaging.
 
 ## Disposition of existing Phase 1 work

@@ -1150,6 +1150,29 @@
           "dashboard/tests/gui-parity.spec.mjs"
         ]
       }
+    },
+    {
+      "id": "prii-export-utils-internal",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Deterministic federation-export helper module used only by producer scripts. It provides stable identifier hashing, text normalization, and file SHA-256 calculation; it exposes no route, endpoint, control, or operator workflow of its own.",
+      "analysis": {
+        "files": [
+          "scripts/prii_export_utils.py"
+        ],
+        "symbols": [
+          "scripts/prii_export_utils.py:fid",
+          "scripts/prii_export_utils.py:norm",
+          "scripts/prii_export_utils.py:sha256"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_federation_export.py",
+          "tests/test_gui_parity.py"
+        ]
+      }
     }
   ],
   "exceptions": []

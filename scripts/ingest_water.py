@@ -14,7 +14,7 @@ emitted with ``review_status=needs_review`` / ``evidence_tier=T3``.
 This MERGES into ``data/utility_assets.jsonl``: existing non-water rows (e.g. the
 power assets from ingest_power) are preserved; water/wastewater rows are replaced.
 Run ``ingest_power`` first, then ``ingest_water``. Source data is machine-local
-(``--src-dir`` to override); the materialized JSONL is committed (small, public).
+(``--src-dir`` to point at it); the materialized JSONL is committed (small, public).
 """
 from __future__ import annotations
 
@@ -22,8 +22,6 @@ import argparse
 import json
 from pathlib import Path
 from typing import Any
-
-DEFAULT_SRC_DIR = "/Users/jotaele/Documents/Data/PR_Geodata/06_Vector_GeoJSON"
 
 # layer file stem -> (asset_type, asset_subtype, id_prefix, display label)
 LAYERS = {
@@ -109,7 +107,9 @@ def merge(existing: list[dict[str, Any]], water: list[dict[str, Any]]) -> list[d
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--src-dir", default=DEFAULT_SRC_DIR)
+    ap.add_argument(
+        "--src-dir", required=True, help="Path to PR_Geodata/06_Vector_GeoJSON"
+    )
     ap.add_argument("--out", default="data/utility_assets.jsonl")
     args = ap.parse_args()
 
