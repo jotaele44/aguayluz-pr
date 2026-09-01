@@ -252,7 +252,7 @@ def test_notify_reports_partial_delivery(client, monkeypatch):
     monkeypatch.setattr(backend, "_send_slack", lambda *_: None)
 
     def fail_ntfy(*_):
-        raise RuntimeError("push rejected")
+        raise RuntimeError("push rejected with secret transport details")
 
     monkeypatch.setattr(backend, "_send_ntfy", fail_ntfy)
     body = client.post("/notify", json={"message": "Check system"}).json()
@@ -260,8 +260,9 @@ def test_notify_reports_partial_delivery(client, monkeypatch):
     assert body["ok"] is False
     assert body["attempted_channels"] == ["slack", "ntfy"]
     assert body["succeeded_channels"] == ["slack"]
-    assert body["failed_channels"] == [{"channel": "ntfy", "error": "push rejected"}]
-    assert body["errors"] == ["ntfy: push rejected"]
+    assert body["failed_channels"] == [{"channel": "ntfy", "error": "delivery failed"}]
+    assert body["errors"] == ["ntfy: delivery failed"]
+    assert "secret transport details" not in str(body)
 
 
 def test_notify_reports_failed_only_delivery(client, monkeypatch):
@@ -270,7 +271,7 @@ def test_notify_reports_failed_only_delivery(client, monkeypatch):
     monkeypatch.delenv("NOTIFY_EMAIL_FROM", raising=False)
 
     def fail_slack(*_):
-        raise RuntimeError("webhook unavailable")
+        raise RuntimeError("webhook unavailable at internal.example.test")
 
     monkeypatch.setattr(backend, "_send_slack", fail_slack)
     body = client.post("/notify", json={"message": "Check system"}).json()
@@ -279,7 +280,8 @@ def test_notify_reports_failed_only_delivery(client, monkeypatch):
     assert body["channels_active"] is True
     assert body["attempted_channels"] == ["slack"]
     assert body["succeeded_channels"] == []
-    assert body["failed_channels"] == [{"channel": "slack", "error": "webhook unavailable"}]
+    assert body["failed_channels"] == [{"channel": "slack", "error": "delivery failed"}]
+    assert "internal.example.test" not in str(body)
 
 
 def test_system_status_reports_missing_artifacts_without_failing(client):

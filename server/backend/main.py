@@ -13,6 +13,7 @@ import contextlib
 import importlib.util
 import io
 import json
+import logging
 import os as _os
 import smtplib as _smtplib
 import sys
@@ -33,6 +34,7 @@ _workspace = _os.getenv("AGUAYLUZ_DATA_HOME", "").strip()
 DATA = Path(_workspace) / "data" if _workspace else REPO_ROOT / "data"
 OUTPUTS = Path(_workspace) / "exports" if _workspace else REPO_ROOT / "outputs"
 SCRIPTS = REPO_ROOT / "scripts"
+logger = logging.getLogger(__name__)
 
 # Monitoring reading kinds -> their canonical JSONL. Every kind here has a producer
 # in scripts/ that scripts/refresh.py runs, so an empty series means "no data yet",
@@ -943,8 +945,9 @@ async def notify(request: Request, _=_Depends(_require_key)) -> JSONResponse:  #
         try:
             _send_slack(slack_url, f"*{title}*\n{message}")
             succeeded_channels.append("slack")
-        except Exception as e:
-            failed_channels.append({"channel": "slack", "error": str(e)})
+        except Exception:
+            logger.exception("Notification delivery failed for channel slack")
+            failed_channels.append({"channel": "slack", "error": "delivery failed"})
 
     ntfy_topic = _configured_env("NTFY_TOPIC")
     if ntfy_topic:
@@ -952,8 +955,9 @@ async def notify(request: Request, _=_Depends(_require_key)) -> JSONResponse:  #
         try:
             _send_ntfy(ntfy_topic, message, title)
             succeeded_channels.append("ntfy")
-        except Exception as e:
-            failed_channels.append({"channel": "ntfy", "error": str(e)})
+        except Exception:
+            logger.exception("Notification delivery failed for channel ntfy")
+            failed_channels.append({"channel": "ntfy", "error": "delivery failed"})
 
     email_from = _configured_env("NOTIFY_EMAIL_FROM")
     email_to = _configured_env("NOTIFY_EMAIL_TO")
@@ -963,8 +967,9 @@ async def notify(request: Request, _=_Depends(_require_key)) -> JSONResponse:  #
         try:
             _send_email(email_from, email_to, smtp_host, title, message)
             succeeded_channels.append("email")
-        except Exception as e:
-            failed_channels.append({"channel": "email", "error": str(e)})
+        except Exception:
+            logger.exception("Notification delivery failed for channel email")
+            failed_channels.append({"channel": "email", "error": "delivery failed"})
 
     errors = [
         f"{failure['channel']}: {failure['error']}"

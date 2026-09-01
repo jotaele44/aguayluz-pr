@@ -82,7 +82,8 @@ def setup_python() -> None:
             if not venv_version.startswith("3.10") and not venv_version.startswith("3.11") and not venv_version.startswith("3.12"):
                 print(f"Resetting incompatible virtual environment ({venv_version}) …")
                 shutil.rmtree(VENV_DIR)
-        except Exception:
+        except (OSError, subprocess.SubprocessError, ValueError):
+            # An unreadable or malformed venv is treated as incompatible and rebuilt below.
             pass
     if not venv_python().exists():
         print(f"Creating virtual environment at {VENV_DIR} using {python_executable} …")
