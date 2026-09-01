@@ -183,7 +183,8 @@ def test_public_monitoring_projection_contains_only_p0_identifiable_sources() ->
     config = load_json(CONFIG_PATH)
     for source in config["sources"]:
         if source["privacy_class"] in {"P2_CONTROLLED", "P3_RESTRICTED"}:
-            assert source["source_id"] not in serialized
+            source_id = source["source_id"]
+            assert source_id not in serialized
 
 
 def test_current_camuy_closed_state_and_cave_surface_remain_get_only() -> None:
@@ -201,6 +202,9 @@ def test_current_camuy_closed_state_and_cave_surface_remain_get_only() -> None:
         }
         assert cave_paths
         assert {method for methods in cave_paths.values() for method in methods} == {"get"}
-        assert client.post("/cave-karst/summary").status_code == 405
-        assert client.patch("/cave-karst/assets/AYL_KARST_CAMUY_PARK").status_code == 405
-        assert client.delete("/cave-karst/alerts").status_code == 405
+        post_response = client.post("/cave-karst/summary")
+        patch_response = client.patch("/cave-karst/assets/AYL_KARST_CAMUY_PARK")
+        delete_response = client.delete("/cave-karst/alerts")
+        assert post_response.status_code == 405
+        assert patch_response.status_code == 405
+        assert delete_response.status_code == 405
