@@ -46,6 +46,7 @@
   "hub_callable_commands": {
     "setup": "python -m pip install uv && uv pip install --system -e .[dev]",
     "validation_gates": "python scripts/validate_repo.py",
+    "doctor": "python scripts/doctor.py",
     "lint": "ruff check .",
     "test_suite": "python -m pytest -q",
     "export_canonical": "python3 scripts/federation_export.py --mode test --out exports/federation --no-outputs",

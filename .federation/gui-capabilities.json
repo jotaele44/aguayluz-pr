@@ -1169,6 +1169,27 @@
           "tests/test_gui_parity.py"
         ]
       }
+    },
+    {
+      "id": "system-diagnostics-doctor",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "The doctor engine's results are surfaced on the native desktop app's existing 'Setup & Diagnostics' screen (thehub-pr packages/prii_desktop setup_center.diagnostics(), reached via the gear icon on every page, no new route) rather than a Vite/dashboard route this checker's frontend discovery can see. scripts/doctor.py is the CLI entrypoint for developers and CI; it has no independent GUI surface of its own.",
+      "analysis": {
+        "files": [
+          "scripts/doctor.py",
+          ".federation/doctor-checks.json"
+        ],
+        "symbols": [
+          "scripts/doctor.py:main"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_doctor.py"
+        ]
+      }
     }
   ],
   "exceptions": []

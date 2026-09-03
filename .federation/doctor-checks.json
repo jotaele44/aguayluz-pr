@@ -1,0 +1,60 @@
+{
+  "schema_version": "prii.doctor-checks/v1",
+  "repository": "jotaele44/aguayluz-pr",
+  "validation_entrypoint": "validation_gates",
+  "checks": [
+    {
+      "id": "epa_waters_api_key_presence",
+      "diagnosability_class": "presence-only",
+      "category": "credential",
+      "severity_if_absent": "blocking",
+      "description": "EPA WATERS Services REST API key -- primary_source for this producer's water/wastewater asset and NHDPlus enrichment ingest.",
+      "check": { "type": "env_var_presence", "env_var": "EPA_WATERS_API_KEY" },
+      "manifest_cross_check": "federation.json:source_truth.runtime_required_keys[0]",
+      "operator_action": "Obtain a key and set EPA_WATERS_API_KEY. Presence is verified here; validity is not -- an invalid key still shows as present."
+    },
+    {
+      "id": "neon_api_token_presence",
+      "diagnosability_class": "presence-only",
+      "category": "credential",
+      "severity_if_absent": "advisory",
+      "description": "NSF NEON API token, required only for scripts/ingest_neon_products.py (readings). NEON metadata (sites, products, availableMonths) needs no credential.",
+      "check": { "type": "env_var_presence", "env_var": "NEON_API_TOKEN" },
+      "manifest_cross_check": "federation.json:source_truth.runtime_required_keys[1]",
+      "operator_action": "ingest_neon_products.py prints a skip notice and exits 0 when this is absent -- that is expected, not an error. An INVALID token also 403s exactly like a missing one; this check cannot tell the two apart, only that a value is set."
+    },
+    {
+      "id": "miluma_waf_gated",
+      "diagnosability_class": "not-automatable",
+      "category": "waf-blocked",
+      "description": "MiLUMA electric-outage API (api.miluma.lumapr.com) sits behind an Incapsula WAF that returns HTTP 403 to plain clients.",
+      "check": { "type": "manual" },
+      "manifest_cross_check": "federation.json:waf_blocked_sources[0]",
+      "last_known_state": {
+        "as_of": "2026-08-25",
+        "note": "fetch_luma_live.py's browser User-Agent workaround is not guaranteed to succeed; activated via refresh.py --all, which warns and continues on WAF failure rather than blocking."
+      },
+      "operator_action": "A formal PREB/LUMA data-sharing arrangement is the recommended durable path to T1 electric outage attribution -- there is no automated fix available from inside this repo."
+    },
+    {
+      "id": "aee_incidents_mirror_staleness",
+      "diagnosability_class": "not-automatable",
+      "category": "stale-third-party-mirror",
+      "description": "aee_incidents (per-municipio LUMA outage attribution) is sourced from the SuperSonicHub1/luma-energy-outages GitHub mirror, which carries no timestamps of its own.",
+      "check": { "type": "manual" },
+      "manifest_cross_check": "federation.json:source_truth.real_data_sources.aee_incidents",
+      "last_known_state": {
+        "as_of": "2025-03-03",
+        "note": "The upstream mirror has been inactive since this date. Committed data is a reproducible point-in-time snapshot at tier T2/needs_review -- staleness beyond this date cannot be measured, only assumed."
+      },
+      "operator_action": "Wire a LIVE source (PR Energy Bureau regulatory outage reports, or MiLUMA with permission) for ongoing attribution. scripts/ingest_aee.py is source-agnostic and does not need to change."
+    },
+    {
+      "id": "outputs_schema_validation",
+      "diagnosability_class": "local-deterministic",
+      "category": "validation-suite",
+      "description": "Delegates to this repo's own federation validation gates (G01-G08). Reports only the suite's exit code and a truncated output tail -- see scripts/validate_repo.py for the per-gate table.",
+      "check": { "type": "delegate_subprocess" }
+    }
+  ]
+}
