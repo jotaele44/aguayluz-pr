@@ -1,0 +1,17 @@
+{
+  "contract": "federation.environmental-source/1.0",
+  "source_id": "usfs_fia_fiadb_pr_csv",
+  "custody": "FEDERATION_EVIDENCE_PLANE",
+  "consumer": "AGUAYLUZ",
+  "rules": [
+    "Freeze raw bytes before normalization and retain source/member SHA256.",
+    "RAW, NORMALIZED, and CANONICAL values are separate; normalization cannot prove identity.",
+    "FIA CN is preserved as source-native stable identifier and never replaced by AguaYLuz entity IDs.",
+    "No FIA public coordinate may establish parcel/facility/monitoring-site identity by proximity.",
+    "Population estimates must preserve EVALID/stratum/adjustment semantics; never sum unweighted plot rows as population totals.",
+    "Zero-row tables are valid schema manifestations and must not be silently dropped.",
+    "Joins must assert expected cardinality and row conservation; M:N multiplication fails closed unless explicitly modeled.",
+    "Source snapshot is immutable; future updates become new manifestations and are diffed, never overwritten."
+  ],
+  "minimum_metadata": ["source_manifest_id","source_table","source_cn","snapshot_sha256","retrieved_utc","inventory_year","created_date","modified_date","spatial_precision_class"]
+}
