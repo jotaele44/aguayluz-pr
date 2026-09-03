@@ -168,12 +168,12 @@ jobs:
           cp artifacts/pfas_ucmr5/derived/ucmr5_pr.tsv data/pfas_ucmr5_pr.tsv
           actual="$(sha256sum data/pfas_ucmr5_pr.tsv | cut -d' ' -f1)"
           test "$actual" = 'ac40d8d67f7343832e0b11d78c892e3a6cdd44fe4d0b0892407347d4400b80c5'
-          git add data/pfas_ucmr5_pr.tsv
+          git add -f data/pfas_ucmr5_pr.tsv
           if git diff --cached --quiet; then
             echo 'Canonical UCMR5 Puerto Rico denominator already materialized.'
             exit 0
           fi
           git config user.name 'aguayluz-bot'
           git config user.email 'noreply@github.com'
-          git commit -m 'data(pfas): materialize final UCMR5 Puerto Rico denominator [skip ci]'
+          git commit -m 'data(pfas): materialize final UCMR5 Puerto Rico denominator'
           git push origin "HEAD:${GITHUB_HEAD_REF}"
