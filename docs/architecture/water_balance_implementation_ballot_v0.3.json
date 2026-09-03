@@ -1,0 +1,366 @@
+{
+  "schema_version": "aguayluz.water-balance-implementation-ballot/v0.3",
+  "ballot_id": "AYL_WBIB_PR119_V0_3",
+  "parent_pr": 119,
+  "parent_head_sha": "5c3fcb3a5803773ad388b91afc5bc288d4fd4c80",
+  "design_only": true,
+  "decision": "bounded_implementation_design_approved_runtime_held",
+  "reviewed_prs": {
+    "asset_graph": {
+      "pr": 101,
+      "head_sha": "c50855876c57c0d10cd3bcea81a6998814863a09",
+      "decision": "adapt"
+    },
+    "usgs_hardened_parsers": {
+      "pr": 109,
+      "head_sha": "651ad41e8bbcbd7f1877bb14436bb19a1bcfab2a",
+      "decision": "adapt_selected_semantics_only"
+    },
+    "usgs_provider_framework": {
+      "pr": 116,
+      "head_sha": "628a7da4dddb0622f07d97850bf79a0567bdef3e",
+      "decision": "adapt_framework_only"
+    },
+    "laguna_control_plane": {
+      "pr": 118,
+      "head_sha": "b82c724072d46631bc563c9562948d11119b4cc6",
+      "decision": "adapt_secondary_pilot_hold_operational_balance"
+    }
+  },
+  "edge_classification": [
+    {
+      "relationship_type": "UPSTREAM_OF",
+      "default_class": "unresolved",
+      "balance_eligible_by_default": false,
+      "promotion_requirements": [
+        "both_endpoints_are_water_assets",
+        "direction_source_declared_or_independently_corroborated",
+        "inferred_false",
+        "authoritative_lineage_present",
+        "no_reverse_or_duplicate_contradiction"
+      ]
+    },
+    {
+      "relationship_type": "DOWNSTREAM_OF",
+      "default_class": "unresolved",
+      "balance_eligible_by_default": false,
+      "promotion_requirements": [
+        "both_endpoints_are_water_assets",
+        "direction_source_declared_or_independently_corroborated",
+        "inferred_false",
+        "authoritative_lineage_present",
+        "no_reverse_or_duplicate_contradiction"
+      ]
+    },
+    {
+      "relationship_type": "SUPPLIES",
+      "default_class": "dependency_only",
+      "balance_eligible_by_default": false,
+      "promotion_requirements": [
+        "original_source_vocabulary_preserved",
+        "source_vocabulary_means_water_conveyance",
+        "not_mapped_from_energizes",
+        "direction_and_endpoints_adjudicated",
+        "authoritative_or_declared_topology"
+      ]
+    },
+    {
+      "relationship_type": "DEPENDS_ON",
+      "default_class": "dependency_only",
+      "balance_eligible_by_default": false,
+      "promotion_requirements": []
+    },
+    {
+      "relationship_type": "POWERED_BY",
+      "default_class": "dependency_only",
+      "balance_eligible_by_default": false,
+      "promotion_requirements": []
+    },
+    {
+      "relationship_type": "BACKUP_FOR",
+      "default_class": "dependency_only",
+      "balance_eligible_by_default": false,
+      "promotion_requirements": [
+        "separate_operator_declared_transfer_edge",
+        "direction_capacity_and_state_defined"
+      ]
+    },
+    {
+      "relationship_type": "LOCATED_IN",
+      "default_class": "dependency_only",
+      "balance_eligible_by_default": false,
+      "promotion_requirements": []
+    },
+    {
+      "relationship_type": "SERVES",
+      "default_class": "dependency_only",
+      "balance_eligible_by_default": false,
+      "promotion_requirements": [
+        "separate_metered_distribution_edge"
+      ]
+    },
+    {
+      "relationship_type": "MONITORED_BY",
+      "default_class": "dependency_only",
+      "balance_eligible_by_default": false,
+      "promotion_requirements": []
+    },
+    {
+      "relationship_type": "UNKNOWN",
+      "default_class": "unresolved",
+      "balance_eligible_by_default": false,
+      "promotion_requirements": []
+    }
+  ],
+  "usgs_acquisition_decision": {
+    "producer_rule": "exactly_one_producer_per_collection",
+    "framework_source": "PR116",
+    "field_measurement_semantics_source": "PR109",
+    "annual_peak_semantics_source": "PR109",
+    "source_asset_prefixes": {
+      "surface_water": "USGS_",
+      "groundwater_daily_values": "USGSGW_",
+      "groundwater_field_measurements": "USGSFM_"
+    },
+    "canonical_source_equivalence_key": "usgs:monitoring-location:<bare_site_number>",
+    "field_measurement_rules": [
+      "year_slice_statewide_queries",
+      "lookup_monitoring_location_metadata",
+      "derive_calendar_date_from_year_month_day_first",
+      "default_parameter_72019_only",
+      "parameter_62610_opt_in_and_isolated",
+      "static_only_known_clean_qualifier",
+      "retain_negative_artesian_values",
+      "incremental_exact_id_asset_merge",
+      "no_date_only_to_instant_promotion"
+    ],
+    "annual_peak_rules": [
+      "preserve_discharge_and_stage_separately",
+      "include_qualifier_set_in_identity",
+      "preserve_stage_at_peak_and_annual_max_stage",
+      "retain_value_caveats_as_review_flags",
+      "historical_cross_validation_not_current_balance_term"
+    ],
+    "rejected": [
+      "run_PR109_and_PR116_duplicate_field_measurement_producers",
+      "run_PR109_and_PR116_duplicate_peak_producers",
+      "prefix_wide_USGSFM_asset_replacement",
+      "provider_coverage_as_observation_freshness",
+      "mix_62610_and_72019_drawdown_semantics",
+      "copy_unrelated_NHC_or_NEON_scope_into_USGS_lane"
+    ]
+  },
+  "laguna_cartagena_decision": {
+    "role": "secondary_contract_and_missing_data_pilot",
+    "operational_balance_state": "hold",
+    "adapt": [
+      "direct_proxy_context_classification",
+      "hydrologic_representativeness",
+      "historical_baseline_state",
+      "metric_specific_validity",
+      "synchronization_gate",
+      "mixed_unit_fail_closed",
+      "known_leak_separate_from_residual",
+      "non_proof_candidate_conveyance_loss",
+      "explicit_external_gaps"
+    ],
+    "missing_for_parent_contract": [
+      "quantity_kind_and_normalized_unit",
+      "interval_start_and_end",
+      "temporal_precision",
+      "numeric_uncertainty_bounds",
+      "correlated_error_group",
+      "full_quality_flags",
+      "transformation_and_parent_lineage",
+      "source_equivalence_group",
+      "strict_balance_and_synchronization_schemas"
+    ]
+  },
+  "components": [
+    {
+      "component": "canonical_asset_projector",
+      "category": "projector",
+      "decision": "new",
+      "source": "adapt_PR101_identity_and_disclosure",
+      "runtime_activation": false
+    },
+    {
+      "component": "relationship_to_flow_edge_projector",
+      "category": "projector",
+      "decision": "new",
+      "source": "adapt_PR101_relationships_fail_closed",
+      "runtime_activation": false
+    },
+    {
+      "component": "monitoring_reading_to_water_observation_projector",
+      "category": "projector",
+      "decision": "new",
+      "source": "current_main_monitoring_reading_plus_PR119_contract",
+      "runtime_activation": false
+    },
+    {
+      "component": "laguna_observation_projector",
+      "category": "projector",
+      "decision": "adapt",
+      "source": "PR118",
+      "runtime_activation": false
+    },
+    {
+      "component": "source_equivalence_resolver",
+      "category": "quality_gate",
+      "decision": "new",
+      "source": "PR119_double_counting_policy",
+      "runtime_activation": false
+    },
+    {
+      "component": "usgs_shared_client_and_receipts",
+      "category": "adapter",
+      "decision": "adapt",
+      "source": "PR116",
+      "runtime_activation": false
+    },
+    {
+      "component": "usgs_field_measurement_adapter",
+      "category": "adapter",
+      "decision": "adapt",
+      "source": "PR116_framework_plus_PR109_semantics",
+      "runtime_activation": false
+    },
+    {
+      "component": "usgs_annual_peaks_adapter",
+      "category": "adapter",
+      "decision": "adapt",
+      "source": "PR116_framework_plus_PR109_semantics",
+      "runtime_activation": false
+    },
+    {
+      "component": "existing_usgs_daily_values_adapter",
+      "category": "adapter",
+      "decision": "reuse",
+      "source": "current_main_ingest_usgs_levels",
+      "runtime_activation": false
+    },
+    {
+      "component": "quantitative_precipitation_adapter",
+      "category": "adapter",
+      "decision": "external_data_dependency",
+      "source": "NOAA_NWS_or_reviewed_gauge_QPE",
+      "runtime_activation": false
+    },
+    {
+      "component": "operator_withdrawal_release_adapter",
+      "category": "adapter",
+      "decision": "external_data_dependency",
+      "source": "AAA_DRNA_operator_records",
+      "runtime_activation": false
+    },
+    {
+      "component": "stage_storage_curve_registry",
+      "category": "reference_data",
+      "decision": "external_data_dependency",
+      "source": "operator_or_authoritative_engineering_records",
+      "runtime_activation": false
+    },
+    {
+      "component": "shadow_ledger_store",
+      "category": "ledger_store",
+      "decision": "new",
+      "source": "append_only_reversible_derived_outputs",
+      "runtime_activation": false
+    },
+    {
+      "component": "nested_balance_engine",
+      "category": "balance_engine",
+      "decision": "new",
+      "source": "PR119_contract",
+      "runtime_activation": false
+    },
+    {
+      "component": "uncertainty_and_synchronization_gate",
+      "category": "quality_gate",
+      "decision": "adapt",
+      "source": "PR118_freshness_plus_PR119_uncertainty",
+      "runtime_activation": false
+    },
+    {
+      "component": "balance_api",
+      "category": "api",
+      "decision": "hold",
+      "source": "separate_ballot_required",
+      "runtime_activation": false
+    },
+    {
+      "component": "balance_gui",
+      "category": "gui",
+      "decision": "hold",
+      "source": "separate_ballot_required",
+      "runtime_activation": false
+    },
+    {
+      "component": "balance_alert_promotion",
+      "category": "alert",
+      "decision": "hold",
+      "source": "prohibited_in_v0_3",
+      "runtime_activation": false
+    },
+    {
+      "component": "balance_incident_promotion",
+      "category": "incident",
+      "decision": "hold",
+      "source": "prohibited_in_v0_3",
+      "runtime_activation": false
+    },
+    {
+      "component": "balance_federation_export",
+      "category": "export",
+      "decision": "hold",
+      "source": "privacy_and_federation_ballot_required",
+      "runtime_activation": false
+    }
+  ],
+  "selected_pilot": {
+    "pilot_id": "carraizo_lago_loiza_hydrologic_reservoir_shadow",
+    "name": "Carraizo / Lago Loiza hydrologic-reservoir boundary",
+    "state": "selected_blocked",
+    "initial_balance_type": "reservoir",
+    "selection_basis": [
+      "current_main_materializes_direct_USGS_reservoir_level_and_streamflow",
+      "existing_monitoring_identifies_system_as_marquee_public_supply_reservoir",
+      "existing_provenance_freshness_alert_and_incident_infrastructure",
+      "Laguna_Cartagena_required_current_terms_explicitly_missing"
+    ],
+    "required_entry_gates": [
+      "canonical_reservoir_and_watershed_boundary",
+      "adjudicated_inflow_and_outflow_edges",
+      "versioned_stage_storage_curve",
+      "operator_withdrawal_records",
+      "controlled_release_and_spill_records",
+      "quantitative_precipitation",
+      "evaporation_method_and_uncertainty",
+      "one_accounting_interval",
+      "unit_datum_and_source_equivalence_clear"
+    ],
+    "permitted_pre_entry_result": [
+      "underdetermined",
+      "not_evaluated"
+    ],
+    "public_output": false,
+    "incident_promotion": false,
+    "alert_promotion": false
+  },
+  "prohibitions": {
+    "merge_reviewed_prs": false,
+    "live_polling": false,
+    "database_migration": false,
+    "source_data_mutation": false,
+    "scheduler_change": false,
+    "api_activation": false,
+    "gui_activation": false,
+    "alert_activation": false,
+    "incident_promotion": false,
+    "notification_activation": false,
+    "public_export": false,
+    "federation_export": false,
+    "automatic_control_action": false
+  }
+}

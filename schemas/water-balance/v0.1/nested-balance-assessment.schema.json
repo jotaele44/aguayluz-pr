@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/water-balance/v0.1/nested-balance-assessment.schema.json",
+  "title": "AguaYLuz Nested Balance Assessment v0.1",
+  "description": "Design-only contract for watershed, reservoir, groundwater, treatment, transmission, and distribution balance windows.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "assessment_id",
+    "balance_type",
+    "boundary_asset_id",
+    "interval_start",
+    "interval_end",
+    "input_terms",
+    "output_terms",
+    "storage_change_terms",
+    "excluded_terms",
+    "residual",
+    "uncertainty_envelope",
+    "coverage",
+    "closure_status",
+    "attribution",
+    "design_only"
+  ],
+  "properties": {
+    "schema_version": {"const": "aguayluz.nested-water-balance/v0.1"},
+    "assessment_id": {"type": "string", "pattern": "^AYL_WBS_"},
+    "balance_type": {"enum": ["watershed", "reservoir", "groundwater", "treatment", "transmission", "distribution"]},
+    "boundary_asset_id": {"type": "string", "pattern": "^AYL_WBA_"},
+    "parent_assessment_id": {"type": ["string", "null"]},
+    "interval_start": {"type": "string", "format": "date-time"},
+    "interval_end": {"type": "string", "format": "date-time"},
+    "accounting_unit": {"const": "m3"},
+    "input_terms": {"type": "array", "items": {"$ref": "#/$defs/Term"}},
+    "output_terms": {"type": "array", "items": {"$ref": "#/$defs/Term"}},
+    "storage_change_terms": {"type": "array", "items": {"$ref": "#/$defs/Term"}},
+    "excluded_terms": {"type": "array", "items": {"$ref": "#/$defs/ExcludedTerm"}},
+    "residual": {"$ref": "#/$defs/Residual"},
+    "uncertainty_envelope": {"$ref": "#/$defs/Envelope"},
+    "coverage": {"$ref": "#/$defs/Coverage"},
+    "closure_status": {"enum": ["closed", "within_uncertainty", "open", "underdetermined", "contradictory", "not_evaluated"]},
+    "first_failed_boundary": {"type": ["string", "null"]},
+    "persistence_windows": {"type": "integer", "minimum": 0},
+    "attribution": {"$ref": "#/$defs/Attribution"},
+    "incident_promotion_eligible": {"const": false},
+    "federation_export_eligible": {"const": false},
+    "design_only": {"const": true},
+    "notes": {"type": "array", "items": {"type": "string"}}
+  },
+  "$defs": {
+    "Term": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["term_id", "role", "ledger_entry_ids", "value_m3", "uncertainty_lower_m3", "uncertainty_upper_m3", "source_equivalence_groups"],
+      "properties": {
+        "term_id": {"type": "string"},
+        "role": {"enum": ["precipitation", "inflow", "recharge", "groundwater_inflow", "transfer_in", "withdrawal", "release", "spill", "evaporation", "evapotranspiration", "seepage", "transfer_out", "finished_water", "process_use", "backwash", "sludge_water", "bypass", "tank_storage_change", "zone_input", "metered_consumption", "authorized_unbilled_use", "return_flow", "other"]},
+        "ledger_entry_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^AYL_WBL_"}},
+        "value_m3": {"type": "number"},
+        "uncertainty_lower_m3": {"type": "number"},
+        "uncertainty_upper_m3": {"type": "number"},
+        "source_equivalence_groups": {"type": "array", "uniqueItems": true, "items": {"type": "string"}}
+      }
+    },
+    "ExcludedTerm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_id", "reason"],
+      "properties": {
+        "record_id": {"type": "string"},
+        "reason": {"enum": ["missing", "stale", "historical_only", "future_dated", "unsynchronized", "unit_error", "datum_error", "meter_reset", "contradictory", "double_counted", "restricted", "inferred_topology", "not_balance_relevant", "unknown"]},
+        "detail": {"type": ["string", "null"]}
+      }
+    },
+    "Residual": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value_m3", "percent_of_total_input", "classification", "proof_state"],
+      "properties": {
+        "value_m3": {"type": "number"},
+        "percent_of_total_input": {"type": ["number", "null"]},
+        "classification": {"enum": ["negligible", "within_uncertainty", "positive_unaccounted", "negative_unaccounted", "not_computable"]},
+        "proof_state": {"enum": ["model_only", "not_proven"]}
+      }
+    },
+    "Envelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lower_m3", "upper_m3", "method", "correlated_error_groups"],
+      "properties": {
+        "lower_m3": {"type": "number"},
+        "upper_m3": {"type": "number"},
+        "method": {"enum": ["root_sum_square", "interval_sum", "monte_carlo", "ensemble", "unknown"]},
+        "correlated_error_groups": {"type": "array", "uniqueItems": true, "items": {"type": "string"}}
+      }
+    },
+    "Coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required_term_count", "eligible_term_count", "missing_term_count", "coverage_pct", "topology_complete", "time_alignment_complete", "unit_normalization_complete"],
+      "properties": {
+        "required_term_count": {"type": "integer", "minimum": 0},
+        "eligible_term_count": {"type": "integer", "minimum": 0},
+        "missing_term_count": {"type": "integer", "minimum": 0},
+        "coverage_pct": {"type": "number", "minimum": 0, "maximum": 100},
+        "topology_complete": {"type": "boolean"},
+        "time_alignment_complete": {"type": "boolean"},
+        "unit_normalization_complete": {"type": "boolean"}
+      }
+    },
+    "Attribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "candidate_causes", "corroborating_record_ids", "non_proof_statement"],
+      "properties": {
+        "state": {"enum": ["not_attempted", "data_quality_likely", "operational_record_gap_likely", "hydrologic_model_gap_likely", "apparent_loss_candidate", "physical_loss_candidate", "unrecorded_abstraction_candidate", "unresolved"]},
+        "candidate_causes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"enum": ["meter_error", "time_alignment", "unit_or_datum_error", "storage_curve_error", "missing_operational_record", "hydrologic_model_gap", "authorized_unmetered_use", "apparent_loss", "physical_leak", "unrecorded_abstraction", "unknown"]}
+        },
+        "corroborating_record_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "non_proof_statement": {"const": "A mass-balance residual is an analytical finding, not proof of a leak, illegal withdrawal, theft, diversion, falsified reporting, or operator misconduct."}
+      }
+    }
+  }
+}

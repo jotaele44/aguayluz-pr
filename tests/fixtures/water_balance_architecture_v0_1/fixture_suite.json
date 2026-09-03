@@ -1,0 +1,322 @@
+{
+  "fixture_version": "aguayluz.water-balance-fixtures/v0.1",
+  "positive_contract": {
+    "schema_version": "aguayluz.water-balance/v0.1",
+    "ledger_id": "AYL_WBC_DESIGN_PILOT_001",
+    "source_main_sha": "17c843595b5cdfbcef4e5f7b1ac6c662092e335d",
+    "design_only": true,
+    "created_at": "2026-08-04T19:16:00Z",
+    "assets": [
+      {
+        "asset_id": "AYL_WBA_RESERVOIR_PILOT",
+        "asset_type": "reservoir",
+        "name": "Design-only pilot reservoir",
+        "source_asset_ids": ["LEGACY_RESERVOIR_PILOT"],
+        "aliases": [],
+        "operator": null,
+        "municipality": null,
+        "disclosure_class": "public_generalized",
+        "topology_state": "declared",
+        "balance_boundary_eligible": true,
+        "evidence_tier": "T2",
+        "review_status": "needs_review"
+      },
+      {
+        "asset_id": "AYL_WBA_TREATMENT_PILOT",
+        "asset_type": "treatment_plant",
+        "name": "Design-only pilot treatment plant",
+        "source_asset_ids": ["LEGACY_TREATMENT_PILOT"],
+        "aliases": [],
+        "operator": null,
+        "municipality": null,
+        "disclosure_class": "public_generalized",
+        "topology_state": "declared",
+        "balance_boundary_eligible": true,
+        "evidence_tier": "T2",
+        "review_status": "needs_review"
+      }
+    ],
+    "flow_edges": [
+      {
+        "edge_id": "AYL_WBE_RESERVOIR_TO_TREATMENT",
+        "from_asset_id": "AYL_WBA_RESERVOIR_PILOT",
+        "to_asset_id": "AYL_WBA_TREATMENT_PILOT",
+        "edge_type": "withdrawal",
+        "topology_state": "declared",
+        "balance_eligible": true,
+        "eligibility_reasons": ["design_fixture"],
+        "lineage": {
+          "source_record_ids": ["FIXTURE_EDGE_001"],
+          "source_refs": ["tests/fixtures/water_balance_architecture_v0_1/fixture_suite.json"],
+          "source_hashes": [],
+          "parent_record_ids": [],
+          "transformation_ids": [],
+          "direct_or_derived": "direct",
+          "source_equivalence_group": "FIXTURE_EDGE_EQ_001"
+        },
+        "evidence_tier": "T2",
+        "review_status": "needs_review"
+      }
+    ],
+    "observations": [
+      {
+        "observation_id": "AYL_WBO_WITHDRAWAL_20260804",
+        "asset_id": null,
+        "edge_id": "AYL_WBE_RESERVOIR_TO_TREATMENT",
+        "phenomenon": "withdrawal_volume",
+        "quantity": {
+          "value": 1000.0,
+          "unit": "m3",
+          "kind": "volume",
+          "normalized_value": 1000.0,
+          "normalized_unit": "m3",
+          "datum": null
+        },
+        "interval_start": "2026-08-04T00:00:00Z",
+        "interval_end": "2026-08-05T00:00:00Z",
+        "temporal_precision": "day",
+        "uncertainty": {
+          "method": "reported",
+          "lower_bound": 980.0,
+          "upper_bound": 1020.0,
+          "standard_deviation": null,
+          "correlated_error_group": "FIXTURE_METER_001"
+        },
+        "freshness": {
+          "observed_at": "2026-08-05T00:05:00Z",
+          "valid_until": "2026-08-06T00:05:00Z",
+          "state": "current",
+          "eligible": true,
+          "exclusion_reason": null
+        },
+        "quality": {
+          "state": "accepted",
+          "flags": ["none"],
+          "review_status": "accepted"
+        },
+        "lineage": {
+          "source_record_ids": ["FIXTURE_OBS_001"],
+          "source_refs": ["tests/fixtures/water_balance_architecture_v0_1/fixture_suite.json"],
+          "source_hashes": [],
+          "parent_record_ids": [],
+          "transformation_ids": [],
+          "direct_or_derived": "direct",
+          "source_equivalence_group": "FIXTURE_WITHDRAWAL_EQ_001"
+        },
+        "balance_eligible": true,
+        "eligibility_reasons": ["current_synchronized_normalized"]
+      }
+    ],
+    "ledger_entries": [
+      {
+        "entry_id": "AYL_WBL_WITHDRAWAL_20260804",
+        "entry_type": "withdrawal",
+        "boundary_asset_id": "AYL_WBA_RESERVOIR_PILOT",
+        "from_asset_id": "AYL_WBA_RESERVOIR_PILOT",
+        "to_asset_id": "AYL_WBA_TREATMENT_PILOT",
+        "interval_start": "2026-08-04T00:00:00Z",
+        "interval_end": "2026-08-05T00:00:00Z",
+        "quantity": {
+          "value": 1000.0,
+          "unit": "m3",
+          "kind": "volume",
+          "normalized_value": 1000.0,
+          "normalized_unit": "m3",
+          "datum": null
+        },
+        "observation_ids": ["AYL_WBO_WITHDRAWAL_20260804"],
+        "uncertainty": {
+          "method": "reported",
+          "lower_bound": 980.0,
+          "upper_bound": 1020.0,
+          "standard_deviation": null,
+          "correlated_error_group": "FIXTURE_METER_001"
+        },
+        "freshness": {
+          "observed_at": "2026-08-05T00:05:00Z",
+          "valid_until": "2026-08-06T00:05:00Z",
+          "state": "current",
+          "eligible": true,
+          "exclusion_reason": null
+        },
+        "quality": {
+          "state": "accepted",
+          "flags": ["none"],
+          "review_status": "accepted"
+        },
+        "lineage": {
+          "source_record_ids": ["FIXTURE_OBS_001"],
+          "source_refs": ["tests/fixtures/water_balance_architecture_v0_1/fixture_suite.json"],
+          "source_hashes": [],
+          "parent_record_ids": ["AYL_WBO_WITHDRAWAL_20260804"],
+          "transformation_ids": ["FIXTURE_VOLUME_NORMALIZATION_V1"],
+          "direct_or_derived": "derived",
+          "source_equivalence_group": "FIXTURE_WITHDRAWAL_EQ_001"
+        },
+        "balance_eligible": true,
+        "eligibility_reasons": ["current_synchronized_normalized"]
+      }
+    ],
+    "notes": ["Synthetic design fixture only"]
+  },
+  "positive_assessment": {
+    "schema_version": "aguayluz.nested-water-balance/v0.1",
+    "assessment_id": "AYL_WBS_RESERVOIR_20260804",
+    "balance_type": "reservoir",
+    "boundary_asset_id": "AYL_WBA_RESERVOIR_PILOT",
+    "parent_assessment_id": null,
+    "interval_start": "2026-08-04T00:00:00Z",
+    "interval_end": "2026-08-05T00:00:00Z",
+    "accounting_unit": "m3",
+    "input_terms": [
+      {
+        "term_id": "TERM_INFLOW",
+        "role": "inflow",
+        "ledger_entry_ids": ["AYL_WBL_INFLOW_20260804"],
+        "value_m3": 1500.0,
+        "uncertainty_lower_m3": 1470.0,
+        "uncertainty_upper_m3": 1530.0,
+        "source_equivalence_groups": ["FIXTURE_INFLOW_EQ_001"]
+      }
+    ],
+    "output_terms": [
+      {
+        "term_id": "TERM_WITHDRAWAL",
+        "role": "withdrawal",
+        "ledger_entry_ids": ["AYL_WBL_WITHDRAWAL_20260804"],
+        "value_m3": 1000.0,
+        "uncertainty_lower_m3": 980.0,
+        "uncertainty_upper_m3": 1020.0,
+        "source_equivalence_groups": ["FIXTURE_WITHDRAWAL_EQ_001"]
+      }
+    ],
+    "storage_change_terms": [
+      {
+        "term_id": "TERM_STORAGE_CHANGE",
+        "role": "other",
+        "ledger_entry_ids": ["AYL_WBL_STORAGE_CHANGE_20260804"],
+        "value_m3": 490.0,
+        "uncertainty_lower_m3": 470.0,
+        "uncertainty_upper_m3": 510.0,
+        "source_equivalence_groups": ["FIXTURE_STORAGE_EQ_001"]
+      }
+    ],
+    "excluded_terms": [],
+    "residual": {
+      "value_m3": 10.0,
+      "percent_of_total_input": 0.6666666667,
+      "classification": "within_uncertainty",
+      "proof_state": "model_only"
+    },
+    "uncertainty_envelope": {
+      "lower_m3": -70.0,
+      "upper_m3": 70.0,
+      "method": "interval_sum",
+      "correlated_error_groups": ["FIXTURE_INFLOW_EQ_001", "FIXTURE_WITHDRAWAL_EQ_001", "FIXTURE_STORAGE_EQ_001"]
+    },
+    "coverage": {
+      "required_term_count": 3,
+      "eligible_term_count": 3,
+      "missing_term_count": 0,
+      "coverage_pct": 100.0,
+      "topology_complete": true,
+      "time_alignment_complete": true,
+      "unit_normalization_complete": true
+    },
+    "closure_status": "within_uncertainty",
+    "first_failed_boundary": null,
+    "persistence_windows": 0,
+    "attribution": {
+      "state": "not_attempted",
+      "candidate_causes": [],
+      "corroborating_record_ids": [],
+      "non_proof_statement": "A mass-balance residual is an analytical finding, not proof of a leak, illegal withdrawal, theft, diversion, falsified reporting, or operator misconduct."
+    },
+    "incident_promotion_eligible": false,
+    "federation_export_eligible": false,
+    "design_only": true,
+    "notes": ["Synthetic design fixture only"]
+  },
+  "cases": [
+    {
+      "fixture_id": "WB_FIX_POSITIVE",
+      "scenario": "positive",
+      "signal": "All required terms are current, synchronized, normalized and independently represented.",
+      "expected_closure_status": "within_uncertainty",
+      "expected_balance_eligible": true,
+      "incident_promotion_eligible": false
+    },
+    {
+      "fixture_id": "WB_FIX_NEGATIVE",
+      "scenario": "negative",
+      "signal": "A required identifier or quantity violates the canonical schema.",
+      "expected_closure_status": "not_evaluated",
+      "expected_balance_eligible": false,
+      "incident_promotion_eligible": false
+    },
+    {
+      "fixture_id": "WB_FIX_MISSING",
+      "scenario": "missing",
+      "signal": "A required inflow, release, withdrawal or storage term is absent.",
+      "expected_closure_status": "underdetermined",
+      "expected_balance_eligible": false,
+      "incident_promotion_eligible": false
+    },
+    {
+      "fixture_id": "WB_FIX_STALE",
+      "scenario": "stale",
+      "signal": "A term is outside its valid-until window.",
+      "expected_closure_status": "not_evaluated",
+      "expected_balance_eligible": false,
+      "incident_promotion_eligible": false
+    },
+    {
+      "fixture_id": "WB_FIX_CONTRADICTORY",
+      "scenario": "contradictory",
+      "signal": "Two eligible records assert incompatible quantities for the same source-equivalence group and interval.",
+      "expected_closure_status": "contradictory",
+      "expected_balance_eligible": false,
+      "incident_promotion_eligible": false
+    },
+    {
+      "fixture_id": "WB_FIX_DOUBLE_COUNTED",
+      "scenario": "double_counted",
+      "signal": "One source-equivalence group appears in multiple terms in the same boundary and interval.",
+      "expected_closure_status": "not_evaluated",
+      "expected_balance_eligible": false,
+      "incident_promotion_eligible": false
+    },
+    {
+      "fixture_id": "WB_FIX_METER_RESET",
+      "scenario": "meter_reset",
+      "signal": "A cumulative meter rollover or reset creates an apparent negative interval volume.",
+      "expected_closure_status": "not_evaluated",
+      "expected_balance_eligible": false,
+      "incident_promotion_eligible": false
+    },
+    {
+      "fixture_id": "WB_FIX_TIME_SKEW",
+      "scenario": "time_skew",
+      "signal": "Terms exceed the maximum synchronization tolerance or date-only precision is mixed with hourly telemetry.",
+      "expected_closure_status": "not_evaluated",
+      "expected_balance_eligible": false,
+      "incident_promotion_eligible": false
+    },
+    {
+      "fixture_id": "WB_FIX_UNIT_ERROR",
+      "scenario": "unit_error",
+      "signal": "A rate, volume, level or datum is compared without an approved transformation.",
+      "expected_closure_status": "not_evaluated",
+      "expected_balance_eligible": false,
+      "incident_promotion_eligible": false
+    },
+    {
+      "fixture_id": "WB_FIX_UNDERDETERMINED",
+      "scenario": "underdetermined",
+      "signal": "Coverage is insufficient to distinguish physical loss from missing records or model error.",
+      "expected_closure_status": "underdetermined",
+      "expected_balance_eligible": false,
+      "incident_promotion_eligible": false
+    }
+  ]
+}
