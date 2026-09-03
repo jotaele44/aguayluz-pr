@@ -13,6 +13,7 @@ import hashlib
 import json
 from collections import Counter
 from collections.abc import Iterable
+from decimal import Decimal
 from typing import Any
 
 ENTITY_KINDS = frozenset({
@@ -275,7 +276,7 @@ class _PFAS:
         if unit_norm in {"ng/l", "ppt"}:
             return float(value)
         if unit_norm in {"ug/l", "ppb"}:
-            return float(value) * 1000.0
+            return float(Decimal(str(value)) * Decimal("1000"))
         raise ValueError(f"unsupported PFAS concentration unit: {unit}")
 
     @classmethod
