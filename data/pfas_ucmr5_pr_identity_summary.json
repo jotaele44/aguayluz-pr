@@ -1,0 +1,60 @@
+{
+  "schema_version": "aguayluz.pfas.ucmr5_identity/v1",
+  "source_manifest": "data/pfas_ucmr5_pr_manifest.json",
+  "source_tsv_sha256": "ac40d8d67f7343832e0b11d78c892e3a6cdd44fe4d0b0892407347d4400b80c5",
+  "row_count": 21771,
+  "pws_id_count": 99,
+  "pws_id_name_pair_count": 99,
+  "pws_ids_with_multiple_source_names": 0,
+  "source_names_bound_to_multiple_pws_ids": 0,
+  "facility_identity_key": ["PWSID", "FacilityID"],
+  "facility_identity_key_count": 229,
+  "facility_source_variant_count": 229,
+  "sample_point_identity_key": ["PWSID", "FacilityID", "SamplePointID"],
+  "sample_point_identity_key_count": 253,
+  "sample_point_source_variant_count": 253,
+  "sample_id_count": 755,
+  "sample_point_type_counts": {
+    "EP": 21771
+  },
+  "facility_water_type_row_counts": {
+    "GW": 8130,
+    "MX": 3479,
+    "SW": 10162
+  },
+  "associated_facility_id_nonempty_rows": 0,
+  "associated_sample_point_id_nonempty_rows": 0,
+  "collection_date_min": "2023-01-10",
+  "collection_date_max": "2026-01-12",
+  "collection_year_row_counts": {
+    "2023": 7462,
+    "2024": 9299,
+    "2025": 4981,
+    "2026": 29
+  },
+  "sample_event_code_row_counts": {
+    "SE1": 7530,
+    "SE2": 7410,
+    "SE3": 3412,
+    "SE4": 3419
+  },
+  "monitoring_requirement_row_counts": {
+    "AM": 21771
+  },
+  "method_row_counts": {
+    "EPA 200.7": 726,
+    "EPA 533": 18149,
+    "EPA 537.1": 2896
+  },
+  "source_unit_row_counts": {
+    "µg/L": 21771
+  },
+  "join_invariants": [
+    "PWSID is the authoritative source water-system identifier; PWSName is not an identity key.",
+    "Facility identity is source-scoped by PWSID plus FacilityID.",
+    "Sample-point identity is source-scoped by PWSID plus FacilityID plus SamplePointID.",
+    "Source-level identity closure does not establish equivalence to a physical AguaYLuz utility asset or geometry.",
+    "No nearest-neighbour or normalized-name join may promote a physical-asset binding without independent evidence."
+  ],
+  "physical_asset_binding_state": "OPEN"
+}
