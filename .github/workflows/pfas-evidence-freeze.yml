@@ -1,0 +1,129 @@
+name: PFAS Evidence Freeze
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  freeze-ucmr5-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Download exact EPA UCMR5 state archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/pfas_ucmr5/raw artifacts/pfas_ucmr5/derived
+          url='https://www.epa.gov/system/files/other-files/2023-08/ucmr5-occurrence-data-by-state.zip'
+          curl --fail --location --proto '=https' --tlsv1.2 \
+            --retry 3 --retry-all-errors \
+            --output artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip \
+            "$url"
+          test -s artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip
+          file artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip
+          unzip -t artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip
+          sha256sum artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip \
+            > artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip.sha256
+          unzip -Z1 artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip \
+            > artifacts/pfas_ucmr5/raw/archive-members.txt
+
+      - name: Extract Puerto Rico denominator and provenance
+        shell: python
+        run: |
+          import csv
+          import hashlib
+          import json
+          import pathlib
+          import zipfile
+          from collections import Counter
+          from datetime import datetime, timezone
+
+          root = pathlib.Path('artifacts/pfas_ucmr5')
+          archive = root / 'raw' / 'ucmr5-occurrence-data-by-state.zip'
+          derived = root / 'derived'
+          url = 'https://www.epa.gov/system/files/other-files/2023-08/ucmr5-occurrence-data-by-state.zip'
+
+          def sha256_bytes(payload: bytes) -> str:
+              return hashlib.sha256(payload).hexdigest()
+
+          with zipfile.ZipFile(archive) as zf:
+              members = zf.namelist()
+              candidates = [
+                  name for name in members
+                  if name.lower().endswith('.txt')
+                  and ('ma_wy' in name.lower() or 'ma-wy' in name.lower())
+              ]
+              if len(candidates) != 1:
+                  raise SystemExit(f'expected exactly one M-W state member; found {candidates}')
+              member = candidates[0]
+              payload = zf.read(member)
+
+          text = payload.decode('utf-8-sig')
+          reader = csv.DictReader(text.splitlines(), delimiter='\t')
+          if reader.fieldnames is None:
+              raise SystemExit('UCMR5 state member has no header')
+          headers = list(reader.fieldnames)
+          pws_field = next((h for h in headers if h.lower().replace(' ', '') == 'pwsid'), None)
+          if pws_field is None:
+              raise SystemExit(f'PWSID field not found in {headers}')
+
+          rows = [row for row in reader if str(row.get(pws_field) or '').upper().startswith('PR')]
+          if not rows:
+              raise SystemExit('zero Puerto Rico rows found; fail closed')
+
+          out_tsv = derived / 'ucmr5_pr.tsv'
+          with out_tsv.open('w', encoding='utf-8', newline='') as handle:
+              writer = csv.DictWriter(handle, fieldnames=headers, delimiter='\t', lineterminator='\n')
+              writer.writeheader()
+              writer.writerows(rows)
+
+          contaminant_field = next((h for h in headers if h.lower() == 'contaminant'), None)
+          sign_field = next((h for h in headers if h.lower() == 'analyticalresultssign'), None)
+          pws_ids = sorted({str(row[pws_field]) for row in rows})
+          contaminants = Counter(str(row.get(contaminant_field) or '') for row in rows) if contaminant_field else Counter()
+          signs = Counter(str(row.get(sign_field) or '') for row in rows) if sign_field else Counter()
+
+          manifest = {
+              'schema_version': 'aguayluz.pfas.ucmr5_freeze/v1',
+              'source_url': url,
+              'retrieved_utc': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+              'archive_sha256': sha256_bytes(archive.read_bytes()),
+              'archive_size_bytes': archive.stat().st_size,
+              'archive_member_count': len(members),
+              'selected_member': member,
+              'selected_member_sha256': sha256_bytes(payload),
+              'selected_member_size_bytes': len(payload),
+              'headers': headers,
+              'header_count': len(headers),
+              'puerto_rico_row_count': len(rows),
+              'puerto_rico_pws_count': len(pws_ids),
+              'puerto_rico_pws_ids': pws_ids,
+              'contaminant_counts': dict(sorted(contaminants.items())),
+              'analytical_result_sign_counts': dict(sorted(signs.items())),
+              'derived_tsv_sha256': sha256_bytes(out_tsv.read_bytes()),
+              'selection_rule': 'PWSID starts with PR',
+              'semantic_guard': 'UCMR occurrence results are not compliance determinations.',
+          }
+          (derived / 'ucmr5_pr_manifest.json').write_text(
+              json.dumps(manifest, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          print(json.dumps({
+              'selected_member': member,
+              'puerto_rico_row_count': len(rows),
+              'puerto_rico_pws_count': len(pws_ids),
+              'archive_sha256': manifest['archive_sha256'],
+              'derived_tsv_sha256': manifest['derived_tsv_sha256'],
+          }, indent=2, sort_keys=True))
+
+      - name: Upload frozen EPA evidence bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pfas-ucmr5-pr-evidence
+          path: artifacts/pfas_ucmr5
+          if-no-files-found: error
+          retention-days: 90
