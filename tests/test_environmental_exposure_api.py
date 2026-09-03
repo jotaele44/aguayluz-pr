@@ -73,6 +73,15 @@ def test_summary_is_read_only_and_fail_closed(client):
     }
     assert body["integrity"]["structural_integrity_state"] == "PASS"
     assert body["integrity"]["corpus_certification_state"] == "OPEN"
+    assert body["pfas"]["certification_state"] == "OPEN"
+    assert body["pfas"]["occurrence"]["total_rows"] == 21771
+    assert body["pfas"]["occurrence"]["public_water_system_ids"] == 99
+    assert body["pfas"]["provenance"]["archive_sha256"] == (
+        "4845eb3abf34d61d7d239e26a815c69b21e39d249840243d266274b5b5d73aaa"
+    )
+    assert "PWS_FACILITY_SAMPLE_POINT_GEOMETRY_BINDING_OPEN" in (
+        body["pfas"]["unresolved_material"]
+    )
     assert client.post("/environmental-exposure/summary").status_code == 405
 
 
