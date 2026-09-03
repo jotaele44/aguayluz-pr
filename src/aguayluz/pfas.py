@@ -106,7 +106,7 @@ def current_rule(rules: Iterable[RegulatoryRule], analyte: str, as_of: str) -> R
         r for r in rules
         if r.analyte == analyte
         and (r.effective_from is None or r.effective_from <= as_of)
-        and r.legal_state == "IN_FORCE"
+        and r.legal_state.startswith("IN_FORCE")
     ]
     if not candidates:
         return None
