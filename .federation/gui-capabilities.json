@@ -60,7 +60,9 @@
       "backend": {
         "files": [
           "server/backend/main.py",
-          "server/backend/app.py"
+          "server/backend/app.py",
+          "scripts/validate_federation_spatial.py",
+          "src/aguayluz/spatial_analysis.py"
         ],
         "endpoints": [
           "GET /assets",
@@ -71,7 +73,14 @@
           "GET /municipios/{name}/summary"
         ],
         "symbols": [
-          "server/backend/app.py:municipio_summary"
+          "server/backend/app.py:municipio_summary",
+          "scripts/validate_federation_spatial.py:main",
+          "src/aguayluz/spatial_analysis.py:DirectedEdge",
+          "src/aguayluz/spatial_analysis.py:RasterSpec",
+          "src/aguayluz/spatial_analysis.py:impacted_assets",
+          "src/aguayluz/spatial_analysis.py:raster_layer_contract",
+          "src/aguayluz/spatial_analysis.py:trace_downstream",
+          "src/aguayluz/spatial_analysis.py:trace_upstream"
         ]
       },
       "frontend": {
@@ -107,7 +116,9 @@
         "backend": [
           "tests/test_backend_events_api.py",
           "tests/test_pr_geo_boundaries.py",
-          "tests/test_backend_municipio_summary_api.py"
+          "tests/test_backend_municipio_summary_api.py",
+          "tests/test_federation_spatial_core.py",
+          "tests/test_spatial_analysis.py"
         ],
         "contract": [
           "tests/test_navigation.py",
