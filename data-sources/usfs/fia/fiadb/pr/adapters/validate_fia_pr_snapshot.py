@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
-import csv, hashlib, json, sys, zipfile
+import csv
+import hashlib
+import json
+import sys
+import zipfile
 from pathlib import Path
+
 
 def main(zpath):
     zpath = Path(zpath)
