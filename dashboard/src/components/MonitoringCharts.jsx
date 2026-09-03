@@ -146,7 +146,7 @@ export default function MonitoringCharts() {
         </div>
       </div>
 
-      <div className="rounded-lg border border-slate-800 bg-slate-900 p-3 shadow-sm">
+      <div className="rounded-lg border border-slate-800 bg-slate-900 p-3 shadow-xs">
         <div className="mb-3 flex items-start justify-between gap-3">
           <div>
             <div className="text-xs uppercase tracking-wide text-slate-400">{series.label}{activeSite ? ` · site ${activeSite}` : ''} · {readings.length} readings ({series.unit})</div>

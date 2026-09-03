@@ -99,7 +99,7 @@ export default function AiQueryPanel() {
               onKeyDown={handleKey}
               placeholder="Ask about the data…"
               disabled={loading}
-              className="flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-sky-600 disabled:opacity-50"
+              className="flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-hidden focus:border-sky-600 disabled:opacity-50"
             />
             <button
               type="submit"

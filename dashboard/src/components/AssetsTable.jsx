@@ -242,7 +242,7 @@ export default function AssetsTable({ assets = [], isLoading, selectedId, onSele
 
       <div ref={scrollRef} className="flex-1 overflow-auto">
         <Table>
-          <TableHeader className="sticky top-0 z-10 bg-slate-900 shadow-sm shadow-slate-950">
+          <TableHeader className="sticky top-0 z-10 bg-slate-900 shadow-xs shadow-slate-950">
             <TableRow className="border-slate-800 hover:bg-transparent">
               {COLS.map(({ key, label }) => (
                 <TableHead
@@ -271,7 +271,7 @@ export default function AssetsTable({ assets = [], isLoading, selectedId, onSele
                   onClick={() => onSelect?.(a)}
                   tabIndex={0}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect?.(a) } }}
-                  className={cn('cursor-pointer border-slate-800 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-sky-500/50', selectedId === a.asset_id ? 'bg-sky-500/10 ring-1 ring-inset ring-sky-500/30' : 'hover:bg-slate-800/50')}
+                  className={cn('cursor-pointer border-slate-800 focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-sky-500/50', selectedId === a.asset_id ? 'bg-sky-500/10 ring-1 ring-inset ring-sky-500/30' : 'hover:bg-slate-800/50')}
                 >
                   <TableCell className="max-w-[190px] align-top">
                     <div className="truncate text-xs font-medium text-slate-200">{a.asset_name}</div>
