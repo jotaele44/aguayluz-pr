@@ -1,0 +1,97 @@
+{
+  "schema_version": "aguayluz.failure-operational-fixtures/v0.1",
+  "synthetic_fixture": true,
+  "operational_claims_forbidden": true,
+  "notes": "Synthetic PRASA-style contract fixtures only; no record describes PRASA, AAA, a municipality, or a Puerto Rico asset.",
+  "as_of": "2026-08-04T21:00:00Z",
+  "system_id": "SYS_EAST",
+  "asset_identities": [
+    {"ref": "SRC", "canonical": "AYL_SOURCE_EAST", "type": "source", "name": "Synthetic source", "disclosure": "public_exact"},
+    {"ref": "INTAKE", "canonical": "AYL_INTAKE_EAST", "type": "intake", "name": "Synthetic intake", "disclosure": "public_exact"},
+    {"ref": "TREAT", "canonical": "AYL_TREATMENT_EAST", "type": "treatment", "name": "Synthetic treatment", "disclosure": "public_exact"},
+    {"ref": "MAIN", "canonical": "AYL_MAIN_EAST", "type": "transmission", "name": "Synthetic main", "disclosure": "public_approximate"},
+    {"ref": "TANK", "canonical": "AYL_TANK_EAST", "type": "tank", "name": "Synthetic tank", "disclosure": "public_exact"},
+    {"ref": "PUMP", "canonical": "AYL_PUMP_EAST", "type": "pump", "name": "Synthetic pump", "disclosure": "operator_restricted"},
+    {"ref": "VALVE", "canonical": "AYL_VALVE_EAST", "type": "valve", "name": "Synthetic valve", "disclosure": "operator_restricted", "attributes": {"normally_open": true}},
+    {"ref": "ZONE", "canonical": "AYL_ZONE_EAST", "type": "pressure_zone", "name": "Synthetic pressure zone", "disclosure": "public_approximate"},
+    {"ref": "DIST", "canonical": "AYL_DIST_EAST", "type": "distribution", "name": "Synthetic distribution", "disclosure": "public_approximate"},
+    {"ref": "SERVICE", "canonical": "AYL_SERVICE_EAST", "type": "service_area", "name": "Synthetic service area", "disclosure": "public_approximate"}
+  ],
+  "memberships": [
+    {"asset": "MAIN", "zone": "ZONE", "service": "SERVICE"},
+    {"asset": "TANK", "zone": "ZONE", "service": "SERVICE"},
+    {"asset": "PUMP", "zone": "ZONE", "service": "SERVICE"},
+    {"asset": "VALVE", "zone": "ZONE", "service": "SERVICE"},
+    {"asset": "ZONE", "zone": "ZONE", "service": "SERVICE"},
+    {"asset": "DIST", "zone": "ZONE", "service": "SERVICE"},
+    {"asset": "SERVICE", "zone": "ZONE", "service": "SERVICE"}
+  ],
+  "topology": [
+    {"ref": "E01", "from": "SRC", "to": "INTAKE"},
+    {"ref": "E02", "from": "INTAKE", "to": "TREAT"},
+    {"ref": "E03", "from": "TREAT", "to": "MAIN"},
+    {"ref": "E04", "from": "MAIN", "to": "TANK"},
+    {"ref": "E05", "from": "TANK", "to": "PUMP"},
+    {"ref": "E06", "from": "PUMP", "to": "VALVE"},
+    {"ref": "E07", "from": "VALVE", "to": "ZONE"},
+    {"ref": "E08", "from": "ZONE", "to": "DIST"},
+    {"ref": "E09", "from": "DIST", "to": "SERVICE", "type": "SERVES"}
+  ],
+  "scenarios": {
+    "known_break": [
+      {"id": "OBS_PRESS_MAIN_UP", "kind": "pressure", "target": "TREAT", "value": 60},
+      {"id": "OBS_PRESS_MAIN_DOWN", "kind": "pressure", "target": "MAIN", "value": 15},
+      {"id": "OBS_FLOW_MAIN_IN", "kind": "flow", "target_type": "edge", "target": "E03", "value": 100, "uncertainty": 2},
+      {"id": "OBS_FLOW_MAIN_OUT", "kind": "flow", "target_type": "edge", "target": "E04", "value": 40, "uncertainty": 2},
+      {"id": "OBS_OUTAGE_SERVICE", "kind": "outage", "target": "SERVICE", "value": "outage"},
+      {"id": "OBS_BREAK_ASSERT", "kind": "work_order", "target": "MAIN", "value": "main_break", "assertion": "main_break"}
+    ],
+    "hidden_leak": [
+      {"id": "OBS_PRESS_MAIN_UP", "kind": "pressure", "target": "TREAT", "value": 60},
+      {"id": "OBS_PRESS_MAIN_DOWN", "kind": "pressure", "target": "MAIN", "value": 15},
+      {"id": "OBS_FLOW_MAIN_IN", "kind": "flow", "target_type": "edge", "target": "E03", "value": 100, "uncertainty": 2},
+      {"id": "OBS_FLOW_MAIN_OUT", "kind": "flow", "target_type": "edge", "target": "E04", "value": 40, "uncertainty": 2},
+      {"id": "OBS_OUTAGE_SERVICE", "kind": "outage", "target": "SERVICE", "value": "outage"}
+    ],
+    "pump_failure": [
+      {"id": "OBS_PUMP_STATE", "kind": "pump_state", "target": "PUMP", "value": "fault"},
+      {"id": "OBS_PUMP_POWER", "kind": "power", "target": "PUMP", "value": "on"},
+      {"id": "OBS_PRESS_PUMP_UP", "kind": "pressure", "target": "TANK", "value": 55},
+      {"id": "OBS_PRESS_PUMP_DOWN", "kind": "pressure", "target": "PUMP", "value": 12},
+      {"id": "OBS_OUTAGE_SERVICE", "kind": "outage", "target": "SERVICE", "value": "outage"}
+    ],
+    "valve_misconfiguration": [
+      {"id": "OBS_VALVE_STATE", "kind": "valve_state", "target": "VALVE", "value": "closed"},
+      {"id": "OBS_PRESS_VALVE_UP", "kind": "pressure", "target": "PUMP", "value": 58},
+      {"id": "OBS_PRESS_VALVE_DOWN", "kind": "pressure", "target": "VALVE", "value": 9},
+      {"id": "OBS_OUTAGE_SERVICE", "kind": "outage", "target": "SERVICE", "value": "outage"}
+    ],
+    "tank_depletion": [
+      {"id": "OBS_TANK_1", "kind": "tank_level", "target": "TANK", "value": 45, "expected": 80, "tolerance": 10, "observed_at": "2026-08-04T20:20:00Z"},
+      {"id": "OBS_TANK_2", "kind": "tank_level", "target": "TANK", "value": 20, "expected": 80, "tolerance": 10},
+      {"id": "OBS_OUTAGE_SERVICE", "kind": "outage", "target": "SERVICE", "value": "outage"}
+    ],
+    "power_loss": [
+      {"id": "OBS_POWER_OFF", "kind": "power", "target": "PUMP", "value": "off"},
+      {"id": "OBS_PUMP_OFF", "kind": "pump_state", "target": "PUMP", "value": "off"},
+      {"id": "OBS_PRESS_PWR_UP", "kind": "pressure", "target": "TANK", "value": 55},
+      {"id": "OBS_PRESS_PWR_DOWN", "kind": "pressure", "target": "PUMP", "value": 10},
+      {"id": "OBS_OUTAGE_SERVICE", "kind": "outage", "target": "SERVICE", "value": "outage"}
+    ],
+    "multicausal": [
+      {"id": "OBS_MULTI_PUMP", "kind": "pump_state", "target": "PUMP", "value": "fault"},
+      {"id": "OBS_MULTI_POWER", "kind": "power", "target": "PUMP", "value": "on"},
+      {"id": "OBS_MULTI_VALVE", "kind": "valve_state", "target": "VALVE", "value": "closed"},
+      {"id": "OBS_MULTI_PRESS_UP", "kind": "pressure", "target": "TANK", "value": 55},
+      {"id": "OBS_MULTI_PRESS_MID", "kind": "pressure", "target": "PUMP", "value": 20},
+      {"id": "OBS_MULTI_PRESS_DOWN", "kind": "pressure", "target": "VALVE", "value": 5},
+      {"id": "OBS_OUTAGE_SERVICE", "kind": "outage", "target": "SERVICE", "value": "outage"}
+    ],
+    "unresolved": [
+      {"id": "OBS_OUTAGE_SERVICE", "kind": "outage", "target": "SERVICE", "value": "outage"}
+    ],
+    "stale_telemetry": [
+      {"id": "OBS_STALE_OUTAGE", "kind": "outage", "target": "SERVICE", "value": "outage", "freshness": "stale", "observed_at": "2026-08-04T18:00:00Z", "max_age_seconds": 60}
+    ]
+  }
+}
