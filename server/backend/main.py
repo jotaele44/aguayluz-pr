@@ -13,6 +13,7 @@ import contextlib
 import importlib.util
 import io
 import json
+import logging
 import os as _os
 import smtplib as _smtplib
 import sys
@@ -28,30 +29,99 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 
+logger = logging.getLogger(__name__)
+
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 _workspace = _os.getenv("AGUAYLUZ_DATA_HOME", "").strip()
 DATA = Path(_workspace) / "data" if _workspace else REPO_ROOT / "data"
 OUTPUTS = Path(_workspace) / "exports" if _workspace else REPO_ROOT / "outputs"
 SCRIPTS = REPO_ROOT / "scripts"
 
-# Monitoring reading kinds -> their canonical JSONL. Every kind here has a producer
-# in scripts/ that scripts/refresh.py runs, so an empty series means "no data yet",
-# never "no such feed". All three share one record shape (site_no / metric / value /
-# observed_date), so the dashboard renders them with a single time-series path.
-READINGS_FILES: dict[str, Path] = {
-    "reservoir": DATA / "reservoir_levels.jsonl",       # scripts/ingest_usgs_levels.py
-    "groundwater": DATA / "groundwater_levels.jsonl",   # scripts/ingest_usgs_groundwater.py
-    "coastal": DATA / "coastal_levels.jsonl",           # scripts/ingest_noaa_tides.py
-    "drought": DATA / "drought_conditions.jsonl",       # scripts/ingest_drought_usdm.py
-    "precipitation": DATA / "precipitation_conditions.jsonl",  # scripts/ingest_precip_ncei.py
-    "neon": DATA / "neon_readings.jsonl",               # scripts/ingest_neon_products.py
-    "usgs_field_measurements": DATA / "usgs_field_measurements_readings.jsonl",  # scripts/ingest_usgs_field_measurements.py
-    "usgs_peaks": DATA / "usgs_peaks_readings.jsonl",   # scripts/ingest_usgs_peaks.py
+# Monitoring reading kinds -> their canonical JSONL + per-metric filtering rules. This is
+# the single source of truth for what a "reading kind" is: server.backend.app (the app
+# desktop/config.py actually serves) reads READING_VECTOR_REGISTRY directly instead of
+# keeping its own hand-maintained copy — a second copy is what previously let `neon` drift
+# out of sync there, so GET /readings?kind=neon 400'd on the canonical app while this
+# module's own /readings quietly served it. READINGS_FILES (path-only, used by /health and
+# /system/status below) is derived from this registry so the two can't disagree again.
+#
+# `metrics` lists every `monitoring_reading.metric` value the kind's producer writes, each
+# with the unit(s) it's stored in — app.py's `_series_rows` filters on exact unit
+# membership, so a metric missing its real unit silently drops every matching row (see the
+# `usgs_peaks` streamflow note below). `metric_required=True` means the kind's rows span
+# more than one metric, so app.py's /readings refuses to guess which one the caller wants.
+#
+# `neon` intentionally maps only `streamflow` and `gage_height`: each is one physical
+# quantity per NEON product (m3/s, m — see docs/NEON_INTEGRATION.md's product table and
+# aguayluz.neon.mapping.PRODUCT_METRICS). NEON's `water_quality` metric is not: it covers
+# four products (specific conductance in uS/cm, nitrate in uM, dissolved CO2 in mol/mol)
+# under one metric name, so the single per-series `unit` that
+# monitoring_quality.SERIES_METADATA_REGISTRY records could not describe it without
+# mislabeling three of the four. Left out rather than guessed at — a tracked follow-up,
+# same shape as the `usgs_samples` gap documented in docs/LAGUNA_CARTAGENA_GAP.md.
+READING_VECTOR_REGISTRY: dict[str, dict[str, Any]] = {
+    "reservoir": {
+        "path": DATA / "reservoir_levels.jsonl",  # scripts/ingest_usgs_levels.py
+        "metrics": {
+            "reservoir_elevation": {"units": {"ft"}},
+            "reservoir_storage_pct": {"units": {"%"}},
+            "streamflow": {"units": {"ft3/s", "ft³/s"}},
+            "gage_height": {"units": {"ft"}},
+        },
+        "metric_required": True,
+    },
+    "groundwater": {
+        "path": DATA / "groundwater_levels.jsonl",  # scripts/ingest_usgs_groundwater.py
+        "metrics": {"groundwater_level": {"units": {"ft"}}},
+        "metric_required": False,
+    },
+    "coastal": {
+        "path": DATA / "coastal_levels.jsonl",  # scripts/ingest_noaa_tides.py
+        "metrics": {"coastal_water_level": {"units": {"ft"}}},
+        "metric_required": False,
+    },
+    "drought": {
+        "path": DATA / "drought_conditions.jsonl",  # scripts/ingest_drought_usdm.py
+        "metrics": {"drought_category": {"units": {"category"}}},
+        "metric_required": False,
+    },
+    "precipitation": {
+        "path": DATA / "precipitation_conditions.jsonl",  # scripts/ingest_precip_ncei.py
+        "metrics": {"precipitation_pct_normal": {"units": {"%"}}},
+        "metric_required": False,
+    },
+    "neon": {
+        "path": DATA / "neon_readings.jsonl",  # scripts/ingest_neon_products.py
+        "metrics": {
+            "streamflow": {"units": {"m3/s"}},
+            "gage_height": {"units": {"m"}},
+        },
+        "metric_required": True,
+    },
+    # Discrete USGS field measurements — the wells the Daily Values service cannot see.
+    "usgs_field_measurements": {
+        "path": DATA / "usgs_field_measurements_readings.jsonl",  # scripts/ingest_usgs_field_measurements.py
+        "metrics": {"groundwater_level": {"units": {"ft"}}},
+        "metric_required": False,
+    },
+    # Annual peak flow, 1899->. `ft^3/s` is load-bearing and NOT a typo: the USGS OGC API
+    # publishes `unit_of_measure: "ft^3/s"` and ingest_usgs_peaks.py stores it verbatim, so
+    # a whitelist of only {"ft3/s","ft³/s"} silently drops all 4,104 streamflow peaks —
+    # _series_rows filters on exact unit membership. Regression-tested.
+    "usgs_peaks": {
+        "path": DATA / "usgs_peaks_readings.jsonl",  # scripts/ingest_usgs_peaks.py
+        "metrics": {
+            "streamflow": {"units": {"ft^3/s", "ft3/s", "ft³/s"}},
+            "gage_height": {"units": {"ft"}},
+        },
+        "metric_required": True,
+    },
 }
-# NOTE: this dict and app.py's READING_VECTOR_REGISTRY are maintained by hand and have
-# drifted — `neon` lives only here, so GET /readings?kind=neon 400s on the canonical app
-# that is actually served (desktop/config.py points at server.backend.app). Unifying them
-# is a tracked follow-up, deliberately not bundled into this change.
+
+# Path-only view for callers (this module's /health, /system/status) that only need "does
+# this kind's file exist / how many rows" — derived so it can never drift from the registry
+# above the way it previously did.
+READINGS_FILES: dict[str, Path] = {kind: vector["path"] for kind, vector in READING_VECTOR_REGISTRY.items()}
 
 # Default page size for GET /events. The service_events corpus includes the full
 # EPA SDWIS violation history (tens of thousands of rows, ~13 MB), so an unbounded
@@ -717,8 +787,9 @@ async def run_export(request: Request, _=_Depends(_require_key)) -> JSONResponse
         with contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
             spec.loader.exec_module(module)
             return_code = module.main([])
-    except Exception as exc:  # noqa: BLE001 - converted to a user-facing API failure
+    except Exception as exc:  # noqa: BLE001 - runs arbitrary exporter code; genuinely unbounded
         detail = errors.getvalue()[-1600:] or str(exc)
+        logger.exception("federation_export.py failed: %s", detail)
         raise HTTPException(status_code=500, detail=detail) from exc
     if return_code != 0:
         raise HTTPException(
@@ -782,7 +853,11 @@ async def ai_query(request: Request, _=_Depends(_require_key)) -> JSONResponse: 
             result = json.loads(resp.read())
         text = result["content"][0]["text"]
         return JSONResponse({"answer": text})
-    except Exception as exc:
+    # OSError covers urllib's URLError/HTTPError and socket-level failures (DNS, timeout,
+    # connection reset) — all subclass it. JSONDecodeError/KeyError/IndexError cover a
+    # response that isn't the JSON shape expected (malformed body, no `content`, empty list).
+    except (OSError, json.JSONDecodeError, KeyError, IndexError) as exc:
+        logger.exception("Anthropic API request failed")
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
@@ -931,14 +1006,18 @@ async def notify(request: Request, _=_Depends(_require_key)) -> JSONResponse:  #
     if slack_url:
         try:
             _send_slack(slack_url, f"*{title}*\n{message}")
-        except Exception as e:
+        # OSError covers urllib's URLError/HTTPError and socket-level failures (DNS,
+        # timeout, connection reset) — all subclass it.
+        except OSError as e:
+            logger.exception("slack notification dispatch failed")
             errors.append(f"slack: {e}")
 
     ntfy_topic = _os.getenv("NTFY_TOPIC")
     if ntfy_topic:
         try:
             _send_ntfy(ntfy_topic, message, title)
-        except Exception as e:
+        except OSError as e:
+            logger.exception("ntfy notification dispatch failed")
             errors.append(f"ntfy: {e}")
 
     email_from = _os.getenv("NOTIFY_EMAIL_FROM")
@@ -947,7 +1026,11 @@ async def notify(request: Request, _=_Depends(_require_key)) -> JSONResponse:  #
     if email_from and email_to and smtp_host:
         try:
             _send_email(email_from, email_to, smtp_host, title, message)
-        except Exception as e:
+        # SMTPException covers protocol-level failures (auth, recipients refused, data
+        # errors); OSError covers connection-level ones (refused, DNS, timeout) the same
+        # way as the webhook calls above.
+        except (_smtplib.SMTPException, OSError) as e:
+            logger.exception("email notification dispatch failed")
             errors.append(f"email: {e}")
 
     channels_active = bool(slack_url or ntfy_topic or (email_from and email_to and smtp_host))
