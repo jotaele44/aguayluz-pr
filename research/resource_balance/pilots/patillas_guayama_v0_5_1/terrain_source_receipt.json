@@ -1,0 +1,40 @@
+{
+  "schema_version": "aguayluz.patillas-terrain-source-receipt/v0.5.1",
+  "source_release_doi": "10.5066/P9Y2SCY1",
+  "source_report_doi": "10.3133/sim3471",
+  "full_filegdb_archive": {
+    "filename": "Patillas_Terrain_2019.gdb.zip",
+    "size_bytes": 27171688,
+    "sha256": "3beac301b1521a197837ebb49eff701e2774385cb34f220e3546c82c5d732ea7",
+    "md5": "562ed7f0458a5c84b379963a90b9c8d1",
+    "retrieved_at": "2026-08-04T23:24:26Z",
+    "workflow_artifact_id": 8912513566,
+    "workflow_artifact_digest": "sha256:881537c057a54ca38eb23822487fe84bacfdb601cfe64c16c2c3614bf7f597b2"
+  },
+  "repository_partial_gdb_note": "The merged repository preserves the Patillas2019_volume physical table components only; the complete terrain GDB was recovered from the prior certified workflow artifact for v0.5.1 analysis.",
+  "crs": {
+    "horizontal": "NAD83(2011) / Puerto Rico and Virgin Is.",
+    "horizontal_epsg": 6566,
+    "vertical": "Puerto Rico Vertical Datum of 2002",
+    "vertical_epsg": 6641,
+    "stage_datum": "PRVD02"
+  },
+  "terrain_resolution_m": 1.0,
+  "terrain_accuracy_context": {"vertical_accuracy_95pct_m": 1.74, "median_absolute_vertical_error_m": 0.13},
+  "authoritative_shoreline": {
+    "layer": "Patillas_shoreline83_2011",
+    "stage_m_prvd02": 67.55,
+    "feature_count": 1,
+    "geometry_type": "MultiPolygon",
+    "area_m2": 1203713.9819335968,
+    "perimeter_m": 21828.075344,
+    "role": "top-stage geometry and independent stage-area cross-check"
+  },
+  "bathymetry": {
+    "layer": "Patillas_points2019_83_2011",
+    "feature_count": 240524,
+    "role": "source terrain support; not directly promoted to an independently reconstructed terrain because ArcGIS terrain LiDAR multipoints are not reproducibly exposed by the open FileGDB reader"
+  },
+  "derived_stage_area_method": "pchip derivative of the authoritative terrain-generated 24-row stage-storage relation, with the 67.55 m knot replaced by direct shoreline area",
+  "real_balance_executed": false
+}
