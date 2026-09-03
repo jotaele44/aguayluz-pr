@@ -1,0 +1,88 @@
+{
+  "acceptance_gates": {
+    "live": [
+      "3 authoritative USDM annual ZIP bytes frozen",
+      "13 authoritative supplemental weekly ZIP bytes frozen",
+      "all 16 object SHA256/byte lengths verified",
+      "155/155 authoritative GML issue dates",
+      "known non-issue 2016-11-01 explicitly bound",
+      "zero missing/unexpected after supplemental closure",
+      "manifest SHA256 frozen",
+      "offline replay against frozen objects passes"
+    ],
+    "static": [
+      "all required paths exist",
+      "all required modules compile",
+      "required source SHA256 equals frozen census",
+      "dependency DAG is acyclic"
+    ],
+    "synthetic": [
+      "3 annual ZIPs shaped like authoritative archive coverage",
+      "13 supplemental weekly ZIPs",
+      "155 authoritative issue dates",
+      "known non-issue 2016-11-01 excluded",
+      "first 2014-01-07",
+      "last 2016-12-27",
+      "zero missing",
+      "zero unexpected",
+      "canonical manifest",
+      "offline replay pass"
+    ]
+  },
+  "dependency_dag_sha256": "e40d6e6bd507d3622b8e204ec8ae12a887dc5c9fd886e6c87cf4b8d8686ca8b1",
+  "failure_policy": {
+    "downstream_invalidation": "invalidate only dependency closure",
+    "reuse": "preserve frozen upstream pass artifacts unless source identity or dependency changes",
+    "transaction": "staging never promotes to certified until all live gates pass",
+    "transport_failure": "transport_blocked_not_zero_result"
+  },
+  "goal": "certify the 2014-2016 Puerto Rico drought denominator pipeline before class-specific event-bound derivation",
+  "mgvb": {
+    "definition": "smallest closed evidence-producing pipeline that can acquire or ingest authoritative USDM GML bytes, supplement incomplete annual archives from authoritative weekly objects, content-address them, emit a canonical manifest, certify the actual 155-release 2014-2016 GML calendar, and replay verification without network",
+    "first_runtime_allowed_after": [
+      "all_required_drafted",
+      "all_required_compile",
+      "dependency_dag_acyclic",
+      "required_sha256_frozen",
+      "synthetic_155_release_closure_pass"
+    ],
+    "required_scripts": ["S01", "S02", "S03", "S04", "S05", "S06"]
+  },
+  "schema_version": "aguayluz.self-correcting-buildplan/v0.2",
+  "script_census": [
+    {"class":"required","depends_on":[],"id":"S01","path":"research/drought_resilience/mgvb/transport.py","sha256":"3aacc1020ca1fd7f067c2183ceefec5c0a02e31da1ca85cb45f3b52dcc6a474e"},
+    {"class":"required","depends_on":[],"id":"S02","path":"research/drought_resilience/mgvb/content_store.py","sha256":"d94b589098ebb2e5bf63809e917218b0bc37bf150c0165397f6a4b07b9fc50ee"},
+    {"class":"required","depends_on":[],"id":"S03","path":"research/drought_resilience/mgvb/manifest.py","sha256":"165f095d72158343ab19b3a837130ef1fa22d6d126a01bbaed0979ae54e60b82"},
+    {"class":"required","depends_on":["S01","S02","S03"],"id":"S04","path":"research/drought_resilience/mgvb/usdm_freeze.py","sha256":"531b2296586460b51a21a1cda1b740d40b98b74ea565952f5fdd45b4441aefa7"},
+    {"class":"required","depends_on":["S02","S03","S04"],"id":"S05","path":"research/drought_resilience/mgvb/certify_usdm.py","sha256":"ba5b79ada7136620e7bd3c0a9ac71f6e361fe525fc831d872235e30e6f816942"},
+    {"class":"required","depends_on":["S03","S05"],"id":"S06","path":"research/drought_resilience/mgvb/replay_freeze.py","sha256":"ed789d0bc9f5e0ff4e2f7c777385fc4faa9c22485896a6e1f0aa8980d6dc131b"},
+    {"activation":"MGVB_USDM_CERTIFIED","class":"conditional","depends_on":["S06"],"id":"S07","path":"research/drought_resilience/freeze_denominators.py","purpose":"expand certified acquisition to NCEI and USGS query families"},
+    {"activation":"USGS_RAW_METADATA_FROZEN","class":"conditional","depends_on":["S07"],"id":"S08","path":"research/drought_resilience/parameter_registry.py","purpose":"bind parameter/unit/datum/direction semantics"},
+    {"activation":"AAA_DRNA_DACO_RESPONSE_RECORDS_FROZEN","class":"conditional","depends_on":[],"id":"S09","path":"research/drought_resilience/response_ledger.py","purpose":"reconstruct response chronology independent of drought classes"},
+    {"activation":"TEMPORALLY_RESOLVED_AGRICULTURAL_OBSERVATIONS_FROZEN","class":"conditional","depends_on":[],"id":"S10","path":"research/drought_resilience/agricultural_series.py","purpose":"build independent agricultural indicator series"},
+    {"activation":"RELEVANT_CLASS_DENOMINATOR_CERTIFIED","class":"deferred","depends_on":["S08"],"id":"S11","path":"research/drought_resilience/method_registry.py","purpose":"version onset/termination methods per class"},
+    {"activation":"METHOD_REGISTRY_AND_CLASS_SERIES_CERTIFIED","class":"deferred","depends_on":["S11"],"id":"S12","path":"research/drought_resilience/derive_event_bounds.py","purpose":"derive candidate onset/peak/termination"},
+    {"activation":"CANDIDATE_BOUNDS_EXIST","class":"deferred","depends_on":["S12"],"id":"S13","path":"research/drought_resilience/falsify_bounds.py","purpose":"negative controls, sensitivity and contradiction adjudication"}
+  ],
+  "script_census_sha256": "796cdb23acf3a491874dfeb08ea988bb5a6041cecb61dfa0f58f4dc62396ccc6",
+  "skill_package": {
+    "name": "self-correcting-code-builder-v0.4.skill",
+    "sha256": "eb6b83082a243e18d0894c43e5ffd0ab28d5ced9f58a36c34e5eafa251fe416e"
+  },
+  "status": {
+    "live_freeze": "certified",
+    "static_closure": "passed",
+    "synthetic_closure": "passed_155_release_authoritative_shape",
+    "authoritative_usdm_denominator": "certified",
+    "authoritative_manifest_sha256": "46ee7c56790f0bb54988d1b151b64e10f8d172d18c2332877c7726b2cf5b6ef9",
+    "authoritative_artifact_id": 9173764047,
+    "authoritative_artifact_sha256": "00d6489b783717fa0d73dcd4422a51392e38f87714610d0455a6e460abf38f94",
+    "authoritative_release_count": 155,
+    "known_non_issue_dates": ["2016-11-01"],
+    "offline_replay": "passed_network_required_false",
+    "s07_activation": "activated_prerequisite_satisfied_not_yet_executed",
+    "s08_activation": "blocked_until_USGS_RAW_METADATA_FROZEN",
+    "preserved_required_after_E003": ["S01", "S02", "S03"],
+    "recovered_required_after_E003": ["S04", "S05", "S06"]
+  }
+}

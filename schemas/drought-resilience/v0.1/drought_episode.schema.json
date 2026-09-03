@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/drought-resilience/v0.1/drought_episode.schema.json",
+  "title": "DroughtEpisode",
+  "description": "Research-stage historical drought episode denominator. Keeps research window, certified event bounds, class-specific evidence, interventions, and unresolved gaps separate. A research window is not itself an asserted drought interval.",
+  "type": "object",
+  "required": ["episode_id", "title", "research_window", "episode_status", "geography_id", "sources", "class_evidence", "interventions", "gaps", "review_status"],
+  "additionalProperties": false,
+  "properties": {
+    "episode_id": {"type": "string", "pattern": "^AYL_DEP_[A-Za-z0-9_.-]+$"},
+    "title": {"type": "string", "minLength": 1},
+    "research_window": {
+      "type": "object",
+      "required": ["start_date", "end_date"],
+      "additionalProperties": false,
+      "properties": {
+        "start_date": {"type": "string", "format": "date"},
+        "end_date": {"type": "string", "format": "date"}
+      }
+    },
+    "certified_event_bounds": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["start_date", "end_date", "methodology_ref"],
+      "properties": {
+        "start_date": {"type": ["string", "null"], "format": "date"},
+        "end_date": {"type": ["string", "null"], "format": "date"},
+        "methodology_ref": {"type": ["string", "null"]}
+      }
+    },
+    "episode_status": {"enum": ["candidate_denominator", "provisional", "certified", "rejected"]},
+    "geography_id": {"type": "string", "minLength": 1},
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source_id", "authority", "source_ref", "role", "evidence_tier", "retrieval_status"],
+        "additionalProperties": false,
+        "properties": {
+          "source_id": {"type": "string", "minLength": 1},
+          "authority": {"type": "string", "minLength": 1},
+          "source_ref": {"type": "string", "minLength": 1},
+          "role": {"type": "string", "minLength": 1},
+          "evidence_tier": {"enum": ["T1", "T2", "T3", "T4"]},
+          "retrieval_status": {"enum": ["discovered", "frozen", "parsed", "blocked", "superseded"]},
+          "notes": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "class_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["meteorological", "hydrological", "agricultural", "socioeconomic"],
+      "properties": {
+        "meteorological": {"$ref": "#/$defs/classRecord"},
+        "hydrological": {"$ref": "#/$defs/classRecord"},
+        "agricultural": {"$ref": "#/$defs/classRecord"},
+        "socioeconomic": {"$ref": "#/$defs/classRecord"}
+      }
+    },
+    "interventions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["date", "intervention_type", "authority", "source_id", "claim_status"],
+        "additionalProperties": false,
+        "properties": {
+          "date": {"type": "string", "format": "date"},
+          "intervention_type": {"type": "string", "minLength": 1},
+          "authority": {"type": "string", "minLength": 1},
+          "source_id": {"type": "string", "minLength": 1},
+          "claim_status": {"enum": ["fact", "provisional", "candidate", "unknown"]},
+          "notes": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "gaps": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "review_status": {"enum": ["accepted", "needs_review", "rejected", "blocked"]},
+    "notes": {"type": ["string", "null"]}
+  },
+  "$defs": {
+    "classRecord": {
+      "type": "object",
+      "required": ["status", "source_ids", "observations"],
+      "additionalProperties": false,
+      "properties": {
+        "status": {"enum": ["unassessed", "candidate", "provisional", "certified", "not_supported"]},
+        "source_ids": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "observations": {"type": "array", "items": {"type": "string"}},
+        "notes": {"type": ["string", "null"]}
+      }
+    }
+  }
+}

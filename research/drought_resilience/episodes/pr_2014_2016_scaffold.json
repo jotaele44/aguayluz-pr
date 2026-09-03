@@ -1,0 +1,157 @@
+{
+  "episode_id": "AYL_DEP_PR_2014_2016",
+  "title": "Puerto Rico drought research denominator, 2014-2016",
+  "research_window": {
+    "start_date": "2014-01-01",
+    "end_date": "2016-12-31"
+  },
+  "certified_event_bounds": null,
+  "episode_status": "candidate_denominator",
+  "geography_id": "PR",
+  "sources": [
+    {
+      "source_id": "NOAA_NCEI_GHCND",
+      "authority": "NOAA NCEI",
+      "source_ref": "https://www.ncei.noaa.gov/access/search/data-search/daily-summaries",
+      "role": "meteorological observation denominator",
+      "evidence_tier": "T1",
+      "retrieval_status": "discovered",
+      "notes": "Exact Puerto Rico station universe and completeness denominator not yet frozen."
+    },
+    {
+      "source_id": "USGS_WATERDATA_DAILY_FIELD",
+      "authority": "U.S. Geological Survey",
+      "source_ref": "https://api.waterdata.usgs.gov/docs/ogcapi/migration/",
+      "role": "streamflow and groundwater observation denominator",
+      "evidence_tier": "T1",
+      "retrieval_status": "discovered",
+      "notes": "Exact 2014-2016 station/parameter universe not yet frozen."
+    },
+    {
+      "source_id": "USGS_PR_SELECTED_RESERVOIRS_2015",
+      "authority": "U.S. Geological Survey",
+      "source_ref": "https://pr.water.usgs.gov/drought/hydro_conditions_selected_sites.html",
+      "role": "2015 reservoir comparison and PRASA operating-level context",
+      "evidence_tier": "T1",
+      "retrieval_status": "discovered",
+      "notes": "Underlying station series must be frozen before quantitative certification."
+    },
+    {
+      "source_id": "USDM_ARCHIVE",
+      "authority": "U.S. Drought Monitor",
+      "source_ref": "https://droughtmonitor.unl.edu/dmdata/DataArchive.aspx?p=gml",
+      "role": "weekly spatial drought classification denominator",
+      "evidence_tier": "T1",
+      "retrieval_status": "discovered",
+      "notes": "Weekly files for the full research window not yet frozen."
+    },
+    {
+      "source_id": "DRNA_2015_STREAMFLOW_NOTICE",
+      "authority": "Puerto Rico Department of Natural and Environmental Resources",
+      "source_ref": "https://www.drna.pr.gov/noticias/se-reduce-el-flujo-de-agua-en-las-cuencas-que-suplen-principales-embalses/",
+      "role": "dated hydrological and response observation",
+      "evidence_tier": "T1",
+      "retrieval_status": "discovered",
+      "notes": "Official notice dated 2015-06-24."
+    },
+    {
+      "source_id": "DRNA_2015_DROUGHT_MONITOR_NOV10",
+      "authority": "Puerto Rico Department of Natural and Environmental Resources",
+      "source_ref": "https://www.drna.pr.gov/noticias/acuiferos-del-sur-muestran-aumentos-en-niveles-excepto-santa-isabel/",
+      "role": "dated aquifer and drought-monitor observation",
+      "evidence_tier": "T1",
+      "retrieval_status": "discovered",
+      "notes": "Official notice dated 2015-11-12 reporting 2015-11-10 weekly conditions."
+    },
+    {
+      "source_id": "DACO_ORDER_2015_03",
+      "authority": "Puerto Rico Department of Consumer Affairs",
+      "source_ref": "https://www.daco.pr.gov/orden/orden-de-congelacion-de-precios-2015-03/",
+      "role": "socioeconomic response intervention",
+      "evidence_tier": "T1",
+      "retrieval_status": "discovered",
+      "notes": "Exact signed/order document should be frozen before final claim binding."
+    },
+    {
+      "source_id": "DACO_ORDER_2015_12",
+      "authority": "Puerto Rico Department of Consumer Affairs",
+      "source_ref": "https://www.daco.pr.gov/orden/orden-2015-12/",
+      "role": "response cessation intervention",
+      "evidence_tier": "T1",
+      "retrieval_status": "discovered",
+      "notes": "States rationing plan ceased 2015-10-25; this bounds intervention state only."
+    },
+    {
+      "source_id": "USGS_WATER_USE_2015",
+      "authority": "U.S. Geological Survey",
+      "source_ref": "https://pubs.usgs.gov/publication/ofr20211060",
+      "role": "annual withdrawal/use context",
+      "evidence_tier": "T1",
+      "retrieval_status": "discovered",
+      "notes": "Temporal resolution is annual and must not be promoted to daily shortage evidence."
+    }
+  ],
+  "class_evidence": {
+    "meteorological": {
+      "status": "unassessed",
+      "source_ids": ["NOAA_NCEI_GHCND", "USDM_ARCHIVE"],
+      "observations": [],
+      "notes": "No event start/end inferred from narrative sources."
+    },
+    "hydrological": {
+      "status": "candidate",
+      "source_ids": ["USGS_WATERDATA_DAILY_FIELD", "USGS_PR_SELECTED_RESERVOIRS_2015", "DRNA_2015_STREAMFLOW_NOTICE", "DRNA_2015_DROUGHT_MONITOR_NOV10"],
+      "observations": [
+        "DRNA reported on 2015-06-24 that 12 of 22 referenced river stations were below historical minimum flow and all 22 were below median for several consecutive weeks; underlying station rows remain to be frozen.",
+        "USGS exposes a Puerto Rico reservoir comparison specifically including 2015 for Lago Loiza, Lago La Plata and Lago Toa Vaca.",
+        "DRNA reported 2015-11-10 drought-monitor percentages and continuing aquifer concerns, including Santa Isabel."
+      ],
+      "notes": "Candidate until raw series and denominators are frozen and independently recomputed."
+    },
+    "agricultural": {
+      "status": "unassessed",
+      "source_ids": ["USDM_ARCHIVE", "USGS_WATER_USE_2015"],
+      "observations": [],
+      "notes": "2015 irrigation-use context exists, but agricultural drought requires independent soil/crop evidence."
+    },
+    "socioeconomic": {
+      "status": "candidate",
+      "source_ids": ["DACO_ORDER_2015_03", "DACO_ORDER_2015_12", "USGS_WATER_USE_2015"],
+      "observations": [
+        "DACO issued a drought-related price-freeze response associated with possible water rationing in 2015.",
+        "DACO later rescinded that order after the water-rationing plan ceased on 2015-10-25.",
+        "USGS estimated 2015 public-supply withdrawals at annual scale; this is context, not a daily shortage series."
+      ],
+      "notes": "Response chronology is not identical to socioeconomic-drought onset/termination."
+    }
+  },
+  "interventions": [
+    {
+      "date": "2015-06-24",
+      "intervention_type": "official hydrological status communication during rationing",
+      "authority": "DRNA",
+      "source_id": "DRNA_2015_STREAMFLOW_NOTICE",
+      "claim_status": "fact",
+      "notes": "Notice references ongoing rationing and USGS-supported streamflow analysis."
+    },
+    {
+      "date": "2015-10-25",
+      "intervention_type": "water rationing plan cessation",
+      "authority": "Puerto Rico Aqueduct and Sewer Authority as referenced by DACO",
+      "source_id": "DACO_ORDER_2015_12",
+      "claim_status": "fact",
+      "notes": "Bound to DACO's official rescission order; does not define hydrological drought end."
+    }
+  ],
+  "gaps": [
+    "freeze complete NOAA/NCEI Puerto Rico precipitation-station universe for 2014-2016",
+    "freeze complete USGS Puerto Rico streamflow/groundwater/reservoir station and parameter universe for 2014-2016",
+    "freeze every weekly USDM Puerto Rico geometry/table for the research window and verify week-count closure",
+    "recover exact AAA rationing schedules, reservoir operating thresholds and revisions from authoritative records",
+    "recover DRNA drought committee membership, methodology, minutes/reports and after-action recommendations if extant",
+    "acquire independent agricultural drought observations before class promotion",
+    "define certified event start/end methodology before assigning episode bounds"
+  ],
+  "review_status": "needs_review",
+  "notes": "This file is a bounded research denominator and claim ledger, not a declaration that drought continuously occupied 2014-01-01 through 2016-12-31."
+}

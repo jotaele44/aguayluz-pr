@@ -1,0 +1,93 @@
+{
+  "schema_version": "aguayluz.drought-institutional-leads/v0.1",
+  "research_window": [
+    "2014-01-01",
+    "2016-12-31"
+  ],
+  "records": [
+    {
+      "record_id": "DRNA_2015_06_24_TECHNICAL_DROUGHT_COMMITTEE",
+      "authority": "Puerto Rico Department of Natural and Environmental Resources",
+      "source_ref": "https://www.drna.pr.gov/noticias/se-reduce-el-flujo-de-agua-en-las-cuencas-que-suplen-principales-embalses/",
+      "published_date": "2015-06-24",
+      "classification": "primary_official_notice",
+      "certified_facts": [
+        "A voluntary team of experts had constituted a Technical Drought Committee since the prior year.",
+        "The committee advised DRNA and other agencies during the drought.",
+        "A proposed change in minimum inflow was to be brought to the committee for consideration that week."
+      ],
+      "not_certified": [
+        "formal charter",
+        "complete membership roster",
+        "meeting minutes",
+        "decision rules",
+        "complete recommendation history",
+        "whether every agency response followed a committee recommendation"
+      ],
+      "epistemic_use": "Certifies committee existence and advisory function only; does not establish institutional-memory completeness."
+    },
+    {
+      "record_id": "DRNA_USGS_2015_SOUTH_AQUIFER_SENTINEL_METHOD",
+      "authority": "Puerto Rico Department of Natural and Environmental Resources + U.S. Geological Survey",
+      "source_refs": [
+        "https://www.drna.pr.gov/noticias/continuan-en-descenso-los-niveles-de-los-acuiferos-del-sur/",
+        "https://www.drna.pr.gov/noticias/continuan-en-descenso-los-niveles-del-acuifero-de-salinas-2/",
+        "https://www.drna.pr.gov/noticias/acuiferos-del-sur-registran-aumentos-en-niveles/",
+        "https://waterdata.usgs.gov/pr/nwis/inventory/?agency_cd=USGS&site_no=175827066141000",
+        "https://waterdata.usgs.gov/nwis/uv?legacy=1&site_no=175934066364800",
+        "https://waterdata.usgs.gov/monitoring-location/180057066311300/",
+        "https://waterdata.usgs.gov/monitoring-location/175734066233300/"
+      ],
+      "classification": "primary_official_notice_and_monitoring_location_binding",
+      "sentinel_bindings": [
+        {
+          "label": "Aguirre",
+          "municipality": "Salinas",
+          "usgs_site_no": "175827066141000",
+          "usgs_name": "AGUIRRE WELL, SALINAS, PR",
+          "parameter_status": "historical_groundwater_level_measurements_confirmed; exact 2015 public-dashboard parameter binding still to freeze"
+        },
+        {
+          "label": "Constancia",
+          "municipality": "Ponce",
+          "usgs_site_no": "175934066364800",
+          "usgs_name": "CONSTANCIA 3 WELL, PONCE, PR",
+          "parameter_code": "72019",
+          "parameter_name": "Water level, depth LSD"
+        },
+        {
+          "label": "Jac-6",
+          "municipality": "Juana Diaz",
+          "usgs_site_no": "180057066311300",
+          "usgs_name": "PIEZOMETER JAC-6, JUANA DIAZ, PR",
+          "parameter_code": "72019",
+          "parameter_name": "Water level, depth LSD"
+        },
+        {
+          "label": "Alomar Oeste",
+          "municipality": "Santa Isabel",
+          "usgs_site_no": "175734066233300",
+          "usgs_name": "ALOMAR OESTE WELL, SANTA ISABEL, PR",
+          "parameter_status": "monitoring-location identity confirmed; exact 2015 public-dashboard parameter binding still to freeze"
+        }
+      ],
+      "certified_facts": [
+        "DRNA described a monitoring metric based on four USGS-operated sentinel wells for southern aquifers.",
+        "The four sentinel observation points are Aguirre in Salinas, Constancia in Ponce, Jac-6 in Juana Diaz, and Alomar Oeste in Santa Isabel.",
+        "All four sentinel labels are now bound to unique USGS site numbers.",
+        "USGS exposes parameter 72019, Water level depth below land-surface datum, for Constancia 3 and Jac-6.",
+        "The public-facing condition scale comprised optimal, observation, controls-and-adjustments, and critical states.",
+        "DRNA treated aquifer conditions separately from reservoir conditions.",
+        "Published weekly examples report depth below land surface, so larger depth values represent lower groundwater levels and parameter direction must be preserved."
+      ],
+      "not_certified": [
+        "numeric threshold for each condition state",
+        "effective date of each threshold",
+        "revision history of the scale",
+        "exact 2015 parameter-code binding for Aguirre and Alomar Oeste",
+        "raw 2014-2016 observation-byte denominator for the four sentinel points"
+      ],
+      "epistemic_use": "Certifies sentinel identities, USGS site bindings, qualitative operating-state vocabulary, and depth-direction semantics where parameter 72019 is explicit. Numeric thresholds and raw historical series remain unresolved."
+    }
+  ]
+}

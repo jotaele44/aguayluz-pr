@@ -1,0 +1,44 @@
+{
+  "schema_version": "aguayluz.drought-agricultural-leads/v0.1",
+  "research_window": ["2014-01-01", "2016-12-31"],
+  "records": [
+    {
+      "record_id": "USGS_CASC_2014_2016_CROP_DROUGHT_IMPACTS",
+      "authority": "U.S. Geological Survey Climate Adaptation Science Centers",
+      "source_ref": "https://www.usgs.gov/programs/climate-adaptation-science-centers/drought-impacts-crops-us-caribbean",
+      "classification": "official_scientific_synthesis",
+      "drought_class": "agricultural",
+      "certified_facts": [
+        "USGS describes a long and intense 2014-2016 drought in the U.S. Caribbean that affected multiple crop types.",
+        "For Puerto Rico in 2015, USGS reports approximately 14 million dollars in agricultural drought losses, citing the Puerto Rico Department of Agriculture Statistics Division (2017).",
+        "Grass, fodder, and plantains are reported as accounting for 85 percent of the 2015 agricultural losses; plantain losses alone are reported at about 3 million dollars."
+      ],
+      "not_certified": [
+        "agricultural drought onset date",
+        "agricultural drought termination date",
+        "daily or weekly soil-moisture denominator",
+        "complete municipality-by-crop loss table",
+        "raw 2017 Puerto Rico Department of Agriculture loss dataset"
+      ],
+      "epistemic_use": "Independent agricultural-impact evidence. It can validate that agricultural drought impacts occurred, but cannot define meteorological or hydrological drought bounds and cannot by itself establish agricultural onset/termination."
+    },
+    {
+      "record_id": "USGS_2015_IRRIGATION_WITHDRAWAL_CONTEXT",
+      "authority": "U.S. Geological Survey",
+      "source_ref": "https://www.usgs.gov/publications/estimated-water-withdrawals-and-use-puerto-rico-2015",
+      "classification": "official_annual_water_use_estimate",
+      "drought_class": "agricultural_context",
+      "certified_facts": [
+        "USGS estimated irrigation withdrawals at 78 Mgal/d for 2015, 104 percent greater than in 2010.",
+        "USGS states that the increase may have been associated with drought conditions in agricultural counties along the south and southeast coasts."
+      ],
+      "not_certified": [
+        "daily irrigation demand",
+        "crop-specific shortage timing",
+        "soil-moisture state",
+        "agricultural drought onset or termination"
+      ],
+      "epistemic_use": "Annual demand context only; explicitly prohibited from daily or event-bound inference."
+    }
+  ]
+}
