@@ -51,12 +51,20 @@ def client(tmp_path, monkeypatch):
         "site_no": "F1", "metric": "groundwater_level", "parameter_code": "72019",
         "unit": "ft", "value": 11.2, "observed_date": "2026-07-28",
     }) + "\n", encoding="utf-8")
+    neon = tmp_path / "neon_readings.jsonl"
+    neon.write_text("".join(json.dumps(row) + "\n" for row in [
+        {"site_no": "CUPE", "metric": "streamflow", "parameter_code": "DP4.00130.001",
+         "unit": "m3/s", "value": 2.3, "observed_date": "2026-02-01"},
+        {"site_no": "CUPE", "metric": "gage_height", "parameter_code": "DP1.20016.001",
+         "unit": "m", "value": 0.8, "observed_date": "2026-02-01"},
+    ]), encoding="utf-8")
 
     monkeypatch.setitem(backend.READING_VECTOR_REGISTRY["reservoir"], "path", surface)
     monkeypatch.setitem(backend.READING_VECTOR_REGISTRY["groundwater"], "path", groundwater)
     monkeypatch.setitem(backend.READING_VECTOR_REGISTRY["coastal"], "path", coastal)
     monkeypatch.setitem(backend.READING_VECTOR_REGISTRY["usgs_peaks"], "path", peaks)
     monkeypatch.setitem(backend.READING_VECTOR_REGISTRY["usgs_field_measurements"], "path", field)
+    monkeypatch.setitem(backend.READING_VECTOR_REGISTRY["neon"], "path", neon)
     with TestClient(backend.app) as test_client:
         yield test_client
 
@@ -79,6 +87,8 @@ def test_unknown_kind_and_metric_fail_closed(client):
         ("usgs_field_measurements", "groundwater_level", "ft"),
         ("usgs_peaks", "streamflow", "ft^3/s"),
         ("usgs_peaks", "gage_height", "ft"),
+        ("neon", "streamflow", "m3/s"),
+        ("neon", "gage_height", "m"),
     ],
 )
 def test_every_vector_is_independently_observable(client, kind, metric, unit):
@@ -170,6 +180,23 @@ def test_a_historical_series_is_not_reported_as_stale(client):
 def test_peaks_require_an_explicit_metric(client):
     """Two metrics share the corpus, so defaulting would silently pick one."""
     assert client.get("/readings?kind=usgs_peaks").status_code == 400
+
+
+def test_neon_kind_is_registered_and_independently_observable(client):
+    """Regression: `neon` drifted out of this module's READING_VECTOR_REGISTRY while
+    staying in server.backend.main.READINGS_FILES, so GET /readings?kind=neon 400'd with
+    `unknown_reading_kind` on this app — the one desktop/config.py actually serves — even
+    though data/neon_readings.jsonl existed. Two metrics share the corpus (same shape as
+    usgs_peaks), so a bare `kind=neon` still 400s, but now with `metric_required`, not
+    `unknown_reading_kind`.
+    """
+    unknown_kind = client.get("/readings?kind=neon").json()
+    assert unknown_kind["detail"]["error"] == "metric_required"
+
+    body = client.get("/readings?kind=neon&metric=streamflow").json()
+    assert body["record_count"] == 1
+    assert body["units"] == ["m3/s"]
+    assert body["items"][0]["site_no"] == "CUPE"
 
 
 def test_reference_series_raise_no_incidents(client):
