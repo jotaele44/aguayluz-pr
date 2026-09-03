@@ -1,0 +1,47 @@
+{
+  "scope": "EPA final UCMR5 Puerto Rico occurrence denominator",
+  "source_manifest": "data/pfas_ucmr5_pr_manifest.json",
+  "total_rows": 21771,
+  "public_water_system_ids": 99,
+  "pfas_rows": 21045,
+  "lithium_rows": 726,
+  "pfas_reported_detections": 325,
+  "pfas_nondetect_rows": 20720,
+  "pws_ids_with_any_reported_pfas_detection": 39,
+  "sample_points_with_any_reported_pfas_detection": 93,
+  "sample_ids_with_any_reported_pfas_detection": 159,
+  "pfas_analytes_with_reported_detections": [
+    "6:2 FTS",
+    "8:2 FTS",
+    "PFBA",
+    "PFBS",
+    "PFDA",
+    "PFDoA",
+    "PFHpA",
+    "PFHxA",
+    "PFHxS",
+    "PFOA",
+    "PFOS",
+    "PFPeA"
+  ],
+  "pfas_detection_counts_by_analyte": {
+    "6:2 FTS": 4,
+    "8:2 FTS": 1,
+    "PFBA": 35,
+    "PFBS": 71,
+    "PFDA": 3,
+    "PFDoA": 3,
+    "PFHpA": 2,
+    "PFHxA": 23,
+    "PFHxS": 22,
+    "PFOA": 9,
+    "PFOS": 114,
+    "PFPeA": 38
+  },
+  "semantic_guards": [
+    "A reported UCMR occurrence result is not a PFAS NPDWR compliance finding.",
+    "AnalyticalResultsSign '<' is preserved as a non-detect and is not converted to zero or MRL.",
+    "PWS/facility/sample-point identity remains source-authored until separately bound to AguaYLuz utility assets.",
+    "Occurrence does not establish contaminant-source or manufacturer attribution."
+  ]
+}

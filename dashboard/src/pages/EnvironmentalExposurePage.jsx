@@ -41,6 +41,7 @@ export default function EnvironmentalExposurePage() {
   const summary = summaryQuery.data
   const relationships = relationshipsQuery.data?.items ?? []
   const integrity = integrityQuery.data
+  const pfas = summary?.pfas
   const unavailable = !summary || !integrity
 
   return (
@@ -102,6 +103,69 @@ export default function EnvironmentalExposurePage() {
                   detail={`${integrity.error_count} validation errors · corpus ${String(integrity.corpus_certification_state || 'OPEN').toLowerCase()}`}
                 />
               </section>
+
+              {pfas && (
+                <section
+                  className="mb-6 rounded-lg border border-slate-800 bg-slate-900/60"
+                  aria-label="Puerto Rico PFAS evidence checkpoint"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-800 px-4 py-3">
+                    <div>
+                      <h2 className="text-sm font-semibold text-slate-100">
+                        Puerto Rico PFAS evidence plane
+                      </h2>
+                      <p className="mt-1 text-xs text-slate-500">
+                        Final EPA UCMR5 occurrence denominator plus regulatory, site, and legal evidence.
+                      </p>
+                    </div>
+                    <div className="rounded border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-xs font-semibold text-amber-200">
+                      {pfas.certification_state}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4">
+                    <MetricCard
+                      icon={Database}
+                      label="UCMR5 PR rows"
+                      value={pfas.occurrence?.total_rows ?? '—'}
+                      detail={`${pfas.occurrence?.public_water_system_ids ?? 0} PWS IDs`}
+                    />
+                    <MetricCard
+                      icon={Activity}
+                      label="PFAS detections"
+                      value={pfas.occurrence?.pfas_reported_detections ?? '—'}
+                      detail={`${pfas.occurrence?.pws_ids_with_any_reported_pfas_detection ?? 0} PWS IDs with ≥1 reported detection`}
+                    />
+                    <MetricCard
+                      icon={ShieldCheck}
+                      label="Source hashes open"
+                      value={pfas.counts?.source_hashes_open ?? '—'}
+                      detail={`${pfas.counts?.source_manifestations ?? 0} source manifestations`}
+                    />
+                    <MetricCard
+                      icon={GitBranch}
+                      label="Legal manifestations"
+                      value={pfas.counts?.legal_manifestations ?? '—'}
+                      detail={`${pfas.counts?.primary_legal_dockets_open ?? 0} primary docket freezes open`}
+                    />
+                  </div>
+
+                  <div className="border-t border-slate-800 px-4 py-3">
+                    <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                      Material residue
+                    </div>
+                    {pfas.unresolved_material?.length ? (
+                      <ul className="mt-2 grid gap-1 text-xs text-slate-400">
+                        {pfas.unresolved_material.map((item) => (
+                          <li key={item} className="font-mono">{item}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="mt-2 text-xs text-emerald-300">No material residue recorded.</div>
+                    )}
+                  </div>
+                </section>
+              )}
 
               <section className="rounded-lg border border-slate-800 bg-slate-900/60">
                 <div className="border-b border-slate-800 px-4 py-3">
