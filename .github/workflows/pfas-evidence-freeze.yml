@@ -63,7 +63,17 @@ jobs:
               member = candidates[0]
               payload = zf.read(member)
 
-          text = payload.decode('utf-8-sig')
+          selected_encoding = None
+          for encoding in ('utf-8-sig', 'cp1252'):
+              try:
+                  text = payload.decode(encoding)
+                  selected_encoding = encoding
+                  break
+              except UnicodeDecodeError:
+                  continue
+          if selected_encoding is None:
+              raise SystemExit('authoritative UCMR5 member is not valid UTF-8 or CP1252')
+
           reader = csv.DictReader(text.splitlines(), delimiter='\t')
           if reader.fieldnames is None:
               raise SystemExit('UCMR5 state member has no header')
@@ -96,6 +106,7 @@ jobs:
               'archive_size_bytes': archive.stat().st_size,
               'archive_member_count': len(members),
               'selected_member': member,
+              'selected_member_encoding': selected_encoding,
               'selected_member_sha256': sha256_bytes(payload),
               'selected_member_size_bytes': len(payload),
               'headers': headers,
@@ -114,6 +125,7 @@ jobs:
           )
           print(json.dumps({
               'selected_member': member,
+              'selected_member_encoding': selected_encoding,
               'puerto_rico_row_count': len(rows),
               'puerto_rico_pws_count': len(pws_ids),
               'archive_sha256': manifest['archive_sha256'],
