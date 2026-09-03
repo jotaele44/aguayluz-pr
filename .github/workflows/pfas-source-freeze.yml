@@ -1,0 +1,130 @@
+name: PFAS Public Source Freeze
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  freeze-public-sources:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Freeze canonical public manifestations
+        shell: python
+        run: |
+          import hashlib
+          import json
+          import pathlib
+          import subprocess
+          from datetime import datetime, timezone
+
+          sources = [
+              (
+                  'EPA_PFAS_NPDWR_CURRENT_20260903',
+                  'https://www.epa.gov/sdwa/and-polyfluoroalkyl-substances-pfas',
+              ),
+              (
+                  'EPA_PFAS_RESCISSION_PROPOSED_20260518',
+                  'https://www.epa.gov/sdwa/proposed-pfas-rescission-rule',
+              ),
+              (
+                  'EPA_PFOA_PFOS_EXTENSION_PROPOSED_20260518',
+                  'https://www.epa.gov/sdwa/proposed-pfoa-and-pfos-compliance-extension-rule',
+              ),
+              (
+                  'PRASA_FY2024_CER',
+                  'https://docs.pr.gov/files/AAA/Nuestra%20AAA/Documentos/FY2024%20CER_Final.pdf',
+              ),
+              (
+                  'PRDOH_DWSRF_2022_BIL_GENERAL_SUPP_202405',
+                  'https://www.salud.pr.gov/CMS/DOWNLOAD/9479',
+              ),
+              (
+                  'NGB_PR_PFAS_LIBRARY',
+                  'https://www.nationalguard.mil/Leadership/Joint-Staff/Personal-Staff/Public-Affairs/Community-Engagement/Environmental/PFAS-Library/Puerto-Rico/',
+              ),
+              (
+                  'NGB_FORT_ALLEN_SI_FINAL_202212',
+                  'https://www.nationalguard.mil/Leadership/Joint-Staff/Personal-Staff/Public-Affairs/Community-Engagement/Environmental/PFAS-Library/Puerto-Rico/FileId/341918/',
+              ),
+              (
+                  'NAVFAC_VIEQUES_PFAS',
+                  'https://www.navfac.navy.mil/Divisions/Environmental/Products-and-Services/Environmental-Restoration/Atlantic/Vieques/PFAS-Investigation/',
+              ),
+          ]
+
+          root = pathlib.Path('artifacts/pfas_public_sources')
+          raw = root / 'raw'
+          raw.mkdir(parents=True, exist_ok=True)
+          rows = []
+          failures = []
+
+          for source_id, url in sources:
+              target = raw / f'{source_id}.bin'
+              headers = raw / f'{source_id}.headers.txt'
+              command = [
+                  'curl', '--fail', '--location', '--proto', '=https', '--tlsv1.2',
+                  '--retry', '3', '--retry-all-errors',
+                  '--silent', '--show-error',
+                  '--dump-header', str(headers),
+                  '--output', str(target),
+                  '--write-out', '%{url_effective}\n%{content_type}\n%{http_code}\n',
+                  url,
+              ]
+              proc = subprocess.run(command, text=True, capture_output=True)
+              if proc.returncode != 0 or not target.is_file() or target.stat().st_size == 0:
+                  failures.append({
+                      'source_record_id': source_id,
+                      'url': url,
+                      'returncode': proc.returncode,
+                      'stderr': proc.stderr[-1000:],
+                  })
+                  continue
+              output = proc.stdout.splitlines()
+              effective_url = output[0] if output else url
+              content_type = output[1] if len(output) > 1 else None
+              http_code = output[2] if len(output) > 2 else None
+              payload = target.read_bytes()
+              rows.append({
+                  'source_record_id': source_id,
+                  'requested_url': url,
+                  'effective_url': effective_url,
+                  'http_code': http_code,
+                  'content_type': content_type,
+                  'size_bytes': len(payload),
+                  'byte_sha256': hashlib.sha256(payload).hexdigest(),
+                  'retrieved_utc': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+                  'headers_file': headers.name,
+                  'raw_file': target.name,
+              })
+
+          manifest = {
+              'schema_version': 'aguayluz.pfas.public_source_freeze/v1',
+              'expected_source_count': len(sources),
+              'frozen_source_count': len(rows),
+              'failure_count': len(failures),
+              'sources': sorted(rows, key=lambda row: row['source_record_id']),
+              'failures': failures,
+          }
+          (root / 'manifest.json').write_text(
+              json.dumps(manifest, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          print(json.dumps(manifest, indent=2, sort_keys=True))
+          if failures:
+              raise SystemExit(f'{len(failures)} source manifestations could not be frozen')
+          if len(rows) != len(sources):
+              raise SystemExit('source manifestation arithmetic did not close')
+
+      - name: Upload public-source evidence bundle
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pfas-public-source-freeze
+          path: artifacts/pfas_public_sources
+          if-no-files-found: error
+          retention-days: 90
