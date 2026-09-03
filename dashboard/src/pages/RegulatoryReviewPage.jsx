@@ -256,7 +256,7 @@ export default function RegulatoryReviewPage() {
                             value={actor}
                             onChange={(e) => setActor(e.target.value)}
                             placeholder="Your name or identifier"
-                            className="mt-1 flex h-9 w-full rounded-md border border-slate-800 bg-slate-950/60 px-3 py-1 text-sm text-slate-200 placeholder:text-slate-600 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-500"
+                            className="mt-1 flex h-9 w-full rounded-md border border-slate-800 bg-slate-950/60 px-3 py-1 text-sm text-slate-200 placeholder:text-slate-600 focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-sky-500"
                           />
                         </div>
                         <div>
@@ -267,7 +267,7 @@ export default function RegulatoryReviewPage() {
                             onChange={(e) => setRationale(e.target.value)}
                             rows={3}
                             placeholder="Why this decision is correct"
-                            className="mt-1 flex w-full rounded-md border border-slate-800 bg-slate-950/60 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-600 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-500"
+                            className="mt-1 flex w-full rounded-md border border-slate-800 bg-slate-950/60 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-600 focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-sky-500"
                           />
                         </div>
                         <div className="flex flex-wrap gap-2">

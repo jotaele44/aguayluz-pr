@@ -180,7 +180,7 @@ export default function OverviewPage() {
             // than rendering a bare 0 that reads like a total outage.
             const untracked = sectors != null && (s.total ?? 0) === 0
             return (
-              <Link key={key} to={`/sector/${key}`} className={`block rounded-lg border ${meta.border} ${meta.bg} p-4 hover:brightness-110 transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-500/50 ${untracked ? 'opacity-60' : ''}`}>
+              <Link key={key} to={`/sector/${key}`} className={`block rounded-lg border ${meta.border} ${meta.bg} p-4 hover:brightness-110 transition-all focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-sky-500/50 ${untracked ? 'opacity-60' : ''}`}>
                 <div className="flex items-center gap-2 mb-3">
                   <meta.icon className={`h-4 w-4 ${meta.color}`} />
                   <span className={`text-xs font-semibold uppercase tracking-wider ${meta.color}`}>{meta.label}</span>
