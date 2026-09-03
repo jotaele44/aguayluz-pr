@@ -58,20 +58,12 @@ app.include_router(cave_karst_router)
 app.include_router(regulatory_router)
 app.include_router(environmental_exposure_router)
 
-READING_VECTOR_REGISTRY: dict[str, dict[str, Any]] = {
-    "reservoir": {"path": legacy.DATA / "reservoir_levels.jsonl", "metrics": {"reservoir_elevation": {"units": {"ft"}}, "reservoir_storage_pct": {"units": {"%"}}, "streamflow": {"units": {"ft3/s", "ft³/s"}}, "gage_height": {"units": {"ft"}}}, "metric_required": True},
-    "groundwater": {"path": legacy.DATA / "groundwater_levels.jsonl", "metrics": {"groundwater_level": {"units": {"ft"}}}, "metric_required": False},
-    "coastal": {"path": legacy.DATA / "coastal_levels.jsonl", "metrics": {"coastal_water_level": {"units": {"ft"}}}, "metric_required": False},
-    "drought": {"path": legacy.DATA / "drought_conditions.jsonl", "metrics": {"drought_category": {"units": {"category"}}}, "metric_required": False},
-    "precipitation": {"path": legacy.DATA / "precipitation_conditions.jsonl", "metrics": {"precipitation_pct_normal": {"units": {"%"}}}, "metric_required": False},
-    # Discrete USGS field measurements — the wells the Daily Values service cannot see.
-    "usgs_field_measurements": {"path": legacy.DATA / "usgs_field_measurements_readings.jsonl", "metrics": {"groundwater_level": {"units": {"ft"}}}, "metric_required": False},
-    # Annual peak flow, 1899->. `ft^3/s` is load-bearing and NOT a typo: the USGS OGC API
-    # publishes `unit_of_measure: "ft^3/s"` and ingest_usgs_peaks.py stores it verbatim, so
-    # a whitelist of only {"ft3/s","ft³/s"} silently drops all 4,104 streamflow peaks —
-    # _series_rows filters on exact unit membership. Regression-tested.
-    "usgs_peaks": {"path": legacy.DATA / "usgs_peaks_readings.jsonl", "metrics": {"streamflow": {"units": {"ft^3/s", "ft3/s", "ft³/s"}}, "gage_height": {"units": {"ft"}}}, "metric_required": True},
-}
+# Single source of truth: server.backend.main.READING_VECTOR_REGISTRY (see its definition
+# for the full reasoning). Referencing it here rather than keeping a second hand-maintained
+# copy is what closes the drift that previously left `neon` out of this module's vectors
+# while it stayed in `legacy.READINGS_FILES` — GET /readings?kind=neon 400'd on this app
+# (the one desktop/config.py actually serves) even though the data existed.
+READING_VECTOR_REGISTRY: dict[str, dict[str, Any]] = legacy.READING_VECTOR_REGISTRY
 
 # `utility_asset.asset_id` prefix -> the reading `kind`(s) whose `site_no` it identifies.
 # One physical USGS stream gage backs both the daily-values `reservoir` vector

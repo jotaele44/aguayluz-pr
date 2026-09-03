@@ -90,6 +90,23 @@ SERIES_METADATA_REGISTRY: dict[tuple[str, str], dict[str, Any]] = {
         "datum_required": True, "freshness_hours": None,
         "threshold": None,
     },
+    # NEON (docs/NEON_INTEGRATION.md): a research-observatory feed, not an operational one —
+    # no operator threshold exists for it. Its constituent products also publish on
+    # genuinely mixed cadences (continuous sensors alongside irregular field campaigns; see
+    # aguayluz.neon.mapping.IRREGULAR_CADENCE_PRODUCTS), so a single freshness SLA would be
+    # invented rather than derived from anything real. Treated as a reference series, like
+    # usgs_peaks above.
+    ("neon", "streamflow"): {
+        "kind": "neon", "unit": "m3/s",
+        "parameter_codes": ["DP4.00130.001", "DP1.20193.001", "DP1.20048.001"],
+        "datum_required": False, "freshness_hours": None,
+        "threshold": None,
+    },
+    ("neon", "gage_height"): {
+        "kind": "neon", "unit": "m", "parameter_codes": ["DP1.20016.001"],
+        "datum_required": True, "freshness_hours": None,
+        "threshold": None,
+    },
     # `drought` and `precipitation` were missing from this registry entirely — every
     # /readings request for either kind unconditionally called series_policy() below and
     # raised KeyError, which FastAPI turns into a connection-level failure rather than a
