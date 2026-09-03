@@ -6,8 +6,9 @@ are separate facts. No name/proximity-only evidence can establish causation.
 """
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Any, Iterable
+from typing import Any
 
 PFAS_SUBSTANCES = {
     "PFOA": {"cas": "335-67-1", "name": "perfluorooctanoic acid"},
@@ -83,7 +84,7 @@ def validate_binding(row: dict[str, Any]) -> None:
     state = str(row.get("evidence_state") or "")
     if state not in EVIDENCE_STATES:
         raise ValueError(f"unsupported evidence_state: {state}")
-    cardinality = str(row.get("identity_cardinality") or "UNRESOLVED")
+    cardinality = str(row.get("identity_cardinalityity") or row.get("identity_cardinality") or "UNRESOLVED")
     if cardinality not in IDENTITY_CARDINALITIES:
         raise ValueError(f"unsupported identity cardinality: {cardinality}")
     spatial = row.get("spatial_state")
