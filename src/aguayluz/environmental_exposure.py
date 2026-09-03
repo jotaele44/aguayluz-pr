@@ -237,3 +237,195 @@ def integrity_report(
         "structural_integrity_state": "PASS" if not errors and arithmetic_closes else "FAIL",
         "corpus_certification_state": "OPEN",
     }
+
+
+class _PFAS:
+    """Internal PFAS specialization of the environmental exposure plane."""
+
+    substances = {
+        "PFOA": {"cas": "335-67-1", "name": "perfluorooctanoic acid"},
+        "PFOS": {"cas": "1763-23-1", "name": "perfluorooctanesulfonic acid"},
+        "PFHxS": {"cas": "355-46-4", "name": "perfluorohexanesulfonic acid"},
+        "PFNA": {"cas": "375-95-1", "name": "perfluorononanoic acid"},
+        "HFPO-DA": {
+            "cas": "13252-13-6",
+            "name": "hexafluoropropylene oxide dimer acid",
+        },
+        "PFBS": {"cas": "375-73-5", "name": "perfluorobutanesulfonic acid"},
+    }
+    evidence_states = frozenset({
+        "MEASURED", "ALLEGED", "ASSOCIATED", "CANDIDATE", "ATTRIBUTED",
+        "ADJUDICATED", "CONTRADICTED", "EXCLUDED", "UNRESOLVED",
+    })
+    identity_cardinalities = frozenset({
+        "1:1", "1:N", "N:1", "N:N", "0:1", "UNRESOLVED",
+    })
+    spatial_states = frozenset({
+        "FULLY_WITHIN", "PARTIAL", "TOUCH_ONLY", "OUTSIDE", "NULL_EMPTY",
+        "UNRESOLVED",
+    })
+    discovery_only = frozenset({
+        "NAME_ONLY", "NORMALIZED_NAME_ONLY", "COUNT_EQUALITY", "NEAREST_ONLY",
+        "PROXIMITY_ONLY", "SAME_CATEGORY", "SOURCE_ABSENCE", "TEXT_SEARCH_ONLY",
+    })
+
+    @staticmethod
+    def normalize_ng_l(value: float, unit: str) -> float:
+        unit_norm = unit.strip().lower().replace("µ", "u")
+        if unit_norm in {"ng/l", "ppt"}:
+            return float(value)
+        if unit_norm in {"ug/l", "ppb"}:
+            return float(value) * 1000.0
+        raise ValueError(f"unsupported PFAS concentration unit: {unit}")
+
+    @classmethod
+    def validate_measurement(cls, row: dict[str, Any]) -> None:
+        analyte = str(row.get("analyte") or "")
+        if analyte not in cls.substances:
+            raise ValueError(f"unsupported canonical PFAS analyte: {analyte}")
+        if row.get("evidence_state") != "MEASURED":
+            raise ValueError("analytical observations must retain evidence_state=MEASURED")
+        if not row.get("source_record_id"):
+            raise ValueError("measurement requires source_record_id")
+        if not row.get("sample_date"):
+            raise ValueError("measurement requires sample_date")
+        sign = row.get("result_sign")
+        if sign not in {"=", "<"}:
+            raise ValueError("result_sign must be '=' or '<'")
+        value = row.get("result_value")
+        if sign == "=" and value is None:
+            raise ValueError("detected result requires numeric result_value")
+        if sign == "<" and value is not None:
+            raise ValueError("non-detect must not synthesize a numeric result_value")
+        if sign == "=" and not row.get("result_unit"):
+            raise ValueError("numeric result requires result_unit")
+
+    @classmethod
+    def validate_binding(cls, row: dict[str, Any]) -> None:
+        state = str(row.get("evidence_state") or "")
+        if state not in cls.evidence_states:
+            raise ValueError(f"unsupported evidence_state: {state}")
+        cardinality = str(row.get("identity_cardinality") or "UNRESOLVED")
+        if cardinality not in cls.identity_cardinalities:
+            raise ValueError(f"unsupported identity cardinality: {cardinality}")
+        spatial = row.get("spatial_state")
+        if spatial is not None and spatial not in cls.spatial_states:
+            raise ValueError(f"unsupported spatial_state: {spatial}")
+        evidence_classes = frozenset(str(v) for v in row.get("evidence_classes", []))
+        if (
+            state in {"ATTRIBUTED", "ADJUDICATED"}
+            and evidence_classes
+            and evidence_classes <= cls.discovery_only
+        ):
+            raise ValueError("attribution cannot be established from discovery-only evidence")
+        if state == "ADJUDICATED":
+            if cardinality == "UNRESOLVED":
+                raise ValueError("adjudicated binding requires resolved cardinality")
+            if row.get("contradictions"):
+                raise ValueError("adjudicated binding cannot retain open contradictions")
+            if not row.get("source_record_ids"):
+                raise ValueError("adjudicated binding requires source_record_ids")
+
+    @staticmethod
+    def current_rule(
+        rules: Iterable[dict[str, Any]], analyte: str, as_of: str
+    ) -> dict[str, Any] | None:
+        candidates = [
+            rule
+            for rule in rules
+            if rule.get("analyte") == analyte
+            and (
+                rule.get("effective_from") is None
+                or str(rule.get("effective_from")) <= as_of
+            )
+            and str(rule.get("legal_state") or "").startswith("IN_FORCE")
+        ]
+        if not candidates:
+            return None
+        return sorted(
+            candidates,
+            key=lambda rule: (
+                str(rule.get("effective_from") or ""),
+                str(rule.get("rule_id") or ""),
+            ),
+        )[-1]
+
+    @classmethod
+    def compare_measurement_to_rule(
+        cls,
+        measurement: dict[str, Any],
+        rule: dict[str, Any] | None,
+        *,
+        as_of: str,
+    ) -> dict[str, Any]:
+        cls.validate_measurement(measurement)
+        if rule is None or rule.get("value") is None:
+            return {"state": "NO_APPLICABLE_NUMERIC_RULE", "compliance_finding": False}
+        if measurement["result_sign"] == "<":
+            return {"state": "NONDETECT_NOT_COMPARABLE", "compliance_finding": False}
+        observed = cls.normalize_ng_l(
+            float(measurement["result_value"]), str(measurement["result_unit"])
+        )
+        threshold = cls.normalize_ng_l(float(rule["value"]), str(rule["unit"]))
+        return {
+            "state": "ABOVE_REFERENCE" if observed > threshold else "AT_OR_BELOW_REFERENCE",
+            "observed_ng_l": observed,
+            "threshold_ng_l": threshold,
+            "rule_id": rule.get("rule_id"),
+            "as_of": as_of,
+            "compliance_finding": False,
+            "note": "A single occurrence measurement is not an MCL compliance determination.",
+        }
+
+    @classmethod
+    def certification_report(
+        cls,
+        *,
+        source_manifestations: Iterable[dict[str, Any]],
+        measurements: Iterable[dict[str, Any]],
+        bindings: Iterable[dict[str, Any]],
+        unresolved_material: Iterable[str],
+    ) -> dict[str, Any]:
+        sources = list(source_manifestations)
+        observations = list(measurements)
+        binding_rows = list(bindings)
+        unresolved = sorted(set(str(v) for v in unresolved_material if str(v)))
+        errors: list[str] = []
+        source_ids = [str(row.get("source_record_id") or "") for row in sources]
+        if len(source_ids) != len(set(source_ids)):
+            errors.append("duplicate source_record_id")
+        for row in sources:
+            if (
+                not row.get("source_record_id")
+                or not row.get("url")
+                or not row.get("retrieved_utc")
+            ):
+                errors.append(
+                    f"incomplete source manifestation: {row.get('source_record_id')}"
+                )
+            if row.get("byte_sha256") is None:
+                unresolved.append(f"SOURCE_HASH_OPEN:{row.get('source_record_id')}")
+        for row in observations:
+            try:
+                cls.validate_measurement(row)
+            except ValueError as exc:
+                errors.append(str(exc))
+        for row in binding_rows:
+            try:
+                cls.validate_binding(row)
+            except ValueError as exc:
+                errors.append(str(exc))
+        unresolved = sorted(set(unresolved))
+        structural = "PASS" if not errors else "FAIL"
+        certification = "PASS" if structural == "PASS" and not unresolved else "OPEN"
+        return {
+            "source_count": len(sources),
+            "measurement_count": len(observations),
+            "binding_count": len(binding_rows),
+            "structural_state": structural,
+            "error_count": len(errors),
+            "errors": errors,
+            "unresolved_material_count": len(unresolved),
+            "unresolved_material": unresolved,
+            "certification_state": certification,
+        }
