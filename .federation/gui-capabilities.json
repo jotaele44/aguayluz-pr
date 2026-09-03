@@ -285,7 +285,9 @@
           "dashboard/src/pages/LiveLogsPage.jsx",
           "dashboard/src/pages/SystemPage.jsx",
           "dashboard/src/components/MonitoringCharts.jsx",
-          "dashboard/src/components/IncidentOperationsConsole.jsx"
+          "dashboard/src/components/IncidentOperationsConsole.jsx",
+          "dashboard/src/components/WaterMonitoringConsole.jsx",
+          "dashboard/src/lib/water-monitoring.js"
         ],
         "discoverability": [
           "dashboard/src/components/layout/Sidebar.jsx",
@@ -306,6 +308,9 @@
         ],
         "e2e": [
           "dashboard/tests/gui-parity.spec.mjs"
+        ],
+        "unit": [
+          "dashboard/src/lib/water-monitoring.test.js"
         ]
       }
     },

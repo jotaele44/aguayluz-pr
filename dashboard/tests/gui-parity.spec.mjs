@@ -149,6 +149,17 @@ for (const label of MONITORING_SERIES_LABELS) {
   });
 }
 
+test("water monitoring layer controls expose their fail-closed state", async ({ page }) => {
+  await page.goto("/monitoring", { waitUntil: "domcontentloaded" });
+
+  const watersheds = page.getByRole("button", { name: /Watersheds & catchments/i });
+  await expect(watersheds).toBeVisible();
+  await watersheds.click();
+
+  await expect(page.locator("#root")).toContainText("Watersheds & catchments");
+  await expect(page.locator("#root")).toContainText("NOT CERTIFIABLE YET");
+});
+
 // ── Severity rendering on /review ────────────────────────────────────────────
 //
 // Everything above is generated from the manifest and asserts reachability: the
