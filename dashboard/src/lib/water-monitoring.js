@@ -55,9 +55,9 @@ export const WATER_MONITORING_LAYERS = [
     note: 'No exhaustive public DRNA permit/franchise rowset is bound. Physical-well GIS cannot substitute for legal authorization identity.',
   },
   {
-    key: 'quality', label: 'Water quality', state: 'PARTIAL', seriesStatus: 'OPEN', geometryStatus: 'PARTIAL',
-    series: [], assetSubtypes: ['groundwater_well'], geometry: 'station',
-    note: 'USGS/NEON adapters exist, but analyte parameter_code + unit identities require a dedicated frontend contract before mixed water-quality charting is safe.',
+    key: 'quality', label: 'Water quality', state: 'PARTIAL', seriesStatus: 'PARTIAL', geometryStatus: 'PARTIAL',
+    series: ['water_quality'], assetSubtypes: ['groundwater_well'], geometry: 'station',
+    note: 'USGS/NEON adapters exist. Exact parameter_code + unit + site identity is now enforced; backend publication of all mixed-analyte corpora remains open.',
   },
 ]
 
@@ -103,6 +103,46 @@ export function filterLayerAssetGeojson(geojson, layer) {
     // from multiple rows and never invent geometry for a missing source feature.
     features: features.filter((feature) => allowed.has(feature?.properties?.asset_subtype)),
   }
+}
+
+export function waterQualityIdentity(reading = {}) {
+  const site = String(reading.site_no ?? '').trim()
+  const parameter = String(reading.parameter_code ?? '').trim()
+  const unit = String(reading.unit ?? '').trim()
+  if (!site || !parameter || !unit || reading.metric !== 'water_quality') return null
+  return `${site}|${parameter}|${unit}`
+}
+
+export function partitionWaterQualityReadings(readings = []) {
+  const groups = new Map()
+  const rejected = []
+  for (const reading of readings) {
+    const identity = waterQualityIdentity(reading)
+    if (!identity) {
+      rejected.push(reading)
+      continue
+    }
+    if (!groups.has(identity)) groups.set(identity, [])
+    groups.get(identity).push(reading)
+  }
+  return { groups, rejected }
+}
+
+export function selectWaterQualitySeries(readings = [], { siteNo, parameterCode, unit } = {}) {
+  if (!siteNo || !parameterCode || !unit) return []
+  return readings.filter((reading) => (
+    reading.metric === 'water_quality'
+    && String(reading.site_no ?? '') === String(siteNo)
+    && String(reading.parameter_code ?? '') === String(parameterCode)
+    && String(reading.unit ?? '') === String(unit)
+  ))
+}
+
+export function assertSingleWaterQualityIdentity(readings = []) {
+  const { groups, rejected } = partitionWaterQualityReadings(readings)
+  if (rejected.length) throw new Error('Water-quality reading missing site/parameter/unit identity')
+  if (groups.size > 1) throw new Error('Mixed water-quality identities cannot be charted together')
+  return true
 }
 
 export function assertWaterMonitoringLayerRegistry(layers = WATER_MONITORING_LAYERS) {
