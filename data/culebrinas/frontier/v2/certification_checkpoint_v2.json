@@ -1,0 +1,49 @@
+{
+  "checkpoint_id": "CULEBRINAS_FRONTIER_GEOMETRIC_EXPERIMENTAL_v2",
+  "issued_utc": "2026-09-03T16:36:02.399310+00:00",
+  "baseline_reused": "CULEBRINAS_SCIENTIFIC_FRONTIER_CERTIFIED_v1",
+  "scope": {
+    "certified_claim": "The bounded Culebrinas frontier research site, field/evidence architecture, hypotheses H1-H5, and deployable acquisition design are internally consistent, provenance-separated, and ready for canonical-data rescue and field execution.",
+    "not_certified": [
+      "Exact authoritative Culebrinas aquifer polygon",
+      "Complete public/private subsurface census",
+      "Measured KVI",
+      "Experimental truth/falsification result for H1-H5",
+      "Universal PR-wide maximum claim"
+    ]
+  },
+  "states": {
+    "baseline_v1": "PASS_REUSED",
+    "canonical_service_binding": "PASS_SERVICE_ONLY",
+    "authoritative_aquifer_geometry": "BLOCKED_FEATURE_EXTRACTION",
+    "field_deployment_package": "CERTIFIED_DESIGN",
+    "federation_contract": "DEPLOYED_ON_BRANCH",
+    "known_public_observations_ingested": "PASS_BOUNDED",
+    "new_field_observations": "BLOCKED_NOT_COLLECTED",
+    "kvi_readiness_percent": 0.0,
+    "kvi_measured": "BLOCKED_NO_FIELD_DATA",
+    "H1": "OPEN_UNTESTED",
+    "H2": "OPEN_UNTESTED",
+    "H3": "OPEN_PENDING_SEISMIC_INTERPRETATION",
+    "H4": "OPEN_UNTESTED",
+    "H5": "OPEN_UNTESTED",
+    "geometric_experimental_certification": "OPEN_BLOCKED"
+  },
+  "blocking_evidence": [
+    "SIGE exact aquifer feature/GlobalID not extracted",
+    "USACE boring coordinates/logs incomplete in package",
+    "UPRM 2026 interpretation not available",
+    "No new nested groundwater monitoring",
+    "No repeated river gain/loss measurements",
+    "No direct fresh/salt interface campaign",
+    "No >=2-method SGD campaign"
+  ],
+  "invariants": {
+    "gpkg_integrity": "ok",
+    "observed_proposed_separated": true,
+    "raw_normalized_canonical_separated": true,
+    "measured_kvi_not_synthesized": true,
+    "identity_by_proximity_prohibited": true,
+    "field_observation_layer_rows": 0
+  }
+}
