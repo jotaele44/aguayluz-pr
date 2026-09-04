@@ -2,11 +2,15 @@ import { describe, expect, it } from 'vitest'
 import {
   EXTRACTION_STATUSES,
   WATER_MONITORING_LAYERS,
+  assertSingleWaterQualityIdentity,
   assertWaterMonitoringLayerRegistry,
   classifyExtractionRecord,
   filterLayerAssetGeojson,
   filterLayerAssetRows,
   isCertifiableLayer,
+  partitionWaterQualityReadings,
+  selectWaterQualitySeries,
+  waterQualityIdentity,
 } from './water-monitoring'
 
 describe('water monitoring contracts', () => {
@@ -27,7 +31,7 @@ describe('water monitoring contracts', () => {
     expect(classifyExtractionRecord({ permit_status: 'active', identity_binding: 'authoritative', permit_id: 'P-1' })).toBe('AUTHORIZED')
   })
 
-  it('keeps planned and partial layers outside the certifiable set', () => {
+  it('keeps non-PASS layers outside the certifiable set', () => {
     const certifiable = WATER_MONITORING_LAYERS.filter(isCertifiableLayer).map((layer) => layer.key)
     expect(certifiable).toEqual(['rivers', 'reservoirs', 'rainfall', 'groundwater', 'coastal'])
   })
@@ -52,6 +56,41 @@ describe('water monitoring contracts', () => {
     const watersheds = WATER_MONITORING_LAYERS.find((layer) => layer.key === 'watersheds')
     expect(filterLayerAssetGeojson(null, watersheds)).toEqual({ type: 'FeatureCollection', features: [] })
     expect(filterLayerAssetRows([{ asset_id: 'x', asset_subtype: 'stream_gage' }], watersheds)).toEqual([])
+  })
+
+  it('requires site + parameter_code + unit for a water-quality identity', () => {
+    expect(waterQualityIdentity({ metric: 'water_quality', site_no: '1', parameter_code: '00618', unit: 'mg/L' })).toBe('1|00618|mg/L')
+    expect(waterQualityIdentity({ metric: 'water_quality', site_no: '1', unit: 'mg/L' })).toBeNull()
+    expect(waterQualityIdentity({ metric: 'streamflow', site_no: '1', parameter_code: '00618', unit: 'mg/L' })).toBeNull()
+  })
+
+  it('preserves complete water-quality identity groups and rejects incomplete rows', () => {
+    const a = { metric: 'water_quality', site_no: '1', parameter_code: '00618', unit: 'mg/L', value: 1 }
+    const b = { metric: 'water_quality', site_no: '1', parameter_code: '00618', unit: 'mg/L', value: 2 }
+    const c = { metric: 'water_quality', site_no: '1', parameter_code: '01045', unit: 'ug/L', value: 3 }
+    const bad = { metric: 'water_quality', site_no: '1', parameter_code: '00618', value: 4 }
+    const { groups, rejected } = partitionWaterQualityReadings([a, b, c, bad])
+    expect([...groups.keys()]).toEqual(['1|00618|mg/L', '1|01045|ug/L'])
+    expect(groups.get('1|00618|mg/L')).toEqual([a, b])
+    expect(rejected).toEqual([bad])
+  })
+
+  it('never mixes analytes or units in a selected water-quality series', () => {
+    const readings = [
+      { metric: 'water_quality', site_no: '1', parameter_code: '00618', unit: 'mg/L', value: 1 },
+      { metric: 'water_quality', site_no: '1', parameter_code: '00618', unit: 'ug/L', value: 1000 },
+      { metric: 'water_quality', site_no: '1', parameter_code: '01045', unit: 'mg/L', value: 2 },
+      { metric: 'water_quality', site_no: '2', parameter_code: '00618', unit: 'mg/L', value: 3 },
+    ]
+    expect(selectWaterQualitySeries(readings, { siteNo: '1', parameterCode: '00618', unit: 'mg/L' })).toEqual([readings[0]])
+    expect(selectWaterQualitySeries(readings, { siteNo: '1', parameterCode: '00618' })).toEqual([])
+  })
+
+  it('fails a chart certification gate when identities are mixed or incomplete', () => {
+    const one = [{ metric: 'water_quality', site_no: '1', parameter_code: '00618', unit: 'mg/L', value: 1 }]
+    expect(assertSingleWaterQualityIdentity(one)).toBe(true)
+    expect(() => assertSingleWaterQualityIdentity([...one, { ...one[0], parameter_code: '01045' }])).toThrow(/Mixed water-quality identities/)
+    expect(() => assertSingleWaterQualityIdentity([{ ...one[0], unit: '' }])).toThrow(/missing site\/parameter\/unit/)
   })
 
   it('has a valid unique registry and unique extraction state codes', () => {
