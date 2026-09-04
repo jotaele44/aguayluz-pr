@@ -1,0 +1,33 @@
+{
+  "schema_version": "federation_capability_v1",
+  "capability_id": "aguayluz.water_monitoring",
+  "program_id": "aguayluz-pr",
+  "route": "/monitoring",
+  "federation_role": "water_grid_monitoring_node",
+  "haf_contract": ".federation/haf_contract.json",
+  "certification_required": true,
+  "certification_state": "PROVISIONAL",
+  "fail_closed": true,
+  "source_registry": "config/water_monitoring_sources.json",
+  "layer_registry": "config/water_monitoring_layers.json",
+  "snapshot_command": "python scripts/snapshot_water_monitoring_sources.py",
+  "topology_command": "python scripts/build_water_monitoring_topology.py --stations <frozen-stations.geojson> --watersheds <frozen-watersheds.geojson> --output <topology.json>",
+  "certifiable_live_layers": ["rivers", "reservoirs", "rainfall", "groundwater", "coastal"],
+  "noncertified_layers": {
+    "watersheds": "OPEN_FROZEN_SNAPSHOT_AND_TOPOLOGY",
+    "extraction": "BLOCKED_DRNA_AUTHORIZATION_ROWSET",
+    "water_quality": "PARTIAL_PARAMETER_UNIT_FRONTEND_CONTRACT"
+  },
+  "prohibited_identity_evidence": [
+    "NAME_ONLY",
+    "NORMALIZED_NAME_ONLY",
+    "COUNT_EQUALITY",
+    "NEAREST_ONLY",
+    "PROXIMITY_ONLY",
+    "SAME_CATEGORY",
+    "SOURCE_ABSENCE"
+  ],
+  "allowed_cardinalities": ["1:1", "1:N", "N:1", "N:N", "0:1", "UNRESOLVED"],
+  "spatial_states": ["FULLY_WITHIN", "PARTIAL", "TOUCH_ONLY", "OUTSIDE", "NULL_EMPTY", "UNRESOLVED"],
+  "merge_gate": "Certification remains PROVISIONAL while any noncertified_layers entry is material to the claimed complete scope."
+}
