@@ -1,0 +1,63 @@
+{
+  "schema_version": "water_monitoring_source_registry_v1",
+  "scope": "Puerto Rico water monitoring",
+  "snapshot_policy": "Mutable sources are versioned by retrieval UTC and raw-byte SHA256. Downstream retries reuse an existing snapshot unless a new snapshot is explicitly requested.",
+  "sources": [
+    {
+      "source_id": "sige_pr_watersheds_0",
+      "authority": "Puerto Rico Planning Board SIGE / MiPR",
+      "role": "watershed_geometry",
+      "service": "MIPR/Geologia_v10_N",
+      "layer": 0,
+      "layer_name": "Cuencas Hidrográficas",
+      "url": "https://sige.pr.gov/server/rest/services/MIPR/Geologia_v10_N/MapServer/0",
+      "query": {"where": "1=1", "outFields": "*", "returnGeometry": true, "outSR": 4326, "f": "geojson"},
+      "source_crs": "EPSG:32161",
+      "geometry_type": "Polygon",
+      "stable_id_candidates": ["GlobalID", "CUENCA_ID"],
+      "mutable": true,
+      "snapshot_state": "OPEN"
+    },
+    {
+      "source_id": "sige_pr_jca_drinking_wells_20",
+      "authority": "Puerto Rico Planning Board SIGE / JCA source manifestation",
+      "role": "physical_well_candidate_geometry",
+      "service": "MIPR/ValorEcologico_v10_N",
+      "layer": 20,
+      "layer_name": "Pozos Agua Potable JCA",
+      "url": "https://sige.pr.gov/server/rest/services/MIPR/ValorEcologico_v10_N/FeatureServer/20",
+      "query": {"where": "1=1", "outFields": "*", "returnGeometry": true, "outSR": 4326, "f": "geojson"},
+      "source_crs": "EPSG:32161",
+      "geometry_type": "Point",
+      "identity_scope": "physical/source candidate only; not a DRNA permit or franchise identity",
+      "mutable": true,
+      "snapshot_state": "OPEN"
+    },
+    {
+      "source_id": "sige_pr_aaa_wells_21",
+      "authority": "Puerto Rico Planning Board SIGE / AAA source manifestation",
+      "role": "physical_well_candidate_geometry",
+      "service": "MIPR/ValorEcologico_v10_N",
+      "layer": 21,
+      "layer_name": "Pozo AAA",
+      "url": "https://sige.pr.gov/server/rest/services/MIPR/ValorEcologico_v10_N/FeatureServer/21",
+      "query": {"where": "1=1", "outFields": "*", "returnGeometry": true, "outSR": 4326, "f": "geojson"},
+      "source_crs": "EPSG:32161",
+      "geometry_type": "Point",
+      "identity_scope": "physical/source candidate only; not a DRNA permit or franchise identity",
+      "mutable": true,
+      "snapshot_state": "OPEN"
+    },
+    {
+      "source_id": "drna_water_permits_franchises",
+      "authority": "Puerto Rico Department of Natural and Environmental Resources (DRNA)",
+      "role": "authorization_and_extraction_legal_state",
+      "url": "https://www.drna.pr.gov/",
+      "query": null,
+      "identity_scope": "authoritative permit, water-franchise, and enforcement records",
+      "mutable": true,
+      "snapshot_state": "BLOCKED",
+      "blocker": "No exhaustive machine-readable public permit/franchise rowset has been authoritatively identified in the current bounded discovery. Public physical-well GIS layers do not substitute for authorization records."
+    }
+  ]
+}
