@@ -1,5 +1,5 @@
 export const WATER_LAYER_STATES = ['AVAILABLE', 'PARTIAL', 'PLANNED', 'BLOCKED']
-export const READINESS_STATES = ['PASS', 'OPEN', 'BLOCKED', 'NOT_APPLICABLE']
+export const READINESS_STATES = ['PASS', 'PARTIAL', 'OPEN', 'BLOCKED', 'NOT_APPLICABLE']
 
 export const EXTRACTION_STATUSES = [
   'AUTHORIZED',
@@ -16,7 +16,7 @@ export const EXTRACTION_STATUSES = [
 export const MONITORING_ALERT_STATES = ['NORMAL', 'WATCH', 'WARNING', 'CRITICAL', 'UNKNOWN', 'STALE']
 
 // Geometry bindings are explicit source manifestations already materialized in the
-// canonical AguaYLuz asset plane.  No name, proximity, count, or category heuristic
+// canonical AguaYLuz asset plane. No name, proximity, count, or category heuristic
 // may create an asset↔monitoring identity.
 export const WATER_MONITORING_LAYERS = [
   {
@@ -50,14 +50,14 @@ export const WATER_MONITORING_LAYERS = [
     note: 'Authoritative SIGE watershed geometry is known, but the frozen polygon snapshot and station topology ledger must close first.',
   },
   {
-    key: 'extraction', label: 'Water extraction', state: 'PLANNED', seriesStatus: 'OPEN', geometryStatus: 'OPEN',
+    key: 'extraction', label: 'Water extraction', state: 'BLOCKED', seriesStatus: 'OPEN', geometryStatus: 'OPEN',
     series: [], assetSubtypes: [], geometry: 'point_or_polygon',
-    note: 'DRNA permit/franchise identity and physical-well geometry must be independently bound before legal-state classification.',
+    note: 'No exhaustive public DRNA permit/franchise rowset is bound. Physical-well GIS cannot substitute for legal authorization identity.',
   },
   {
-    key: 'quality', label: 'Water quality', state: 'PLANNED', seriesStatus: 'OPEN', geometryStatus: 'OPEN',
-    series: [], assetSubtypes: [], geometry: 'station',
-    note: 'No metric is exposed until an authoritative source adapter, unit contract, station identity, and geometry contract pass.',
+    key: 'quality', label: 'Water quality', state: 'PARTIAL', seriesStatus: 'OPEN', geometryStatus: 'PARTIAL',
+    series: [], assetSubtypes: ['groundwater_well'], geometry: 'station',
+    note: 'USGS/NEON adapters exist, but analyte parameter_code + unit identities require a dedicated frontend contract before mixed water-quality charting is safe.',
   },
 ]
 
