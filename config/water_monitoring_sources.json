@@ -92,6 +92,29 @@
       "snapshot_state": "DISCOVERED"
     },
     {
+      "source_id": "sige_drna_protected_folder",
+      "authority": "Puerto Rico SIGE / DRNA",
+      "role": "candidate_authoritative_gis_namespace",
+      "url": "https://sige.pr.gov/server/rest/services/DRNA",
+      "identity_scope": "candidate DRNA GIS namespace; contents not anonymously enumerable in the bounded discovery",
+      "mutable": true,
+      "snapshot_state": "BLOCKED",
+      "blocker": "SIGE root directory lists the DRNA folder, but anonymous navigation redirects to the SIGE login surface. No layer names or rowsets inside the protected folder are asserted."
+    },
+    {
+      "source_id": "sige_mipr_permisos_super_sip_environmental_5",
+      "authority": "Puerto Rico Planning Board SIGE / historical permitting systems",
+      "role": "permit_discovery_candidate",
+      "service": "MIPR/Permisos",
+      "layer": 5,
+      "layer_name": "Permisos Ambientales (SuperSip)",
+      "url": "https://sige.pr.gov/server/rest/services/MIPR/Permisos/MapServer/5",
+      "declared_fields": ["Caso", "Siglas", "NomProy", "Estado", "Adjud", "Catastro", "Municipio", "Agencia", "Categoria", "Tramite", "Radicado", "F_Estado", "CorePermit"],
+      "identity_scope": "general environmental-permit discovery candidate only; not proven complete for DPFA well permits or water franchises",
+      "mutable": true,
+      "snapshot_state": "CANDIDATE_NOT_IDENTITY"
+    },
+    {
       "source_id": "drna_water_permits_franchises",
       "authority": "Puerto Rico Department of Natural and Environmental Resources (DRNA)",
       "role": "authorization_and_extraction_legal_state",
@@ -101,7 +124,7 @@
       "identity_scope": "authoritative issued permit, water-franchise, acquired-right, transfer/amendment, revocation/expiration, and enforcement records",
       "mutable": true,
       "snapshot_state": "BLOCKED",
-      "blocker": "Bounded official-source discovery located the competent DPFA office, governing regulation, and application schemas (FA-03/FA-09), but no exhaustive public machine-readable issued permit/franchise rowset or complete decision ledger was identified. Forms and physical-well GIS are source/schema evidence only and cannot prove authorization status."
+      "blocker": "Bounded official-source discovery located the competent DPFA office, governing regulation, application schemas (FA-03/FA-09), a protected SIGE DRNA namespace, and general historical permit discovery layers, but no exhaustive public machine-readable issued DPFA permit/franchise rowset or complete decision ledger was identified. Forms, general permit layers, and physical-well GIS cannot by themselves prove authorization status."
     }
   ]
 }
