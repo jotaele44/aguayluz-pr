@@ -3,6 +3,15 @@
   "repo": "aguayluz-pr",
   "central_baseline": "2026-08-31",
   "central_governance_pr": 218,
-  "disposition": "COMPATIBLE",
-  "contracts": ["repo_federation_manifest@1", "federation_export_manifest@1"]
+  "disposition": "ATTESTED",
+  "contracts": [
+    "repo_federation_manifest@1",
+    "federation_export_manifest@1",
+    "federation_cell_index@1",
+    "cell_domain_summary@1",
+    "record_cell_binding@1",
+    "cell_profile@1"
+  ],
+  "spatial_generation": "federation-spatial-index/1",
+  "spatial_note": "Compatible with the federation spatial index generation. This repository consumes the canonical Cell_ID address space and publishes no geometry of its own; its CELL_PROFILE index lands in a later wave."
 }
