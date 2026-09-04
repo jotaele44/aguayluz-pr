@@ -49,15 +49,59 @@
       "snapshot_state": "OPEN"
     },
     {
+      "source_id": "drna_dpfa_authority",
+      "authority": "Puerto Rico Department of Natural and Environmental Resources (DRNA), Division de Permisos y Franquicias de Agua",
+      "role": "authorization_system_authority",
+      "url": "https://www.drna.pr.gov/oficinas/division-de-franquicias-y-permisos-de-agua/",
+      "regulatory_basis": [
+        "Ley Núm. 136 de 3 de junio de 1976, según enmendada",
+        "Reglamento 6213 para el Aprovechamiento, Uso, Conservación y Administración de las Aguas de Puerto Rico"
+      ],
+      "identity_scope": "authoritative description of the office that evaluates well permits and water-franchise applications; not a permit-holder rowset",
+      "mutable": true,
+      "snapshot_state": "DISCOVERED"
+    },
+    {
+      "source_id": "drna_fa03_well_intake_permit_application",
+      "authority": "Puerto Rico Department of Natural and Environmental Resources (DRNA)",
+      "role": "permit_schema_semantics",
+      "form_code": "FA-03",
+      "url": "https://www.drna.pr.gov/documentos/formularios/fa-03-hoja-de-cotejo-y-requisitos-para-la-solicitud-de-permiso-de-construccion-de-pozo-o-toma-de-agua/",
+      "identity_scope": "application requirements/schema only; an application or blank form is not an issued permit",
+      "mutable": true,
+      "snapshot_state": "DISCOVERED"
+    },
+    {
+      "source_id": "drna_fa09_water_franchise_application",
+      "authority": "Puerto Rico Department of Natural and Environmental Resources (DRNA)",
+      "role": "franchise_schema_semantics",
+      "form_code": "FA-09",
+      "url": "https://www.drna.pr.gov/documentos/formularios/fa-09-solicitud-de-franquicia-para-el-aprovechamiento-y-uso-de-aguas-de-puerto-rico/",
+      "declared_fields": ["petitioner", "franchise_holder", "well_location", "withdrawal_quantity", "withdrawal_method"],
+      "identity_scope": "application requirements/schema only; an application or blank form is not an issued franchise",
+      "mutable": true,
+      "snapshot_state": "DISCOVERED"
+    },
+    {
+      "source_id": "drna_reg6213_water_authorization_semantics",
+      "authority": "Puerto Rico Department of Natural and Environmental Resources (DRNA)",
+      "role": "regulatory_semantics",
+      "url": "https://www.drna.pr.gov/historico/biblioteca/reglamentos_folder/Reg6213.pdf",
+      "identity_scope": "defines permit/franchise requirements and legal semantics; not an issued-authorization rowset",
+      "mutable": false,
+      "snapshot_state": "DISCOVERED"
+    },
+    {
       "source_id": "drna_water_permits_franchises",
       "authority": "Puerto Rico Department of Natural and Environmental Resources (DRNA)",
       "role": "authorization_and_extraction_legal_state",
       "url": "https://www.drna.pr.gov/",
       "query": null,
-      "identity_scope": "authoritative permit, water-franchise, and enforcement records",
+      "required_record_types": ["issued_well_or_intake_permit", "issued_water_franchise", "recognized_acquired_right", "transfer_or_amendment", "revocation_or_expiration", "enforcement_or_adjudicative_finding"],
+      "identity_scope": "authoritative issued permit, water-franchise, acquired-right, transfer/amendment, revocation/expiration, and enforcement records",
       "mutable": true,
       "snapshot_state": "BLOCKED",
-      "blocker": "No exhaustive machine-readable public permit/franchise rowset has been authoritatively identified in the current bounded discovery. Public physical-well GIS layers do not substitute for authorization records."
+      "blocker": "Bounded official-source discovery located the competent DPFA office, governing regulation, and application schemas (FA-03/FA-09), but no exhaustive public machine-readable issued permit/franchise rowset or complete decision ledger was identified. Forms and physical-well GIS are source/schema evidence only and cannot prove authorization status."
     }
   ]
 }
