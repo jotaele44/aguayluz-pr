@@ -1,0 +1,60 @@
+{
+  "schema_version": "aguayluz.culebrinas-field-operator-packet/v1.0",
+  "packet_mode": "shadow_only_until_experimental_certification",
+  "timezone_contract": "UTC",
+  "canonical_geometry_required_for_new_station_binding": true,
+  "field_access": {
+    "authorization_required": true,
+    "qualified_crew_required": true,
+    "site_specific_safety_plan_required": true,
+    "no_private_property_entry_without_permission": true,
+    "no_water_entry_or_boating_without_separate_authorization": true,
+    "no_drilling_or_electrode_installation_without_permission": true
+  },
+  "authoritative_existing_controls": {
+    "USGS-50147800": {"role": "surface_water_control", "name": "Rio Culebrinas at Hwy 404", "identity_state": "PASS_STABLE_ID"},
+    "USGS-50148890": {"role": "surface_water_control", "name": "Rio Culebrinas at Margarita Damsite", "identity_state": "PASS_STABLE_ID"},
+    "USGS-182252067115800": {"role": "groundwater_control", "name": "Aguada 1", "identity_state": "PASS_STABLE_ID", "local_aquifer_code": "110RCBV"}
+  },
+  "proposed_station_policy": {
+    "coordinates_before_survey": null,
+    "state": "PROPOSED_NOT_OBSERVED",
+    "binding_requires": ["canonical_aquifer_geometry", "survey_control", "access_authorization", "stable_station_id"]
+  },
+  "campaigns": {
+    "H1": ["nested_head", "specific_conductance", "water_temperature", "major_ions", "delta18O", "delta2H", "ERT_TEM"],
+    "H2": ["ERT_TEM", "boring_log_ground_truth", "slug_or_pumping_test"],
+    "H3": ["UPRM_2026_seismic_interpretation", "cross_structure_head", "cross_structure_chemistry", "hydraulic_test"],
+    "H4": ["nested_EC_profile", "TEM_or_EM", "tide_stage"],
+    "H5": ["coastal_temperature_salinity", "radon_or_radium", "seepage_or_independent_flux_method"]
+  },
+  "required_packet_files": [
+    "packet_manifest.json",
+    "observations.csv",
+    "instrument_calibrations.csv",
+    "chain_of_custody.csv",
+    "station_manifest.csv",
+    "file_manifest.csv"
+  ],
+  "kvi_readiness_gates": [
+    "canonical_aquifer_feature_bound",
+    "subsurface_census_closed",
+    "usace_boring_geometry_closed",
+    "uprm_seismic_interpretation_recovered",
+    "head_ec_network_complete",
+    "gain_loss_repeated",
+    "fresh_salt_directly_observed",
+    "sgd_two_independent_methods",
+    "qa_qc_closed",
+    "withheld_validation_set_defined"
+  ],
+  "preserve": {
+    "raw_strings": true,
+    "raw_files": true,
+    "raw_crs": true,
+    "observed_modelled_inferred_separate": true,
+    "no_proximity_identity": true,
+    "no_synthetic_kvi": true,
+    "fail_closed": true
+  }
+}
