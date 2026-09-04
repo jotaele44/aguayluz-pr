@@ -1,0 +1,42 @@
+{
+  "admission": {
+    "candidate_only_geometry_residue": "NONZERO_OR_NOT_YET_COMPUTABLE",
+    "canonical_geometry_denominator": "OPEN",
+    "canonical_identity_denominator": "OPEN",
+    "consumer_fallback_to_latest": false,
+    "consumer_may_recompute_geometry": false,
+    "immutable_input_pin": "PASS",
+    "producer_materialization": "BLOCKED_EXTERNAL_ACTIONS_RUNNER_NOT_ASSIGNED",
+    "runtime_activation": false
+  },
+  "consumer_repo": "aguayluz-pr",
+  "consumer_source_head": "3678271a03e36375dc3e9f2fb4da0b6b655622bd",
+  "expected_contract": {
+    "expected_cross_source_identity_promotions": 0,
+    "expected_gnis_source_identity_nodes": 148,
+    "expected_sige_manifestation_nodes": 29,
+    "geometry_release_schema": "spiderweb.canonical-geometry-release.v0.3",
+    "identity_graph_schema": "spiderweb.archipelago.identity-graph.v0.3",
+    "offshore_classifier_schema": "spiderweb.offshore-classifier.v0.3"
+  },
+  "pin_kind": "EXACT_IMMUTABLE_BLOCKED_CANDIDATE",
+  "producer_branch": "feat/archipelago-identity-v0-3",
+  "producer_commit_sha": "3440996569d977069f782a4755f686dfcab818ba",
+  "producer_repo": "spiderweb-pr",
+  "producer_source_baseline_sha": "f46546ef24c7dc2164b3f203d1af57e7d2570219",
+  "release_id": "spiderweb.pr-archipelago.identity-graph.v0.3-candidate",
+  "required_before_activation": [
+    "producer materialization at exact pinned commit succeeds against exact snapshot SHA256",
+    "canonical identity denominator closed",
+    "canonical geometry denominator closed",
+    "zero identity, geometry, duplicate, and candidate-only residue",
+    "source and retained/excluded arithmetic closed",
+    "consumer verifies exact release logical and byte hashes",
+    "consumer-specific cardinality and no-loss/no-multiplication regressions pass"
+  ],
+  "reviewed_bootstrap_payload_sha256": "b56be1796daf9901db04d5b16072876213716408e307e2636639d8fcf54a993d",
+  "schema_version": "federation.spiderweb-geometry-release-pin.v0.3",
+  "source_release_tag": "pr-archipelago-freeze-2026-08-22",
+  "source_snapshot_asset": "pr-archipelago-current-snapshot.zip",
+  "source_snapshot_sha256": "6e8a29fc87178264584c5e88add8ac63d8e0e9a72b9f05f63795c6edec2c92e4"
+}
