@@ -1,16 +1,16 @@
 {
-  "version": 1,
+  "version": 2,
   "scope": "Puerto Rico water monitoring console",
   "certification_state": "PROVISIONAL",
   "layers": [
-    {"key":"rivers","state":"AVAILABLE","authoritative_sources":["USGS NWIS"],"required_gates":["site_id","metric","unit","timestamp","freshness","geometry"]},
-    {"key":"reservoirs","state":"AVAILABLE","authoritative_sources":["USGS NWIS","AAA operational reporting"],"required_gates":["site_id","metric","unit","datum","timestamp","freshness","cross_source_semantics"]},
-    {"key":"rainfall","state":"AVAILABLE","authoritative_sources":["NOAA NCEI"],"required_gates":["station_id","accumulation_window","metric","unit","timestamp","freshness"]},
-    {"key":"groundwater","state":"AVAILABLE","authoritative_sources":["USGS NWIS"],"required_gates":["well_id","metric","unit","datum","timestamp","geometry"]},
-    {"key":"coastal","state":"AVAILABLE","authoritative_sources":["NOAA CO-OPS"],"required_gates":["station_id","metric","unit","datum","timestamp","freshness"]},
-    {"key":"watersheds","state":"PARTIAL","authoritative_sources":["Puerto Rico SIGE/MiPR"],"required_gates":["stable_geometry_id","crs","geometry_validity","station_topology_binding"]},
-    {"key":"extraction","state":"PLANNED","authoritative_sources":["DRNA permits","DRNA water franchises","authoritative enforcement records"],"required_gates":["physical_well_identity","permit_identity","franchise_identity","operator_identity","geometry","temporal_validity","legal_state_evidence"]},
-    {"key":"water_quality","state":"PLANNED","authoritative_sources":[],"required_gates":["source_registry","parameter_identity","unit","method","qa_flag","timestamp","geometry"]}
+    {"key":"rivers","state":"AVAILABLE","series_status":"PASS","geometry_status":"PASS","asset_subtypes":["stream_gage"],"authoritative_sources":["USGS NWIS"],"required_gates":["site_id","metric","unit","timestamp","freshness","geometry"]},
+    {"key":"reservoirs","state":"AVAILABLE","series_status":"PASS","geometry_status":"PASS","asset_subtypes":["reservoir"],"authoritative_sources":["USGS NWIS","AAA operational reporting"],"required_gates":["site_id","metric","unit","datum","timestamp","freshness","geometry","cross_source_semantics"]},
+    {"key":"rainfall","state":"AVAILABLE","series_status":"PASS","geometry_status":"PASS","asset_subtypes":["precipitation_gauge"],"authoritative_sources":["NOAA NCEI"],"required_gates":["station_id","accumulation_window","metric","unit","timestamp","freshness","geometry"]},
+    {"key":"groundwater","state":"AVAILABLE","series_status":"PASS","geometry_status":"PASS","asset_subtypes":["groundwater_well"],"authoritative_sources":["USGS NWIS"],"required_gates":["well_id","metric","unit","datum","timestamp","geometry"]},
+    {"key":"coastal","state":"AVAILABLE","series_status":"PASS","geometry_status":"PASS","asset_subtypes":["tide_gauge"],"authoritative_sources":["NOAA CO-OPS"],"required_gates":["station_id","metric","unit","datum","timestamp","freshness","geometry"]},
+    {"key":"watersheds","state":"PARTIAL","series_status":"NOT_APPLICABLE","geometry_status":"OPEN","asset_subtypes":[],"authoritative_sources":["Puerto Rico SIGE/MiPR Geologia_v10_N layer 0"],"required_gates":["frozen_snapshot","stable_geometry_id","crs","geometry_validity","station_topology_binding"]},
+    {"key":"extraction","state":"BLOCKED","series_status":"OPEN","geometry_status":"OPEN","asset_subtypes":[],"authoritative_sources":["DRNA permits","DRNA water franchises","authoritative enforcement records"],"required_gates":["authoritative_rowset","physical_well_identity","permit_identity","franchise_identity","operator_identity","geometry","temporal_validity","legal_state_evidence"]},
+    {"key":"water_quality","state":"PARTIAL","series_status":"OPEN","geometry_status":"PARTIAL","asset_subtypes":["groundwater_well"],"authoritative_sources":["USGS discrete samples","NSF NEON where token-authorized"],"required_gates":["parameter_identity","unit","method","qa_flag","timestamp","station_identity","parameter_unit_frontend_contract"]}
   ],
   "extraction_statuses": ["AUTHORIZED","PERMIT_PENDING","PERMIT_EXPIRED","PERMIT_REVOKED","NO_MATCH_FOUND","SUSPECTED_UNPERMITTED","ENFORCEMENT_REFERRED","CONFIRMED_UNAUTHORIZED","UNKNOWN"],
   "prohibited_inferences": [
