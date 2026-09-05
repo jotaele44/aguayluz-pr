@@ -1,11 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import { Activity, Layers, MapPinned, Satellite } from 'lucide-react'
+import { useSpatialTools, SpatialToolsPanel } from './SpatialToolsPanel'
 
 // Resolve against the configured base so it works in the normal build
 // (served from '/') and the VITE_OFFLINE single-file file:// export (base './').
 const MUNICIPIOS_URL = new URL('geo/pr_municipios.geojson', document.baseURI).href
 const BARRIOS_URL = new URL('geo/pr_barrios.geojson', document.baseURI).href
+
+// AWS's free public elevation tile set — no API key, same free-public-tile
+// precedent as the OSM/Esri raster basemaps already used above.
+const TERRAIN_DEM_URL = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'
 
 const BASE_STYLE = {
   version: 8,
@@ -231,6 +236,9 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
   // barrio outline alone would only add visual noise, not more signal.
   const [layers, setLayers] = useState({ power: true, water: true, wastewater: true, other: true, municipios: true, barrios: false, events: true, review: false, alerts: false, criticalAlertsOnly: false, muniFillMode: 'drought' })
   const [basemap, setBasemap] = useState('osm')
+  const [showTerrain, setShowTerrain] = useState(false)
+  const [showTools, setShowTools] = useState(false)
+  const [mapReady, setMapReady] = useState(false)
 
   const assetFeatures = assets?.features ?? []
   const visibleAssets = useMemo(() => {
@@ -367,7 +375,20 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
         },
       })
 
+      map.addSource('terrain-dem', {
+        type: 'raster-dem', tiles: [TERRAIN_DEM_URL], tileSize: 256, encoding: 'terrarium',
+      })
+      map.addLayer(
+        {
+          id: 'hillshade', type: 'hillshade', source: 'terrain-dem',
+          paint: { 'hillshade-exaggeration': 0.6 },
+          layout: { visibility: 'none' },
+        },
+        'muni-fill',
+      )
+
       readyRef.current = true
+      setMapReady(true)
       const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 8 })
       map.on('mouseenter', 'assets-dot', (e) => {
         map.getCanvas().style.cursor = 'pointer'
@@ -488,6 +509,29 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
     } catch { /* layers may not be ready yet */ }
   }, [basemap])
 
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return
+    const map = mapRef.current
+    map.setLayoutProperty('hillshade', 'visibility', showTerrain ? 'visible' : 'none')
+    if (showTerrain) {
+      map.setTerrain({ source: 'terrain-dem', exaggeration: 1.3 })
+      map.easeTo({ pitch: 55, duration: 600 })
+    } else {
+      map.setTerrain(null)
+      map.easeTo({ pitch: 0, duration: 600 })
+    }
+  }, [showTerrain, mapReady])
+
+  const spatialToolTargets = useMemo(
+    () => ({
+      Assets: () => visibleAssets.features,
+      Events: () => eventGeo.features,
+      Alerts: () => alertGeo.features,
+    }),
+    [visibleAssets, eventGeo, alertGeo],
+  )
+  const spatialTools = useSpatialTools({ mapRef, mapReady, targets: spatialToolTargets })
+
   return (
     <div className="relative h-full w-full">
       <div ref={containerRef} className="h-full w-full" />
@@ -506,6 +550,8 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
           <ControlButton active={layers.barrios} tone="border-violet-500/40 text-violet-300" onClick={() => setLayers((s) => ({ ...s, barrios: !s.barrios }))}>Barrios</ControlButton>
           <ControlButton active={layers.events} tone="border-red-500/40 text-red-300" onClick={() => setLayers((s) => ({ ...s, events: !s.events }))}>Events (sample) {eventGeo.features.length}</ControlButton>
           <ControlButton active={layers.alerts} tone="border-orange-500/40 text-orange-300" onClick={() => setLayers((s) => ({ ...s, alerts: !s.alerts }))}>Alerts {alertGeo.features.length}</ControlButton>
+          <ControlButton active={showTerrain} tone="border-teal-500/40 text-teal-300" onClick={() => setShowTerrain((v) => !v)}>Terrain</ControlButton>
+          <ControlButton active={showTools} tone="border-pink-500/40 text-pink-300" onClick={() => setShowTools((v) => !v)}>Spatial tools</ControlButton>
         </div>
         <div className="mt-1.5">
           <div className="mb-1 text-[10px] uppercase tracking-wide text-slate-500">Municipio fill</div>
@@ -632,6 +678,8 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
           <div className="mt-2 flex items-center gap-1.5 text-[10px] text-amber-300"><Activity className="h-3 w-3" /> Event dots are a recent/approximate sample — use the "Density" municipio fill for the full corpus.</div>
         )}
       </div>
+
+      {showTools && <SpatialToolsPanel {...spatialTools} />}
     </div>
   )
 }
