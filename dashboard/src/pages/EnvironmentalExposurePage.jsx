@@ -7,12 +7,10 @@ import {
   getEnvironmentalExposureIntegrity,
   getEnvironmentalExposureRelationships,
   getEnvironmentalExposureSummary,
-} from '@/lib/environmental-exposure-api'
-import {
   getHazardEvents,
   getHazardIntegrity,
   getHazardSummary,
-} from '@/lib/hazard-advisory-api'
+} from '@/lib/environmental-exposure-api'
 
 const pretty = (value) => String(value || 'unknown').replaceAll('_', ' ').toLowerCase()
 
