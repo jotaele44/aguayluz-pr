@@ -34,7 +34,7 @@ jobs:
           python -m pip install uv
           uv pip install --system -e .[dev] -r server/backend/requirements.txt
       - name: Clean generated evidence plane
-        run: rm -rf outputs artifacts/federation_certification .certification
+        run: rm -rf outputs artifacts/federation_certification .certification .federation-consumer
       - name: Full producer regression suite
         run: pytest -q --cov --cov-report=term-missing:skip-covered
       - name: Write commit-bound test execution receipt
@@ -47,12 +47,21 @@ jobs:
         run: python scripts/validate_federation_gis_retention.py
       - name: Prove spatial structure without promotion
         run: python scripts/validate_federation_spatial.py --audit
-      - name: Generate runtime manifestation once
+      - name: Generate runtime manifestation exactly once
         run: |
           python scripts/federation_export.py \
             --mode test \
             --out outputs/federation \
             --outputs outputs
+      - name: Quarantine nonaccepted records from canonical federation streams
+        run: |
+          python scripts/enforce_federation_review_quarantine.py \
+            --outputs outputs \
+            --federation-dir outputs/federation
+      - name: Bind architecture certification scope to producer Git identity
+        run: |
+          python scripts/write_federation_spatial_scope_receipt.py \
+            --output outputs/federation_spatial_certification_scope_receipt.json
       - name: Finalize post-generation gate state
         run: |
           python scripts/finalize_federation_outputs.py \
@@ -64,6 +73,48 @@ jobs:
             --test-receipt .certification/test-execution.json \
             --output artifacts/federation_certification/runtime_manifest.json \
             --evidence-only
+      - name: Checkout frozen TheHub consumer
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: jotaele44/thehub-pr
+          ref: b3f2461d155f81b2d95ca1057c4f57343e18bb35
+          path: .federation-consumer/thehub-pr
+          fetch-depth: 1
+      - name: Validate exact frozen bytes in TheHub audit-only mode
+        run: |
+          python .federation-consumer/thehub-pr/scripts/validate_federation_runtime_package.py \
+            --manifest artifacts/federation_certification/runtime_manifest.json \
+            --package-root . \
+            > artifacts/federation_certification/thehub_audit_validation.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          payload = json.loads(Path("artifacts/federation_certification/thehub_audit_validation.json").read_text())
+          assert payload["ok"] is True, payload
+          assert payload["mode"] == "AUDIT_ONLY", payload
+          assert payload["promotable"] is False, payload
+          assert payload["review_quarantine_state"] == "PASS", payload
+          print("THEHUB AUDIT-ONLY EXACT-BYTE PASS / NON-PROMOTABLE")
+          PY
+      - name: Prove unresolved producer state cannot enter certified ingestion
+        run: |
+          set +e
+          python .federation-consumer/thehub-pr/scripts/validate_federation_runtime_package.py \
+            --manifest artifacts/federation_certification/runtime_manifest.json \
+            --package-root . \
+            --certification \
+            > artifacts/federation_certification/thehub_certification_rejection.json
+          rc=$?
+          set -e
+          test "$rc" -ne 0
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          payload = json.loads(Path("artifacts/federation_certification/thehub_certification_rejection.json").read_text())
+          assert payload["ok"] is False, payload
+          assert payload["mode"] == "CERTIFICATION", payload
+          print("THEHUB CERTIFICATION REJECTION PASS")
+          PY
       - name: Assert generated files do not dirty tracked source
         run: |
           git status --short
@@ -76,10 +127,11 @@ jobs:
           path: |
             outputs/
             .certification/test-execution.json
-            artifacts/federation_certification/runtime_manifest.json
+            artifacts/federation_certification/
             federation.spatial.json
             .federation/haf_contract.json
             governance/federation_compatibility.json
             governance/federation_gis_retention_v1.json
+            governance/federation_spatial_certification_scope_v1.json
           if-no-files-found: warn
           retention-days: 30
