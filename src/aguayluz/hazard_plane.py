@@ -125,6 +125,7 @@ class HazardRecord(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     record_id: str = Field(min_length=1)
+    canonical_event_id: str = Field(min_length=1)
     record_kind: RecordKind
     family: HazardFamily
     hazard_type: str = Field(min_length=1)
@@ -170,6 +171,8 @@ class HazardRecord(BaseModel):
             raise ValueError("observed_to cannot precede observed_from")
         if self.effective_from and self.effective_to and self.effective_to < self.effective_from:
             raise ValueError("effective_to cannot precede effective_from")
+        if self.supersedes_record_id == self.record_id:
+            raise ValueError("record cannot supersede itself")
         if self.family == HazardFamily.HUMAN_INFECTIOUS_DISEASE:
             if self.case_class is None:
                 raise ValueError("human disease records require case_class")
@@ -271,6 +274,7 @@ def integrity_report(
     duplicate_relationship_ids = sorted(key for key, count in relationship_counts.items() if count > 1)
     manifestation_counts = Counter(row.manifestation_id for row in manifestations)
     duplicate_manifestation_ids = sorted(key for key, count in manifestation_counts.items() if count > 1)
+    record_by_id = {row.record_id: row for row in records}
 
     dangling_relationships = sorted(
         row.relationship_id
@@ -282,6 +286,18 @@ def integrity_report(
             row.object_kind == EntityKind.HAZARD_RECORD
             and row.object_id not in record_ids
         )
+    )
+    dangling_supersedes = sorted(
+        row.record_id
+        for row in records
+        if row.supersedes_record_id and row.supersedes_record_id not in record_ids
+    )
+    cross_event_supersedes = sorted(
+        row.record_id
+        for row in records
+        if row.supersedes_record_id
+        and row.supersedes_record_id in record_by_id
+        and record_by_id[row.supersedes_record_id].canonical_event_id != row.canonical_event_id
     )
     missing_manifestations = sorted({
         manifestation_id
@@ -303,12 +319,17 @@ def integrity_report(
         unresolved.append("DUPLICATE_MANIFESTATION_IDS")
     if dangling_relationships:
         unresolved.append("DANGLING_RELATIONSHIPS")
+    if dangling_supersedes:
+        unresolved.append("DANGLING_SUPERSEDES")
+    if cross_event_supersedes:
+        unresolved.append("CROSS_EVENT_SUPERSEDES")
     if missing_manifestations:
         unresolved.append("MISSING_SOURCE_MANIFESTATIONS")
     return {
         "state": "PASS" if not unresolved else "FAIL",
         "counts": {
             "records": len(records),
+            "canonical_events": len({row.canonical_event_id for row in records}),
             "current_records": len(current_records(records)),
             "relationships": len(relationships),
             "manifestations": len(manifestations),
@@ -317,6 +338,8 @@ def integrity_report(
         "duplicate_relationship_ids": duplicate_relationship_ids,
         "duplicate_manifestation_ids": duplicate_manifestation_ids,
         "dangling_relationships": dangling_relationships,
+        "dangling_supersedes": dangling_supersedes,
+        "cross_event_supersedes": cross_event_supersedes,
         "missing_manifestations": missing_manifestations,
         "unresolved": unresolved,
     }
