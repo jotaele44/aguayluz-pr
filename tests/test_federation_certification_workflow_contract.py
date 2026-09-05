@@ -5,6 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github" / "workflows" / "federation-certification-evidence.yml"
+PINNED_HUB_SHA = "8cbb58b39652d6c0c6db330ce21dc008b1abc93a"
 
 
 def test_certification_workflow_generates_once_then_quarantines_and_freezes():
@@ -32,7 +33,7 @@ def test_thehub_consumer_is_pinned_to_exact_commit_not_branch():
         text,
     )
     assert match, "TheHub checkout must be pinned to an exact 40-hex commit"
-    assert match.group(1) == "b3f2461d155f81b2d95ca1057c4f57343e18bb35"
+    assert match.group(1) == PINNED_HUB_SHA
 
 
 def test_audit_only_and_negative_certification_paths_are_both_executed():
