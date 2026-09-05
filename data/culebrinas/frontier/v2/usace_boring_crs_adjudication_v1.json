@@ -1,0 +1,30 @@
+{
+  "schema_version": "aguayluz.culebrinas-usace-boring-crs-adjudication/v1.0",
+  "source": "USACE Rio Culebrinas Design Memorandum Appendix B geotechnical logs (1998 borings)",
+  "raw_coordinate_units": "feet",
+  "raw_coordinate_examples": [
+    {"boring_id":"CB-CUL-01","x":248651.0,"y":212523.0},
+    {"boring_id":"CB-CUL-03","x":248955.0,"y":211084.0},
+    {"boring_id":"CB-CUL-09","x":246627.0,"y":207832.0}
+  ],
+  "candidate_crs": {
+    "epsg": 3991,
+    "name": "Puerto Rico State Plane CS of 1927",
+    "linear_unit": "US survey foot",
+    "state": "INFERENCE_HIGH_CONFIDENCE"
+  },
+  "basis": [
+    "raw source coordinates are explicitly in feet",
+    "magnitude is incompatible with the current SIGE native EPSG:32161 metre coordinates",
+    "EPSG:3991 is a historically appropriate Puerto Rico State Plane feet system for 1998-era engineering work",
+    "candidate transformation places recovered borings coherently in the Culebrinas/Aguada project corridor"
+  ],
+  "authoritative_datum_statement_recovered": false,
+  "canonical_coordinate_transform_allowed": false,
+  "required_for_certification": "recover an explicit USACE drawing/log/project statement or equivalent authoritative survey-control record binding the raw X/Y to the horizontal datum/CRS",
+  "prohibitions": [
+    "do not overwrite raw X/Y",
+    "do not publish transformed coordinates as certified while datum binding is inferred",
+    "do not use proximity alone to certify CRS"
+  ]
+}
