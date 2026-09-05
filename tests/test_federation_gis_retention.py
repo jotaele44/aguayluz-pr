@@ -28,6 +28,10 @@ def test_merged_gis_change_set_is_retained_20_of_20():
     assert result["missing"] == []
     assert result["source_merge_changed_paths"] == [
         ".federation/gui-capabilities.json",
+        "schemas/federation_spatial_manifest_v1.schema.json",
         "scripts/validate_federation_spatial.py",
     ]
-    assert result["repair_changed_paths"] == ["scripts/validate_federation_spatial.py"]
+    assert result["repair_changed_paths"] == [
+        "schemas/federation_spatial_manifest_v1.schema.json",
+        "scripts/validate_federation_spatial.py",
+    ]
