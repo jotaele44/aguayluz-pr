@@ -5,10 +5,10 @@ separate so source bytes and HTTP metadata can be frozen before normalization.
 """
 from __future__ import annotations
 
-from datetime import UTC, datetime
-from hashlib import sha256
 import json
 import re
+from datetime import datetime, timezone
+from hashlib import sha256
 from typing import Any
 
 from aguayluz.hazard_plane import HazardFamily, HazardRecord, RecordKind, RecordStatus
@@ -24,7 +24,7 @@ def _date(value: Any) -> datetime | None:
         return None
     for fmt in ("%Y%m%d", "%Y-%m-%d"):
         try:
-            return datetime.strptime(text, fmt).replace(tzinfo=UTC)
+            return datetime.strptime(text, fmt).replace(tzinfo=timezone.utc)
         except ValueError:
             continue
     return None
