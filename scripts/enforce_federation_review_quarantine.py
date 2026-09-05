@@ -12,11 +12,19 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import sys
 from collections import Counter
 from pathlib import Path
 from typing import Any
 
-from prii_export_utils import fid as _fid
+# Keep direct execution and importlib-based tests on the same helper identity.
+# When this module is loaded via spec_from_file_location, Python does not
+# automatically add scripts/ to sys.path as it does for `python scripts/...`.
+_SCRIPT_DIR = Path(__file__).resolve().parent
+if str(_SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPT_DIR))
+
+from prii_export_utils import fid as _fid  # noqa: E402
 
 POLICY_VERSION = "federation-review-quarantine/1.0"
 PRODUCER = "aguayluz-pr"
