@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from collections import Counter
 from datetime import datetime
-from enum import StrEnum
+from enum import Enum
 from hashlib import sha256
 import json
 from typing import Any
@@ -16,7 +16,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
-class HazardFamily(StrEnum):
+class HazardFamily(str, Enum):
     WATER_HEALTH = "WATER_HEALTH"
     FOOD_SAFETY = "FOOD_SAFETY"
     AGRICULTURAL_HEALTH = "AGRICULTURAL_HEALTH"
@@ -26,14 +26,14 @@ class HazardFamily(StrEnum):
     ENVIRONMENTAL_HEALTH = "ENVIRONMENTAL_HEALTH"
 
 
-class RecordKind(StrEnum):
+class RecordKind(str, Enum):
     EVENT = "EVENT"
     OBSERVATION = "OBSERVATION"
     ADVISORY = "ADVISORY"
     ACTION = "ACTION"
 
 
-class RecordStatus(StrEnum):
+class RecordStatus(str, Enum):
     ACTIVE = "ACTIVE"
     INACTIVE = "INACTIVE"
     TERMINATED = "TERMINATED"
@@ -43,14 +43,14 @@ class RecordStatus(StrEnum):
     UNRESOLVED = "UNRESOLVED"
 
 
-class CaseClass(StrEnum):
+class CaseClass(str, Enum):
     SUSPECTED = "SUSPECTED"
     PROBABLE = "PROBABLE"
     CONFIRMED = "CONFIRMED"
     UNKNOWN = "UNKNOWN"
 
 
-class EvidenceClass(StrEnum):
+class EvidenceClass(str, Enum):
     STABLE_ID = "STABLE_ID"
     AUTHORITATIVE_BINDING = "AUTHORITATIVE_BINDING"
     CERTIFIED_GEOMETRY = "CERTIFIED_GEOMETRY"
@@ -63,7 +63,7 @@ class EvidenceClass(StrEnum):
     UNRESOLVED = "UNRESOLVED"
 
 
-class RelationshipType(StrEnum):
+class RelationshipType(str, Enum):
     SAME_LOCATION = "SAME_LOCATION"
     SPATIALLY_INTERSECTS = "SPATIALLY_INTERSECTS"
     SAME_WATERSHED = "SAME_WATERSHED"
