@@ -5,6 +5,7 @@ from pydantic import ValidationError
 
 from aguayluz.hazard_plane import (
     CaseClass,
+    EntityKind,
     EvidenceClass,
     HazardFamily,
     HazardRecord,
@@ -38,9 +39,9 @@ def record(record_id="evt-1", **overrides):
     return HazardRecord(**row)
 
 
-def manifestation():
+def manifestation(manifestation_id="manifest-1"):
     return Manifestation(
-        manifestation_id="manifest-1",
+        manifestation_id=manifestation_id,
         source_authority="DRNA",
         source_system="beach-monitoring",
         source_record_id="notice-1",
@@ -105,7 +106,7 @@ def test_statistical_association_requires_method_and_sample_size():
         )
 
 
-def test_integrity_detects_missing_manifestation_and_dangling_edge():
+def test_integrity_detects_missing_manifestation_and_dangling_hazard_edge():
     edge = HazardRelationship(
         relationship_id="rel-1",
         subject_id="evt-1",
@@ -118,6 +119,40 @@ def test_integrity_detects_missing_manifestation_and_dangling_edge():
     assert result["state"] == "FAIL"
     assert result["dangling_relationships"] == ["rel-1"]
     assert result["missing_manifestations"] == ["missing-manifest"]
+
+
+def test_external_federation_entity_is_not_misclassified_as_dangling_hazard_record():
+    edge = HazardRelationship(
+        relationship_id="rel-water-system",
+        subject_id="evt-1",
+        predicate=RelationshipType.SAME_WATER_SYSTEM,
+        object_id="AYL_WATER_SYSTEM_123",
+        object_kind=EntityKind.WATER_SYSTEM,
+        evidence_class=EvidenceClass.AUTHORITATIVE_BINDING,
+        source_manifestation_ids=["manifest-1"],
+    )
+    result = integrity_report([record()], [edge], [manifestation()])
+    assert result["state"] == "PASS"
+    assert result["dangling_relationships"] == []
+
+
+def test_duplicate_relationship_and_manifestation_ids_fail_closed():
+    edge = HazardRelationship(
+        relationship_id="rel-dup",
+        subject_id="evt-1",
+        predicate=RelationshipType.TEMPORALLY_OVERLAPS,
+        object_id="evt-1",
+        evidence_class=EvidenceClass.AUTHORITATIVE_BINDING,
+        source_manifestation_ids=["manifest-1"],
+    )
+    result = integrity_report(
+        [record()],
+        [edge, edge.model_copy()],
+        [manifestation(), manifestation()],
+    )
+    assert result["state"] == "FAIL"
+    assert result["duplicate_relationship_ids"] == ["rel-dup"]
+    assert result["duplicate_manifestation_ids"] == ["manifest-1"]
 
 
 def test_temporal_end_cannot_precede_start():
