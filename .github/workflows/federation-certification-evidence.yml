@@ -77,7 +77,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: jotaele44/thehub-pr
-          ref: b3f2461d155f81b2d95ca1057c4f57343e18bb35
+          ref: 8cbb58b39652d6c0c6db330ce21dc008b1abc93a
           path: .federation-consumer/thehub-pr
           fetch-depth: 1
       - name: Validate exact frozen bytes in TheHub audit-only mode
