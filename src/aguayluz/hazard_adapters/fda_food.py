@@ -41,16 +41,34 @@ def classify_pr_relevance(row: dict[str, Any]) -> str:
     return PR_NO_INDICATION
 
 
-def stable_record_id(row: dict[str, Any]) -> str:
+def row_digest(row: dict[str, Any]) -> str:
+    payload = json.dumps(row, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return sha256(payload.encode("utf-8")).hexdigest()
+
+
+def canonical_event_id(row: dict[str, Any]) -> str:
     recall_number = str(row.get("recall_number") or "").strip()
     if recall_number:
         return f"FDA_FOOD_RECALL:{recall_number}"
-    payload = json.dumps(row, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-    return f"FDA_FOOD_RECALL_UNRESOLVED:{sha256(payload.encode('utf-8')).hexdigest()[:24]}"
+    event_id = str(row.get("event_id") or "").strip()
+    if event_id:
+        return f"FDA_FOOD_EVENT:{event_id}"
+    return f"FDA_FOOD_UNRESOLVED:{row_digest(row)[:24]}"
 
 
-def normalize(row: dict[str, Any], manifestation_id: str) -> HazardRecord:
+def stable_record_id(row: dict[str, Any]) -> str:
+    """Versioned logical row identity; changed source content yields a new row."""
+    return f"{canonical_event_id(row)}:REV:{row_digest(row)[:20]}"
+
+
+def normalize(
+    row: dict[str, Any],
+    manifestation_id: str,
+    *,
+    supersedes_record_id: str | None = None,
+) -> HazardRecord:
     """Normalize one openFDA enforcement row without synthetic field aggregation."""
+    event_id = canonical_event_id(row)
     record_id = stable_record_id(row)
     source_record_id = str(row.get("recall_number") or row.get("event_id") or record_id)
     status_raw = str(row.get("status") or "").casefold()
@@ -63,6 +81,7 @@ def normalize(row: dict[str, Any], manifestation_id: str) -> HazardRecord:
 
     return HazardRecord(
         record_id=record_id,
+        canonical_event_id=event_id,
         record_kind=RecordKind.ADVISORY,
         family=HazardFamily.FOOD_SAFETY,
         hazard_type="FDA_FOOD_ENFORCEMENT_RECALL",
@@ -78,6 +97,7 @@ def normalize(row: dict[str, Any], manifestation_id: str) -> HazardRecord:
         effective_to=_date(row.get("termination_date")),
         geography_basis="DISTRIBUTION_PATTERN_TEXT",
         geometry_precision="NONE_UNLESS_INDEPENDENTLY_BOUND",
+        supersedes_record_id=supersedes_record_id,
         raw_attributes={
             "event_id": row.get("event_id"),
             "recall_number": row.get("recall_number"),
@@ -93,6 +113,7 @@ def normalize(row: dict[str, Any], manifestation_id: str) -> HazardRecord:
             "pr_relevance": classify_pr_relevance(row),
             "voluntary_mandated": row.get("voluntary_mandated"),
             "initial_firm_notification": row.get("initial_firm_notification"),
+            "source_row_sha256": row_digest(row),
             "source_row": row,
         },
     )
