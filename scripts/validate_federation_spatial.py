@@ -7,7 +7,11 @@ import re
 from pathlib import Path
 from typing import Any
 
+from jsonschema import Draft202012Validator
+from jsonschema.exceptions import SchemaError
+
 ROOT = Path(__file__).resolve().parents[1]
+MANIFEST_SCHEMA_PATH = ROOT / "schemas" / "federation_spatial_manifest_v1.schema.json"
 HEX40 = re.compile(r"^[a-f0-9]{40}$")
 REQUIRED_CONTRACTS = {"feature", "layer", "map_runtime", "offline_package", "impact_report"}
 REQUIRED_CERTIFICATION_GATES = (
@@ -34,8 +38,22 @@ ALLOWED_GATE_STATES = {
 }
 
 
-def validate_manifest(manifest: dict[str, Any], *, certification: bool) -> list[str]:
+def _schema_problems(manifest: dict[str, Any]) -> list[str]:
+    try:
+        schema = json.loads(MANIFEST_SCHEMA_PATH.read_text(encoding="utf-8"))
+        Draft202012Validator.check_schema(schema)
+    except (OSError, UnicodeError, json.JSONDecodeError, SchemaError) as exc:
+        return [f"cannot validate spatial manifest schema: {exc}"]
+    validator = Draft202012Validator(schema)
     problems: list[str] = []
+    for error in sorted(validator.iter_errors(manifest), key=lambda item: list(item.absolute_path)):
+        location = ".".join(str(part) for part in error.absolute_path) or "$"
+        problems.append(f"manifest schema {location}: {error.message}")
+    return problems
+
+
+def validate_manifest(manifest: dict[str, Any], *, certification: bool) -> list[str]:
+    problems: list[str] = _schema_problems(manifest)
     if manifest.get("contract_version") != "federation-spatial-manifest/1.0":
         problems.append("wrong contract_version")
     if manifest.get("producer_repo") != "aguayluz-pr":
@@ -57,8 +75,9 @@ def validate_manifest(manifest: dict[str, Any], *, certification: bool) -> list[
             problems.append(f"missing {label}: {rel}")
         else:
             try:
-                json.loads(p.read_text(encoding="utf-8"))
-            except Exception as exc:  # noqa: BLE001 - validator must fail closed
+                schema_doc = json.loads(p.read_text(encoding="utf-8"))
+                Draft202012Validator.check_schema(schema_doc)
+            except (OSError, UnicodeError, json.JSONDecodeError, SchemaError) as exc:
                 problems.append(f"invalid JSON schema {rel}: {exc}")
 
     storage = manifest.get("storage")
@@ -120,7 +139,9 @@ def main(argv: list[str] | None = None) -> int:
 
     problems = validate_manifest(manifest, certification=not args.audit)
     gates = manifest.get("gates", {}) if isinstance(manifest.get("gates"), dict) else {}
-    certification_ready = all(gates.get(gate) == "PASS" for gate in REQUIRED_CERTIFICATION_GATES)
+    certification_ready = not problems and all(
+        gates.get(gate) == "PASS" for gate in REQUIRED_CERTIFICATION_GATES
+    )
     payload = {
         "ok": not problems,
         "mode": mode,
