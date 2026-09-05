@@ -22,9 +22,10 @@ from aguayluz.hazard_plane import (
 NOW = datetime(2026, 9, 5, tzinfo=timezone.utc)
 
 
-def record(record_id="evt-1", **overrides):
+def record(record_id="evt-1:rev-a", **overrides):
     row = {
         "record_id": record_id,
+        "canonical_event_id": "evt-1",
         "record_kind": RecordKind.ADVISORY,
         "family": HazardFamily.WATER_HEALTH,
         "hazard_type": "BEACH_ADVISORY",
@@ -59,11 +60,27 @@ def test_source_arithmetic_fails_closed_on_unexplained_delta():
 
 
 def test_revision_selection_uses_whole_latest_row():
-    old = record("old", status=RecordStatus.SUPERSEDED)
-    new = record("new", supersedes_record_id="old", title_raw="Revised advisory")
+    old = record("evt-1:rev-old", status=RecordStatus.SUPERSEDED)
+    new = record(
+        "evt-1:rev-new",
+        supersedes_record_id="evt-1:rev-old",
+        title_raw="Revised advisory",
+    )
     rows = current_records([old, new])
-    assert [row.record_id for row in rows] == ["new"]
+    assert [row.record_id for row in rows] == ["evt-1:rev-new"]
     assert rows[0].title_raw == "Revised advisory"
+
+
+def test_cross_event_supersedes_fails_integrity():
+    old = record("evt-1:rev-old")
+    new = record(
+        "evt-2:rev-new",
+        canonical_event_id="evt-2",
+        supersedes_record_id="evt-1:rev-old",
+    )
+    result = integrity_report([old, new], [], [manifestation()])
+    assert result["state"] == "FAIL"
+    assert result["cross_event_supersedes"] == ["evt-2:rev-new"]
 
 
 def test_human_disease_requires_case_semantics():
@@ -86,9 +103,9 @@ def test_proximity_cannot_be_promoted_to_causal_confirmation():
     with pytest.raises(ValidationError):
         HazardRelationship(
             relationship_id="rel-1",
-            subject_id="evt-1",
+            subject_id="evt-1:rev-a",
             predicate=RelationshipType.CAUSALLY_CONFIRMED,
-            object_id="evt-2",
+            object_id="evt-2:rev-a",
             evidence_class=EvidenceClass.PROXIMITY,
             source_manifestation_ids=["manifest-1"],
         )
@@ -98,9 +115,9 @@ def test_statistical_association_requires_method_and_sample_size():
     with pytest.raises(ValidationError):
         HazardRelationship(
             relationship_id="rel-1",
-            subject_id="evt-1",
+            subject_id="evt-1:rev-a",
             predicate=RelationshipType.STATISTICAL_ASSOCIATION,
-            object_id="evt-2",
+            object_id="evt-2:rev-a",
             evidence_class=EvidenceClass.AUTHORITATIVE_BINDING,
             source_manifestation_ids=["manifest-1"],
         )
@@ -109,7 +126,7 @@ def test_statistical_association_requires_method_and_sample_size():
 def test_integrity_detects_missing_manifestation_and_dangling_hazard_edge():
     edge = HazardRelationship(
         relationship_id="rel-1",
-        subject_id="evt-1",
+        subject_id="evt-1:rev-a",
         predicate=RelationshipType.SAME_WATERSHED,
         object_id="missing-record",
         evidence_class=EvidenceClass.CERTIFIED_GEOMETRY,
@@ -124,7 +141,7 @@ def test_integrity_detects_missing_manifestation_and_dangling_hazard_edge():
 def test_external_federation_entity_is_not_misclassified_as_dangling_hazard_record():
     edge = HazardRelationship(
         relationship_id="rel-water-system",
-        subject_id="evt-1",
+        subject_id="evt-1:rev-a",
         predicate=RelationshipType.SAME_WATER_SYSTEM,
         object_id="AYL_WATER_SYSTEM_123",
         object_kind=EntityKind.WATER_SYSTEM,
@@ -139,9 +156,9 @@ def test_external_federation_entity_is_not_misclassified_as_dangling_hazard_reco
 def test_duplicate_relationship_and_manifestation_ids_fail_closed():
     edge = HazardRelationship(
         relationship_id="rel-dup",
-        subject_id="evt-1",
+        subject_id="evt-1:rev-a",
         predicate=RelationshipType.TEMPORALLY_OVERLAPS,
-        object_id="evt-1",
+        object_id="evt-1:rev-a",
         evidence_class=EvidenceClass.AUTHORITATIVE_BINDING,
         source_manifestation_ids=["manifest-1"],
     )
