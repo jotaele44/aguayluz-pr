@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 """Fetch and freeze the canonical SIGE aquifer feature for the Culebrinas frontier.
 
-The operator is intentionally fail-closed. It never promotes a feature by proximity alone:
+Fail-closed identity rules:
 - source service/layer identity is fixed,
-- spatial query anchor is fixed to an existing authoritative USGS control,
+- the spatial query anchor is a USGS groundwater well explicitly assigned to
+  the Rio Culebrinas Valley Aquifer (local aquifer code 110RCBV),
 - exactly one intersecting SIGE feature must be returned,
-- GlobalID must be present,
-- geometry must be returned,
+- its aquifer-type description must be compatible with the alluvial/intergranular
+  Culebrinas valley setting,
+- GlobalID and geometry are mandatory,
 - the canonicalized feature and receipt are SHA-256 bound.
 
-Network access is required only for acquisition. `freeze_response` is pure and unit-testable.
+Network access is required only for acquisition. `freeze_response` is pure and
+unit-testable with captured authoritative responses.
 """
 from __future__ import annotations
 
@@ -27,11 +30,17 @@ LAYER_NAME = "Acuífero"
 SOURCE_ITEM_ID = "294d280fa3094e4e8d3cffa339fd33b7"
 SOURCE_NATIVE_EPSG = 32161
 ANCHOR = {
-    "id": "USGS-50148890",
-    "name": "Rio Culebrinas at Margarita Damsite NR Aguada, PR",
-    "longitude": -67.1512,
-    "latitude": 18.394503,
+    "id": "USGS-182252067115800",
+    "name": "Aguada 1",
+    "longitude": -67.1991533,
+    "latitude": 18.3792523,
     "crs": "EPSG:4326",
+    "local_aquifer_code": "110RCBV",
+    "local_aquifer_name": "Rio Culebrinas Valley Aquifer",
+}
+EXPECTED_DESCRIPTIONS = {
+    "INTERGRANULAR AQUIFERS",
+    "INTERGRANULAR UNIT OVERLYING FISSURED ROCK UNIT",
 }
 
 
@@ -59,7 +68,7 @@ def query_url() -> str:
 
 
 def acquire(timeout_seconds: float = 30.0) -> dict[str, Any]:
-    req = Request(query_url(), headers={"User-Agent": "aguayluz-culebrinas-canonical-freeze/1.0"})
+    req = Request(query_url(), headers={"User-Agent": "aguayluz-culebrinas-canonical-freeze/1.1"})
     with urlopen(req, timeout=timeout_seconds) as response:  # noqa: S310 - fixed authoritative URL
         payload = response.read()
     parsed = json.loads(payload.decode("utf-8"))
@@ -90,6 +99,8 @@ def freeze_response(response: dict[str, Any]) -> tuple[dict[str, Any], dict[str,
         raise ValueError("sige_globalid_missing")
     object_id = attributes.get("OBJECTID")
     description = attributes.get("DESCRIPCIO")
+    if description not in EXPECTED_DESCRIPTIONS:
+        raise ValueError(f"sige_unexpected_aquifer_type:{description}")
 
     frozen = {
         "type": "Feature",
@@ -103,15 +114,17 @@ def freeze_response(response: dict[str, Any]) -> tuple[dict[str, Any], dict[str,
             "source_objectid": object_id,
             "source_globalid": global_id,
             "description": description,
-            "binding_method": "authoritative_feature_intersects_authoritative_USGS_control",
+            "binding_method": "authoritative_SIGE_feature_intersects_USGS_groundwater_control_explicitly_assigned_to_110RCBV",
             "anchor_id": ANCHOR["id"],
+            "anchor_local_aquifer_code": ANCHOR["local_aquifer_code"],
+            "anchor_local_aquifer_name": ANCHOR["local_aquifer_name"],
             "identity_state": "PASS_STABLE_GLOBALID",
         },
         "geometry": geometry,
     }
     frozen_hash = _sha256_bytes(_canonical_bytes(frozen))
     receipt = {
-        "schema_version": "aguayluz.culebrinas-canonical-aquifer-freeze/v1.0",
+        "schema_version": "aguayluz.culebrinas-canonical-aquifer-freeze/v1.1",
         "state": "FROZEN",
         "source_service": SOURCE_SERVICE,
         "source_layer_id": LAYER_ID,
@@ -119,9 +132,11 @@ def freeze_response(response: dict[str, Any]) -> tuple[dict[str, Any], dict[str,
         "source_native_epsg": SOURCE_NATIVE_EPSG,
         "query_output_epsg": 4326,
         "anchor": ANCHOR,
+        "expected_descriptions": sorted(EXPECTED_DESCRIPTIONS),
         "feature_count": 1,
         "global_id": global_id,
         "object_id": object_id,
+        "description": description,
         "feature_sha256": frozen_hash,
         "proximity_identity_used": False,
         "canonical_geometry_bound": True,
