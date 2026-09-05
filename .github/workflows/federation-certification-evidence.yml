@@ -1,0 +1,81 @@
+name: Federation Certification Evidence
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: federation-certification-evidence-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  freeze-runtime-evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Establish isolated producer identity
+        run: |
+          test ! -e "$GITHUB_WORKSPACE/../thehub-pr"
+          git rev-parse HEAD
+          git rev-parse 'HEAD^{tree}'
+          git status --short
+      - name: Install producer dependencies
+        run: |
+          python -m pip install uv
+          uv pip install --system -e .[dev] -r server/backend/requirements.txt
+      - name: Clean generated evidence plane
+        run: rm -rf outputs artifacts/federation_certification .certification
+      - name: Full producer regression suite
+        run: pytest -q --cov --cov-report=term-missing:skip-covered
+      - name: Write commit-bound test execution receipt
+        run: |
+          python scripts/write_test_execution_receipt.py \
+            --output .certification/test-execution.json \
+            --command "pytest -q --cov --cov-report=term-missing:skip-covered" \
+            --suite FULL
+      - name: Prove GIS 20-file retention
+        run: python scripts/validate_federation_gis_retention.py
+      - name: Prove spatial structure without promotion
+        run: python scripts/validate_federation_spatial.py --audit
+      - name: Generate runtime manifestation once
+        run: |
+          python scripts/federation_export.py \
+            --mode test \
+            --out outputs/federation \
+            --outputs outputs
+      - name: Finalize post-generation gate state
+        run: |
+          python scripts/finalize_federation_outputs.py \
+            --test-receipt .certification/test-execution.json
+      - name: Freeze bytes hashes counts and producer identity
+        run: |
+          mkdir -p artifacts/federation_certification
+          python scripts/freeze_federation_runtime.py \
+            --test-receipt .certification/test-execution.json \
+            --output artifacts/federation_certification/runtime_manifest.json \
+            --evidence-only
+      - name: Assert generated files do not dirty tracked source
+        run: |
+          git status --short
+          test -z "$(git status --short --untracked-files=no)"
+      - name: Upload immutable runtime evidence bundle
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: aguayluz-federation-runtime-${{ github.sha }}
+          path: |
+            outputs/
+            .certification/test-execution.json
+            artifacts/federation_certification/runtime_manifest.json
+          if-no-files-found: warn
+          retention-days: 30
