@@ -1,0 +1,62 @@
+{
+  "schema_version": "aguayluz.culebrinas-prefield-closure/v1.0",
+  "issued_date": "2026-09-05",
+  "state": "OPEN_BLOCKED",
+  "B01_sige_globalid": {
+    "state": "BLOCKED_FEATURE_EXTRACTION",
+    "authoritative_layer": "https://sige.pr.gov/server/rest/services/MIPR/Geologia_v10_N/FeatureServer/2",
+    "native_epsg": 32161,
+    "service_item_id": "294d280fa3094e4e8d3cffa339fd33b7",
+    "binding_anchor": {
+      "site_id": "USGS-182252067115800",
+      "name": "Aguada 1 Well",
+      "wgs84_lat": 18.3792522838065,
+      "wgs84_lon": -67.199153298312,
+      "local_aquifer_code": "110RCBV",
+      "local_aquifer_name": "Rio Culebrinas Valley Aquifer"
+    },
+    "freeze_operator": "operators/fetch_culebrinas_canonical_aquifer.py",
+    "rule": "exactly_one_intersecting_compatible_feature_with_nonnull_GlobalID",
+    "proximity_identity_used": false
+  },
+  "B02_usace_crs": {
+    "state": "OPEN_AUTHORITATIVE_BINDING",
+    "raw_coordinates_retained": true,
+    "candidate_epsg": 3991,
+    "candidate_state": "INFERENCE_HIGH_CONFIDENCE",
+    "canonical_transform_allowed": false,
+    "reason": "1998 USACE boring logs provide raw X/Y and elevation datum but the bounded public corpus did not expose an explicit authoritative horizontal CRS/datum statement"
+  },
+  "B03_subsurface_census": {
+    "state": "OPEN_INCOMPLETE",
+    "closed_manifestations": [
+      "15_of_15_USACE_design_boring_headers",
+      "USGS-182252067115800_Aguada_1_106_ft_110RCBV",
+      "USGS_surface_water_controls"
+    ],
+    "bounded_search_result": "no modern regional groundwater model, dense borehole network, regional ERT/TEM campaign, or additional publicly indexed USGS well explicitly tagged 110RCBV was recovered",
+    "unresolved_source_families": ["DRNA_local_groundwater_files", "AAA_PRASA_well_and_project_files", "UPR_unpublished_theses_or_project_data", "public_private_geotechnical_borings"]
+  },
+  "B04_uprm_seismic": {
+    "state": "OPEN_PENDING_SEISMIC_INTERPRETATION",
+    "campaign": "2026 PR-418 Valle de Aguada active seismic line",
+    "sensors": 96,
+    "line_km": 2.28,
+    "bounded_search_result": "campaign and data handoff confirmed; no later public interpretation recovered"
+  },
+  "B05_federation_ci": {
+    "state": "BLOCKED_EXTERNAL_GITHUB_ACTIONS_RUNNER",
+    "aguayluz_issue": 234,
+    "aguayluz_latest_validate_run": 33985351741,
+    "thehub_latest_hub_ci_run": 33985423445,
+    "invariant": "failed jobs return steps=null and logs_url=null before runner steps execute",
+    "merge_allowed": false
+  },
+  "prefield_certified": false,
+  "promotion_blockers": ["B01","B02","B03","B04","B05"],
+  "field_execution_allowed_as_certified_campaign": false,
+  "new_experimental_observation_count": 0,
+  "KVI_MEASURED": "BLOCKED_NO_FIELD_DATA",
+  "H1_H5": "OPEN",
+  "zero_material_residue": false
+}

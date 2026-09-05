@@ -1,0 +1,57 @@
+{
+  "schema_version": "aguayluz.culebrinas-crew-packet/v2.0",
+  "mode": "TEMPLATE_NOT_OBSERVATION",
+  "experimental_ingest_schema": "data/culebrinas/frontier/v2/field_observation_ingest_schema_v3.json",
+  "experimental_ingest_validator": "operators/validate_culebrinas_field_ingest_v3.py",
+  "predeployment_gates": [
+    "canonical_aquifer_feature_and_globalid_frozen",
+    "station_geometry_independently_justified",
+    "written_access_authorization_present",
+    "site_specific_safety_plan_approved",
+    "survey_control_and_datum_defined",
+    "utility_clearance_complete_where_required",
+    "instrument_calibrations_current_and_hashed",
+    "laboratory_and_chain_of_custody_ready",
+    "deterministic_station_sample_observation_and_file_ids_assigned",
+    "raw_storage_and_sha256_workflow_verified"
+  ],
+  "campaigns": {
+    "H1": {"minimum_domains":["GROUNDWATER","GEOCHEMISTRY","GEOPHYSICS"],"repeat_required":true},
+    "H2": {"minimum_domains":["GEOPHYSICS","GEOLOGY","GROUNDWATER"],"ground_truth_required":true},
+    "H3": {"minimum_domains":["GEOPHYSICS","GROUNDWATER","GEOCHEMISTRY"],"uprm_interpretation_required":true},
+    "H4": {"minimum_domains":["FRESH_SALT","GEOPHYSICS"],"tide_context_required":true,"repeat_required":true},
+    "H5": {"minimum_domains":["SGD"],"independent_methods_min":2,"seaward_gradient_required":true,"repeat_required":true}
+  },
+  "withheld_validation": {
+    "partition_before_model_fit": true,
+    "calibration_withheld_overlap_prohibited": true,
+    "withheld_ids_frozen_and_hashed": true,
+    "minimum_one_withheld_observation": true
+  },
+  "required_outputs": [
+    "packet_manifest.json",
+    "observations.ndjson",
+    "observations.csv",
+    "station_manifest.csv",
+    "instrument_calibrations.csv",
+    "chain_of_custody.csv",
+    "authorization_manifest.csv",
+    "raw_file_manifest.csv",
+    "file_manifest.csv",
+    "hypothesis_evidence.json",
+    "kvi_evidence.json",
+    "rejection_ledger.csv",
+    "gap_receipts.csv"
+  ],
+  "prohibitions": [
+    "no template row may be ingested as observation",
+    "no proposed/modelled/inferred value may enter experimental store",
+    "no identity by nearest feature or proximity",
+    "no coordinate transform without authoritative CRS binding",
+    "no KVI_MEASURED without real authorized observations",
+    "no hypothesis support without falsifier tests and independent methods",
+    "no certification while any H1-H5 is unresolved",
+    "no certification while federation CI is not green",
+    "no production promotion from certification candidate alone"
+  ]
+}
