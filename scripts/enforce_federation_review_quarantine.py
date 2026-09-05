@@ -17,9 +17,6 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
-# Keep direct execution and importlib-based tests on the same helper identity.
-# When this module is loaded via spec_from_file_location, Python does not
-# automatically add scripts/ to sys.path as it does for `python scripts/...`.
 _SCRIPT_DIR = Path(__file__).resolve().parent
 if str(_SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPT_DIR))
@@ -38,7 +35,6 @@ STREAM_SCHEMA = {
 ACCEPTED = "accepted"
 LEGACY_ACCEPTED = {"approved": ACCEPTED}
 NON_ACCEPTED = {"needs_review", "rejected", "blocked"}
-ALLOWED = {ACCEPTED, *NON_ACCEPTED, *LEGACY_ACCEPTED}
 
 
 class QuarantineError(ValueError):
@@ -99,12 +95,7 @@ def _sha256(path: Path) -> str:
 
 
 def _record_id(kind: str, row: dict[str, Any]) -> str:
-    if kind == "asset":
-        value = row.get("asset_id")
-    elif kind == "event":
-        value = row.get("event_id")
-    else:
-        value = row.get("alert_id")
+    value = row.get({"asset": "asset_id", "event": "event_id", "alert": "alert_id"}[kind])
     if not isinstance(value, str) or not value:
         raise QuarantineError(f"{kind} record missing stable id")
     return value
@@ -164,15 +155,13 @@ def enforce(outputs_dir: Path, federation_dir: Path) -> dict[str, Any]:
     if not isinstance(manifest, dict):
         raise QuarantineError("canonical manifest root must be an object")
 
-    accepted_primary: set[str] = {
-        _primary_entity_id("asset", rid) for rid in accepted_assets
-    } | {
-        _primary_entity_id("event", rid) for rid in accepted_events
+    accepted_primary = {
+        *(_primary_entity_id("asset", rid) for rid in accepted_assets),
+        *(_primary_entity_id("event", rid) for rid in accepted_events),
     }
-    quarantined_primary: set[str] = {
-        _primary_entity_id("asset", item["record_id"]) for item in quarantined_assets
-    } | {
-        _primary_entity_id("event", item["record_id"]) for item in quarantined_events
+    quarantined_primary = {
+        *(_primary_entity_id("asset", item["record_id"]) for item in quarantined_assets),
+        *(_primary_entity_id("event", item["record_id"]) for item in quarantined_events),
     }
 
     entity_by_id: dict[str, dict[str, Any]] = {}
@@ -213,9 +202,11 @@ def enforce(outputs_dir: Path, federation_dir: Path) -> dict[str, Any]:
 
     candidate_relationships: list[dict[str, Any]] = []
     referenced_support: set[str] = set()
+    support_source: dict[str, str] = {}
     for relationship in original["relationships"]:
         left = relationship.get("source_entity_id")
         right = relationship.get("target_entity_id")
+        rel_source = relationship.get("source_id")
         if not isinstance(left, str) or not isinstance(right, str):
             raise QuarantineError("canonical relationship missing endpoint id")
         if left in quarantined_primary or right in quarantined_primary:
@@ -224,18 +215,26 @@ def enforce(outputs_dir: Path, federation_dir: Path) -> dict[str, Any]:
             raise QuarantineError("canonical relationship references missing entity")
         if left not in accepted_primary and right not in accepted_primary:
             continue
+        if not isinstance(rel_source, str) or not rel_source:
+            raise QuarantineError("retained canonical relationship missing source_id")
         candidate_relationships.append(dict(relationship))
-        if left not in accepted_primary:
-            referenced_support.add(left)
-        if right not in accepted_primary:
-            referenced_support.add(right)
+        for endpoint in (left, right):
+            if endpoint not in accepted_primary:
+                referenced_support.add(endpoint)
+                support_source.setdefault(endpoint, rel_source)
 
     kept_entity_ids = accepted_primary | referenced_support
-    kept_entities = [
-        entity_by_id[eid]
-        for eid in entity_by_id
-        if eid in kept_entity_ids
-    ]
+    kept_entities: list[dict[str, Any]] = []
+    for eid, entity in entity_by_id.items():
+        if eid not in kept_entity_ids:
+            continue
+        row = dict(entity)
+        if eid in referenced_support:
+            accepted_source = support_source.get(eid)
+            if not accepted_source:
+                raise QuarantineError(f"retained support entity lacks accepted provenance: {eid}")
+            row["source_id"] = accepted_source
+        kept_entities.append(row)
 
     kept_alerts: list[dict[str, Any]] = []
     accepted_alert_ids = {_fid("alrt", rid): review for rid, review in accepted_alerts.items()}
@@ -257,9 +256,7 @@ def enforce(outputs_dir: Path, federation_dir: Path) -> dict[str, Any]:
         row["attributes"] = attrs
         entity_id = row.get("entity_id")
         if entity_id is not None and entity_id not in kept_entity_ids:
-            raise QuarantineError(
-                f"accepted alert {aid} references non-retained entity {entity_id}"
-            )
+            raise QuarantineError(f"accepted alert {aid} references non-retained entity {entity_id}")
         kept_alerts.append(row)
 
     referenced_sources: set[str] = set()
@@ -274,11 +271,7 @@ def enforce(outputs_dir: Path, federation_dir: Path) -> dict[str, Any]:
         if isinstance(row.get("source_id"), str):
             referenced_sources.add(row["source_id"])
 
-    kept_sources = [
-        dict(row)
-        for row in original["sources"]
-        if row.get("source_id") in referenced_sources
-    ]
+    kept_sources = [dict(row) for row in original["sources"] if row.get("source_id") in referenced_sources]
     source_ids = {row.get("source_id") for row in kept_sources}
     missing_sources = sorted(referenced_sources - source_ids)
     if missing_sources:
@@ -323,15 +316,9 @@ def enforce(outputs_dir: Path, federation_dir: Path) -> dict[str, Any]:
         "state": "PASS",
         "canonical_admission_rule": "ACCEPTED_ONLY",
         "legacy_aliases": {"approved": "accepted"},
-        "raw_counts": {
-            "assets": len(assets),
-            "events": len(events),
-            "alerts": len(alerts),
-        },
+        "raw_counts": {"assets": len(assets), "events": len(events), "alerts": len(alerts)},
         "accepted_input_counts": {
-            "assets": len(accepted_assets),
-            "events": len(accepted_events),
-            "alerts": len(accepted_alerts),
+            "assets": len(accepted_assets), "events": len(accepted_events), "alerts": len(accepted_alerts)
         },
         "quarantined_input_counts": {
             "assets": len(quarantined_assets),
@@ -354,9 +341,13 @@ def enforce(outputs_dir: Path, federation_dir: Path) -> dict[str, Any]:
             ),
             "canonical_alerts_accepted_only": len(kept_alerts) == len(accepted_alerts),
             "relationship_endpoints_retained": all(
-                row.get("source_entity_id") in kept_entity_ids
-                and row.get("target_entity_id") in kept_entity_ids
+                row.get("source_entity_id") in kept_entity_ids and row.get("target_entity_id") in kept_entity_ids
                 for row in candidate_relationships
+            ),
+            "support_entities_rebound_to_accepted_provenance": all(
+                row.get("source_id") == support_source.get(row.get("entity_id"))
+                for row in kept_entities
+                if row.get("entity_id") in referenced_support
             ),
         },
         "problems": [],
@@ -364,8 +355,7 @@ def enforce(outputs_dir: Path, federation_dir: Path) -> dict[str, Any]:
     if not all(receipt["invariants"].values()):
         raise QuarantineError(f"quarantine invariant failed: {receipt['invariants']}")
     (outputs_dir / "review_quarantine_receipt.json").write_text(
-        json.dumps(receipt, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
+        json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     return receipt
 
