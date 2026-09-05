@@ -12,10 +12,12 @@
     ".federation/gui-capabilities.json"
   ],
   "repair_modified_paths": [
+    "schemas/federation_spatial_manifest_v1.schema.json",
     "scripts/validate_federation_spatial.py"
   ],
   "allowed_post_merge_modified_paths": [
     ".federation/gui-capabilities.json",
+    "schemas/federation_spatial_manifest_v1.schema.json",
     "scripts/validate_federation_spatial.py"
   ],
   "semantic_markers": {
@@ -24,10 +26,24 @@
       "tests/test_spatial_analysis.py",
       "scripts/validate_federation_spatial.py"
     ],
+    "schemas/federation_spatial_manifest_v1.schema.json": [
+      "federation-spatial-manifest/1.0",
+      "CANDIDATE_NOT_IDENTITY",
+      "schema",
+      "geometry",
+      "tests",
+      "postgis",
+      "security",
+      "performance",
+      "desktop",
+      "ios",
+      "federation"
+    ],
     "scripts/validate_federation_spatial.py": [
       "REQUIRED_CERTIFICATION_GATES",
       "CANDIDATE_NOT_IDENTITY",
-      "thehub-pr"
+      "thehub-pr",
+      "Draft202012Validator"
     ]
   },
   "expected_paths": [
@@ -53,5 +69,6 @@
     "tests/test_spatial_analysis.py"
   ],
   "pre_repair_classification": "RETAINED_20_OF_20_WITH_19_BYTE_UNCHANGED_AND_1_ADJUDICATED_EXTENSION",
+  "current_repair_classification": "RETAINED_20_OF_20_WITH_17_BYTE_UNCHANGED_AND_3_ADJUDICATED_POST_MERGE_CHANGES",
   "certification_rule": "Every expected path must remain present. Post-merge changes within the 20-path set must be explicitly allowlisted and pass semantic-marker checks; all other changes fail closed."
 }
