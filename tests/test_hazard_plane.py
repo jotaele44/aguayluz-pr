@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 import pytest
 from pydantic import ValidationError
@@ -19,7 +19,7 @@ from aguayluz.hazard_plane import (
     source_arithmetic,
 )
 
-NOW = datetime(2026, 9, 5, tzinfo=UTC)
+NOW = datetime(2026, 9, 5, tzinfo=timezone.utc)
 
 
 def record(record_id="evt-1", **overrides):
@@ -157,4 +157,4 @@ def test_duplicate_relationship_and_manifestation_ids_fail_closed():
 
 def test_temporal_end_cannot_precede_start():
     with pytest.raises(ValidationError):
-        record(observed_from=NOW, observed_to=datetime(2026, 9, 4, tzinfo=UTC))
+        record(observed_from=NOW, observed_to=datetime(2026, 9, 4, tzinfo=timezone.utc))
