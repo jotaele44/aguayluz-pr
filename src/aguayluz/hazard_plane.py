@@ -50,6 +50,21 @@ class CaseClass(str, Enum):
     UNKNOWN = "UNKNOWN"
 
 
+class EntityKind(str, Enum):
+    HAZARD_RECORD = "HAZARD_RECORD"
+    FACILITY = "FACILITY"
+    WATER_SYSTEM = "WATER_SYSTEM"
+    WATERSHED = "WATERSHED"
+    SEWERSHED = "SEWERSHED"
+    MUNICIPALITY = "MUNICIPALITY"
+    BARRIO = "BARRIO"
+    PRODUCT = "PRODUCT"
+    DISTRIBUTOR = "DISTRIBUTOR"
+    RETAILER = "RETAILER"
+    AGRICULTURAL_SITE = "AGRICULTURAL_SITE"
+    EXTERNAL_FEDERATION_ENTITY = "EXTERNAL_FEDERATION_ENTITY"
+
+
 class EvidenceClass(str, Enum):
     STABLE_ID = "STABLE_ID"
     AUTHORITATIVE_BINDING = "AUTHORITATIVE_BINDING"
@@ -97,10 +112,13 @@ class Manifestation(BaseModel):
     source_system: str = Field(min_length=1)
     source_record_id: str = Field(min_length=1)
     source_url: str = Field(min_length=1)
+    retrieval_query: str | None = None
     retrieved_at_utc: datetime
     byte_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     schema_signature: str | None = None
     record_count: int | None = Field(default=None, ge=0)
+    http_etag: str | None = None
+    http_last_modified: str | None = None
 
 
 class HazardRecord(BaseModel):
@@ -165,8 +183,10 @@ class HazardRelationship(BaseModel):
 
     relationship_id: str = Field(min_length=1)
     subject_id: str = Field(min_length=1)
+    subject_kind: EntityKind = EntityKind.HAZARD_RECORD
     predicate: RelationshipType
     object_id: str = Field(min_length=1)
+    object_kind: EntityKind = EntityKind.HAZARD_RECORD
     evidence_class: EvidenceClass
     source_manifestation_ids: list[str] = Field(min_length=1)
     effective_from: datetime | None = None
@@ -247,10 +267,21 @@ def integrity_report(
     record_ids = {row.record_id for row in records}
     manifestation_ids = {row.manifestation_id for row in manifestations}
     duplicate_record_ids = validate_identity_uniqueness(records)
+    relationship_counts = Counter(row.relationship_id for row in relationships)
+    duplicate_relationship_ids = sorted(key for key, count in relationship_counts.items() if count > 1)
+    manifestation_counts = Counter(row.manifestation_id for row in manifestations)
+    duplicate_manifestation_ids = sorted(key for key, count in manifestation_counts.items() if count > 1)
+
     dangling_relationships = sorted(
         row.relationship_id
         for row in relationships
-        if row.subject_id not in record_ids or row.object_id not in record_ids
+        if (
+            row.subject_kind == EntityKind.HAZARD_RECORD
+            and row.subject_id not in record_ids
+        ) or (
+            row.object_kind == EntityKind.HAZARD_RECORD
+            and row.object_id not in record_ids
+        )
     )
     missing_manifestations = sorted({
         manifestation_id
@@ -266,6 +297,10 @@ def integrity_report(
     unresolved = []
     if duplicate_record_ids:
         unresolved.append("DUPLICATE_RECORD_IDS")
+    if duplicate_relationship_ids:
+        unresolved.append("DUPLICATE_RELATIONSHIP_IDS")
+    if duplicate_manifestation_ids:
+        unresolved.append("DUPLICATE_MANIFESTATION_IDS")
     if dangling_relationships:
         unresolved.append("DANGLING_RELATIONSHIPS")
     if missing_manifestations:
@@ -279,6 +314,8 @@ def integrity_report(
             "manifestations": len(manifestations),
         },
         "duplicate_record_ids": duplicate_record_ids,
+        "duplicate_relationship_ids": duplicate_relationship_ids,
+        "duplicate_manifestation_ids": duplicate_manifestation_ids,
         "dangling_relationships": dangling_relationships,
         "missing_manifestations": missing_manifestations,
         "unresolved": unresolved,
