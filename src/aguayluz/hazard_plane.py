@@ -6,11 +6,11 @@ spatial/temporal coincidence into causation.
 """
 from __future__ import annotations
 
+import json
 from collections import Counter
 from datetime import datetime
 from enum import Enum
 from hashlib import sha256
-import json
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
