@@ -1,0 +1,57 @@
+{
+  "schema_version": "prii_federation_gis_retention_v1",
+  "repository": "jotaele44/aguayluz-pr",
+  "source_pr": 209,
+  "source_head_commit": "c7a6c0bf4b69346810c64a0b2ce86cf0c7c27f5b",
+  "source_merge_commit": "3abb6bd5cf613eabc55083964a8c6802100539b8",
+  "pre_repair_snapshot_commit": "3678271a03e36375dc3e9f2fb4da0b6b655622bd",
+  "pre_repair_snapshot_tree": "7bed39d09f7571ad4fdd78b18c02c61e944ed454",
+  "expected_path_count": 20,
+  "pre_repair_byte_unchanged_since_merge_count": 19,
+  "pre_repair_modified_retained_paths": [
+    ".federation/gui-capabilities.json"
+  ],
+  "repair_modified_paths": [
+    "scripts/validate_federation_spatial.py"
+  ],
+  "allowed_post_merge_modified_paths": [
+    ".federation/gui-capabilities.json",
+    "scripts/validate_federation_spatial.py"
+  ],
+  "semantic_markers": {
+    ".federation/gui-capabilities.json": [
+      "tests/test_federation_spatial_core.py",
+      "tests/test_spatial_analysis.py",
+      "scripts/validate_federation_spatial.py"
+    ],
+    "scripts/validate_federation_spatial.py": [
+      "REQUIRED_CERTIFICATION_GATES",
+      "CANDIDATE_NOT_IDENTITY",
+      "thehub-pr"
+    ]
+  },
+  "expected_paths": [
+    ".federation/gui-capabilities.json",
+    "docs/FEDERATION_GIS_CAPABILITY_MATRIX_v1.md",
+    "federation.spatial.json",
+    "federation/fedgeopack.py",
+    "federation/spatial_core.py",
+    "migrations/20260831_federation_mvt_v1.sql",
+    "migrations/20260831_federation_spatial_v1.sql",
+    "reports/federation_spatial_impact_v1.json",
+    "schemas/federation_spatial_feature_v1.schema.json",
+    "schemas/federation_spatial_impact_report_v1.schema.json",
+    "schemas/federation_spatial_layer_v1.schema.json",
+    "schemas/federation_spatial_manifest_v1.schema.json",
+    "schemas/fedgeopack_v1.schema.json",
+    "schemas/maplibre_layer_runtime_v1.schema.json",
+    "scripts/validate_federation_spatial.py",
+    "src/aguayluz/spatial_analysis.py",
+    "tests/test_federation_spatial_core.py",
+    "tests/test_fedgeopack.py",
+    "tests/test_schemas.py",
+    "tests/test_spatial_analysis.py"
+  ],
+  "pre_repair_classification": "RETAINED_20_OF_20_WITH_19_BYTE_UNCHANGED_AND_1_ADJUDICATED_EXTENSION",
+  "certification_rule": "Every expected path must remain present. Post-merge changes within the 20-path set must be explicitly allowlisted and pass semantic-marker checks; all other changes fail closed."
+}
