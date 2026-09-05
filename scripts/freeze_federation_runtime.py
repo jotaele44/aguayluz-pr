@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Freeze one coherent AguaYLuz federation runtime manifestation.
 
-The receipt binds every emitted byte to one Git commit/tree, closes the core
-operator-output arithmetic, re-verifies the canonical stream manifest, and
-records whether the same commit is spatial-certification eligible. Evidence-only
-mode may freeze a BLOCKED package for downstream audit without promoting it.
+The receipt binds every emitted byte plus the producer control-plane documents
+to one Git commit/tree, closes core operator-output arithmetic, re-verifies the
+canonical stream manifest, and records whether the same commit is spatial-
+certification eligible. Evidence-only mode may freeze a coherent unresolved
+package for downstream audit without promoting it.
 """
 from __future__ import annotations
 
@@ -31,6 +32,12 @@ REQUIRED_OPERATOR = {
     "integration_report.json",
 }
 REQUIRED_STREAMS = {"sources", "entities", "relationships", "alerts"}
+CONTROL_PLANE_FILES = (
+    "federation.spatial.json",
+    ".federation/haf_contract.json",
+    "governance/federation_compatibility.json",
+    "governance/federation_gis_retention_v1.json",
+)
 
 
 def _git(*args: str) -> str:
@@ -69,23 +76,72 @@ def _line_count(path: Path) -> int:
         return sum(1 for line in handle if line.strip())
 
 
+def _control_plane_receipts(problems: list[str]) -> list[dict[str, Any]]:
+    receipts: list[dict[str, Any]] = []
+    for rel in CONTROL_PLANE_FILES:
+        path = ROOT / rel
+        if not path.is_file():
+            problems.append(f"missing control-plane file: {rel}")
+            continue
+        if path.is_symlink():
+            problems.append(f"symlink not allowed for control-plane file: {rel}")
+            continue
+        try:
+            blob_sha = _git("rev-parse", f"HEAD:{rel}")
+        except subprocess.CalledProcessError as exc:
+            problems.append(f"control-plane file is not tracked at HEAD: {rel}: {exc}")
+            continue
+        receipts.append(
+            {
+                "path": rel,
+                "bytes": path.stat().st_size,
+                "sha256": _sha256(path),
+                "git_blob_sha": blob_sha,
+            }
+        )
+    if len(receipts) != len(CONTROL_PLANE_FILES):
+        problems.append(
+            f"control-plane receipt count={len(receipts)} expected={len(CONTROL_PLANE_FILES)}"
+        )
+    return receipts
+
+
 def freeze(test_receipt: Path, *, evidence_only: bool) -> dict[str, Any]:
     problems: list[str] = []
     commit_sha = _git("rev-parse", "HEAD")
     tree_sha = _git("rev-parse", "HEAD^{tree}")
+    control_plane_files = _control_plane_receipts(problems)
 
     missing_operator = sorted(name for name in REQUIRED_OPERATOR if not (OUTPUTS / name).is_file())
     if missing_operator:
         problems.append(f"missing operator outputs: {missing_operator}")
     if not (FEDERATION / "manifest.json").is_file():
         problems.append("missing canonical federation manifest")
-    if problems:
+    if missing_operator or not (FEDERATION / "manifest.json").is_file():
         return {
-            "ok": False,
-            "certification_eligible": False,
+            "schema_version": "aguayluz_federation_runtime_freeze_v1",
+            "repository": "jotaele44/aguayluz-pr",
             "producer_commit": commit_sha,
             "producer_tree": tree_sha,
+            "generated_utc": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+            "mode": "EVIDENCE_ONLY" if evidence_only else "CERTIFICATION",
+            "test_receipt": {"gate_id": "G08_EXECUTED_TEST_RECEIPT", "status": "FAIL", "details": "runtime outputs incomplete"},
+            "spatial_certification": {"ok": False, "certification_ready": False, "certification_state": "BLOCKED"},
+            "counts": {
+                "utility_assets": 0,
+                "service_events": 0,
+                "records_total": 0,
+                "source_manifest_entries": 0,
+                "review_queue_items": 0,
+                "canonical_streams": {},
+            },
+            "files": [],
+            "file_count": 0,
+            "control_plane_files": control_plane_files,
+            "control_plane_file_count": len(control_plane_files),
+            "certification_eligible": False,
             "problems": problems,
+            "state": "BLOCKED",
         }
 
     receipt_gate = _load_repo_validator()._validate_test_receipt(test_receipt)
@@ -205,6 +261,7 @@ def freeze(test_receipt: Path, *, evidence_only: bool) -> dict[str, Any]:
     except json.JSONDecodeError:
         spatial_payload = {
             "ok": False,
+            "certification_ready": False,
             "certification_state": "UNRESOLVED",
             "raw": spatial_proc.stdout[-1000:],
         }
@@ -232,6 +289,8 @@ def freeze(test_receipt: Path, *, evidence_only: bool) -> dict[str, Any]:
         },
         "files": all_files,
         "file_count": len(all_files),
+        "control_plane_files": control_plane_files,
+        "control_plane_file_count": len(control_plane_files),
         "certification_eligible": certification_eligible,
         "problems": problems,
         "state": "PASS" if certification_eligible else ("AUDIT_ONLY" if evidence_only and not problems else "BLOCKED"),
