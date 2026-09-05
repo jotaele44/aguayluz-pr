@@ -2,8 +2,10 @@ from aguayluz.hazard_adapters.fda_food import (
     PR_EXPLICIT,
     PR_NATIONAL_CANDIDATE,
     PR_NO_INDICATION,
+    canonical_event_id,
     classify_pr_relevance,
     normalize,
+    stable_record_id,
 )
 from aguayluz.hazard_plane import RecordStatus
 
@@ -34,11 +36,22 @@ def test_normalize_preserves_raw_source_and_recall_identity():
         "recalling_firm": "Example Foods",
     }
     record = normalize(raw, "manifest-fda-1")
-    assert record.record_id == "FDA_FOOD_RECALL:F-1234-2026"
+    assert record.canonical_event_id == "FDA_FOOD_RECALL:F-1234-2026"
+    assert record.record_id.startswith("FDA_FOOD_RECALL:F-1234-2026:REV:")
     assert record.status == RecordStatus.ACTIVE
     assert record.raw_attributes["source_row"] == raw
     assert record.raw_attributes["pr_relevance"] == PR_EXPLICIT
     assert record.geometry_precision == "NONE_UNLESS_INDEPENDENTLY_BOUND"
+
+
+def test_changed_source_row_keeps_event_identity_but_gets_new_record_identity():
+    old = {"recall_number": "F-1234-2026", "product_description": "Product", "status": "Ongoing"}
+    revised = {**old, "status": "Terminated", "termination_date": "20260901"}
+    assert canonical_event_id(old) == canonical_event_id(revised)
+    assert stable_record_id(old) != stable_record_id(revised)
+    old_record = normalize(old, "manifest-1")
+    revised_record = normalize(revised, "manifest-2", supersedes_record_id=old_record.record_id)
+    assert revised_record.supersedes_record_id == old_record.record_id
 
 
 def test_terminated_status_and_dates_are_not_conflated():
