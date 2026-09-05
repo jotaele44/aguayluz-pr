@@ -208,6 +208,18 @@ _municipios_geojson: dict[str, Any] = _load_json(
     DATA / "geo" / "pr_municipios.geojson",
     {"type": "FeatureCollection", "features": []},
 )
+_barrios_geojson: dict[str, Any] = _load_json(
+    DATA / "geo" / "pr_barrios.geojson",
+    {"type": "FeatureCollection", "features": []},
+)
+# name -> geoid, for joining event_type.municipality (canonical Spanish names,
+# confirmed to match pr_municipios.geojson's `name` field exactly) to a
+# choropleth key. Built once at startup like the corpora above.
+_MUNICIPIO_GEOID_BY_NAME: dict[str, str] = {
+    f["properties"]["name"]: f["properties"]["geoid"]
+    for f in _municipios_geojson.get("features", [])
+    if f.get("properties", {}).get("name") and f["properties"].get("geoid")
+}
 # The operational alert layer (docs/ALERT_SYSTEM.md) — built by scripts/build_alerts.py
 # and validated by scripts/build_alert_system.py. Loaded once at startup like the other
 # corpora: it is several MB, so re-parsing per request would dominate every alert call.
@@ -335,6 +347,59 @@ def assets_geojson() -> JSONResponse:
 @app.get("/municipios.geojson")
 def municipios_geojson() -> JSONResponse:
     return JSONResponse(_municipios_geojson)
+
+
+@app.get("/barrios.geojson")
+def barrios_geojson() -> JSONResponse:
+    return JSONResponse(_barrios_geojson)
+
+
+@app.get("/municipios/event_density")
+def municipios_event_density(
+    type: str | None = Query(default=None),
+    since: str | None = Query(default=None),
+    until: str | None = Query(default=None),
+) -> JSONResponse:
+    """Per-municipio event counts over the FULL corpus (unlike /events, which is
+    capped at DEFAULT_EVENTS_LIMIT for payload size). Individual events are
+    structurally area-level, not point geometry (confirmed: well under 1% of
+    service_events.jsonl carries real lat/lon) — a choropleth by count is the
+    accurate representation, not the client trying to plot every event as a
+    fake-precise dot. Same filter semantics as GET /events, minus limit/offset/
+    municipio (which would defeat the purpose of an aggregate)."""
+    result = _events
+    if type:
+        result = [e for e in result if e.get("event_type") == type]
+    since_dt = _parse_dt(since)
+    until_dt = _parse_dt(until)
+    if since_dt or until_dt:
+        filtered = []
+        for e in result:
+            dt = _parse_dt(e.get("start_time"))
+            if dt is None:
+                continue
+            if since_dt and dt < since_dt:
+                continue
+            if until_dt and dt > until_dt:
+                continue
+            filtered.append(e)
+        result = filtered
+
+    by_geoid: Counter[str] = Counter()
+    unresolved_count = 0
+    for e in result:
+        geoid = _MUNICIPIO_GEOID_BY_NAME.get(e.get("municipality") or "")
+        if geoid is None:
+            unresolved_count += 1
+            continue
+        by_geoid[geoid] += 1
+
+    return JSONResponse({
+        "by_geoid": dict(by_geoid),
+        "unresolved_count": unresolved_count,
+        "total_events": len(result),
+        "filters": {"type": type, "since": since, "until": until},
+    })
 
 
 @app.get("/municipios/{name}/summary")
