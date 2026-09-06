@@ -1,0 +1,35 @@
+{
+  "fixture_id": "usace_culebrinas_2004_geotech_uploaded_v1",
+  "filename_raw": "RioCulebrinasDPR_B_Geotec_jun2004.pdf",
+  "byte_count": 15207302,
+  "sha256": "0bbe08da2729eac846bf410a92186ce3a78aa4ad2ccefdde1b836a3dedd191d4",
+  "source_family": {
+    "project_raw": "Rio Culebrinas, Flood Control, Section 204 CAP",
+    "date_raw": "June 2004",
+    "expected_manifestations": [
+      "Main Text",
+      "EA",
+      "Appendix A - Hydrology & Hydraulics",
+      "Appendix B - Geotechnical",
+      "Appendix C - Design & Cost",
+      "Appendix D - Real Estate",
+      "Appendix E - Economics"
+    ]
+  },
+  "known_positive_assertions": {
+    "appendix_b_heading": true,
+    "geotechnical_studies": true,
+    "design_core_borings": 15,
+    "borrow_site_boring": 1,
+    "design_boring_depth_min_ft": 15.0,
+    "design_boring_depth_max_ft": 49.5,
+    "boring_logs_included": true,
+    "site_plan_and_boring_locations": true,
+    "embedded_appendix_c_heading_detected_near_end": true
+  },
+  "contamination_regression": {
+    "state": "PASS_CANDIDATE",
+    "finding": "The uploaded file named as Appendix B also contains an Appendix C heading near pages 98-100. Treat outer filename as source manifestation metadata, not proof of a pure single-appendix logical document.",
+    "required_classifier": "SAME_FILE_MULTIPLE_LOGICAL_SECTIONS"
+  }
+}
