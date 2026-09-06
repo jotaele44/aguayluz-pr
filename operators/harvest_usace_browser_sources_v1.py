@@ -6,7 +6,6 @@ import csv
 import hashlib
 import json
 from pathlib import Path
-import re
 import time
 from typing import Any, Iterable
 from urllib.parse import urlencode, urlsplit, urlunsplit, parse_qsl
@@ -41,9 +40,11 @@ def _with_query(url: str, **values: str) -> str:
 
 def _click_text(driver: Any, text: str, *, timeout: int, optional: bool = False) -> bool:
     _, TimeoutException, By, EC, _, WebDriverWait = _require_selenium()
+    # XPath literals are simple known UI labels defined by this operator.
+    escaped = text.replace("'", "’")
     xpath = (
-        "//*[self::button or self::a or @role='button']"
-        f"[contains(normalize-space(.), {json.dumps(text)})]"
+        "//*[self::button or self::a or @role='button' or @role='tab']"
+        f"[contains(normalize-space(.), '{escaped}')]"
     )
     try:
         element = WebDriverWait(driver, timeout).until(EC.element_to_be_clickable((By.XPATH, xpath)))
@@ -82,7 +83,12 @@ def _select_html_option(driver: Any, label_tokens: Iterable[str], option_tokens:
             probe = f"{text} {value}".casefold()
             if any(token in probe for token in options):
                 select.select_by_visible_text(text)
-                return {"state": "PASS_NATIVE_SELECT", "label_context": context, "selected_text": text, "selected_value": value}
+                return {
+                    "state": "PASS_NATIVE_SELECT",
+                    "label_context": context,
+                    "selected_text": text,
+                    "selected_value": value,
+                }
     return {"state": "UNRESOLVED_CUSTOM_OR_MISSING_FILTER"}
 
 
@@ -91,7 +97,6 @@ def _table_rows(driver: Any) -> tuple[list[str], list[dict[str, Any]]]:
     tables = driver.find_elements(By.TAG_NAME, "table")
     if not tables:
         raise RuntimeError("no HTML table found after entering Table View")
-    # Prefer the table with the largest number of body rows.
     ranked = sorted(tables, key=lambda t: len(t.find_elements(By.CSS_SELECTOR, "tbody tr")), reverse=True)
     table = ranked[0]
     headers = [cell.text.strip() for cell in table.find_elements(By.CSS_SELECTOR, "thead th")]
@@ -204,7 +209,6 @@ def run_rrs(driver: Any, args: argparse.Namespace) -> dict[str, Any]:
     driver.get(args.url)
     _click_text(driver, "I Accept", timeout=args.timeout, optional=True)
     _click_text(driver, "Table View", timeout=args.timeout)
-    # Native filters are attempted but are not assumed to exist; custom React controls remain a blocker receipt.
     state_filter = _select_html_option(driver, ["state"], ["puerto rico", "pr"])
     district_filter = _select_html_option(driver, ["district"], ["caribbean", "saa"])
     headers, rows, pages = capture_table_pages(
@@ -228,66 +232,69 @@ def run_rrs(driver: Any, args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
-ORM_TYPES = {
-    "jds": "AJD",
-    "s408": "Section 408",
-}
+ORM_UI_CLASSES = [
+    "Final IP",
+    "Pending IP",
+    "NEPA EA",
+    "NEPA EIS",
+    "Emergency",
+    "214/Other",
+    "DWHS",
+    "AJD",
+    "Section 408",
+]
+
+
+def _safe_token(label: str) -> str:
+    return "".join(ch.lower() if ch.isalnum() else "_" for ch in label).strip("_")
 
 
 def run_orm(driver: Any, args: argparse.Namespace) -> dict[str, Any]:
-    type_receipts: list[dict[str, Any]] = []
+    """Enumerate the authoritative nine ORM UI content classes without guessing hidden type codes."""
+    class_receipts: list[dict[str, Any]] = []
     total_rows = 0
     all_headers: dict[str, list[str]] = {}
-    # Only query codes independently evidenced in authoritative/public indexed URLs are prebound.
-    # Other UI content classes remain unresolved instead of inventing query codes.
-    for type_code, label in ORM_TYPES.items():
-        url = _with_query(args.url, mode="table", org="SAA", type=type_code)
-        driver.get(url)
+    base = _with_query(args.url, mode="table", org="SAA")
+    for label in ORM_UI_CLASSES:
+        token = _safe_token(label)
+        driver.get(base)
+        _click_text(driver, label, timeout=args.timeout)
         _click_text(driver, "Table View", timeout=args.timeout, optional=True)
+        district_filter = _select_html_option(driver, ["district"], ["caribbean", "saa"])
         state_filter = _select_html_option(driver, ["state"], ["puerto rico", "pr"])
-        out_dir = args.output / f"orm_{type_code}_pages"
         headers, rows, pages = capture_table_pages(
-            driver, out_dir, max_pages=args.max_pages, settle_seconds=args.settle
+            driver,
+            args.output / f"orm_{token}_pages",
+            max_pages=args.max_pages,
+            settle_seconds=args.settle,
         )
-        _write_rows(args.output / f"orm_{type_code}_rows.csv", headers, rows)
-        all_headers[type_code] = headers
+        _write_rows(args.output / f"orm_{token}_rows.csv", headers, rows)
+        all_headers[label] = headers
         total_rows += len(rows)
-        type_receipts.append(
+        scope_pass = state_filter["state"].startswith("PASS_")
+        class_receipts.append(
             {
-                "type_code": type_code,
-                "label": label,
-                "url": url,
+                "class_label": label,
+                "resolved_url": driver.current_url,
                 "row_count": len(rows),
                 "page_count": len(pages),
+                "district_filter": district_filter,
                 "state_filter": state_filter,
-                "state": (
-                    "PASS_EXHAUSTIVE_PR_SCOPE"
-                    if state_filter["state"].startswith("PASS_")
-                    else "UNRESOLVED_PR_SCOPE_FILTER"
-                ),
+                "state": "PASS_EXHAUSTIVE_PR_SCOPE" if scope_pass else "UNRESOLVED_PR_SCOPE_FILTER",
                 "page_receipts": pages,
             }
         )
-    missing_classes = [
-        "Final IP",
-        "Pending IP",
-        "NEPA EA",
-        "NEPA EIS",
-        "Emergency",
-        "214/Other",
-        "DWHS",
-    ]
+    unresolved = [row for row in class_receipts if not row["state"].startswith("PASS_")]
     return {
         "source_id": "orm_public_pr",
-        "adapter": "selenium_table_v1",
+        "adapter": "selenium_table_v2_ui_universe",
         "base_url": args.url,
         "retrieved_utc": utc_now(),
-        "prebound_type_codes": ORM_TYPES,
-        "unbound_type_classes": missing_classes,
-        "type_receipts": type_receipts,
+        "ui_class_universe": ORM_UI_CLASSES,
+        "class_receipts": class_receipts,
         "row_count": total_rows,
-        "headers_by_type": all_headers,
-        "state": "UNRESOLVED_ORM_TYPE_CODE_UNIVERSE" if missing_classes else "PASS_EXHAUSTIVE_PR_SCOPE",
+        "headers_by_class": all_headers,
+        "state": "PASS_EXHAUSTIVE_PR_SCOPE" if not unresolved else "UNRESOLVED_PR_SCOPE_FILTER",
     }
 
 
