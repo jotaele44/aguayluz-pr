@@ -55,10 +55,13 @@ def load_registry(path: Path) -> dict[str, Any]:
 def execution_class(source: dict[str, Any]) -> str:
     role = str(source.get("role") or "UNDECLARED")
     state = str(source.get("adapter_state") or "UNDECLARED")
+    environment = str(source.get("execution_environment") or "http").casefold()
     if role == "SECONDARY_REFERENCE_SOURCE" or state.startswith(("REFERENCE_ONLY", "SECONDARY_")):
         return "REFERENCE_OR_CROSSCHECK"
     if state.startswith("BLOCKED_"):
         return "BLOCKED"
+    if environment == "browser":
+        return "DEFER_BROWSER"
     if source.get("adapter"):
         return "EXECUTE"
     return "BLOCKED"
@@ -71,6 +74,7 @@ def execute_source(client: httpx.Client, source: dict[str, Any], *, v2: Any):
         "url": source["url"],
         "adapter": source.get("adapter"),
         "adapter_state_declared": source.get("adapter_state"),
+        "execution_environment": source.get("execution_environment", "http"),
         "started_utc": utc_now(),
         "candidate_count": 0,
         "state": "OPEN",
@@ -79,6 +83,10 @@ def execute_source(client: httpx.Client, source: dict[str, Any], *, v2: Any):
     receipt["execution_class"] = kind
     if kind == "REFERENCE_OR_CROSSCHECK":
         receipt["state"] = "PASS_DECLARED_REFERENCE_OR_CROSSCHECK"
+        return [], receipt
+    if kind == "DEFER_BROWSER":
+        receipt["state"] = "OPEN_BROWSER_EXECUTION_REQUIRED"
+        receipt["browser_operator"] = source.get("browser_operator")
         return [], receipt
     if kind == "BLOCKED":
         if source.get("adapter") == "pal_api":
@@ -172,7 +180,7 @@ def main() -> int:
     v2 = _load_v2_module()
     candidates: list[DiscoveryCandidate] = []
     source_receipts: list[dict[str, Any]] = []
-    headers = {"User-Agent": "aguayluz-pr-usace-harvester/4.0 (+public research corpus)"}
+    headers = {"User-Agent": "aguayluz-pr-usace-harvester/4.1 (+public research corpus)"}
 
     with httpx.Client(
         timeout=httpx.Timeout(60, connect=20), headers=headers, follow_redirects=True
@@ -225,7 +233,7 @@ def main() -> int:
     required = [row for row in source_receipts if row.get("role") in REQUIRED_ROLES]
     blocking = [row for row in required if not str(row.get("state", "")).startswith("PASS_")]
     snapshot = {
-        "snapshot_version": "4.0.0",
+        "snapshot_version": "4.1.0",
         "created_utc": utc_now(),
         "registry_version": registry.get("registry_version"),
         "declared_source_count": len(source_receipts),
@@ -239,6 +247,9 @@ def main() -> int:
             "required": len(required),
             "reference_or_crosscheck": sum(
                 1 for row in source_receipts if row.get("execution_class") == "REFERENCE_OR_CROSSCHECK"
+            ),
+            "browser_deferred": sum(
+                1 for row in source_receipts if row.get("execution_class") == "DEFER_BROWSER"
             ),
             "blocking_required": len(blocking),
         },
