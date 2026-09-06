@@ -1,7 +1,7 @@
 {
   "schema_version": "federation.gui-backend-contract/1.0",
   "repository": "Jotaele44/aguayluz-pr",
-  "source_commit": "3678271a03e36375dc3e9f2fb4da0b6b655622bd",
+  "source_commit": "6222414acd568614e23c7eeecff17f2e2f364c59",
   "policy": {"require_zero_material_residue": true, "dimensions": ["executability", "semantic", "state", "auth", "data", "provenance", "device", "identity", "geometry", "authority"]},
   "discovery": {"backend_roots": ["server/backend", "src/aguayluz", "desktop", "scripts"], "frontend_roots": ["dashboard/src"], "route_files": ["dashboard/src/App.jsx"], "navigation_files": ["dashboard/src/components/Sidebar.jsx", "dashboard/src/App.jsx"], "existing_gui_capability_manifests": [".federation/gui-capabilities.json"]},
   "authority": {"semantic_authority": "water-hydrology-ecology-utility-monitoring", "mutation_authority": "aguayluz-domain-state-only", "identity_authority": "aguayluz-domain-entities-and-source-manifestations", "geometry_authority": "domain-geometry-claims-consume-spiderweb-where-federated", "provenance_authority": "aguayluz-domain-source-and-evidence-provenance"},
@@ -10,5 +10,5 @@
   "devices": {"desktop": true, "mobile_web": true, "native_ios": false, "native_evidence_files": [], "intentional_restrictions": []},
   "backend_only_allowlist": [], "gui_only_allowlist": [], "state_claims": [],
   "runtime_evidence": {"data": {"state": "OPEN", "evidence": []}, "identity": {"state": "OPEN", "evidence": []}, "geometry": {"state": "OPEN", "evidence": []}, "device": {"state": "OPEN", "evidence": []}},
-  "certification": {"state": "OPEN", "material_residue": ["Reconcile source dashboard and Floot/native manifestations without promoting historical/provisional evidence."]}
+  "certification": {"state": "OPEN", "material_residue": ["Persistent water-disruption mutation guard closed; source/Floot/native semantic, freshness, provenance, runtime and device reconciliation remains open."]}
 }
