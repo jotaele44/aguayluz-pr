@@ -1,0 +1,56 @@
+{
+  "checkpoint_id": "USACE_PR_HYDROSPATIAL_CORPUS_v1_20260906",
+  "state": "OPEN",
+  "certification_target": "USACE_PR_HYDROSPATIAL_CORPUS_CERTIFIED",
+  "bounded_scope": "Declared public USACE Puerto Rico water-related source universe in source_registry_v2.json",
+  "producer": "jotaele44/aguayluz-pr:usace-pr-hydrospatial-corpus-v1",
+  "control_plane": "jotaele44/thehub-pr:usace-pr-hydrospatial-corpus-v1",
+  "implemented": {
+    "source_architecture": "PASS",
+    "identity_layers": "PASS",
+    "saj_environmental_documents_adapter": "PASS_IMPLEMENTED_NOT_LIVE_EXECUTED_IN_CURRENT_RUNTIME",
+    "contentdm_adapter": "PASS_IMPLEMENTED",
+    "contentdm_pagination": "PASS_IMPLEMENTED_NOT_LIVE_EXECUTED_IN_CURRENT_RUNTIME",
+    "pr_scoped_regulatory_discovery": "PASS_IMPLEMENTED_OVERDISCOVERY",
+    "mixed_index_discovery": "PASS_IMPLEMENTED_REQUIRES_CHILD_CLASSIFICATION",
+    "atomic_download_sha256_receipts": "PASS_IMPLEMENTED",
+    "source_arithmetic_gate": "PASS_IMPLEMENTED",
+    "culebrinas_fixture": "PASS",
+    "culebrinas_2004_index_family_discovery": "PASS_7_OF_7_INDEX_MEMBERS",
+    "saj_pr_index_seed": "PASS_29_SOURCE_ROWS_PRESERVED",
+    "thehub_registry": "DEPLOYED_ON_DRAFT_BRANCH"
+  },
+  "known_blockers": {
+    "direct_usace_bulk_download_from_current_runtime": "BLOCKED_DNS_OR_TOOL_TRANSPORT",
+    "pal_api_adapter": "BLOCKED_API_SCHEMA_DISCOVERY",
+    "erdc_search_adapter": "BLOCKED_SEARCH_ENDPOINT_DISCOVERY",
+    "fact_sheet_child_pr_classification": "OPEN",
+    "civil_works_child_pr_classification": "OPEN",
+    "contentdm_live_pagination_receipt": "OPEN",
+    "all_report_families_expanded": "OPEN",
+    "all_recoverable_bytes_hashed": "OPEN",
+    "project_identity_adjudication": "OPEN",
+    "waterbody_identity_adjudication": "OPEN",
+    "source_arithmetic_closed": "OPEN",
+    "unresolved_zero": false,
+    "github_ci": "BLOCKED_PRE_RUNNER_STEPS_EMPTY"
+  },
+  "culebrinas_fixture": {
+    "file": "RioCulebrinasDPR_B_Geotec_jun2004.pdf",
+    "size_bytes": 15207302,
+    "sha256": "0bbe08da2729eac846bf410a92186ce3a78aa4ad2ccefdde1b836a3dedd191d4",
+    "design_core_borings": 15,
+    "borrow_site_boring": 1,
+    "design_depth_range_ft": [15.0, 49.5],
+    "mixed_logical_sections_detected": ["APPENDIX_B", "APPENDIX_C"],
+    "byte_identity_to_public_url": "UNRESOLVED"
+  },
+  "arithmetic": {
+    "declared_source_count": 9,
+    "saj_pr_index_source_row_count": 29,
+    "culebrinas_2004_authoritative_index_family_members": 7,
+    "certified_manifestation_count": 0,
+    "unresolved_residue": "NONZERO"
+  },
+  "certification_rule": "Do not promote until every declared primary source is executed/dispositioned, family expansion and retrieval close, identity is adjudicated, arithmetic closes, and unresolved residue is zero."
+}
