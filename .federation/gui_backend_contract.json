@@ -1,0 +1,14 @@
+{
+  "schema_version": "federation.gui-backend-contract/1.0",
+  "repository": "Jotaele44/aguayluz-pr",
+  "source_commit": "3678271a03e36375dc3e9f2fb4da0b6b655622bd",
+  "policy": {"require_zero_material_residue": true, "dimensions": ["executability", "semantic", "state", "auth", "data", "provenance", "device", "identity", "geometry", "authority"]},
+  "discovery": {"backend_roots": ["server/backend", "src/aguayluz", "desktop", "scripts"], "frontend_roots": ["dashboard/src"], "route_files": ["dashboard/src/App.jsx"], "navigation_files": ["dashboard/src/components/Sidebar.jsx", "dashboard/src/App.jsx"], "existing_gui_capability_manifests": [".federation/gui-capabilities.json"]},
+  "authority": {"semantic_authority": "water-hydrology-ecology-utility-monitoring", "mutation_authority": "aguayluz-domain-state-only", "identity_authority": "aguayluz-domain-entities-and-source-manifestations", "geometry_authority": "domain-geometry-claims-consume-spiderweb-where-federated", "provenance_authority": "aguayluz-domain-source-and-evidence-provenance"},
+  "auth": {"mutating_route_policy": "require_guard_or_explicit_public", "guard_patterns": ["_require_key", "Depends\\(", "require_admin", "require_write", "dependencies\\s*="], "explicit_public_mutations": []},
+  "provenance": {"required_fields_when_available": ["source_ref", "source_hash", "evidence_tier", "review_status", "observed_at"], "frontend_evidence_files": ["dashboard/src/App.jsx", "dashboard/src/pages/Monitoring.jsx", "dashboard/src/pages/System.jsx"]},
+  "devices": {"desktop": true, "mobile_web": true, "native_ios": false, "native_evidence_files": [], "intentional_restrictions": []},
+  "backend_only_allowlist": [], "gui_only_allowlist": [], "state_claims": [],
+  "runtime_evidence": {"data": {"state": "OPEN", "evidence": []}, "identity": {"state": "OPEN", "evidence": []}, "geometry": {"state": "OPEN", "evidence": []}, "device": {"state": "OPEN", "evidence": []}},
+  "certification": {"state": "OPEN", "material_residue": ["Reconcile source dashboard and Floot/native manifestations without promoting historical/provisional evidence."]}
+}
