@@ -1,0 +1,98 @@
+{
+  "registry_version": "2.0.0",
+  "scope_statement": "Bounded public USACE source universe for Puerto Rico water-related project/report manifestations. All source families remain in arithmetic even when an adapter is blocked. Source absence is never nonexistence evidence.",
+  "waterbody_universe": {
+    "primary": "USGS NHDPlus HR Puerto Rico",
+    "crosschecks": ["Puerto Rico detailed hydrography GIS", "Puerto Rico SIGE Cuerpos de Agua"],
+    "marine_rule": "USACE/NOAA named marine entities remain candidates until independently bound"
+  },
+  "sources": [
+    {
+      "source_id": "saj_environmental_documents_pr",
+      "url": "https://www.saj.usace.army.mil/About/Divisions-Offices/Planning/Environmental-Branch/Environmental-Documents/",
+      "authority": "USACE Jacksonville District",
+      "adapter": "saj_environmental_documents",
+      "adapter_state": "IMPLEMENTED",
+      "scope": "Puerto Rico table; planning/environmental report families"
+    },
+    {
+      "source_id": "usace_digital_library_global_pr",
+      "url": "https://usace.contentdm.oclc.org/digital/api/search/searchterm/Puerto%20Rico/field/all/maxRecords/1024",
+      "authority": "USACE Digital Library",
+      "adapter": "contentdm_api",
+      "adapter_state": "IMPLEMENTED_SINGLE_PAGE_REQUIRES_PAGINATION_GATE",
+      "scope": "Global ContentDM Puerto Rico discovery"
+    },
+    {
+      "source_id": "usace_digital_library_project_management_pr",
+      "url": "https://usace.contentdm.oclc.org/digital/api/search/collection/p16021coll7/searchterm/Puerto%20Rico/field/all/maxRecords/1024",
+      "authority": "USACE Digital Library",
+      "adapter": "contentdm_api",
+      "adapter_state": "IMPLEMENTED_SINGLE_PAGE_REQUIRES_PAGINATION_GATE",
+      "scope": "Project Management Reports Puerto Rico discovery"
+    },
+    {
+      "source_id": "saj_regulatory_public_notices_pr",
+      "url": "https://www.saj.usace.army.mil/Missions/Regulatory/Public-Notices/Tag/3896/puerto-rico/",
+      "authority": "USACE Jacksonville District Regulatory",
+      "adapter": "pr_scoped_index",
+      "adapter_state": "IMPLEMENTED_OVERDISCOVERY",
+      "scope": "Puerto Rico-tagged regulatory notices",
+      "require_document_like": false
+    },
+    {
+      "source_id": "saj_congressional_fact_sheets_pr",
+      "url": "https://www.saj.usace.army.mil/About/Congressional-Fact-Sheets-2025/",
+      "authority": "USACE Jacksonville District",
+      "adapter": "generic_mixed_index",
+      "adapter_state": "IMPLEMENTED_DISCOVERY_CHILD_PR_CLASSIFICATION_REQUIRED",
+      "scope": "Civil Works/O&M/studies/FUDS project discovery",
+      "include_href_regex": "/About/Congressional-Fact-Sheets-2025/"
+    },
+    {
+      "source_id": "saj_civil_works_project_pages",
+      "url": "https://www.saj.usace.army.mil/Missions/Civil-Works/",
+      "authority": "USACE Jacksonville District",
+      "adapter": "generic_mixed_index",
+      "adapter_state": "IMPLEMENTED_DISCOVERY_CHILD_PR_CLASSIFICATION_REQUIRED",
+      "scope": "Civil Works project page discovery",
+      "include_href_regex": "/Missions/Civil-Works/"
+    },
+    {
+      "source_id": "iwr_project_assistance_library",
+      "url": "https://publibrary.sec.usace.army.mil/search",
+      "authority": "USACE Institute for Water Resources",
+      "adapter": "pal_api",
+      "adapter_state": "BLOCKED_API_SCHEMA_DISCOVERY",
+      "scope": "PAL public resources; FAQ confirms public API and advanced search"
+    },
+    {
+      "source_id": "erdc_knowledge_core",
+      "url": "https://www.erdc.usace.army.mil/Library/",
+      "authority": "USACE ERDC",
+      "adapter": "erdc_search",
+      "adapter_state": "BLOCKED_SEARCH_ENDPOINT_DISCOVERY",
+      "scope": "ERDC reports/datasets with Puerto Rico waterbody/project binding"
+    },
+    {
+      "source_id": "usace_hq_publications",
+      "url": "https://www.publications.usace.army.mil/",
+      "authority": "Headquarters USACE",
+      "adapter": "hq_publications_search",
+      "adapter_state": "SECONDARY_REFERENCE_SOURCE_NOT_PRIMARY_PROJECT_DISCOVERY",
+      "scope": "HQ references linked by project documents; retain only when project family references them"
+    }
+  ],
+  "certification_invariants": {
+    "all_sources_accounted": true,
+    "all_implemented_adapters_executed": false,
+    "blocked_adapters_zero": false,
+    "contentdm_pagination_closed": false,
+    "child_page_classification_closed": false,
+    "family_expansion_closed": false,
+    "recoverable_bytes_hashed": false,
+    "source_arithmetic_closed": false,
+    "unresolved_zero": false,
+    "certification_state": "OPEN"
+  }
+}
