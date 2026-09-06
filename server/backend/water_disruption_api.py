@@ -6,10 +6,11 @@ import os
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
+from server.backend import main as legacy
 from server.backend.water_disruption import WaterIncidentService
 
 router = APIRouter(prefix="/water-disruption", tags=["water-disruption"])
@@ -123,7 +124,7 @@ th,td{{border:1px solid #334155;padding:.45rem;text-align:left;vertical-align:to
 {control_html}</div></body></html>"""
 
 
-@router.post("/intake")
+@router.post("/intake", dependencies=[Depends(legacy._require_key)])
 def intake(envelope: dict[str, Any], idempotency_key: str = Header(alias="Idempotency-Key"), shadow_mode: str = Header(default="true", alias="X-Shadow-Mode")) -> dict[str, Any]:
     if shadow_mode.lower() != "true":
         raise HTTPException(status_code=409, detail="shadow_mode_required")
@@ -156,7 +157,7 @@ def validation_queue() -> dict[str, Any]:
     return {"shadow_mode": True, "total": len(items), "items": items}
 
 
-@router.post("/validation/{candidate_id}")
+@router.post("/validation/{candidate_id}", dependencies=[Depends(legacy._require_key)])
 def validate(candidate_id: str, request: ValidationRequest, idempotency_key: str = Header(alias="Idempotency-Key")) -> dict[str, Any]:
     if request.candidate.get("candidate_id") != candidate_id:
         raise HTTPException(status_code=422, detail="candidate_id_mismatch")
@@ -184,7 +185,7 @@ def incident(incident_id: str) -> dict[str, Any]:
         raise HTTPException(status_code=404, detail="incident_not_found") from exc
 
 
-@router.post("/incidents/{incident_id}/transition")
+@router.post("/incidents/{incident_id}/transition", dependencies=[Depends(legacy._require_key)])
 def transition(incident_id: str, request: TransitionRequest, idempotency_key: str = Header(alias="Idempotency-Key")) -> dict[str, Any]:
     try:
         return service.transition(incident_id, request.to_state, request.reason, idempotency_key)
@@ -194,16 +195,16 @@ def transition(incident_id: str, request: TransitionRequest, idempotency_key: st
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
-@router.post("/incidents/{incident_id}/merge")
+@router.post("/incidents/{incident_id}/merge", dependencies=[Depends(legacy._require_key)])
 def merge(incident_id: str, request: MergeRequest, idempotency_key: str = Header(alias="Idempotency-Key")) -> dict[str, Any]:
     return service.merge(incident_id, request.source_incident_ids, request.reason, idempotency_key)
 
 
-@router.post("/incidents/{incident_id}/split")
+@router.post("/incidents/{incident_id}/split", dependencies=[Depends(legacy._require_key)])
 def split(incident_id: str, request: SplitRequest, idempotency_key: str = Header(alias="Idempotency-Key")) -> dict[str, Any]:
     return service.split(incident_id, request.child_dedup_keys, request.reason, idempotency_key)
 
 
-@router.post("/retractions")
+@router.post("/retractions", dependencies=[Depends(legacy._require_key)])
 def retract(request: RetractionRequest, idempotency_key: str = Header(alias="Idempotency-Key")) -> dict[str, Any]:
     return service.retract(request.candidate_id, request.reason, idempotency_key)
