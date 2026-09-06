@@ -1,0 +1,74 @@
+{
+  "schema_version": "aguayluz.culebrinas-prefield-closure/v1.1",
+  "issued_date": "2026-09-06",
+  "state": "OPEN_BLOCKED",
+  "B01_sige_globalid": {
+    "state": "BLOCKED_FEATURE_EXTRACTION",
+    "authoritative_layer": "https://sige.pr.gov/server/rest/services/MIPR/Geologia_v10_N/FeatureServer/2",
+    "native_epsg": 32161,
+    "service_item_id": "294d280fa3094e4e8d3cffa339fd33b7",
+    "binding_anchor": {
+      "site_id": "USGS-182252067115800",
+      "name": "Aguada 1 Well",
+      "wgs84_lat": 18.3792522838065,
+      "wgs84_lon": -67.199153298312,
+      "local_aquifer_code": "110RCBV",
+      "local_aquifer_name": "Rio Culebrinas Valley Aquifer"
+    },
+    "direct_query_attempt_20260906": "BLOCKED_BY_CURRENT_RUNTIME_TRANSPORT",
+    "layer_metadata_reverified_20260906": true,
+    "globalid_field_nonnull": true,
+    "supported_query_formats": ["JSON", "geoJSON", "PBF"],
+    "freeze_operator": "operators/fetch_culebrinas_canonical_aquifer.py",
+    "rule": "exactly_one_intersecting_compatible_feature_with_nonnull_GlobalID",
+    "proximity_identity_used": false
+  },
+  "B02_usace_crs": {
+    "state": "OPEN_AUTHORITATIVE_BINDING",
+    "raw_coordinates_retained": true,
+    "candidate_epsg": 3991,
+    "candidate_state": "INFERENCE_HIGH_CONFIDENCE",
+    "canonical_transform_allowed": false,
+    "new_bounded_result_20260906": "USACE Appendix B text reverified that X and Y coordinates are given in feet; no explicit horizontal datum/CRS statement recovered",
+    "reason": "feet-based project coordinates plus spatial coherence support EPSG:3991 as a candidate, but authoritative datum binding is still absent"
+  },
+  "B03_subsurface_census": {
+    "state": "OPEN_INCOMPLETE",
+    "closed_manifestations": [
+      "15_of_15_USACE_design_boring_headers",
+      "USGS-182252067115800_Aguada_1_106_ft_110RCBV",
+      "USGS_surface_water_controls"
+    ],
+    "new_bounded_evidence_20260906": [
+      "USGS HA730-N states little is known about groundwater flow from west coast to Isabela",
+      "USGS HA730-N states extent of saltwater near Isabela is unknown",
+      "USGS HA730-N states lower-aquifer groundwater in extreme west probably moves toward Rio Culebrinas and ocean",
+      "USGS PP1419 describes inadequate observation-well distribution and lower-aquifer well scarcity as limits on North Coast groundwater-flow definition"
+    ],
+    "bounded_search_result": "no modern regional groundwater model, dense borehole network, regional ERT/TEM campaign, or additional publicly indexed USGS well explicitly tagged 110RCBV was recovered",
+    "unresolved_source_families": ["DRNA_local_groundwater_files", "AAA_PRASA_well_and_project_files", "UPR_unpublished_theses_or_project_data", "public_private_geotechnical_borings"]
+  },
+  "B04_uprm_seismic": {
+    "state": "OPEN_PENDING_SEISMIC_INTERPRETATION",
+    "campaign": "2026 PR-418 Valle de Aguada active seismic line",
+    "sensors": 96,
+    "line_km": 2.28,
+    "bounded_search_date": "2026-09-06",
+    "bounded_search_result": "UPRM acquisition announcement remains the latest authoritative public result recovered; no later public interpretation found"
+  },
+  "B05_federation_ci": {
+    "state": "BLOCKED_EXTERNAL_GITHUB_ACTIONS_RUNNER",
+    "aguayluz_issue": 234,
+    "aguayluz_latest_validate_run": 33986242177,
+    "thehub_latest_hub_ci_run": 33986252824,
+    "invariant": "failed jobs return steps=null and logs_url=null before runner steps execute in both repositories",
+    "merge_allowed": false
+  },
+  "prefield_certified": false,
+  "promotion_blockers": ["B01", "B02", "B03", "B04", "B05"],
+  "field_execution_allowed_as_certified_campaign": false,
+  "new_experimental_observation_count": 0,
+  "KVI_MEASURED": "BLOCKED_NO_FIELD_DATA",
+  "H1_H5": "OPEN",
+  "zero_material_residue": false
+}
