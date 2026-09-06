@@ -1,0 +1,200 @@
+{
+  "registry_version": "3.0.0",
+  "scope_statement": "Bounded public-source architecture for Puerto Rico USACE water-related reports, project documents and regulatory manifestations. Current and historical sources are separated; source absence is never nonexistence evidence.",
+  "source_roles": [
+    "PRIMARY_REPORT_SOURCE",
+    "CURRENT_REGULATORY_SOURCE",
+    "HISTORICAL_BACKFILL_SOURCE",
+    "PROJECT_DISCOVERY_SOURCE",
+    "SECONDARY_REFERENCE_SOURCE"
+  ],
+  "waterbody_universe": {
+    "primary": "Existing AguaYLuz NHDPlus V2.1 Puerto Rico VPU 21 water graph / water assets",
+    "crosschecks": [
+      "Puerto Rico detailed hydrography GIS",
+      "Puerto Rico SIGE waterbody service"
+    ],
+    "reuse_rule": "Reuse passed AguaYLuz hydrography manifestations before acquiring a new mutable snapshot.",
+    "marine_rule": "Named bays, harbors, lagoons, estuaries, coastal waters and offshore disposal/study areas discovered from authoritative USACE/NOAA manifestations remain separate candidates until independently bound."
+  },
+  "sources": [
+    {
+      "source_id": "saj_environmental_documents_pr",
+      "role": "PRIMARY_REPORT_SOURCE",
+      "temporal_role": "HISTORICAL_AND_LEGACY_PLANNING_INDEX",
+      "url": "https://www.saj.usace.army.mil/About/Divisions-Offices/Planning/Environmental-Branch/Environmental-Documents/",
+      "authority": "USACE Jacksonville District",
+      "adapter": "saj_environmental_documents",
+      "adapter_state": "IMPLEMENTED",
+      "scope": "Puerto Rico project report families and appendices retained on Jacksonville historical index"
+    },
+    {
+      "source_id": "usace_digital_library_global_pr",
+      "role": "PRIMARY_REPORT_SOURCE",
+      "temporal_role": "ENTERPRISE_ARCHIVE",
+      "url": "https://usace.contentdm.oclc.org/digital/api/search/searchterm/Puerto%20Rico/field/all/maxRecords/1024",
+      "authority": "USACE Digital Library",
+      "adapter": "contentdm_api",
+      "adapter_state": "IMPLEMENTED_PAGINATION_GATE",
+      "scope": "All ContentDM collections with Puerto Rico metadata/full-text discovery"
+    },
+    {
+      "source_id": "usace_digital_library_project_management_pr",
+      "role": "PRIMARY_REPORT_SOURCE",
+      "temporal_role": "ENTERPRISE_ARCHIVE",
+      "url": "https://usace.contentdm.oclc.org/digital/api/search/collection/p16021coll7/searchterm/Puerto%20Rico/field/all/maxRecords/1024",
+      "authority": "USACE Digital Library",
+      "adapter": "contentdm_api",
+      "adapter_state": "IMPLEMENTED_PAGINATION_GATE",
+      "scope": "Project Management Reports collection Puerto Rico discovery"
+    },
+    {
+      "source_id": "iwr_project_assistance_library",
+      "role": "PRIMARY_REPORT_SOURCE",
+      "temporal_role": "ENTERPRISE_PLANNING_LIBRARY",
+      "url": "https://publibrary.sec.usace.army.mil/search",
+      "authority": "USACE Institute for Water Resources",
+      "adapter": "pal_api",
+      "adapter_state": "BLOCKED_API_SCHEMA_DISCOVERY",
+      "scope": "Project Assistance Library public planning resources"
+    },
+    {
+      "source_id": "erdc_knowledge_core",
+      "role": "PRIMARY_REPORT_SOURCE",
+      "temporal_role": "ENTERPRISE_TECHNICAL_LIBRARY",
+      "url": "https://erdc-library.erdc.dren.mil/",
+      "authority": "USACE ERDC Knowledge Core",
+      "adapter": "erdc_search",
+      "adapter_state": "BLOCKED_SEARCH_ENDPOINT_DISCOVERY",
+      "scope": "ERDC-authored and predecessor technical reports/datasets with Puerto Rico binding"
+    },
+    {
+      "source_id": "rrs_public_notices_pr",
+      "role": "CURRENT_REGULATORY_SOURCE",
+      "temporal_role": "CURRENT_PRIMARY_FROM_2025",
+      "url": "https://rrs.usace.army.mil/rrs/public-notices",
+      "authority": "USACE Regulatory Request System",
+      "adapter": "rrs_public_notices",
+      "adapter_state": "BLOCKED_PUBLIC_API_DISCOVERY_JS_APPLICATION",
+      "scope": "Current nationwide Regulatory public notices filtered to Puerto Rico / Caribbean District; official Puerto Rico Regulatory portal identifies RRS as primary notice location"
+    },
+    {
+      "source_id": "orm_public_pr",
+      "role": "CURRENT_REGULATORY_SOURCE",
+      "temporal_role": "CURRENT_AND_FINALIZED_ACTIONS",
+      "url": "https://permits.ops.usace.army.mil/orm-public",
+      "authority": "USACE Regulatory and Section 408 Publicly Available Data",
+      "adapter": "orm_public",
+      "adapter_state": "BLOCKED_DISTRICT_CODE_AND_DATA_ENDPOINT_DISCOVERY",
+      "scope": "Final/pending individual permits, NEPA EA/EIS, emergency, AJD, Section 408 and other publicly available Regulatory actions"
+    },
+    {
+      "source_id": "sad_puerto_rico_regulatory_portal",
+      "role": "SECONDARY_REFERENCE_SOURCE",
+      "temporal_role": "CURRENT_AUTHORITY_POINTER",
+      "url": "https://www.sad.usace.army.mil/Missions/Regulatory/Puerto-Rico/",
+      "authority": "USACE South Atlantic Division / Caribbean District Regulatory",
+      "adapter": null,
+      "adapter_state": "REFERENCE_ONLY",
+      "scope": "Authoritative pointer identifying RRS as primary USACE Regulatory Public Notice location and Caribbean District Puerto Rico regulatory resources"
+    },
+    {
+      "source_id": "saj_regulatory_public_notices_pr",
+      "role": "HISTORICAL_BACKFILL_SOURCE",
+      "temporal_role": "LEGACY_BEFORE_RRS_MIGRATION",
+      "url": "https://www.saj.usace.army.mil/Missions/Regulatory/Public-Notices/Tag/3896/puerto-rico/",
+      "authority": "USACE Jacksonville District Regulatory",
+      "adapter": "pr_scoped_index",
+      "adapter_state": "IMPLEMENTED_OVERDISCOVERY_HISTORICAL_BACKFILL",
+      "scope": "Legacy Puerto Rico public notices and attachment discovery retained after migration to RRS"
+    },
+    {
+      "source_id": "saa_site_index",
+      "role": "PROJECT_DISCOVERY_SOURCE",
+      "temporal_role": "CURRENT_DISTRICT_SITE_STRUCTURE",
+      "url": "https://www.saa.usace.army.mil/Site-Index/",
+      "authority": "USACE Latin America & Caribbean District",
+      "adapter": "pr_scoped_index",
+      "adapter_state": "IMPLEMENTED_OVERDISCOVERY_CHILD_CLASSIFICATION_REQUIRED",
+      "scope": "Current district site/project hubs; presently exposes the dedicated Rio Puerto Nuevo project hierarchy"
+    },
+    {
+      "source_id": "saa_rio_puerto_nuevo_project_hub",
+      "role": "PROJECT_DISCOVERY_SOURCE",
+      "temporal_role": "CURRENT_PROJECT_HUB",
+      "url": "https://www.saa.usace.army.mil/Rio-Puerto-Nuevo/",
+      "authority": "USACE Latin America & Caribbean District",
+      "adapter": "pr_scoped_index",
+      "adapter_state": "IMPLEMENTED_OVERDISCOVERY_FAMILY_EXPANSION_REQUIRED",
+      "scope": "Current Rio Puerto Nuevo historical/current project information, reports, assessments, boring-related appendices and project phases"
+    },
+    {
+      "source_id": "saa_fy26_contract_forecast",
+      "role": "PROJECT_DISCOVERY_SOURCE",
+      "temporal_role": "CURRENT_PROJECT_CROSSCHECK",
+      "url": "https://www.saa.usace.army.mil/Portals/90/SAA%20FY26%20Contract%20Forecast%20Booklet_001.pdf",
+      "authority": "USACE Latin America & Caribbean District",
+      "adapter": null,
+      "adapter_state": "SECONDARY_PROJECT_UNIVERSE_CROSSCHECK",
+      "scope": "Current Civil Works/O&M/interagency workload crosscheck including Puerto Rico river, harbor and dam projects"
+    },
+    {
+      "source_id": "saj_congressional_fact_sheets_pr",
+      "role": "PROJECT_DISCOVERY_SOURCE",
+      "temporal_role": "LEGACY_AND_CURRENT_PROJECT_CROSSCHECK",
+      "url": "https://www.saj.usace.army.mil/About/Congressional-Fact-Sheets-2025/",
+      "authority": "USACE Jacksonville District",
+      "adapter": "generic_mixed_index",
+      "adapter_state": "IMPLEMENTED_DISCOVERY_CHILD_PR_CLASSIFICATION_REQUIRED",
+      "scope": "Civil Works/O&M/studies/FUDS project discovery crosscheck"
+    },
+    {
+      "source_id": "saj_civil_works_project_pages",
+      "role": "PROJECT_DISCOVERY_SOURCE",
+      "temporal_role": "LEGACY_PROJECT_CROSSCHECK",
+      "url": "https://www.saj.usace.army.mil/Missions/Civil-Works/",
+      "authority": "USACE Jacksonville District",
+      "adapter": "generic_mixed_index",
+      "adapter_state": "IMPLEMENTED_DISCOVERY_CHILD_PR_CLASSIFICATION_REQUIRED",
+      "scope": "Legacy Civil Works project-page discovery"
+    },
+    {
+      "source_id": "usace_units_repository_metaregistry",
+      "role": "SECONDARY_REFERENCE_SOURCE",
+      "temporal_role": "CURRENT_REPOSITORY_DISCOVERY",
+      "url": "https://www.usace.army.mil/Resources/Contact/Unit-Websites/",
+      "authority": "USACE Headquarters",
+      "adapter": null,
+      "adapter_state": "REFERENCE_ONLY_REPOSITORY_METAREGISTRY",
+      "scope": "Official USACE library/document-repository list used to detect omitted repository families such as Digital Library, Knowledge Core, Planning Toolbox and ORM Public"
+    },
+    {
+      "source_id": "usace_hq_publications",
+      "role": "SECONDARY_REFERENCE_SOURCE",
+      "temporal_role": "ENTERPRISE_REFERENCE_LIBRARY",
+      "url": "https://www.publications.usace.army.mil/",
+      "authority": "Headquarters USACE",
+      "adapter": null,
+      "adapter_state": "REFERENCE_ONLY_FOLLOW_WHEN_PROJECT_DOCUMENT_CITES",
+      "scope": "HQ manuals/policies/publications referenced by Puerto Rico project reports; not independent project identity"
+    }
+  ],
+  "certification_invariants": {
+    "declared_source_count": 16,
+    "current_regulatory_primary_is_rrs": true,
+    "orm_public_required": true,
+    "jacksonville_regulatory_is_historical_backfill": true,
+    "current_caribbean_district_discovery_present": true,
+    "all_primary_adapters_executed": false,
+    "all_current_regulatory_adapters_executed": false,
+    "all_project_discovery_crosschecks_executed": false,
+    "family_expansion_closed": false,
+    "recoverable_bytes_hashed": false,
+    "project_identity_closed": false,
+    "waterbody_identity_closed": false,
+    "source_arithmetic_closed": false,
+    "unresolved_zero": false,
+    "certification_state": "OPEN"
+  },
+  "certification_rule": "USACE_PR_HYDROSPATIAL_CORPUS_CERTIFIED requires zero unexplained residue across all declared PRIMARY_REPORT_SOURCE, CURRENT_REGULATORY_SOURCE and PROJECT_DISCOVERY_SOURCE entries; SECONDARY_REFERENCE_SOURCE entries must be followed when referenced but do not independently define project identity."
+}
