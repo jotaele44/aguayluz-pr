@@ -1,0 +1,110 @@
+{
+  "registry_version": "1.0.0",
+  "scope_statement": "Bounded public USACE source universe for Puerto Rico water-related project/report manifestations. Source absence is never evidence of nonexistence.",
+  "waterbody_universe": {
+    "primary": {
+      "source_id": "usgs_nhdplus_hr_pr",
+      "authority": "USGS National Hydrography",
+      "url": "https://www.usgs.gov/national-hydrography/nhdplus-high-resolution",
+      "coverage": "Puerto Rico",
+      "role": "canonical terrestrial hydrography discovery universe"
+    },
+    "local_crosscheck": {
+      "source_id": "pr_gis_detailed_hydrography",
+      "authority": "Puerto Rico GIS / OGP / CRIM",
+      "url": "https://gis.pr.gov/descargaGeodatos/ambientales/Pages/Hidrograf%C3%ADa.aspx",
+      "role": "independent local linear/area hydrography crosscheck"
+    },
+    "service_crosscheck": {
+      "source_id": "pr_sige_waterbodies",
+      "authority": "Puerto Rico SIGE",
+      "url": "https://sige.pr.gov/server/rest/services/Advisory_Maps/Advisory_Maps/FeatureServer/2",
+      "role": "named waterbody service crosscheck; GlobalID present"
+    },
+    "marine_extension_rule": "Named bays, harbors, lagoons, estuaries, coastal waters, ODMDS and offshore study areas discovered from authoritative USACE/NOAA project manifestations are retained as separate candidate hydrologic entities until independently bound."
+  },
+  "sources": [
+    {
+      "source_id": "saj_environmental_documents_pr",
+      "source_type": "USACE_DISTRICT_INDEX",
+      "url": "https://www.saj.usace.army.mil/About/Divisions-Offices/Planning/Environmental-Branch/Environmental-Documents/",
+      "authority": "USACE Jacksonville District",
+      "scope": "Puerto Rico section; planning reports, EA/EIS, appendices and related environmental documents",
+      "enabled": true,
+      "adapter": "saj_environmental_documents"
+    },
+    {
+      "source_id": "usace_digital_library_global_pr",
+      "source_type": "CONTENTDM_API",
+      "url": "https://usace.contentdm.oclc.org/digital/api/search/searchterm/Puerto%20Rico/field/all/maxRecords/1024",
+      "authority": "USACE Digital Library",
+      "scope": "All collections, Puerto Rico full-text/metadata discovery",
+      "enabled": true,
+      "adapter": "contentdm_api"
+    },
+    {
+      "source_id": "usace_digital_library_project_management_pr",
+      "source_type": "CONTENTDM_API",
+      "url": "https://usace.contentdm.oclc.org/digital/api/search/collection/p16021coll7/searchterm/Puerto%20Rico/field/all/maxRecords/1024",
+      "authority": "USACE Digital Library",
+      "scope": "Project Management Reports collection, Puerto Rico",
+      "enabled": true,
+      "adapter": "contentdm_api"
+    },
+    {
+      "source_id": "saj_regulatory_public_notices_pr",
+      "source_type": "USACE_DISTRICT_INDEX",
+      "url": "https://www.saj.usace.army.mil/Missions/Regulatory/Public-Notices/Tag/3896/puerto-rico/",
+      "authority": "USACE Jacksonville District Regulatory",
+      "scope": "Puerto Rico regulatory public notices and attachments",
+      "enabled": true,
+      "adapter": null
+    },
+    {
+      "source_id": "saj_congressional_fact_sheets_pr",
+      "source_type": "USACE_DISTRICT_INDEX",
+      "url": "https://www.saj.usace.army.mil/About/Congressional-Fact-Sheets-2025/",
+      "authority": "USACE Jacksonville District",
+      "scope": "Puerto Rico Civil Works, O&M, studies and DERP/FUDS project discovery",
+      "enabled": true,
+      "adapter": null
+    },
+    {
+      "source_id": "saj_civil_works_project_pages",
+      "source_type": "USACE_DISTRICT_INDEX",
+      "url": "https://www.saj.usace.army.mil/Missions/Civil-Works/",
+      "authority": "USACE Jacksonville District",
+      "scope": "Civil Works project pages including navigation and flood-risk projects",
+      "enabled": true,
+      "adapter": null
+    },
+    {
+      "source_id": "iwr_project_assistance_library",
+      "source_type": "USACE_LIBRARY",
+      "url": "https://publibrary.sec.usace.army.mil/search",
+      "authority": "USACE Institute for Water Resources",
+      "scope": "Planning/project-assistance resources with Puerto Rico geographic or full-text match",
+      "enabled": true,
+      "adapter": null
+    },
+    {
+      "source_id": "erdc_knowledge_core",
+      "source_type": "USACE_LIBRARY",
+      "url": "https://www.erdc.usace.army.mil/Library/",
+      "authority": "USACE ERDC",
+      "scope": "ERDC reports/datasets with Puerto Rico waterbody or project binding",
+      "enabled": true,
+      "adapter": null
+    },
+    {
+      "source_id": "usace_hq_publications",
+      "source_type": "USACE_LIBRARY",
+      "url": "https://www.publications.usace.army.mil/",
+      "authority": "Headquarters USACE",
+      "scope": "HQ publications referenced by Puerto Rico project reports; not waterbody identity by itself",
+      "enabled": true,
+      "adapter": null
+    }
+  ],
+  "certification_rule": "CERTIFIED only when every declared source has an implemented/executed adapter or an explicit EXCLUDED/UNAVAILABLE disposition, every discovered manifestation is classified, family expansion is closed, bytes are hashed where recoverable, identities are adjudicated, and source_total = retrieved + excluded + unavailable + unresolved with unresolved = 0 inside the certified scope."
+}
