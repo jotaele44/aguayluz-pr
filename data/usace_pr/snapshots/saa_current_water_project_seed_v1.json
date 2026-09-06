@@ -1,0 +1,35 @@
+{
+  "snapshot_id": "saa_current_water_project_seed_v1",
+  "retrieval_date_utc": "2026-09-06",
+  "authority": "USACE Latin America & Caribbean District",
+  "scope": "Current public project/workload crosscheck only. This seed discovers omitted project families; it is not a complete district workload inventory and does not independently prove waterbody identity.",
+  "sources": [
+    "https://www.saa.usace.army.mil/Portals/90/SAA%20FY26%20Contract%20Forecast%20Booklet_001.pdf",
+    "https://www.saa.usace.army.mil/Rio-Puerto-Nuevo/",
+    "https://www.saa.usace.army.mil/News-Info/News-Releases/"
+  ],
+  "candidates": [
+    {"project_raw":"Rio Puerto Nuevo","work_raw":"Contract 7 A/B/C - Design","state":"DISCOVERY_CANDIDATE"},
+    {"project_raw":"Rio Puerto Nuevo","work_raw":"Contract 6A - Geotechnical Surveys","state":"DISCOVERY_CANDIDATE"},
+    {"project_raw":"Rio Grande de Arecibo","work_raw":"Contract 2 - Design","state":"DISCOVERY_CANDIDATE"},
+    {"project_raw":"Rio Guayanilla","work_raw":"Design","state":"DISCOVERY_CANDIDATE"},
+    {"project_raw":"Rio Guanajibo","work_raw":"Contract 1 - Design","state":"DISCOVERY_CANDIDATE"},
+    {"project_raw":"Rio Nigua","work_raw":"Design","state":"DISCOVERY_CANDIDATE"},
+    {"project_raw":"Rio Nigua","work_raw":"Geotechnical & Seismic","state":"DISCOVERY_CANDIDATE"},
+    {"project_raw":"San Juan Metro","work_raw":"Cataño Breakwaters","state":"DISCOVERY_CANDIDATE"},
+    {"project_raw":"San Juan Harbor","work_raw":"Operations & Maintenance","state":"DISCOVERY_CANDIDATE"},
+    {"project_raw":"Arecibo Harbor","work_raw":"Operations & Maintenance","state":"DISCOVERY_CANDIDATE"},
+    {"project_raw":"Ponce Harbor","work_raw":"Operations & Maintenance","state":"DISCOVERY_CANDIDATE"},
+    {"project_raw":"Mayaguez Harbor","work_raw":"Operations & Maintenance","state":"DISCOVERY_CANDIDATE"},
+    {"project_raw":"Guajataca Dam","work_raw":"Permanent Repairs","state":"DISCOVERY_CANDIDATE"},
+    {"project_raw":"Patillas Dam","work_raw":"Seismic Retrofit Pre-Award Support","state":"DISCOVERY_CANDIDATE"},
+    {"project_raw":"Rio de La Plata Flood Control Project","work_raw":"North Coast Super-Aqueduct relocation / Supplemental Contract 1","state":"DISCOVERY_CANDIDATE"},
+    {"project_raw":"Caño Martín Peña Ecosystem Restoration Project","work_raw":"Current construction/restoration phases","state":"DISCOVERY_CANDIDATE"}
+  ],
+  "invariants": {
+    "candidate_count": 16,
+    "project_or_waterbody_identity_closed": false,
+    "crosscheck_only": true,
+    "required_followup": "Each candidate must be searched independently across primary report sources and retained even if no exact-name report is found."
+  }
+}
