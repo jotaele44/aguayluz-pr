@@ -34,7 +34,11 @@ def is_allowed_path(path: str, allowed_paths: list[str]) -> bool:
     )
 
 
-def validate(root: Path) -> dict[str, Any]:
+def validate(
+    root: Path,
+    enforce_change_scope: bool = False,
+    change_base: str | None = None,
+) -> dict[str, Any]:
     skillpack_root = root / ".claude" / "skillpacks"
     errors: list[str] = []
 
@@ -143,38 +147,64 @@ def validate(root: Path) -> dict[str, Any]:
             )
             if ancestry.returncode != 0:
                 errors.append("pinned base is not an ancestor of HEAD")
-
-            diff = run_git(
-                root,
-                "diff",
-                "--name-only",
-                f"{base_commit}..HEAD",
-            )
-            if diff.returncode != 0:
-                errors.append("git diff failed")
             else:
-                changed_paths = [
-                    path for path in diff.stdout.splitlines() if path
-                ]
-                allowed_paths = manifest["allowed_change_paths"]
-                for changed_path in changed_paths:
-                    if not is_allowed_path(changed_path, allowed_paths):
-                        errors.append(f"out-of-scope change: {changed_path}")
+                checks.append("pinned_base_ancestry")
 
-                for legacy_surface in binding["legacy_surfaces"]:
-                    legacy_prefix = legacy_surface.rstrip("/") + "/"
-                    for changed_path in changed_paths:
-                        if changed_path == legacy_surface or changed_path.startswith(
-                            legacy_prefix
-                        ):
-                            errors.append(
-                                "legacy surface was modified: "
-                                f"{legacy_surface}"
-                            )
+        if enforce_change_scope:
+            scope_base = change_base or base_commit
+            scope_base_object = run_git(
+                root,
+                "cat-file",
+                "-e",
+                f"{scope_base}^{{commit}}",
+            )
+            if scope_base_object.returncode != 0:
+                errors.append("change base commit object is unavailable")
+                changed_paths: list[str] = []
+            elif (
+                run_git(
+                    root,
+                    "merge-base",
+                    "--is-ancestor",
+                    scope_base,
+                    "HEAD",
+                ).returncode
+                != 0
+            ):
+                errors.append("change base is not an ancestor of HEAD")
+                changed_paths = []
+            else:
+                diff = run_git(
+                    root,
+                    "diff",
+                    "--name-only",
+                    f"{scope_base}..HEAD",
+                )
+                if diff.returncode != 0:
+                    errors.append("git diff failed")
+                    changed_paths = []
+                else:
+                    changed_paths = [path for path in diff.stdout.splitlines() if path]
+
+            allowed_paths = manifest["allowed_change_paths"]
+            for changed_path in changed_paths:
+                if not is_allowed_path(changed_path, allowed_paths):
+                    errors.append(f"out-of-scope change: {changed_path}")
+
+            for legacy_surface in binding["legacy_surfaces"]:
+                legacy_prefix = legacy_surface.rstrip("/") + "/"
+                for changed_path in changed_paths:
+                    if changed_path == legacy_surface or changed_path.startswith(
+                        legacy_prefix
+                    ):
+                        errors.append(
+                            "legacy surface was modified: "
+                            f"{legacy_surface}"
+                        )
 
             checks.extend(
                 [
-                    "exact_base_ancestry",
+                    "change_base_ancestry",
                     "change_scope",
                     "legacy_non_modification",
                 ]
@@ -195,9 +225,18 @@ def validate(root: Path) -> dict[str, Any]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", default=".")
+    parser.add_argument("--enforce-change-scope", action="store_true")
+    parser.add_argument(
+        "--change-base",
+        help="commit used for changed-path enforcement (defaults to pinned base)",
+    )
     args = parser.parse_args()
 
-    result = validate(Path(args.root).resolve())
+    result = validate(
+        Path(args.root).resolve(),
+        enforce_change_scope=args.enforce_change_scope,
+        change_base=args.change_base,
+    )
     print(json.dumps(result, indent=2, sort_keys=True))
     return 0 if result["status"] == "success" else 1
 

@@ -33,7 +33,7 @@ def test_summary_is_explicitly_pilot_scoped(client):
         "edges": 6,
         "status_events": 3,
         "observations": 2,
-        "alerts": alerts["total"],
+        "alerts": 7,
         "unresolved_gaps": body["counts"]["unresolved_gaps"],
     }
     assert alerts["total"] >= 3
@@ -41,6 +41,11 @@ def test_summary_is_explicitly_pilot_scoped(client):
         "ok": True,
         "error_count": 0,
         "contradiction_count": 0,
+    }
+    assert alerts["total"] == body["counts"]["alerts"]
+    assert {item["alert_type"] for item in alerts["items"]} == {
+        "public_access_restriction",
+        "stale_operational_status",
     }
 
 
