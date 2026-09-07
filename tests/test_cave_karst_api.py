@@ -29,11 +29,15 @@ def test_summary_is_explicitly_pilot_scoped(client):
     assert body["counts"] == {
         "assets": 4,
         "sources": 4,
-        "edges": 6,
-        "status_events": 3,
-        "observations": 2,
-        "alerts": 3,
-        "unresolved_gaps": body["counts"]["unresolved_gaps"],
+            "edges": 6,
+            "status_events": 3,
+            "observations": 2,
+            "alerts": 7,
+            "unresolved_gaps": body["counts"]["unresolved_gaps"],
+        }
+    assert body["alert_type"] == {
+        "public_access_restriction": 3,
+        "stale_operational_status": 4,
     }
     assert body["validation"] == {
         "ok": True,
