@@ -17,7 +17,11 @@ export const useAssets = (f = {}) => useQuery({ queryKey: ['assets', f], queryFn
 export const useAssetsGeojson = () => useQuery({ queryKey: ['assets.geojson'], queryFn: getAssetsGeojson })
 export const useMunicipiosGeojson = () => useQuery({ queryKey: ['municipios.geojson'], queryFn: getMunicipiosGeojson })
 export const useBarriosGeojson = () => useQuery({ queryKey: ['barrios.geojson'], queryFn: getBarriosGeojson })
-export const useEventDensity = (f = {}) => useQuery({ queryKey: ['municipios/event_density', f], queryFn: () => getEventDensity(f) })
+export const useEventDensity = (f = {}) => useQuery({
+  queryKey: ['municipios/event_density', f],
+  queryFn: () => getEventDensity(f),
+  retry: false,
+})
 export const DEFAULT_EVENT_LIMIT = 500
 export const useEvents = (f = {}) => {
   const params = { limit: DEFAULT_EVENT_LIMIT, ...f }

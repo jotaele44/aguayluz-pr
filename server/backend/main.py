@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import hashlib
 import importlib.util
 import io
 import json
@@ -181,6 +182,45 @@ def _load_json(path: Path, default: Any = None) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _source_manifestation(path: Path, row_count: int | None = None) -> dict[str, Any]:
+    try:
+        display_path = str(path.relative_to(REPO_ROOT))
+    except ValueError:
+        display_path = str(path)
+    manifestation: dict[str, Any] = {
+        "path": display_path,
+        "exists": path.is_file(),
+        "sha256": hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None,
+    }
+    if row_count is not None:
+        manifestation["row_count"] = row_count
+    return manifestation
+
+
+def _build_municipio_geoid_index(document: dict[str, Any]) -> dict[str, str]:
+    by_name: dict[str, str] = {}
+    names_by_geoid: dict[str, str] = {}
+    for index, feature in enumerate(document.get("features", [])):
+        properties = feature.get("properties") if isinstance(feature, dict) else None
+        if not isinstance(properties, dict):
+            raise ValueError(f"municipio feature {index} has no properties object")
+        name = properties.get("name")
+        geoid = properties.get("geoid")
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError(f"municipio feature {index} has no nonblank name")
+        if not isinstance(geoid, str) or not geoid.strip():
+            raise ValueError(f"municipio feature {index} has no nonblank geoid")
+        if name in by_name:
+            raise ValueError(f"duplicate municipio name: {name}")
+        if geoid in names_by_geoid:
+            raise ValueError(
+                f"duplicate municipio geoid {geoid}: {names_by_geoid[geoid]} and {name}"
+            )
+        by_name[name] = geoid
+        names_by_geoid[geoid] = name
+    return by_name
+
+
 def _parse_dt(s: str | None) -> datetime | None:
     if not s:
         return None
@@ -201,9 +241,12 @@ def _parse_dt(s: str | None) -> datetime | None:
 
 # Load at startup; restart server to pick up data changes.
 _assets: list[dict[str, Any]] = _load_jsonl(DATA / "utility_assets.jsonl")
-_events: list[dict[str, Any]] = (
-    _load_jsonl(DATA / "service_events.jsonl") + _load_jsonl(DATA / "aee_incidents.jsonl")
-)
+_EVENT_SOURCE_PATHS = (DATA / "service_events.jsonl", DATA / "aee_incidents.jsonl")
+_event_sources = [(path, _load_jsonl(path)) for path in _EVENT_SOURCE_PATHS]
+_events: list[dict[str, Any]] = [row for _, rows in _event_sources for row in rows]
+_EVENT_DENSITY_SOURCE_MANIFESTATIONS = [
+    _source_manifestation(path, len(rows)) for path, rows in _event_sources
+]
 _municipios_geojson: dict[str, Any] = _load_json(
     DATA / "geo" / "pr_municipios.geojson",
     {"type": "FeatureCollection", "features": []},
@@ -212,14 +255,13 @@ _barrios_geojson: dict[str, Any] = _load_json(
     DATA / "geo" / "pr_barrios.geojson",
     {"type": "FeatureCollection", "features": []},
 )
-# name -> geoid, for joining event_type.municipality (canonical Spanish names,
-# confirmed to match pr_municipios.geojson's `name` field exactly) to a
-# choropleth key. Built once at startup like the corpora above.
-_MUNICIPIO_GEOID_BY_NAME: dict[str, str] = {
-    f["properties"]["name"]: f["properties"]["geoid"]
-    for f in _municipios_geojson.get("features", [])
-    if f.get("properties", {}).get("name") and f["properties"].get("geoid")
-}
+# Exact source strings are retained as aggregation keys. This lookup has no
+# identity effect: it does not normalize names or promote event records.
+_MUNICIPIO_GEOID_BY_NAME = _build_municipio_geoid_index(_municipios_geojson)
+_MUNICIPIO_SOURCE_MANIFESTATION = _source_manifestation(
+    DATA / "geo" / "pr_municipios.geojson",
+    len(_municipios_geojson.get("features", [])),
+)
 # The operational alert layer (docs/ALERT_SYSTEM.md) — built by scripts/build_alerts.py
 # and validated by scripts/build_alert_system.py. Loaded once at startup like the other
 # corpora: it is several MB, so re-parsing per request would dominate every alert call.
@@ -372,6 +414,12 @@ def municipios_event_density(
         result = [e for e in result if e.get("event_type") == type]
     since_dt = _parse_dt(since)
     until_dt = _parse_dt(until)
+    if since and since_dt is None:
+        raise HTTPException(status_code=400, detail="since must be an ISO-8601 timestamp")
+    if until and until_dt is None:
+        raise HTTPException(status_code=400, detail="until must be an ISO-8601 timestamp")
+    if since_dt and until_dt and since_dt > until_dt:
+        raise HTTPException(status_code=400, detail="since must not be after until")
     if since_dt or until_dt:
         filtered = []
         for e in result:
@@ -386,19 +434,38 @@ def municipios_event_density(
         result = filtered
 
     by_geoid: Counter[str] = Counter()
-    unresolved_count = 0
+    unresolved_by_name: Counter[str] = Counter()
     for e in result:
-        geoid = _MUNICIPIO_GEOID_BY_NAME.get(e.get("municipality") or "")
+        municipality = e.get("municipality")
+        source_name = municipality if isinstance(municipality, str) and municipality else "__NULL__"
+        geoid = _MUNICIPIO_GEOID_BY_NAME.get(source_name)
         if geoid is None:
-            unresolved_count += 1
+            unresolved_by_name[source_name] += 1
             continue
         by_geoid[geoid] += 1
 
+    matched_count = sum(by_geoid.values())
+    unresolved_count = sum(unresolved_by_name.values())
+
     return JSONResponse({
         "by_geoid": dict(by_geoid),
+        "matched_count": matched_count,
         "unresolved_count": unresolved_count,
+        "unresolved_by_name": dict(unresolved_by_name),
         "total_events": len(result),
         "filters": {"type": type, "since": since, "until": until},
+        "scope": {
+            "aggregation_key": "event.municipality exact source string",
+            "normalization": "NONE",
+            "identity_effect": "NONE",
+            "geometry_effect": "NONE",
+            "state": "CANDIDATE_NOT_IDENTITY" if unresolved_count else "PASS",
+        },
+        "provenance": {
+            "event_sources": _EVENT_DENSITY_SOURCE_MANIFESTATIONS,
+            "municipio_source": _MUNICIPIO_SOURCE_MANIFESTATION,
+            "loaded_at": "process_startup",
+        },
     })
 
 

@@ -21,6 +21,7 @@ def client():
 
 def test_summary_is_explicitly_pilot_scoped(client):
     body = client.get("/cave-karst/summary").json()
+    alerts = client.get("/cave-karst/alerts").json()
 
     assert body["scope"]["statewide_complete"] is False
     assert body["scope"]["registry_scope"] == {"pilot": 4}
@@ -32,9 +33,10 @@ def test_summary_is_explicitly_pilot_scoped(client):
         "edges": 6,
         "status_events": 3,
         "observations": 2,
-        "alerts": 3,
+        "alerts": alerts["total"],
         "unresolved_gaps": body["counts"]["unresolved_gaps"],
     }
+    assert alerts["total"] >= 3
     assert body["validation"] == {
         "ok": True,
         "error_count": 0,

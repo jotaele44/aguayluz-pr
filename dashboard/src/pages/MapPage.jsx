@@ -15,7 +15,8 @@ export default function MapPage() {
   // Aggregated over the full, uncapped corpus (unlike `events` above, which is
   // paginated for the map's point layer) — this is what drives the "Density"
   // municipio fill mode, since individual events are structurally area-level.
-  const { data: eventDensity } = useEventDensity()
+  const eventDensityQuery = useEventDensity()
+  const { data: eventDensity } = eventDensityQuery
   const eventDensityByGeoid = eventDensity?.by_geoid ?? {}
   const { data: alertsGeo } = useAlertsGeojson()
   const { data: coverage } = useCoverage()
@@ -65,6 +66,14 @@ export default function MapPage() {
           alerts={alertsGeo}
           droughtByGeoid={droughtByGeoid}
           eventDensityByGeoid={eventDensityByGeoid}
+          eventDensityState={{
+            data: eventDensity,
+            error: eventDensityQuery.error,
+            isError: eventDensityQuery.isError,
+            isFetching: eventDensityQuery.isFetching,
+            isLoading: eventDensityQuery.isLoading,
+            refetch: eventDensityQuery.refetch,
+          }}
           selectedAssetId={selected?.asset_id}
           selectedMunicipio={selectedMunicipio}
           onSelect={selectByProps}

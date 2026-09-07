@@ -14,6 +14,7 @@ const TERRAIN_DEM_URL = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium
 
 const BASE_STYLE = {
   version: 8,
+  glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
   sources: {
     osm: {
       type: 'raster',
@@ -219,10 +220,13 @@ function ControlButton({ active, children, onClick, tone }) {
   )
 }
 
-export default function AssetMap({ assets, assetRows = [], municipios, barrios, events = [], alerts, droughtByGeoid, eventDensityByGeoid, selectedAssetId, selectedMunicipio, onSelect, onMunicipioSelect, onAlertSelect, flyTo }) {
+export default function AssetMap({ assets, assetRows = [], municipios, barrios, events = [], alerts, droughtByGeoid, eventDensityByGeoid, eventDensityState, selectedAssetId, selectedMunicipio, onSelect, onMunicipioSelect, onAlertSelect, flyTo }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const readyRef = useRef(false)
+  const spatialToolActiveRef = useRef(false)
+  const droughtGeoidsRef = useRef(new Set())
+  const eventDensityGeoidsRef = useRef(new Set())
   const onSelectRef = useRef(onSelect); onSelectRef.current = onSelect
   const onMunicipioSelectRef = useRef(onMunicipioSelect); onMunicipioSelectRef.current = onMunicipioSelect
   const onAlertSelectRef = useRef(onAlertSelect); onAlertSelectRef.current = onAlertSelect
@@ -412,9 +416,14 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
         map.getCanvas().style.cursor = ''
         popup.remove()
       })
-      map.on('click', 'alerts-dot', (e) => onAlertSelectRef.current?.(e.features[0].properties))
-      map.on('click', 'assets-dot', (e) => onSelectRef.current?.(e.features[0].properties))
+      map.on('click', 'alerts-dot', (e) => {
+        if (!spatialToolActiveRef.current) onAlertSelectRef.current?.(e.features[0].properties)
+      })
+      map.on('click', 'assets-dot', (e) => {
+        if (!spatialToolActiveRef.current) onSelectRef.current?.(e.features[0].properties)
+      })
       map.on('click', 'clusters', async (e) => {
+        if (spatialToolActiveRef.current) return
         const features = map.queryRenderedFeatures(e.point, { layers: ['clusters'] })
         const clusterId = features[0]?.properties?.cluster_id
         if (clusterId == null) return
@@ -422,6 +431,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
         map.easeTo({ center: features[0].geometry.coordinates, zoom })
       })
       map.on('click', 'muni-fill', (e) => {
+        if (spatialToolActiveRef.current) return
         const props = e.features?.[0]?.properties || {}
         onMunicipioSelectRef.current?.({ name: props.name || props.NAME || props.municipio || props.MUNICIPIO, properties: props })
       })
@@ -446,27 +456,54 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
 
   useEffect(() => {
     if (!readyRef.current || !mapRef.current) return
-    mapRef.current.getSource('barrios')?.setData(barrios || EMPTY)
+    mapRef.current.getSource('barrios')?.setData(barrios || BARRIOS_URL)
   }, [barrios])
 
   useEffect(() => {
-    if (!readyRef.current || !mapRef.current) return
-    // Also re-run when `municipios` changes: the municipios source's own setData() effect
-    // (above) can resolve after this one already applied feature-state, and MapLibre's
-    // GeoJSON source rebuilds its internal feature ids on setData — any state set before
-    // that rebuild is lost, so a real municipios update must trigger a re-apply here too.
-    for (const [geoid, category] of Object.entries(droughtByGeoid || {})) {
-      mapRef.current.setFeatureState({ source: 'municipios', id: geoid }, { drought_category: category })
+    if (!mapReady || !mapRef.current) return undefined
+    const map = mapRef.current
+    const apply = () => {
+      try {
+        for (const geoid of droughtGeoidsRef.current) {
+          map.removeFeatureState({ source: 'municipios', id: geoid }, 'drought_category')
+        }
+        droughtGeoidsRef.current.clear()
+        for (const [geoid, category] of Object.entries(droughtByGeoid || {})) {
+          map.setFeatureState({ source: 'municipios', id: geoid }, { drought_category: category })
+          droughtGeoidsRef.current.add(geoid)
+        }
+      } catch { /* source is still rebuilding; sourcedata retries below */ }
     }
-  }, [droughtByGeoid, municipios])
+    const onSourceData = (event) => {
+      if (event.sourceId === 'municipios' && event.isSourceLoaded) apply()
+    }
+    apply()
+    map.on('sourcedata', onSourceData)
+    return () => map.off('sourcedata', onSourceData)
+  }, [droughtByGeoid, mapReady, municipios])
 
   useEffect(() => {
-    if (!readyRef.current || !mapRef.current) return
-    // Same re-apply-on-municipios-change reasoning as the drought effect above.
-    for (const [geoid, count] of Object.entries(eventDensityByGeoid || {})) {
-      mapRef.current.setFeatureState({ source: 'municipios', id: geoid }, { event_count: count })
+    if (!mapReady || !mapRef.current) return undefined
+    const map = mapRef.current
+    const apply = () => {
+      try {
+        for (const geoid of eventDensityGeoidsRef.current) {
+          map.removeFeatureState({ source: 'municipios', id: geoid }, 'event_count')
+        }
+        eventDensityGeoidsRef.current.clear()
+        for (const [geoid, count] of Object.entries(eventDensityByGeoid || {})) {
+          map.setFeatureState({ source: 'municipios', id: geoid }, { event_count: count })
+          eventDensityGeoidsRef.current.add(geoid)
+        }
+      } catch { /* source is still rebuilding; sourcedata retries below */ }
     }
-  }, [eventDensityByGeoid, municipios])
+    const onSourceData = (event) => {
+      if (event.sourceId === 'municipios' && event.isSourceLoaded) apply()
+    }
+    apply()
+    map.on('sourcedata', onSourceData)
+    return () => map.off('sourcedata', onSourceData)
+  }, [eventDensityByGeoid, mapReady, municipios])
 
   useEffect(() => {
     if (!readyRef.current || !mapRef.current) return
@@ -530,7 +567,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
     }),
     [visibleAssets, eventGeo, alertGeo],
   )
-  const spatialTools = useSpatialTools({ mapRef, mapReady, targets: spatialToolTargets })
+  const spatialTools = useSpatialTools({ mapRef, mapReady, targets: spatialToolTargets, interactionLockRef: spatialToolActiveRef })
 
   return (
     <div className="relative h-full w-full">
@@ -560,6 +597,24 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
             <ControlButton active={layers.muniFillMode === 'drought'} tone="border-amber-500/40 text-amber-300" onClick={() => setLayers((s) => ({ ...s, muniFillMode: 'drought' }))}>Drought</ControlButton>
             <ControlButton active={layers.muniFillMode === 'event_density'} tone="border-blue-500/40 text-blue-300" onClick={() => setLayers((s) => ({ ...s, muniFillMode: 'event_density' }))}>Density</ControlButton>
           </div>
+          {layers.muniFillMode === 'event_density' && (
+            <div aria-live="polite" className="mt-1.5 rounded border border-slate-800 bg-slate-950/60 p-1.5 text-[10px] leading-relaxed text-slate-500">
+              {(eventDensityState?.isLoading || eventDensityState?.isFetching) && <div className="text-blue-300">Loading full-corpus density…</div>}
+              {eventDensityState?.isError && (
+                <div>
+                  <div className="text-red-300">Density unavailable; no zero-event inference was made.</div>
+                  <div className="truncate" title={String(eventDensityState.error)}>{String(eventDensityState.error)}</div>
+                  <button type="button" onClick={() => eventDensityState.refetch?.()} className="mt-1 text-sky-300 underline">Retry density</button>
+                </div>
+              )}
+              {!eventDensityState?.isError && !eventDensityState?.isLoading && !eventDensityState?.isFetching && eventDensityState?.data && (
+                <div>
+                  <div className="text-slate-300">{eventDensityState.data.matched_count ?? 0} matched · {eventDensityState.data.unresolved_count ?? 0} unresolved · {eventDensityState.data.total_events ?? 0} total</div>
+                  <div>Aggregation: exact source string · identity effect <span className="text-amber-300">{eventDensityState.data.scope?.identity_effect ?? 'NONE'}</span></div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
         {layers.alerts && (
           <button

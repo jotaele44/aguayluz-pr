@@ -69,6 +69,27 @@ async function getJSON(path, fallback = null) {
   }
 }
 
+async function getRequiredJSON(path) {
+  const key = path.split('?')[0]
+  if (OFFLINE) {
+    if (key in snapshot) return snapshot[key]
+    throw new Error(`Offline snapshot does not include ${key}`)
+  }
+
+  let res
+  try {
+    res = await fetch(`${API_BASE}${path}`, { signal: AbortSignal.timeout(8000) })
+  } catch (error) {
+    throw new Error(`GET ${path} failed: ${error instanceof Error ? error.message : String(error)}`)
+  }
+  if (!res.ok) throw new Error(`GET ${path} failed (HTTP ${res.status})`)
+  try {
+    return await res.json()
+  } catch (error) {
+    throw new Error(`GET ${path} returned invalid JSON: ${error instanceof Error ? error.message : String(error)}`)
+  }
+}
+
 const qs = (params) => {
   const p = Object.entries(params).filter(([, v]) => v != null && v !== '')
   return p.length ? '?' + new URLSearchParams(p).toString() : ''
@@ -78,8 +99,8 @@ export const getHealth = () => getJSON('/health', { status: 'down', counts: {}, 
 export const getAssets = (f = {}) => getJSON(`/assets${qs(f)}`, [])
 export const getAssetsGeojson = () => getJSON('/assets.geojson', { type: 'FeatureCollection', features: [] })
 export const getMunicipiosGeojson = () => getJSON('/municipios.geojson', { type: 'FeatureCollection', features: [] })
-export const getBarriosGeojson = () => getJSON('/barrios.geojson', { type: 'FeatureCollection', features: [] })
-export const getEventDensity = (f = {}) => getJSON(`/municipios/event_density${qs(f)}`, { by_geoid: {}, unresolved_count: 0, total_events: 0, filters: {} })
+export const getBarriosGeojson = () => getJSON('/barrios.geojson', null)
+export const getEventDensity = (f = {}) => getRequiredJSON(`/municipios/event_density${qs(f)}`)
 // /events returns {total, offset, items}; getEvents unwraps to the array for backward compat.
 export const getEvents = async (f = {}) => {
   const r = await getJSON(`/events${qs(f)}`, { items: [] })
