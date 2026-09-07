@@ -5,6 +5,7 @@ import subprocess
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location(
@@ -45,6 +46,28 @@ class TestUnifiedSkillpackConformance(unittest.TestCase):
         result = MODULE.validate(ROOT, enforce_change_scope=True, change_base=head)
         self.assertEqual(result["status"], "success", result["errors"])
         self.assertIn("change_base_ancestry", result["checks"])
+
+    def test_change_scope_rejects_forbidden_path(self) -> None:
+        def fake_run_git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
+            stdout = ""
+            if args == ("rev-parse", "--is-shallow-repository"):
+                stdout = "false\n"
+            elif args[:2] == ("diff", "--name-only"):
+                stdout = "src/outside_scope.py\n"
+            return subprocess.CompletedProcess(args, 0, stdout, "")
+
+        with patch.object(MODULE, "run_git", side_effect=fake_run_git):
+            result = MODULE.validate(
+                ROOT,
+                enforce_change_scope=True,
+                change_base="0" * 40,
+            )
+
+        self.assertEqual(result["status"], "failed")
+        self.assertEqual(
+            result["errors"],
+            ["out-of-scope change: src/outside_scope.py"],
+        )
 
 
 if __name__ == "__main__":
