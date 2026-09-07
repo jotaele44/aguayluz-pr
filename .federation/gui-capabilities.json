@@ -1111,7 +1111,7 @@
       "classification": "analysis",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Read-only, fail-closed environmental source→pathway→receptor graph. It preserves existing utility/regulatory identities, exposes provenance and causal state, and prohibits proximity/name-only evidence from becoming causal attribution.",
+      "rationale": "Read-only, fail-closed environmental source\u2192pathway\u2192receptor graph. It preserves existing utility/regulatory identities, exposes provenance and causal state, and prohibits proximity/name-only evidence from becoming causal attribution.",
       "backend": {
         "files": [
           "server/backend/environmental_exposure_api.py",
@@ -1276,6 +1276,23 @@
           "tests/test_ingest_hifld_power.py",
           "tests/test_ingest_osm_power.py",
           "tests/test_local_hydro_assets.py"
+        ]
+      }
+    },
+    {
+      "id": "desktop-startup-evidence",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Release preparation probe verifies loopback API, HTML and JavaScript delivery; it does not certify operator journeys or platform readiness. Invoked by the completion runner as an internal check, with no separate operator capability.",
+      "analysis": {
+        "files": [
+          "scripts/desktop_startup_probe.py"
+        ],
+        "symbols": [
+          "scripts/desktop_startup_probe.py:ScriptSources",
+          "scripts/desktop_startup_probe.py:main",
+          "scripts/desktop_startup_probe.py:probe"
         ]
       }
     }
