@@ -32,13 +32,19 @@ def test_summary_is_explicitly_pilot_scoped(client):
         "edges": 6,
         "status_events": 3,
         "observations": 2,
-        "alerts": 3,
+        "alerts": 7,
         "unresolved_gaps": body["counts"]["unresolved_gaps"],
     }
     assert body["validation"] == {
         "ok": True,
         "error_count": 0,
         "contradiction_count": 0,
+    }
+    alerts = client.get("/cave-karst/alerts").json()
+    assert alerts["total"] == body["counts"]["alerts"]
+    assert {item["alert_type"] for item in alerts["items"]} == {
+        "public_access_restriction",
+        "stale_operational_status",
     }
 
 
