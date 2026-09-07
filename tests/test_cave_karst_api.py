@@ -37,6 +37,10 @@ def test_summary_is_explicitly_pilot_scoped(client):
         "unresolved_gaps": body["counts"]["unresolved_gaps"],
     }
     assert alerts["total"] >= 3
+    assert body["alert_type"] == {
+        "public_access_restriction": 3,
+        "stale_operational_status": 4,
+    }
     assert body["validation"] == {
         "ok": True,
         "error_count": 0,
