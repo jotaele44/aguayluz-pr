@@ -1,3 +1,4 @@
+import pytest
 from scripts.federation_spatial_binding_v1_1 import bind_record
 
 
@@ -50,10 +51,41 @@ def test_multiple_matches_preserve_one_to_many():
         row,
         id_field="asset_id",
         id_namespace="asset_id",
-        canonical_index={
-            "aguayluz-pr:asset_id:WATER-1": ["pr:water:1", "pr:water:2"]
-        },
+        canonical_index={"aguayluz-pr:asset_id:WATER-1": ["pr:water:1", "pr:water:2"]},
         evidence_basis=["STABLE_ID"],
     )
     assert result["cardinality"] == "1:N"
     assert result["identity_state"] == "UNRESOLVED"
+
+
+def test_string_candidate_collection_fails_closed():
+    with pytest.raises(ValueError, match="must be an array"):
+        bind_record(
+            {"asset_id": "WATER-1"},
+            id_field="asset_id",
+            id_namespace="asset_id",
+            canonical_index={"aguayluz-pr:asset_id:WATER-1": "pr:water:1"},
+            evidence_basis=["STABLE_ID"],
+        )
+
+
+def test_duplicate_candidate_ids_fail_closed():
+    with pytest.raises(ValueError, match="duplicate canonical IDs"):
+        bind_record(
+            {"asset_id": "WATER-1"},
+            id_field="asset_id",
+            id_namespace="asset_id",
+            canonical_index={"aguayluz-pr:asset_id:WATER-1": ["pr:water:1", "pr:water:1"]},
+            evidence_basis=["STABLE_ID"],
+        )
+
+
+def test_lowercase_name_only_basis_is_rejected():
+    with pytest.raises(ValueError, match="heuristic-only"):
+        bind_record(
+            {"asset_id": "WATER-1"},
+            id_field="asset_id",
+            id_namespace="asset_id",
+            canonical_index={},
+            evidence_basis=["name_only"],
+        )
