@@ -1,0 +1,91 @@
+{
+  "schema_version": "aguayluz.culebrinas-prefield-closure/v1.2",
+  "issued_date": "2026-09-08",
+  "state": "OPEN_BLOCKED",
+  "B01_sige_globalid": {
+    "state": "BLOCKED_FEATURE_EXTRACTION",
+    "authoritative_layer": "https://sige.pr.gov/server/rest/services/MIPR/Geologia_v10_N/FeatureServer/2",
+    "native_epsg": 32161,
+    "service_item_id": "294d280fa3094e4e8d3cffa339fd33b7",
+    "binding_anchor": {
+      "site_id": "USGS-182252067115800",
+      "name": "Aguada 1 Well",
+      "wgs84_lat": 18.3792522838065,
+      "wgs84_lon": -67.199153298312,
+      "local_aquifer_code": "110RCBV",
+      "local_aquifer_name": "Rio Culebrinas Valley Aquifer"
+    },
+    "query_form_discovered": true,
+    "query_operation_url": "https://sige.pr.gov/server/rest/services/MIPR/Geologia_v10_N/FeatureServer/2/query",
+    "direct_parameterized_query_state": "BLOCKED_BY_CURRENT_RUNTIME_TRANSPORT",
+    "globalid_field_nonnull": true,
+    "supported_query_formats": ["JSON", "geoJSON", "PBF"],
+    "freeze_operator": "operators/fetch_culebrinas_canonical_aquifer.py",
+    "rule": "exactly_one_intersecting_compatible_feature_with_nonnull_GlobalID",
+    "proximity_identity_used": false
+  },
+  "B02_usace_crs": {
+    "state": "OPEN_BORING_TO_PROJECT_SURVEY_BINDING",
+    "raw_coordinates_retained": true,
+    "project_survey_horizontal_datum": "NAD83",
+    "project_survey_vertical_datum": "NGVD29",
+    "project_survey_source": "USACE Appendix A Hydrology and Hydraulics, Survey Data section",
+    "candidate_epsg": 3991,
+    "candidate_state": "INFERENCE_HIGH_CONFIDENCE",
+    "canonical_transform_allowed": false,
+    "adjudication": "The project survey datum is explicitly NAD83/NGVD29, but no recovered statement yet proves the 1998 boring X/Y were recorded in that same horizontal coordinate realization."
+  },
+  "B03_subsurface_census": {
+    "state": "OPEN_INCOMPLETE_EXPANDED_UNIVERSE",
+    "closed_manifestations": [
+      "15_of_15_USACE_design_boring_headers",
+      "USGS-182252067115800_Aguada_1_106_ft_110RCBV",
+      "USGS_surface_water_controls"
+    ],
+    "new_manifestations_20260908": [
+      {
+        "source_family": "PR_DTOP_PRHTA_bridge_boreholes",
+        "evidence": "USGS/GSA liquefaction study states borehole data had previously been collected by Puerto Rico Department of Transportation and Public Works at one Rio Culebrinas bridge crossing",
+        "known_borehole_label": "RT-2",
+        "known_parameters": {"susceptible_sediment_depth_ft": 20, "N1_60": 16},
+        "identity_state": "PASS_SOURCE_FAMILY_OPEN_EXACT_GEOMETRY"
+      },
+      {
+        "source_family": "USGS_paleoliquefaction_field_sites",
+        "evidence": "USGS study reports 27 liquefaction features at 10 Rio Culebrinas sites",
+        "identity_state": "PASS_FIELD_MANIFESTATIONS_NOT_AQUIFER_OBSERVATIONS"
+      }
+    ],
+    "bounded_search_result": "No modern regional groundwater model, dense borehole network, regional ERT/TEM campaign, or additional publicly indexed USGS well explicitly tagged 110RCBV was recovered, but DTOP/PRHTA bridge-borehole evidence proves the prior census was incomplete.",
+    "unresolved_source_families": [
+      "DRNA_local_groundwater_files",
+      "AAA_PRASA_well_and_project_files",
+      "UPR_unpublished_theses_or_project_data",
+      "PR_DTOP_PRHTA_bridge_borehole_logs_and_coordinates",
+      "public_private_geotechnical_borings"
+    ]
+  },
+  "B04_uprm_seismic": {
+    "state": "OPEN_PENDING_SEISMIC_INTERPRETATION",
+    "campaign": "2026 PR-418 Valle de Aguada active seismic line",
+    "sensors": 96,
+    "line_km": 2.28,
+    "coordinator": "Jose A. Martinez Cruzado",
+    "collaborators": ["Puerto Rico Strong Motion Program", "Puerto Rico Seismic Network", "USGS instrumentation support"],
+    "bounded_search_date": "2026-09-08",
+    "bounded_search_result": "UPRM acquisition announcement remains the latest authoritative public result recovered; the data had been handed to geophysics/seismology specialists and no later public fault-present/fault-absent/inconclusive interpretation was found."
+  },
+  "B05_federation_ci": {
+    "state": "BLOCKED_EXTERNAL_GITHUB_ACTIONS_RUNNER",
+    "aguayluz_issue": 234,
+    "invariant": "failed jobs return steps=null and logs_url=null before runner steps execute",
+    "merge_allowed": false
+  },
+  "prefield_certified": false,
+  "promotion_blockers": ["B01", "B02", "B03", "B04", "B05"],
+  "field_execution_allowed_as_certified_campaign": false,
+  "new_experimental_observation_count": 0,
+  "KVI_MEASURED": "BLOCKED_NO_FIELD_DATA",
+  "H1_H5": "OPEN",
+  "zero_material_residue": false
+}
