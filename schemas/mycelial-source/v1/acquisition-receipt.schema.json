@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aguayluz.local/schemas/mycelial-source/v1/acquisition-receipt.schema.json",
+  "title": "Mycelial source acquisition receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "record_type",
+    "schema_version",
+    "receipt_id",
+    "source_id",
+    "dataset_identity",
+    "requested_manifestation",
+    "retrieval_started_at",
+    "retrieval_completed_at",
+    "status",
+    "failure_class",
+    "transport",
+    "original_payload",
+    "native_metadata",
+    "rights_state",
+    "coordinate_retention_class",
+    "admission_state"
+  ],
+  "properties": {
+    "record_type": {"const": "mycelial_source_acquisition_receipt"},
+    "schema_version": {"const": "1.0.0"},
+    "receipt_id": {"type": "string", "pattern": "^MYC_ACQ_[A-Z0-9_]{3,100}$"},
+    "source_id": {"type": "string", "pattern": "^MYC_SRC_[A-Z0-9_]{3,100}$"},
+    "dataset_identity": {"type": "string", "minLength": 1},
+    "requested_manifestation": {"enum": ["provider_export", "api_response", "dwca", "eml", "gbif_download", "other"]},
+    "query_or_version_reference": {"type": ["string", "null"]},
+    "retrieval_started_at": {"type": "string", "format": "date-time"},
+    "retrieval_completed_at": {"type": ["string", "null"], "format": "date-time"},
+    "status": {"enum": ["complete", "partial", "failed", "blocked"]},
+    "failure_class": {"enum": ["none", "dns", "tls", "http", "authentication", "rate_limit", "access_policy", "content_type", "truncation", "archive_structure", "metadata_binding", "license_hold", "coordinate_policy_hold", "unknown"]},
+    "transport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requested_url", "final_url", "status_code", "content_type", "redirect_chain"],
+      "properties": {
+        "requested_url": {"type": "string", "format": "uri"},
+        "final_url": {"type": ["string", "null"], "format": "uri"},
+        "status_code": {"type": ["integer", "null"], "minimum": 100, "maximum": 599},
+        "content_type": {"type": ["string", "null"]},
+        "redirect_chain": {"type": "array", "items": {"type": "string", "format": "uri"}}
+      }
+    },
+    "original_payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["captured", "byte_count", "sha256", "storage_reference"],
+      "properties": {
+        "captured": {"type": "boolean"},
+        "byte_count": {"type": ["integer", "null"], "minimum": 0},
+        "sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+        "storage_reference": {"type": ["string", "null"]}
+      }
+    },
+    "native_metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "captured", "sha256", "binding_state"],
+      "properties": {
+        "kind": {"enum": ["eml", "provider_json", "provider_xml", "provider_text", "none", "other"]},
+        "captured": {"type": "boolean"},
+        "sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+        "binding_state": {"enum": ["bound_to_payload", "separate_snapshot", "missing", "unresolved"]}
+      }
+    },
+    "rights_state": {"enum": ["verified_for_intended_internal_use", "restricted", "unresolved_hold", "prohibited"]},
+    "coordinate_retention_class": {"enum": ["none", "generalized_only", "withheld", "separate_sensitive_ballot_required"]},
+    "admission_state": {"const": "not_canonical_not_model_eligible"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "complete"}}, "required": ["status"]},
+      "then": {
+        "properties": {
+          "failure_class": {"const": "none"},
+          "retrieval_completed_at": {"type": "string", "format": "date-time"},
+          "original_payload": {
+            "properties": {
+              "captured": {"const": true},
+              "byte_count": {"type": "integer", "minimum": 1},
+              "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "storage_reference": {"type": "string", "minLength": 1}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"original_payload": {"properties": {"captured": {"const": false}}, "required": ["captured"]}}, "required": ["original_payload"]},
+      "then": {"properties": {"original_payload": {"properties": {"byte_count": {"type": "null"}, "sha256": {"type": "null"}, "storage_reference": {"type": "null"}}}}}
+    },
+    {
+      "if": {"properties": {"status": {"enum": ["failed", "blocked"]}}, "required": ["status"]},
+      "then": {"not": {"properties": {"failure_class": {"const": "none"}}, "required": ["failure_class"]}}
+    }
+  ]
+}
