@@ -1,0 +1,150 @@
+{
+  "record_type": "mycelial_source_contract_registry",
+  "schema_version": "1.0.0",
+  "as_of_date": "2026-09-09",
+  "classification": "DESIGN_AND_DISCOVERY_ONLY",
+  "rules": {
+    "license_scope": "Bind terms to the exact source manifestation and record/media object. Portal-wide text does not override a more specific source contract, and a source-specific license is not generalized to unrelated datasets.",
+    "coordinate_rule": "Do not request, reconstruct, infer, publish, log, or export private/obscured exact coordinates. Public exact coordinates are not admitted to this Phase 1 package; retain only an approved generalized or withheld representation.",
+    "identity_rule": "Provider, dataset, record, specimen, collecting event, site, survey, fruiting episode, biological individual, and media are separate namespaces.",
+    "admission_rule": "Public accessibility or successful download does not by itself authorize canonical training admission."
+  },
+  "sources": [
+    {
+      "source_id": "MYC_SRC_INATURALIST_DIRECT",
+      "authority": "iNaturalist",
+      "role": "modern observation and phenology candidate",
+      "discovery_url": "https://www.inaturalist.org/pages/developers",
+      "api_reference_url": "https://www.inaturalist.org/api",
+      "candidate_scope": {"place_id": 6848, "taxon_id": 47170, "meaning": "Puerto Rico place and Fungi taxon candidate filters; not a mushroom-only denominator"},
+      "stable_record_identity_candidate": "iNaturalist observation id",
+      "rights": {
+        "observation_data": "LICENSE_PER_RECORD",
+        "photos": "LICENSE_PER_MEDIA_OBJECT",
+        "sounds": "LICENSE_PER_MEDIA_OBJECT",
+        "canonical_training": "HOLD_PENDING_RECORD_LEVEL_RIGHTS_AND_TARGET_ADJUDICATION"
+      },
+      "access": {
+        "api_rate_contract": "Official developer guidance states max 100 requests/minute and asks clients to target 60/minute or lower.",
+        "bulk_strategy": "Prefer supported exports/datasets for substantial acquisition; do not treat the application API as an unbounded scraper.",
+        "state": "CONTRACT_READY_ACQUISITION_NOT_EXECUTED"
+      },
+      "coordinate_policy": "FAIL_CLOSED_ON_OBSCURED_PRIVATE_OR_SENSITIVE_LOCATION"
+    },
+    {
+      "source_id": "MYC_SRC_GBIF_OCCURRENCE",
+      "authority": "Global Biodiversity Information Facility",
+      "role": "aggregator and cross-dataset manifestation plane",
+      "api_reference_url": "https://techdocs.gbif.org/en/openapi/v1/occurrence",
+      "download_reference_url": "https://techdocs.gbif.org/en/data-use/api-downloads",
+      "candidate_scope": {"country_code": "PR", "kingdom_key": 5, "meaning": "Puerto Rico + Fungi discovery scope; not a mushroom-phenology denominator"},
+      "stable_record_identity_candidate": "gbifID plus datasetKey and occurrenceID",
+      "rights": {
+        "dataset_license": "BIND_PER_DATASET_MANIFESTATION",
+        "canonical_training": "HOLD_PENDING_SOURCE_DATASET_RIGHTS_AND_IDENTITY_ADJUDICATION"
+      },
+      "access": {
+        "search": "maximum page size 300; hard search-window limit 100000 for a query",
+        "bulk_download": "authenticated asynchronous download required for exhaustive retrieval beyond the search limit",
+        "state": "CONTRACT_READY_AUTHENTICATED_DOWNLOAD_NOT_EXECUTED"
+      },
+      "identity_policy": "A GBIF manifestation of an iNaturalist/MyCoPortal/provider record is not independent biological corroboration by default."
+    },
+    {
+      "source_id": "MYC_SRC_MYCO_PORTAL",
+      "authority": "Mycology Collections Portal",
+      "role": "collection discovery and provider-specific archive manifestation plane",
+      "usage_policy_url": "https://mycoportal.org/portal/includes/usagepolicy.php",
+      "publisher_index_url": "https://mycoportal.org/portal/collections/datasets/datapublisher.php",
+      "rights": {
+        "portal_policy": "TRACK_GENERIC_USAGE_GUIDELINES_SEPARATELY",
+        "collection_license": "MUST_BE_BOUND_PER_COLLECTION_OR_PROVIDER",
+        "redistribution": "HOLD_UNLESS_EXPLICITLY_AUTHORIZED_FOR_EXACT_MANIFESTATION",
+        "canonical_training": "HOLD_PENDING_COLLECTION_SPECIFIC_TERMS"
+      },
+      "access": {"state": "DISCOVERY_AVAILABLE_ORIGINAL_ARCHIVE_BYTES_NOT_CAPTURED_IN_PRIOR_AUDIT"},
+      "identity_policy": "Portal collection identity and provider dataset identity remain separate from individual occurrence/specimen identity."
+    },
+    {
+      "source_id": "MYC_SRC_CUP",
+      "authority": "Cornell University Plant Pathology Herbarium (CUP)",
+      "role": "voucher/specimen anchor and archive-acquisition pilot",
+      "mycoportal_collection_id": 23,
+      "mycoportal_uuid": "db7e5316-dfd6-4ffa-b26f-eaa54ce972a2",
+      "gbif_dataset_key": "5a6538b8-e35c-46c4-8978-6858a657a75f",
+      "gbif_dataset_url": "https://www.gbif.org/dataset/5a6538b8-e35c-46c4-8978-6858a657a75f",
+      "registered_archive_candidate": "https://www.mycoportal.org/portal/content/dwca/CUP_DwC-A.zip",
+      "rights": {
+        "verified_manifestation": "GBIF dataset page declares CC0 1.0",
+        "legal_determination": false,
+        "canonical_training": "HOLD_PENDING_BYTES_PARSE_PR_SCOPE_AND_TARGET_ELIGIBILITY"
+      },
+      "access": {"state": "ORIGINAL_ARCHIVE_DOWNLOAD_ATTEMPT_FAILED_IN_PRIOR_AND_CURRENT_RUNTIME"},
+      "scientific_scope": "Preserved specimens are contextual/voucher evidence unless a record independently supports the forecast target."
+    },
+    {
+      "source_id": "MYC_SRC_BPI",
+      "authority": "USDA-ARS U.S. National Fungus Collections (BPI)",
+      "role": "voucher/specimen anchor",
+      "mycoportal_collection_id": 24,
+      "gbif_dataset_key": "d1a3b128-b406-46bb-a6d1-f3591dcc8a7b",
+      "rights": {"state": "HOLD_CURRENT_LICENSE_REVERIFICATION_REQUIRED"},
+      "access": {"state": "DISCOVERED_NOT_ACQUIRED"},
+      "scientific_scope": "Strong microfungal/plant-pathogen relevance does not imply mushroom-fruiting forecast eligibility."
+    },
+    {
+      "source_id": "MYC_SRC_ILL",
+      "authority": "University of Illinois Fungarium (ILL)",
+      "role": "historical voucher/specimen anchor",
+      "mycoportal_collection_id": 31,
+      "gbif_dataset_key": "0f702193-7ac9-4f05-bc51-c43e7a01c612",
+      "rights": {"state": "HOLD_LICENSE_AND_ORIGINAL_METADATA_UNRESOLVED"},
+      "access": {"state": "DISCOVERED_NOT_ACQUIRED"}
+    },
+    {
+      "source_id": "MYC_SRC_NY",
+      "authority": "New York Botanical Garden fungal collection (NY)",
+      "role": "historical voucher/specimen anchor",
+      "mycoportal_collection_id": 3,
+      "source_snapshot_date_observed": "2021-02-09",
+      "rights": {"state": "REVERIFY_AGAINST_EXACT_CURRENT_MANIFESTATION"},
+      "access": {"state": "PORTAL_SNAPSHOT_DISCOVERED_DIRECT_CURRENT_SOURCE_REQUIRED"},
+      "freshness_rule": "A current retrieval of the profile does not make a 2021 dataset snapshot current."
+    },
+    {
+      "source_id": "MYC_SRC_PUR",
+      "authority": "Purdue University Arthur Fungarium (PUR)",
+      "role": "historical rust/specimen anchor",
+      "mycoportal_collection_id": 46,
+      "source_snapshot_date_observed": "2021-12-01",
+      "rights": {
+        "observed_badge": "CC_BY_ND_BADGE",
+        "license_version_and_exact_scope": "UNRESOLVED",
+        "derivative_admission": "HOLD"
+      },
+      "access": {"state": "PORTAL_SNAPSHOT_DISCOVERED_NOT_ACQUIRED"}
+    },
+    {
+      "source_id": "MYC_SRC_UPRRP_HERBARIUM",
+      "authority": "University of Puerto Rico Rio Piedras Herbarium",
+      "role": "Puerto Rico institutional fungal authority candidate",
+      "rights": {"state": "HOLD_FUNGI_DENOMINATOR_EXPORT_AND_LICENSE_UNRESOLVED"},
+      "access": {"state": "DIRECT_FUNGAL_ONLINE_DENOMINATOR_NOT_FROZEN"}
+    },
+    {
+      "source_id": "MYC_SRC_MAPR_HERBARIUM",
+      "authority": "University of Puerto Rico Mayaguez Herbarium (MAPR)",
+      "role": "Puerto Rico institutional fungal authority candidate",
+      "rights": {"state": "HOLD_OR_RESTRICTED_PENDING_EXACT_MANIFESTATION_TERMS"},
+      "access": {"state": "PARTIAL_MUTABLE_DIGITIZATION_DO_NOT_TREAT_AS_COMPLETE_DENOMINATOR"}
+    },
+    {
+      "source_id": "MYC_SRC_MUSHROOM_OBSERVER_DIRECT",
+      "authority": "Mushroom Observer",
+      "role": "modern observation candidate",
+      "rights": {"state": "HOLD_DIRECT_SOURCE_TERMS_AND_STABLE_EXPORT_CONTRACT_NOT_YET_FROZEN"},
+      "access": {"state": "DISCOVERY_REQUIRED"},
+      "identity_policy": "Cross-posting or portal mirroring must be candidate-linked rather than count-summed."
+    }
+  ]
+}
