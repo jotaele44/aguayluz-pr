@@ -9,6 +9,9 @@ from jsonschema import Draft202012Validator, FormatChecker
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_DIR = ROOT / "schemas" / "mycelial-field" / "v1"
 FIXTURE_PATH = ROOT / "tests" / "fixtures" / "mycelial_field_protocol" / "v1" / "cases.json"
+TARGET_FIXTURE_PATH = (
+    ROOT / "tests" / "fixtures" / "mycelial_field_protocol" / "v1" / "targets.json"
+)
 
 
 def _load(path: Path):
@@ -30,13 +33,15 @@ def test_all_schemas_are_valid_draft_2020_12():
         "field-site.schema.json",
         "field-survey.schema.json",
         "fruiting-observation.schema.json",
+        "study-target.schema.json",
     ):
         _validator(name)
 
 
 def test_synthetic_fixture_classification_is_explicit():
-    payload = _load(FIXTURE_PATH)
-    assert payload["classification"] == "SYNTHETIC_FIXTURES_ONLY_NOT_BIOLOGICAL_DATA"
+    for path in (FIXTURE_PATH, TARGET_FIXTURE_PATH):
+        payload = _load(path)
+        assert payload["classification"] == "SYNTHETIC_FIXTURES_ONLY_NOT_BIOLOGICAL_DATA"
 
 
 def test_fixture_expectations_match_schema_results():
@@ -47,6 +52,28 @@ def test_fixture_expectations_match_schema_results():
             case["name"],
             [error.message for error in errors],
         )
+
+
+def test_target_fixture_expectations_match_schema_results():
+    payload = _load(TARGET_FIXTURE_PATH)
+    validator = _validator("study-target.schema.json")
+    for case in payload["cases"]:
+        errors = list(validator.iter_errors(case["record"]))
+        assert (not errors) is case["valid"], (
+            case["name"],
+            [error.message for error in errors],
+        )
+
+
+def test_sensitive_targets_are_never_forecast_candidates():
+    validator = _validator("study-target.schema.json")
+    payload = _load(TARGET_FIXTURE_PATH)
+    for case in payload["cases"]:
+        record = case["record"]
+        if record["sensitivity_state"] in {"sensitive", "sensitivity_unresolved"}:
+            errors = list(validator.iter_errors(record))
+            if not errors:
+                assert record["forecast_role"] == "not_forecast_eligible"
 
 
 def test_valid_survey_fixtures_have_observer_arithmetic_and_monotonic_times():
@@ -97,7 +124,7 @@ def test_valid_fruiting_observations_cannot_encode_non_detection_as_a_body():
 
 
 def test_valid_protocol_records_do_not_contain_exact_coordinate_keys():
-    payload = _load(FIXTURE_PATH)
+    payloads = (_load(FIXTURE_PATH), _load(TARGET_FIXTURE_PATH))
 
     def keys(value):
         if isinstance(value, dict):
@@ -109,10 +136,11 @@ def test_valid_protocol_records_do_not_contain_exact_coordinate_keys():
                 yield from keys(item)
 
     forbidden = {"latitude", "longitude", "private_latitude", "private_longitude"}
-    for case in payload["cases"]:
-        if not case["valid"]:
-            continue
-        assert forbidden.isdisjoint(set(keys(case["record"])))
+    for payload in payloads:
+        for case in payload["cases"]:
+            if not case["valid"]:
+                continue
+            assert forbidden.isdisjoint(set(keys(case["record"])))
 
 
 def test_protocol_package_contains_no_predictive_fields():
