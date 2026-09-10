@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aguayluz.local/schemas/mycelial-field/v1/fruiting-observation.schema.json",
+  "title": "Observed fruiting-body evidence contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "record_type",
+    "schema_version",
+    "observation_id",
+    "survey_id",
+    "site_id",
+    "target_id",
+    "observed_at",
+    "visible_fruiting_state",
+    "state_basis",
+    "taxonomic_assertion_id",
+    "episode",
+    "individual",
+    "count",
+    "measurements",
+    "substrate_observed",
+    "host_observed",
+    "media_ids",
+    "review_state"
+  ],
+  "properties": {
+    "record_type": {"const": "mycelial_fruiting_observation"},
+    "schema_version": {"const": "1.0.0"},
+    "observation_id": {"type": "string", "pattern": "^MYC_FOBS_[A-Z0-9_]{3,80}$"},
+    "survey_id": {"type": "string", "pattern": "^MYC_SUR_[A-Z0-9_]{3,80}$"},
+    "site_id": {"type": "string", "pattern": "^MYC_SITE_[A-Z0-9_]{3,80}$"},
+    "target_id": {"type": "string", "pattern": "^MYC_TGT_[A-Z0-9_]{3,80}$"},
+    "observed_at": {"type": "string", "format": "date-time"},
+    "visible_fruiting_state": {"enum": ["primordia", "emerging", "expanding", "mature", "senescent", "decomposing", "unresolved"]},
+    "state_basis": {"type": "string", "minLength": 1},
+    "taxonomic_assertion_id": {"type": ["string", "null"], "pattern": "^MYC_TAX_[A-Z0-9_]{3,80}$"},
+    "episode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["episode_id", "identity_state", "basis"],
+      "properties": {
+        "episode_id": {"type": ["string", "null"], "pattern": "^MYC_EPI_[A-Z0-9_]{3,80}$"},
+        "identity_state": {"enum": ["unassigned", "candidate", "adjudicated"]},
+        "basis": {"type": ["string", "null"]}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"identity_state": {"const": "unassigned"}}, "required": ["identity_state"]},
+          "then": {"properties": {"episode_id": {"type": "null"}, "basis": {"type": "null"}}}
+        },
+        {
+          "if": {"properties": {"identity_state": {"enum": ["candidate", "adjudicated"]}}, "required": ["identity_state"]},
+          "then": {"properties": {"episode_id": {"type": "string", "pattern": "^MYC_EPI_[A-Z0-9_]{3,80}$"}, "basis": {"type": "string", "minLength": 1}}}
+        }
+      ]
+    },
+    "individual": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fruiting_body_id", "identity_state", "identity_basis"],
+      "properties": {
+        "fruiting_body_id": {"type": ["string", "null"], "pattern": "^MYC_FB_[A-Z0-9_]{3,80}$"},
+        "identity_state": {"enum": ["unassigned", "candidate", "adjudicated"]},
+        "identity_basis": {"enum": ["none", "photo_sequence", "tagged_marker", "field_landmark", "combined_evidence"]}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"identity_state": {"const": "unassigned"}}, "required": ["identity_state"]},
+          "then": {"properties": {"fruiting_body_id": {"type": "null"}, "identity_basis": {"const": "none"}}}
+        },
+        {
+          "if": {"properties": {"identity_state": {"enum": ["candidate", "adjudicated"]}}, "required": ["identity_state"]},
+          "then": {"properties": {"fruiting_body_id": {"type": "string", "pattern": "^MYC_FB_[A-Z0-9_]{3,80}$"}, "identity_basis": {"enum": ["photo_sequence", "tagged_marker", "field_landmark", "combined_evidence"]}}}
+        }
+      ]
+    },
+    "count": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "value", "lower_bound", "upper_bound"],
+      "properties": {
+        "method": {"enum": ["exact", "minimum_estimate", "range", "unknown"]},
+        "value": {"type": ["integer", "null"], "minimum": 0},
+        "lower_bound": {"type": ["integer", "null"], "minimum": 0},
+        "upper_bound": {"type": ["integer", "null"], "minimum": 0}
+      }
+    },
+    "measurements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["measurement_id", "metric", "value", "unit", "method", "scale_evidence", "uncertainty"],
+        "properties": {
+          "measurement_id": {"type": "string", "pattern": "^MYC_MSR_[A-Z0-9_]{3,80}$"},
+          "metric": {"enum": ["cap_diameter", "height", "stipe_diameter", "cluster_span", "occupied_area", "other"]},
+          "value": {"type": "number", "minimum": 0},
+          "unit": {"type": "string", "minLength": 1},
+          "method": {"type": "string", "minLength": 1},
+          "scale_evidence": {"type": ["string", "null"]},
+          "uncertainty": {"type": ["number", "null"], "minimum": 0}
+        }
+      }
+    },
+    "substrate_observed": {"type": ["string", "null"]},
+    "host_observed": {"type": ["string", "null"]},
+    "media_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^MYC_MED_[A-Z0-9_]{3,80}$"}},
+    "review_state": {"enum": ["needs_review", "protocol_eligible", "rejected", "superseded"]}
+  }
+}
