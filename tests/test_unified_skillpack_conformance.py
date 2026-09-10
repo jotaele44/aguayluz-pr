@@ -1,9 +1,19 @@
 from __future__ import annotations
 
+import importlib.util
+import json
 import subprocess
 import sys
 import unittest
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+SPEC = importlib.util.spec_from_file_location(
+    "validate_unified_skillpacks", ROOT / "tools" / "validate_unified_skillpacks.py"
+)
+MODULE = importlib.util.module_from_spec(SPEC)
+assert SPEC.loader
+SPEC.loader.exec_module(MODULE)
 
 
 class TestUnifiedSkillpackConformance(unittest.TestCase):
@@ -25,6 +35,18 @@ class TestUnifiedSkillpackConformance(unittest.TestCase):
             0,
             result.stdout + "\n" + result.stderr,
         )
+
+    def test_spatial_scope_remains_exact(self) -> None:
+        manifest = json.loads((ROOT / ".claude/skillpacks/MANIFEST.json").read_text())
+        allowed = manifest["allowed_change_paths"]
+        self.assertTrue(MODULE.is_allowed_path("federation/spatial/grid_manifest.json", allowed))
+        self.assertFalse(MODULE.is_allowed_path("federation/spatial/unreviewed.json", allowed))
+        self.assertFalse(MODULE.is_allowed_path("governance/unreviewed.json", allowed))
+
+    def test_spatial_disposition_does_not_replace_repo_compatibility(self) -> None:
+        receipt = json.loads((ROOT / "governance/federation_compatibility.json").read_text())
+        self.assertEqual(receipt["disposition"], "COMPATIBLE")
+        self.assertEqual(receipt["spatial_disposition"], "ATTESTED")
 
 
 if __name__ == "__main__":
