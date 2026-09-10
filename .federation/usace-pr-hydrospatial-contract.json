@@ -1,0 +1,60 @@
+{
+  "contract": "federation.usace-pr-hydrospatial/1.0",
+  "producer": "AGUAYLUZ",
+  "consumer": "THEHUB",
+  "geometry_consumer": "SPIDERWEB",
+  "scope": "Puerto Rico USACE water-related report/project corpus",
+  "identity_layers": [
+    "BYTE",
+    "SOURCE_MANIFESTATION",
+    "LOGICAL_DOCUMENT",
+    "PROJECT",
+    "WATERBODY"
+  ],
+  "dispositions": [
+    "RETRIEVED",
+    "EXCLUDED",
+    "UNAVAILABLE",
+    "UNRESOLVED"
+  ],
+  "prohibited_identity_proofs": [
+    "NAME_ONLY",
+    "NORMALIZED_NAME_ONLY",
+    "COUNT_EQUALITY",
+    "NEAREST_ONLY",
+    "PROXIMITY_ONLY",
+    "SOURCE_ABSENCE"
+  ],
+  "producer_rules": [
+    "AguaYLuz owns the raw USACE source manifestations, immutable bytes, hashes, family expansion and water-domain bindings.",
+    "Raw strings are preserved; normalized discovery keys cannot overwrite raw values.",
+    "Every download receives a retrieval receipt and SHA256.",
+    "Different hashes prove byte difference only.",
+    "A source-family filename is not proof that the bytes contain only that logical appendix.",
+    "Source arithmetic must close for every certified snapshot."
+  ],
+  "thehub_rules": [
+    "TheHub stores discovery, provenance and certification state only.",
+    "TheHub must not become the raw-document authority or silently rewrite producer identity.",
+    "Promotion is blocked if any declared source or manifestation remains unexplained."
+  ],
+  "spiderweb_rules": [
+    "Spiderweb may consume validated canonical waterbody/project geometry only.",
+    "Document search hits, nearest features and text aliases are discovery only."
+  ],
+  "certification_gate": {
+    "name": "USACE_PR_HYDROSPATIAL_CORPUS_CERTIFIED",
+    "required": [
+      "declared_source_universe_frozen",
+      "all_source_adapters_executed_or_dispositioned",
+      "family_expansion_closed",
+      "recoverable_bytes_hashed",
+      "manifestation_identity_adjudicated",
+      "project_identity_adjudicated",
+      "waterbody_identity_adjudicated",
+      "source_arithmetic_closed",
+      "unresolved_zero"
+    ],
+    "initial_state": "OPEN"
+  }
+}

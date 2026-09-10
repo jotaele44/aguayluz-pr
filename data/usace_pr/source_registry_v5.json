@@ -1,0 +1,212 @@
+{
+  "registry_version": "5.0.0",
+  "supersedes": "source_registry_v4.json",
+  "scope_statement": "Bounded public-source universe for Puerto Rico USACE water-related reports, project documents and regulatory manifestations as of 2026-09-06. Adapter code availability and live source exhaustion are separate states. This registry does not claim universal Internet exhaustion.",
+  "waterbody_universe": {
+    "primary": "Existing AguaYLuz NHDPlus V2.1 Puerto Rico VPU 21 water graph / water assets",
+    "crosschecks": [
+      "data/geo/pr_natural_features.json — USGS GNIS Puerto Rico natural features",
+      "Puerto Rico detailed hydrography GIS",
+      "Puerto Rico SIGE waterbody service"
+    ],
+    "reuse_rule": "Reuse passed AguaYLuz hydrography manifestations before acquiring mutable replacements.",
+    "identity_rule": "NAME_ONLY, NORMALIZED_NAME_ONLY, fuzzy match and proximity are discovery only; final identity requires stable ID, authoritative binding or independently certified geometry evidence.",
+    "marine_rule": "Bays, harbors, lagoons, estuaries, coastal waters and offshore study/disposal areas remain independent candidates until bound."
+  },
+  "sources": [
+    {
+      "source_id": "saj_environmental_documents_pr",
+      "role": "PRIMARY_REPORT_SOURCE",
+      "url": "https://www.saj.usace.army.mil/About/Divisions-Offices/Planning/Environmental-Branch/Environmental-Documents/",
+      "authority": "USACE Jacksonville District",
+      "adapter": "saj_environmental_documents",
+      "adapter_state": "CODEPATH_IMPLEMENTED",
+      "execution_environment": "http",
+      "scope": "Puerto Rico planning/environmental report families and appendices retained on historical Jacksonville index"
+    },
+    {
+      "source_id": "usace_digital_library_global_pr",
+      "role": "PRIMARY_REPORT_SOURCE",
+      "url": "https://usace.contentdm.oclc.org/digital/api/search/searchterm/Puerto%20Rico/field/all/maxRecords/1024",
+      "authority": "USACE Digital Library",
+      "adapter": "contentdm_api",
+      "adapter_state": "CODEPATH_IMPLEMENTED_PAGINATION_GATE",
+      "execution_environment": "http",
+      "scope": "All ContentDM collections with Puerto Rico metadata/full-text discovery"
+    },
+    {
+      "source_id": "usace_digital_library_project_management_pr",
+      "role": "PRIMARY_REPORT_SOURCE",
+      "url": "https://usace.contentdm.oclc.org/digital/api/search/collection/p16021coll7/searchterm/Puerto%20Rico/field/all/maxRecords/1024",
+      "authority": "USACE Digital Library",
+      "adapter": "contentdm_api",
+      "adapter_state": "CODEPATH_IMPLEMENTED_PAGINATION_GATE",
+      "execution_environment": "http",
+      "scope": "Project Management Reports collection Puerto Rico discovery"
+    },
+    {
+      "source_id": "iwr_project_assistance_library",
+      "role": "PRIMARY_REPORT_SOURCE",
+      "url": "https://publibrary.sec.usace.army.mil/search",
+      "api_documentation_url": "https://pal.sec.usace.army.mil/api",
+      "authority": "USACE Institute for Water Resources",
+      "adapter": "pal_browser_partition_v1",
+      "adapter_state": "CODEPATH_IMPLEMENTED_NEEDS_LIVE_PARTITION_EXECUTION",
+      "execution_environment": "browser",
+      "browser_operator": "operators/harvest_usace_pal_browser_v1.py",
+      "known_simple_search_cap": 250,
+      "known_advanced_search_cap": 200,
+      "known_resource_pattern": "https://publibrary.sec.usace.army.mil/resource?title=<title>&documentId=<uuid>",
+      "known_download_pattern": "https://publibrary.sec.usace.army.mil/api/download?id=<uuid>&filename=<filename>&token=&preview=true",
+      "scope": "Public PAL resources; partition execution must prove gap-free coverage and reject any search that reaches the public result cap"
+    },
+    {
+      "source_id": "erdc_knowledge_core",
+      "role": "PRIMARY_REPORT_SOURCE",
+      "url": "https://erdc-library.erdc.dren.mil/",
+      "api_url": "https://erdc-library.erdc.dren.mil",
+      "query": "Puerto Rico",
+      "page_size": 100,
+      "authority": "USACE ERDC Knowledge Core",
+      "adapter": "dspace7_api",
+      "adapter_state": "CODEPATH_IMPLEMENTED_NEEDS_LIVE_EXECUTION",
+      "execution_environment": "http",
+      "scope": "ERDC and predecessor technical reports/datasets through DSpace 7 REST discovery"
+    },
+    {
+      "source_id": "rrs_public_notices_pr",
+      "role": "CURRENT_REGULATORY_SOURCE",
+      "temporal_role": "CURRENT_PRIMARY_FROM_2025",
+      "url": "https://rrs.usace.army.mil/rrs/public-notices",
+      "authority": "USACE Regulatory Request System",
+      "district_code": "SAA",
+      "adapter": "rrs_selenium_table_v1",
+      "adapter_state": "CODEPATH_IMPLEMENTED_NEEDS_LIVE_BROWSER_EXECUTION",
+      "execution_environment": "browser",
+      "browser_operator": "operators/harvest_usace_browser_sources_v1.py rrs",
+      "scope": "Current public notices; adapter requires explicit Puerto Rico state scoping and pagination exhaustion receipt"
+    },
+    {
+      "source_id": "orm_public_pr",
+      "role": "CURRENT_REGULATORY_SOURCE",
+      "url": "https://permits.ops.usace.army.mil/orm-public",
+      "authority": "USACE Regulatory and Section 408 Publicly Available Data",
+      "adapter": "orm_selenium_table_v2",
+      "adapter_state": "CODEPATH_IMPLEMENTED_NEEDS_LIVE_BROWSER_EXECUTION",
+      "execution_environment": "browser",
+      "browser_operator": "operators/harvest_usace_browser_sources_v1.py orm",
+      "ui_class_universe": ["Final IP","Pending IP","NEPA EA","NEPA EIS","Emergency","214/Other","DWHS","AJD","Section 408"],
+      "scope": "All nine publicly exposed action classes, each scoped to Caribbean District/Puerto Rico and paginated to exhaustion"
+    },
+    {
+      "source_id": "sad_puerto_rico_regulatory_portal",
+      "role": "SECONDARY_REFERENCE_SOURCE",
+      "url": "https://www.sad.usace.army.mil/Missions/Regulatory/Puerto-Rico/",
+      "authority": "USACE South Atlantic Division / Caribbean District Regulatory",
+      "adapter": null,
+      "adapter_state": "REFERENCE_ONLY",
+      "scope": "Authoritative current pointer identifying RRS as the primary public-notice source"
+    },
+    {
+      "source_id": "saj_regulatory_public_notices_pr",
+      "role": "HISTORICAL_BACKFILL_SOURCE",
+      "url": "https://www.saj.usace.army.mil/Missions/Regulatory/Public-Notices/Tag/3896/puerto-rico/",
+      "authority": "USACE Jacksonville District Regulatory",
+      "adapter": "pr_scoped_index",
+      "adapter_state": "CODEPATH_IMPLEMENTED_OVERDISCOVERY_REQUIRES_CLASSIFICATION",
+      "execution_environment": "http",
+      "require_document_like": false,
+      "scope": "Legacy Puerto Rico public notices retained after migration to RRS"
+    },
+    {
+      "source_id": "saa_site_index",
+      "role": "PROJECT_DISCOVERY_SOURCE",
+      "url": "https://www.saa.usace.army.mil/Site-Index/",
+      "authority": "USACE Latin America & Caribbean District",
+      "adapter": "pr_scoped_index",
+      "adapter_state": "CODEPATH_IMPLEMENTED_OVERDISCOVERY_REQUIRES_CLASSIFICATION",
+      "execution_environment": "http",
+      "require_document_like": false,
+      "scope": "Current district project/site hubs"
+    },
+    {
+      "source_id": "saa_rio_puerto_nuevo_project_hub",
+      "role": "PROJECT_DISCOVERY_SOURCE",
+      "url": "https://www.saa.usace.army.mil/Rio-Puerto-Nuevo/",
+      "authority": "USACE Latin America & Caribbean District",
+      "adapter": "pr_scoped_index",
+      "adapter_state": "CODEPATH_IMPLEMENTED_FAMILY_EXPANSION_REQUIRED",
+      "execution_environment": "http",
+      "require_document_like": false,
+      "scope": "Current Río Puerto Nuevo project family hub"
+    },
+    {
+      "source_id": "saa_fy26_contract_forecast",
+      "role": "PROJECT_DISCOVERY_SOURCE",
+      "url": "https://www.saa.usace.army.mil/Portals/90/SAA%20FY26%20Contract%20Forecast%20Booklet_001.pdf",
+      "authority": "USACE Latin America & Caribbean District",
+      "adapter": null,
+      "adapter_state": "SECONDARY_PROJECT_UNIVERSE_CROSSCHECK",
+      "scope": "Current project/workload crosscheck; candidates must be independently recovered from authoritative report/project sources"
+    },
+    {
+      "source_id": "saj_congressional_fact_sheets_pr",
+      "role": "PROJECT_DISCOVERY_SOURCE",
+      "url": "https://www.saj.usace.army.mil/About/Congressional-Fact-Sheets-2025/",
+      "authority": "USACE Jacksonville District",
+      "adapter": "generic_mixed_index",
+      "adapter_state": "CODEPATH_IMPLEMENTED_CHILD_PR_CLASSIFICATION_REQUIRED",
+      "execution_environment": "http",
+      "include_href_regex": "/About/Congressional-Fact-Sheets-2025/",
+      "scope": "Civil Works/O&M/studies/FUDS project discovery crosscheck"
+    },
+    {
+      "source_id": "saj_civil_works_project_pages",
+      "role": "PROJECT_DISCOVERY_SOURCE",
+      "url": "https://www.saj.usace.army.mil/Missions/Civil-Works/",
+      "authority": "USACE Jacksonville District",
+      "adapter": "generic_mixed_index",
+      "adapter_state": "CODEPATH_IMPLEMENTED_CHILD_PR_CLASSIFICATION_REQUIRED",
+      "execution_environment": "http",
+      "include_href_regex": "/Missions/Civil-Works/",
+      "scope": "Legacy Civil Works project-page discovery"
+    },
+    {
+      "source_id": "usace_units_repository_metaregistry",
+      "role": "SECONDARY_REFERENCE_SOURCE",
+      "url": "https://www.usace.army.mil/Resources/Contact/Unit-Websites/",
+      "authority": "USACE Headquarters",
+      "adapter": null,
+      "adapter_state": "REFERENCE_ONLY_REPOSITORY_METAREGISTRY",
+      "scope": "Official repository list used to detect omitted source families"
+    },
+    {
+      "source_id": "usace_hq_publications",
+      "role": "SECONDARY_REFERENCE_SOURCE",
+      "url": "https://www.publications.usace.army.mil/",
+      "authority": "Headquarters USACE",
+      "adapter": null,
+      "adapter_state": "REFERENCE_ONLY_FOLLOW_WHEN_CITED",
+      "scope": "HQ manuals/policies referenced by project reports; not independent project identity"
+    }
+  ],
+  "certification_invariants": {
+    "declared_source_count": 16,
+    "required_adapter_codepaths_implemented": true,
+    "required_live_source_executions_pass": false,
+    "current_regulatory_primary_is_rrs": true,
+    "current_caribbean_district_code": "SAA",
+    "family_expansion_closed": false,
+    "recoverable_bytes_hashed": false,
+    "archive_member_identity_closed": false,
+    "project_identity_closed": false,
+    "waterbody_identity_closed": false,
+    "source_arithmetic_closed": false,
+    "family_arithmetic_closed": false,
+    "identity_arithmetic_closed": false,
+    "green_merged_federation_integration": false,
+    "unresolved_zero": false,
+    "certification_state": "OPEN"
+  },
+  "certification_rule": "Adapter implementation alone cannot satisfy a source gate. USACE_PR_HYDROSPATIAL_CORPUS_CERTIFIED requires successful live execution or an explicit disposition for every bounded source, family expansion, recoverable-byte hashing, project/waterbody adjudication, source/family/identity arithmetic closure, green merged federation integration, and UNRESOLVED=0."
+}
