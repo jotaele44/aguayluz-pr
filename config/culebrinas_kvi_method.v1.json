@@ -1,0 +1,39 @@
+{
+  "schema_version": "aguayluz.culebrinas-kvi-method/v1.0",
+  "meaning": "0=well constrained by required direct evidence; 100=maximal unresolved evidence deficit",
+  "grid_contract": {
+    "cell_size_m": 250,
+    "geometry_source": "canonical_aquifer_feature_plus_explicit_transition_corridors",
+    "canonical_geometry_required": true,
+    "centroid_or_nearest_only_selection_prohibited": true
+  },
+  "components": {
+    "vertical_depth_gap": {"weight": 0.25, "requires": ["screen_or_boring_depths", "hydrostratigraphic_ground_truth"]},
+    "spatial_resolution_gap": {"weight": 0.20, "requires": ["direct_observation_coverage_by_method"]},
+    "temporal_gap": {"weight": 0.15, "requires": ["wet_dry_or_equivalent_repeat_observations"]},
+    "cross_domain_connectivity_gap": {"weight": 0.15, "requires": ["river_groundwater_exchange", "karst_valley_binding"]},
+    "fresh_salt_gap": {"weight": 0.10, "requires": ["direct_EC_profile", "independent_EM_support"]},
+    "coastal_sgd_gap": {"weight": 0.10, "requires": ["coastal_reconnaissance", "second_independent_SGD_method"]},
+    "predictive_validation_gap": {"weight": 0.05, "requires": ["withheld_validation_set"]}
+  },
+  "component_state_contract": ["MEASURED", "UNRESOLVED"],
+  "missing_component_policy": "NO_KVI_MEASURED",
+  "calculation": "100 * weighted_mean(component_gap_fraction)",
+  "component_gap_fraction_range": [0.0, 1.0],
+  "sensitivity_ensemble": {
+    "required": true,
+    "method": "vary_each_weight_plus_minus_20_percent_then_renormalize",
+    "report": ["baseline", "ensemble_min", "ensemble_max", "winner_stability_fraction"]
+  },
+  "uncertainty": {
+    "statistical_confidence_interval_only_if_sampling_design_supports_it": true,
+    "otherwise_report": "sensitivity_interval_and_spatial_uncertainty_polygon"
+  },
+  "promotion_gates": [
+    "all_components_measured",
+    "qa_qc_closed",
+    "row_and_join_invariants_pass",
+    "withheld_validation_pass",
+    "zero_material_identity_or_geometry_residue"
+  ]
+}

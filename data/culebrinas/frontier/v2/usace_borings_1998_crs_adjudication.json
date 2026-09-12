@@ -1,0 +1,46 @@
+{
+  "schema_version": "aguayluz.culebrinas-usace-boring-crs-adjudication/v1.0",
+  "source": {
+    "authority": "U.S. Army Corps of Engineers, Jacksonville District",
+    "document": "Rio Culebrinas, Flood Control, Detailed Project Report, June 2004, Appendix B, Geotechnical",
+    "borings_performed": "June 1998",
+    "vertical_datum_as_logged": "MSL"
+  },
+  "observed_coordinate_strings": [
+    {
+      "boring_id": "CB-CUL-01",
+      "x_raw": 248651,
+      "y_raw": 212523,
+      "evidence_state": "FACT_FROM_DRILLING_LOG"
+    },
+    {
+      "boring_id": "CB-CUL-03",
+      "x_raw": 248955,
+      "y_raw": 211084,
+      "evidence_state": "FACT_FROM_DRILLING_LOG"
+    }
+  ],
+  "candidate_crs_tests": [
+    {
+      "epsg": 3991,
+      "name": "Puerto Rico State Plane CS of 1927",
+      "unit": "US survey foot",
+      "result": "SPATIALLY_COHERENT_WITH_CULEBRINAS_PROJECT_CORRIDOR",
+      "classification": "COMPUTED"
+    },
+    {
+      "epsg": 32161,
+      "name": "NAD83 / Puerto Rico & Virgin Is.",
+      "unit": "metre",
+      "result": "INCOMPATIBLE_IF_RAW_XY_ARE_INTERPRETED_AS_METRES",
+      "classification": "COMPUTED"
+    }
+  ],
+  "adjudication": {
+    "best_candidate": "EPSG:3991",
+    "state": "INFERENCE_HIGH_CONFIDENCE_NOT_CERTIFIED",
+    "reason": "Two independent historical boring coordinate pairs map into the correct Aguada/Culebrinas corridor under EPSG:3991 and fail the native-metre interpretation. The recovered drilling-log text does not itself explicitly name the horizontal datum/CRS.",
+    "promotion_rule": "Do not mark usace_boring_geometry_closed until an authoritative plan sheet, survey note, metadata record, or other USACE source explicitly binds the raw coordinates to the horizontal CRS, or an independently surveyed control set uniquely proves the transformation.",
+    "proximity_identity_used": false
+  }
+}

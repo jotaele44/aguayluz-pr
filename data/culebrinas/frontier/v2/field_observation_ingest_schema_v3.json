@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Culebrinas Field Observation v3",
+  "type": "object",
+  "required": [
+    "observation_id","campaign_id","station_id","observed_utc","evidence_state",
+    "domain","method","parameter","qa_flag","raw_source_id","raw_file_sha256",
+    "authorization_id","calibration_id","identity_state","geometry_state",
+    "canonical_aquifer_globalid"
+  ],
+  "properties": {
+    "observation_id":{"type":"string","minLength":1},
+    "campaign_id":{"enum":["H1","H2","H3","H4","H5","BASELINE","GAIN_LOSS","GEOPHYSICS","FRESH_SALT","SGD"]},
+    "station_id":{"type":"string","minLength":1},
+    "sample_id":{"type":["string","null"]},
+    "observed_utc":{"type":"string","format":"date-time"},
+    "evidence_state":{"const":"OBSERVED"},
+    "domain":{"enum":["GROUNDWATER","SURFACE_WATER","GEOPHYSICS","GEOCHEMISTRY","FRESH_SALT","SGD","METEOROLOGY","GEOLOGY"]},
+    "method":{"type":"string","minLength":1},
+    "parameter":{"type":"string","minLength":1},
+    "value":{"type":["number","null"]},
+    "unit":{"type":["string","null"]},
+    "detection_limit":{"type":["number","null"]},
+    "qa_flag":{"enum":["RAW","PASS","FAIL","REVIEW","BELOW_DETECTION","DUPLICATE","BLANK","CALIBRATION"]},
+    "raw_source_id":{"type":"string","minLength":1},
+    "raw_file_sha256":{"type":"string","pattern":"^[A-Fa-f0-9]{64}$"},
+    "authorization_id":{"type":"string","minLength":1},
+    "calibration_id":{"type":"string","minLength":1},
+    "chain_of_custody_id":{"type":["string","null"]},
+    "identity_state":{"enum":["CERTIFIED","PASS","CANDIDATE_NOT_IDENTITY","UNRESOLVED"]},
+    "geometry_state":{"const":"OBSERVED"},
+    "canonical_aquifer_globalid":{"type":"string","minLength":1},
+    "survey_crs":{"type":"string","minLength":1},
+    "survey_datum":{"type":"string","minLength":1},
+    "notes":{"type":["string","null"]},
+    "geometry":{"type":"object"}
+  },
+  "allOf": [
+    {
+      "if": {"properties":{"domain":{"enum":["GEOCHEMISTRY","SGD"]}}},
+      "then": {"required":["sample_id","chain_of_custody_id"]}
+    }
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,50 @@
+{
+  "schema_version": "aguayluz.culebrinas-prefield-closure/v1.2",
+  "issued_date": "2026-09-06",
+  "state": "OPEN_BLOCKED",
+  "B01_sige_globalid": {
+    "state": "BLOCKED_FEATURE_EXTRACTION",
+    "authoritative_layer": "https://sige.pr.gov/server/rest/services/MIPR/Geologia_v10_N/FeatureServer/2",
+    "native_epsg": 32161,
+    "binding_anchor": {
+      "site_id": "USGS-182252067115800",
+      "name": "Aguada 1 Well",
+      "local_aquifer_code": "110RCBV",
+      "local_aquifer_name": "Rio Culebrinas Valley Aquifer"
+    },
+    "direct_query_attempt": "BLOCKED_BY_WEB_SAFE_URL_POLICY_AND_CONTAINER_DNS",
+    "canonical_geometry_frozen": false
+  },
+  "B02_usace_crs": {
+    "state": "OPEN_AUTHORITATIVE_BINDING",
+    "bounded_result": "USACE Appendix B explicitly states X and Y coordinates are given in feet; no explicit horizontal datum/CRS statement recovered",
+    "candidate_epsg": 3991,
+    "candidate_state": "INFERENCE_HIGH_CONFIDENCE",
+    "canonical_transform_allowed": false
+  },
+  "B03_subsurface_census": {
+    "state": "OPEN_INCOMPLETE",
+    "new_public_manifestations": [
+      "AAA/PRASA Rio Culebrinas raw-water intake rehabilitation and maintenance records",
+      "2026 PRASA mitigation procurement for Rio Culebrinas raw-water intake"
+    ],
+    "bounded_result": "No superseding regional hydrogeologic characterization or additional publicly indexed USGS 110RCBV well recovered; DRNA/AAA/UPR/grey literature universe remains non-exhaustive"
+  },
+  "B04_uprm_seismic": {
+    "state": "OPEN_PENDING_SEISMIC_INTERPRETATION",
+    "latest_authoritative_public_result": "UPRM 2026-02-20 acquisition announcement; no later public interpretation recovered in bounded search"
+  },
+  "B05_federation_ci": {
+    "state": "BLOCKED_EXTERNAL_GITHUB_ACTIONS_RUNNER",
+    "aguayluz_latest_validate_run": 33986242177,
+    "thehub_latest_hub_ci_run": 33986252824,
+    "invariant": "failed jobs still return steps=null and logs_url=null before runner steps execute",
+    "merge_allowed": false
+  },
+  "prefield_certified": false,
+  "promotion_blockers": ["B01","B02","B03","B04","B05"],
+  "new_experimental_observation_count": 0,
+  "KVI_MEASURED": "BLOCKED_NO_FIELD_DATA",
+  "H1_H5": "OPEN",
+  "zero_material_residue": false
+}
