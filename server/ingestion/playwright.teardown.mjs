@@ -8,7 +8,8 @@ import { fileURLToPath } from "node:url";
 
 export default function globalTeardown() {
   const here = path.dirname(fileURLToPath(import.meta.url));
-  const result = spawnSync("python", [path.join(here, "gui_parity_teardown.py")], {
+  const pythonExecutable = process.env.PYTHON || (process.platform === "win32" ? "python" : "python3");
+  const result = spawnSync(pythonExecutable, [path.join(here, "gui_parity_teardown.py")], {
     stdio: "inherit",
   });
 
