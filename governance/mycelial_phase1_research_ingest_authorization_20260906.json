@@ -1,0 +1,50 @@
+{
+  "schema_version": "1.0.0",
+  "decision_id": "MYC_BALLOT_A_RESEARCH_INGEST_20260906",
+  "decision": "APPROVE_RESEARCH_INGEST",
+  "decision_state": "ACTIVE",
+  "authorization_class": "explicit_user_directive_in_active_session",
+  "repository_owner_identity_independently_verified": false,
+  "base_branch": "main",
+  "base_sha": "3678271a03e36375dc3e9f2fb4da0b6b655622bd",
+  "directive_sha256": "fac1e939d3647fa335e9152dc986e13892c6b57f64f1ce33853da75625abbf19",
+  "supersedes": [
+    {
+      "reference": "4851413154",
+      "prior_state": "HOLD",
+      "new_state": "SUPERSEDED",
+      "reason": "A later explicit execution directive authorizes bounded research ingestion while preserving the prior HOLD in history."
+    }
+  ],
+  "authorized_scope": [
+    "bounded internal research ingestion",
+    "RAW_NORMALIZED_CANONICAL manifestation separation",
+    "append-only lifecycle evidence persistence",
+    "stable sites and effort-aware repeated surveys",
+    "taxonomic evidence",
+    "media evidence",
+    "date-matched environmental snapshots",
+    "duplicate candidate preservation",
+    "deterministic import receipt accounting",
+    "fail-closed coordinate handling"
+  ],
+  "explicit_exclusions": [
+    "ecological calibration",
+    "prediction or scoring",
+    "habitat suitability",
+    "location ranking",
+    "ecological connectivity",
+    "underground mycelial continuity inference from fruiting-body proximity",
+    "public exact sensitive coordinates",
+    "production API or GUI admission",
+    "notifications",
+    "control actions",
+    "fungal-to-infrastructure inference"
+  ],
+  "scientific_invariants": [
+    "mycelium tracking and fruiting-body tracking remain separate evidence domains",
+    "non-detection under documented effort is not proof of absence",
+    "environmental correlation is not causal identity",
+    "observations precede calibration and calibration precedes prediction"
+  ]
+}
