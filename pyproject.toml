@@ -32,11 +32,16 @@ dependencies = [
   # so this project installs from an isolated clone.
   "prii-maintenance",
   "prii-export-utils",
+  "prii-doctor",
 ]
 
 [tool.uv.sources]
 prii-maintenance = { git = "https://github.com/jotaele44/thehub-pr.git", rev = "f2b81769924689b4d959554928810b1d7b7ef3d6", subdirectory = "packages/prii_maintenance" }
 prii-export-utils = { git = "https://github.com/jotaele44/thehub-pr.git", rev = "f2b81769924689b4d959554928810b1d7b7ef3d6", subdirectory = "packages/prii_export_utils" }
+# Pinned to feature/prii-doctor-package's branch-tip commit (thehub-pr PR
+# not yet merged). Re-pin to the merge commit on main once that PR lands --
+# mirrors the prii-maintenance/prii-export-utils pin-bump pattern above.
+prii-doctor = { git = "https://github.com/jotaele44/thehub-pr.git", rev = "85d023640934f75ff0664e4c1771f45def50400f", subdirectory = "packages/prii_doctor" }
 
 [project.optional-dependencies]
 dev = [
