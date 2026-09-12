@@ -1,0 +1,130 @@
+{
+  "schema_version": "water_monitoring_source_registry_v1",
+  "scope": "Puerto Rico water monitoring",
+  "snapshot_policy": "Mutable sources are versioned by retrieval UTC and raw-byte SHA256. Downstream retries reuse an existing snapshot unless a new snapshot is explicitly requested.",
+  "sources": [
+    {
+      "source_id": "sige_pr_watersheds_0",
+      "authority": "Puerto Rico Planning Board SIGE / MiPR",
+      "role": "watershed_geometry",
+      "service": "MIPR/Geologia_v10_N",
+      "layer": 0,
+      "layer_name": "Cuencas Hidrográficas",
+      "url": "https://sige.pr.gov/server/rest/services/MIPR/Geologia_v10_N/MapServer/0",
+      "query": {"where": "1=1", "outFields": "*", "returnGeometry": true, "outSR": 4326, "f": "geojson"},
+      "source_crs": "EPSG:32161",
+      "geometry_type": "Polygon",
+      "stable_id_candidates": ["GlobalID", "CUENCA_ID"],
+      "mutable": true,
+      "snapshot_state": "OPEN"
+    },
+    {
+      "source_id": "sige_pr_jca_drinking_wells_20",
+      "authority": "Puerto Rico Planning Board SIGE / JCA source manifestation",
+      "role": "physical_well_candidate_geometry",
+      "service": "MIPR/ValorEcologico_v10_N",
+      "layer": 20,
+      "layer_name": "Pozos Agua Potable JCA",
+      "url": "https://sige.pr.gov/server/rest/services/MIPR/ValorEcologico_v10_N/FeatureServer/20",
+      "query": {"where": "1=1", "outFields": "*", "returnGeometry": true, "outSR": 4326, "f": "geojson"},
+      "source_crs": "EPSG:32161",
+      "geometry_type": "Point",
+      "identity_scope": "physical/source candidate only; not a DRNA permit or franchise identity",
+      "mutable": true,
+      "snapshot_state": "OPEN"
+    },
+    {
+      "source_id": "sige_pr_aaa_wells_21",
+      "authority": "Puerto Rico Planning Board SIGE / AAA source manifestation",
+      "role": "physical_well_candidate_geometry",
+      "service": "MIPR/ValorEcologico_v10_N",
+      "layer": 21,
+      "layer_name": "Pozo AAA",
+      "url": "https://sige.pr.gov/server/rest/services/MIPR/ValorEcologico_v10_N/FeatureServer/21",
+      "query": {"where": "1=1", "outFields": "*", "returnGeometry": true, "outSR": 4326, "f": "geojson"},
+      "source_crs": "EPSG:32161",
+      "geometry_type": "Point",
+      "identity_scope": "physical/source candidate only; not a DRNA permit or franchise identity",
+      "mutable": true,
+      "snapshot_state": "OPEN"
+    },
+    {
+      "source_id": "drna_dpfa_authority",
+      "authority": "Puerto Rico Department of Natural and Environmental Resources (DRNA), Division de Permisos y Franquicias de Agua",
+      "role": "authorization_system_authority",
+      "url": "https://www.drna.pr.gov/oficinas/division-de-franquicias-y-permisos-de-agua/",
+      "regulatory_basis": [
+        "Ley Núm. 136 de 3 de junio de 1976, según enmendada",
+        "Reglamento 6213 para el Aprovechamiento, Uso, Conservación y Administración de las Aguas de Puerto Rico"
+      ],
+      "identity_scope": "authoritative description of the office that evaluates well permits and water-franchise applications; not a permit-holder rowset",
+      "mutable": true,
+      "snapshot_state": "DISCOVERED"
+    },
+    {
+      "source_id": "drna_fa03_well_intake_permit_application",
+      "authority": "Puerto Rico Department of Natural and Environmental Resources (DRNA)",
+      "role": "permit_schema_semantics",
+      "form_code": "FA-03",
+      "url": "https://www.drna.pr.gov/documentos/formularios/fa-03-hoja-de-cotejo-y-requisitos-para-la-solicitud-de-permiso-de-construccion-de-pozo-o-toma-de-agua/",
+      "identity_scope": "application requirements/schema only; an application or blank form is not an issued permit",
+      "mutable": true,
+      "snapshot_state": "DISCOVERED"
+    },
+    {
+      "source_id": "drna_fa09_water_franchise_application",
+      "authority": "Puerto Rico Department of Natural and Environmental Resources (DRNA)",
+      "role": "franchise_schema_semantics",
+      "form_code": "FA-09",
+      "url": "https://www.drna.pr.gov/documentos/formularios/fa-09-solicitud-de-franquicia-para-el-aprovechamiento-y-uso-de-aguas-de-puerto-rico/",
+      "declared_fields": ["petitioner", "franchise_holder", "well_location", "withdrawal_quantity", "withdrawal_method"],
+      "identity_scope": "application requirements/schema only; an application or blank form is not an issued franchise",
+      "mutable": true,
+      "snapshot_state": "DISCOVERED"
+    },
+    {
+      "source_id": "drna_reg6213_water_authorization_semantics",
+      "authority": "Puerto Rico Department of Natural and Environmental Resources (DRNA)",
+      "role": "regulatory_semantics",
+      "url": "https://www.drna.pr.gov/historico/biblioteca/reglamentos_folder/Reg6213.pdf",
+      "identity_scope": "defines permit/franchise requirements and legal semantics; not an issued-authorization rowset",
+      "mutable": false,
+      "snapshot_state": "DISCOVERED"
+    },
+    {
+      "source_id": "sige_drna_protected_folder",
+      "authority": "Puerto Rico SIGE / DRNA",
+      "role": "candidate_authoritative_gis_namespace",
+      "url": "https://sige.pr.gov/server/rest/services/DRNA",
+      "identity_scope": "candidate DRNA GIS namespace; contents not anonymously enumerable in the bounded discovery",
+      "mutable": true,
+      "snapshot_state": "BLOCKED",
+      "blocker": "SIGE root directory lists the DRNA folder, but anonymous navigation redirects to the SIGE login surface. No layer names or rowsets inside the protected folder are asserted."
+    },
+    {
+      "source_id": "sige_mipr_permisos_super_sip_environmental_5",
+      "authority": "Puerto Rico Planning Board SIGE / historical permitting systems",
+      "role": "permit_discovery_candidate",
+      "service": "MIPR/Permisos",
+      "layer": 5,
+      "layer_name": "Permisos Ambientales (SuperSip)",
+      "url": "https://sige.pr.gov/server/rest/services/MIPR/Permisos/MapServer/5",
+      "declared_fields": ["Caso", "Siglas", "NomProy", "Estado", "Adjud", "Catastro", "Municipio", "Agencia", "Categoria", "Tramite", "Radicado", "F_Estado", "CorePermit"],
+      "identity_scope": "general environmental-permit discovery candidate only; not proven complete for DPFA well permits or water franchises",
+      "mutable": true,
+      "snapshot_state": "CANDIDATE_NOT_IDENTITY"
+    },
+    {
+      "source_id": "drna_water_permits_franchises",
+      "authority": "Puerto Rico Department of Natural and Environmental Resources (DRNA)",
+      "role": "authorization_and_extraction_legal_state",
+      "url": "https://www.drna.pr.gov/",
+      "query": null,
+      "required_record_types": ["issued_well_or_intake_permit", "issued_water_franchise", "recognized_acquired_right", "transfer_or_amendment", "revocation_or_expiration", "enforcement_or_adjudicative_finding"],
+      "identity_scope": "authoritative issued permit, water-franchise, acquired-right, transfer/amendment, revocation/expiration, and enforcement records",
+      "mutable": true,
+      "snapshot_state": "BLOCKED",
+      "blocker": "Bounded official-source discovery located the competent DPFA office, governing regulation, application schemas (FA-03/FA-09), a protected SIGE DRNA namespace, and general historical permit discovery layers, but no exhaustive public machine-readable issued DPFA permit/franchise rowset or complete decision ledger was identified. Forms, general permit layers, and physical-well GIS cannot by themselves prove authorization status."
+    }
+  ]
+}
