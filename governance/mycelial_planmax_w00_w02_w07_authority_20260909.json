@@ -1,0 +1,60 @@
+{
+  "record_type": "mycelial_planmax_execution_authority",
+  "schema_version": "1.0.0",
+  "program_id": "MYC_PLANMAX_20260909_W00_W02_W07",
+  "created_date": "2026-09-09",
+  "repository": "jotaele44/aguayluz-pr",
+  "exact_base_sha": "eb6fa76514257f1361b7ceb7ff298bb4f11161e9",
+  "governing_adr": "docs/adr/ADR-0002-mycelial-phase-0-baseline-and-phase-1-admission.md",
+  "user_directive": {
+    "label": "VECTOR_C_PLAN_MAX_PROCEED",
+    "scope": [
+      "W00_baseline_scope_authority_register",
+      "W01_rights_privacy_retention_contracts",
+      "W02_source_contracts_access_diagnostics",
+      "W07_known_site_study_protocol_design",
+      "retry_exact_head_PR238_certification_without_changing_head"
+    ]
+  },
+  "predecessor_ingest_pr": {
+    "number": 238,
+    "head_sha": "7f7fa5f9826604c2d47e04267bb6cd6c76fc97fb",
+    "state_at_execution_start": "OPEN_DRAFT_UNMERGED",
+    "relationship": "independent_predecessor; not rebased or modified by this package"
+  },
+  "scientific_invariants": [
+    "observation_acquisition_before_calibration",
+    "calibration_before_prediction",
+    "known_site_phenology_before_island_wide_habitat_suitability",
+    "fruiting_body_evidence_is_not_underground_mycelium_evidence",
+    "source_manifestation_is_not_canonical_biological_identity",
+    "non_detection_requires_documented_effort_and_is_not_absence",
+    "environmental_correlation_is_not_causal_identity",
+    "preserve_RAW_NORMALIZED_CANONICAL_separately",
+    "preserve_conflicting_assertions_and_duplicate_candidates",
+    "sensitive_coordinates_fail_closed",
+    "unresolved_license_identity_arithmetic_or_nonexecuted_CI_fail_closed"
+  ],
+  "authorized_now": [
+    "documentation_and_governance_freeze",
+    "public_source_contract_research",
+    "bounded_access_diagnostics",
+    "field_protocol_and_schema_design",
+    "synthetic_validation_fixtures",
+    "retry_existing_failed_GitHub_Actions_jobs_without_code_change"
+  ],
+  "not_authorized_by_this_record": [
+    "production_or_GUI_admission",
+    "public_exact_sensitive_coordinates",
+    "canonical_ingestion_of_real_biological_records",
+    "ecological_calibration",
+    "model_fitting_or_scoring",
+    "habitat_suitability_or_location_ranking",
+    "ecological_connectivity",
+    "underground_mycelial_continuity_inference",
+    "notifications_or_automated_control",
+    "fungal_to_infrastructure_inference",
+    "merging_PR238_or_any_new_PR"
+  ],
+  "completion_rule": "Each work package closes only on its own evidence; later-package readiness is never inferred from upstream documentation completeness."
+}

@@ -1,0 +1,101 @@
+{
+  "classification": "SYNTHETIC_FIXTURES_ONLY_NOT_BIOLOGICAL_DATA",
+  "cases": [
+    {
+      "name": "valid taxon target",
+      "valid": true,
+      "record": {
+        "record_type": "mycelial_study_target",
+        "schema_version": "1.0.0",
+        "target_id": "MYC_TGT_SYNTH_TAXON",
+        "kind": "taxon",
+        "display_name": "Synthetic taxon target",
+        "taxonomic_scope": {
+          "asserted_name": "Synthetic fungus",
+          "rank": "species",
+          "authority": "synthetic-authority",
+          "authority_version": "fixture-v1",
+          "definition_reference": "synthetic-definition"
+        },
+        "field_inclusion_rule": "Synthetic visible fruiting bodies meeting the target definition.",
+        "field_exclusion_rule": "Exclude records that do not meet the synthetic identification rule.",
+        "minimum_verification_class": "media_supported",
+        "sensitivity_state": "ordinary",
+        "forecast_role": "future_detection_target_candidate",
+        "review_state": "protocol_eligible"
+      }
+    },
+    {
+      "name": "valid context-only broad target",
+      "valid": true,
+      "record": {
+        "record_type": "mycelial_study_target",
+        "schema_version": "1.0.0",
+        "target_id": "MYC_TGT_SYNTH_MACROFUNGI",
+        "kind": "all_macrofungi",
+        "display_name": "Synthetic macrofungi context",
+        "taxonomic_scope": {
+          "asserted_name": null,
+          "rank": "macrofungi_scope",
+          "authority": null,
+          "authority_version": null,
+          "definition_reference": "synthetic-macrofungi-definition"
+        },
+        "field_inclusion_rule": "Synthetic macroscopic fruiting structures under the fixture definition.",
+        "field_exclusion_rule": "Exclude non-fruiting evidence and unresolved microscopic-only records.",
+        "minimum_verification_class": "field_morphotype",
+        "sensitivity_state": "ordinary",
+        "forecast_role": "context_only",
+        "review_state": "protocol_eligible"
+      }
+    },
+    {
+      "name": "invalid sensitive forecast target",
+      "valid": false,
+      "record": {
+        "record_type": "mycelial_study_target",
+        "schema_version": "1.0.0",
+        "target_id": "MYC_TGT_SYNTH_SENSITIVE",
+        "kind": "taxon",
+        "display_name": "Synthetic sensitive target",
+        "taxonomic_scope": {
+          "asserted_name": "Synthetic sensitive fungus",
+          "rank": "species",
+          "authority": "synthetic-authority",
+          "authority_version": "fixture-v1",
+          "definition_reference": "synthetic-sensitive-definition"
+        },
+        "field_inclusion_rule": "Synthetic inclusion rule.",
+        "field_exclusion_rule": "Synthetic exclusion rule.",
+        "minimum_verification_class": "expert_verified",
+        "sensitivity_state": "sensitive",
+        "forecast_role": "future_detection_target_candidate",
+        "review_state": "needs_review"
+      }
+    },
+    {
+      "name": "invalid taxon without authority",
+      "valid": false,
+      "record": {
+        "record_type": "mycelial_study_target",
+        "schema_version": "1.0.0",
+        "target_id": "MYC_TGT_SYNTH_NOAUTH",
+        "kind": "taxon",
+        "display_name": "Synthetic unresolved taxon",
+        "taxonomic_scope": {
+          "asserted_name": "Synthetic fungus",
+          "rank": "species",
+          "authority": null,
+          "authority_version": null,
+          "definition_reference": "synthetic-definition"
+        },
+        "field_inclusion_rule": "Synthetic rule.",
+        "field_exclusion_rule": "Synthetic rule.",
+        "minimum_verification_class": "unresolved_review_required",
+        "sensitivity_state": "ordinary",
+        "forecast_role": "not_forecast_eligible",
+        "review_state": "needs_review"
+      }
+    }
+  ]
+}
