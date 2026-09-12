@@ -295,6 +295,6 @@ def test_historical_edges_keep_order_independence(make_rows):
 
 
 def test_correction_keeps_schema_version_and_pin_unchanged():
-    assert M.IMPLEMENTATION_VERSION == "2.0.1"
+    assert M.IMPLEMENTATION_VERSION == "2.0.2"
     assert M.SCHEMA_VERSION == "2.0.0"
     assert M.SCHEMA_SHA256 == "bfe7e8628d93adb149c8b79672cbfb4c8025c56d1de3505cb07a9eec2f2a8aba"

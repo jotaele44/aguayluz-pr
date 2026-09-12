@@ -20,7 +20,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-IMPLEMENTATION_VERSION = "2.0.1"
+IMPLEMENTATION_VERSION = "2.0.2"
 SCHEMA_VERSION = "2.0.0"
 SCHEMA_SHA256 = "bfe7e8628d93adb149c8b79672cbfb4c8025c56d1de3505cb07a9eec2f2a8aba"
 SCHEMA_PATH = Path(__file__).resolve().parents[2] / "schemas/mycelial-consistency/v2/contracts.schema.json"
@@ -28,6 +28,9 @@ MAX_INPUT_BYTES = 2 * 1024 * 1024
 MAX_ROWS = 512
 MAX_DEPTH = 48
 MAX_NODES = 50000
+# Operational key bounds, not an assertion that a matching key exists in IANA.
+MAX_ZONE_KEY_LENGTH = 255
+ZONE_KEY = re.compile(r"[A-Za-z0-9_+-]{1,64}(?:/[A-Za-z0-9_+-]{1,64})*")
 SERIALIZATION = "aguayluz.sorted-json-utf8/v1"
 KINDS = {
     "mycelial_field_site": ("site", "site_id"),
@@ -133,6 +136,21 @@ def _time(value: str) -> datetime:
     return stamp
 
 
+def _zone(key: str) -> ZoneInfo:
+    """Bound untrusted lookup keys; never normalize, leak paths or default to UTC."""
+    if len(key) > MAX_ZONE_KEY_LENGTH or ZONE_KEY.fullmatch(key) is None:
+        raise InputRejected("TIMEZONE_KEY_INVALID")
+    try:
+        return ZoneInfo(key)
+    except ZoneInfoNotFoundError:
+        # Not found cannot distinguish an unknown key from a missing database.
+        raise InputRejected("UNRECOGNIZED_TIMEZONE") from None
+    except OSError:
+        raise InputRejected("TIMEZONE_DATA_ACCESS_FAILURE") from None
+    except (ValueError, EOFError):
+        raise InputRejected("TIMEZONE_DATA_INVALID") from None
+
+
 def _format_checker() -> FormatChecker:
     # Explicit standard-library checks avoid silently disabled optional formats.
     checker = FormatChecker(formats=[])
@@ -227,12 +245,14 @@ def check_record(record: Any) -> dict[str, Any]:
         if record["detection_status"] == "detected" and (start is None or end is None or record["observer_count"] < 1 or record["person_minutes"] <= 0):
             errors.append("DETECTION_WITHOUT_SEARCH_EVIDENCE")
         try:
-            zone = ZoneInfo(record["timezone"])
+            zone = _zone(record["timezone"])
             for timestamp in (start, end, record["scheduled_for"]):
                 if timestamp is not None:
                     stamp = _time(timestamp)
                     if stamp.utcoffset() != stamp.astimezone(zone).utcoffset():
                         holds.append("TIMESTAMP_ZONE_REPRESENTATION_REVIEW")
+        except InputRejected as exc:
+            errors.append(str(exc))
         except OverflowError:
             errors.append("TIMESTAMP_ZONE_OUT_OF_RANGE")
         except (ZoneInfoNotFoundError, ValueError):
@@ -319,7 +339,17 @@ Preschedule hashes test declared logical identity, not independent clock evidenc
     ) -> dict[str, Any] | None:
         kind = next(k for k, v in KINDS.items() if v[0] == family)
         indices = groups.get((kind, value), [])
-        candidates.append({"requester_row": i, "reference_field": field, "candidate_rows": list(indices)})
+        # Only an explicitly superseded requester supplies historical definitions.
+        # A historical predecessor may be inspected but never promotes active use.
+        role = (
+            "historical_definition"
+            if edge_role == "active_use" and records[i].get("review_state") == "superseded"
+            else edge_role
+        )
+        candidates.append({
+            "requester_row": i, "reference_field": field,
+            "candidate_rows": list(indices), "edge_role": role,
+        })
         deps[i].update(indices)
         if len(indices) != 1:
             fail(i, "MISSING_OR_AMBIGUOUS_REFERENCE")
@@ -329,9 +359,13 @@ Preschedule hashes test declared logical identity, not independent clock evidenc
             fail(i, "DEPENDENCY_CONSISTENCY_FAILURE")
             return None
         state = records[j].get("review_state")
-        if state == "superseded" and edge_role == "historical_predecessor":
-            # Historical binding does not restore active eligibility or authority.
-            checks[i]["review_hold_codes"].append("HISTORICAL_PREDECESSOR_NOT_ACTIVE")
+        if state == "superseded" and role in {"historical_predecessor", "historical_definition"}:
+            # All structural/hash/time/dependency checks still execute on archives.
+            hold = (
+                "HISTORICAL_PREDECESSOR_NOT_ACTIVE"
+                if role == "historical_predecessor" else "HISTORICAL_DEFINITION_NOT_ACTIVE"
+            )
+            checks[i]["review_hold_codes"].append(hold)
         elif state in {"rejected", "retired", "superseded"}:
             fail(i, "REFERENCE_REVIEW_STATE_NOT_USABLE")
         return records[j]
