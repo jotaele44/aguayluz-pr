@@ -84,25 +84,35 @@ _ENTITY_SCHEMAS = {
     "alert_events.json":     "alert_event",            # list of alert_event
 }
 
+_ENTITY_ARRAY_FILES = {
+    "utility_assets.json", "service_events.json", "monitoring_readings.json", "alert_events.json",
+}
 
-def gate_g01_schema() -> GateResult:
-    if not OUTPUTS_DIR.exists():
+
+def gate_g01_schema(*, outputs_dir: Path | None = None) -> GateResult:
+    outputs_dir = OUTPUTS_DIR if outputs_dir is None else Path(outputs_dir)
+    if not outputs_dir.exists():
         return GateResult("G01_SCHEMA", "SKIP", "outputs/ directory missing")
-    files = [p for p in OUTPUTS_DIR.iterdir() if p.is_file() and p.suffix == ".json"]
+    files = sorted(p for p in outputs_dir.iterdir() if p.is_file() and p.suffix == ".json")
     if not files:
         return GateResult("G01_SCHEMA", "SKIP", "outputs/ empty — no entities to validate")
 
+    recognized = [p for p in files if p.name in _ENTITY_SCHEMAS]
+    ignored = [p.name for p in files if p.name not in _ENTITY_SCHEMAS]
+    if not recognized:
+        return GateResult("G01_SCHEMA", "SKIP", f"no recognized entity outputs; {len(ignored)} unvalidated JSON file(s)")
     errors: list[str] = []
-    for p in files:
-        schema_name = _ENTITY_SCHEMAS.get(p.name)
-        if schema_name is None:
-            continue
+    for p in recognized:
+        schema_name = _ENTITY_SCHEMAS[p.name]
         try:
             data = json.loads(p.read_text(encoding="utf-8"))
         except json.JSONDecodeError as exc:
             errors.append(f"{p.name}: invalid JSON ({exc})")
             continue
-        instances = data if isinstance(data, list) and p.name.endswith("s.json") else [data]
+        if p.name in _ENTITY_ARRAY_FILES and not isinstance(data, list):
+            errors.append(f"{p.name}: expected an array of entities")
+            continue
+        instances = data if p.name in _ENTITY_ARRAY_FILES else [data]
         for i, inst in enumerate(instances):
             try:
                 validate_against_schema(schema_name, inst)
@@ -110,18 +120,22 @@ def gate_g01_schema() -> GateResult:
                 errors.append(f"{p.name}[{i}]: {exc.__class__.__name__}: {exc}")
     if errors:
         return GateResult("G01_SCHEMA", "FAIL", "; ".join(errors[:5]) + (f" (+{len(errors) - 5} more)" if len(errors) > 5 else ""))
-    return GateResult("G01_SCHEMA", "PASS", f"{len(files)} file(s) validated")
+    details = f"{len(recognized)} file(s) validated; {len(ignored)} unvalidated JSON file(s)"
+    if ignored:
+        details += ": " + ", ".join(ignored)
+    return GateResult("G01_SCHEMA", "PASS", details)
 
 
 # ---------------------------------------------------------------------------
 # G02 — every output backed by a source_manifest entry
 # ---------------------------------------------------------------------------
 
-def gate_g02_source_manifest() -> GateResult:
-    manifest_path = OUTPUTS_DIR / "source_manifest.json"
+def gate_g02_source_manifest(*, outputs_dir: Path | None = None) -> GateResult:
+    outputs_dir = OUTPUTS_DIR if outputs_dir is None else Path(outputs_dir)
+    manifest_path = outputs_dir / "source_manifest.json"
     if not manifest_path.exists():
         outputs_have_entities = any(
-            (OUTPUTS_DIR / f).exists() for f in _ENTITY_SCHEMAS if f != "source_manifest.json"
+            (outputs_dir / f).exists() for f in _ENTITY_SCHEMAS if f != "source_manifest.json"
         )
         if not outputs_have_entities:
             return GateResult("G02_SOURCE_MANIFEST", "SKIP", "no entity outputs yet")
@@ -132,20 +146,64 @@ def gate_g02_source_manifest() -> GateResult:
     except Exception as exc:  # noqa: BLE001
         return GateResult("G02_SOURCE_MANIFEST", "FAIL", f"{exc.__class__.__name__}: {exc}")
     entries = data.get("entries", [])
+    candidates: dict[str, list[int]] = {}
+    for index, entry in enumerate(entries):
+        candidates.setdefault(entry["source_ref"], []).append(index)
+    total = bound = missing = invalid = multiple = 0
+    issues: list[dict] = []
+    for filename in sorted(_ENTITY_ARRAY_FILES):
+        path = outputs_dir / filename
+        if not path.exists():
+            continue
+        try:
+            records = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            issues.append({"file": filename, "error": str(exc)})
+            continue
+        if not isinstance(records, list):
+            issues.append({"file": filename, "error": "expected an array of entities"})
+            continue
+        for index, record in enumerate(records):
+            total += 1
+            ref = record.get("source_ref") if isinstance(record, dict) else None
+            matches = candidates.get(ref, []) if isinstance(ref, str) and ref else []
+            if not isinstance(ref, str) or not ref:
+                invalid += 1
+            elif not matches:
+                missing += 1
+            else:
+                bound += 1
+                if len(matches) > 1:
+                    multiple += 1
+                else:
+                    continue
+            issues.append({"file": filename, "index": index, "source_ref": ref,
+                           "manifest_indices": matches})
+    assert total == bound + missing + invalid
+    details = json.dumps({
+        "scope": sorted(_ENTITY_ARRAY_FILES), "sources": len(entries),
+        "entities": total, "bound": bound, "missing": missing, "invalid": invalid,
+        "multiple_candidates": multiple, "issues": issues, "identity_effect": "NONE",
+    }, ensure_ascii=False, sort_keys=True)
+    if missing or invalid or any("error" in issue for issue in issues):
+        return GateResult("G02_SOURCE_MANIFEST", "FAIL", details)
+    if multiple:
+        return GateResult("G02_SOURCE_MANIFEST", "WARN", details)
     if not entries:
-        return GateResult("G02_SOURCE_MANIFEST", "WARN", "manifest empty")
-    return GateResult("G02_SOURCE_MANIFEST", "PASS", f"{len(entries)} source(s)")
+        return GateResult("G02_SOURCE_MANIFEST", "WARN", details)
+    return GateResult("G02_SOURCE_MANIFEST", "PASS", details)
 
 
 # ---------------------------------------------------------------------------
 # G03 — every entity has confidence + tier (enforced by schema; spot-check here)
 # ---------------------------------------------------------------------------
 
-def gate_g03_confidence() -> GateResult:
+def gate_g03_confidence(*, outputs_dir: Path | None = None) -> GateResult:
+    outputs_dir = OUTPUTS_DIR if outputs_dir is None else Path(outputs_dir)
     # G01 already enforces schema; this gate confirms no zero-confidence accepted records leak.
     issues: list[str] = []
     for fname in ("utility_assets.json", "service_events.json"):
-        p = OUTPUTS_DIR / fname
+        p = outputs_dir / fname
         if not p.exists():
             continue
         try:
@@ -156,7 +214,7 @@ def gate_g03_confidence() -> GateResult:
             return GateResult("G03_CONFIDENCE", "FAIL", str(exc))
     if issues:
         return GateResult("G03_CONFIDENCE", "WARN", "; ".join(issues[:5]))
-    return GateResult("G03_CONFIDENCE", "PASS" if (OUTPUTS_DIR / "utility_assets.json").exists() else "SKIP",
+    return GateResult("G03_CONFIDENCE", "PASS" if (outputs_dir / "utility_assets.json").exists() else "SKIP",
                       "" if not issues else "")
 
 
@@ -164,12 +222,13 @@ def gate_g03_confidence() -> GateResult:
 # G04 — review queue presence + shape
 # ---------------------------------------------------------------------------
 
-def gate_g04_review_queue() -> GateResult:
-    p = OUTPUTS_DIR / "review_queue.json"
+def gate_g04_review_queue(*, outputs_dir: Path | None = None) -> GateResult:
+    outputs_dir = OUTPUTS_DIR if outputs_dir is None else Path(outputs_dir)
+    p = outputs_dir / "review_queue.json"
     if not p.exists():
         # acceptable for empty runs; only required if any entity has review_status="needs_review"/"blocked"
         for fname in ("utility_assets.json", "service_events.json"):
-            ep = OUTPUTS_DIR / fname
+            ep = outputs_dir / fname
             if not ep.exists():
                 continue
             try:
@@ -190,8 +249,9 @@ def gate_g04_review_queue() -> GateResult:
 # G05 — coverage ledger
 # ---------------------------------------------------------------------------
 
-def gate_g05_coverage_ledger() -> GateResult:
-    p = OUTPUTS_DIR / "integration_report.json"
+def gate_g05_coverage_ledger(*, outputs_dir: Path | None = None) -> GateResult:
+    outputs_dir = OUTPUTS_DIR if outputs_dir is None else Path(outputs_dir)
+    p = outputs_dir / "integration_report.json"
     if not p.exists():
         return GateResult("G05_COVERAGE_LEDGER", "SKIP", "integration_report.json missing")
     try:
@@ -206,8 +266,9 @@ def gate_g05_coverage_ledger() -> GateResult:
 # G06 — Hub export sanitization
 # ---------------------------------------------------------------------------
 
-def gate_g06_hub_export() -> GateResult:
-    p = OUTPUTS_DIR / "hub_export.json"
+def gate_g06_hub_export(*, outputs_dir: Path | None = None) -> GateResult:
+    outputs_dir = OUTPUTS_DIR if outputs_dir is None else Path(outputs_dir)
+    p = outputs_dir / "hub_export.json"
     if not p.exists():
         return GateResult("G06_HUB_EXPORT", "SKIP", "hub_export.json missing")
     try:
@@ -335,7 +396,9 @@ GATE_FUNCS: dict[str, Callable[[], GateResult]] = {
 }
 
 
-def run_gates(toggles: dict[str, dict] | None = None) -> GateReport:
+def run_gates(
+    toggles: dict[str, dict] | None = None, *, outputs_dir: Path | None = None,
+) -> GateReport:
     toggles = toggles if toggles is not None else _load_gate_toggles()
     results: list[GateResult] = []
     for gate_id, fn in GATE_FUNCS.items():
@@ -343,7 +406,13 @@ def run_gates(toggles: dict[str, dict] | None = None) -> GateReport:
         if not cfg.get("enabled", True):
             results.append(GateResult(gate_id, "SKIP", "disabled in config"))
             continue
-        result = fn()
+        if outputs_dir is not None and gate_id in {
+            "G01_SCHEMA", "G02_SOURCE_MANIFEST", "G03_CONFIDENCE",
+            "G04_REVIEW_QUEUE", "G05_COVERAGE_LEDGER", "G06_HUB_EXPORT",
+        }:
+            result = fn(outputs_dir=outputs_dir)
+        else:
+            result = fn()
         if result.status == "FAIL" and cfg.get("blocking", True) is False:
             result = GateResult(gate_id, "WARN", f"non-blocking; underlying: {result.details}")
         results.append(result)

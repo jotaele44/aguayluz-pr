@@ -1,5 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
+import { renderQueryPage } from '@/test/render-query-page'
+import { screen, waitFor } from '@testing-library/react'
 import { axe } from 'vitest-axe'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -44,14 +44,7 @@ const SUMMARY = {
 }
 
 function renderPage() {
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false, gcTime: 0 } },
-  })
-  return render(
-    <QueryClientProvider client={client}>
-      <RegulatoryPage />
-    </QueryClientProvider>,
-  )
+  return renderQueryPage(<RegulatoryPage />)
 }
 
 beforeEach(() => {
@@ -73,16 +66,16 @@ beforeEach(() => {
 
 describe('RegulatoryPage', () => {
   it('renders the non-authoritative scope note and observation summary', async () => {
-    renderPage()
+    await renderPage()
 
     expect(await screen.findByRole('heading', { name: 'Regulatory Observations' })).toBeInTheDocument()
     expect(screen.getByRole('note', { name: 'Regulatory framework scope limitation' }))
       .toHaveTextContent(/never a claim/i)
-    expect(await screen.findByText(/USGS · 50038100/)).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /USGS · 50038100/ })).toBeInTheDocument()
   })
 
   it('selects observations through accessible pressed buttons and loads detail with receipt', async () => {
-    renderPage()
+    await renderPage()
 
     const button = await screen.findByRole('button', { name: /USGS · 50038100/ })
     await waitFor(() => expect(button).toHaveAttribute('aria-pressed', 'true'))
@@ -93,16 +86,16 @@ describe('RegulatoryPage', () => {
 
   it('shows an empty state when no observations match the filters', async () => {
     getRegulatoryObservations.mockResolvedValue({ total: 0, items: [] })
-    renderPage()
+    await renderPage()
 
     expect(await screen.findByText(/no observations match the current filters/i)).toBeInTheDocument()
   })
 
   it('has no detectable accessibility violations', async () => {
-    const { container } = renderPage()
-    await screen.findByText(/USGS · 50038100/)
+    const { container } = await renderPage()
+    await screen.findByRole('heading', { name: /USGS · 50038100/ })
     await screen.findByRole('heading', { name: 'Source receipt' })
 
     expect(await axe(container)).toHaveNoViolations()
-  })
+  }, 30_000)
 })

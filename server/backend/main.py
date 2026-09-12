@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import hashlib
 import importlib.util
 import io
 import json
@@ -21,6 +22,7 @@ import urllib.request as _notify_urllib
 from collections import Counter
 from datetime import datetime, timezone
 from email.message import EmailMessage as _EmailMessage
+from html import escape
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +30,9 @@ from fastapi import Depends as _Depends
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+from starlette.concurrency import run_in_threadpool
+
+from server.backend.operator_state import OperatorState, OperatorStateError, validate_patch
 
 logger = logging.getLogger(__name__)
 
@@ -224,11 +229,76 @@ _alert_gaps: list[dict[str, Any]] = _load_jsonl(DATA / "alert_gaps.jsonl")
 CRITICAL_SEVERITY = 4
 INACTIVE_ALERT_STATUS = {"closed", "rejected"}
 
-# In-memory store for review decisions (survives only until server restart).
-_decisions: dict[str, str] = {}
-# In-memory patches for event/asset acknowledgements & flags (volatile).
-_event_patches: dict[str, dict[str, Any]] = {}
-_asset_patches: dict[str, dict[str, Any]] = {}
+# Local operator overrides survive restarts without rewriting source JSONL.
+OPERATOR_STATE_PATH = Path(_os.getenv("AGUAYLUZ_OPERATOR_STATE_PATH") or (
+    (Path(_workspace) if _workspace else REPO_ROOT) / ".aguayluz" / "operator_state.sqlite"
+))
+
+
+@app.exception_handler(OperatorStateError)
+async def operator_state_error(_request: Request, exc: OperatorStateError) -> JSONResponse:
+    return JSONResponse({"detail": str(exc)}, status_code=503)
+
+
+def _operator_store() -> OperatorState:
+    return OperatorState(OPERATOR_STATE_PATH)
+
+
+def _current_rows(rows: list[dict[str, Any]], namespace: str, id_field: str) -> list[dict[str, Any]]:
+    saved = _operator_store().snapshot(namespace)
+    if not saved:
+        return rows
+    counts = Counter(row.get(id_field) for row in rows if isinstance(row.get(id_field), str))
+    result = []
+    for row in rows:
+        record_id = row.get(id_field)
+        override = saved.get(record_id) if isinstance(record_id, str) else None
+        if override is None:
+            result.append(row)
+            continue
+        if counts[record_id] != 1:
+            result.append({**row, "operator_override": {"state": "UNRESOLVED", "reason": "duplicate stable ID"}})
+            continue
+        values = override["values"]
+        result.append({**row, **values, "operator_override": {
+            "state": "local", "updated_at": override["updated_at"],
+            "original_values": {key: row[key] for key in values if key in row},
+            "source_fields_absent": [key for key in values if key not in row],
+        }})
+    return result
+
+
+def _current_assets() -> list[dict[str, Any]]:
+    return _current_rows(_assets, "asset", "asset_id")
+
+
+def _current_events() -> list[dict[str, Any]]:
+    return _current_rows(_events, "event", "event_id")
+
+
+def _unique_record(rows: list[dict[str, Any]], field: str, record_id: str) -> dict[str, Any]:
+    matches = [row for row in rows if row.get(field) == record_id]
+    if not matches:
+        raise HTTPException(status_code=404, detail="Record not found")
+    if len(matches) != 1:
+        raise HTTPException(status_code=409, detail="Stable ID matches multiple records; adjudication required")
+    return matches[0]
+
+
+def _review_binding(item: dict[str, Any]) -> str:
+    return hashlib.sha256(json.dumps(item, sort_keys=True, ensure_ascii=False, allow_nan=False, separators=(",", ":")).encode("utf-8")).hexdigest()
+
+
+async def _validated_patch(request: Request, namespace: str) -> dict[str, str]:
+    try:
+        body = await request.json()
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail="Expected a JSON object") from exc
+    try:
+        validate_patch(namespace, body)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return body
 
 
 @app.get("/health")
@@ -261,7 +331,7 @@ def assets(
     type: str | None = Query(default=None),
     search: str | None = Query(default=None),
 ) -> JSONResponse:
-    result = _assets
+    result = _current_assets()
     if type:
         result = [a for a in result if a.get("asset_type") == type]
     if search:
@@ -278,7 +348,7 @@ def asset_events(asset_id: str) -> JSONResponse:
     municipio = (asset.get("municipality") or "").lower()
     name = (asset.get("asset_name") or "").lower()
     related = [
-        e for e in _events
+        e for e in _current_events()
         if (municipio and municipio in (e.get("municipality") or "").lower())
         or (municipio and municipio in (e.get("affected_area") or "").lower())
         or (name and name in (e.get("affected_area") or "").lower())
@@ -307,20 +377,16 @@ def auth_status() -> JSONResponse:
 @app.patch("/assets/{asset_id}")
 async def patch_asset(asset_id: str, request: Request, _=_Depends(_require_key)) -> JSONResponse:  # noqa: B008
     """Update mutable fields (review_status) on an asset."""
-    for a in _assets:
-        if a.get("asset_id") == asset_id:
-            body = await request.json()
-            allowed = {"review_status", "status"}
-            patch = {k: v for k, v in body.items() if k in allowed}
-            _asset_patches.setdefault(asset_id, {}).update(patch)
-            return JSONResponse({**a, **_asset_patches[asset_id]})
-    raise HTTPException(status_code=404, detail="Asset not found")
+    _unique_record(_assets, "asset_id", asset_id)
+    patch = await _validated_patch(request, "asset")
+    await run_in_threadpool(_operator_store().update, "asset", asset_id, patch)
+    return JSONResponse(_unique_record(_current_assets(), "asset_id", asset_id))
 
 
 @app.get("/assets.geojson")
 def assets_geojson() -> JSONResponse:
     features = []
-    for a in _assets:
+    for a in _current_assets():
         lat, lon = a.get("lat"), a.get("lon")
         if not isinstance(lat, (int, float)) or not isinstance(lon, (int, float)):
             continue
@@ -340,9 +406,9 @@ def municipios_geojson() -> JSONResponse:
 @app.get("/municipios/{name}/summary")
 def municipio_summary(name: str) -> JSONResponse:
     name_lower = name.lower()
-    mun_assets = [a for a in _assets if (a.get("municipality") or "").lower() == name_lower]
+    mun_assets = [a for a in _current_assets() if (a.get("municipality") or "").lower() == name_lower]
     mun_events = [
-        e for e in _events
+        e for e in _current_events()
         if (e.get("municipality") or "").lower() == name_lower
         or name_lower in (e.get("affected_area") or "").lower()
     ]
@@ -361,7 +427,7 @@ async def events_stream() -> StreamingResponse:
     """SSE endpoint: pushes latest 20 events every 5 s."""
     async def generator():
         while True:
-            payload = _events[-20:]
+            payload = _current_events()[-20:]
             yield f"data: {json.dumps(payload)}\n\n"
             await asyncio.sleep(5)
 
@@ -370,24 +436,16 @@ async def events_stream() -> StreamingResponse:
 
 @app.get("/events/{event_id}")
 def event_detail(event_id: str) -> JSONResponse:
-    for e in _events:
-        if str(e.get("event_id", "")) == event_id:
-            merged = {**e, **_event_patches.get(event_id, {})}
-            return JSONResponse(merged)
-    raise HTTPException(status_code=404, detail="Event not found")
+    return JSONResponse(_unique_record(_current_events(), "event_id", event_id))
 
 
 @app.patch("/events/{event_id}")
 async def patch_event(event_id: str, request: Request, _=_Depends(_require_key)) -> JSONResponse:  # noqa: B008
     """Update mutable fields (resolution_status, review_status) on an event."""
-    for e in _events:
-        if str(e.get("event_id", "")) == event_id:
-            body = await request.json()
-            allowed = {"resolution_status", "review_status"}
-            patch = {k: v for k, v in body.items() if k in allowed}
-            _event_patches.setdefault(event_id, {}).update(patch)
-            return JSONResponse({**e, **_event_patches[event_id]})
-    raise HTTPException(status_code=404, detail="Event not found")
+    _unique_record(_events, "event_id", event_id)
+    patch = await _validated_patch(request, "event")
+    await run_in_threadpool(_operator_store().update, "event", event_id, patch)
+    return JSONResponse(_unique_record(_current_events(), "event_id", event_id))
 
 
 @app.get("/events")
@@ -398,12 +456,18 @@ def events(
     until: str | None = Query(default=None),
     limit: int | None = Query(default=None),
     offset: int = Query(default=0),
+    active: bool | None = Query(default=None),
 ) -> JSONResponse:
-    result = _events
+    result = _current_events()
     since_dt = _parse_dt(since)
     until_dt = _parse_dt(until)
     if type:
         result = [e for e in result if e.get("event_type") == type]
+    if active is not None:
+        result = [e for e in result if (
+            e.get("resolution_status") in ("open", "acknowledged")
+            if e.get("resolution_status") else not e.get("end_time")
+        ) == active]
     if municipio:
         mun = municipio.lower()
         result = [
@@ -471,7 +535,16 @@ def review_queue(
 ) -> JSONResponse:
     data = _load_json(OUTPUTS / "review_queue.json")
     items: list[dict[str, Any]] = data.get("items", []) if data else []
-    items = [i for i in items if _decisions.get(i.get("record_ref", "")) not in ("accept", "reject")]
+    decisions = _operator_store().snapshot("review")
+    counts = Counter(i.get("record_ref", "") for i in items)
+    visible = []
+    for item in items:
+        binding = _review_binding(item)
+        saved = decisions.get(item.get("record_ref", ""), {}).get("values", {})
+        if counts[item.get("record_ref", "")] == 1 and saved.get("source_binding") == binding and saved.get("decision") in ("accept", "reject"):
+            continue
+        visible.append({**item, "review_binding": binding})
+    items = visible
     if severity:
         items = [i for i in items if i.get("severity") == severity]
     if tier:
@@ -485,12 +558,13 @@ def review_queue(
 
 @app.post("/review-queue/{ref}/decision")
 async def review_decision(ref: str, request: Request, _=_Depends(_require_key)) -> JSONResponse:  # noqa: B008
-    body = await request.json()
-    decision = body.get("decision")
-    if decision not in ("accept", "reject", "skip"):
-        raise HTTPException(status_code=400, detail="decision must be accept, reject, or skip")
-    _decisions[ref] = decision
-    return JSONResponse({"ref": ref, "decision": decision, "ok": True})
+    body = await _validated_patch(request, "review")
+    data = _load_json(OUTPUTS / "review_queue.json", {})
+    item = _unique_record(data.get("items", []), "record_ref", ref)
+    if body["source_binding"] != _review_binding(item):
+        raise HTTPException(status_code=409, detail="Review record changed; reload it before deciding")
+    saved = await run_in_threadpool(_operator_store().update, "review", ref, body)
+    return JSONResponse({"ref": ref, "decision": body["decision"], "ok": True, "saved_at": saved["updated_at"], "scope": "local"})
 
 
 @app.get("/summary")
@@ -501,9 +575,10 @@ def summary() -> JSONResponse:
 @app.get("/summary/sectors")
 def summary_sectors() -> JSONResponse:
     sectors: dict[str, dict[str, Any]] = {}
+    current_assets = _current_assets()
     for sector, types in SECTOR_TYPE_MAP.items():
         sector_assets = [
-            a for a in _assets
+            a for a in current_assets
             if (a.get("asset_type") or "").lower() in types
         ]
         active = sum(1 for a in sector_assets if a.get("status") == "active")
@@ -529,11 +604,12 @@ def summary_coverage() -> JSONResponse:
     a map-first UI, which reads as "this is everything" — so report them as first-class
     numbers, alongside the subtype facet the assets table filters on.
     """
-    total = len(_assets)
-    mapped = sum(1 for a in _assets
+    current_assets = _current_assets()
+    total = len(current_assets)
+    mapped = sum(1 for a in current_assets
                  if isinstance(a.get("lat"), (int, float))
                  and isinstance(a.get("lon"), (int, float)))
-    joined = sum(1 for a in _assets
+    joined = sum(1 for a in current_assets
                  if (a.get("municipality") or "").strip().lower() not in UNJOINED_MUNICIPALITY)
     pct = lambda n: round(n / total * 100, 1) if total else 0.0  # noqa: E731
 
@@ -547,18 +623,18 @@ def summary_coverage() -> JSONResponse:
             "municipio_unjoined": total - joined,
             "pct_municipio_joined": pct(joined),
         },
-        "review_status": dict(Counter(a.get("review_status") or "unknown" for a in _assets)),
-        "evidence_tier": dict(Counter(a.get("evidence_tier") or "unknown" for a in _assets)),
-        "asset_type": dict(Counter(a.get("asset_type") or "unknown" for a in _assets)),
+        "review_status": dict(Counter(a.get("review_status") or "unknown" for a in current_assets)),
+        "evidence_tier": dict(Counter(a.get("evidence_tier") or "unknown" for a in current_assets)),
+        "asset_type": dict(Counter(a.get("asset_type") or "unknown" for a in current_assets)),
         # Facet options for the assets table — derived, so a new ingest's subtypes are
         # filterable without a frontend change.
         "asset_subtype": dict(
-            Counter(a.get("asset_subtype") for a in _assets if a.get("asset_subtype")).most_common()
+            Counter(a.get("asset_subtype") for a in current_assets if a.get("asset_subtype")).most_common()
         ),
         # Which subtypes are the map-invisible ones, so the UI can explain the gap
         # instead of only reporting its size.
         "unmapped_by_subtype": dict(
-            Counter(a.get("asset_subtype") or "unknown" for a in _assets
+            Counter(a.get("asset_subtype") or "unknown" for a in current_assets
                     if not isinstance(a.get("lat"), (int, float))).most_common(10)
         ),
     })
@@ -594,8 +670,13 @@ def system_status() -> JSONResponse:
     at click time. This lets the UI disable a tool with a reason instead.
     """
     exports = OUTPUTS / "federation"
+    try:
+        operator_state = _operator_store().status()
+    except OperatorStateError as exc:
+        operator_state = {"state": "unavailable", "durable": False, "error": str(exc)}
     return JSONResponse({
         **auth_status_payload(),
+        "operator_state": operator_state,
         "artifacts": {
             "hub_export": _artifact_status(OUTPUTS / "hub_export.json"),
             "review_queue": _artifact_status(OUTPUTS / "review_queue.json"),
@@ -864,14 +945,16 @@ async def ai_query(request: Request, _=_Depends(_require_key)) -> JSONResponse: 
 @app.get("/export/report.html")
 def export_report_html() -> HTMLResponse:
     """Generate a printable HTML status report for the dashboard."""
+    current_assets = _current_assets()
+    current_events = _current_events()
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    total_assets = len(_assets)
-    total_events = len(_events)
+    total_assets = len(current_assets)
+    total_events = len(current_events)
 
     # Sector rollup
     sector_rows = ""
     for sector, types in SECTOR_TYPE_MAP.items():
-        sa = [a for a in _assets if (a.get("asset_type") or "").lower() in types]
+        sa = [a for a in current_assets if (a.get("asset_type") or "").lower() in types]
         active = sum(1 for a in sa if a.get("status") == "active")
         pct = round(active / len(sa) * 100, 1) if sa else 0
         sector_rows += f"<tr><td>{sector.title()}</td><td>{len(sa)}</td><td>{active}</td><td>{pct}%</td></tr>\n"
@@ -879,20 +962,20 @@ def export_report_html() -> HTMLResponse:
     # Top 10 municipios by event count
     mun_counts = Counter(
         e.get("municipality") or e.get("affected_area") or "Unknown"
-        for e in _events
+        for e in current_events
     )
     top10_rows = ""
     for mun, cnt in mun_counts.most_common(10):
-        top10_rows += f"<tr><td>{mun}</td><td>{cnt}</td></tr>\n"
+        top10_rows += f"<tr><td>{escape(str(mun))}</td><td>{cnt}</td></tr>\n"
 
     # Recent events
-    recent_events = _events[-20:]
+    recent_events = current_events[-20:]
     recent_rows = ""
     for e in reversed(recent_events):
         etype = (e.get("event_type") or "event").replace("_", " ").title()
         area = e.get("affected_area") or e.get("municipality") or "—"
         start = (e.get("start_time") or "")[:10]
-        recent_rows += f"<tr><td>{etype}</td><td>{area}</td><td>{start}</td></tr>\n"
+        recent_rows += f"<tr><td>{escape(etype)}</td><td>{escape(str(area))}</td><td>{escape(start)}</td></tr>\n"
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -924,7 +1007,7 @@ def export_report_html() -> HTMLResponse:
   <div class="kpi-grid">
     <div class="kpi"><div class="val">{total_assets:,}</div><div class="lbl">Total Assets</div></div>
     <div class="kpi"><div class="val">{total_events:,}</div><div class="lbl">Service Events</div></div>
-    <div class="kpi"><div class="val">{sum(1 for a in _assets if a.get("status") == "active"):,}</div><div class="lbl">Active Assets</div></div>
+    <div class="kpi"><div class="val">{sum(1 for a in current_assets if a.get("status") == "active"):,}</div><div class="lbl">Active Assets</div></div>
   </div>
 
   <h2>Sector Summary</h2>

@@ -35,7 +35,8 @@
       "dashboard/src/App.jsx"
     ],
     "navigation_files": [
-      "dashboard/src/components/layout/Sidebar.jsx"
+      "dashboard/src/components/layout/Sidebar.jsx",
+      "dashboard/src/zip-design/AppShell.jsx"
     ],
     "implicit_routes": [
       {
@@ -62,7 +63,8 @@
           "server/backend/main.py",
           "server/backend/app.py",
           "scripts/validate_federation_spatial.py",
-          "src/aguayluz/spatial_analysis.py"
+          "src/aguayluz/spatial_analysis.py",
+          "server/backend/operator_state.py"
         ],
         "endpoints": [
           "GET /assets",
@@ -105,11 +107,14 @@
           "dashboard/src/pages/MunicipioDetailPage.jsx",
           "dashboard/src/components/AssetMap.jsx",
           "dashboard/src/components/AssetsTable.jsx",
-          "dashboard/src/components/AssetDetail.jsx"
+          "dashboard/src/components/AssetDetail.jsx",
+          "dashboard/src/zip-design/AppShell.jsx",
+          "dashboard/src/components/ReadFailureBoundary.jsx"
         ],
         "discoverability": [
           "dashboard/src/components/layout/Sidebar.jsx",
-          "dashboard/src/pages/OverviewPage.jsx"
+          "dashboard/src/pages/OverviewPage.jsx",
+          "dashboard/src/zip-design/AppShell.jsx"
         ]
       },
       "tests": {
@@ -118,19 +123,26 @@
           "tests/test_pr_geo_boundaries.py",
           "tests/test_backend_municipio_summary_api.py",
           "tests/test_federation_spatial_core.py",
-          "tests/test_spatial_analysis.py"
+          "tests/test_spatial_analysis.py",
+          "tests/test_operator_state.py",
+          "tests/test_operator_state_api.py"
         ],
         "contract": [
           "tests/test_navigation.py",
           "tests/test_gui_parity.py"
         ],
         "unit": [
-          "dashboard/src/pages/MunicipioDetailPage.test.jsx"
+          "dashboard/src/pages/MunicipioDetailPage.test.jsx",
+          "dashboard/src/zip-design/AppShell.test.jsx",
+          "dashboard/src/components/ReadFailureBoundary.test.jsx",
+          "dashboard/src/lib/api.test.js"
         ],
         "e2e": [
-          "dashboard/tests/gui-parity.spec.mjs"
+          "dashboard/tests/gui-parity.spec.mjs",
+          "dashboard/tests/zip-design.spec.mjs"
         ]
-      }
+      },
+      "rationale": " Local SQLite overrides persist across restarts with transactional audit records; raw source rows and canonical exports are preserved. Diagnostic reads apply only unique exact stable-ID overrides; ambiguous IDs are unresolved. Storage failures return 503 and are visible through System & Tools. Active read failures hide result content while keeping navigation and query observers mounted; explicit retry restores successful data. Shared client reads propagate HTTP, parsing and network errors. Asset virtualization uses a viewport-bounded scroll container, verified during real-corpus read recovery and scrolling."
     },
     {
       "id": "alerts-outages-and-events",
@@ -139,7 +151,8 @@
       "requires_terminal": false,
       "backend": {
         "files": [
-          "server/backend/main.py"
+          "server/backend/main.py",
+          "server/backend/operator_state.py"
         ],
         "endpoints": [
           "GET /events/stream",
@@ -159,11 +172,13 @@
           "/alerts",
           "/alerts/:id",
           "/outages",
-          "/events/:id"
+          "/events/:id",
+          "/"
         ],
         "e2e_routes": [
           "/alerts",
-          "/outages"
+          "/outages",
+          "/"
         ],
         "components": [
           "dashboard/src/lib/api.js",
@@ -171,27 +186,33 @@
           "dashboard/src/pages/AlertDetailPage.jsx",
           "dashboard/src/pages/OutagesPage.jsx",
           "dashboard/src/pages/EventDetailPage.jsx",
-          "dashboard/src/components/OutagesPanel.jsx"
+          "dashboard/src/components/OutagesPanel.jsx",
+          "dashboard/src/pages/OverviewPage.jsx"
         ],
         "discoverability": [
           "dashboard/src/components/layout/Sidebar.jsx",
           "dashboard/src/pages/AlertsPage.jsx",
-          "dashboard/src/components/OutagesPanel.jsx"
+          "dashboard/src/components/OutagesPanel.jsx",
+          "dashboard/src/zip-design/AppShell.jsx"
         ]
       },
       "tests": {
         "backend": [
           "tests/test_backend_alerts_api.py",
           "tests/test_backend_events_api.py",
-          "tests/test_alerts.py"
+          "tests/test_alerts.py",
+          "tests/test_operator_state.py",
+          "tests/test_operator_state_api.py"
         ],
         "contract": [
           "tests/test_gui_parity.py"
         ],
         "e2e": [
-          "dashboard/tests/gui-parity.spec.mjs"
+          "dashboard/tests/gui-parity.spec.mjs",
+          "dashboard/tests/zip-design.spec.mjs"
         ]
-      }
+      },
+      "rationale": " Local SQLite overrides persist across restarts with transactional audit records; raw source rows and canonical exports are preserved. Diagnostic reads apply only unique exact stable-ID overrides; ambiguous IDs are unresolved. Storage failures return 503 and are visible through System & Tools. Acknowledgment and resolution are separate explicit controls in event detail."
     },
     {
       "id": "monitoring-analytics-and-system-state",
@@ -270,13 +291,15 @@
           "/monitoring",
           "/analytics",
           "/logs",
-          "/system"
+          "/system",
+          "/"
         ],
         "e2e_routes": [
           "/monitoring",
           "/analytics",
           "/logs",
-          "/system"
+          "/system",
+          "/"
         ],
         "components": [
           "dashboard/src/lib/api.js",
@@ -287,11 +310,14 @@
           "dashboard/src/components/MonitoringCharts.jsx",
           "dashboard/src/components/IncidentOperationsConsole.jsx",
           "dashboard/src/components/WaterMonitoringConsole.jsx",
-          "dashboard/src/lib/water-monitoring.js"
+          "dashboard/src/lib/water-monitoring.js",
+          "dashboard/src/pages/OverviewPage.jsx",
+          "dashboard/src/lib/overview-series.js"
         ],
         "discoverability": [
           "dashboard/src/components/layout/Sidebar.jsx",
-          "dashboard/src/pages/MonitoringPage.jsx"
+          "dashboard/src/pages/MonitoringPage.jsx",
+          "dashboard/src/zip-design/AppShell.jsx"
         ]
       },
       "tests": {
@@ -307,10 +333,12 @@
           "tests/test_monitoring_phase3.py"
         ],
         "e2e": [
-          "dashboard/tests/gui-parity.spec.mjs"
+          "dashboard/tests/gui-parity.spec.mjs",
+          "dashboard/tests/zip-design.spec.mjs"
         ],
         "unit": [
-          "dashboard/src/lib/water-monitoring.test.js"
+          "dashboard/src/lib/water-monitoring.test.js",
+          "dashboard/src/lib/overview-series.test.js"
         ]
       }
     },
@@ -321,7 +349,8 @@
       "requires_terminal": false,
       "backend": {
         "files": [
-          "server/backend/main.py"
+          "server/backend/main.py",
+          "server/backend/operator_state.py"
         ],
         "endpoints": [
           "GET /review-queue",
@@ -339,27 +368,35 @@
           "dashboard/src/lib/api.js",
           "dashboard/src/pages/ReviewPage.jsx",
           "dashboard/src/components/ReviewQueue.jsx",
-          "dashboard/src/components/ReviewRecordCard.jsx"
+          "dashboard/src/components/ReviewRecordCard.jsx",
+          "dashboard/src/lib/hooks.js"
         ],
         "discoverability": [
-          "dashboard/src/components/layout/Sidebar.jsx"
+          "dashboard/src/components/layout/Sidebar.jsx",
+          "dashboard/src/zip-design/AppShell.jsx"
         ]
       },
       "tests": {
         "backend": [
-          "tests/test_backend_events_api.py"
+          "tests/test_backend_events_api.py",
+          "tests/test_operator_state.py",
+          "tests/test_operator_state_api.py"
         ],
         "contract": [
           "tests/test_gui_parity.py"
         ],
         "e2e": [
-          "dashboard/tests/gui-parity.spec.mjs"
+          "dashboard/tests/gui-parity.spec.mjs",
+          "dashboard/tests/zip-design.spec.mjs"
         ],
         "unit": [
           "dashboard/src/lib/format.test.js",
-          "dashboard/src/components/ReviewRecordCard.test.jsx"
+          "dashboard/src/components/ReviewRecordCard.test.jsx",
+          "dashboard/src/lib/api.test.js",
+          "dashboard/src/lib/hooks.test.jsx"
         ]
-      }
+      },
+      "rationale": "Review mutations reject unconfirmed HTTP and offline writes. Failed single decisions restore optimistic rows; batches report success/failure counts and retain failed selections for retry. A synchronous in-flight guard prevents overlapping keyboard and button decisions. Local SQLite overrides persist across restarts with transactional audit records; raw source rows and canonical exports are preserved. Diagnostic reads apply only unique exact stable-ID overrides; ambiguous IDs are unresolved. Storage failures return 503 and are visible through System & Tools. Review decisions require the fingerprint of the displayed source item. Changed items reappear; stale decisions fail with 409."
     },
     {
       "id": "system-tools",
@@ -368,13 +405,24 @@
       "requires_terminal": false,
       "backend": {
         "files": [
-          "server/backend/main.py"
+          "server/backend/main.py",
+          "server/backend/operator_state.py",
+          "scripts/federation_export.py",
+          "src/aguayluz/validation.py"
         ],
         "endpoints": [
           "POST /admin/run-export",
           "POST /ai/query",
           "GET /export/report.html",
           "POST /notify"
+        ],
+        "symbols": [
+          "server/backend/operator_state.py:OperatorState",
+          "server/backend/operator_state.py:OperatorStateError",
+          "server/backend/operator_state.py:validate_patch",
+          "server/backend/main.py:operator_state_error",
+          "scripts/federation_export.py:build_outputs",
+          "src/aguayluz/validation.py:gate_g02_source_manifest"
         ]
       },
       "frontend": {
@@ -389,18 +437,27 @@
           "dashboard/src/components/AiQueryPanel.jsx"
         ],
         "discoverability": [
-          "dashboard/src/components/layout/Sidebar.jsx"
+          "dashboard/src/components/layout/Sidebar.jsx",
+          "dashboard/src/zip-design/AppShell.jsx"
         ]
       },
       "tests": {
         "contract": [
           "tests/test_validate_repo.py",
-          "tests/test_gui_parity.py"
+          "tests/test_gui_parity.py",
+          "tests/test_federation_export_e2e.py",
+          "tests/test_validation_gate_regressions.py"
         ],
         "e2e": [
-          "dashboard/tests/gui-parity.spec.mjs"
+          "dashboard/tests/gui-parity.spec.mjs",
+          "dashboard/tests/zip-design.spec.mjs"
+        ],
+        "backend": [
+          "tests/test_operator_state.py",
+          "tests/test_operator_state_api.py"
         ]
-      }
+      },
+      "rationale": " Local SQLite overrides persist across restarts with transactional audit records; raw source rows and canonical exports are preserved. Diagnostic reads apply only unique exact stable-ID overrides; ambiguous IDs are unresolved. Storage failures return 503 and are visible through System & Tools. Export G02 checks exact declared source-reference coverage for core entity arrays, preserves all candidate manifest indices, and records missing references as FAIL and multiple source versions as WARN in the integration ledger. This is reference coverage only, not source-byte authentication or canonical identity. Printable report escapes source strings at the HTML output boundary; API regressions verify literal-text preservation and the GUI test opens the report from System."
     },
     {
       "id": "water-disruption-shadow-consumer",
@@ -464,7 +521,8 @@
           "dashboard/src/pages/WaterDisruption.jsx"
         ],
         "discoverability": [
-          "dashboard/src/components/layout/Sidebar.jsx"
+          "dashboard/src/components/layout/Sidebar.jsx",
+          "dashboard/src/zip-design/AppShell.jsx"
         ]
       },
       "tests": {
@@ -476,7 +534,8 @@
           "tests/test_gui_parity.py"
         ],
         "e2e": [
-          "dashboard/tests/gui-parity.spec.mjs"
+          "dashboard/tests/gui-parity.spec.mjs",
+          "dashboard/tests/zip-design.spec.mjs"
         ]
       }
     },
@@ -700,7 +759,8 @@
           "dashboard/src/components/layout/Sidebar.jsx"
         ],
         "discoverability": [
-          "dashboard/src/components/layout/Sidebar.jsx"
+          "dashboard/src/components/layout/Sidebar.jsx",
+          "dashboard/src/zip-design/AppShell.jsx"
         ]
       },
       "tests": {
@@ -715,7 +775,8 @@
           "dashboard/src/pages/CaveKarstPage.test.jsx"
         ],
         "e2e": [
-          "dashboard/tests/gui-parity.spec.mjs"
+          "dashboard/tests/gui-parity.spec.mjs",
+          "dashboard/tests/zip-design.spec.mjs"
         ]
       }
     },
@@ -770,7 +831,8 @@
           "dashboard/src/components/layout/Sidebar.jsx"
         ],
         "discoverability": [
-          "dashboard/src/components/layout/Sidebar.jsx"
+          "dashboard/src/components/layout/Sidebar.jsx",
+          "dashboard/src/zip-design/AppShell.jsx"
         ]
       },
       "tests": {
@@ -783,7 +845,8 @@
           "dashboard/src/pages/RegulatoryReviewPage.test.jsx"
         ],
         "e2e": [
-          "dashboard/tests/gui-parity.spec.mjs"
+          "dashboard/tests/gui-parity.spec.mjs",
+          "dashboard/tests/zip-design.spec.mjs"
         ]
       }
     },
@@ -1080,7 +1143,7 @@
       "classification": "internal",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Test fixture for the GUI parity gate, not a user capability. outputs/ is gitignored and the E2E job runs no exporter, so /review-queue returned an empty list in CI and the reachability spec passed over a blank page. seed_demo.py writes a minimal review queue only when none exists, and the teardown removes it only when seed_demo.py created it, so neither a real export nor a developer checkout is ever altered. Both run from the Playwright config; no operator invokes them and neither has a GUI surface. The capability they serve is review-queue, whose GUI path is unchanged.",
+      "rationale": "Internal GUI regression fixture. Creates only an absent schema-valid queue with exclusive creation. Teardown requires the seed marker SHA256 to match current bytes, preserving replacement exports and unverified legacy markers. Cleanup failure fails the test gate.",
       "analysis": {
         "files": [
           "server/ingestion/seed_demo.py",
@@ -1094,6 +1157,9 @@
       "tests": {
         "e2e": [
           "dashboard/tests/gui-parity.spec.mjs"
+        ],
+        "contract": [
+          "tests/test_gui_parity_seed.py"
         ]
       }
     },
@@ -1102,7 +1168,7 @@
       "classification": "analysis",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Read-only, fail-closed environmental source→pathway→receptor graph. It preserves existing utility/regulatory identities, exposes provenance and causal state, and prohibits proximity/name-only evidence from becoming causal attribution.",
+      "rationale": "Read-only, fail-closed environmental source\u2192pathway\u2192receptor graph. It preserves existing utility/regulatory identities, exposes provenance and causal state, and prohibits proximity/name-only evidence from becoming causal attribution.",
       "backend": {
         "files": [
           "server/backend/environmental_exposure_api.py",
@@ -1147,7 +1213,8 @@
           "dashboard/src/components/layout/Sidebar.jsx"
         ],
         "discoverability": [
-          "dashboard/src/components/layout/Sidebar.jsx"
+          "dashboard/src/components/layout/Sidebar.jsx",
+          "dashboard/src/zip-design/AppShell.jsx"
         ]
       },
       "tests": {
@@ -1159,7 +1226,8 @@
           "tests/test_gui_parity.py"
         ],
         "e2e": [
-          "dashboard/tests/gui-parity.spec.mjs"
+          "dashboard/tests/gui-parity.spec.mjs",
+          "dashboard/tests/zip-design.spec.mjs"
         ]
       }
     },

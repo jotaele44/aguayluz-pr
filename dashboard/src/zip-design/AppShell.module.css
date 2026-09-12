@@ -1,0 +1,63 @@
+.shell {
+  min-height: 100vh;
+  background: var(--zip-background);
+  color: var(--zip-foreground);
+  font-family: var(--zip-font-family-base);
+}
+.sidebar {
+  position: fixed; inset: 0 auto 0 0; width: 236px; z-index: 50; display: flex; flex-direction: column;
+  padding: var(--zip-spacing-4); background: var(--zip-sidebar); color: var(--zip-sidebar-foreground);
+  border-right: 1px solid color-mix(in srgb, var(--zip-sidebar-foreground) 10%, transparent); overflow-y: auto;
+}
+.brandRow { display: flex; align-items: center; gap: 10px; }
+.brandMark { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; position: relative; background: color-mix(in srgb, var(--zip-primary) 24%, transparent); color: var(--zip-primary); border: 1px solid color-mix(in srgb, var(--zip-primary) 38%, transparent); }
+.brandMark svg:last-child { position: absolute; right: 4px; bottom: 4px; color: var(--zip-accent); }
+.brandCopy { display: flex; flex-direction: column; line-height: 1.1; min-width: 0; }
+.brandCopy strong { font-family: var(--zip-font-family-display); font-size: 1rem; letter-spacing: -0.01em; }
+.brandCopy span { margin-top: 4px; font-size: 0.68rem; opacity: .62; }
+.closeMobile { display: none !important; margin-left: auto; color: inherit !important; }
+.statusPill { display: flex; align-items: center; gap: 7px; margin: 16px 0 8px; padding: 7px 9px; border-radius: var(--zip-radius-sm); font: 500 9px/1.2 var(--zip-font-family-monospace); letter-spacing: .04em; color: color-mix(in srgb, var(--zip-sidebar-foreground) 68%, transparent); background: color-mix(in srgb, var(--zip-sidebar-foreground) 5%, transparent); border: 1px solid color-mix(in srgb, var(--zip-sidebar-foreground) 8%, transparent); }
+.statusDot { width: 7px; height: 7px; border-radius: 50%; background: var(--zip-success); box-shadow: 0 0 0 3px color-mix(in srgb, var(--zip-success) 14%, transparent); }
+.nav { display: flex; flex-direction: column; gap: 18px; margin-top: 12px; }
+.navGroup { display: flex; flex-direction: column; gap: 3px; }
+.navLabel { padding: 0 9px 7px; font-size: .64rem; text-transform: uppercase; letter-spacing: .12em; opacity: .45; font-weight: 700; }
+.navLink { display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 10px; border-radius: 9px; color: color-mix(in srgb, var(--zip-sidebar-foreground) 70%, transparent); text-decoration: none; font-size: .82rem; font-weight: 500; transition: background var(--zip-animation-duration-fast), color var(--zip-animation-duration-fast), transform var(--zip-animation-duration-fast); }
+.navLink:hover { background: color-mix(in srgb, var(--zip-sidebar-foreground) 7%, transparent); color: var(--zip-sidebar-foreground); }
+.navLink:focus-visible { outline: 2px solid color-mix(in srgb, var(--zip-primary) 88%, white); outline-offset: 2px; background: color-mix(in srgb, var(--zip-sidebar-foreground) 8%, transparent); color: var(--zip-sidebar-foreground); }
+.navLinkActive { background: color-mix(in srgb, var(--zip-primary) 20%, transparent); color: color-mix(in srgb, var(--zip-primary) 32%, white); }
+.navLinkActive svg { color: var(--zip-primary); }
+.operatorCard { display:flex; align-items:center; gap:8px; margin-top:auto; padding:9px; border:1px solid color-mix(in srgb,var(--zip-sidebar-foreground) 9%,transparent); border-radius:9px; background:color-mix(in srgb,var(--zip-sidebar-foreground) 4%,transparent); }
+.operatorCard>svg { flex:0 0 auto; color:var(--zip-primary); }
+.operatorCard>div { display:flex; flex:1; min-width:0; flex-direction:column; gap:2px; }
+.operatorCard strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.7rem; }
+.operatorCard span { font-size:.61rem; opacity:.58; }
+.operatorCard button,.operatorCard a { color:inherit!important; }
+.sidebarFooter { margin-top: 8px; display: flex; gap: 9px; align-items: center; padding: 12px 9px 4px; border-top: 1px solid color-mix(in srgb, var(--zip-sidebar-foreground) 9%, transparent); opacity: .65; }
+.sidebarFooter div { display: flex; flex-direction: column; }
+.sidebarFooter strong { font-size: .72rem; }
+.sidebarFooter span { font: 400 .65rem var(--zip-font-family-monospace); }
+.workspace { margin-left: 236px; min-height: 100vh; }
+.topbar { position: sticky; top: 0; z-index: 30; height: 58px; display: flex; align-items: center; gap: 12px; padding: 0 22px; background: color-mix(in srgb, var(--zip-background) 88%, transparent); backdrop-filter: blur(16px); border-bottom: 1px solid var(--zip-border); }
+.menuButton { display: none !important; }
+.topbarTitle { min-width: 0; display: flex; align-items: baseline; gap: 12px; margin-right: auto; }
+.liveLabel { display: inline-flex; align-items: center; gap: 6px; font: 600 .68rem var(--zip-font-family-monospace); text-transform: uppercase; letter-spacing: .08em; color: var(--zip-muted-foreground); }
+.liveLabel span { width: 6px; height: 6px; border-radius: 50%; background: var(--zip-success); }
+.topbarSub { font-size: .76rem; color: var(--zip-muted-foreground); }
+.main { min-height: calc(100vh - 58px); }
+.bottomNav { display: none; }
+.scrim { display: none; }
+.compactNavLink { min-height: unset; }
+@media (max-width: 860px) {
+  .sidebar { transform: translateX(-102%); visibility: hidden; pointer-events: none; transition: transform var(--zip-animation-duration-normal), visibility 0s linear var(--zip-animation-duration-normal); box-shadow: var(--zip-shadow-lg); }
+  .sidebarOpen { transform: translateX(0); visibility: visible; pointer-events: auto; transition-delay: 0s; }
+  .closeMobile { display: inline-flex !important; }
+  .scrim { display: block; position: fixed; inset: 0; z-index: 45; border: 0; background: hsl(210 50% 5% / .52); }
+  .workspace { margin-left: 0; }
+  .topbar { height: 54px; padding: env(safe-area-inset-top, 0px) 12px 0; }
+  .menuButton { display: inline-flex !important; }
+  .topbarSub { display: none; }
+  .main { min-height: calc(100vh - 112px); padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
+  .bottomNav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 35; display: grid; grid-template-columns: repeat(5, 1fr); padding: 7px 4px calc(7px + env(safe-area-inset-bottom, 0px)); background: color-mix(in srgb, var(--zip-card) 94%, transparent); backdrop-filter: blur(18px); border-top: 1px solid var(--zip-border); box-shadow: 0 -8px 24px hsl(208 48% 12% / .06); }
+  .compactNavLink { min-height: 48px; flex-direction: column; gap: 3px; justify-content: center; padding: 4px 2px; border-radius: 9px; font-size: .61rem; }
+  .compactNavLink span { display: block; max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}

@@ -33,6 +33,9 @@ export default defineConfig({
     alias: { '@': path.resolve(__dirname, './src') },
   },
   test: {
+    // Functional assertions keep their own deadlines. Allow rendering and axe
+    // computation to finish on busy hosts; this suite is not a latency benchmark.
+    testTimeout: 30_000,
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/test/setup.js',

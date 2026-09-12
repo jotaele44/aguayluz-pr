@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   getHealth, getAssets, getAssetsGeojson, getMunicipiosGeojson,
-  getEvents, getEventsPaged, getAssetEvents, getEvent, getMunicipioSummary,
+  getEvents, getEventsPaged, getActiveOutageCount, getAssetEvents, getEvent, getMunicipioSummary,
   getReadings, getReviewQueue, getReviewQueuePaged,
   getSummary, getSummarySectors, getCoverage, getSystemStatus,
   getAlerts, getAlertsPaged, getAlert, getAlertFacets, getAlertsGeojson,
@@ -17,6 +17,7 @@ export const useAssets = (f = {}) => useQuery({ queryKey: ['assets', f], queryFn
 export const useAssetsGeojson = () => useQuery({ queryKey: ['assets.geojson'], queryFn: getAssetsGeojson })
 export const useMunicipiosGeojson = () => useQuery({ queryKey: ['municipios.geojson'], queryFn: getMunicipiosGeojson })
 export const DEFAULT_EVENT_LIMIT = 500
+export const useActiveOutageCount = () => useQuery({ queryKey: ['events', 'active-outage-count'], queryFn: getActiveOutageCount })
 export const useEvents = (f = {}) => {
   const params = { limit: DEFAULT_EVENT_LIMIT, ...f }
   return useQuery({ queryKey: ['events', params], queryFn: () => getEvents(params) })
@@ -65,6 +66,7 @@ export const useAlertGaps = () => useQuery({ queryKey: ['alerts/gaps'], queryFn:
 const dropRef = (data, ref) => {
   if (Array.isArray(data)) return data.filter((r) => r.record_ref !== ref)
   if (data?.items) {
+    if (!data.items.some((r) => r.record_ref === ref)) return data
     return { ...data, items: data.items.filter((r) => r.record_ref !== ref), total: Math.max(0, (data.total ?? data.items.length) - 1) }
   }
   return data
@@ -73,7 +75,7 @@ const dropRef = (data, ref) => {
 export const useDecision = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ ref, decision }) => postDecision(ref, decision),
+    mutationFn: ({ ref, decision, sourceBinding }) => postDecision(ref, decision, sourceBinding),
     onMutate: async ({ ref }) => {
       await qc.cancelQueries({ queryKey: ['review'] })
       await qc.cancelQueries({ queryKey: ['review/paged'] })
@@ -87,10 +89,11 @@ export const useDecision = () => {
     onError: (_err, _vars, context) => {
       context?.prev?.forEach(([key, data]) => qc.setQueryData(key, data))
     },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: ['review'] })
-      qc.invalidateQueries({ queryKey: ['review/paged'] })
-    },
+    onSettled: () => Promise.all([
+      qc.invalidateQueries({ queryKey: ['review'] }),
+      qc.invalidateQueries({ queryKey: ['review/paged'] }),
+      qc.invalidateQueries({ queryKey: ['system/status'] }),
+    ]),
   })
 }
 
@@ -110,10 +113,13 @@ export const useAckEvent = () => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, status }) => patchEvent(id, { resolution_status: status }),
-    onSuccess: (_, { id }) => {
-      qc.invalidateQueries({ queryKey: ['event', id] })
-      qc.invalidateQueries({ queryKey: ['events'] })
-    },
+    onSuccess: (_, { id }) => Promise.all([
+      qc.invalidateQueries({ queryKey: ['event', id] }),
+      qc.invalidateQueries({ queryKey: ['events'] }),
+      qc.invalidateQueries({ queryKey: ['events/paged'] }),
+      qc.invalidateQueries({ queryKey: ['asset-events'] }),
+      qc.invalidateQueries({ queryKey: ['system/status'] }),
+    ]),
   })
 }
 
@@ -121,8 +127,13 @@ export const useFlagAsset = () => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, reviewStatus }) => patchAsset(id, { review_status: reviewStatus }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['assets'] })
-    },
+    onSuccess: () => Promise.all([
+      qc.invalidateQueries({ queryKey: ['assets'] }),
+      qc.invalidateQueries({ queryKey: ['assets.geojson'] }),
+      qc.invalidateQueries({ queryKey: ['summary/sectors'] }),
+      qc.invalidateQueries({ queryKey: ['summary/coverage'] }),
+      qc.invalidateQueries({ queryKey: ['municipio'] }),
+      qc.invalidateQueries({ queryKey: ['system/status'] }),
+    ]),
   })
 }

@@ -19,8 +19,8 @@ Two rules keep the fixture from becoming a liability:
 If ``review_queue.json`` already exists it is left completely alone.
 
 *Never leave fake data behind.* When this script does write the fixture it also
-drops a marker file beside it. ``gui_parity_teardown.py`` removes the queue file
-only when that marker is present, so a seeded run cleans up after itself and a
+drops a marker containing its SHA-256 beside it. ``gui_parity_teardown.py`` removes
+the queue only when its bytes still match that marker, so a seeded run cleans up and a
 later ordinary backend run cannot serve ``SEED-*`` records as if they were real.
 Without the marker a teardown could not tell a fixture apart from an export.
 
@@ -31,6 +31,7 @@ seed written here is picked up without a restart.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import sys
@@ -44,8 +45,7 @@ _workspace = os.getenv("AGUAYLUZ_DATA_HOME", "").strip()
 OUTPUTS = Path(_workspace) / "exports" if _workspace else REPO_ROOT / "outputs"
 
 REVIEW_QUEUE = OUTPUTS / "review_queue.json"
-# Presence of this marker is the only thing that authorises deleting the queue
-# file. It means "this run created that file", never "this file is disposable".
+# Cleanup requires this marker's hash to match the current queue bytes.
 SEED_MARKER = OUTPUTS / ".review_queue.seeded"
 
 # Deliberately small and deliberately mixed. `block` comes first because
@@ -82,19 +82,21 @@ def main() -> int:
     if REVIEW_QUEUE.exists():
         print(f"seed_demo: {REVIEW_QUEUE} already present — leaving it alone")
         return 0
+    if SEED_MARKER.exists():
+        print("seed_demo: stale seed marker exists; preserving it for review", file=sys.stderr)
+        return 1
 
-    payload = {"total": len(_ITEMS), "offset": 0, "items": _ITEMS}
+    payload = {"module_id": "aguayluz-pr", "generated_at": "2026-01-01T00:00:00Z", "items": _ITEMS}
+    content = (json.dumps(payload, indent=2) + "\n").encode("utf-8")
     try:
         OUTPUTS.mkdir(parents=True, exist_ok=True)
-        REVIEW_QUEUE.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        # Exclusive creation also protects an export created after exists().
+        with REVIEW_QUEUE.open("xb") as stream:
+            stream.write(content)
         # Written after the queue file, so a crash between the two leaves no
         # marker and the teardown declines to delete anything.
-        SEED_MARKER.write_text(
-            "Written by server/ingestion/seed_demo.py. Presence of this file means\n"
-            "review_queue.json is a GUI-parity fixture and may be removed by\n"
-            "server/ingestion/gui_parity_teardown.py.\n",
-            encoding="utf-8",
-        )
+        with SEED_MARKER.open("x", encoding="utf-8") as stream:
+            stream.write(json.dumps({"sha256": hashlib.sha256(content).hexdigest()}) + "\n")
     except OSError as exc:
         # The playwright config chains this with `&&`, so a non-zero exit fails
         # the whole webServer boot rather than starting a backend with no data.

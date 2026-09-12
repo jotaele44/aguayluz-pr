@@ -240,7 +240,7 @@ export default function AssetsTable({ assets = [], isLoading, selectedId, onSele
         </div>
       </div>
 
-      <div ref={scrollRef} className="flex-1 overflow-auto">
+      <div ref={scrollRef} data-testid="asset-scroll-viewport" className="min-h-0 flex-1 overflow-auto" style={{ maxHeight: '65vh' }}>
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-slate-900 shadow-xs shadow-slate-950">
             <TableRow className="border-slate-800 hover:bg-transparent">

@@ -5,9 +5,13 @@ import pluginReactHooks from "eslint-plugin-react-hooks";
 import pluginUnusedImports from "eslint-plugin-unused-imports";
 
 export default [
+  // Vite removes these generated config bundles immediately after loading them.
+  // Linting one concurrently races that cleanup; the source config stays checked.
+  { ignores: ["*.config.*.timestamp-*.mjs"] },
   {
     files: [
       "src/components/**/*.{js,mjs,cjs,jsx}",
+      "src/zip-design/**/*.{js,jsx}",
       "src/pages/**/*.{js,mjs,cjs,jsx}",
       "src/Layout.jsx",
     ],

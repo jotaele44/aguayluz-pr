@@ -83,7 +83,7 @@ const CORPUS_LABELS = {
 }
 
 export default function SystemPage() {
-  const { data: status, isLoading } = useSystemStatus()
+  const { data: status, isLoading, isFetching: checkingStatus, refetch: refreshStatus } = useSystemStatus()
   const { data: health, isError: healthError } = useHealth()
   const { mutate: runExport, isPending: exporting } = useRunExport()
   const [notifying, setNotifying] = useState(false)
@@ -121,6 +121,25 @@ export default function SystemPage() {
         title="System & Tools"
         subtitle="Backend configuration, artifact freshness, and the operator actions that depend on them"
       />
+
+      <Panel title="Saved local changes">
+        <p className="text-xs text-slate-400">
+          Confirmed review decisions and asset/event edits are saved locally and survive backend restarts.
+          Source files and canonical Federation exports are unchanged by these diagnostic edits.
+        </p>
+        {status?.operator_state?.state === 'unavailable' ? (
+          <p role="alert" className="mt-2 text-sm text-red-300">{status.operator_state.error}</p>
+        ) : status?.operator_state ? (
+          <div className="mt-2 text-xs text-slate-300" role="status">
+            {status.operator_state.state === 'not_initialized'
+              ? 'No changes saved yet. The local store is created on first write.'
+              : `${status.operator_state.saved_records} saved records · ${status.operator_state.audit_entries} saved changes · Last saved ${fmtDate(status.operator_state.last_saved_at)}`}
+          </div>
+        ) : <p className="mt-2 text-xs text-slate-400">Local storage status is unverified.</p>}
+        <Button size="sm" variant="outline" className="mt-3" disabled={checkingStatus} onClick={() => refreshStatus()}>
+          Retry local storage check
+        </Button>
+      </Panel>
 
       <Panel title="Operator tools">
         <div className="flex flex-wrap items-start gap-3">

@@ -60,13 +60,9 @@ async function getJSON(path, fallback = null) {
     const key = path.split('?')[0] // server-side filters degrade to the unfiltered snapshot
     return key in snapshot ? snapshot[key] : fallback
   }
-  try {
-    const res = await fetch(`${API_BASE}${path}`, { signal: AbortSignal.timeout(8000) })
-    if (!res.ok) return fallback
-    return await res.json()
-  } catch {
-    return fallback
-  }
+  const res = await fetch(`${API_BASE}${path}`, { signal: AbortSignal.timeout(8000) })
+  if (!res.ok) throw new Error(`Data unavailable (HTTP ${res.status}). Retry when the backend is available.`)
+  return await res.json()
 }
 
 const qs = (params) => {
@@ -84,6 +80,7 @@ export const getEvents = async (f = {}) => {
   return r?.items ?? r ?? []
 }
 export const getEventsPaged = (f = {}) => getJSON(`/events${qs(f)}`, { total: 0, offset: 0, items: [] })
+export const getActiveOutageCount = () => getJSON('/events?type=outage&active=true&limit=0', null)
 export const getAssetEvents = (id) => getJSON(`/assets/${id}/events`, [])
 export const getMunicipioSummary = (name) => getJSON(`/municipios/${encodeURIComponent(name)}/summary`, null)
 export const getReadings = (f = {}) => getJSON(`/readings${qs(typeof f === 'string' ? { kind: f } : f)}`, [])
@@ -110,19 +107,20 @@ export const getAlertFacets = () => getJSON('/alerts/facets', null)
 export const getAlertsGeojson = (f = {}) => getJSON(`/alerts.geojson${qs(f)}`, { type: 'FeatureCollection', features: [] })
 export const getAlertDependencies = (f = {}) => getJSON(`/alerts/dependencies${qs(f)}`, [])
 export const getAlertGaps = () => getJSON('/alerts/gaps', [])
-export const postDecision = async (ref, decision) => {
-  if (OFFLINE) return { ok: true }
+export const postDecision = async (ref, decision, sourceBinding) => {
+  if (OFFLINE) throw new Error('Decisions are unavailable in offline mode; no changes were saved.')
   const res = await fetch(`${API_BASE}/review-queue/${encodeURIComponent(ref)}/decision`, {
     method: 'POST',
     headers: jsonHeaders(),
-    body: JSON.stringify({ decision }),
+    body: JSON.stringify({ decision, source_binding: sourceBinding }),
     signal: AbortSignal.timeout(8000),
   })
   if (res.status === 401) throw new Error(`Decision ${authFailureMessage()}`)
+  if (!res.ok) throw new Error(`Decision failed (HTTP ${res.status}); no decision was confirmed.`)
   return res.json()
 }
 export const postRunExport = async () => {
-  if (OFFLINE) return { ok: true }
+  if (OFFLINE) throw new Error('Export is unavailable in offline mode; no outputs were regenerated.')
   const res = await fetch(`${API_BASE}/admin/run-export`, {
     method: 'POST',
     headers: authHeaders(),
@@ -155,7 +153,7 @@ export const postAiQuery = async (query) => {
     // This route is key-guarded because it spends the operator's ANTHROPIC_API_KEY.
     if (res.status === 401) return { answer: null, error: `AI query ${authFailureMessage()}` }
     if (!res.ok) return { answer: null, error: `Backend error ${res.status}` }
-    return res.json()
+    return await res.json()
   } catch (e) {
     return { answer: null, error: String(e) }
   }
@@ -164,7 +162,7 @@ export const postAiQuery = async (query) => {
 export const getEvent = (id) => getJSON(`/events/${encodeURIComponent(id)}`, null)
 
 export const patchEvent = async (id, data) => {
-  if (OFFLINE) return null
+  if (OFFLINE) throw new Error('Event edits are unavailable in offline mode; no changes were saved.')
   const res = await fetch(`${API_BASE}/events/${encodeURIComponent(id)}`, {
     method: 'PATCH',
     headers: jsonHeaders(),
@@ -177,7 +175,7 @@ export const patchEvent = async (id, data) => {
 }
 
 export const patchAsset = async (id, data) => {
-  if (OFFLINE) return null
+  if (OFFLINE) throw new Error('Asset edits are unavailable in offline mode; no changes were saved.')
   const res = await fetch(`${API_BASE}/assets/${encodeURIComponent(id)}`, {
     method: 'PATCH',
     headers: jsonHeaders(),
@@ -202,7 +200,7 @@ export const postNotify = async ({ message, title }) => {
     })
     if (res.status === 401) return { ok: false, error: `Notify ${authFailureMessage()}` }
     if (!res.ok) return { ok: false, error: `Backend error ${res.status}` }
-    return res.json()
+    return await res.json()
   } catch (e) {
     return { ok: false, error: String(e) }
   }

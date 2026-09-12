@@ -33,7 +33,7 @@ export default function AiQueryPanel() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full border border-sky-700/60 bg-sky-950/90 px-4 py-2.5 text-sm text-sky-200 shadow-lg backdrop-blur hover:bg-sky-900/80 transition"
+        className="zip-ai-trigger fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full border border-sky-700/60 bg-sky-950/90 px-4 py-2.5 text-sm text-sky-200 shadow-lg backdrop-blur hover:bg-sky-900/80 transition"
         title="Ask a question about the dashboard data"
       >
         <MessageCircle className="h-4 w-4" />
@@ -41,7 +41,7 @@ export default function AiQueryPanel() {
       </button>
 
       {open && (
-        <div className="fixed bottom-20 right-5 z-50 flex flex-col w-[360px] max-h-[520px] rounded-xl border border-slate-700/70 bg-slate-950/95 shadow-2xl backdrop-blur">
+        <div className="zip-ai-panel fixed bottom-20 right-5 z-50 flex flex-col w-[360px] max-h-[520px] rounded-xl border border-slate-700/70 bg-slate-950/95 shadow-2xl backdrop-blur">
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800">
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-100">
               <Bot className="h-4 w-4 text-sky-400" />

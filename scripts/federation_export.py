@@ -508,13 +508,14 @@ def build_outputs(
     _validate_record_list(readings, "monitoring_reading")
     (outputs_dir / "monitoring_readings.json").write_text(json.dumps(readings, indent=2, sort_keys=True))
 
-    # 3. source_manifest — one entry per unique source_ref across both record lists.
-    seen: dict[str, dict[str, Any]] = {}
-    for r in assets + events:
+    # 3. Include observation provenance and preserve distinct source versions.
+    seen: dict[tuple, dict[str, Any]] = {}
+    for r in assets + events + readings:
         ref = r.get("source_ref")
-        if not ref or ref in seen:
+        key = (ref, r.get("source_hash"), r.get("evidence_tier", "T3"))
+        if not ref or key in seen:
             continue
-        seen[ref] = {
+        seen[key] = {
             "source_ref": ref,
             "source_hash": r.get("source_hash"),
             "tier": r.get("evidence_tier", "T3"),
@@ -525,7 +526,7 @@ def build_outputs(
     manifest = {
         "module_id": "aguayluz-pr",
         "generated_at": now,
-        "entries": sorted(seen.values(), key=lambda e: e["source_ref"]),
+        "entries": sorted(seen.values(), key=lambda e: (e["source_ref"], e["source_hash"] or "", e["tier"])),
     }
     _validate_and_write(outputs_dir / "source_manifest.json", "source_manifest", manifest)
 
@@ -598,7 +599,7 @@ def build_outputs(
         (outputs_dir / stale).unlink(missing_ok=True)
 
     from aguayluz.validation import run_gates  # local import; same reason as _validate_and_write
-    report = run_gates()
+    report = run_gates(outputs_dir=outputs_dir)
     gate_ledger = [
         {"id": r.gate_id, "status": r.status, "details": r.details or None}
         for r in report.results

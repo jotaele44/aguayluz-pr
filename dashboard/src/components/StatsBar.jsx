@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useAssetsGeojson, useEvents, useHealth, useReviewQueue, useSummary } from '@/lib/hooks'
+import { useCoverage, useHealth, useReviewQueuePaged, useSummary } from '@/lib/hooks'
 import { Activity, AlertTriangle, Database, Droplets, MapPinned, ShieldAlert, ShieldCheck, SlidersHorizontal, TrendingDown, TrendingUp, WifiOff, X } from 'lucide-react'
 
 function Kpi({ icon: Icon, label, value, hint, tone = 'text-slate-300', emphasis = false, trend }) {
@@ -22,9 +22,8 @@ function Kpi({ icon: Icon, label, value, hint, tone = 'text-slate-300', emphasis
 
 export default function StatsBar() {
   const { data: health, isError } = useHealth()
-  const { data: assetsGeo } = useAssetsGeojson()
-  const { data: events = [] } = useEvents()
-  const { data: reviewQueue = [] } = useReviewQueue()
+  const { data: corpusCoverage } = useCoverage()
+  const { data: reviewQueue } = useReviewQueuePaged({ limit: 1 })
   const { data: summary } = useSummary()
   const [dismissed, setDismissed] = useState(false)
   const prevRef = useRef({})
@@ -38,10 +37,12 @@ export default function StatsBar() {
     return Object.values(c.readings).reduce((total, n) => total + Number(n || 0), 0)
   }, [c.readings])
 
-  const mapped = assetsGeo?.features?.length
+  // Counts belong in summary responses; loading the full map here transfers
+  // megabytes on every route even when the operator never opens the map.
+  const mapped = corpusCoverage?.assets?.mapped
   const coverage = r.coverage_pct != null ? `${r.coverage_pct}%` : '–'
-  const reviewCount = r.records_review ?? reviewQueue.length
-  const reviewTone = reviewCount > 0 ? 'text-amber-300' : 'text-emerald-300'
+  const reviewCount = reviewQueue?.total ?? r.records_review
+  const reviewTone = reviewCount == null ? 'text-slate-300' : reviewCount > 0 ? 'text-amber-300' : 'text-emerald-300'
   const showDownBanner = (isError || (!up && health != null)) && !dismissed
 
   const coverageTrend = prevRef.current.coverage != null && r.coverage_pct != null
@@ -78,7 +79,7 @@ export default function StatsBar() {
         <div className="h-8 w-px bg-slate-800 shrink-0" />
         <Kpi icon={Database} label="Assets" value={c.assets} hint="canonical JSONL" tone="text-sky-300" emphasis />
         <Kpi icon={MapPinned} label="Mapped" value={mapped} hint="GeoJSON features" tone="text-cyan-300" />
-        <Kpi icon={Activity} label="Events" value={c.events ?? events.length} hint="service records" tone="text-amber-300" />
+        <Kpi icon={Activity} label="Events" value={c.events} hint="service records" tone="text-amber-300" />
         <Kpi
           icon={ShieldAlert}
           label="Alerts"

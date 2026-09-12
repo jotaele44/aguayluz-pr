@@ -20,15 +20,9 @@ const authFailureMessage = () =>
 
 async function getJSON(path, fallback) {
   if (OFFLINE) return fallback
-  try {
-    const response = await fetch(`${API_BASE}${path}`, {
-      signal: AbortSignal.timeout(8000),
-    })
-    if (!response.ok) return fallback
-    return await response.json()
-  } catch {
-    return fallback
-  }
+  const response = await fetch(`${API_BASE}${path}`, { signal: AbortSignal.timeout(8000) })
+  if (!response.ok) throw new Error(`Data unavailable (HTTP ${response.status}). Retry when the backend is available.`)
+  return await response.json()
 }
 
 const qs = (params) => {

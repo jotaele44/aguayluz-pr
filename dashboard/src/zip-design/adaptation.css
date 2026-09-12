@@ -1,0 +1,57 @@
+/* Shared interaction safeguards for the archive-derived surfaces. */
+.zip-surface { background: var(--zip-background); color: var(--zip-foreground); }
+.zip-surface :is(a,button,input,select):focus-visible { outline: 2px solid var(--zip-primary); outline-offset: 3px; }
+.zip-surface { min-width: 0; }
+.zip-surface main { min-width: 0; }
+@media (prefers-reduced-motion: reduce) { .zip-surface *, .zip-surface *::before, .zip-surface *::after { scroll-behavior: auto !important; transition-duration: 0s !important; animation-duration: 0s !important; } }
+
+.zip-mobile-menu { display: none; }
+@media (max-width: 860px) {
+ .zip-mobile-menu { display: block; padding: 12px; background: var(--zip-sidebar); color: var(--zip-sidebar-foreground); }
+ .zip-mobile-menu summary { min-height: 44px; cursor: pointer; padding: 10px; }
+}
+
+/* Explicit conversion from ZIP full colors to the existing HSL-channel contract. */
+:root {
+ --background: 204 33% 97%;
+ --foreground: 207 53% 12%;
+ --card: 0 0% 100%;
+ --card-foreground: 207 53% 12%;
+ --primary: 196 84% 36%;
+ --primary-foreground: 0 0% 100%;
+ --secondary: 201 42% 88%;
+ --secondary-foreground: 207 53% 16%;
+ --muted: 204 22% 91%;
+ --muted-foreground: 207 16% 42%;
+ --accent: 38 92% 52%;
+ --accent-foreground: 208 52% 12%;
+ --border: 202 22% 82%;
+ --popover: 0 0% 100%;
+ --popover-foreground: 207 53% 12%;
+ --input: 202 22% 82%;
+ --ring: 196 84% 36%;
+}
+:root.dark, :root[data-theme="dark"] {
+ --background: 209 52% 8%;
+ --foreground: 198 24% 94%;
+ --card: 208 42% 14%;
+ --card-foreground: 198 24% 94%;
+ --primary: 193 82% 48%;
+ --primary-foreground: 210 54% 7%;
+ --secondary: 207 30% 20%;
+ --secondary-foreground: 198 24% 94%;
+ --muted: 208 24% 18%;
+ --muted-foreground: 202 15% 68%;
+ --accent: 41 96% 57%;
+ --accent-foreground: 210 54% 7%;
+ --border: 205 24% 24%;
+ --popover: 208 42% 13%;
+ --popover-foreground: 198 24% 94%;
+ --input: 205 24% 24%;
+ --ring: 193 82% 48%;
+}
+
+@media (max-width: 860px) {
+ .zip-ai-trigger { bottom: calc(82px + env(safe-area-inset-bottom)); }
+ .zip-ai-panel { bottom: calc(140px + env(safe-area-inset-bottom)); width: min(360px, calc(100vw - 24px)); right: 12px; max-height: calc(100dvh - 170px); }
+}
