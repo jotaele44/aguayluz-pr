@@ -1,7 +1,106 @@
 {
-  "$schema":"https://json-schema.org/draft/2020-12/schema",
-  "$id":"https://federation.local/schemas/federation_spatial_manifest_v1.schema.json",
-  "title":"Federation Spatial Sidecar Manifest v1","type":"object","additionalProperties":false,
-  "required":["contract_version","producer_repo","authority","frozen_base_sha","branch","contracts","storage","domain_extensions","cross_repo","gates"],
-  "properties":{"contract_version":{"const":"federation-spatial-manifest/1.0"},"producer_repo":{"enum":["spiderweb-pr","moneysweep-pr","aguayluz-pr","skywatcher-pr"]},"authority":{"type":"string","minLength":1},"frozen_base_sha":{"type":"string","pattern":"^[a-f0-9]{40}$"},"branch":{"type":"string"},"contracts":{"type":"object","required":["feature","layer","map_runtime","offline_package","impact_report"],"additionalProperties":{"type":"string"}},"storage":{"type":"object","required":["postgis_migration","mvt_migration","ownership"],"properties":{"postgis_migration":{"type":"string"},"mvt_migration":{"type":"string"},"ownership":{"const":"REPO_LOCAL"}}},"domain_extensions":{"type":"array","items":{"type":"string"}},"cross_repo":{"type":"object","required":["identity_default","hub_correlation_authority","consumer_contract"],"properties":{"identity_default":{"const":"CANDIDATE_NOT_IDENTITY"},"hub_correlation_authority":{"const":"thehub-pr"},"consumer_contract":{"type":"string"}}},"gates":{"type":"object","additionalProperties":{"enum":["PASS","OPEN","BLOCKED","N/A"]}}}
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://federation.local/schemas/federation_spatial_manifest_v1.schema.json",
+  "title": "Federation Spatial Sidecar Manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "producer_repo",
+    "authority",
+    "frozen_base_sha",
+    "branch",
+    "contracts",
+    "storage",
+    "domain_extensions",
+    "cross_repo",
+    "gates"
+  ],
+  "$defs": {
+    "gate_state": {
+      "enum": [
+        "PASS",
+        "FAIL",
+        "OPEN",
+        "BLOCKED",
+        "PROVISIONAL",
+        "AUDIT_ONLY",
+        "UNRESOLVED",
+        "UNKNOWN",
+        "NOT_APPLICABLE"
+      ]
+    }
+  },
+  "properties": {
+    "contract_version": {"const": "federation-spatial-manifest/1.0"},
+    "producer_repo": {
+      "enum": ["spiderweb-pr", "moneysweep-pr", "aguayluz-pr", "skywatcher-pr"]
+    },
+    "authority": {"type": "string", "minLength": 1},
+    "frozen_base_sha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "branch": {"type": "string", "minLength": 1},
+    "contracts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["feature", "layer", "map_runtime", "offline_package", "impact_report"],
+      "properties": {
+        "feature": {"type": "string", "minLength": 1},
+        "layer": {"type": "string", "minLength": 1},
+        "map_runtime": {"type": "string", "minLength": 1},
+        "offline_package": {"type": "string", "minLength": 1},
+        "impact_report": {"type": "string", "minLength": 1}
+      }
+    },
+    "storage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["postgis_migration", "mvt_migration", "ownership"],
+      "properties": {
+        "postgis_migration": {"type": "string", "minLength": 1},
+        "mvt_migration": {"type": "string", "minLength": 1},
+        "ownership": {"const": "REPO_LOCAL"}
+      }
+    },
+    "domain_extensions": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "cross_repo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identity_default", "hub_correlation_authority", "consumer_contract"],
+      "properties": {
+        "identity_default": {"const": "CANDIDATE_NOT_IDENTITY"},
+        "hub_correlation_authority": {"const": "thehub-pr"},
+        "consumer_contract": {"type": "string", "minLength": 1}
+      }
+    },
+    "gates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "geometry",
+        "tests",
+        "postgis",
+        "security",
+        "performance",
+        "desktop",
+        "ios",
+        "federation"
+      ],
+      "properties": {
+        "schema": {"$ref": "#/$defs/gate_state"},
+        "geometry": {"$ref": "#/$defs/gate_state"},
+        "tests": {"$ref": "#/$defs/gate_state"},
+        "postgis": {"$ref": "#/$defs/gate_state"},
+        "security": {"$ref": "#/$defs/gate_state"},
+        "performance": {"$ref": "#/$defs/gate_state"},
+        "desktop": {"$ref": "#/$defs/gate_state"},
+        "ios": {"$ref": "#/$defs/gate_state"},
+        "federation": {"$ref": "#/$defs/gate_state"}
+      }
+    }
+  }
 }

@@ -1,0 +1,77 @@
+{
+  "schema_version": "prii_federation_spatial_certification_scope_v1",
+  "claim": "FEDERATION_SPATIAL_ARCHITECTURE",
+  "claim_version": "1.0.0",
+  "producer": "jotaele44/aguayluz-pr",
+  "consumer_authority": "jotaele44/thehub-pr",
+  "zero_residue_rule": "ZERO_MATERIAL_UNRESOLVED_WITHIN_CLAIM",
+  "in_scope": [
+    "producer_git_commit_and_tree_identity",
+    "federation_spatial_manifest_schema_and_gate_state",
+    "federation_compatibility_contract",
+    "haf_adapter_and_contract_semantics",
+    "pr209_twenty_path_retention_accounting",
+    "fail_closed_audit_vs_certification_semantics",
+    "full_executed_regression_receipt_bound_to_certified_commit_tree",
+    "postgis_schema_and_mvt_contract_deployment_proof",
+    "geometry_and_identity_semantics",
+    "security_regressions_for_spatial_and_runtime_artifacts",
+    "performance_bounds_for_spatial_runtime",
+    "desktop_visual_runtime_gate",
+    "ios_visual_runtime_gate",
+    "one_atomic_runtime_manifestation",
+    "runtime_and_control_plane_byte_size_sha256_accounting",
+    "canonical_stream_count_and_hash_arithmetic",
+    "exact_byte_thehub_consumption",
+    "candidate_not_identity_cross_repository_semantics",
+    "promotion_and_rollback_prerequisites"
+  ],
+  "disclosed_but_outside_architecture_claim": [
+    {
+      "class": "DOMAIN_DATA_COMPLETENESS",
+      "rule": "Missing or partial domain datasets remain visible in outputs and residue ledgers but do not fail the architecture claim when the architecture correctly preserves and quarantines that incompleteness."
+    },
+    {
+      "class": "DOMAIN_DATA_RECENCY",
+      "rule": "Stale or point-in-time upstream domain feeds remain disclosed but are not evidence that the federation architecture itself is invalid."
+    },
+    {
+      "class": "DOMAIN_RECORD_ADJUDICATION",
+      "rule": "Domain records in needs_review/blocked state may remain non-promotable data; architecture certification requires that their state is preserved and cannot be silently promoted, not that every domain record is adjudicated."
+    },
+    {
+      "class": "UPSTREAM_HASH_APPLICABILITY",
+      "rule": "A null source_hash allowed by the producer source-manifest schema remains disclosed. Architecture certification covers integrity of the emitted runtime and control-plane bytes, not a claim that every upstream service exposes retrievable immutable raw bytes."
+    }
+  ],
+  "blocking_residue_classes": [
+    "REPOSITORY_IDENTITY",
+    "CHANGESET_RETENTION",
+    "CONTRACT",
+    "SCHEMA",
+    "GEOMETRY",
+    "IDENTITY",
+    "TEST_EXECUTION",
+    "POSTGIS",
+    "SECURITY",
+    "PERFORMANCE",
+    "DESKTOP",
+    "IOS",
+    "FEDERATION",
+    "RUNTIME_INTEGRITY",
+    "CONTROL_PLANE_PROVENANCE",
+    "ARITHMETIC",
+    "HUB_CONSUMPTION",
+    "PROMOTION",
+    "ROLLBACK",
+    "UNCLASSIFIED"
+  ],
+  "nonblocking_disclosed_residue_classes": [
+    "DOMAIN_DATA_COMPLETENESS",
+    "DOMAIN_DATA_RECENCY",
+    "DOMAIN_RECORD_ADJUDICATION",
+    "UPSTREAM_HASH_APPLICABILITY"
+  ],
+  "promotion_rule": "Only zero blocking residue permits FEDERATION_SPATIAL_ARCHITECTURE certification. Nonblocking domain residue must remain present in the evidence package and must never be rewritten as resolved.",
+  "status": "PROVISIONAL_UNTIL_REFERENCE_EXECUTION_PASSES"
+}
