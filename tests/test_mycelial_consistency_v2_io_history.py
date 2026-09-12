@@ -36,7 +36,7 @@ def test_bad_key_rejected_before_lookup(key, monkeypatch):
     def forbidden(value):
         calls.append(value)
         raise AssertionError('Invalid key reached lookup')
-    monkeypatch.setattr(M, 'ZoneInfo', forbidden)
+    monkeypatch.setattr(M, '_read_zone_bytes', forbidden)
     row = R.fixture()[4]
     row['timezone'] = key
     before = copy.deepcopy(row)
@@ -61,7 +61,7 @@ def test_lookup_failure_containment(exc, code, monkeypatch):
     def unavailable(key):
         calls.append(key)
         raise exc('SYNTHETIC_PRIVATE_RESOURCE_PATH')
-    monkeypatch.setattr(M, 'ZoneInfo', unavailable)
+    monkeypatch.setattr(M, '_read_zone_bytes', unavailable)
     row = R.fixture()[4]
     result = R.call(row)
     assert result['state'] == 'FAIL' and code in result['reason_codes']
@@ -97,7 +97,7 @@ def test_unknown_is_not_defaulted_to_utc():
 def test_io_failure_dependency_accounting(monkeypatch):
     def unavailable(key):
         raise PermissionError('SYNTHETIC_PRIVATE_RESOURCE_PATH')
-    monkeypatch.setattr(M, 'ZoneInfo', unavailable)
+    monkeypatch.setattr(M, '_read_zone_bytes', unavailable)
     result = R.call(R.fixture())
     assert result['rows'][4]['state'] == result['rows'][5]['state'] == 'FAIL'
     assert result['rows'][0]['state'] == 'PASS_CHECKED_CONSTRAINTS'

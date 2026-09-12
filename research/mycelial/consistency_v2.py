@@ -10,9 +10,15 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import os
 import re
+import stat
+import struct
+import zoneinfo
 from collections import deque
 from datetime import datetime, timezone
+from importlib import resources
+from io import BytesIO
 from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import urlsplit
@@ -20,7 +26,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-IMPLEMENTATION_VERSION = "2.0.2"
+IMPLEMENTATION_VERSION = "2.0.3"
 SCHEMA_VERSION = "2.0.0"
 SCHEMA_SHA256 = "bfe7e8628d93adb149c8b79672cbfb4c8025c56d1de3505cb07a9eec2f2a8aba"
 SCHEMA_PATH = Path(__file__).resolve().parents[2] / "schemas/mycelial-consistency/v2/contracts.schema.json"
@@ -30,6 +36,13 @@ MAX_DEPTH = 48
 MAX_NODES = 50000
 # Operational key bounds, not an assertion that a matching key exists in IANA.
 MAX_ZONE_KEY_LENGTH = 255
+MAX_TZIF_BYTES = 1024 * 1024
+MAX_TZIF_TRANSITIONS = 16384
+MAX_TZIF_TYPES = 256
+MAX_TZIF_DESIGNATIONS = 4096
+MAX_TZIF_LEAPS = 1024
+MAX_TZIF_FOOTER = 256
+MAX_TZPATH_ROOTS = 32
 ZONE_KEY = re.compile(r"[A-Za-z0-9_+-]{1,64}(?:/[A-Za-z0-9_+-]{1,64})*")
 SERIALIZATION = "aguayluz.sorted-json-utf8/v1"
 KINDS = {
@@ -136,18 +149,190 @@ def _time(value: str) -> datetime:
     return stamp
 
 
+def _read_regular_tzif(path: Path) -> bytes:
+    """One bounded snapshot from a regular local file, not a later parser reopen.
+
+    TZPATH and installed packages are trusted configuration. This does not promise
+    a wall-clock deadline on a failing kernel or remote-mounted filesystem.
+    """
+    flags = os.O_RDONLY | getattr(os, "O_NONBLOCK", 0) | getattr(os, "O_CLOEXEC", 0)
+    fd = os.open(path, flags)
+    try:
+        before = os.fstat(fd)
+        if not stat.S_ISREG(before.st_mode):
+            raise InputRejected("TIMEZONE_RESOURCE_NOT_REGULAR")
+        if before.st_size > MAX_TZIF_BYTES:
+            raise InputRejected("TIMEZONE_RESOURCE_LIMIT")
+        # The descriptor, not the path, is read. The immutable returned buffer is
+        # both validated and decoded; filesystem mutations cannot replace it.
+        chunks = []
+        remaining = MAX_TZIF_BYTES + 1
+        read_calls = 0
+        while remaining:
+            read_calls += 1
+            if read_calls > 64:
+                raise InputRejected("TIMEZONE_RESOURCE_LIMIT")
+            chunk = os.read(fd, remaining)
+            if not chunk:
+                break
+            chunks.append(chunk)
+            remaining -= len(chunk)
+        data = b"".join(chunks)
+        after = os.fstat(fd)
+        def identity(v):
+            return (v.st_dev, v.st_ino, v.st_size, v.st_mtime_ns, v.st_ctime_ns)
+        if identity(before) != identity(after) or len(data) != before.st_size:
+            raise InputRejected("TIMEZONE_RESOURCE_CHANGED")
+        if len(data) > MAX_TZIF_BYTES:
+            raise InputRejected("TIMEZONE_RESOURCE_LIMIT")
+        return data
+    finally:
+        os.close(fd)
+
+
+def _read_zone_bytes(key: str) -> bytes:
+    """Follow system-root priority; fall back only when a file is not found.
+
+    The supported resource class is regular local files, including unpacked
+    tzdata wheels. Zip/custom import-resource backends fail explicitly rather
+    than entering an unbounded decompressor or user-defined stream.
+    """
+    roots = tuple(zoneinfo.TZPATH)
+    if len(roots) > MAX_TZPATH_ROOTS:
+        raise InputRejected("TIMEZONE_RESOURCE_LIMIT")
+    for root in roots:
+        try:
+            return _read_regular_tzif(Path(root).joinpath(*key.split("/")))
+        except FileNotFoundError:
+            continue
+    try:
+        resource = resources.files("tzdata.zoneinfo").joinpath(*key.split("/"))
+    except ModuleNotFoundError:
+        raise ZoneInfoNotFoundError(key) from None
+    try:
+        path = Path(os.fspath(resource))
+    except TypeError:
+        raise InputRejected("TIMEZONE_RESOURCE_BACKEND_UNSUPPORTED") from None
+    try:
+        return _read_regular_tzif(path)
+    except FileNotFoundError:
+        raise ZoneInfoNotFoundError(key) from None
+
+
+def _tzif_block(data: bytes, offset: int, time_size: int) -> tuple[bytes, int]:
+    """Check counted arrays before allocating or handing them to the decoder."""
+    if offset + 44 > len(data) or data[offset:offset + 4] != b"TZif":
+        raise InputRejected("TIMEZONE_DATA_INVALID")
+    version = data[offset + 4:offset + 5]
+    if version not in (b"\x00", b"2", b"3", b"4"):
+        raise InputRejected("TIMEZONE_TZIF_VERSION_UNSUPPORTED")
+    utc_count, std_count, leap_count, time_count, type_count, char_count = (
+        struct.unpack_from(">6I", data, offset + 20)
+    )
+    if type_count < 1 or char_count < 1:
+        raise InputRejected("TIMEZONE_DATA_INVALID")
+    if type_count > MAX_TZIF_TYPES or char_count > MAX_TZIF_DESIGNATIONS:
+        raise InputRejected("TIMEZONE_RESOURCE_LIMIT")
+    if time_count > MAX_TZIF_TRANSITIONS or leap_count > MAX_TZIF_LEAPS:
+        raise InputRejected("TIMEZONE_RESOURCE_LIMIT")
+    if utc_count not in (0, type_count) or std_count not in (0, type_count):
+        raise InputRejected("TIMEZONE_DATA_INVALID")
+    begin = offset + 44
+    end = (begin + time_count * (time_size + 1) + type_count * 6 + char_count
+           + leap_count * (time_size + 4) + std_count + utc_count)
+    if end > len(data):
+        raise InputRejected("TIMEZONE_DATA_INVALID")
+    fmt = ">i" if time_size == 4 else ">q"
+    times_end = begin + time_count * time_size
+    previous = None
+    for (transition,) in struct.iter_unpack(fmt, data[begin:times_end]):
+        if previous is not None and transition <= previous:
+            raise InputRejected("TIMEZONE_DATA_INVALID")
+        previous = transition
+    indices_end = times_end + time_count
+    if any(index >= type_count for index in data[times_end:indices_end]):
+        raise InputRejected("TIMEZONE_DATA_INVALID")
+    types_end = indices_end + type_count * 6
+    names_end = types_end + char_count
+    names = data[types_end:names_end]
+    # This conservative decoder-compatible subset uses printable ASCII names.
+    # It is not a claim that RFC 9636 forbids other designation encodings.
+    if names[-1] != 0:
+        raise InputRejected("TIMEZONE_DATA_INVALID")
+    if any(c != 0 and not 32 <= c <= 126 for c in names):
+        raise InputRejected("TIMEZONE_DECODER_RANGE_UNSUPPORTED")
+    for utc_offset, dst, index in struct.iter_unpack(">iBB", data[indices_end:types_end]):
+        if dst not in (0, 1) or index >= char_count or names.find(b"\x00", index) == -1:
+            raise InputRejected("TIMEZONE_DATA_INVALID")
+        # Current Python readers use signed abbreviation indices internally, and
+        # datetime offsets must be strictly between -24h and +24h.
+        if index > 127 or not -86400 < utc_offset < 86400:
+            raise InputRejected("TIMEZONE_DECODER_RANGE_UNSUPPORTED")
+    leap_end = names_end + leap_count * (time_size + 4)
+    last_time = last_correction = None
+    leap_fmt = ">ii" if time_size == 4 else ">qi"
+    for i, (instant, correction) in enumerate(struct.iter_unpack(leap_fmt, data[names_end:leap_end])):
+        if instant < 0 or (last_time is not None and instant <= last_time):
+            raise InputRejected("TIMEZONE_DATA_INVALID")
+        if last_correction is None:
+            if version != b"4" and correction not in (-1, 1):
+                raise InputRejected("TIMEZONE_DATA_INVALID")
+        elif abs(correction - last_correction) != 1:
+            if not (version == b"4" and i == leap_count - 1 and correction == last_correction):
+                raise InputRejected("TIMEZONE_DATA_INVALID")
+        last_time, last_correction = instant, correction
+    standards = data[leap_end:leap_end + std_count]
+    universals = data[leap_end + std_count:end]
+    if any(v not in (0, 1) for v in standards + universals):
+        raise InputRejected("TIMEZONE_DATA_INVALID")
+    if any(v and (not standards or not standards[i]) for i, v in enumerate(universals)):
+        raise InputRejected("TIMEZONE_DATA_INVALID")
+    return version, end
+
+
+def _validate_tzif(data: bytes) -> None:
+    """Bound a complete TZif 1/2/3/4 resource, including both counted blocks.
+
+    This checks a documented structural/decoder-compatible subset, not all RFC
+    semantics or the authority/correctness of a time zone's civil-time rules.
+    """
+    if type(data) is not bytes or not data:
+        raise InputRejected("TIMEZONE_DATA_INVALID")
+    if len(data) > MAX_TZIF_BYTES:
+        raise InputRejected("TIMEZONE_RESOURCE_LIMIT")
+    version, end = _tzif_block(data, 0, 4)
+    if version == b"\x00":
+        if end != len(data):
+            raise InputRejected("TIMEZONE_DATA_INVALID")
+        return
+    second_version, end = _tzif_block(data, end, 8)
+    if second_version != version:
+        raise InputRejected("TIMEZONE_DATA_INVALID")
+    footer = data[end:]
+    if not 2 <= len(footer) <= MAX_TZIF_FOOTER:
+        raise InputRejected("TIMEZONE_DATA_INVALID")
+    if footer[:1] != b"\n" or footer[-1:] != b"\n":
+        raise InputRejected("TIMEZONE_DATA_INVALID")
+    if any(not 32 <= c <= 126 for c in footer[1:-1]):
+        raise InputRejected("TIMEZONE_DATA_INVALID")
+
+
 def _zone(key: str) -> ZoneInfo:
-    """Bound untrusted lookup keys; never normalize, leak paths or default to UTC."""
+    """Decode only the same bounded immutable bytes that passed preflight."""
     if len(key) > MAX_ZONE_KEY_LENGTH or ZONE_KEY.fullmatch(key) is None:
         raise InputRejected("TIMEZONE_KEY_INVALID")
     try:
-        return ZoneInfo(key)
+        data = _read_zone_bytes(key)
+        _validate_tzif(data)
+        with BytesIO(data) as snapshot:
+            return ZoneInfo.from_file(snapshot, key=key)
+    except InputRejected:
+        raise
     except ZoneInfoNotFoundError:
-        # Not found cannot distinguish an unknown key from a missing database.
         raise InputRejected("UNRECOGNIZED_TIMEZONE") from None
     except OSError:
         raise InputRejected("TIMEZONE_DATA_ACCESS_FAILURE") from None
-    except (ValueError, EOFError):
+    except (ValueError, EOFError, struct.error, AssertionError, IndexError, OverflowError):
         raise InputRejected("TIMEZONE_DATA_INVALID") from None
 
 
