@@ -12,14 +12,15 @@ import json
 import math
 import re
 from collections import deque
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from jsonschema import Draft202012Validator, FormatChecker
 
+IMPLEMENTATION_VERSION = "2.0.1"
 SCHEMA_VERSION = "2.0.0"
 SCHEMA_SHA256 = "bfe7e8628d93adb149c8b79672cbfb4c8025c56d1de3505cb07a9eec2f2a8aba"
 SCHEMA_PATH = Path(__file__).resolve().parents[2] / "schemas/mycelial-consistency/v2/contracts.schema.json"
@@ -37,7 +38,13 @@ KINDS = {
     "mycelial_substrate_unit": ("substrate", "substrate_unit_id"),
     "mycelial_preschedule_commitment": ("preschedule", "commitment_id"),
 }
-STAMP = re.compile(r"^\d{4}-\d{2}-\d{2}[Tt]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[Zz]|[+-]\d{2}:\d{2})$")
+# RFC 3339 offset components must be checked before fromisoformat can normalize
+# them. Leap seconds remain unsupported, as in v2.0.0; no raw string is changed.
+STAMP = re.compile(
+    r"^[0-9]{4}-[0-9]{2}-[0-9]{2}[Tt]"
+    r"(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\.[0-9]+)?"
+    r"(?:[Zz]|[+-](?:[01][0-9]|2[0-3]):[0-5][0-9])$"
+)
 
 
 class InputRejected(ValueError):
@@ -117,6 +124,12 @@ def _time(value: str) -> datetime:
     stamp = datetime.fromisoformat(value.upper().replace("Z", "+00:00"))
     if stamp.tzinfo is None or stamp.utcoffset() is None:
         raise ValueError("NAIVE_TIMESTAMP")
+    # All later temporal comparisons require an instant representable in UTC.
+    # Keep this as validation only: return the original parsed representation.
+    try:
+        stamp.astimezone(timezone.utc)
+    except OverflowError:
+        raise ValueError("TIMESTAMP_UTC_OUT_OF_RANGE") from None
     return stamp
 
 
@@ -191,7 +204,9 @@ def check_record(record: Any) -> dict[str, Any]:
     if family == "site":
         holds.append("ACCESS_AUTHORITY_NOT_VERIFIED")
     elif family == "survey":
-        if record["observer_count"] != len(record["observer_pseudonyms"]):
+        observed_count = len(record["observer_pseudonyms"])
+        count_matches = record["observer_count"] == observed_count
+        if not count_matches:
             errors.append("OBSERVER_COUNT_MISMATCH")
         start, end = record["started_at"], record["ended_at"]
         if (start is None) != (end is None):
@@ -203,7 +218,9 @@ def check_record(record: Any) -> dict[str, Any]:
             if record["person_minutes"] > 0:
                 if seconds <= 0:
                     errors.append("POSITIVE_EFFORT_WITHOUT_DURATION")
-                elif record["person_minutes"] > seconds / 60 * record["observer_count"] + 1e-9:
+                # Never coerce an untrusted arbitrary-size count into a float.
+                # The input structure bounds observed_count; mismatches already fail.
+                elif count_matches and record["person_minutes"] > seconds / 60 * observed_count + 1e-9:
                     errors.append("EFFORT_EXCEEDS_PERSON_TIME_CAPACITY")
         elif record["person_minutes"] > 0:
             errors.append("POSITIVE_EFFORT_WITHOUT_TIME")
@@ -216,6 +233,8 @@ def check_record(record: Any) -> dict[str, Any]:
                     stamp = _time(timestamp)
                     if stamp.utcoffset() != stamp.astimezone(zone).utcoffset():
                         holds.append("TIMESTAMP_ZONE_REPRESENTATION_REVIEW")
+        except OverflowError:
+            errors.append("TIMESTAMP_ZONE_OUT_OF_RANGE")
         except (ZoneInfoNotFoundError, ValueError):
             errors.append("UNRECOGNIZED_TIMEZONE")
         if record["person_minutes"] == 0 and record["substrate_unit_ids"]:
@@ -294,7 +313,10 @@ Preschedule hashes test declared logical identity, not independent clock evidenc
     def fail(i: int, code: str) -> None:
         checks[i]["reason_codes"].append(code)
 
-    def ref(family: str, value: str, i: int, field: str) -> dict[str, Any] | None:
+    def ref(
+        family: str, value: str, i: int, field: str, *,
+        edge_role: Literal["active_use", "historical_predecessor"] = "active_use",
+    ) -> dict[str, Any] | None:
         kind = next(k for k, v in KINDS.items() if v[0] == family)
         indices = groups.get((kind, value), [])
         candidates.append({"requester_row": i, "reference_field": field, "candidate_rows": list(indices)})
@@ -306,7 +328,11 @@ Preschedule hashes test declared logical identity, not independent clock evidenc
         if not usable[j]:
             fail(i, "DEPENDENCY_CONSISTENCY_FAILURE")
             return None
-        if records[j].get("review_state") in {"rejected", "retired", "superseded"}:
+        state = records[j].get("review_state")
+        if state == "superseded" and edge_role == "historical_predecessor":
+            # Historical binding does not restore active eligibility or authority.
+            checks[i]["review_hold_codes"].append("HISTORICAL_PREDECESSOR_NOT_ACTIVE")
+        elif state in {"rejected", "retired", "superseded"}:
             fail(i, "REFERENCE_REVIEW_STATE_NOT_USABLE")
         return records[j]
 
@@ -317,7 +343,7 @@ Preschedule hashes test declared logical identity, not independent clock evidenc
         if family == "substrate":
             ref("site", row["site_id"], i, "site_id")
             if row["supersedes_substrate_unit_id"] is not None:
-                old = ref("substrate", row["supersedes_substrate_unit_id"], i, "supersedes_substrate_unit_id")
+                old = ref("substrate", row["supersedes_substrate_unit_id"], i, "supersedes_substrate_unit_id", edge_role="historical_predecessor")
                 if old and (old["site_id"] != row["site_id"] or _time(old["registered_at"]) >= _time(row["registered_at"])):
                     fail(i, "SUBSTRATE_SUPERSESSION_CONFLICT")
         elif family == "preschedule":
@@ -337,7 +363,7 @@ Preschedule hashes test declared logical identity, not independent clock evidenc
                         if logical_sha256(sub) != p["substrate_definition_sha256"][unit_id]:
                             fail(i, "PLAN_DEFINITION_HASH_MISMATCH")
             if row["supersedes_commitment_id"] is not None:
-                old = ref("preschedule", row["supersedes_commitment_id"], i, "supersedes_commitment_id")
+                old = ref("preschedule", row["supersedes_commitment_id"], i, "supersedes_commitment_id", edge_role="historical_predecessor")
                 if old and _time(old["committed_at"]) >= _time(row["committed_at"]):
                     fail(i, "COMMITMENT_SUPERSESSION_TIME_CONFLICT")
         elif family == "survey":
