@@ -1,0 +1,13 @@
+{
+  "schema_version": "prii_change_log_v1",
+  "repository": "aguayluz-pr",
+  "entries": [
+    {
+      "date": "2026-09-13",
+      "summary": "Introduced governance/change_log.json as a passive, non-enforcing per-repo change tracker (federation-wide rollout across all seven repos). It documents changes only; nothing reads or validates it, and nothing in CI depends on its contents. Prompted by removing a repo-wide change-freeze that existed in moneysweep-pr and ovnis-pr's unified-skillpack conformance checks and blocked ordinary PRs; this repo never had that freeze.",
+      "files": [
+        "governance/change_log.json"
+      ]
+    }
+  ]
+}
