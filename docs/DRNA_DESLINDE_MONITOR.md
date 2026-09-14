@@ -15,7 +15,13 @@ Current bounded source:
 
 The approved-listing source publishes a stable `Número de Permiso`, a certified date, and commonly the promovente, propietario, address, purpose, and notice-publication date. The monitor uses the permit number as the administrative identity key.
 
-This denominator is **bounded**, not universal. Pagination/archive completeness, older notices, deleted pages, non-web records, appeals, amendments, and geometry exhibits remain separate coverage questions.
+This denominator is **bounded, not universal**. Older/deleted notices, non-web records, appeals, amendments, and geometry exhibits remain separate coverage questions.
+
+### 2026-09-14 pagination observation
+
+The live first listing page exposed 12 visible approved-notice entries and numbered pagination candidates through page 16. Direct checks of at least `/page/2/` and `/page/16/` redirected outside the approved-listing family to an older `Aviso Deslindes ZMT` item (`Page Dorado Beach Resort, Dorado`, 2009). That is a source-manifestation contradiction, not evidence that pages 2-16 are empty.
+
+The runtime therefore treats any numbered pagination candidate that resolves outside the approved-listing family as a blocking acquisition error. It must not silently truncate to page 1 and call the corpus exhaustive. Until the archive/pagination route is independently recovered or an authoritative alternative denominator is found, **historical approved-list exhaustion is BLOCKED**.
 
 ## Approval gate
 
@@ -24,14 +30,14 @@ A record may emit `DESLINDE_APPROVED` only when all of the following hold:
 1. source host is `drna.pr.gov` or `www.drna.pr.gov`;
 2. source path is under the DRNA approved-deslinde detail path;
 3. a stable DRNA permit number matching the accepted permit format is present;
-4. an explicit parseable certified date is present;
+4. an explicit valid certified date is present;
 5. the permit number did not exist in the previous frozen logical snapshot.
 
 Keyword presence such as `aprobado`, `certificación`, or `deslinde` is insufficient.
 
 ## Preservation and identity
 
-Each parsed record preserves:
+Each acquired listing/detail manifestation is eligible for content-addressed raw-byte preservation. Each parsed record preserves:
 
 - authoritative source URL;
 - retrieval UTC;
@@ -39,7 +45,11 @@ Each parsed record preserves:
 - SHA-256 of the retrieved detail-page bytes;
 - raw published strings for promovente, owner, address, and purpose.
 
+The CLI defaults raw-byte preservation to `data/drna_deslindes/raw_cas/<sha256-prefix>/<sha256>`.
+
 RAW strings are not canonicalized into identity claims. Permit identity, person/company identity, parcel identity, and geometry identity remain separate.
+
+Duplicate stable permit IDs found at distinct authoritative detail URLs fail closed for adjudication; they are never collapsed by name, proximity, or ordering.
 
 ## State transitions
 
@@ -50,6 +60,10 @@ RAW strings are not canonicalized into identity claims. Permit identity, person/
 - `SOURCE_ABSENCE` — a previously observed permit is absent from the newly discovered corpus.
 
 `SOURCE_ABSENCE` must never be interpreted automatically as revocation, denial, withdrawal, supersession, or invalidation.
+
+### Baseline rule
+
+The first successful acquisition is a **BASELINE**, not a transition interval. The CLI suppresses `DESLINDE_APPROVED` events on bootstrap by default. Historical approvals are emitted on bootstrap only with the explicit diagnostic flag `--emit-bootstrap-approvals`.
 
 ## Geometry boundary
 
@@ -80,6 +94,16 @@ The repository regression fixture uses those published fields strictly as an aut
 
 ## Run
 
+Baseline:
+
+```bash
+python scripts/ingest_drna_deslindes.py \
+  --output data/drna_deslindes/current.json \
+  --events data/drna_deslindes/events.json
+```
+
+Subsequent diff:
+
 ```bash
 python scripts/ingest_drna_deslindes.py \
   --previous data/drna_deslindes/previous.json \
@@ -87,18 +111,31 @@ python scripts/ingest_drna_deslindes.py \
   --events data/drna_deslindes/events.json
 ```
 
-For the first run, omit `--previous`. Every current record will then appear as newly observed; that bootstrap run must be classified as baseline acquisition, not as proof that all approvals occurred during the monitoring interval.
+## Certification gates
 
-## Open gates before certification
+### PASS in implementation scope
 
-- exhaust listing pagination/archive behavior;
-- determine whether older approved notices are discoverable outside the current listing;
-- freeze listing-page bytes in addition to detail-page hashes;
-- preserve raw detail-page bytes in a CAS or immutable acquisition store rather than hashes alone;
-- add scheduler/alert delivery only after cadence and failure semantics are defined;
-- add appeal/reconsideration/supersession sources;
+- authoritative-host/detail-path gate;
+- stable permit identity gate;
+- explicit valid certification-date gate, including Spanish month names;
+- social/news/non-approved-path rejection;
+- keyword-only rejection;
+- duplicate-detail discovery deduplication;
+- duplicate stable permit across distinct detail URLs fails closed;
+- source disappearance remains `SOURCE_ABSENCE`;
+- bootstrap does not manufacture historical transition events;
+- raw listing/detail bytes can be preserved in content-addressed storage;
+- listing pagination redirects outside the denominator fail closed.
+
+### OPEN/BLOCKED before certification
+
+- **BLOCKED:** recover/exhaust approved-list pagination/archive because observed numbered routes can redirect outside the approved-listing family;
+- determine whether older approved notices are discoverable through an alternate authoritative archive/query;
+- execute live acquisition and freeze a complete baseline only after denominator closure;
+- add appeal/reconsideration/supersession authoritative sources;
 - add authoritative geometry-document acquisition and parcel/ZMT/servidumbre binding;
-- test live HTML drift and malformed-notice handling;
-- verify no duplicate permit IDs are published across distinct detail URLs without adjudication.
+- test broader live HTML drift and malformed-notice variants;
+- execute CI/runtime/lint/coverage evidence on the PR head;
+- add scheduler/alert delivery only after acquisition denominator and cadence semantics close.
 
-Certification state remains **PROVISIONAL** until those bounded-source and persistence gates close.
+Certification state remains **PROVISIONAL / BLOCKED ON HISTORICAL DENOMINATOR**.
