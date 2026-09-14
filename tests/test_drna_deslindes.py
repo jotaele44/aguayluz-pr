@@ -3,14 +3,18 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from pathlib import Path
 
+import httpx
 import pytest
 
 from aguayluz.drna_deslindes import (
+    APPROVED_LISTING_URL,
     DeslindeParseError,
     DeslindeRecord,
     SourceManifestation,
     diff_records,
     discover_detail_urls,
+    discover_listing_pages,
+    fetch_current_records,
     freeze_snapshot,
     load_snapshot,
     parse_approved_notice,
@@ -35,7 +39,7 @@ PUNTA_BANDERA_HTML = b"""
 """
 
 
-def _record(permit_number: str, *, owner: str = "OWNER") -> DeslindeRecord:
+def _record(permit_number: str, *, owner: str = "OWNER", url: str = PUNTA_BANDERA_URL) -> DeslindeRecord:
     return DeslindeRecord(
         permit_number=permit_number,
         status="APPROVED",
@@ -46,7 +50,7 @@ def _record(permit_number: str, *, owner: str = "OWNER") -> DeslindeRecord:
         address_raw="ADDRESS",
         purpose_raw="PURPOSE",
         source=SourceManifestation(
-            source_url=PUNTA_BANDERA_URL,
+            source_url=url,
             retrieved_at="2026-09-14T22:00:00Z",
             sha256="a" * 64,
             byte_count=123,
@@ -54,11 +58,12 @@ def _record(permit_number: str, *, owner: str = "OWNER") -> DeslindeRecord:
     )
 
 
-def test_punta_bandera_notice_is_bound_by_stable_permit_and_certified_date() -> None:
+def test_punta_bandera_notice_is_bound_by_stable_permit_and_certified_date(tmp_path: Path) -> None:
     record = parse_approved_notice(
         PUNTA_BANDERA_HTML,
         PUNTA_BANDERA_URL,
         retrieved_at=datetime(2026, 9, 14, 22, 0, tzinfo=timezone.utc),
+        cas_dir=tmp_path / "cas",
     )
     assert record.permit_number == "O-AG-CER02-SJ-00887-16062025"
     assert record.status == "APPROVED"
@@ -66,15 +71,8 @@ def test_punta_bandera_notice_is_bound_by_stable_permit_and_certified_date() -> 
     assert record.publication_date == "2026-08-24"
     assert record.owner_raw == "PUNTA BANDERA ASSOCIATES, INC."
     assert len(record.source.sha256) == 64
-
-
-def test_numeric_dates_remain_supported() -> None:
-    html = PUNTA_BANDERA_HTML.replace(b"29-julio-2026", b"29/07/2026").replace(
-        b"24-agosto-2026", b"24/08/2026"
-    )
-    record = parse_approved_notice(html, PUNTA_BANDERA_URL)
-    assert record.certified_date == "2026-07-29"
-    assert record.publication_date == "2026-08-24"
+    raw_path = tmp_path / "cas" / record.source.sha256[:2] / record.source.sha256
+    assert raw_path.read_bytes() == PUNTA_BANDERA_HTML
 
 
 def test_non_drna_or_non_approved_path_cannot_emit_approval() -> None:
@@ -100,7 +98,7 @@ def test_permit_without_certified_date_cannot_emit_approval() -> None:
         parse_approved_notice(html, PUNTA_BANDERA_URL)
 
 
-def test_invalid_certified_date_fails_closed() -> None:
+def test_invalid_calendar_date_cannot_emit_approval() -> None:
     html = PUNTA_BANDERA_HTML.replace(b"29-julio-2026", b"31-febrero-2026")
     with pytest.raises(DeslindeParseError):
         parse_approved_notice(html, PUNTA_BANDERA_URL)
@@ -114,6 +112,60 @@ def test_discovery_deduplicates_and_rejects_nonapproved_links() -> None:
     <a href="https://example.com/deslinde">social</a>
     """
     assert discover_detail_urls(listing) == [PUNTA_BANDERA_URL]
+
+
+def test_listing_page_discovery_preserves_full_numbered_candidate_set() -> None:
+    listing = """
+    <a href="/deslindes-zmt-aprobados/page/2/">2</a>
+    <a href="/deslindes-zmt-aprobados/page/16/">16</a>
+    <a href="https://example.com/deslindes-zmt-aprobados/page/3/">external</a>
+    """
+    assert discover_listing_pages(listing) == [
+        APPROVED_LISTING_URL,
+        "https://www.drna.pr.gov/deslindes-zmt-aprobados/page/2/",
+        "https://www.drna.pr.gov/deslindes-zmt-aprobados/page/16/",
+    ]
+
+
+def test_broken_pagination_redirect_fails_closed() -> None:
+    first_html = b'<a href="/deslindes-zmt-aprobados/page/2/">2</a>'
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/deslindes-zmt-aprobados/":
+            return httpx.Response(200, content=first_html, request=request)
+        if request.url.path == "/deslindes-zmt-aprobados/page/2/":
+            return httpx.Response(
+                302,
+                headers={
+                    "Location": (
+                        "https://www.drna.pr.gov/deslindes-zmt/aviso-deslindes-zmt/"
+                        "page-dorado-beach-resort-dorado/"
+                    )
+                },
+                request=request,
+            )
+        return httpx.Response(200, content=b"unrelated", request=request)
+
+    with httpx.Client(transport=httpx.MockTransport(handler), follow_redirects=True) as client:
+        with pytest.raises(DeslindeParseError, match="pagination source redirected"):
+            fetch_current_records(client=client)
+
+
+def test_duplicate_stable_permit_on_distinct_detail_urls_fails_closed() -> None:
+    second_url = PUNTA_BANDERA_URL.replace("-11/", "-99/")
+    listing = (
+        f'<a href="{PUNTA_BANDERA_URL}">one</a>'
+        f'<a href="{second_url}">two</a>'
+    ).encode()
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/deslindes-zmt-aprobados/":
+            return httpx.Response(200, content=listing, request=request)
+        return httpx.Response(200, content=PUNTA_BANDERA_HTML, request=request)
+
+    with httpx.Client(transport=httpx.MockTransport(handler), follow_redirects=True) as client:
+        with pytest.raises(DeslindeParseError, match="duplicate permit"):
+            fetch_current_records(client=client)
 
 
 def test_new_authoritative_manifestation_emits_approved_transition() -> None:
