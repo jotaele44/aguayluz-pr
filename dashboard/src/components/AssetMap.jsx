@@ -381,6 +381,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
 
       map.addSource('terrain-dem', {
         type: 'raster-dem', tiles: [TERRAIN_DEM_URL], tileSize: 256, encoding: 'terrarium',
+        attribution: 'Terrain: AWS Terrarium (Mapzen/Joerd)',
       })
       map.addLayer(
         {
