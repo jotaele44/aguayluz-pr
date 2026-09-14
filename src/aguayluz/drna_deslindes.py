@@ -12,8 +12,9 @@ import hashlib
 import html
 import json
 import re
+import unicodedata
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Iterable, Sequence
@@ -25,7 +26,23 @@ APPROVED_LISTING_URL = "https://www.drna.pr.gov/deslindes-zmt-aprobados/"
 APPROVED_PATH_FRAGMENT = "/deslindes-zmt/deslindes-zmt-aprobados/"
 _ALLOWED_HOSTS = {"drna.pr.gov", "www.drna.pr.gov"}
 _PERMIT_RE = re.compile(r"\b[AO]-AG-CER02-[A-Z]{2}-\d{5}-\d{8}\b", re.IGNORECASE)
-_DATE_RE = re.compile(r"\b(\d{1,2})[-/](\d{1,2})[-/](\d{4})\b")
+_NUMERIC_DATE_RE = re.compile(r"\b(\d{1,2})[-/](\d{1,2})[-/](\d{4})\b")
+_WORD_DATE_RE = re.compile(r"\b(\d{1,2})[-/\s]+([A-Za-z\u00c0-\u017f]+)[-/\s]+(\d{4})\b")
+_SPANISH_MONTHS = {
+    "enero": 1,
+    "febrero": 2,
+    "marzo": 3,
+    "abril": 4,
+    "mayo": 5,
+    "junio": 6,
+    "julio": 7,
+    "agosto": 8,
+    "septiembre": 9,
+    "setiembre": 9,
+    "octubre": 10,
+    "noviembre": 11,
+    "diciembre": 12,
+}
 
 
 class DeslindeParseError(ValueError):
@@ -77,7 +94,11 @@ class _LinkParser(HTMLParser):
 
 def _authoritative_detail_url(url: str) -> bool:
     parsed = urlparse(url)
-    return parsed.scheme == "https" and parsed.hostname in _ALLOWED_HOSTS and APPROVED_PATH_FRAGMENT in parsed.path
+    return (
+        parsed.scheme == "https"
+        and parsed.hostname in _ALLOWED_HOSTS
+        and APPROVED_PATH_FRAGMENT in parsed.path
+    )
 
 
 def _text_from_html(raw_html: str) -> str:
@@ -106,20 +127,50 @@ def _field(text: str, labels: Sequence[str]) -> str | None:
     return None
 
 
+def _fold_ascii(value: str) -> str:
+    return "".join(
+        character
+        for character in unicodedata.normalize("NFKD", value.casefold())
+        if not unicodedata.combining(character)
+    )
+
+
+def _format_valid_date(day: int, month: int, year: int) -> str | None:
+    try:
+        return date(year, month, day).isoformat()
+    except ValueError:
+        return None
+
+
 def _iso_date(value: str | None) -> str | None:
     if not value:
         return None
-    match = _DATE_RE.search(value)
-    if not match:
+
+    numeric = _NUMERIC_DATE_RE.search(value)
+    if numeric:
+        day, month, year = map(int, numeric.groups())
+        return _format_valid_date(day, month, year)
+
+    word = _WORD_DATE_RE.search(value)
+    if not word:
         return None
-    day, month, year = map(int, match.groups())
-    return f"{year:04d}-{month:02d}-{day:02d}"
+    day_raw, month_raw, year_raw = word.groups()
+    month = _SPANISH_MONTHS.get(_fold_ascii(month_raw))
+    if month is None:
+        return None
+    return _format_valid_date(int(day_raw), month, int(year_raw))
 
 
-def parse_approved_notice(raw_bytes: bytes, source_url: str, retrieved_at: datetime | None = None) -> DeslindeRecord:
+def parse_approved_notice(
+    raw_bytes: bytes,
+    source_url: str,
+    retrieved_at: datetime | None = None,
+) -> DeslindeRecord:
     """Parse one DRNA approved-deslinde notice under fail-closed authority rules."""
     if not _authoritative_detail_url(source_url):
-        raise DeslindeParseError("source URL is not an authoritative DRNA approved-deslinde detail path")
+        raise DeslindeParseError(
+            "source URL is not an authoritative DRNA approved-deslinde detail path"
+        )
 
     retrieved = (retrieved_at or datetime.now(timezone.utc)).astimezone(timezone.utc)
     raw_html = raw_bytes.decode("utf-8", errors="replace")
@@ -166,7 +217,10 @@ def parse_approved_notice(raw_bytes: bytes, source_url: str, retrieved_at: datet
     )
 
 
-def discover_detail_urls(listing_html: str, listing_url: str = APPROVED_LISTING_URL) -> list[str]:
+def discover_detail_urls(
+    listing_html: str,
+    listing_url: str = APPROVED_LISTING_URL,
+) -> list[str]:
     """Discover DRNA approved-detail URLs. Discovery is not itself approval evidence."""
     parser = _LinkParser()
     parser.feed(listing_html)
@@ -201,7 +255,10 @@ def fetch_current_records(
             http.close()
 
 
-def diff_records(previous: Iterable[DeslindeRecord], current: Iterable[DeslindeRecord]) -> list[DeslindeEvent]:
+def diff_records(
+    previous: Iterable[DeslindeRecord],
+    current: Iterable[DeslindeRecord],
+) -> list[DeslindeEvent]:
     """Diff snapshots without converting source absence into a legal-status inference."""
     previous_by_id = {record.permit_number: record for record in previous}
     current_by_id = {record.permit_number: record for record in current}
@@ -214,7 +271,10 @@ def diff_records(previous: Iterable[DeslindeRecord], current: Iterable[DeslindeR
                 permit_number=permit_number,
                 previous=None,
                 current=current_by_id[permit_number],
-                rationale="new stable permit identifier appeared in authoritative DRNA approved listing with explicit certified date",
+                rationale=(
+                    "new stable permit identifier appeared in authoritative DRNA approved "
+                    "listing with explicit certified date"
+                ),
             )
         )
 
@@ -244,7 +304,10 @@ def diff_records(previous: Iterable[DeslindeRecord], current: Iterable[DeslindeR
                     permit_number=permit_number,
                     previous=before,
                     current=after,
-                    rationale="same stable permit identifier has changed authoritative published fields; legal effect requires adjudication",
+                    rationale=(
+                        "same stable permit identifier has changed authoritative published "
+                        "fields; legal effect requires adjudication"
+                    ),
                 )
             )
 
@@ -255,7 +318,10 @@ def diff_records(previous: Iterable[DeslindeRecord], current: Iterable[DeslindeR
                 permit_number=permit_number,
                 previous=previous_by_id[permit_number],
                 current=None,
-                rationale="previously observed permit is absent from current discovery result; no revocation/denial inference permitted",
+                rationale=(
+                    "previously observed permit is absent from current discovery result; "
+                    "no revocation/denial inference permitted"
+                ),
             )
         )
 
@@ -266,7 +332,10 @@ def freeze_snapshot(records: Sequence[DeslindeRecord], destination: Path) -> Pat
     """Persist a deterministic logical snapshot; raw-source hashes remain in each record."""
     destination.parent.mkdir(parents=True, exist_ok=True)
     payload = [asdict(record) for record in sorted(records, key=lambda item: item.permit_number)]
-    destination.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    destination.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
     return destination
 
 
