@@ -1,0 +1,32 @@
+{
+  "version": "1.0",
+  "provider": "DRNA",
+  "record_type": "COASTAL_DESLINDE",
+  "authoritative_sources": [
+    {
+      "source_id": "DRNA_ZMT_APPROVED_LISTING",
+      "url": "https://www.drna.pr.gov/deslindes-zmt-aprobados/",
+      "authority": "DRNA",
+      "scope": "published approved/certified ZMT deslinde notices",
+      "status_signal": "presence of a detail notice under the approved-listing path with an explicit certified date",
+      "identity_key": "numero_permiso",
+      "live_fetch_allowed": true
+    }
+  ],
+  "discovery_only_sources": [
+    "social_media",
+    "news_media",
+    "search_engine_results",
+    "third_party_reposts"
+  ],
+  "non_identity_fields": [
+    "owner_name",
+    "promovente_name",
+    "address_text",
+    "project_purpose",
+    "publication_title"
+  ],
+  "approval_rule": "Never infer approval from keywords alone. Require authoritative DRNA approved-listing manifestation, stable permit/expediente identifier, and explicit certified date.",
+  "disappearance_rule": "A record disappearing from the listing is not revocation, denial, supersession, or invalidation. Preserve the prior manifestation and classify the new absence as SOURCE_ABSENCE until independently adjudicated.",
+  "geometry_rule": "Administrative approval and geometry identity are separate claims. ZMT, parcel, approved boundary, and servidumbre de salvamento geometries require independent source binding and adjudication."
+}
