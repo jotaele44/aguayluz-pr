@@ -29,8 +29,8 @@ PUNTA_BANDERA_HTML = b"""
 <p>Propietario: PUNTA BANDERA ASSOCIATES, INC.</p>
 <p>Direcci&oacute;n: LUQUILLO BEACH BOULEVARD/OCEAN DRIVE BO. MATA DE PLATANO, LUQUILLO</p>
 <p>Prop&oacute;sito: DELIMITAR CABIDA Y PROYECTO RESIDENCIAL</p>
-<p>Fecha Deslinde Certificado : 29/07/2026</p>
-<p>Fecha de Publicaci&oacute;n del Aviso: 24/08/2026</p>
+<p>Fecha Deslinde Certificado : 29-julio-2026</p>
+<p>Fecha de Publicaci&oacute;n del Aviso: 24-agosto-2026</p>
 </body></html>
 """
 
@@ -68,6 +68,15 @@ def test_punta_bandera_notice_is_bound_by_stable_permit_and_certified_date() -> 
     assert len(record.source.sha256) == 64
 
 
+def test_numeric_dates_remain_supported() -> None:
+    html = PUNTA_BANDERA_HTML.replace(b"29-julio-2026", b"29/07/2026").replace(
+        b"24-agosto-2026", b"24/08/2026"
+    )
+    record = parse_approved_notice(html, PUNTA_BANDERA_URL)
+    assert record.certified_date == "2026-07-29"
+    assert record.publication_date == "2026-08-24"
+
+
 def test_non_drna_or_non_approved_path_cannot_emit_approval() -> None:
     with pytest.raises(DeslindeParseError):
         parse_approved_notice(PUNTA_BANDERA_HTML, "https://example.com/social-post")
@@ -87,6 +96,12 @@ def test_keyword_only_notice_cannot_emit_approval() -> None:
 
 def test_permit_without_certified_date_cannot_emit_approval() -> None:
     html = b"<html><body>Numero de Permiso: O-AG-CER02-SJ-00887-16062025</body></html>"
+    with pytest.raises(DeslindeParseError):
+        parse_approved_notice(html, PUNTA_BANDERA_URL)
+
+
+def test_invalid_certified_date_fails_closed() -> None:
+    html = PUNTA_BANDERA_HTML.replace(b"29-julio-2026", b"31-febrero-2026")
     with pytest.raises(DeslindeParseError):
         parse_approved_notice(html, PUNTA_BANDERA_URL)
 
@@ -125,5 +140,8 @@ def test_same_permit_changed_fields_is_manifestation_change_not_new_identity() -
 
 
 def test_snapshot_round_trip_preserves_records(tmp_path: Path) -> None:
-    path = freeze_snapshot([_record("O-AG-CER02-SJ-00887-16062025")], tmp_path / "snapshot.json")
+    path = freeze_snapshot(
+        [_record("O-AG-CER02-SJ-00887-16062025")],
+        tmp_path / "snapshot.json",
+    )
     assert load_snapshot(path) == [_record("O-AG-CER02-SJ-00887-16062025")]
