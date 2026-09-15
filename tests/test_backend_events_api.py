@@ -71,3 +71,80 @@ def test_offset_paginates(client):
     second = client.get("/events", params={"limit": 100, "offset": 100}).json()
     assert first["items"][0]["event_id"] != second["items"][0]["event_id"]
     assert len({e["event_id"] for e in first["items"] + second["items"]}) == 200
+
+
+def test_event_density_closes_arithmetic_and_preserves_unresolved(monkeypatch):
+    monkeypatch.setattr(
+        backend,
+        "_events",
+        [
+            {
+                "event_id": "matched",
+                "municipality": "San Juan",
+                "start_time": "2026-09-01T00:00:00Z",
+            },
+            {
+                "event_id": "unknown",
+                "municipality": "Unknown Place",
+                "start_time": "2026-09-02T00:00:00Z",
+            },
+            {
+                "event_id": "missing",
+                "municipality": None,
+                "start_time": "2026-09-03T00:00:00Z",
+            },
+        ],
+    )
+
+    with TestClient(backend.app) as test_client:
+        body = test_client.get("/municipios/event_density").json()
+
+    assert body["by_geoid"] == {"72127": 1}
+    assert body["matched_count"] == 1
+    assert body["unresolved_count"] == 2
+    assert body["unresolved_by_name"] == {"Unknown Place": 1, "__NULL__": 1}
+    assert body["matched_count"] + body["unresolved_count"] == body["total_events"] == 3
+    assert body["scope"] == {
+        "aggregation_key": "event.municipality exact source string",
+        "normalization": "NONE",
+        "identity_effect": "NONE",
+        "geometry_effect": "NONE",
+        "state": "CANDIDATE_NOT_IDENTITY",
+    }
+    assert all(source["sha256"] for source in body["provenance"]["event_sources"])
+    assert body["provenance"]["municipio_source"]["row_count"] == 78
+
+
+@pytest.mark.parametrize(
+    ("query", "detail"),
+    [
+        ("since=bad", "since must be an ISO-8601 timestamp"),
+        (
+            "since=2026-09-03T00:00:00Z&until=2026-09-01T00:00:00Z",
+            "since must not be after until",
+        ),
+    ],
+)
+def test_event_density_rejects_invalid_time_windows(client, query, detail):
+    response = client.get(f"/municipios/event_density?{query}")
+
+    assert response.status_code == 400
+    assert response.json() == {"detail": detail}
+
+
+@pytest.mark.parametrize(
+    "features",
+    [
+        [
+            {"properties": {"name": "A", "geoid": "1"}},
+            {"properties": {"name": "A", "geoid": "2"}},
+        ],
+        [
+            {"properties": {"name": "A", "geoid": "1"}},
+            {"properties": {"name": "B", "geoid": "1"}},
+        ],
+    ],
+)
+def test_municipio_index_rejects_duplicate_names_and_geoids(features):
+    with pytest.raises(ValueError):
+        backend._build_municipio_geoid_index({"features": features})

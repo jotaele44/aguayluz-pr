@@ -160,6 +160,60 @@ test("water monitoring layer controls expose their fail-closed state", async ({ 
   await expect(page.locator("#root")).toContainText("NOT CERTIFIABLE YET");
 });
 
+test("map spatial controls expose density failure, retry, and evidence state", async ({ page }) => {
+  const consoleErrors = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
+  let densityAttempts = 0;
+  await page.route("**/municipios/event_density**", async (route) => {
+    densityAttempts += 1;
+    if (densityAttempts === 1) {
+      await route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        headers: { "access-control-allow-origin": "*" },
+        body: JSON.stringify({ detail: "test outage" }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      headers: { "access-control-allow-origin": "*" },
+      body: JSON.stringify({
+        by_geoid: { "72127": 1 },
+        matched_count: 1,
+        unresolved_count: 1,
+        unresolved_by_name: { "Unknown Place": 1 },
+        total_events: 2,
+        scope: { identity_effect: "NONE", state: "CANDIDATE_NOT_IDENTITY" },
+      }),
+    });
+  });
+
+  await page.goto("/map", { waitUntil: "domcontentloaded" });
+  await page.getByRole("button", { name: "Density" }).click();
+  await expect(page.getByText("Density unavailable; no zero-event inference was made.")).toBeVisible();
+  expect(consoleErrors).toEqual([
+    "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+  ]);
+  consoleErrors.length = 0;
+
+  await page.getByRole("button", { name: "Retry density" }).click();
+  await expect(page.getByText("1 matched · 1 unresolved · 2 total")).toBeVisible();
+  await expect(page.getByText(/identity effect NONE/i)).toBeVisible();
+
+  await page.getByRole("button", { name: "Spatial tools" }).click();
+  await page.getByRole("button", { name: "Buffer" }).click();
+  const target = page.getByLabel("Spatial target layer");
+  await expect(target).toBeVisible();
+  await target.selectOption("Events");
+  await page.getByRole("button", { name: "10 km" }).click();
+  await expect(page.getByRole("button", { name: "10 km" })).toHaveAttribute("aria-pressed", "true");
+  expect(consoleErrors).toEqual([]);
+});
+
 // ── Severity rendering on /review ────────────────────────────────────────────
 //
 // Everything above is generated from the manifest and asserts reachability: the
