@@ -34,6 +34,7 @@ source = { editable = "." }
 dependencies = [
     { name = "httpx" },
     { name = "jsonschema" },
+    { name = "prii-doctor" },
     { name = "prii-export-utils" },
     { name = "prii-maintenance" },
     { name = "pydantic" },
@@ -60,6 +61,7 @@ requires-dist = [
     { name = "geopandas", marker = "extra == 'geo'", specifier = ">=0.14" },
     { name = "httpx", specifier = ">=0.27" },
     { name = "jsonschema", specifier = ">=4.21" },
+    { name = "prii-doctor", git = "https://github.com/jotaele44/thehub-pr.git?subdirectory=packages%2Fprii_doctor&rev=f2d5a0a742215db00915475e1e494b8329608dbd" },
     { name = "prii-export-utils", git = "https://github.com/jotaele44/thehub-pr.git?subdirectory=packages%2Fprii_export_utils&rev=f2b81769924689b4d959554928810b1d7b7ef3d6" },
     { name = "prii-maintenance", git = "https://github.com/jotaele44/thehub-pr.git?subdirectory=packages%2Fprii_maintenance&rev=f2b81769924689b4d959554928810b1d7b7ef3d6" },
     { name = "pydantic", specifier = ">=2.6" },
@@ -2150,6 +2152,11 @@ sdist = { url = "https://files.pythonhosted.org/packages/f9/e2/3e91f31a7d2b083fe
 wheels = [
     { url = "https://files.pythonhosted.org/packages/54/20/4d324d65cc6d9205fabedc306948156824eb9f0ee1633355a8f7ec5c66bf/pluggy-1.6.0-py3-none-any.whl", hash = "sha256:e920276dd6813095e9377c0bc5566d94c932c33b27a3e3945d8389c374dd4746", size = 20538, upload-time = "2025-05-15T12:30:06.134Z" },
 ]
+
+[[package]]
+name = "prii-doctor"
+version = "0.1.0"
+source = { git = "https://github.com/jotaele44/thehub-pr.git?subdirectory=packages%2Fprii_doctor&rev=f2d5a0a742215db00915475e1e494b8329608dbd#f2d5a0a742215db00915475e1e494b8329608dbd" }
 
 [[package]]
 name = "prii-export-utils"
