@@ -70,10 +70,14 @@
           "PATCH /assets/{asset_id}",
           "GET /assets.geojson",
           "GET /municipios.geojson",
+          "GET /barrios.geojson",
+          "GET /municipios/event_density",
           "GET /municipios/{name}/summary"
         ],
         "symbols": [
           "server/backend/app.py:municipio_summary",
+          "server/backend/main.py:barrios_geojson",
+          "server/backend/main.py:municipios_event_density",
           "scripts/validate_federation_spatial.py:main",
           "src/aguayluz/spatial_analysis.py:DirectedEdge",
           "src/aguayluz/spatial_analysis.py:RasterSpec",
@@ -98,12 +102,14 @@
         ],
         "components": [
           "dashboard/src/lib/api.js",
+          "dashboard/src/lib/hooks.js",
           "dashboard/src/pages/OverviewPage.jsx",
           "dashboard/src/pages/MapPage.jsx",
           "dashboard/src/pages/AssetsPage.jsx",
           "dashboard/src/pages/SectorDetailPage.jsx",
           "dashboard/src/pages/MunicipioDetailPage.jsx",
           "dashboard/src/components/AssetMap.jsx",
+          "dashboard/src/components/SpatialToolsPanel.jsx",
           "dashboard/src/components/AssetsTable.jsx",
           "dashboard/src/components/AssetDetail.jsx"
         ],
@@ -125,6 +131,9 @@
           "tests/test_gui_parity.py"
         ],
         "unit": [
+          "dashboard/src/components/AssetMap.test.jsx",
+          "dashboard/src/components/SpatialToolsPanel.test.jsx",
+          "dashboard/src/lib/api.test.js",
           "dashboard/src/pages/MunicipioDetailPage.test.jsx"
         ],
         "e2e": [

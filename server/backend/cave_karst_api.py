@@ -180,6 +180,7 @@ def cave_karst_summary() -> JSONResponse:
     status_counts = Counter(str(item.get("current_status") or "unknown") for item in assets)
     review_counts = Counter(str(item.get("review_status") or "unknown") for item in assets)
     evidence_counts = Counter(str(item.get("evidence_tier") or "unknown") for item in assets)
+    alert_type_counts = Counter(str(item.get("alert_type") or "unknown") for item in alerts)
     gap_count = sum(len(item["unresolved_gaps"]) for item in assets)
 
     return JSONResponse(
@@ -202,6 +203,7 @@ def cave_karst_summary() -> JSONResponse:
             "status": dict(sorted(status_counts.items())),
             "review_status": dict(sorted(review_counts.items())),
             "evidence_tier": dict(sorted(evidence_counts.items())),
+            "alert_type": dict(sorted(alert_type_counts.items())),
             "freshness": {
                 "stale_assets": sum(bool(item["freshness"]["stale"]) for item in assets),
                 "stale_after_days": _STALE_AFTER_DAYS,
