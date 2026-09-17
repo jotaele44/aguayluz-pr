@@ -1,0 +1,9 @@
+{
+  "contract_version":"1.0.0",
+  "registry_authority":"thehub-pr/.federation/statistical-routing-manifest.json",
+  "repo":"aguayluz-pr",
+  "primary_domains":["Agricultura","Ambiente y Energia"],
+  "secondary_domains":["Geografia","Vivienda y Construccion","Economia y Finanzas"],
+  "ingest_policy":"consume routed water/energy/environment/agriculture/infrastructure context with source provenance intact",
+  "guardrails":["correlation != causation","source taxonomy != canonical identity","methodology break != continuous series","unknown != zero"]
+}
