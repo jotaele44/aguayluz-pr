@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aguayluz.local/schemas/mycelial-field/v1/field-site.schema.json",
+  "title": "Known-site field research contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "record_type",
+    "schema_version",
+    "site_id",
+    "stable_site_key",
+    "location",
+    "habitat_description",
+    "substrate_scope",
+    "access_permission_state",
+    "sensitivity_state",
+    "review_state"
+  ],
+  "properties": {
+    "record_type": {"const": "mycelial_field_site"},
+    "schema_version": {"const": "1.0.0"},
+    "site_id": {"type": "string", "pattern": "^MYC_SITE_[A-Z0-9_]{3,80}$"},
+    "stable_site_key": {"type": "string", "minLength": 1},
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "municipality", "precision_tier", "generalized_reference", "exact_coordinates_included"],
+      "properties": {
+        "mode": {"enum": ["generalized", "withheld"]},
+        "municipality": {"type": ["string", "null"]},
+        "precision_tier": {"enum": ["municipality", "coarse_grid", "withheld"]},
+        "generalized_reference": {"type": ["string", "null"]},
+        "exact_coordinates_included": {"const": false}
+      }
+    },
+    "habitat_description": {"type": ["string", "null"]},
+    "substrate_scope": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "host_scope": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}, "default": []},
+    "access_permission_state": {"enum": ["verified_permitted", "public_access_subject_to_rules", "permission_required", "withheld", "expired"]},
+    "permission_reference": {"type": ["string", "null"]},
+    "sensitivity_state": {"enum": ["ordinary_research_site", "sensitive", "sensitivity_unresolved"]},
+    "review_state": {"enum": ["needs_review", "protocol_eligible", "rejected", "retired", "superseded"]}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"access_permission_state": {"const": "verified_permitted"}}, "required": ["access_permission_state"]},
+      "then": {"properties": {"permission_reference": {"type": "string", "minLength": 1}}}
+    },
+    {
+      "if": {"properties": {"sensitivity_state": {"enum": ["sensitive", "sensitivity_unresolved"]}}, "required": ["sensitivity_state"]},
+      "then": {"properties": {"location": {"properties": {"mode": {"const": "withheld"}, "precision_tier": {"const": "withheld"}}}}}
+    }
+  ]
+}

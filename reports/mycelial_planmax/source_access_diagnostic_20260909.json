@@ -1,0 +1,88 @@
+{
+  "record_type": "mycelial_planmax_access_diagnostic",
+  "schema_version": "1.0.0",
+  "date": "2026-09-09",
+  "repository": "jotaele44/aguayluz-pr",
+  "planmax_branch_base": "eb6fa76514257f1361b7ceb7ff298bb4f11161e9",
+  "claims_boundary": "Bounded route observations only; failures do not prove source unavailability or universal exhaustion.",
+  "source_routes": [
+    {
+      "target": "iNaturalist developer/API documentation",
+      "result": "accessible_via_public_web_index",
+      "evidence": [
+        "https://www.inaturalist.org/pages/developers",
+        "https://www.inaturalist.org/api"
+      ],
+      "original_biological_payload_captured": false
+    },
+    {
+      "target": "iNaturalist exact observation API query",
+      "result": "not_executed_through_web_proxy",
+      "failure_class": "access_policy",
+      "details": "The tested web-proxy route refused opening the constructed API URL. This is not evidence that the iNaturalist API itself is unavailable.",
+      "original_biological_payload_captured": false
+    },
+    {
+      "target": "GBIF occurrence and bulk-download documentation",
+      "result": "accessible_via_public_web_index",
+      "evidence": [
+        "https://techdocs.gbif.org/en/openapi/v1/occurrence",
+        "https://techdocs.gbif.org/en/data-use/api-downloads"
+      ],
+      "original_biological_payload_captured": false
+    },
+    {
+      "target": "MyCoPortal usage guidance",
+      "result": "accessible_via_public_web_index",
+      "evidence": ["https://mycoportal.org/portal/includes/usagepolicy.php"],
+      "original_biological_payload_captured": false
+    },
+    {
+      "target": "CUP MyCoPortal collection profile",
+      "result": "accessible_via_public_web_index",
+      "evidence": ["https://mycoportal.org/portal/collections/misc/collprofiles.php?collid=23"],
+      "observed_contract": "live-data managed; collection UUID and DwC-A/EML bindings exposed; CC0 1.0 displayed in surfaced profile evidence",
+      "original_biological_payload_captured": false
+    },
+    {
+      "target": "CUP registered Darwin Core Archive",
+      "requested_url": "https://www.mycoportal.org/portal/content/dwca/CUP_DwC-A.zip",
+      "result": "binary_download_failed_in_current_execution_environment",
+      "failure_class": "unknown",
+      "original_biological_payload_captured": false,
+      "sha256": null,
+      "byte_count": null
+    }
+  ],
+  "repository_execution_routes": [
+    {
+      "target": "PR_238_exact_head",
+      "head_sha": "7f7fa5f9826604c2d47e04267bb6cd6c76fc97fb",
+      "action": "failed_workflow_jobs_rerun_requested",
+      "result": "failure_conclusions_returned_without_executed_steps_in_sampled_latest_validate_job",
+      "classification": "BLOCKED_NONEXECUTED_NOT_TEST_FAIL",
+      "merge_or_ready_transition": false
+    },
+    {
+      "target": "PR_253_protocol_branch",
+      "head_at_sample": "41d43ce1120825517842e35fc58e5a3594b1683b",
+      "result": "failure_conclusions_returned_without_executed_steps_in_sampled_validate_job",
+      "classification": "BLOCKED_NONEXECUTED_NOT_TEST_FAIL",
+      "merge_or_ready_transition": false
+    },
+    {
+      "target": "direct_git_clone_for_exact_branch_local_execution",
+      "result": "failed_before_checkout",
+      "failure_class": "dns",
+      "details": "Execution container could not resolve github.com.",
+      "tests_executed": false
+    }
+  ],
+  "current_counts": {
+    "original_biological_payloads_captured": 0,
+    "canonical_biological_records_inserted": 0,
+    "models_fitted": 0
+  },
+  "w02_state": "PARTIAL",
+  "next_gate": "Obtain one authorized original source payload plus native metadata through an allowed route and issue a complete acquisition receipt before opening real W04 parsing."
+}

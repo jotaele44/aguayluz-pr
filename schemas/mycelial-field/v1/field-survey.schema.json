@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aguayluz.local/schemas/mycelial-field/v1/field-survey.schema.json",
+  "title": "Effort-aware known-site mushroom survey contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "record_type",
+    "schema_version",
+    "survey_id",
+    "site_id",
+    "protocol_id",
+    "protocol_version",
+    "target_scope",
+    "scheduled_for",
+    "started_at",
+    "ended_at",
+    "timezone",
+    "search_geometry",
+    "person_minutes",
+    "observer_count",
+    "observer_pseudonyms",
+    "qualification_classes",
+    "coverage",
+    "constraints",
+    "equipment",
+    "visit_status",
+    "detection_status",
+    "non_detection_interpretation",
+    "outcome_reason",
+    "review_state"
+  ],
+  "properties": {
+    "record_type": {"const": "mycelial_field_survey"},
+    "schema_version": {"const": "1.0.0"},
+    "survey_id": {"type": "string", "pattern": "^MYC_SUR_[A-Z0-9_]{3,80}$"},
+    "site_id": {"type": "string", "pattern": "^MYC_SITE_[A-Z0-9_]{3,80}$"},
+    "protocol_id": {"type": "string", "minLength": 1},
+    "protocol_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "target_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target_id", "kind", "value"],
+      "properties": {
+        "target_id": {"type": "string", "pattern": "^MYC_TGT_[A-Z0-9_]{3,80}$"},
+        "kind": {"enum": ["taxon", "guild", "morphotype", "all_macrofungi"]},
+        "value": {"type": "string", "minLength": 1}
+      }
+    },
+    "scheduled_for": {"type": "string", "format": "date-time"},
+    "started_at": {"type": ["string", "null"], "format": "date-time"},
+    "ended_at": {"type": ["string", "null"], "format": "date-time"},
+    "timezone": {"type": "string", "minLength": 1},
+    "search_geometry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "generalized_reference", "exact_coordinates_included"],
+      "properties": {
+        "kind": {"enum": ["plot", "transect", "route", "bounded_area", "site_reference"]},
+        "generalized_reference": {"type": "string", "minLength": 1},
+        "exact_coordinates_included": {"const": false}
+      }
+    },
+    "person_minutes": {"type": "number", "minimum": 0},
+    "observer_count": {"type": "integer", "minimum": 0},
+    "observer_pseudonyms": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "qualification_classes": {"type": "array", "uniqueItems": true, "items": {"enum": ["trainee", "field_observer", "expert", "voucher_authority"]}},
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["substrates", "hosts", "deadwood", "microsites"],
+      "properties": {
+        "substrates": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "hosts": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "deadwood": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "microsites": {"type": "array", "uniqueItems": true, "items": {"type": "string"}}
+      }
+    },
+    "constraints": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "equipment": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "visit_status": {"enum": ["completed", "incomplete", "aborted", "missed"]},
+    "detection_status": {"enum": ["detected", "not_detected", "not_assessed"]},
+    "non_detection_interpretation": {"type": ["string", "null"]},
+    "outcome_reason": {"type": ["string", "null"]},
+    "review_state": {"enum": ["needs_review", "protocol_eligible", "rejected", "superseded"]}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"visit_status": {"const": "completed"}}, "required": ["visit_status"]},
+      "then": {
+        "properties": {
+          "started_at": {"type": "string", "format": "date-time"},
+          "ended_at": {"type": "string", "format": "date-time"},
+          "person_minutes": {"type": "number", "exclusiveMinimum": 0},
+          "observer_count": {"type": "integer", "minimum": 1},
+          "observer_pseudonyms": {"minItems": 1},
+          "detection_status": {"enum": ["detected", "not_detected"]}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"detection_status": {"const": "not_detected"}}, "required": ["detection_status"]},
+      "then": {
+        "properties": {
+          "visit_status": {"const": "completed"},
+          "person_minutes": {"type": "number", "exclusiveMinimum": 0},
+          "non_detection_interpretation": {"const": "documented non-detection under stated effort; not proof of absence"},
+          "outcome_reason": {"type": "null"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"visit_status": {"enum": ["incomplete", "aborted"]}}, "required": ["visit_status"]},
+      "then": {
+        "properties": {
+          "detection_status": {"enum": ["detected", "not_assessed"]},
+          "non_detection_interpretation": {"type": "null"},
+          "outcome_reason": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"visit_status": {"const": "missed"}}, "required": ["visit_status"]},
+      "then": {
+        "properties": {
+          "started_at": {"type": "null"},
+          "ended_at": {"type": "null"},
+          "person_minutes": {"const": 0},
+          "observer_count": {"const": 0},
+          "observer_pseudonyms": {"maxItems": 0},
+          "qualification_classes": {"maxItems": 0},
+          "detection_status": {"const": "not_assessed"},
+          "non_detection_interpretation": {"type": "null"},
+          "outcome_reason": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"detection_status": {"enum": ["detected", "not_assessed"]}}, "required": ["detection_status"]},
+      "then": {"properties": {"non_detection_interpretation": {"type": "null"}}}
+    }
+  ]
+}

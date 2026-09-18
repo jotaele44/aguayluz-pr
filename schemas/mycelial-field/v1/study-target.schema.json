@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aguayluz.local/schemas/mycelial-field/v1/study-target.schema.json",
+  "title": "Known-site study target contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "record_type",
+    "schema_version",
+    "target_id",
+    "kind",
+    "display_name",
+    "taxonomic_scope",
+    "field_inclusion_rule",
+    "field_exclusion_rule",
+    "minimum_verification_class",
+    "sensitivity_state",
+    "forecast_role",
+    "review_state"
+  ],
+  "properties": {
+    "record_type": {"const": "mycelial_study_target"},
+    "schema_version": {"const": "1.0.0"},
+    "target_id": {"type": "string", "pattern": "^MYC_TGT_[A-Z0-9_]{3,80}$"},
+    "kind": {"enum": ["taxon", "guild", "morphotype", "all_macrofungi"]},
+    "display_name": {"type": "string", "minLength": 1},
+    "taxonomic_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["asserted_name", "rank", "authority", "authority_version", "definition_reference"],
+      "properties": {
+        "asserted_name": {"type": ["string", "null"]},
+        "rank": {"enum": ["species", "genus", "family", "guild", "morphotype", "macrofungi_scope", "unresolved"]},
+        "authority": {"type": ["string", "null"]},
+        "authority_version": {"type": ["string", "null"]},
+        "definition_reference": {"type": "string", "minLength": 1}
+      }
+    },
+    "field_inclusion_rule": {"type": "string", "minLength": 1},
+    "field_exclusion_rule": {"type": "string", "minLength": 1},
+    "minimum_verification_class": {"enum": ["voucher_verified", "expert_verified", "media_supported", "field_morphotype", "unresolved_review_required"]},
+    "sensitivity_state": {"enum": ["ordinary", "sensitive", "sensitivity_unresolved"]},
+    "forecast_role": {"enum": ["future_detection_target_candidate", "context_only", "not_forecast_eligible"]},
+    "review_state": {"enum": ["needs_review", "protocol_eligible", "rejected", "retired", "superseded"]}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"kind": {"const": "taxon"}}, "required": ["kind"]},
+      "then": {
+        "properties": {
+          "taxonomic_scope": {
+            "properties": {
+              "asserted_name": {"type": "string", "minLength": 1},
+              "rank": {"enum": ["species", "genus", "family"]},
+              "authority": {"type": "string", "minLength": 1},
+              "authority_version": {"type": "string", "minLength": 1}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"sensitivity_state": {"enum": ["sensitive", "sensitivity_unresolved"]}}, "required": ["sensitivity_state"]},
+      "then": {"properties": {"forecast_role": {"const": "not_forecast_eligible"}}}
+    }
+  ]
+}

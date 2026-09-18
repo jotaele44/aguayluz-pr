@@ -1,0 +1,120 @@
+{
+  "classification": "SYNTHETIC_FIXTURES_ONLY_NOT_SOURCE_ACQUISITIONS",
+  "cases": [
+    {
+      "name": "valid complete synthetic archive",
+      "valid": true,
+      "record": {
+        "record_type": "mycelial_source_acquisition_receipt",
+        "schema_version": "1.0.0",
+        "receipt_id": "MYC_ACQ_SYNTH_COMPLETE",
+        "source_id": "MYC_SRC_SYNTH_SOURCE",
+        "dataset_identity": "synthetic-dataset-v1",
+        "requested_manifestation": "dwca",
+        "query_or_version_reference": "synthetic-version",
+        "retrieval_started_at": "2026-01-01T12:00:00Z",
+        "retrieval_completed_at": "2026-01-01T12:00:01Z",
+        "status": "complete",
+        "failure_class": "none",
+        "transport": {"requested_url": "https://example.invalid/synthetic.zip", "final_url": "https://example.invalid/synthetic.zip", "status_code": 200, "content_type": "application/zip", "redirect_chain": []},
+        "original_payload": {"captured": true, "byte_count": 100, "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "storage_reference": "restricted://synthetic/archive.zip"},
+        "native_metadata": {"kind": "eml", "captured": true, "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "binding_state": "bound_to_payload"},
+        "rights_state": "verified_for_intended_internal_use",
+        "coordinate_retention_class": "generalized_only",
+        "admission_state": "not_canonical_not_model_eligible"
+      }
+    },
+    {
+      "name": "valid failed dns attempt",
+      "valid": true,
+      "record": {
+        "record_type": "mycelial_source_acquisition_receipt",
+        "schema_version": "1.0.0",
+        "receipt_id": "MYC_ACQ_SYNTH_FAILED",
+        "source_id": "MYC_SRC_SYNTH_SOURCE",
+        "dataset_identity": "synthetic-dataset-v1",
+        "requested_manifestation": "dwca",
+        "query_or_version_reference": null,
+        "retrieval_started_at": "2026-01-02T12:00:00Z",
+        "retrieval_completed_at": "2026-01-02T12:00:00Z",
+        "status": "failed",
+        "failure_class": "dns",
+        "transport": {"requested_url": "https://example.invalid/synthetic.zip", "final_url": null, "status_code": null, "content_type": null, "redirect_chain": []},
+        "original_payload": {"captured": false, "byte_count": null, "sha256": null, "storage_reference": null},
+        "native_metadata": {"kind": "none", "captured": false, "sha256": null, "binding_state": "missing"},
+        "rights_state": "unresolved_hold",
+        "coordinate_retention_class": "withheld",
+        "admission_state": "not_canonical_not_model_eligible"
+      }
+    },
+    {
+      "name": "invalid complete receipt without payload identity",
+      "valid": false,
+      "record": {
+        "record_type": "mycelial_source_acquisition_receipt",
+        "schema_version": "1.0.0",
+        "receipt_id": "MYC_ACQ_SYNTH_BADCOMPLETE",
+        "source_id": "MYC_SRC_SYNTH_SOURCE",
+        "dataset_identity": "synthetic-dataset-v1",
+        "requested_manifestation": "api_response",
+        "query_or_version_reference": null,
+        "retrieval_started_at": "2026-01-03T12:00:00Z",
+        "retrieval_completed_at": "2026-01-03T12:00:01Z",
+        "status": "complete",
+        "failure_class": "none",
+        "transport": {"requested_url": "https://example.invalid/api", "final_url": "https://example.invalid/api", "status_code": 200, "content_type": "application/json", "redirect_chain": []},
+        "original_payload": {"captured": false, "byte_count": null, "sha256": null, "storage_reference": null},
+        "native_metadata": {"kind": "none", "captured": false, "sha256": null, "binding_state": "missing"},
+        "rights_state": "verified_for_intended_internal_use",
+        "coordinate_retention_class": "generalized_only",
+        "admission_state": "not_canonical_not_model_eligible"
+      }
+    },
+    {
+      "name": "invalid failed receipt with no failure class",
+      "valid": false,
+      "record": {
+        "record_type": "mycelial_source_acquisition_receipt",
+        "schema_version": "1.0.0",
+        "receipt_id": "MYC_ACQ_SYNTH_BADFAIL",
+        "source_id": "MYC_SRC_SYNTH_SOURCE",
+        "dataset_identity": "synthetic-dataset-v1",
+        "requested_manifestation": "eml",
+        "query_or_version_reference": null,
+        "retrieval_started_at": "2026-01-04T12:00:00Z",
+        "retrieval_completed_at": "2026-01-04T12:00:01Z",
+        "status": "failed",
+        "failure_class": "none",
+        "transport": {"requested_url": "https://example.invalid/eml", "final_url": null, "status_code": null, "content_type": null, "redirect_chain": []},
+        "original_payload": {"captured": false, "byte_count": null, "sha256": null, "storage_reference": null},
+        "native_metadata": {"kind": "none", "captured": false, "sha256": null, "binding_state": "missing"},
+        "rights_state": "unresolved_hold",
+        "coordinate_retention_class": "withheld",
+        "admission_state": "not_canonical_not_model_eligible"
+      }
+    },
+    {
+      "name": "invalid uncaptured payload with fabricated hash",
+      "valid": false,
+      "record": {
+        "record_type": "mycelial_source_acquisition_receipt",
+        "schema_version": "1.0.0",
+        "receipt_id": "MYC_ACQ_SYNTH_FAKEHASH",
+        "source_id": "MYC_SRC_SYNTH_SOURCE",
+        "dataset_identity": "synthetic-dataset-v1",
+        "requested_manifestation": "other",
+        "query_or_version_reference": null,
+        "retrieval_started_at": "2026-01-05T12:00:00Z",
+        "retrieval_completed_at": "2026-01-05T12:00:00Z",
+        "status": "blocked",
+        "failure_class": "access_policy",
+        "transport": {"requested_url": "https://example.invalid/source", "final_url": null, "status_code": 403, "content_type": null, "redirect_chain": []},
+        "original_payload": {"captured": false, "byte_count": null, "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "storage_reference": null},
+        "native_metadata": {"kind": "none", "captured": false, "sha256": null, "binding_state": "missing"},
+        "rights_state": "restricted",
+        "coordinate_retention_class": "withheld",
+        "admission_state": "not_canonical_not_model_eligible"
+      }
+    }
+  ]
+}
