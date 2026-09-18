@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: write   # allow the job to commit updated data files
+  statuses: write   # attach the lightweight integrity result to the exact refresh SHA
 
 # Serialise runs on the same ref without cancelling. This workflow can
 # publish, write data, or hand off to another repo, and killing it
@@ -29,7 +30,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 1
+          fetch-depth: 2
 
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
@@ -95,16 +96,126 @@ jobs:
             git commit -m "chore: scheduled refresh $(date -u +%Y-%m-%dT%H:%MZ) [skip ci]"
             git push
             echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "commit_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           fi
 
+      # [skip ci] intentionally suppresses the expensive full push matrix. Instead,
+      # the producer workflow certifies the newly pushed refresh commit itself and
+      # writes an explicit commit status on that exact SHA. Floot promotion remains
+      # fail-closed behind this lightweight gate.
+      - name: Mark exact refresh SHA pending
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SYNC_COMMIT: ${{ steps.commit.outputs.commit_sha }}
+        run: |
+          curl --fail-with-body --show-error --silent \
+            -X POST \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/statuses/${SYNC_COMMIT}" \
+            -d '{"state":"pending","context":"refresh/exact-sha-integrity","description":"Validating exact scheduled-refresh commit"}'
+
+      - name: Validate exact refresh SHA
+        id: exact_refresh
+        if: steps.commit.outputs.changed == 'true'
+        continue-on-error: true
+        env:
+          SYNC_COMMIT: ${{ steps.commit.outputs.commit_sha }}
+        run: |
+          set -euo pipefail
+
+          test "${SYNC_COMMIT}" = "$(git rev-parse HEAD)"
+          REMOTE_MAIN="$(git ls-remote origin refs/heads/main | awk '{print $1}')"
+          test "${SYNC_COMMIT}" = "${REMOTE_MAIN}"
+
+          BAD_PATHS="$(git diff-tree --no-commit-id --name-only -r "${SYNC_COMMIT}" | grep -Ev '^(data|outputs|reports)/' || true)"
+          if [ -n "${BAD_PATHS}" ]; then
+            echo "Scheduled refresh changed non-data paths:" >&2
+            echo "${BAD_PATHS}" >&2
+            exit 1
+          fi
+
+          git diff --check "${SYNC_COMMIT}^" "${SYNC_COMMIT}"
+
+          python - <<'PY'
+          import json
+          import subprocess
+          from pathlib import Path
+
+          sha = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          changed = subprocess.check_output(
+              ["git", "diff-tree", "--no-commit-id", "--name-only", "-r", sha],
+              text=True,
+          ).splitlines()
+
+          checked = 0
+          for raw in changed:
+              path = Path(raw)
+              if not path.is_file():
+                  continue
+              suffix = path.suffix.lower()
+              if suffix == ".jsonl":
+                  with path.open("r", encoding="utf-8") as fh:
+                      for line_no, line in enumerate(fh, 1):
+                          if not line.strip():
+                              raise SystemExit(f"{path}:{line_no}: blank JSONL record")
+                          value = json.loads(line)
+                          if not isinstance(value, dict):
+                              raise SystemExit(f"{path}:{line_no}: JSONL record is not an object")
+                  checked += 1
+              elif suffix in {".json", ".geojson"}:
+                  value = json.loads(path.read_text(encoding="utf-8"))
+                  if suffix == ".geojson":
+                      if not isinstance(value, dict) or value.get("type") != "FeatureCollection" or not isinstance(value.get("features"), list):
+                          raise SystemExit(f"{path}: invalid FeatureCollection")
+                  checked += 1
+
+          if checked == 0:
+              raise SystemExit("refresh changed data but no JSON/JSONL/GeoJSON artifact was validated")
+          print(f"validated {checked} changed structured artifact(s) at {sha}")
+          PY
+
+          mkdir -p artifacts
+          python scripts/check_gui_parity.py --report artifacts/refresh-gui-parity.json
+          python -m pytest -q tests/test_gui_parity.py
+
+      - name: Publish exact refresh SHA status
+        if: always() && steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SYNC_COMMIT: ${{ steps.commit.outputs.commit_sha }}
+          VALIDATION_OUTCOME: ${{ steps.exact_refresh.outcome }}
+        run: |
+          set -euo pipefail
+          if [ "${VALIDATION_OUTCOME}" = "success" ]; then
+            STATE=success
+            DESCRIPTION="Exact refresh SHA passed data + GUI-contract integrity"
+          else
+            STATE=failure
+            DESCRIPTION="Exact refresh SHA failed data or GUI-contract integrity"
+          fi
+
+          curl --fail-with-body --show-error --silent \
+            -X POST \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/statuses/${SYNC_COMMIT}" \
+            -d "{\"state\":\"${STATE}\",\"context\":\"refresh/exact-sha-integrity\",\"description\":\"${DESCRIPTION}\"}"
+
+          test "${VALIDATION_OUTCOME}" = "success"
+
       # The refresh commit itself carries [skip ci], so dispatch Floot from this
-      # already-running producer workflow instead of relying on a second push workflow.
+      # already-running producer workflow after the exact-SHA integrity status is green.
       # The Floot endpoint is commit-gated and idempotent: retries cannot roll back
       # the current snapshot or duplicate a completed promotion.
       - name: Promote refreshed snapshot to Floot
-        if: steps.commit.outputs.changed == 'true'
+        if: steps.commit.outputs.changed == 'true' && steps.exact_refresh.outcome == 'success'
+        env:
+          SYNC_COMMIT: ${{ steps.commit.outputs.commit_sha }}
         run: |
-          SYNC_COMMIT="$(git rev-parse HEAD)"
           curl --fail-with-body --show-error --silent \
             --retry 3 --retry-all-errors --retry-delay 2 \
             -X POST \
@@ -118,7 +229,7 @@ jobs:
       # so forks and unprivileged runs stay quiet. This is the event-driven
       # federation hop that closes the "Hub is not triggered by aguayluz" gap.
       - name: Notify Hub of new export (repository_dispatch)
-        if: steps.commit.outputs.changed == 'true' && env.FEDERATION_DISPATCH_TOKEN != ''
+        if: steps.commit.outputs.changed == 'true' && steps.exact_refresh.outcome == 'success' && env.FEDERATION_DISPATCH_TOKEN != ''
         env:
           FEDERATION_DISPATCH_TOKEN: ${{ secrets.FEDERATION_DISPATCH_TOKEN }}
         run: |
