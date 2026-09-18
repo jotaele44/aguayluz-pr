@@ -33,6 +33,7 @@ jobs:
           required = {
               "schema_version",
               "haf_contract_version",
+              "adapter_release_version",
               "framework_compatibility",
               "program_id",
               "repository_full_name",
@@ -52,6 +53,7 @@ jobs:
           expected_values = {
               "schema_version": "haf_repo_contract_v2",
               "haf_contract_version": "2.0.0",
+              "adapter_release_version": "0.5.0",
               "framework_compatibility": ">=0.4.0,<1.0.0",
               "certification_required": True,
               "raw_snapshot_policy": "PRESERVE_OR_IMMUTABLE_REFERENCE",
@@ -97,5 +99,6 @@ jobs:
           print(
               "HAF CONTRACT PASS",
               contract["program_id"],
-              contract["haf_contract_version"],
+              f"adapter={contract['adapter_release_version']}",
+              f"contract={contract['haf_contract_version']}",
           )
