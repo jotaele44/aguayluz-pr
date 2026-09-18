@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/drna_deslinde.schema.json",
+  "title": "DRNACoastalDeslinde",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "permit_number",
+    "status",
+    "certified_date",
+    "source"
+  ],
+  "properties": {
+    "permit_number": {
+      "type": "string",
+      "pattern": "^[AO]-AG-CER02-[A-Z]{2}-[0-9]{5}-[0-9]{8}$"
+    },
+    "status": {
+      "enum": ["APPROVED"]
+    },
+    "certified_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "publication_date": {
+      "type": ["string", "null"],
+      "format": "date"
+    },
+    "proponent_raw": {"type": ["string", "null"]},
+    "owner_raw": {"type": ["string", "null"]},
+    "address_raw": {"type": ["string", "null"]},
+    "purpose_raw": {"type": ["string", "null"]},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_url", "retrieved_at", "sha256", "byte_count"],
+      "properties": {
+        "source_url": {
+          "type": "string",
+          "pattern": "^https://(www\\.)?drna\\.pr\\.gov/deslindes-zmt/deslindes-zmt-aprobados/"
+        },
+        "retrieved_at": {"type": "string", "format": "date-time"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "byte_count": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}
