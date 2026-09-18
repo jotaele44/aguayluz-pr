@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0.0",
+  "classification": "INTERNAL_RESEARCH_VALIDATION_DRAFT_ONLY",
+  "task_authority": "User affirmative response to the immediately preceding atomic versioned consistency-integration proposal; no external approval receipt is invented.",
+  "base_commit": "bb0e18abf4d5d13002421f170a50654bf11a223b",
+  "preserved_pr_heads": {
+    "238": "7f7fa5f9826604c2d47e04267bb6cd6c76fc97fb",
+    "253": "d8ac42470c9e7f3dc289f049c841434b2277c23d"
+  },
+  "governing_adr": "docs/adr/ADR-0002-mycelial-phase-0-baseline-and-phase-1-admission.md",
+  "tracking_references": [
+    "aguayluz-pr#253",
+    "aguayluz-pr#255",
+    "aguayluz-pr#256"
+  ],
+  "expiry": "2026-12-31",
+  "runtime_surface": "NONE",
+  "gui_classification": "internal",
+  "gui_rationale": "Import-only developer consistency checks; no user workflow, API, GUI, CLI, scheduler, exporter or production import is added.",
+  "source_input_archive_sha256": "c4e1b4acea20b1a2bfbf3051101d81fe30f29096dce18445996bc2948abd0e43",
+  "allowed": [
+    "versioned_diagnostic_contracts",
+    "synthetic_tests",
+    "bounded_local_validation",
+    "draft_branch_and_pr"
+  ],
+  "not_authorized": [
+    "canonical_ingestion",
+    "field_authority",
+    "exact_coordinate_disclosure",
+    "public_export",
+    "production_runtime",
+    "model_fitting",
+    "calibration",
+    "prediction",
+    "connectivity",
+    "ready_transition",
+    "merge",
+    "auto_merge"
+  ],
+  "inherited_certification": false,
+  "baseline_schema_mutation": false
+}
