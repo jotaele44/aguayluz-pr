@@ -12,8 +12,10 @@ from fastapi.responses import JSONResponse
 
 from aguayluz import DATA_DIR
 from aguayluz.environmental_exposure_db import graph_integrity, load
+from server.backend.hazard_advisory_api import router as hazard_advisory_router
 
 router = APIRouter(tags=["environmental-exposure"])
+router.include_router(hazard_advisory_router)
 
 
 def _entities() -> list[dict[str, Any]]:

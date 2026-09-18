@@ -1,0 +1,101 @@
+{
+  "schema_version": "1.0.0",
+  "scope": "Puerto Rico food, agricultural, animal, human infectious-disease, wastewater, water-health and environmental-health advisory source-family denominator",
+  "as_of": "2026-09-05",
+  "certification_state": "OPEN",
+  "completeness_claimed": false,
+  "product_capability_id": "hazard-advisory-plane",
+  "product_route": "/hazards",
+  "families": [
+    {
+      "family": "FDA_FOOD_ENFORCEMENT",
+      "authority": "FDA",
+      "hazard_family": "FOOD_SAFETY",
+      "access": "structured_api_and_bulk_json",
+      "url": "https://open.fda.gov/apis/food/enforcement/",
+      "update_semantics": "weekly; historical records may be revised",
+      "status": "BOUND"
+    },
+    {
+      "family": "USDA_FSIS_RECALLS",
+      "authority": "USDA-FSIS",
+      "hazard_family": "FOOD_SAFETY",
+      "access": "public_api_and_web",
+      "url": "https://www.fsis.usda.gov/recalls",
+      "status": "BOUND"
+    },
+    {
+      "family": "PRDOH_ARBOVIRAL",
+      "authority": "Puerto Rico Department of Health",
+      "hazard_family": "HUMAN_INFECTIOUS_DISEASE",
+      "access": "BioData surveillance publication/dashboard",
+      "url": "https://www.salud.pr.gov/",
+      "status": "BOUND_SOURCE_FAMILY_ENDPOINT_ENUMERATION_OPEN"
+    },
+    {
+      "family": "PRDOH_INFLUENZA",
+      "authority": "Puerto Rico Department of Health",
+      "hazard_family": "HUMAN_INFECTIOUS_DISEASE",
+      "access": "BioData surveillance publication/dashboard",
+      "url": "https://www.salud.pr.gov/",
+      "status": "BOUND_SOURCE_FAMILY_ENDPOINT_ENUMERATION_OPEN"
+    },
+    {
+      "family": "CDC_NWSS",
+      "authority": "CDC",
+      "hazard_family": "WASTEWATER_SURVEILLANCE",
+      "access": "public surveillance datasets/dashboard",
+      "url": "https://www.cdc.gov/nwss/",
+      "status": "BOUND_PR_SITE_DENOMINATOR_OPEN"
+    },
+    {
+      "family": "DRNA_BEACH_MONITORING",
+      "authority": "Puerto Rico DRNA",
+      "hazard_family": "WATER_HEALTH",
+      "access": "public notification pages",
+      "url": "https://www.drna.pr.gov/cat/programas-y-proyectos/monitoria-de-playas/notificaciones-ambientales/",
+      "status": "BOUND"
+    },
+    {
+      "family": "USDA_APHIS_PLANT_HEALTH",
+      "authority": "USDA-APHIS",
+      "hazard_family": "AGRICULTURAL_HEALTH",
+      "access": "public notices/data",
+      "url": "https://www.aphis.usda.gov/plant-pests-diseases",
+      "status": "OPEN_PR_DENOMINATOR"
+    },
+    {
+      "family": "USDA_APHIS_ANIMAL_HEALTH",
+      "authority": "USDA-APHIS",
+      "hazard_family": "ANIMAL_HEALTH",
+      "access": "public notices/data",
+      "url": "https://www.aphis.usda.gov/livestock-poultry-disease",
+      "status": "OPEN_PR_DENOMINATOR"
+    },
+    {
+      "family": "PR_AGRICULTURE_ADVISORIES",
+      "authority": "Puerto Rico Department of Agriculture",
+      "hazard_family": "AGRICULTURAL_HEALTH",
+      "access": "public web/publications",
+      "url": "https://www.agricultura.pr.gov/",
+      "status": "OPEN_ENDPOINT_ENUMERATION"
+    },
+    {
+      "family": "EPA_DRINKING_WATER_HEALTH",
+      "authority": "EPA",
+      "hazard_family": "WATER_HEALTH",
+      "access": "federal drinking-water and enforcement data",
+      "url": "https://www.epa.gov/ground-water-and-drinking-water",
+      "status": "OPEN_PR_EVENT_DENOMINATOR"
+    }
+  ],
+  "unresolved_material": [
+    "PRDOH_COMPLETE_MACHINE_READABLE_ENDPOINT_ENUMERATION",
+    "CDC_NWSS_PUERTO_RICO_SITE_DENOMINATOR",
+    "APHIS_PUERTO_RICO_PLANT_AND_ANIMAL_ADVISORY_DENOMINATORS",
+    "PR_DEPARTMENT_OF_AGRICULTURE_COMPLETE_ADVISORY_DENOMINATOR",
+    "EPA_AND_PRASA_BOIL_WATER_DO_NOT_DRINK_DO_NOT_USE_EVENT_DENOMINATOR",
+    "HARMFUL_ALGAL_BLOOM_AND_CYANOBACTERIA_AUTHORITY_DENOMINATOR",
+    "HISTORICAL_BACKFILL_DENOMINATOR_PER_SOURCE_FAMILY"
+  ]
+}
