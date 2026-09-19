@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   getHealth, getAssets, getAssetsGeojson, getMunicipiosGeojson, getBarriosGeojson, getEventDensity,
-  getEvents, getEventsPaged, getAssetEvents, getEvent, getMunicipioSummary,
+  getEvents, getEventsPaged, getLumaRegionStatus, getAssetEvents, getEvent, getMunicipioSummary,
   getReadings, getReviewQueue, getReviewQueuePaged,
   getSummary, getSummarySectors, getCoverage, getSystemStatus,
   getAlerts, getAlertsPaged, getAlert, getAlertFacets, getAlertsGeojson,
@@ -31,6 +31,11 @@ export const useEventsPaged = (f = {}) => {
   const params = { limit: DEFAULT_EVENT_LIMIT, ...f }
   return useQuery({ queryKey: ['events/paged', params], queryFn: () => getEventsPaged(params) })
 }
+export const useLumaRegionStatus = () => useQuery({
+  queryKey: ['outages/regions'],
+  queryFn: getLumaRegionStatus,
+  refetchInterval: 60_000,
+})
 export const useAssetEvents = (id) => useQuery({ queryKey: ['asset-events', id], queryFn: () => getAssetEvents(id), enabled: !!id })
 export const useEvent = (id) => useQuery({ queryKey: ['event', id], queryFn: () => getEvent(id), enabled: !!id })
 export const useMunicipioSummary = (name) => useQuery({ queryKey: ['municipio', name], queryFn: () => getMunicipioSummary(name), enabled: !!name })
