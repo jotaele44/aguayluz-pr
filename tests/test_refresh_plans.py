@@ -159,3 +159,15 @@ def test_luma_status_is_not_scheduled_without_live_fetch():
         scripts = {_script_of(s) for s in refresh.PLANS[cadence]}
         assert "scripts/fetch_luma_live.py" not in scripts
         assert "scripts/ingest_luma_status.py" not in scripts
+
+
+
+def test_miluma_refresh_uses_one_receipt_for_both_ingests():
+    fetch_argv = refresh.STEP_AEE_FETCH[1]
+    status_argv = refresh.STEP_LUMA_STATUS_INGEST[1]
+    town_argv = refresh.STEP_AEE_INGEST[1]
+    assert "--manifest-out" in fetch_argv
+    manifest = fetch_argv[fetch_argv.index("--manifest-out") + 1]
+    assert status_argv[status_argv.index("--snapshot-meta") + 1] == manifest
+    assert town_argv[town_argv.index("--snapshot-meta") + 1] == manifest
+    assert town_argv[town_argv.index("--out") + 1] == "data/luma_live_incidents.jsonl"
