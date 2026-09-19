@@ -161,10 +161,12 @@
           "GET /alerts/dependencies",
           "GET /alerts/gaps",
           "GET /alerts/{alert_id}",
-          "GET /outages/status"
+          "GET /outages/status",
+          "GET /outages/status/changes"
         ],
         "symbols": [
-          "server/backend/main.py:outages_status"
+          "server/backend/main.py:outages_status",
+          "server/backend/main.py:outages_status_changes"
         ]
       },
       "frontend": {
@@ -202,7 +204,8 @@
         ],
         "contract": [
           "tests/test_gui_parity.py",
-          "tests/test_luma_status.py"
+          "tests/test_luma_status.py",
+          "tests/test_luma_status_changes.py"
         ],
         "e2e": [
           "dashboard/tests/gui-parity.spec.mjs"
@@ -211,7 +214,8 @@
       "analysis": {
         "files": [
           "scripts/fetch_luma_live.py",
-          "scripts/ingest_luma_status.py"
+          "scripts/ingest_luma_status.py",
+          "scripts/derive_luma_status_changes.py"
         ],
         "symbols": [
           "scripts/fetch_luma_live.py:fetch_regions",
@@ -219,7 +223,12 @@
           "scripts/ingest_luma_status.py:canonical_bytes",
           "scripts/ingest_luma_status.py:load_rows",
           "scripts/ingest_luma_status.py:main",
-          "scripts/ingest_luma_status.py:snapshot_row"
+          "scripts/ingest_luma_status.py:snapshot_row",
+          "scripts/derive_luma_status_changes.py:classify_pair",
+          "scripts/derive_luma_status_changes.py:derive_changes",
+          "scripts/derive_luma_status_changes.py:load_rows",
+          "scripts/derive_luma_status_changes.py:main",
+          "scripts/derive_luma_status_changes.py:write_rows"
         ]
       }
     },
