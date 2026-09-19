@@ -184,8 +184,10 @@ STEP_AEE_INGEST = (
         "scripts/ingest_aee.py",
         "--src",
         "/tmp/outages_by_town.json",
-        "--snapshot-ts",
-        _NOW_TS,
+        "--snapshot-meta",
+        "/tmp/luma_snapshot_manifest.json",
+        "--out",
+        "data/luma_live_incidents.jsonl",
     ],
     True,
 )
