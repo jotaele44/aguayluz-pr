@@ -20,7 +20,7 @@ import smtplib as _smtplib
 import sys
 import urllib.request as _notify_urllib
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage as _EmailMessage
 from pathlib import Path
 from typing import Any
@@ -243,6 +243,14 @@ def _parse_dt(s: str | None) -> datetime | None:
 _assets: list[dict[str, Any]] = _load_jsonl(DATA / "utility_assets.jsonl")
 _EVENT_SOURCE_PATHS = (DATA / "service_events.jsonl", DATA / "aee_incidents.jsonl")
 _event_sources = [(path, _load_jsonl(path)) for path in _EVENT_SOURCE_PATHS]
+_live_event_path = DATA / "luma_live_incidents.jsonl"
+_live_event_cutoff = datetime.now(timezone.utc) - timedelta(hours=1)
+_live_event_rows = []
+for _row in _load_jsonl(_live_event_path):
+    _dt = _parse_dt(_row.get("start_time"))
+    if _dt is not None and _dt >= _live_event_cutoff:
+        _live_event_rows.append(_row)
+_event_sources.append((_live_event_path, _live_event_rows))
 _events: list[dict[str, Any]] = [row for _, rows in _event_sources for row in rows]
 _luma_status_snapshots: list[dict[str, Any]] = _load_jsonl(
     DATA / "luma_status_snapshots.jsonl"
