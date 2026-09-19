@@ -1,29 +1,24 @@
 #!/usr/bin/env python3
-"""Fetch live MiLUMA outage manifestations for AguaYLuz.
+"""Fetch live MiLUMA outage manifestations with byte-level provenance.
 
-The existing municipality/zone path remains the canonical detailed outage adapter:
+Known public outage surfaces:
+  POST /miluma-outage-api/outage/municipality/towns
+  GET  /miluma-outage-api/outage/regionsWithoutService
 
-    POST /miluma-outage-api/outage/municipality/towns
+The municipality feed is the detailed operational source. The regional feed is a
+separate aggregate manifestation and is attempted independently. A regional WAF
+failure must not discard a valid municipality snapshot.
 
-Optionally, callers may also request the separate regional-status manifestation:
-
-    GET /miluma-outage-api/outage/regionsWithoutService
-
-The two payloads are deliberately kept separate. Regional aggregates are not expanded
-into municipality or zone events.
-
-MiLUMA is protected by an Incapsula WAF. A browser-like User-Agent + Referer may still
-receive HTTP 403. That is SOURCE_UNAVAILABLE, not a zero-outage observation.
-
-Examples:
-    python scripts/fetch_luma_live.py --out /tmp/outages_by_town.json
-    python scripts/fetch_luma_live.py --out /tmp/outages_by_town.json \
-        --status-out /tmp/luma_regions_without_service.json
+Exact response bytes are written unchanged and a receipt binds endpoint, method,
+retrieval UTC, byte count, and SHA-256. Source failure is never interpreted as zero
+outages. Existing temp outputs are removed before each attempt so stale bytes cannot
+silently pass downstream as current observations.
 """
 from __future__ import annotations
 
 import argparse
 import contextlib
+import hashlib
 import json
 import sys
 import unicodedata
@@ -48,7 +43,7 @@ BROWSER_HEADERS = {
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
         "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
     ),
-    "Referer": "https://miluma.lumapr.com/",
+    "Referer": "https://miluma.lumapr.com/view-outage-map",
     "Accept": "application/json",
 }
 
@@ -63,10 +58,13 @@ def municipio_keys(geo_path: Path) -> list[str]:
     return keys
 
 
-def _request_json(req: urllib.request.Request, timeout: float) -> object:
+def _request_json(
+    req: urllib.request.Request,
+    timeout: float,
+) -> tuple[object, bytes]:
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310
-            return json.loads(resp.read())
+            raw = resp.read()
     except urllib.error.HTTPError as exc:
         hint = (
             " (Incapsula WAF block — needs a permissioned LUMA/PREB data path)"
@@ -78,8 +76,16 @@ def _request_json(req: urllib.request.Request, timeout: float) -> object:
         reason = getattr(exc, "reason", None) or "connection timed out"
         raise SourceUnavailable(f"cannot reach MiLUMA: {reason}") from exc
 
+    try:
+        return json.loads(raw), raw
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise SourceUnavailable("MiLUMA returned invalid JSON") from exc
 
-def fetch_towns(municipios: list[str], timeout: float) -> dict:
+
+def fetch_towns(
+    municipios: list[str],
+    timeout: float,
+) -> dict:
     body = json.dumps(municipios).encode()
     req = urllib.request.Request(
         TOWNS_URL,
@@ -87,7 +93,7 @@ def fetch_towns(municipios: list[str], timeout: float) -> dict:
         method="POST",
         headers={**BROWSER_HEADERS, "Content-Type": "application/json"},
     )
-    result = _request_json(req, timeout)
+    result, _raw = _request_json(req, timeout)
     if not isinstance(result, dict):
         raise SourceUnavailable(
             f"unexpected municipality payload type: {type(result).__name__}"
@@ -96,66 +102,148 @@ def fetch_towns(municipios: list[str], timeout: float) -> dict:
 
 
 def fetch_regions(timeout: float) -> object:
-    """Fetch the regional status payload without imposing an unverified schema."""
+    """Fetch regional status without imposing unverified field semantics."""
     req = urllib.request.Request(REGIONS_URL, method="GET", headers=BROWSER_HEADERS)
-    return _request_json(req, timeout)
+    result, _raw = _request_json(req, timeout)
+    return result
 
 
 def _remove_stale_outputs(paths: list[Path]) -> None:
-    """Fail closed: an unavailable live source must not leave old temp bytes reusable."""
+    """Fail closed: unavailable live sources must not leave reusable stale bytes."""
     for path in paths:
         with contextlib.suppress(FileNotFoundError):
             path.unlink()
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--geo", default=DEFAULT_GEO)
     ap.add_argument("--out", default="/tmp/outages_by_town.json")
     ap.add_argument(
         "--status-out",
         default=None,
-        help="optional raw regionsWithoutService JSON output; no regional→municipio inference",
+        help="optional exact regionsWithoutService response bytes",
+    )
+    ap.add_argument(
+        "--manifest-out",
+        default="/tmp/luma_snapshot_manifest.json",
+        help="endpoint receipt manifest",
     )
     ap.add_argument("--timeout", type=float, default=30.0)
     args = ap.parse_args()
 
     out = Path(args.out)
     status_out = Path(args.status_out) if args.status_out else None
-    outputs = [out] + ([status_out] if status_out is not None else [])
+    manifest_out = Path(args.manifest_out)
+    outputs = [out, manifest_out] + ([status_out] if status_out is not None else [])
     _remove_stale_outputs(outputs)
+    for path in outputs:
+        path.parent.mkdir(parents=True, exist_ok=True)
 
+    keys = municipio_keys(Path(args.geo))
+    if len(keys) != 78 or len(set(keys)) != 78:
+        print(
+            f"source-invalid: municipio denominator expected 78 unique keys; "
+            f"got rows={len(keys)} unique={len(set(keys))}",
+            file=sys.stderr,
+        )
+        return 1
+
+    body = json.dumps(keys).encode()
+    town_req = urllib.request.Request(
+        TOWNS_URL,
+        data=body,
+        method="POST",
+        headers={**BROWSER_HEADERS, "Content-Type": "application/json"},
+    )
     try:
-        towns = fetch_towns(municipio_keys(Path(args.geo)), args.timeout)
-        regions = fetch_regions(args.timeout) if status_out is not None else None
+        towns_obj, towns_raw = _request_json(town_req, args.timeout)
     except SourceUnavailable as exc:
         _remove_stale_outputs(outputs)
         print(f"source-unavailable: {exc}", file=sys.stderr)
         return EXIT_SOURCE_UNAVAILABLE
+    if not isinstance(towns_obj, dict):
+        _remove_stale_outputs(outputs)
+        print(
+            f"source-invalid: municipality payload type={type(towns_obj).__name__}",
+            file=sys.stderr,
+        )
+        return 1
 
-    ts = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
-
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(towns, ensure_ascii=False, indent=2), encoding="utf-8")
-
-    affected = {k: v for k, v in towns.items() if v}
-    zones = sum(len(v) for v in towns.values() if isinstance(v, list))
-    print(
-        f"wrote {len(towns)} municipios "
-        f"({zones} zone outages across {len(affected)} municipios) -> {out}"
+    towns_ts = (
+        datetime.now(timezone.utc)
+        .replace(microsecond=0)
+        .isoformat()
+        .replace("+00:00", "Z")
     )
-    print(f"snapshot-ts: {ts}")
-    print(f"source-ref:  {TOWNS_URL}  (live, fetched {ts})")
+    out.write_bytes(towns_raw)
+    manifest: dict[str, object] = {
+        "schema_version": "miluma_live_snapshot_v1",
+        "towns": {
+            "status": "PASS",
+            "method": "POST",
+            "url": TOWNS_URL,
+            "retrieval_utc": towns_ts,
+            "response_bytes": len(towns_raw),
+            "response_sha256": hashlib.sha256(towns_raw).hexdigest(),
+            "request_key_count": len(keys),
+            "request_body_sha256": hashlib.sha256(body).hexdigest(),
+        },
+        "regions": {
+            "status": "NOT_REQUESTED",
+            "method": "GET",
+            "url": REGIONS_URL,
+        },
+    }
 
     if status_out is not None:
-        status_out.parent.mkdir(parents=True, exist_ok=True)
-        status_out.write_text(
-            json.dumps(regions, ensure_ascii=False, indent=2),
-            encoding="utf-8",
+        region_req = urllib.request.Request(
+            REGIONS_URL,
+            method="GET",
+            headers=BROWSER_HEADERS,
         )
-        print(f"wrote regional status manifestation -> {status_out}")
-        print(f"status-source-ref: {REGIONS_URL}  (live, fetched {ts})")
+        try:
+            _regions_obj, regions_raw = _request_json(region_req, args.timeout)
+        except SourceUnavailable as exc:
+            manifest["regions"] = {
+                "status": "SOURCE_UNAVAILABLE",
+                "method": "GET",
+                "url": REGIONS_URL,
+                "error": str(exc),
+            }
+            with contextlib.suppress(FileNotFoundError):
+                status_out.unlink()
+            print(f"regional-source-unavailable: {exc}", file=sys.stderr)
+        else:
+            regions_ts = (
+                datetime.now(timezone.utc)
+                .replace(microsecond=0)
+                .isoformat()
+                .replace("+00:00", "Z")
+            )
+            status_out.write_bytes(regions_raw)
+            manifest["regions"] = {
+                "status": "PASS",
+                "method": "GET",
+                "url": REGIONS_URL,
+                "retrieval_utc": regions_ts,
+                "response_bytes": len(regions_raw),
+                "response_sha256": hashlib.sha256(regions_raw).hexdigest(),
+            }
+            print(f"wrote exact regional response bytes -> {status_out}")
 
+    manifest_out.write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    affected = {k: v for k, v in towns_obj.items() if v}
+    zones = sum(len(v) for v in towns_obj.values() if isinstance(v, list))
+    print(
+        f"wrote exact town response bytes: {len(towns_obj)} keys "
+        f"({zones} zone rows across {len(affected)} affected keys) -> {out}"
+    )
+    print(f"manifest: {manifest_out}")
     return 0
 
 
