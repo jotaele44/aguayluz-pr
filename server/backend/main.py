@@ -244,6 +244,9 @@ _assets: list[dict[str, Any]] = _load_jsonl(DATA / "utility_assets.jsonl")
 _EVENT_SOURCE_PATHS = (DATA / "service_events.jsonl", DATA / "aee_incidents.jsonl")
 _event_sources = [(path, _load_jsonl(path)) for path in _EVENT_SOURCE_PATHS]
 _events: list[dict[str, Any]] = [row for _, rows in _event_sources for row in rows]
+_luma_status_snapshots: list[dict[str, Any]] = _load_jsonl(
+    DATA / "luma_status_snapshots.jsonl"
+)
 _EVENT_DENSITY_SOURCE_MANIFESTATIONS = [
     _source_manifestation(path, len(rows)) for path, rows in _event_sources
 ]
@@ -301,12 +304,38 @@ def health() -> JSONResponse:
         "counts": {
             "assets": len(_assets),
             "events": len(_events),
+            "luma_status_snapshots": len(_luma_status_snapshots),
             "readings": readings_counts,
             "alerts": len(_alerts),
             "alerts_active": sum(1 for a in _alerts if _alert_is_actionable(a)),
             "alerts_critical": sum(1 for a in _alerts if _alert_is_critical(a)),
         },
         "readiness": readiness,
+    })
+
+
+@app.get("/outages/status")
+def outages_status(limit: int = Query(default=24, ge=1, le=500)) -> JSONResponse:
+    """Return preserved MiLUMA regional-status snapshots without schema promotion.
+
+    The raw upstream payload remains under raw_payload. This endpoint deliberately
+    does not reinterpret regional aggregates as municipality events or certified
+    restoration intervals.
+    """
+    ordered = sorted(
+        _luma_status_snapshots,
+        key=lambda row: (
+            str(row.get("snapshot_ts", "")),
+            str(row.get("payload_sha256", "")),
+        ),
+        reverse=True,
+    )
+    items = ordered[:limit]
+    return JSONResponse({
+        "total": len(ordered),
+        "latest": items[0] if items else None,
+        "items": items,
+        "schema_state": "RAW_UNFROZEN",
     })
 
 
