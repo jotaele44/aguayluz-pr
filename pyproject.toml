@@ -32,11 +32,13 @@ dependencies = [
   # so this project installs from an isolated clone.
   "prii-maintenance",
   "prii-export-utils",
+  "prii-doctor",
 ]
 
 [tool.uv.sources]
 prii-maintenance = { git = "https://github.com/jotaele44/thehub-pr.git", rev = "f2b81769924689b4d959554928810b1d7b7ef3d6", subdirectory = "packages/prii_maintenance" }
 prii-export-utils = { git = "https://github.com/jotaele44/thehub-pr.git", rev = "f2b81769924689b4d959554928810b1d7b7ef3d6", subdirectory = "packages/prii_export_utils" }
+prii-doctor = { git = "https://github.com/jotaele44/thehub-pr.git", rev = "f2d5a0a742215db00915475e1e494b8329608dbd", subdirectory = "packages/prii_doctor" }
 
 [project.optional-dependencies]
 dev = [

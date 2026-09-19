@@ -155,8 +155,25 @@ STEP_OSHA = (
     True,
 )
 STEP_AEE_FETCH = (
-    "MiLUMA live fetch → /tmp/outages_by_town.json",
-    ["scripts/fetch_luma_live.py", "--out", "/tmp/outages_by_town.json"],
+    "MiLUMA live fetch → town + regional status raw manifestations",
+    [
+        "scripts/fetch_luma_live.py",
+        "--out",
+        "/tmp/outages_by_town.json",
+        "--status-out",
+        "/tmp/luma_regions_without_service.json",
+    ],
+    True,
+)
+STEP_LUMA_STATUS_INGEST = (
+    "MiLUMA regional status snapshot → append-only history",
+    [
+        "scripts/ingest_luma_status.py",
+        "--src",
+        "/tmp/luma_regions_without_service.json",
+        "--snapshot-ts",
+        _NOW_TS,
+    ],
     True,
 )
 STEP_AEE_INGEST = (
@@ -296,6 +313,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_FEMA,
         STEP_OSHA,
         STEP_AEE_FETCH,
+        STEP_LUMA_STATUS_INGEST,
         STEP_AEE_INGEST,
         STEP_WATERS_ENRICH,
         STEP_USGS_COVERAGE_GATE,

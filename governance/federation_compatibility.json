@@ -1,7 +1,7 @@
 {
   "schema_version": "prii_repo_compatibility_receipt_v1",
   "repo": "aguayluz-pr",
-  "central_baseline": "2026-08-31",
+  "central_baseline": "2026-09-04",
   "central_governance_pr": 218,
   "disposition": "COMPATIBLE",
   "spatial_disposition": "ATTESTED",
@@ -14,5 +14,10 @@
     "cell_profile@1"
   ],
   "spatial_generation": "federation-spatial-index/1",
-  "spatial_note": "Compatible with the federation spatial index generation. This repository consumes the canonical Cell_ID address space and publishes no geometry of its own; its CELL_PROFILE index lands in a later wave."
+  "spatial_note": "Compatible with the federation spatial index generation. This repository consumes the canonical Cell_ID address space and publishes no geometry of its own; its CELL_PROFILE index lands in a later wave.",
+  "local_review": {
+    "date": "2026-09-19",
+    "change": "MiLUMA regional-status source declaration and read-only outage-status surface",
+    "result": "Existing repo_federation_manifest@1 and federation_export_manifest@1 contracts remain compatible"
+  }
 }

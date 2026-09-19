@@ -160,7 +160,11 @@
           "GET /alerts.geojson",
           "GET /alerts/dependencies",
           "GET /alerts/gaps",
-          "GET /alerts/{alert_id}"
+          "GET /alerts/{alert_id}",
+          "GET /outages/status"
+        ],
+        "symbols": [
+          "server/backend/main.py:outages_status"
         ]
       },
       "frontend": {
@@ -180,7 +184,8 @@
           "dashboard/src/pages/AlertDetailPage.jsx",
           "dashboard/src/pages/OutagesPage.jsx",
           "dashboard/src/pages/EventDetailPage.jsx",
-          "dashboard/src/components/OutagesPanel.jsx"
+          "dashboard/src/components/OutagesPanel.jsx",
+          "dashboard/src/lib/hooks.js"
         ],
         "discoverability": [
           "dashboard/src/components/layout/Sidebar.jsx",
@@ -192,13 +197,29 @@
         "backend": [
           "tests/test_backend_alerts_api.py",
           "tests/test_backend_events_api.py",
-          "tests/test_alerts.py"
+          "tests/test_alerts.py",
+          "tests/test_luma_status_api.py"
         ],
         "contract": [
-          "tests/test_gui_parity.py"
+          "tests/test_gui_parity.py",
+          "tests/test_luma_status.py"
         ],
         "e2e": [
           "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/fetch_luma_live.py",
+          "scripts/ingest_luma_status.py"
+        ],
+        "symbols": [
+          "scripts/fetch_luma_live.py:fetch_regions",
+          "scripts/ingest_luma_status.py:append_idempotent",
+          "scripts/ingest_luma_status.py:canonical_bytes",
+          "scripts/ingest_luma_status.py:load_rows",
+          "scripts/ingest_luma_status.py:main",
+          "scripts/ingest_luma_status.py:snapshot_row"
         ]
       }
     },
@@ -1192,6 +1213,27 @@
         "contract": [
           "tests/test_federation_export.py",
           "tests/test_gui_parity.py"
+        ]
+      }
+    },
+    {
+      "id": "system-diagnostics-doctor",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "The doctor engine's results are surfaced on the native desktop app's existing 'Setup & Diagnostics' screen (thehub-pr packages/prii_desktop setup_center.diagnostics(), reached via the gear icon on every page, no new route) rather than a Vite/dashboard route this checker's frontend discovery can see. scripts/doctor.py is the CLI entrypoint for developers and CI; it has no independent GUI surface of its own.",
+      "analysis": {
+        "files": [
+          "scripts/doctor.py",
+          ".federation/doctor-checks.json"
+        ],
+        "symbols": [
+          "scripts/doctor.py:main"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_doctor.py"
         ]
       }
     },
