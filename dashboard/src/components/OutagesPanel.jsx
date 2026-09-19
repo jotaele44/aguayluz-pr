@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useEventsPaged, useHealth } from '@/lib/hooks'
+import { useEventsPaged, useHealth, useLumaOutageStatus } from '@/lib/hooks'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import {
@@ -24,6 +24,7 @@ export default function OutagesPanel() {
   // surface the true corpus total so the count stays honest.
   const { data: paged, isLoading } = useEventsPaged()
   const { data: health } = useHealth()
+  const { data: lumaStatus } = useLumaOutageStatus({ limit: 24 })
   const backendDown = health != null && health.status !== 'ok'
   const events = paged?.items ?? []
   const total = paged?.total ?? events.length
@@ -73,6 +74,23 @@ export default function OutagesPanel() {
           <div className="mb-1 flex items-center gap-1.5 font-semibold"><AlertTriangle className="h-3.5 w-3.5" /> Snapshot caveat</div>
           Service-event records are shown as reported/snapshot-grade. Do not infer live utility attribution unless the source record explicitly supports it.
         </div>
+
+        {lumaStatus?.latest && (
+          <details className="rounded-md border border-sky-500/20 bg-sky-500/5 p-2 text-[11px] text-slate-300">
+            <summary className="cursor-pointer font-semibold text-sky-200">
+              MiLUMA regional status · raw source schema · {fmtDate(lumaStatus.latest.snapshot_ts)}
+            </summary>
+            <p className="mt-1 text-slate-400">
+              Preserved independently from municipio/zone events. No regional aggregate is expanded into a municipality or restoration event.
+            </p>
+            <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded bg-slate-950 p-2 text-[10px] text-slate-300">
+              {JSON.stringify(lumaStatus.latest.raw_payload, null, 2)}
+            </pre>
+            <p className="mt-1 text-slate-500">
+              history snapshots: {lumaStatus.total ?? 0} · schema state: {lumaStatus.schema_state ?? 'RAW_UNFROZEN'}
+            </p>
+          </details>
+        )}
 
         <div className="px-1 pb-1 text-xs text-slate-400">{filtered.length} of {events.length} recent loaded · {total.toLocaleString()} total · {groups.length} areas</div>
 
