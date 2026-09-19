@@ -196,6 +196,11 @@ STEP_AEE_INGEST = (
     ],
     True,
 )
+STEP_PREB_RELIABILITY = (
+    "PREB NEPR-MI-2019-0007 docket → reliability source-family index",
+    ["scripts/ingest_preb_reliability_docket.py"],
+    True,
+)
 STEP_WATERS_ENRICH = (
     "EPA WATERS/NHDPlus asset enrichment",
     ["scripts/enrich_waters_nhd.py"],
@@ -287,6 +292,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_ECHO,
         STEP_FEMA,
         STEP_OSHA,
+        STEP_PREB_RELIABILITY,
         STEP_WATERS_ENRICH,
         STEP_USGS_COVERAGE_GATE,
         *_DERIVE,
@@ -325,6 +331,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_LUMA_STATUS_INGEST,
         STEP_LUMA_STATUS_CHANGES,
         STEP_AEE_INGEST,
+        STEP_PREB_RELIABILITY,
         STEP_WATERS_ENRICH,
         STEP_USGS_COVERAGE_GATE,
         *_DERIVE,
