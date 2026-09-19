@@ -60,7 +60,10 @@ def test_keyed_and_waf_gated_steps_are_optional():
         refresh.STEP_OSHA,
         refresh.STEP_NEON_PRODUCTS,
         refresh.STEP_USGS_SAMPLES,
-                 refresh.STEP_USGS_FIELD_MEAS, refresh.STEP_USGS_PEAKS, refresh.STEP_NHC):
+        refresh.STEP_USGS_FIELD_MEAS,
+        refresh.STEP_USGS_PEAKS,
+        refresh.STEP_NHC,
+    ):
         assert step[2] is True, f"{_script_of(step)} must be optional"
 
 
