@@ -1,6 +1,6 @@
 """Regression gates for the PREB NEPR-MI-2019-0007 docket index."""
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import pytest
 
