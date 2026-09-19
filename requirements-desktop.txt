@@ -4,9 +4,5 @@ pywebview>=6.2.1
 # repositories install independently without requiring a sibling checkout.
 prii-desktop @ https://github.com/jotaele44/thehub-pr/archive/f2b81769924689b4d959554928810b1d7b7ef3d6.zip#subdirectory=packages/prii_desktop
 prii-export-utils @ https://github.com/jotaele44/thehub-pr/archive/f2b81769924689b4d959554928810b1d7b7ef3d6.zip#subdirectory=packages/prii_export_utils
-# setup_center.diagnostics() optionally calls into this if installed (see
-# packages/prii_doctor) -- installed here so the frozen desktop bundle
-# exercises that integration for real.
-prii-doctor @ https://github.com/jotaele44/thehub-pr/archive/f2d5a0a742215db00915475e1e494b8329608dbd.zip#subdirectory=packages/prii_doctor
 jsonschema>=4.21.0
 PyYAML>=6.0
