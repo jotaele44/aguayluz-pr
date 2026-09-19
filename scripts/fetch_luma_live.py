@@ -23,6 +23,7 @@ Examples:
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import sys
 import unicodedata
@@ -103,10 +104,8 @@ def fetch_regions(timeout: float) -> object:
 def _remove_stale_outputs(paths: list[Path]) -> None:
     """Fail closed: an unavailable live source must not leave old temp bytes reusable."""
     for path in paths:
-        try:
+        with contextlib.suppress(FileNotFoundError):
             path.unlink()
-        except FileNotFoundError:
-            pass
 
 
 def main() -> int:
