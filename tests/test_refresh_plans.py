@@ -57,6 +57,7 @@ def test_keyed_and_waf_gated_steps_are_optional():
         refresh.STEP_WATERS_ENRICH,
         refresh.STEP_AEE_FETCH,
         refresh.STEP_LUMA_STATUS_INGEST,
+        refresh.STEP_LUMA_STATUS_CHANGES,
         refresh.STEP_OSHA,
         refresh.STEP_NEON_PRODUCTS,
         refresh.STEP_USGS_SAMPLES,
@@ -171,3 +172,18 @@ def test_miluma_refresh_uses_one_receipt_for_both_ingests():
     assert status_argv[status_argv.index("--snapshot-meta") + 1] == manifest
     assert town_argv[town_argv.index("--snapshot-meta") + 1] == manifest
     assert town_argv[town_argv.index("--out") + 1] == "data/luma_live_incidents.jsonl"
+
+
+
+def test_luma_change_derivation_follows_receipt_bound_snapshot_ingest():
+    scripts = [_script_of(s) for s in refresh.PLANS["all"]]
+    snapshot_i = scripts.index("scripts/ingest_luma_status.py")
+    change_i = scripts.index("scripts/derive_luma_status_changes.py")
+    aee_i = scripts.index("scripts/ingest_aee.py")
+    assert snapshot_i < change_i < aee_i
+
+
+def test_luma_change_derivation_is_not_scheduled_without_live_fetch():
+    for cadence in ("fast", "daily", "weekly"):
+        scripts = {_script_of(s) for s in refresh.PLANS[cadence]}
+        assert "scripts/derive_luma_status_changes.py" not in scripts
