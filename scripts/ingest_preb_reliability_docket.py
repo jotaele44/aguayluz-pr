@@ -67,9 +67,9 @@ class DocketParser(html.parser.HTMLParser):
     def handle_endtag(self, tag: str) -> None:
         if tag == "a" and self._in_tr and self._links:
             href, label = self._links.pop()
-            self._row_links.append((href, " ".join(label.split())))
+            self._row_links.append((href, label))
         elif tag == "td" and self._in_tr and self._in_td:
-            self._cells.append(" ".join("".join(self._current_cell).split()))
+            self._cells.append("".join(self._current_cell))
             self._current_cell = []
             self._in_td = False
         elif tag == "tr" and self._in_tr:
@@ -107,14 +107,16 @@ def _advertised_count(text: str) -> int:
     return int(m.group(1).replace(",", ""))
 
 
-def _split_title_subject(raw_first_cell: str) -> tuple[str, str]:
+def _normalized(text: str) -> str:
+    return " ".join(text.split())
+
+
+def _split_title_subject(raw_first_cell: str, raw_link_label: str) -> tuple[str, str]:
     marker = re.search(r"\b(?:Asunto|Subject)\s*:\s*", raw_first_cell, re.IGNORECASE)
+    title_raw = raw_link_label
     if not marker:
-        return raw_first_cell, ""
-    return (
-        raw_first_cell[: marker.start()].strip(),
-        raw_first_cell[marker.end() :].strip(),
-    )
+        return title_raw, ""
+    return title_raw, raw_first_cell[marker.end() :]
 
 
 def discovery_class(title: str, subject: str) -> str:
@@ -144,7 +146,8 @@ def parse_docket(html_text: str, source_url: str, retrieval_ts: str) -> tuple[li
     for index, parsed in enumerate(parser.rows, start=1):
         cells = parsed["cells"]
         raw_first = cells[0]
-        title, subject = _split_title_subject(raw_first)
+        raw_link_label = parsed["links"][0][1]
+        title, subject = _split_title_subject(raw_first, raw_link_label)
         displayed_date = cells[1] if len(cells) > 1 else ""
         order_date = cells[2] if len(cells) > 2 else ""
         href, _label = parsed["links"][0]
@@ -158,8 +161,12 @@ def parse_docket(html_text: str, source_url: str, retrieval_ts: str) -> tuple[li
                 "subject_raw": subject,
                 "displayed_date_raw": displayed_date,
                 "order_date_raw": order_date,
+                "title_normalized": _normalized(title),
+                "subject_normalized": _normalized(subject),
+                "displayed_date_normalized": _normalized(displayed_date),
+                "order_date_normalized": _normalized(order_date),
                 "document_url": doc_url,
-                "discovery_class": discovery_class(title, subject),
+                "discovery_class": discovery_class(_normalized(title), _normalized(subject)),
                 "comparability_to_miluma_live": "NONCOMPARABLE_BY_DEFAULT",
                 "retrieval_ts": retrieval_ts,
                 "source_url": source_url,
