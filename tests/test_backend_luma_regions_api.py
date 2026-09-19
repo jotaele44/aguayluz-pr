@@ -12,7 +12,6 @@ pytest.importorskip("httpx")
 import server.backend.main as backend  # noqa: E402
 from starlette.testclient import TestClient  # noqa: E402
 
-
 def test_luma_regions_endpoint_closes_arithmetic_and_preserves_scope(monkeypatch):
     rows = [
         {
@@ -58,13 +57,14 @@ def test_luma_regions_endpoint_closes_arithmetic_and_preserves_scope(monkeypatch
         "affected_pct": 2.0,
     }
     assert body["arithmetic_closed"] is True
+    assert body["freshness"]["current_state_max_age_seconds"] == 3600
+    assert "not a MiLUMA publication SLA" in body["freshness"]["policy_basis"]
     assert body["scope"] == {
         "record_class": "regional_aggregate_snapshot",
         "event_identity_effect": "NONE",
         "normalization_identity_effect": "NONE",
     }
     assert [row["region_raw"] for row in body["items"]] == ["SAN JUAN", "PONCE"]
-
 
 def test_luma_regions_endpoint_surfaces_mixed_snapshot_times(monkeypatch):
     rows = [
@@ -88,3 +88,25 @@ def test_luma_regions_endpoint_surfaces_mixed_snapshot_times(monkeypatch):
     assert body["observed_at"] is None
     assert body["totals"]["customers"] == 20
     assert body["totals"]["affected"] == 3
+
+
+def test_luma_regions_old_snapshot_is_not_current_state_eligible(monkeypatch):
+    monkeypatch.setattr(
+        backend,
+        "_luma_region_status",
+        [
+            {
+                "total_customers": 100,
+                "affected_customers": 1,
+                "observed_at": "2025-03-03T01:38:40Z",
+            }
+        ],
+    )
+
+    with TestClient(backend.app) as client:
+        body = client.get("/outages/regions").json()
+
+    assert body["snapshot_consistent"] is True
+    assert body["arithmetic_closed"] is True
+    assert body["freshness"]["current_state_eligible"] is False
+    assert body["freshness"]["snapshot_age_seconds"] > 3600
