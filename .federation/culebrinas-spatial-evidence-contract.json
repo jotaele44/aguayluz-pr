@@ -1,0 +1,58 @@
+{
+  "contract": "federation.spatial-evidence/1.0",
+  "frontier_id": "culebrinas_frontier_v2",
+  "producer": "AGUAYLUZ",
+  "custody": "FEDERATION_EVIDENCE_PLANE",
+  "consumer": "THEHUB",
+  "canonical_source_services": [
+    {
+      "source_id": "pr_sige_aquifer",
+      "url": "https://sige.pr.gov/server/rest/services/MIPR/Geologia_v10_N/FeatureServer/2",
+      "layer_id": 2,
+      "geometry_type": "esriGeometryPolygon",
+      "crs": "EPSG:32161",
+      "global_id_field": "GlobalID",
+      "state": "AUTHORITATIVE_SERVICE_BOUND_FEATURE_UNRESOLVED"
+    },
+    {
+      "source_id": "pr_sige_watershed",
+      "url": "https://sige.pr.gov/server/rest/services/MIPR/Geologia_v10_N/FeatureServer/0",
+      "layer_id": 0,
+      "feature_name": "Cuenca del Río Culebrinas",
+      "crs": "EPSG:32161",
+      "state": "AUTHORITATIVE_SERVICE_BOUND"
+    }
+  ],
+  "artifacts": {
+    "gpkg": {
+      "path": "external_checkpoint/CULEBRINAS_FRONTIER_GEOMETRIC_EXPERIMENTAL_v2/culebrinas_frontier_field_system_v2.gpkg",
+      "sha256": "4f1cab6c8abfc42e0eff72d687e749fd3c904d8e990a1d13b5ccf39a39aeb2f2",
+      "state": "NONCANONICAL_FIELD_SYSTEM"
+    },
+    "evidence_ledger": {
+      "path": "data/culebrinas/frontier/v2/evidence_ledger_v2.csv",
+      "sha256": "f5a046f88b3f86077b3fa73a48ba67ab099afdad7c14e23d2449884fbc98da10"
+    },
+    "checkpoint": {
+      "path": "data/culebrinas/frontier/v2/certification_checkpoint_v2.json",
+      "sha256": "82d084ddfd7fa5ff6f56c05d46940fe881a9dcae353b2715145ca83c81d55d2a"
+    }
+  },
+  "gates": {
+    "canonical_aquifer_feature": "BLOCKED_FEATURE_EXTRACTION",
+    "measured_kvi": "BLOCKED_NO_FIELD_DATA",
+    "H1": "OPEN_UNTESTED",
+    "H2": "OPEN_UNTESTED",
+    "H3": "OPEN_PENDING_SEISMIC_INTERPRETATION",
+    "H4": "OPEN_UNTESTED",
+    "H5": "OPEN_UNTESTED"
+  },
+  "rules": [
+    "Do not promote NONCANONICAL field geometry to canonical aquifer identity.",
+    "Do not compute KVI_MEASURED from proposed stations or proximity-only coverage.",
+    "Preserve observed, modelled, inferred, proposed, and unknown states separately.",
+    "Field ingest fails closed on missing CRS, stable IDs, hashes, calibration, or custody where required.",
+    "Future canonical SIGE feature extraction supersedes only the geometry binding; historical source manifestations remain preserved."
+  ],
+  "certification": "OPEN_BLOCKED_EXPERIMENTAL"
+}

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Culebrinas Field Observation",
+  "type": "object",
+  "required": ["observation_id","campaign_id","station_id","observed_utc","domain","method","parameter","qa_flag","raw_source_id","identity_state","geometry_state"],
+  "properties": {
+    "observation_id":{"type":"string","minLength":1},
+    "campaign_id":{"type":"string","minLength":1},
+    "station_id":{"type":"string","minLength":1},
+    "sample_id":{"type":["string","null"]},
+    "observed_utc":{"type":"string","format":"date-time"},
+    "domain":{"enum":["GROUNDWATER","SURFACE_WATER","GEOPHYSICS","GEOCHEMISTRY","FRESH_SALT","SGD","METEOROLOGY","GEOLOGY"]},
+    "method":{"type":"string"},
+    "parameter":{"type":"string"},
+    "value":{"type":["number","null"]},
+    "unit":{"type":["string","null"]},
+    "detection_limit":{"type":["number","null"]},
+    "qa_flag":{"enum":["RAW","PASS","FAIL","REVIEW","BELOW_DETECTION","DUPLICATE","BLANK","CALIBRATION"]},
+    "raw_source_id":{"type":"string"},
+    "identity_state":{"enum":["CERTIFIED","PASS","CANDIDATE_NOT_IDENTITY","UNRESOLVED"]},
+    "geometry_state":{"enum":["OBSERVED","UNRESOLVED","NULL_EMPTY"]},
+    "notes":{"type":["string","null"]},
+    "geometry":{"type":["object","null"]}
+  },
+  "additionalProperties": false
+}

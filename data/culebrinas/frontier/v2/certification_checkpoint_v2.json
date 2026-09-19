@@ -1,0 +1,64 @@
+{
+  "checkpoint_id": "CULEBRINAS_FRONTIER_PREFIELD_EXECUTION_v4",
+  "baseline_reused": "CULEBRINAS_FRONTIER_FEDERATION_DEPLOYMENT_v3",
+  "scope": {
+    "certified_claim": "The bounded Culebrinas frontier design, producer/control-plane interfaces, 15-hole USACE design-boring header census, executable field packet, KVI method, and fail-closed hypothesis engine are deployed on draft federation branches and preserve evidence/identity separation.",
+    "not_certified": [
+      "Exact authoritative Culebrinas aquifer polygon and GlobalID",
+      "Authoritative CRS binding for 1998 USACE boring X/Y values",
+      "Complete DRNA/AAA/UPR/private subsurface census",
+      "UPRM 2026 seismic interpretation",
+      "Green merged federation integration",
+      "Measured KVI",
+      "Experimental truth/falsification result for H1-H5",
+      "Universal PR-wide maximum claim"
+    ]
+  },
+  "states": {
+    "baseline_v3": "PASS_REUSED",
+    "canonical_service_binding": "PASS_SERVICE_LAYER_CRS_GLOBALID_SCHEMA",
+    "authoritative_aquifer_geometry": "BLOCKED_FEATURE_EXTRACTION",
+    "usace_design_boring_header_census": "PASS_15_OF_15",
+    "usace_borrow_site_identity": "PASS_CB_CUL_15",
+    "usace_raw_xy_crs": "OPEN_AUTHORITATIVE_SAME_PROJECT_NAD83_SUPPORT_NOT_DIRECT_BINDING",
+    "complete_subsurface_census": "OPEN_INCOMPLETE",
+    "uprm_2026_seismic_interpretation": "OPEN_PENDING",
+    "field_deployment_package": "DEPLOYED_ON_BRANCH_CERTIFIED_DESIGN",
+    "kvi_method_engine": "DEPLOYED_ON_BRANCH_FAIL_CLOSED",
+    "federation_producer_branch": "DEPLOYED_ON_BRANCH_PR_225_DRAFT",
+    "federation_control_plane_branch": "DEPLOYED_ON_BRANCH_PR_244_DRAFT",
+    "federation_ci": "CI_INFRA_BLOCKED_REPEATED_JOBS_WITHOUT_STEPS_LOGS",
+    "federation_merged": false,
+    "new_field_observations": 0,
+    "kvi_measured": "BLOCKED_NO_FIELD_DATA",
+    "H1": "OPEN_UNTESTED",
+    "H2": "OPEN_UNTESTED",
+    "H3": "OPEN_PENDING_SEISMIC_INTERPRETATION",
+    "H4": "OPEN_UNTESTED",
+    "H5": "OPEN_UNTESTED",
+    "geometric_experimental_certification": "OPEN_BLOCKED"
+  },
+  "blocking_evidence": [
+    "SIGE exact aquifer feature/GlobalID not extracted",
+    "1998 USACE boring X/Y horizontal CRS not directly stated in recovered drilling-log manifestation",
+    "Complete DRNA/AAA/UPR/private well and boring census not closed",
+    "UPRM 2026 seismic interpretation not yet recovered",
+    "GitHub Actions federation integration not green; rerun repeats failures without usable steps/logs",
+    "No new nested groundwater monitoring",
+    "No repeated river gain/loss measurements",
+    "No direct fresh/salt interface campaign",
+    "No >=2-method SGD campaign",
+    "No measured KVI or withheld experimental validation"
+  ],
+  "invariants": {
+    "observed_proposed_separated": true,
+    "raw_normalized_canonical_separated": true,
+    "measured_kvi_not_synthesized": true,
+    "identity_by_proximity_prohibited": true,
+    "raw_usace_xy_not_transformed_without_crs_binding": true,
+    "boring_header_ids_unique": true,
+    "boring_header_count": 15,
+    "field_observation_rows_new": 0,
+    "production_promotion_enabled": false
+  }
+}
