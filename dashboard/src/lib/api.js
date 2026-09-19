@@ -113,6 +113,12 @@ export const getLumaRegionStatus = () => getJSON('/outages/regions', {
   snapshot_consistent: true,
   totals: { customers: 0, affected: 0, affected_pct: 0 },
   arithmetic_closed: true,
+  freshness: {
+    snapshot_age_seconds: null,
+    current_state_max_age_seconds: 3600,
+    current_state_eligible: false,
+    policy_basis: 'aguayluz operational display guard; not a MiLUMA publication SLA',
+  },
   items: [],
 })
 export const getAssetEvents = (id) => getJSON(`/assets/${id}/events`, [])
