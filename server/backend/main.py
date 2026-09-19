@@ -247,6 +247,9 @@ _events: list[dict[str, Any]] = [row for _, rows in _event_sources for row in ro
 _luma_status_snapshots: list[dict[str, Any]] = _load_jsonl(
     DATA / "luma_status_snapshots.jsonl"
 )
+_luma_status_changes: list[dict[str, Any]] = _load_jsonl(
+    DATA / "luma_status_changes.jsonl"
+)
 _EVENT_DENSITY_SOURCE_MANIFESTATIONS = [
     _source_manifestation(path, len(rows)) for path, rows in _event_sources
 ]
@@ -335,6 +338,26 @@ def outages_status(limit: int = Query(default=24, ge=1, le=500)) -> JSONResponse
         "total": len(ordered),
         "latest": items[0] if items else None,
         "items": items,
+        "schema_state": "RAW_UNFROZEN",
+    })
+
+
+@app.get("/outages/status/changes")
+def outages_status_changes(limit: int = Query(default=24, ge=1, le=500)) -> JSONResponse:
+    """Return conservative adjacent-snapshot changes, never inferred restorations."""
+    ordered = sorted(
+        _luma_status_changes,
+        key=lambda row: (
+            str(row.get("current_snapshot_ts", "")),
+            str(row.get("current_payload_sha256", "")),
+        ),
+        reverse=True,
+    )
+    items = ordered[:limit]
+    return JSONResponse({
+        "total": len(ordered),
+        "items": items,
+        "restoration_inference": "PROHIBITED_FROM_SNAPSHOT_CHANGE_ALONE",
         "schema_state": "RAW_UNFROZEN",
     })
 
