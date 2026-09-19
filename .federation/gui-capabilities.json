@@ -1299,6 +1299,29 @@
           "tests/test_local_hydro_assets.py"
         ]
       }
+    },
+    {
+      "id": "jp-flood-document-ingestion",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "JP flood-document manifest validation and lookup materialization are ingestion/provenance controls consumed by AguaYLuz; they are not a standalone human-facing workflow. The GUI consumes downstream operational data rather than exposing the ingestion CLI.",
+      "analysis": {
+        "files": [
+          "scripts/ingest_jp_flood_documents.py"
+        ],
+        "symbols": [
+          "scripts/ingest_jp_flood_documents.py:build_lookup",
+          "scripts/ingest_jp_flood_documents.py:validate_manifest",
+          "scripts/ingest_jp_flood_documents.py:main"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_gui_parity.py",
+          "tests/test_ingest_jp_flood_documents.py"
+        ]
+      }
     }
   ],
   "exceptions": []
