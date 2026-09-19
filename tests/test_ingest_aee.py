@@ -4,6 +4,7 @@ import json
 import re
 import sys
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import pytest
 
@@ -157,7 +158,10 @@ def test_live_receipt_binds_timestamp_and_cannot_overwrite_historical(tmp_path, 
     rows = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines()]
     assert rows
     assert all(r["start_time"] == "2026-09-19T12:34:56Z" for r in rows)
-    assert all("api.miluma.lumapr.com" in r["source_ref"] for r in rows)
+    assert all(
+        urlsplit(r["source_ref"]).hostname == "api.miluma.lumapr.com"
+        for r in rows
+    )
 
     monkeypatch.setattr(
         sys,
