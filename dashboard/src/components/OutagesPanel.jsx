@@ -47,12 +47,14 @@ export default function OutagesPanel() {
     return Array.from(map.entries()).sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]))
   }, [filtered])
 
-  if (isLoading || !events.length) {
+  const hasRegionalStatus = (lumaRegions?.items?.length ?? 0) > 0
+
+  if (isLoading || (!events.length && !hasRegionalStatus)) {
     return (
       <PanelState
         isLoading={isLoading}
         isError={backendDown}
-        isEmpty={!events.length}
+        isEmpty={!events.length && !hasRegionalStatus}
         rows={5}
         skeletonClass="h-16"
         emptyText="No service events available."
@@ -70,7 +72,7 @@ export default function OutagesPanel() {
         </Select>
       </div>
       <div className="h-full overflow-auto p-2 space-y-2">
-        {lumaRegions?.items?.length > 0 && (
+        {hasRegionalStatus && (
           <section className="rounded-lg border border-slate-800 bg-slate-950/80 p-3">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <div>
