@@ -159,3 +159,18 @@ def test_luma_status_is_not_scheduled_without_live_fetch():
         scripts = {_script_of(s) for s in refresh.PLANS[cadence]}
         assert "scripts/fetch_luma_live.py" not in scripts
         assert "scripts/ingest_luma_status.py" not in scripts
+
+
+
+def test_luma_change_derivation_follows_snapshot_ingest():
+    scripts = [_script_of(s) for s in refresh.PLANS["all"]]
+    snapshot_i = scripts.index("scripts/ingest_luma_status.py")
+    change_i = scripts.index("scripts/derive_luma_status_changes.py")
+    aee_i = scripts.index("scripts/ingest_aee.py")
+    assert snapshot_i < change_i < aee_i
+
+
+def test_luma_change_derivation_is_not_scheduled_without_live_fetch():
+    for cadence in ("fast", "daily", "weekly"):
+        scripts = {_script_of(s) for s in refresh.PLANS[cadence]}
+        assert "scripts/derive_luma_status_changes.py" not in scripts
