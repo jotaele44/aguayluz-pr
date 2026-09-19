@@ -178,6 +178,11 @@ STEP_LUMA_STATUS_INGEST = (
     ],
     True,
 )
+STEP_LUMA_STATUS_CHANGES = (
+    "MiLUMA adjacent snapshots → conservative source-state changes",
+    ["scripts/derive_luma_status_changes.py"],
+    True,
+)
 STEP_AEE_INGEST = (
     "AEE snapshot ingest → aee_incidents",
     [
@@ -318,6 +323,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_OSHA,
         STEP_AEE_FETCH,
         STEP_LUMA_STATUS_INGEST,
+        STEP_LUMA_STATUS_CHANGES,
         STEP_AEE_INGEST,
         STEP_WATERS_ENRICH,
         STEP_USGS_COVERAGE_GATE,
