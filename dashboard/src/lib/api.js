@@ -107,6 +107,10 @@ export const getEvents = async (f = {}) => {
   return r?.items ?? r ?? []
 }
 export const getEventsPaged = (f = {}) => getJSON(`/events${qs(f)}`, { total: 0, offset: 0, items: [] })
+export const getLumaOutageStatus = (f = {}) => getJSON(
+  `/outages/status${qs(f)}`,
+  { total: 0, latest: null, items: [], schema_state: 'RAW_UNFROZEN' },
+)
 export const getAssetEvents = (id) => getJSON(`/assets/${id}/events`, [])
 export const getMunicipioSummary = (name) => getJSON(`/municipios/${encodeURIComponent(name)}/summary`, null)
 export const getReadings = (f = {}) => getJSON(`/readings${qs(typeof f === 'string' ? { kind: f } : f)}`, [])
