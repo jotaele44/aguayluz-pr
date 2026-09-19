@@ -56,7 +56,7 @@
     "ingest_power": "python3 scripts/ingest_power.py",
     "ingest_preps": "python3 scripts/ingest_preps.py",
     "fetch_luma_live": "python3 scripts/fetch_luma_live.py --out /tmp/outages_by_town.json --regions-out /tmp/luma_regions.json --manifest-out /tmp/luma_snapshot_manifest.json",
-    "ingest_aee": "python3 scripts/ingest_aee.py --src /tmp/outages_by_town.json --snapshot-meta /tmp/luma_snapshot_manifest.json",
+    "ingest_aee": "python3 scripts/ingest_aee.py --src /tmp/outages_by_town.json --snapshot-meta /tmp/luma_snapshot_manifest.json --out data/luma_live_incidents.jsonl",
     "build_municipios_geo": "python3 scripts/build_pr_municipios_geo.py --src <census_gazetteer_counties.txt>",
     "build_geo_boundaries": "python3 scripts/build_pr_geo_boundaries.py --counties <cb_us_county_500k.shp> --barrios <cb_72_cousub_500k.shp>",
     "ingest_luma_regions": "python3 scripts/ingest_luma_regions.py --src /tmp/luma_regions.json --snapshot-meta /tmp/luma_snapshot_manifest.json"
