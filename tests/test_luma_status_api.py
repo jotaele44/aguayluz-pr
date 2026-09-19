@@ -32,6 +32,18 @@ def client(monkeypatch):
         },
     ]
     monkeypatch.setattr(backend, "_luma_status_snapshots", rows)
+    monkeypatch.setattr(
+        backend,
+        "_luma_status_changes",
+        [
+            {
+                "current_snapshot_ts": "2026-09-19T09:00:00Z",
+                "current_payload_sha256": "b" * 64,
+                "observation": "SOURCE_STATE_CHANGE",
+                "restoration_state": "UNRESOLVED",
+            }
+        ],
+    )
     return TestClient(backend.app)
 
 
@@ -52,3 +64,15 @@ def test_outages_status_returns_latest_without_schema_promotion(client):
 def test_outages_status_limit_is_bounded(client):
     response = client.get("/outages/status?limit=0")
     assert response.status_code == 422
+
+
+
+def test_outages_status_changes_never_promotes_restoration(client):
+    response = client.get("/outages/status/changes?limit=1")
+    assert response.status_code == 200
+    doc = response.json()
+
+    assert doc["total"] == 1
+    assert doc["restoration_inference"] == "PROHIBITED_FROM_SNAPSHOT_CHANGE_ALONE"
+    assert doc["items"][0]["observation"] == "SOURCE_STATE_CHANGE"
+    assert doc["items"][0]["restoration_state"] == "UNRESOLVED"
