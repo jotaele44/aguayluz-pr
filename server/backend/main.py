@@ -256,7 +256,9 @@ _luma_status_snapshots: list[dict[str, Any]] = _load_jsonl(
     DATA / "luma_status_snapshots.jsonl"
 )
 _EVENT_DENSITY_SOURCE_MANIFESTATIONS = [
-    _source_manifestation(path, len(rows)) for path, rows in _event_sources
+    _source_manifestation(path, len(rows))
+    for path, rows in _event_sources
+    if path.is_file()
 ]
 _municipios_geojson: dict[str, Any] = _load_json(
     DATA / "geo" / "pr_municipios.geojson",
