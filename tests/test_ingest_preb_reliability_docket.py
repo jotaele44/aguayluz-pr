@@ -1,13 +1,16 @@
 """Regression gates for the PREB NEPR-MI-2019-0007 docket index."""
-import sys
+import importlib.util
 from pathlib import Path
 
 import pytest
 
 REPO = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(REPO / "scripts"))
-
-import ingest_preb_reliability_docket as preb  # noqa: E402
+_SPEC = importlib.util.spec_from_file_location(
+    "ingest_preb_reliability_docket",
+    REPO / "scripts" / "ingest_preb_reliability_docket.py",
+)
+preb = importlib.util.module_from_spec(_SPEC)
+_SPEC.loader.exec_module(preb)
 
 
 HTML = """
