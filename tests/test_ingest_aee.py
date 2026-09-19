@@ -9,11 +9,11 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
+import ingest_aee  # noqa: E402
 from aguayluz import REPO_ROOT  # noqa: E402
 from aguayluz.models import ServiceEvent  # noqa: E402
 from federation_export import build_streams  # noqa: E402
 from fetch_luma_live import municipio_keys  # noqa: E402
-import ingest_aee  # noqa: E402
 from ingest_aee import build_events, unaccent_upper  # noqa: E402
 
 TS = "2025-03-03T01:38:40Z"
