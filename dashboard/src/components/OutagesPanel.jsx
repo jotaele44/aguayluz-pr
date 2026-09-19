@@ -78,7 +78,8 @@ export default function OutagesPanel() {
               <div>
                 <div className="text-xs font-semibold text-slate-100">MiLUMA regional customer status</div>
                 <div className="mt-0.5 text-[11px] text-slate-500">
-                  Snapshot {fmtDate(lumaRegions.observed_at)} · T2 / needs review
+                  Snapshot {fmtDate(lumaRegions.observed_at)} · T2 / needs review ·{' '}
+                  {lumaRegions.freshness?.current_state_eligible ? 'current-state eligible' : 'stale/not current-state eligible'}
                 </div>
               </div>
               <div className="text-right">
