@@ -16,14 +16,6 @@ MODULE = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader
 SPEC.loader.exec_module(MODULE)
 
-ROOT = Path(__file__).resolve().parents[1]
-SPEC = importlib.util.spec_from_file_location(
-    "validate_unified_skillpacks", ROOT / "tools" / "validate_unified_skillpacks.py"
-)
-MODULE = importlib.util.module_from_spec(SPEC)
-assert SPEC.loader
-SPEC.loader.exec_module(MODULE)
-
 
 class TestUnifiedSkillpackConformance(unittest.TestCase):
     def test_conformance(self) -> None:
