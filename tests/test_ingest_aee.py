@@ -1,4 +1,6 @@
 """Tests for scripts/ingest_aee.py — the per-municipality AEE/LUMA outage adapter."""
+import hashlib
+import json
 import re
 import sys
 from pathlib import Path
@@ -9,6 +11,7 @@ from aguayluz import REPO_ROOT  # noqa: E402
 from aguayluz.models import ServiceEvent  # noqa: E402
 from federation_export import build_streams  # noqa: E402
 from fetch_luma_live import municipio_keys  # noqa: E402
+import ingest_aee  # noqa: E402
 from ingest_aee import build_events, unaccent_upper  # noqa: E402
 
 TS = "2025-03-03T01:38:40Z"
@@ -109,3 +112,104 @@ def test_federation_export_attaches_location_and_located_in():
     # the two San Juan zone-events converge on one municipality node
     munis = [e for e in streams["entities"] if e["entity_type"] == "municipality"]
     assert any(m["name"] == "San Juan" for m in munis)
+
+
+
+def test_live_receipt_binds_timestamp_and_cannot_overwrite_historical(tmp_path, monkeypatch):
+    src = tmp_path / "towns.json"
+    meta = tmp_path / "manifest.json"
+    out = tmp_path / "luma_live_incidents.jsonl"
+    raw = json.dumps(SAMPLE, separators=(",", ":")).encode("utf-8")
+    src.write_bytes(raw)
+    digest = hashlib.sha256(raw).hexdigest()
+    meta.write_text(
+        json.dumps(
+            {
+                "towns": {
+                    "status": "PASS",
+                    "url": "https://api.miluma.lumapr.com/miluma-outage-api/outage/municipality/towns",
+                    "retrieval_utc": "2026-09-19T12:34:56Z",
+                    "response_sha256": digest,
+                    "response_bytes": len(raw),
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "ingest_aee.py",
+            "--src",
+            str(src),
+            "--snapshot-meta",
+            str(meta),
+            "--geo",
+            str(REPO_ROOT / "data/geo/pr_municipios.json"),
+            "--out",
+            str(out),
+        ],
+    )
+    assert ingest_aee.main() == 0
+    rows = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines()]
+    assert rows
+    assert all(r["start_time"] == "2026-09-19T12:34:56Z" for r in rows)
+    assert all("api.miluma.lumapr.com" in r["source_ref"] for r in rows)
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "ingest_aee.py",
+            "--src",
+            str(src),
+            "--snapshot-meta",
+            str(meta),
+            "--geo",
+            str(REPO_ROOT / "data/geo/pr_municipios.json"),
+            "--out",
+            "data/aee_incidents.jsonl",
+        ],
+    )
+    with pytest.raises(ValueError, match="may not overwrite historical"):
+        ingest_aee.main()
+
+
+def test_live_receipt_rejects_byte_hash_mismatch(tmp_path, monkeypatch):
+    src = tmp_path / "towns.json"
+    meta = tmp_path / "manifest.json"
+    out = tmp_path / "live.jsonl"
+    src.write_text(json.dumps(SAMPLE), encoding="utf-8")
+    meta.write_text(
+        json.dumps(
+            {
+                "towns": {
+                    "status": "PASS",
+                    "url": "https://api.miluma.lumapr.com/miluma-outage-api/outage/municipality/towns",
+                    "retrieval_utc": "2026-09-19T12:34:56Z",
+                    "response_sha256": "0" * 64,
+                    "response_bytes": len(src.read_bytes()),
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "ingest_aee.py",
+            "--src",
+            str(src),
+            "--snapshot-meta",
+            str(meta),
+            "--geo",
+            str(REPO_ROOT / "data/geo/pr_municipios.json"),
+            "--out",
+            str(out),
+        ],
+    )
+    with pytest.raises(ValueError, match="hash mismatch"):
+        ingest_aee.main()
+    assert not out.exists()
