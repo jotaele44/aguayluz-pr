@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/luma_region_status.schema.json",
+  "title": "LumaRegionStatus",
+  "description": "A point-in-time regional customer-service aggregate from MiLUMA. This is a snapshot observation, not a discrete outage-event identity.",
+  "type": "object",
+  "required": [
+    "status_id",
+    "region_raw",
+    "region_normalized",
+    "total_customers",
+    "affected_customers",
+    "affected_pct",
+    "observed_at",
+    "source_ref",
+    "source_hash",
+    "evidence_tier",
+    "confidence",
+    "review_status"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "status_id": {
+      "type": "string",
+      "pattern": "^AYL_LUMA_REGION_[0-9]{8}T[0-9]{6}Z_[A-Za-z0-9_-]+$"
+    },
+    "region_raw": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Region name exactly as emitted by MiLUMA."
+    },
+    "region_normalized": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Whitespace-folded, unaccented uppercase discovery/join key. Not canonical identity."
+    },
+    "total_customers": { "type": "integer", "minimum": 0 },
+    "affected_customers": { "type": "integer", "minimum": 0 },
+    "affected_pct": { "type": "number", "minimum": 0, "maximum": 100 },
+    "observed_at": { "type": "string", "format": "date-time" },
+    "source_ref": { "type": "string", "minLength": 1 },
+    "source_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "evidence_tier": { "const": "T2" },
+    "confidence": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "review_status": { "const": "needs_review" }
+  }
+}
