@@ -135,7 +135,12 @@ def _lineage(phase: str, inputs: list[str]) -> dict[str, Any]:
 
 
 def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], now: str, geo: dict[str, dict] | None = None, crosswalk: list[dict[str, Any]] | None = None, alerts: list[dict[str, Any]] | None = None, dep_edges: list[dict[str, Any]] | None = None) -> dict[str, list[dict[str, Any]]]:
-    inputs = ["data/utility_assets.jsonl", "data/service_events.jsonl", "data/aee_incidents.jsonl"]
+    inputs = [
+        "data/utility_assets.jsonl",
+        "data/service_events.jsonl",
+        "data/aee_incidents.jsonl",
+        "data/luma_live_incidents.jsonl",
+    ]
     geo = geo or {}
     crosswalk = crosswalk or []
     dep_edges = dep_edges or []
@@ -233,7 +238,12 @@ def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], no
         if muni:
             m_id = _fid("ent", "municipality", _norm(muni))
             entities.setdefault(m_id, _entity(m_id, sid, muni, "municipality", 0.95, inputs, now))
-            ev_src = ["data/aee_incidents.jsonl"] if e.get("evidence_tier") == "T2" else ["data/service_events.jsonl"]
+            if e.get("evidence_tier") == "T2" and "api.miluma.lumapr.com" in str(e.get("source_ref", "")):
+                ev_src = ["data/luma_live_incidents.jsonl"]
+            elif e.get("evidence_tier") == "T2":
+                ev_src = ["data/aee_incidents.jsonl"]
+            else:
+                ev_src = ["data/service_events.jsonl"]
             relationships.update(_rel_kv(ev_id, "located_in", m_id, sid, conf, now, source_inputs=ev_src))
             centroid = geo.get(_geo_key(muni))
             if centroid:
@@ -683,7 +693,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--assets", default=str(DATA_ROOT / "utility_assets.jsonl"))
     ap.add_argument("--events", default=str(DATA_ROOT / "service_events.jsonl"))
     ap.add_argument("--incidents", default=str(DATA_ROOT / "aee_incidents.jsonl"),
-                    help="per-municipality outage events (AEE/LUMA model); merged into events")
+                    help="historical per-municipality outage events; merged into events")
+    ap.add_argument("--live-incidents", default=str(DATA_ROOT / "luma_live_incidents.jsonl"),
+                    help="runtime-only direct MiLUMA town observations; age-gated to one hour")
     ap.add_argument("--readings", nargs="*", default=None,
                     help="monitoring_reading time-series files. Default: data/reservoir_levels.jsonl "
                          "+ every data/*_readings.jsonl (reliability, generation, …) — new sources "
@@ -705,16 +717,33 @@ def main(argv: list[str] | None = None) -> int:
 
     raw_events = _load_jsonl(Path(args.events))
     raw_incidents = _load_jsonl(Path(args.incidents))
+    raw_live_incidents = _load_jsonl(Path(args.live_incidents))
     assets = _load_jsonl(Path(args.assets))
     alerts = _load_jsonl(Path(args.alerts))
-    events = raw_events + raw_incidents
+    now_dt = datetime.now(timezone.utc)
+    live_cutoff = now_dt.timestamp() - 3600
+    current_live_incidents = []
+    for row in raw_live_incidents:
+        start = row.get("start_time")
+        if not isinstance(start, str):
+            continue
+        text_ts = start[:-1] + "+00:00" if start.endswith("Z") else start
+        try:
+            dt = datetime.fromisoformat(text_ts)
+        except ValueError:
+            continue
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        if dt.timestamp() >= live_cutoff:
+            current_live_incidents.append(row)
+    events = raw_events + raw_incidents + current_live_incidents
     geo = _load_geo(Path(args.geo))
     crosswalk = _load_jsonl(Path(args.crosswalk))
     dep_edges = _load_jsonl(Path(args.dep_edges))
     if not assets and not events and not alerts:
         print("no input data (data/utility_assets.jsonl / service_events / aee_incidents / alert_events absent) — nothing to export")
         return 0
-    now = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    now = now_dt.replace(microsecond=0).isoformat().replace("+00:00", "Z")
     streams = build_streams(assets, events, now, geo, crosswalk, alerts, dep_edges)
     manifest_path = write_package(streams, Path(args.out), args.mode, now)
     counts = {k: len(v) for k, v in streams.items()}
