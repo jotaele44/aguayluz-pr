@@ -17,6 +17,7 @@ from fetch_luma_live import (  # noqa: E402
     canonical_municipio_keys,
     municipio_keys,
 )
+import ingest_aee  # noqa: E402
 from ingest_aee import build_events, resolve_snapshot_provenance, unaccent_upper  # noqa: E402
 
 TS = "2025-03-03T01:38:40Z"
@@ -114,7 +115,6 @@ def test_federation_export_attaches_location_and_located_in():
     munis = [e for e in streams["entities"] if e["entity_type"] == "municipality"]
     assert any(m["name"] == "San Juan" for m in munis)
 
-
 def test_live_snapshot_meta_binds_timestamp_source_and_hash(tmp_path):
     src = tmp_path / "towns.json"
     raw = json.dumps(SAMPLE, separators=(",", ":")).encode()
@@ -165,3 +165,37 @@ def test_build_events_carries_live_source_hash():
     events = build_events(SAMPLE, TS, GEO, REF, source_hash="a" * 64)
     assert events
     assert all(event["source_hash"] == "a" * 64 for event in events)
+
+
+def test_live_main_refuses_to_overwrite_committed_historical_snapshot(monkeypatch):
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "ingest_aee.py",
+            "--snapshot-meta",
+            "/tmp/any-live-receipt.json",
+            "--out",
+            "data/aee_incidents.jsonl",
+        ],
+    )
+    assert ingest_aee.main() == 2
+
+def test_live_main_deletes_stale_runtime_output_before_source_failure(monkeypatch, tmp_path):
+    out = tmp_path / "luma_live_incidents.jsonl"
+    out.write_text('{"stale":true}\n')
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "ingest_aee.py",
+            "--src",
+            str(tmp_path / "missing-towns.json"),
+            "--snapshot-meta",
+            str(tmp_path / "missing-manifest.json"),
+            "--out",
+            str(out),
+        ],
+    )
+    assert ingest_aee.main() == 2
+    assert not out.exists()
