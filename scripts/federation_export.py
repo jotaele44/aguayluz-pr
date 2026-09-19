@@ -26,6 +26,7 @@ import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from prii_export_utils import fid as _fid
 from prii_export_utils import norm as _norm
@@ -238,7 +239,8 @@ def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], no
         if muni:
             m_id = _fid("ent", "municipality", _norm(muni))
             entities.setdefault(m_id, _entity(m_id, sid, muni, "municipality", 0.95, inputs, now))
-            if e.get("evidence_tier") == "T2" and "api.miluma.lumapr.com" in str(e.get("source_ref", "")):
+            source_host = urlsplit(str(e.get("source_ref", ""))).hostname
+            if e.get("evidence_tier") == "T2" and source_host == "api.miluma.lumapr.com":
                 ev_src = ["data/luma_live_incidents.jsonl"]
             elif e.get("evidence_tier") == "T2":
                 ev_src = ["data/aee_incidents.jsonl"]
