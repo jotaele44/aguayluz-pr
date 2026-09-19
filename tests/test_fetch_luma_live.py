@@ -130,7 +130,6 @@ def test_main_returns_dedicated_exit_code_and_deletes_stale_temp_files(
         path.write_text("STALE")
 
     err = urllib.error.HTTPError(fetch_luma_live.TOWNS_URL, 403, "Forbidden", {}, None)
-    monkeypatch.setattr(fetch_luma_live, "municipio_keys", lambda _path: ["SAN JUAN"])
     monkeypatch.setattr(fetch_luma_live.urllib.request, "urlopen", _raise(err))
     monkeypatch.setattr(
         sys,
@@ -163,7 +162,6 @@ def test_main_preserves_exact_response_bytes_and_binds_manifest(monkeypatch, tmp
     )
     responses = iter([towns_raw, regions_raw])
 
-    monkeypatch.setattr(fetch_luma_live, "municipio_keys", lambda _path: ["SAN JUAN"])
     monkeypatch.setattr(
         fetch_luma_live.urllib.request,
         "urlopen",
@@ -196,4 +194,7 @@ def test_main_preserves_exact_response_bytes_and_binds_manifest(monkeypatch, tmp
     assert receipt["regions"]["status"] == "PASS"
     assert receipt["towns"]["response_sha256"] == hashlib.sha256(towns_raw).hexdigest()
     assert receipt["regions"]["response_sha256"] == hashlib.sha256(regions_raw).hexdigest()
-    assert receipt["towns"]["request_key_count"] == 1
+    assert receipt["towns"]["request_key_count"] == 93
+    assert receipt["towns"]["canonical_municipio_key_count"] == 78
+    assert receipt["towns"]["discovery_extra_key_count"] == 15
+    assert receipt["towns"]["query_taxonomy_identity_effect"] == "NONE"
