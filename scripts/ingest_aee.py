@@ -211,6 +211,18 @@ def main() -> int:
     args = ap.parse_args()
 
     src = Path(args.src)
+    out = Path(args.out)
+    if args.snapshot_meta:
+        historical_out = Path("data/aee_incidents.jsonl").resolve()
+        if out.resolve() == historical_out:
+            print(
+                "provenance-invalid: live MiLUMA ingest may not overwrite "
+                "committed historical data/aee_incidents.jsonl",
+                file=sys.stderr,
+            )
+            return 2
+        # A failed/new source attempt must not leave an older live snapshot in place.
+        out.unlink(missing_ok=True)
     try:
         doc = json.loads(src.read_text(encoding="utf-8"))
         geo = load_geo(Path(args.geo))
@@ -230,7 +242,6 @@ def main() -> int:
     )
 
     unresolved = sorted({r["affected_area"].split(" / ")[0] for r in rows if r["municipality"] is None})
-    out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8")
     print(f"wrote {len(rows)} outage events -> {out}")
