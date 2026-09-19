@@ -10,8 +10,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 pytest.importorskip("fastapi")
 pytest.importorskip("httpx")
 
-import server.backend.main as backend  # noqa: E402
 from starlette.testclient import TestClient  # noqa: E402
+
+import server.backend.main as backend  # noqa: E402
 
 def test_luma_regions_endpoint_closes_arithmetic_and_preserves_scope(monkeypatch):
     rows = [
