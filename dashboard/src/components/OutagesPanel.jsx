@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useEventsPaged, useHealth } from '@/lib/hooks'
+import { useEventsPaged, useHealth, useLumaRegionStatus } from '@/lib/hooks'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import {
@@ -24,6 +24,7 @@ export default function OutagesPanel() {
   // surface the true corpus total so the count stays honest.
   const { data: paged, isLoading } = useEventsPaged()
   const { data: health } = useHealth()
+  const { data: lumaRegions } = useLumaRegionStatus()
   const backendDown = health != null && health.status !== 'ok'
   const events = paged?.items ?? []
   const total = paged?.total ?? events.length
@@ -69,6 +70,43 @@ export default function OutagesPanel() {
         </Select>
       </div>
       <div className="h-full overflow-auto p-2 space-y-2">
+        {lumaRegions?.items?.length > 0 && (
+          <section className="rounded-lg border border-slate-800 bg-slate-950/80 p-3">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <div>
+                <div className="text-xs font-semibold text-slate-100">MiLUMA regional customer status</div>
+                <div className="mt-0.5 text-[11px] text-slate-500">
+                  Snapshot {fmtDate(lumaRegions.observed_at)} · T2 / needs review
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-sm font-semibold text-amber-300">
+                  {Number(lumaRegions.totals?.affected ?? 0).toLocaleString()} affected
+                </div>
+                <div className="text-[11px] text-slate-500">
+                  of {Number(lumaRegions.totals?.customers ?? 0).toLocaleString()} customers · {Number(lumaRegions.totals?.affected_pct ?? 0).toFixed(2)}%
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+              {lumaRegions.items.map((row) => (
+                <div key={row.status_id} className="rounded-md border border-slate-800 bg-slate-900/70 p-2">
+                  <div className="truncate text-[11px] font-medium text-slate-300">{row.region_raw}</div>
+                  <div className="mt-1 text-xs text-slate-100">
+                    {Number(row.affected_customers).toLocaleString()} / {Number(row.total_customers).toLocaleString()}
+                  </div>
+                  <div className="text-[10px] text-slate-500">{Number(row.affected_pct).toFixed(2)}% without service</div>
+                </div>
+              ))}
+            </div>
+            {(!lumaRegions.snapshot_consistent || !lumaRegions.arithmetic_closed) && (
+              <div className="mt-2 text-[11px] text-red-300">
+                Regional snapshot consistency check failed; do not use these totals as a current-state assertion.
+              </div>
+            )}
+          </section>
+        )}
+
         <div className="rounded-md border border-amber-500/20 bg-amber-500/10 p-2 text-[11px] leading-relaxed text-amber-200/90">
           <div className="mb-1 flex items-center gap-1.5 font-semibold"><AlertTriangle className="h-3.5 w-3.5" /> Snapshot caveat</div>
           Service-event records are shown as reported/snapshot-grade. Do not infer live utility attribution unless the source record explicitly supports it.
