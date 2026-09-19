@@ -50,6 +50,29 @@ DEFAULT_GEO = "data/geo/pr_municipios.json"
 DEFAULT_OUT = "/tmp/outages_by_town.json"
 DEFAULT_REGIONS_OUT = "/tmp/luma_regions.json"
 DEFAULT_MANIFEST_OUT = "/tmp/luma_snapshot_manifest.json"
+
+# MiLUMA's query taxonomy is broader than Puerto Rico's 78 canonical municipios.
+# These 15 additional keys are present in the current public tracker client and are
+# treated strictly as discovery vocabulary. They are NOT municipio aliases and may
+# never establish canonical geographic identity on their own.
+API_DISCOVERY_EXTRA_KEYS = (
+    "CAMPANILLA",
+    "CANDELARIA",
+    "CANDELARIA ARENAS",
+    "COCO",
+    "ESTANCIAS DE FLORIDA",
+    "INGENIO",
+    "ISABEL SEGUNDA",
+    "LEVITTOWN",
+    "PAJAROS",
+    "PUERTO REAL",
+    "PUNTA SANTIAGO",
+    "SABANA SECA",
+    "SAN ANTONIO",
+    "SAN ISIDRO",
+    "SANTA BARBARA",
+)
+
 BROWSER_HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -76,14 +99,20 @@ def _sha256(raw: bytes) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
-def municipio_keys(geo_path: Path) -> list[str]:
-    """Return the 78 canonical municipios as ALLCAPS/unaccented API request keys."""
+def canonical_municipio_keys(geo_path: Path) -> list[str]:
+    """Return the 78 canonical municipios as ALLCAPS/unaccented join keys."""
     doc = json.loads(geo_path.read_text(encoding="utf-8"))
     keys = []
     for m in doc["municipios"]:
         folded = unicodedata.normalize("NFKD", m["name"]).encode("ascii", "ignore").decode()
         keys.append(" ".join(folded.upper().split()))
     return keys
+
+
+def municipio_keys(geo_path: Path) -> list[str]:
+    """Return the full MiLUMA request vocabulary without promoting query aliases to identity."""
+    canonical = canonical_municipio_keys(geo_path)
+    return [*canonical, *(key for key in API_DISCOVERY_EXTRA_KEYS if key not in canonical)]
 
 
 def _request_json(req: urllib.request.Request, timeout: float, label: str) -> tuple[Any, bytes]:
@@ -250,7 +279,18 @@ def main() -> int:
         path.unlink(missing_ok=True)
         path.parent.mkdir(parents=True, exist_ok=True)
 
+    canonical_keys = canonical_municipio_keys(Path(args.geo))
+    if len(canonical_keys) != 78 or len(set(canonical_keys)) != 78:
+        print(
+            f"source-invalid: canonical municipio denominator must be 78 unique keys; "
+            f"got {len(canonical_keys)} / {len(set(canonical_keys))}",
+            file=sys.stderr,
+        )
+        return EXIT_SOURCE_INVALID
     keys = municipio_keys(Path(args.geo))
+    if len(keys) != len(set(keys)):
+        print("source-invalid: MiLUMA request vocabulary contains duplicate keys", file=sys.stderr)
+        return EXIT_SOURCE_INVALID
     try:
         towns, towns_raw = fetch_towns_snapshot(keys, args.timeout)
     except SourceUnavailable as exc:
@@ -270,6 +310,10 @@ def main() -> int:
         response_raw=towns_raw,
         extra={
             "request_key_count": len(keys),
+            "canonical_municipio_key_count": len(canonical_keys),
+            "discovery_extra_key_count": len(keys) - len(canonical_keys),
+            "discovery_extra_keys": list(API_DISCOVERY_EXTRA_KEYS),
+            "query_taxonomy_identity_effect": "NONE",
             "request_body_sha256": _sha256(_towns_body(keys)),
             **_town_stats(towns),
         },
