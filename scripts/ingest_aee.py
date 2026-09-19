@@ -134,20 +134,57 @@ def build_events(doc: dict, snapshot_ts: str, geo: dict[str, dict], source_ref: 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--src", default=DEFAULT_SRC, help="LUMA outages_by_town.json snapshot")
-    ap.add_argument("--snapshot-ts", required=True, help="ISO-8601 snapshot time (the file's git commit time)")
+    ap.add_argument("--snapshot-ts", default=None, help="ISO-8601 snapshot time; required without --snapshot-meta")
     ap.add_argument("--geo", default=DEFAULT_GEO)
-    ap.add_argument("--source-ref", default=DEFAULT_SOURCE_REF)
+    ap.add_argument("--source-ref", default=None)
+    ap.add_argument("--snapshot-meta", default=None, help="MiLUMA fetch receipt binding exact town bytes")
     ap.add_argument("--granularity", default="zone", choices=["zone", "municipio"],
                     help="one event per outage zone (default) or one aggregated event per municipio")
     ap.add_argument("--out", default="data/aee_incidents.jsonl")
     args = ap.parse_args()
 
-    doc = json.loads(Path(args.src).read_text(encoding="utf-8"))
+    src = Path(args.src)
+    out = Path(args.out)
+    snapshot_ts = args.snapshot_ts
+    source_ref = args.source_ref or DEFAULT_SOURCE_REF
+    if args.snapshot_meta:
+        if out.resolve() == Path("data/aee_incidents.jsonl").resolve():
+            raise ValueError(
+                "live MiLUMA ingest may not overwrite historical data/aee_incidents.jsonl"
+            )
+        out.unlink(missing_ok=True)
+        meta = json.loads(Path(args.snapshot_meta).read_text(encoding="utf-8"))
+        entry = meta.get("towns")
+        if not isinstance(entry, dict) or entry.get("status") != "PASS":
+            raise ValueError("snapshot manifest towns entry is not PASS")
+        meta_ts = entry.get("retrieval_utc")
+        meta_ref = entry.get("url")
+        meta_hash = entry.get("response_sha256")
+        meta_bytes = entry.get("response_bytes")
+        if not all(isinstance(v, str) and v for v in (meta_ts, meta_ref, meta_hash)):
+            raise ValueError(
+                "snapshot manifest towns entry lacks retrieval_utc/url/response_sha256"
+            )
+        raw = src.read_bytes()
+        actual_hash = hashlib.sha256(raw).hexdigest()
+        if actual_hash != meta_hash:
+            raise ValueError(
+                f"snapshot byte hash mismatch: manifest={meta_hash} actual={actual_hash}"
+            )
+        if meta_bytes != len(raw):
+            raise ValueError(
+                f"snapshot byte-count mismatch: manifest={meta_bytes} actual={len(raw)}"
+            )
+        snapshot_ts = meta_ts
+        source_ref = meta_ref
+    elif not snapshot_ts:
+        raise ValueError("--snapshot-ts is required unless --snapshot-meta is supplied")
+
+    doc = json.loads(src.read_text(encoding="utf-8"))
     geo = load_geo(Path(args.geo))
-    rows = build_events(doc, args.snapshot_ts, geo, args.source_ref, args.granularity)
+    rows = build_events(doc, snapshot_ts, geo, source_ref, args.granularity)
 
     unresolved = sorted({r["affected_area"].split(" / ")[0] for r in rows if r["municipality"] is None})
-    out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8")
     print(f"wrote {len(rows)} outage events -> {out}")
