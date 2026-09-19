@@ -87,7 +87,7 @@
     ]
   },
   "centinelas_pr_only_gaps": [
-    "PREB (Puerto Rico Energy Bureau) regulatory filings: document-based portal, no structured API — centinelas-pr monitors filings and sends signals via ingest_news_event.py until PREB publishes a machine-readable feed",
+    "PREB (Puerto Rico Energy Bureau) regulatory filings: document-based portal, no structured API. aguayluz-pr directly indexes the complete NEPR-MI-2019-0007 public docket metadata with advertised-count closure for the reliability source family; centinelas-pr remains the filing/news signal layer. PREB retrospective reliability metrics are not promoted to MiLUMA live outage state.",
     "AAA/PRASA boil-water notices: the AAA portal is a Webflow marketing site with no public API — SDWIS T1 microbial violations (ingest_sdwis_violations.py) are the authoritative regulatory boil-water signal; individual AAA press-release notices route through centinelas-pr -> ingest_news_event.py at T3"
   ],
   "waf_blocked_sources": [
