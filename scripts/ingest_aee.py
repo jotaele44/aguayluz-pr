@@ -35,6 +35,7 @@ import argparse
 import hashlib
 import json
 import re
+import sys
 import unicodedata
 from pathlib import Path
 
@@ -73,9 +74,17 @@ def _slug(*parts: str, ts: str = "") -> str:
     return f"{readable}_{digest}"
 
 
-def _event(event_id: str, affected_area: str, municipality: str | None, zone: str | None, snapshot_ts: str, source_ref: str) -> dict:
+def _event(
+    event_id: str,
+    affected_area: str,
+    municipality: str | None,
+    zone: str | None,
+    snapshot_ts: str,
+    source_ref: str,
+    source_hash: str | None = None,
+) -> dict:
     """Assemble one schema-valid service_event row (shared by both granularities)."""
-    return {
+    event = {
         "event_id": event_id,
         "event_type": "outage",
         "affected_area": affected_area,
@@ -87,9 +96,19 @@ def _event(event_id: str, affected_area: str, municipality: str | None, zone: st
         "confidence": 80,
         "review_status": "needs_review",
     }
+    if source_hash:
+        event["source_hash"] = source_hash
+    return event
 
 
-def build_events(doc: dict, snapshot_ts: str, geo: dict[str, dict], source_ref: str, granularity: str = "zone") -> list[dict]:
+def build_events(
+    doc: dict,
+    snapshot_ts: str,
+    geo: dict[str, dict],
+    source_ref: str,
+    granularity: str = "zone",
+    source_hash: str | None = None,
+) -> list[dict]:
     """Map the LUMA outages-by-town snapshot to service_event rows.
 
     GRANULARITY (the genuine design choice, now a runtime flag):
@@ -117,7 +136,7 @@ def build_events(doc: dict, snapshot_ts: str, geo: dict[str, dict], source_ref: 
                 affected_area=canonical,
                 municipality=municipality,
                 zone="; ".join(zone_names) or None,
-                snapshot_ts=snapshot_ts, source_ref=source_ref,
+                snapshot_ts=snapshot_ts, source_ref=source_ref, source_hash=source_hash,
             ))
         else:  # per-zone (default)
             for zone in zone_names or [""]:
@@ -126,28 +145,103 @@ def build_events(doc: dict, snapshot_ts: str, geo: dict[str, dict], source_ref: 
                     affected_area=f"{canonical} / {zone}" if zone else canonical,
                     municipality=municipality,
                     zone=zone or None,
-                    snapshot_ts=snapshot_ts, source_ref=source_ref,
+                    snapshot_ts=snapshot_ts, source_ref=source_ref, source_hash=source_hash,
                 ))
     return rows
+
+
+def _sha256_path(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def resolve_snapshot_provenance(
+    src: Path,
+    snapshot_ts: str | None,
+    source_ref: str | None,
+    snapshot_meta: str | None,
+) -> tuple[str, str, str | None]:
+    """Bind a snapshot to the exact fetch receipt, or require explicit historical provenance."""
+    if snapshot_meta:
+        meta_path = Path(snapshot_meta)
+        if not meta_path.is_file():
+            raise ValueError(f"snapshot manifest missing: {meta_path}")
+        doc = json.loads(meta_path.read_text(encoding="utf-8"))
+        entry = doc.get("towns")
+        if not isinstance(entry, dict) or entry.get("status") != "PASS":
+            raise ValueError("snapshot manifest towns entry is not PASS")
+        meta_ts = entry.get("retrieval_utc")
+        meta_ref = entry.get("url")
+        meta_hash = entry.get("response_sha256")
+        if not all(isinstance(v, str) and v for v in (meta_ts, meta_ref, meta_hash)):
+            raise ValueError("snapshot manifest towns entry lacks retrieval_utc/url/response_sha256")
+        actual_hash = _sha256_path(src)
+        if actual_hash != meta_hash:
+            raise ValueError(
+                f"snapshot byte hash mismatch: manifest={meta_hash} actual={actual_hash}"
+            )
+        if snapshot_ts is not None and snapshot_ts != meta_ts:
+            raise ValueError(
+                f"explicit snapshot-ts disagrees with manifest: {snapshot_ts} != {meta_ts}"
+            )
+        if source_ref is not None and source_ref != meta_ref:
+            raise ValueError(
+                f"explicit source-ref disagrees with manifest: {source_ref} != {meta_ref}"
+            )
+        return meta_ts, meta_ref, meta_hash
+
+    if not snapshot_ts:
+        raise ValueError("--snapshot-ts is required unless --snapshot-meta is supplied")
+    return snapshot_ts, source_ref or DEFAULT_SOURCE_REF, None
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--src", default=DEFAULT_SRC, help="LUMA outages_by_town.json snapshot")
-    ap.add_argument("--snapshot-ts", required=True, help="ISO-8601 snapshot time (the file's git commit time)")
+    ap.add_argument("--snapshot-ts", default=None, help="ISO-8601 snapshot time; required without --snapshot-meta")
     ap.add_argument("--geo", default=DEFAULT_GEO)
-    ap.add_argument("--source-ref", default=DEFAULT_SOURCE_REF)
+    ap.add_argument("--source-ref", default=None)
+    ap.add_argument("--snapshot-meta", default=None, help="MiLUMA fetch receipt binding exact source bytes")
     ap.add_argument("--granularity", default="zone", choices=["zone", "municipio"],
                     help="one event per outage zone (default) or one aggregated event per municipio")
     ap.add_argument("--out", default="data/aee_incidents.jsonl")
     args = ap.parse_args()
 
-    doc = json.loads(Path(args.src).read_text(encoding="utf-8"))
-    geo = load_geo(Path(args.geo))
-    rows = build_events(doc, args.snapshot_ts, geo, args.source_ref, args.granularity)
+    src = Path(args.src)
+    out = Path(args.out)
+    if args.snapshot_meta:
+        historical_out = Path("data/aee_incidents.jsonl").resolve()
+        if out.resolve() == historical_out:
+            print(
+                "provenance-invalid: live MiLUMA ingest may not overwrite "
+                "committed historical data/aee_incidents.jsonl",
+                file=sys.stderr,
+            )
+            return 2
+        # A failed/new source attempt must not leave an older live snapshot in place.
+        out.unlink(missing_ok=True)
+    try:
+        doc = json.loads(src.read_text(encoding="utf-8"))
+        geo = load_geo(Path(args.geo))
+        snapshot_ts, source_ref, source_hash = resolve_snapshot_provenance(
+            src, args.snapshot_ts, args.source_ref, args.snapshot_meta
+        )
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        print(f"provenance-invalid: {exc}", file=sys.stderr)
+        return 2
+    rows = build_events(
+        doc,
+        snapshot_ts,
+        geo,
+        source_ref,
+        args.granularity,
+        source_hash=source_hash,
+    )
 
     unresolved = sorted({r["affected_area"].split(" / ")[0] for r in rows if r["municipality"] is None})
-    out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8")
     print(f"wrote {len(rows)} outage events -> {out}")

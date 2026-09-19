@@ -155,12 +155,16 @@
           "GET /events/{event_id}",
           "PATCH /events/{event_id}",
           "GET /events",
+          "GET /outages/regions",
           "GET /alerts",
           "GET /alerts/facets",
           "GET /alerts.geojson",
           "GET /alerts/dependencies",
           "GET /alerts/gaps",
           "GET /alerts/{alert_id}"
+        ],
+        "symbols": [
+          "server/backend/main.py:luma_outage_regions"
         ]
       },
       "frontend": {
@@ -175,6 +179,7 @@
           "/outages"
         ],
         "components": [
+          "dashboard/src/lib/hooks.js",
           "dashboard/src/lib/api.js",
           "dashboard/src/pages/AlertsPage.jsx",
           "dashboard/src/pages/AlertDetailPage.jsx",
@@ -192,7 +197,8 @@
         "backend": [
           "tests/test_backend_alerts_api.py",
           "tests/test_backend_events_api.py",
-          "tests/test_alerts.py"
+          "tests/test_alerts.py",
+          "tests/test_backend_luma_regions_api.py"
         ],
         "contract": [
           "tests/test_gui_parity.py"
@@ -1297,6 +1303,49 @@
           "tests/test_ingest_hifld_power.py",
           "tests/test_ingest_osm_power.py",
           "tests/test_local_hydro_assets.py"
+        ]
+      }
+    },
+    {
+      "id": "miluma-outage-ingest",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Low-frequency source producer invoked by scripts/refresh.py --all and the existing refresh workflow, not a separate human workflow. It preserves MiLUMA bytes/provenance and materializes outage/status data consumed through the already discoverable /outages GUI. WAF/source-access failures remain typed source states; no normal user path requires terminal execution.",
+      "analysis": {
+        "files": [
+          "scripts/fetch_luma_live.py",
+          "scripts/ingest_aee.py",
+          "scripts/ingest_luma_regions.py",
+          "scripts/federation_export.py",
+          "server/backend/main.py"
+        ],
+        "symbols": [
+          "scripts/fetch_luma_live.py:SourceInvalid",
+          "scripts/fetch_luma_live.py:SourceUnavailable",
+          "scripts/fetch_luma_live.py:canonical_municipio_keys",
+          "scripts/fetch_luma_live.py:fetch_regions",
+          "scripts/fetch_luma_live.py:fetch_regions_snapshot",
+          "scripts/fetch_luma_live.py:fetch_towns",
+          "scripts/fetch_luma_live.py:fetch_towns_snapshot",
+          "scripts/fetch_luma_live.py:main",
+          "scripts/fetch_luma_live.py:municipio_keys",
+          "scripts/ingest_aee.py:build_events",
+          "scripts/ingest_aee.py:main",
+          "scripts/ingest_aee.py:resolve_snapshot_provenance",
+          "scripts/ingest_luma_regions.py:build_rows",
+          "scripts/ingest_luma_regions.py:main",
+          "scripts/ingest_luma_regions.py:resolve_receipt",
+          "scripts/federation_export.py:_current_luma_incidents",
+          "server/backend/main.py:_current_luma_event_rows"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_fetch_luma_live.py",
+          "tests/test_ingest_aee.py",
+          "tests/test_ingest_luma_regions.py",
+          "tests/test_refresh_plans.py"
         ]
       }
     }

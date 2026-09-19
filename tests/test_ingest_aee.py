@@ -1,15 +1,24 @@
 """Tests for scripts/ingest_aee.py — the per-municipality AEE/LUMA outage adapter."""
+import hashlib
+import json
 import re
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
+import ingest_aee  # noqa: E402
 from aguayluz import REPO_ROOT  # noqa: E402
 from aguayluz.models import ServiceEvent  # noqa: E402
 from federation_export import build_streams  # noqa: E402
-from fetch_luma_live import municipio_keys  # noqa: E402
-from ingest_aee import build_events, unaccent_upper  # noqa: E402
+from fetch_luma_live import (  # noqa: E402
+    API_DISCOVERY_EXTRA_KEYS,
+    canonical_municipio_keys,
+    municipio_keys,
+)
+from ingest_aee import build_events, resolve_snapshot_provenance, unaccent_upper  # noqa: E402
 
 TS = "2025-03-03T01:38:40Z"
 REF = "https://example/outages_by_town.json"
@@ -31,25 +40,26 @@ SAMPLE = {
 
 PATTERN = re.compile(r"^AYL_EVT_[0-9]{8}_[A-Za-z0-9_-]+$")
 
-
 def test_unaccent_upper_join_key():
     assert unaccent_upper("Cataño") == "CATANO"
     assert unaccent_upper("Río Grande") == "RIO GRANDE"
 
-
 def test_live_fetch_builds_api_keys_from_geodata():
     # The live MiLUMA fetcher must query the API with ALLCAPS/unaccented municipio names.
-    keys = municipio_keys(REPO_ROOT / "data/geo/pr_municipios.json")
-    assert len(keys) == 78
+    geo_path = REPO_ROOT / "data/geo/pr_municipios.json"
+    canonical = canonical_municipio_keys(geo_path)
+    keys = municipio_keys(geo_path)
+    assert len(canonical) == len(set(canonical)) == 78
+    assert len(keys) == len(set(keys)) == 93
+    assert set(canonical).issubset(keys)
+    assert set(keys) - set(canonical) == set(API_DISCOVERY_EXTRA_KEYS)
     assert "SAN JUAN" in keys and "CATANO" in keys and "SAN SEBASTIAN" in keys
     assert all(k == k.upper() and k.isascii() for k in keys)
-
 
 def test_empty_municipio_emits_no_event():
     events = build_events(SAMPLE, TS, GEO, REF)
     assert all(e["municipality"] != "Cataño" for e in events)  # CATANO had []
     assert len(events) == 3  # 2 San Juan zones + 1 Guaynabo zone
-
 
 def test_rows_are_schema_valid_and_well_formed():
     events = build_events(SAMPLE, TS, GEO, REF)
@@ -62,7 +72,6 @@ def test_rows_are_schema_valid_and_well_formed():
         assert e["start_time"] == TS
     assert len({e["event_id"] for e in events}) == len(events)  # unique ids
 
-
 def test_name_normalization_and_zone_detail():
     events = build_events(SAMPLE, TS, GEO, REF)
     sj = next(e for e in events if e["zone"] == "CUPEY")
@@ -70,14 +79,12 @@ def test_name_normalization_and_zone_detail():
     assert sj["affected_area"] == "San Juan / CUPEY"
     assert sj["event_id"].startswith("AYL_EVT_20250303_")  # date from snapshot ts
 
-
 def test_unresolved_municipio_still_emits_without_municipality():
     events = build_events({"NOWHERE CITY": [{"zone": "Z", "area": "NOWHERE CITY"}]}, TS, {}, REF)
     assert len(events) == 1
     assert events[0]["municipality"] is None
     assert events[0]["affected_area"].startswith("Nowhere City")
     ServiceEvent(**events[0])  # still schema-valid
-
 
 def test_municipio_granularity_aggregates_zones():
     events = build_events(SAMPLE, TS, GEO, REF, granularity="municipio")
@@ -90,13 +97,11 @@ def test_municipio_granularity_aggregates_zones():
         assert PATTERN.match(e["event_id"])
     assert len({e["event_id"] for e in events}) == len(events)
 
-
 def test_both_granularities_are_idempotent():
     for g in ("zone", "municipio"):
         a = build_events(SAMPLE, TS, GEO, REF, granularity=g)
         b = build_events(SAMPLE, TS, GEO, REF, granularity=g)
         assert [e["event_id"] for e in a] == [e["event_id"] for e in b]
-
 
 def test_federation_export_attaches_location_and_located_in():
     events = build_events(SAMPLE, TS, GEO, REF)
@@ -109,3 +114,88 @@ def test_federation_export_attaches_location_and_located_in():
     # the two San Juan zone-events converge on one municipality node
     munis = [e for e in streams["entities"] if e["entity_type"] == "municipality"]
     assert any(m["name"] == "San Juan" for m in munis)
+
+def test_live_snapshot_meta_binds_timestamp_source_and_hash(tmp_path):
+    src = tmp_path / "towns.json"
+    raw = json.dumps(SAMPLE, separators=(",", ":")).encode()
+    src.write_bytes(raw)
+    digest = hashlib.sha256(raw).hexdigest()
+    meta = tmp_path / "manifest.json"
+    meta.write_text(
+        json.dumps(
+            {
+                "towns": {
+                    "status": "PASS",
+                    "retrieval_utc": TS,
+                    "url": "https://api.miluma.lumapr.com/miluma-outage-api/outage/municipality/towns",
+                    "response_sha256": digest,
+                }
+            }
+        )
+    )
+
+    resolved = resolve_snapshot_provenance(src, None, None, str(meta))
+    assert resolved == (
+        TS,
+        "https://api.miluma.lumapr.com/miluma-outage-api/outage/municipality/towns",
+        digest,
+    )
+
+def test_live_snapshot_meta_hash_mismatch_fails_closed(tmp_path):
+    src = tmp_path / "towns.json"
+    src.write_text(json.dumps(SAMPLE))
+    meta = tmp_path / "manifest.json"
+    meta.write_text(
+        json.dumps(
+            {
+                "towns": {
+                    "status": "PASS",
+                    "retrieval_utc": TS,
+                    "url": "https://api.miluma.lumapr.com/miluma-outage-api/outage/municipality/towns",
+                    "response_sha256": "0" * 64,
+                }
+            }
+        )
+    )
+
+    with pytest.raises(ValueError):
+        resolve_snapshot_provenance(src, None, None, str(meta))
+
+def test_build_events_carries_live_source_hash():
+    events = build_events(SAMPLE, TS, GEO, REF, source_hash="a" * 64)
+    assert events
+    assert all(event["source_hash"] == "a" * 64 for event in events)
+
+
+def test_live_main_refuses_to_overwrite_committed_historical_snapshot(monkeypatch):
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "ingest_aee.py",
+            "--snapshot-meta",
+            "/tmp/any-live-receipt.json",
+            "--out",
+            "data/aee_incidents.jsonl",
+        ],
+    )
+    assert ingest_aee.main() == 2
+
+def test_live_main_deletes_stale_runtime_output_before_source_failure(monkeypatch, tmp_path):
+    out = tmp_path / "luma_live_incidents.jsonl"
+    out.write_text('{"stale":true}\n')
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "ingest_aee.py",
+            "--src",
+            str(tmp_path / "missing-towns.json"),
+            "--snapshot-meta",
+            str(tmp_path / "missing-manifest.json"),
+            "--out",
+            str(out),
+        ],
+    )
+    assert ingest_aee.main() == 2
+    assert not out.exists()

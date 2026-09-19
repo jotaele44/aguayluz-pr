@@ -48,6 +48,7 @@ FEDERATION_ROOT = OUTPUTS_ROOT / "federation"
 PRODUCER = "aguayluz-pr"
 CONTRACT_VERSION = "1.0.0"
 PRODUCER_SCRIPT = "scripts/federation_export.py"
+LUMA_CURRENT_STATE_MAX_AGE_SECONDS = 60 * 60
 VECTOR = "AGUAYLUZ_WATER_POWER_INFRASTRUCTURE_INTELLIGENCE"
 STREAM_SCHEMA = {
     "sources": "federation_source.schema.json",
@@ -76,10 +77,10 @@ GATE_IDS = (
 )
 WELL_KNOWN_GAPS = [
     "StreamCat NLCD attributes unavailable for VPU 21",
-    "aee_incidents.jsonl is a 2025-03-03 point-in-time snapshot; LIVE per-municipio feed pending",
+    "committed aee_incidents.jsonl remains the 2025-03-03 historical snapshot; direct MiLUMA live state is runtime-only and WAF-gated",
 ]
 NEXT_ACTIONS_DEFAULT = [
-    "AYL_INGEST_LIVE_OUTAGES",
+    "AYL_ACQUIRE_AUTHORIZED_LUMA_LIVE_PATH",
     "AYL_REVIEWER_PASS_OSM_WATER",
 ]
 
@@ -135,7 +136,12 @@ def _lineage(phase: str, inputs: list[str]) -> dict[str, Any]:
 
 
 def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], now: str, geo: dict[str, dict] | None = None, crosswalk: list[dict[str, Any]] | None = None, alerts: list[dict[str, Any]] | None = None, dep_edges: list[dict[str, Any]] | None = None) -> dict[str, list[dict[str, Any]]]:
-    inputs = ["data/utility_assets.jsonl", "data/service_events.jsonl", "data/aee_incidents.jsonl"]
+    inputs = [
+        "data/utility_assets.jsonl",
+        "data/service_events.jsonl",
+        "data/aee_incidents.jsonl",
+        "data/luma_live_incidents.jsonl",
+    ]
     geo = geo or {}
     crosswalk = crosswalk or []
     dep_edges = dep_edges or []
@@ -392,6 +398,31 @@ def _load_jsonl(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
         return []
     return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+
+
+def _current_luma_incidents(
+    rows: list[dict[str, Any]], *, now: datetime | None = None
+) -> list[dict[str, Any]]:
+    """Exclude stale/future direct-MiLUMA rows from operational exports."""
+    reference = now or datetime.now(timezone.utc)
+    current: list[dict[str, Any]] = []
+    for row in rows:
+        raw = row.get("start_time")
+        if not isinstance(raw, str) or not raw.strip():
+            continue
+        text = raw.strip()
+        if text.endswith(("Z", "z")):
+            text = f"{text[:-1]}+00:00"
+        try:
+            observed = datetime.fromisoformat(text)
+        except ValueError:
+            continue
+        if observed.tzinfo is None:
+            observed = observed.replace(tzinfo=timezone.utc)
+        age = (reference - observed.astimezone(timezone.utc)).total_seconds()
+        if 0 <= age <= LUMA_CURRENT_STATE_MAX_AGE_SECONDS:
+            current.append(row)
+    return current
 
 
 # ---------------------------------------------------------------------------
@@ -683,7 +714,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--assets", default=str(DATA_ROOT / "utility_assets.jsonl"))
     ap.add_argument("--events", default=str(DATA_ROOT / "service_events.jsonl"))
     ap.add_argument("--incidents", default=str(DATA_ROOT / "aee_incidents.jsonl"),
-                    help="per-municipality outage events (AEE/LUMA model); merged into events")
+                    help="committed historical per-municipality outage snapshot")
+    ap.add_argument(
+        "--live-incidents",
+        default=str(DATA_ROOT / "luma_live_incidents.jsonl"),
+        help="ignored runtime-only direct MiLUMA outage observations; stale rows are excluded",
+    )
     ap.add_argument("--readings", nargs="*", default=None,
                     help="monitoring_reading time-series files. Default: data/reservoir_levels.jsonl "
                          "+ every data/*_readings.jsonl (reliability, generation, …) — new sources "
@@ -705,9 +741,10 @@ def main(argv: list[str] | None = None) -> int:
 
     raw_events = _load_jsonl(Path(args.events))
     raw_incidents = _load_jsonl(Path(args.incidents))
+    raw_live_incidents = _current_luma_incidents(_load_jsonl(Path(args.live_incidents)))
     assets = _load_jsonl(Path(args.assets))
     alerts = _load_jsonl(Path(args.alerts))
-    events = raw_events + raw_incidents
+    events = raw_events + raw_incidents + raw_live_incidents
     geo = _load_geo(Path(args.geo))
     crosswalk = _load_jsonl(Path(args.crosswalk))
     dep_edges = _load_jsonl(Path(args.dep_edges))

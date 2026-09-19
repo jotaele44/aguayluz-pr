@@ -131,6 +131,11 @@ READINGS_FILES: dict[str, Path] = {kind: vector["path"] for kind, vector in READ
 # "all") to fetch more. The dashboard's default views only need the most recent slice.
 DEFAULT_EVENTS_LIMIT = 500
 
+# Product-level eligibility rule for operational display. This does not claim MiLUMA
+# itself publishes on an hourly SLA; it prevents a retained snapshot older than one hour
+# from silently presenting as current state after a later source-access failure.
+LUMA_CURRENT_STATE_MAX_AGE_SECONDS = 60 * 60
+
 # Canonical asset_type values for each sector.  Exact-match is used (not substring)
 # to prevent "water" matching "wastewater" assets, etc.
 SECTOR_TYPE_MAP: dict[str, set[str]] = {
@@ -239,11 +244,41 @@ def _parse_dt(s: str | None) -> datetime | None:
         return None
 
 
+def _current_luma_event_rows(
+    rows: list[dict[str, Any]], *, now: datetime | None = None
+) -> list[dict[str, Any]]:
+    """Retain only live MiLUMA observations eligible for current-state use."""
+    reference = now or datetime.now(timezone.utc)
+    current: list[dict[str, Any]] = []
+    for row in rows:
+        observed = _parse_dt(row.get("start_time"))
+        if observed is None:
+            continue
+        age = (reference - observed.astimezone(timezone.utc)).total_seconds()
+        if 0 <= age <= LUMA_CURRENT_STATE_MAX_AGE_SECONDS:
+            current.append(row)
+    return current
+
+
 # Load at startup; restart server to pick up data changes.
 _assets: list[dict[str, Any]] = _load_jsonl(DATA / "utility_assets.jsonl")
-_EVENT_SOURCE_PATHS = (DATA / "service_events.jsonl", DATA / "aee_incidents.jsonl")
-_event_sources = [(path, _load_jsonl(path)) for path in _EVENT_SOURCE_PATHS]
+_EVENT_SOURCE_PATHS = (
+    DATA / "service_events.jsonl",
+    DATA / "aee_incidents.jsonl",  # committed historical CC0 snapshot
+    DATA / "luma_live_incidents.jsonl",  # ignored runtime-only direct MiLUMA state
+)
+_event_sources: list[tuple[Path, list[dict[str, Any]]]] = []
+for _event_path in _EVENT_SOURCE_PATHS:
+    _rows = _load_jsonl(_event_path)
+    if _event_path.name == "luma_live_incidents.jsonl":
+        _rows = _current_luma_event_rows(_rows)
+    _event_sources.append((_event_path, _rows))
 _events: list[dict[str, Any]] = [row for _, rows in _event_sources for row in rows]
+_LUMA_REGION_STATUS_PATH = DATA / "luma_region_status.jsonl"
+_luma_region_status: list[dict[str, Any]] = _load_jsonl(_LUMA_REGION_STATUS_PATH)
+_LUMA_REGION_STATUS_SOURCE_MANIFESTATION = _source_manifestation(
+    _LUMA_REGION_STATUS_PATH, len(_luma_region_status)
+)
 _EVENT_DENSITY_SOURCE_MANIFESTATIONS = [
     _source_manifestation(path, len(rows)) for path, rows in _event_sources
 ]
@@ -301,12 +336,71 @@ def health() -> JSONResponse:
         "counts": {
             "assets": len(_assets),
             "events": len(_events),
+            "luma_region_status": len(_luma_region_status),
             "readings": readings_counts,
             "alerts": len(_alerts),
             "alerts_active": sum(1 for a in _alerts if _alert_is_actionable(a)),
             "alerts_critical": sum(1 for a in _alerts if _alert_is_critical(a)),
         },
         "readiness": readiness,
+    })
+
+
+@app.get("/outages/regions")
+def luma_outage_regions() -> JSONResponse:
+    """Current MiLUMA regional customer-status snapshot, kept separate from event identity."""
+    rows = list(_luma_region_status)
+    total_customers = sum(int(row.get("total_customers", 0)) for row in rows)
+    affected_customers = sum(int(row.get("affected_customers", 0)) for row in rows)
+    observed_values = sorted(
+        {row.get("observed_at") for row in rows if isinstance(row.get("observed_at"), str)}
+    )
+    observed_at = observed_values[0] if len(observed_values) == 1 else None
+    affected_pct = (
+        round((affected_customers / total_customers) * 100, 6) if total_customers else 0.0
+    )
+    snapshot_dt = _parse_dt(observed_at)
+    snapshot_age_seconds = None
+    if snapshot_dt is not None:
+        snapshot_age_seconds = max(
+            0,
+            round((datetime.now(timezone.utc) - snapshot_dt.astimezone(timezone.utc)).total_seconds()),
+        )
+    arithmetic_closed = all(
+        isinstance(row.get("total_customers"), int)
+        and isinstance(row.get("affected_customers"), int)
+        and 0 <= row["affected_customers"] <= row["total_customers"]
+        for row in rows
+    )
+    return JSONResponse({
+        "total": len(rows),
+        "observed_at": observed_at,
+        "snapshot_consistent": len(observed_values) <= 1,
+        "totals": {
+            "customers": total_customers,
+            "affected": affected_customers,
+            "affected_pct": affected_pct,
+        },
+        "arithmetic_closed": arithmetic_closed,
+        "freshness": {
+            "snapshot_age_seconds": snapshot_age_seconds,
+            "current_state_max_age_seconds": LUMA_CURRENT_STATE_MAX_AGE_SECONDS,
+            "current_state_eligible": bool(
+                rows
+                and len(observed_values) == 1
+                and arithmetic_closed
+                and snapshot_age_seconds is not None
+                and snapshot_age_seconds <= LUMA_CURRENT_STATE_MAX_AGE_SECONDS
+            ),
+            "policy_basis": "aguayluz operational display guard; not a MiLUMA publication SLA",
+        },
+        "items": rows,
+        "provenance": _LUMA_REGION_STATUS_SOURCE_MANIFESTATION,
+        "scope": {
+            "record_class": "regional_aggregate_snapshot",
+            "event_identity_effect": "NONE",
+            "normalization_identity_effect": "NONE",
+        },
     })
 
 

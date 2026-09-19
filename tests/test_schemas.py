@@ -244,9 +244,9 @@ def test_every_schema_loads_and_validates_itself(schemas_dir):
     from jsonschema import Draft202012Validator
 
     schemas = list(schemas_dir.glob("*.schema.json"))
-    # The GIS sidecar adds six contracts: feature, layer, runtime, package,
-    # impact report, and manifest. Root schema count is an explicit gate.
-    assert len(schemas) == 39, f"expected 39 schemas, found {len(schemas)}"
+    # The GIS sidecar adds six contracts, and MiLUMA regional customer status
+    # adds one typed aggregate-snapshot contract. Root schema count is an explicit gate.
+    assert len(schemas) == 40, f"expected 40 schemas, found {len(schemas)}"
     for p in schemas:
         s = json.loads(p.read_text(encoding="utf-8"))
         Draft202012Validator.check_schema(s)

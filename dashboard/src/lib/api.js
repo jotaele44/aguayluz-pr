@@ -107,6 +107,20 @@ export const getEvents = async (f = {}) => {
   return r?.items ?? r ?? []
 }
 export const getEventsPaged = (f = {}) => getJSON(`/events${qs(f)}`, { total: 0, offset: 0, items: [] })
+export const getLumaRegionStatus = () => getJSON('/outages/regions', {
+  total: 0,
+  observed_at: null,
+  snapshot_consistent: true,
+  totals: { customers: 0, affected: 0, affected_pct: 0 },
+  arithmetic_closed: true,
+  freshness: {
+    snapshot_age_seconds: null,
+    current_state_max_age_seconds: 3600,
+    current_state_eligible: false,
+    policy_basis: 'aguayluz operational display guard; not a MiLUMA publication SLA',
+  },
+  items: [],
+})
 export const getAssetEvents = (id) => getJSON(`/assets/${id}/events`, [])
 export const getMunicipioSummary = (name) => getJSON(`/municipios/${encodeURIComponent(name)}/summary`, null)
 export const getReadings = (f = {}) => getJSON(`/readings${qs(typeof f === 'string' ? { kind: f } : f)}`, [])
