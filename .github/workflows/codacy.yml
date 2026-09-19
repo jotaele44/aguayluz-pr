@@ -45,6 +45,11 @@ jobs:
           # Check https://github.com/codacy/codacy-analysis-cli#project-token to get your project token from your Codacy repository
           # You can also omit the token and run the tools that support default configurations
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+          # Security gate: restrict the classic Codacy action to Bandit for this
+          # Python-centric repository. Running every auto-detected analyzer pulled
+          # the unrelated PMD Legacy Java plugin, whose tool crash prevented SARIF
+          # generation despite the Python analyzers completing.
+          tool: bandit
           verbose: true
           output: results.sarif
           format: sarif
