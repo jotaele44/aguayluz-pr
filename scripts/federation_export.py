@@ -80,7 +80,7 @@ WELL_KNOWN_GAPS = [
     "committed aee_incidents.jsonl remains the 2025-03-03 historical snapshot; direct MiLUMA live state is runtime-only and WAF-gated",
 ]
 NEXT_ACTIONS_DEFAULT = [
-    "AYL_INGEST_LIVE_OUTAGES",
+    "AYL_ACQUIRE_AUTHORIZED_LUMA_LIVE_PATH",
     "AYL_REVIEWER_PASS_OSM_WATER",
 ]
 
