@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -23,6 +24,7 @@ sys.path.insert(0, str(REPO_ROOT / "scripts"))
 from federation_export import (  # noqa: E402
     _compute_aggregates,
     _coverage_pct,
+    _current_luma_incidents,
     _derive_aggregate_status,
     _load_geo,
     _load_jsonl,
@@ -191,7 +193,6 @@ class _FakeGate:
     def __init__(self, status: str) -> None:
         self.status = status
 
-
 def test_derive_aggregate_status_precedence():
     """FAIL > WARN > PASS. SKIP is treated as benign (gate had nothing to check)."""
     assert _derive_aggregate_status([_FakeGate("PASS")] * 8) == "PASS"
@@ -206,7 +207,6 @@ def test_derive_aggregate_status_precedence():
     # GateResult shape OR a list of plain status strings)
     assert _derive_aggregate_status(["FAIL", "PASS"]) == "FAIL"
 
-
 def test_coverage_pct_formula():
     """Honest ratio — must not pin to 100 by construction."""
     assert _coverage_pct(0, 0) == 0.0           # avoid ZeroDivisionError
@@ -214,7 +214,6 @@ def test_coverage_pct_formula():
     assert _coverage_pct(10, 10) == 100.0
     assert _coverage_pct(273, 281) == 97.15     # the real corpus's ratio
     assert _coverage_pct(7, 10) == 70.0
-
 
 def test_hub_export_status_reflects_g03_warning(tmp_path, monkeypatch):
     """Synthetic-anomaly test — proves `build_outputs` actually CONSULTS the
@@ -274,3 +273,17 @@ def test_aggregates_are_pure(real_corpus):
     # And the input lists are untouched.
     assert len(a) == len(real_corpus["assets"])
     assert len(b) == len(real_corpus["events"])
+
+
+def test_export_excludes_stale_future_and_invalid_runtime_miluma_rows():
+    now = datetime(2026, 9, 19, 6, 30, tzinfo=timezone.utc)
+    rows = [
+        {"event_id": "current", "start_time": "2026-09-19T06:00:00Z"},
+        {"event_id": "stale", "start_time": "2026-09-19T05:00:00Z"},
+        {"event_id": "future", "start_time": "2026-09-19T06:31:00Z"},
+        {"event_id": "invalid", "start_time": "garbage"},
+    ]
+
+    kept = _current_luma_incidents(rows, now=now)
+
+    assert [row["event_id"] for row in kept] == ["current"]
