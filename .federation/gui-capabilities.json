@@ -1316,7 +1316,9 @@
         "files": [
           "scripts/fetch_luma_live.py",
           "scripts/ingest_aee.py",
-          "scripts/ingest_luma_regions.py"
+          "scripts/ingest_luma_regions.py",
+          "scripts/federation_export.py",
+          "server/backend/main.py"
         ],
         "symbols": [
           "scripts/fetch_luma_live.py:SourceInvalid",
@@ -1333,7 +1335,9 @@
           "scripts/ingest_aee.py:resolve_snapshot_provenance",
           "scripts/ingest_luma_regions.py:build_rows",
           "scripts/ingest_luma_regions.py:main",
-          "scripts/ingest_luma_regions.py:resolve_receipt"
+          "scripts/ingest_luma_regions.py:resolve_receipt",
+          "scripts/federation_export.py:_current_luma_incidents",
+          "server/backend/main.py:_current_luma_event_rows"
         ]
       },
       "tests": {
