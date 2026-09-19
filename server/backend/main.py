@@ -244,10 +244,35 @@ def _parse_dt(s: str | None) -> datetime | None:
         return None
 
 
+def _current_luma_event_rows(
+    rows: list[dict[str, Any]], *, now: datetime | None = None
+) -> list[dict[str, Any]]:
+    """Retain only live MiLUMA observations eligible for current-state use."""
+    reference = now or datetime.now(timezone.utc)
+    current: list[dict[str, Any]] = []
+    for row in rows:
+        observed = _parse_dt(row.get("start_time"))
+        if observed is None:
+            continue
+        age = (reference - observed.astimezone(timezone.utc)).total_seconds()
+        if 0 <= age <= LUMA_CURRENT_STATE_MAX_AGE_SECONDS:
+            current.append(row)
+    return current
+
+
 # Load at startup; restart server to pick up data changes.
 _assets: list[dict[str, Any]] = _load_jsonl(DATA / "utility_assets.jsonl")
-_EVENT_SOURCE_PATHS = (DATA / "service_events.jsonl", DATA / "aee_incidents.jsonl")
-_event_sources = [(path, _load_jsonl(path)) for path in _EVENT_SOURCE_PATHS]
+_EVENT_SOURCE_PATHS = (
+    DATA / "service_events.jsonl",
+    DATA / "aee_incidents.jsonl",  # committed historical CC0 snapshot
+    DATA / "luma_live_incidents.jsonl",  # ignored runtime-only direct MiLUMA state
+)
+_event_sources: list[tuple[Path, list[dict[str, Any]]]] = []
+for _event_path in _EVENT_SOURCE_PATHS:
+    _rows = _load_jsonl(_event_path)
+    if _event_path.name == "luma_live_incidents.jsonl":
+        _rows = _current_luma_event_rows(_rows)
+    _event_sources.append((_event_path, _rows))
 _events: list[dict[str, Any]] = [row for _, rows in _event_sources for row in rows]
 _LUMA_REGION_STATUS_PATH = DATA / "luma_region_status.jsonl"
 _luma_region_status: list[dict[str, Any]] = _load_jsonl(_LUMA_REGION_STATUS_PATH)
