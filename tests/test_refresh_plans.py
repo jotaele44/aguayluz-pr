@@ -19,7 +19,6 @@ _SPEC = importlib.util.spec_from_file_location(
 refresh = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(refresh)
 
-
 def _script_of(step) -> str:
     return step[1][0]
 
@@ -28,7 +27,6 @@ def _script_of(step) -> str:
 def test_every_step_script_exists(cadence):
     for step in refresh.PLANS[cadence]:
         assert (REPO / _script_of(step)).is_file(), f"{cadence}: missing {_script_of(step)}"
-
 
 def test_export_step_script_exists():
     assert (REPO / _script_of(refresh.STEP_EXPORT)).is_file()
@@ -44,12 +42,10 @@ def test_derived_layers_run_last_and_in_dependency_order(cadence):
         "scripts/build_alert_system.py",
     ], f"{cadence} derived layers out of order: {scripts[-3:]}"
 
-
 def test_alert_system_build_is_blocking():
     """A schema-invalid alert must stop the run before the federation export."""
     optional = refresh.STEP_ALERT_SYSTEM[2]
     assert optional is False
-
 
 def test_keyed_and_waf_gated_steps_are_optional():
     """Steps that need a credential or a permissioned network path warn and continue."""
@@ -67,7 +63,6 @@ def test_keyed_and_waf_gated_steps_are_optional():
     ):
         assert step[2] is True, f"{_script_of(step)} must be optional"
 
-
 def test_neon_availability_runs_before_alert_promotion():
     """build_alerts.py reads data/neon_publication_events.jsonl — the NEON ingest that
     writes it has to have run first, or a fresh publication silently misses a cadence."""
@@ -79,11 +74,9 @@ def test_neon_availability_runs_before_alert_promotion():
             f"{cadence}: NEON ingest must precede alert promotion"
         )
 
-
 def test_neon_availability_is_scheduled_daily():
     """The keyless half needs no credential, so there is no reason to run it rarely."""
     assert "scripts/ingest_neon.py" in {_script_of(s) for s in refresh.PLANS["daily"]}
-
 
 def test_usgs_samples_runs_in_every_cadence():
     """The readings file is gitignored, so it exists only for the life of the job that
@@ -94,7 +87,6 @@ def test_usgs_samples_runs_in_every_cadence():
             _script_of(s) for s in refresh.PLANS[cadence]
         }, cadence
 
-
 def test_field_measurements_runs_in_every_non_fast_cadence():
     """Same argument as the samples ingest: the readings file is gitignored and rebuilt
     from empty each run. Absent from `fast` on purpose — a hydrographer visits a well a
@@ -103,7 +95,6 @@ def test_field_measurements_runs_in_every_non_fast_cadence():
     for cadence in ("daily", "weekly", "all"):
         assert script in {_script_of(s) for s in refresh.PLANS[cadence]}, cadence
     assert script not in {_script_of(s) for s in refresh.PLANS["fast"]}
-
 
 def test_annual_peaks_are_weekly_not_daily():
     """A peak is published once per water year; there is nothing for a daily run to
@@ -114,7 +105,6 @@ def test_annual_peaks_are_weekly_not_daily():
     for cadence in ("fast", "daily"):
         assert script not in {_script_of(s) for s in refresh.PLANS[cadence]}, cadence
 
-
 def test_nhc_runs_in_the_fast_cadence_alongside_the_other_hazard_feeds():
     """NHC is the earliest warning in the corpus: NWS publishes a watch once PR is inside
     the forecast envelope, ~48h out; NHC publishes position and intensity from genesis."""
@@ -122,7 +112,6 @@ def test_nhc_runs_in_the_fast_cadence_alongside_the_other_hazard_feeds():
         assert "scripts/ingest_nhc_storms.py" in {
             _script_of(s) for s in refresh.PLANS[cadence]
         }, cadence
-
 
 def test_readings_producers_are_scheduled():
     """Every reading kind the backend serves has a producer in at least one cadence."""
@@ -146,7 +135,6 @@ def test_readings_producers_are_scheduled():
         assert script in scheduled, f"{kind}: {script} is never run by any cadence"
 
 
-
 def test_miluma_live_chain_is_all_only_and_dependency_ordered():
     """Low-frequency MiLUMA access stays manual/all; fetch must precede both ingests."""
     scripts = [_script_of(step) for step in refresh.PLANS["all"]]
@@ -160,7 +148,6 @@ def test_miluma_live_chain_is_all_only_and_dependency_ordered():
         assert "scripts/fetch_luma_live.py" not in scheduled
         assert "scripts/ingest_aee.py" not in scheduled
         assert "scripts/ingest_luma_regions.py" not in scheduled
-
 
 def test_live_town_ingest_uses_fetch_receipt_not_wall_clock_or_historical_default():
     argv = refresh.STEP_AEE_INGEST[1]
