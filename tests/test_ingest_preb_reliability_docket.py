@@ -105,3 +105,20 @@ def test_partial_parse_fails_closed():
     bad = HTML.replace("Documentos Publicados: 4", "Documentos Publicados: 5")
     with pytest.raises(ValueError, match="denominator mismatch"):
         preb.parse_docket(bad, preb.DEFAULT_URL, "2026-09-19T22:00:00Z")
+
+
+
+def test_raw_and_normalized_strings_are_separate():
+    html = HTML.replace(
+        "Submission of Monthly Report System Reliability Metrics for July 2026",
+        "Submission   of Monthly Report  System Reliability Metrics for July 2026",
+        1,
+    )
+    rows, _ = preb.parse_docket(html, preb.DEFAULT_URL, "2026-09-19T22:00:00Z")
+    first = rows[0]
+
+    assert "   " in first["title_raw"]
+    assert first["title_normalized"] == (
+        "Submission of Monthly Report System Reliability Metrics for July 2026"
+    )
+    assert first["title_raw"] != first["title_normalized"]
