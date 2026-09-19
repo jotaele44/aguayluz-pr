@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from aguayluz import REPO_ROOT  # noqa: E402
 from aguayluz.models import ServiceEvent  # noqa: E402
 from federation_export import build_streams  # noqa: E402
-from fetch_luma_live import municipio_keys  # noqa: E402
+from fetch_luma_live import API_DISCOVERY_EXTRA_KEYS, canonical_municipio_keys, municipio_keys  # noqa: E402
 from ingest_aee import build_events, resolve_snapshot_provenance, unaccent_upper  # noqa: E402
 
 TS = "2025-03-03T01:38:40Z"
@@ -39,8 +39,13 @@ def test_unaccent_upper_join_key():
 
 def test_live_fetch_builds_api_keys_from_geodata():
     # The live MiLUMA fetcher must query the API with ALLCAPS/unaccented municipio names.
-    keys = municipio_keys(REPO_ROOT / "data/geo/pr_municipios.json")
-    assert len(keys) == 78
+    geo_path = REPO_ROOT / "data/geo/pr_municipios.json"
+    canonical = canonical_municipio_keys(geo_path)
+    keys = municipio_keys(geo_path)
+    assert len(canonical) == len(set(canonical)) == 78
+    assert len(keys) == len(set(keys)) == 93
+    assert set(canonical).issubset(keys)
+    assert set(keys) - set(canonical) == set(API_DISCOVERY_EXTRA_KEYS)
     assert "SAN JUAN" in keys and "CATANO" in keys and "SAN SEBASTIAN" in keys
     assert all(k == k.upper() and k.isascii() for k in keys)
 
