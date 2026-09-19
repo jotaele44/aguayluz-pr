@@ -763,7 +763,7 @@
       "classification": "analysis",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Diagnostic-only surface (per docs/adr/0001, this repo's own dashboard is diagnostic, not the supported product surface) for the regulatory framework's third and fourth implementation increments (docs/unfinished_implementation_ledger.v1.json's AYL-008): browsing RegulatoryObservation/RegulatorySourceReceipt rows written by live provider adapters (currently just USGS, src/aguayluz/regulatory_adapters/usgs.py), and adjudicating the RegulatoryEntityLink candidates scripts/build_regulatory_links.py proposes against data/utility_assets.jsonl (src/aguayluz/regulatory_links.py -- hard-identifier USGS site-number matching only so far). The one write path this capability exposes -- POST /regulatory/links/{candidate_id}/decide -- is fail-closed at the API layer, not just the JSON-schema layer: it refuses to record decision_state=approved while the candidate still carries open contradictions, so a client cannot route around that rule by skipping its own validation. Every decision records an actor, timestamp, and rationale a human supplied through this endpoint; nothing here performs automatic entity promotion, and generation itself (scripts/build_regulatory_links.py, registered separately as regulatory-links-generator) never emits approved and never overwrites an existing human decision on rerun.",
+      "rationale": "Diagnostic-only surface (per docs/adr/0001, this repo's own dashboard is diagnostic, not the supported product surface) for the regulatory framework's third and fourth implementation increments (docs/unfinished_implementation_ledger.v1.json's AYL-008): browsing RegulatoryObservation/RegulatorySourceReceipt rows written by live provider adapters (currently just USGS, src/aguayluz/regulatory_adapters/usgs.py), and adjudicating the RegulatoryEntityLink candidates scripts/build_regulatory_links.py proposes against data/utility_assets.jsonl (src/aguayluz/regulatory_links.py -- hard-identifier USGS site-number matching only so far). The one write path this capability exposes -- POST /regulatory/links/{candidate_id}/decide -- is fail-closed at the API layer, not just the JSON-schema layer: it refuses to record decision_state=approved while the candidate still carries open contradictions, so a client cannot route around that rule by skipping its own validation. Every decision records an actor, timestamp, and rationale a human supplied through this endpoint; nothing here performs automatic entity promotion, and generation itself (scripts/build_regulatory_links.py, registered separately as regulatory-links-generator) never emits approved and never overwrites an existing human decision on rerun. PREB NEPR-MI-2019-0007 docket metadata is also indexed here as a separate public regulatory/reliability source family; it preserves the docket denominator and raw filing metadata but remains NONCOMPARABLE_BY_DEFAULT to MiLUMA live outage state.",
       "backend": {
         "files": [
           "server/backend/regulatory_api.py",
@@ -815,7 +815,8 @@
       "tests": {
         "backend": [
           "tests/test_regulatory_api.py",
-          "tests/test_regulatory_links.py"
+          "tests/test_regulatory_links.py",
+          "tests/test_ingest_preb_reliability_docket.py"
         ],
         "unit": [
           "dashboard/src/pages/RegulatoryPage.test.jsx",
@@ -823,6 +824,19 @@
         ],
         "e2e": [
           "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/ingest_preb_reliability_docket.py"
+        ],
+        "symbols": [
+          "scripts/ingest_preb_reliability_docket.py:DocketParser",
+          "scripts/ingest_preb_reliability_docket.py:discovery_class",
+          "scripts/ingest_preb_reliability_docket.py:fetch",
+          "scripts/ingest_preb_reliability_docket.py:main",
+          "scripts/ingest_preb_reliability_docket.py:parse_docket",
+          "scripts/ingest_preb_reliability_docket.py:write_jsonl"
         ]
       }
     },
