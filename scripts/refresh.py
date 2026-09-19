@@ -168,13 +168,15 @@ STEP_AEE_FETCH = (
     True,
 )
 STEP_AEE_INGEST = (
-    "MiLUMA town snapshot ingest → aee_incidents",
+    "MiLUMA town snapshot ingest → runtime-only luma_live_incidents",
     [
         "scripts/ingest_aee.py",
         "--src",
         "/tmp/outages_by_town.json",
         "--snapshot-meta",
         "/tmp/luma_snapshot_manifest.json",
+        "--out",
+        "data/luma_live_incidents.jsonl",
     ],
     True,
 )
@@ -186,6 +188,8 @@ STEP_LUMA_REGIONS_INGEST = (
         "/tmp/luma_regions.json",
         "--snapshot-meta",
         "/tmp/luma_snapshot_manifest.json",
+        "--out",
+        "data/luma_region_status.jsonl",
     ],
     True,
 )
