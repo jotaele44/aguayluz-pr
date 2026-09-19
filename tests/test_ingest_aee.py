@@ -158,8 +158,6 @@ def test_live_snapshot_meta_hash_mismatch_fails_closed(tmp_path):
         )
     )
 
-    import pytest
-
     with pytest.raises(ValueError):
         resolve_snapshot_provenance(src, None, None, str(meta))
 
