@@ -7,6 +7,7 @@ plans here instead.
 """
 
 import importlib.util
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -155,3 +156,26 @@ def test_live_town_ingest_uses_fetch_receipt_not_wall_clock_or_historical_defaul
     assert "/tmp/luma_snapshot_manifest.json" in argv
     assert "--snapshot-ts" not in argv
     assert "--source-ref" not in argv
+
+
+def test_miluma_live_outputs_are_runtime_only_and_historical_snapshot_stays_versioned():
+    town_argv = refresh.STEP_AEE_INGEST[1]
+    region_argv = refresh.STEP_LUMA_REGIONS_INGEST[1]
+    assert town_argv[town_argv.index("--out") + 1] == "data/luma_live_incidents.jsonl"
+    assert region_argv[region_argv.index("--out") + 1] == "data/luma_region_status.jsonl"
+    assert "data/aee_incidents.jsonl" not in town_argv
+
+    for rel in ("data/luma_live_incidents.jsonl", "data/luma_region_status.jsonl"):
+        ignored = subprocess.run(
+            ["git", "check-ignore", "-q", rel],
+            cwd=REPO,
+            check=False,
+        )
+        assert ignored.returncode == 0, f"{rel} must remain gitignored runtime state"
+
+    historical = subprocess.run(
+        ["git", "check-ignore", "-q", "data/aee_incidents.jsonl"],
+        cwd=REPO,
+        check=False,
+    )
+    assert historical.returncode == 1, "historical CC0 snapshot must remain explicitly versionable"
