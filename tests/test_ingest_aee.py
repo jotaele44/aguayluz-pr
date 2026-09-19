@@ -33,11 +33,9 @@ SAMPLE = {
 
 PATTERN = re.compile(r"^AYL_EVT_[0-9]{8}_[A-Za-z0-9_-]+$")
 
-
 def test_unaccent_upper_join_key():
     assert unaccent_upper("Cataño") == "CATANO"
     assert unaccent_upper("Río Grande") == "RIO GRANDE"
-
 
 def test_live_fetch_builds_api_keys_from_geodata():
     # The live MiLUMA fetcher must query the API with ALLCAPS/unaccented municipio names.
@@ -46,12 +44,10 @@ def test_live_fetch_builds_api_keys_from_geodata():
     assert "SAN JUAN" in keys and "CATANO" in keys and "SAN SEBASTIAN" in keys
     assert all(k == k.upper() and k.isascii() for k in keys)
 
-
 def test_empty_municipio_emits_no_event():
     events = build_events(SAMPLE, TS, GEO, REF)
     assert all(e["municipality"] != "Cataño" for e in events)  # CATANO had []
     assert len(events) == 3  # 2 San Juan zones + 1 Guaynabo zone
-
 
 def test_rows_are_schema_valid_and_well_formed():
     events = build_events(SAMPLE, TS, GEO, REF)
@@ -64,7 +60,6 @@ def test_rows_are_schema_valid_and_well_formed():
         assert e["start_time"] == TS
     assert len({e["event_id"] for e in events}) == len(events)  # unique ids
 
-
 def test_name_normalization_and_zone_detail():
     events = build_events(SAMPLE, TS, GEO, REF)
     sj = next(e for e in events if e["zone"] == "CUPEY")
@@ -72,14 +67,12 @@ def test_name_normalization_and_zone_detail():
     assert sj["affected_area"] == "San Juan / CUPEY"
     assert sj["event_id"].startswith("AYL_EVT_20250303_")  # date from snapshot ts
 
-
 def test_unresolved_municipio_still_emits_without_municipality():
     events = build_events({"NOWHERE CITY": [{"zone": "Z", "area": "NOWHERE CITY"}]}, TS, {}, REF)
     assert len(events) == 1
     assert events[0]["municipality"] is None
     assert events[0]["affected_area"].startswith("Nowhere City")
     ServiceEvent(**events[0])  # still schema-valid
-
 
 def test_municipio_granularity_aggregates_zones():
     events = build_events(SAMPLE, TS, GEO, REF, granularity="municipio")
@@ -92,13 +85,11 @@ def test_municipio_granularity_aggregates_zones():
         assert PATTERN.match(e["event_id"])
     assert len({e["event_id"] for e in events}) == len(events)
 
-
 def test_both_granularities_are_idempotent():
     for g in ("zone", "municipio"):
         a = build_events(SAMPLE, TS, GEO, REF, granularity=g)
         b = build_events(SAMPLE, TS, GEO, REF, granularity=g)
         assert [e["event_id"] for e in a] == [e["event_id"] for e in b]
-
 
 def test_federation_export_attaches_location_and_located_in():
     events = build_events(SAMPLE, TS, GEO, REF)
@@ -111,7 +102,6 @@ def test_federation_export_attaches_location_and_located_in():
     # the two San Juan zone-events converge on one municipality node
     munis = [e for e in streams["entities"] if e["entity_type"] == "municipality"]
     assert any(m["name"] == "San Juan" for m in munis)
-
 
 
 def test_live_snapshot_meta_binds_timestamp_source_and_hash(tmp_path):
@@ -140,7 +130,6 @@ def test_live_snapshot_meta_binds_timestamp_source_and_hash(tmp_path):
         digest,
     )
 
-
 def test_live_snapshot_meta_hash_mismatch_fails_closed(tmp_path):
     src = tmp_path / "towns.json"
     src.write_text(json.dumps(SAMPLE))
@@ -160,7 +149,6 @@ def test_live_snapshot_meta_hash_mismatch_fails_closed(tmp_path):
 
     with pytest.raises(ValueError):
         resolve_snapshot_provenance(src, None, None, str(meta))
-
 
 def test_build_events_carries_live_source_hash():
     events = build_events(SAMPLE, TS, GEO, REF, source_hash="a" * 64)
