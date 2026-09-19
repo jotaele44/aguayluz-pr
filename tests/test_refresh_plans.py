@@ -55,6 +55,7 @@ def test_keyed_and_waf_gated_steps_are_optional():
     """Steps that need a credential or a permissioned network path warn and continue."""
     for step in (
         refresh.STEP_WATERS_ENRICH,
+        refresh.STEP_PREB_RELIABILITY,
         refresh.STEP_AEE_FETCH,
         refresh.STEP_LUMA_STATUS_INGEST,
         refresh.STEP_LUMA_STATUS_CHANGES,
@@ -187,3 +188,16 @@ def test_luma_change_derivation_is_not_scheduled_without_live_fetch():
     for cadence in ("fast", "daily", "weekly"):
         scripts = {_script_of(s) for s in refresh.PLANS[cadence]}
         assert "scripts/derive_luma_status_changes.py" not in scripts
+
+
+
+def test_preb_reliability_index_runs_weekly_and_all_only():
+    script = "scripts/ingest_preb_reliability_docket.py"
+    for cadence in ("weekly", "all"):
+        assert script in {_script_of(s) for s in refresh.PLANS[cadence]}, cadence
+    for cadence in ("fast", "daily"):
+        assert script not in {_script_of(s) for s in refresh.PLANS[cadence]}, cadence
+
+
+def test_preb_reliability_index_is_optional_network_source():
+    assert refresh.STEP_PREB_RELIABILITY[2] is True
