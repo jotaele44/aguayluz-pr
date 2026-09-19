@@ -155,6 +155,7 @@
           "GET /events/{event_id}",
           "PATCH /events/{event_id}",
           "GET /events",
+          "GET /outages/regions",
           "GET /alerts",
           "GET /alerts/facets",
           "GET /alerts.geojson",
@@ -175,6 +176,7 @@
           "/outages"
         ],
         "components": [
+          "dashboard/src/lib/hooks.js",
           "dashboard/src/lib/api.js",
           "dashboard/src/pages/AlertsPage.jsx",
           "dashboard/src/pages/AlertDetailPage.jsx",
@@ -192,7 +194,8 @@
         "backend": [
           "tests/test_backend_alerts_api.py",
           "tests/test_backend_events_api.py",
-          "tests/test_alerts.py"
+          "tests/test_alerts.py",
+          "tests/test_backend_luma_regions_api.py"
         ],
         "contract": [
           "tests/test_gui_parity.py"
