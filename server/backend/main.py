@@ -131,6 +131,11 @@ READINGS_FILES: dict[str, Path] = {kind: vector["path"] for kind, vector in READ
 # "all") to fetch more. The dashboard's default views only need the most recent slice.
 DEFAULT_EVENTS_LIMIT = 500
 
+# Product-level eligibility rule for operational display. This does not claim MiLUMA
+# itself publishes on an hourly SLA; it prevents a retained snapshot older than one hour
+# from silently presenting as current state after a later source-access failure.
+LUMA_CURRENT_STATE_MAX_AGE_SECONDS = 60 * 60
+
 # Canonical asset_type values for each sector.  Exact-match is used (not substring)
 # to prevent "water" matching "wastewater" assets, etc.
 SECTOR_TYPE_MAP: dict[str, set[str]] = {
@@ -329,6 +334,13 @@ def luma_outage_regions() -> JSONResponse:
     affected_pct = (
         round((affected_customers / total_customers) * 100, 6) if total_customers else 0.0
     )
+    snapshot_dt = _parse_dt(observed_at)
+    snapshot_age_seconds = None
+    if snapshot_dt is not None:
+        snapshot_age_seconds = max(
+            0,
+            round((datetime.now(timezone.utc) - snapshot_dt.astimezone(timezone.utc)).total_seconds()),
+        )
     arithmetic_closed = all(
         isinstance(row.get("total_customers"), int)
         and isinstance(row.get("affected_customers"), int)
@@ -345,6 +357,18 @@ def luma_outage_regions() -> JSONResponse:
             "affected_pct": affected_pct,
         },
         "arithmetic_closed": arithmetic_closed,
+        "freshness": {
+            "snapshot_age_seconds": snapshot_age_seconds,
+            "current_state_max_age_seconds": LUMA_CURRENT_STATE_MAX_AGE_SECONDS,
+            "current_state_eligible": bool(
+                rows
+                and len(observed_values) == 1
+                and arithmetic_closed
+                and snapshot_age_seconds is not None
+                and snapshot_age_seconds <= LUMA_CURRENT_STATE_MAX_AGE_SECONDS
+            ),
+            "policy_basis": "aguayluz operational display guard; not a MiLUMA publication SLA",
+        },
         "items": rows,
         "provenance": _LUMA_REGION_STATUS_SOURCE_MANIFESTATION,
         "scope": {
