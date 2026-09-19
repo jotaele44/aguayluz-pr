@@ -41,7 +41,6 @@ from pathlib import Path
 
 DEFAULT_SRC = "/tmp/outages_by_town.json"
 DEFAULT_GEO = "data/geo/pr_municipios.json"
-DEFAULT_META = "/tmp/luma_snapshot_manifest.json"
 # Pinned to the exact snapshot that produced the committed data/aee_incidents.jsonl.
 DEFAULT_SOURCE_REF = (
     "https://github.com/SuperSonicHub1/luma-energy-outages/blob/"
@@ -212,9 +211,9 @@ def main() -> int:
     args = ap.parse_args()
 
     src = Path(args.src)
-    doc = json.loads(src.read_text(encoding="utf-8"))
-    geo = load_geo(Path(args.geo))
     try:
+        doc = json.loads(src.read_text(encoding="utf-8"))
+        geo = load_geo(Path(args.geo))
         snapshot_ts, source_ref, source_hash = resolve_snapshot_provenance(
             src, args.snapshot_ts, args.source_ref, args.snapshot_meta
         )
