@@ -1,5 +1,6 @@
 """Regression tests for the MiLUMA regional aggregate API."""
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -11,7 +12,6 @@ pytest.importorskip("httpx")
 
 import server.backend.main as backend  # noqa: E402
 from starlette.testclient import TestClient  # noqa: E402
-
 
 def test_luma_regions_endpoint_closes_arithmetic_and_preserves_scope(monkeypatch):
     rows = [
@@ -90,7 +90,6 @@ def test_luma_regions_endpoint_surfaces_mixed_snapshot_times(monkeypatch):
     assert body["totals"]["customers"] == 20
     assert body["totals"]["affected"] == 3
 
-
 def test_luma_regions_old_snapshot_is_not_current_state_eligible(monkeypatch):
     monkeypatch.setattr(
         backend,
@@ -111,3 +110,17 @@ def test_luma_regions_old_snapshot_is_not_current_state_eligible(monkeypatch):
     assert body["arithmetic_closed"] is True
     assert body["freshness"]["current_state_eligible"] is False
     assert body["freshness"]["snapshot_age_seconds"] > 3600
+
+
+def test_runtime_luma_event_filter_excludes_stale_future_and_invalid_rows():
+    now = datetime(2026, 9, 19, 6, 30, tzinfo=timezone.utc)
+    rows = [
+        {"event_id": "current", "start_time": "2026-09-19T06:00:00Z"},
+        {"event_id": "stale", "start_time": "2026-09-19T05:00:00Z"},
+        {"event_id": "future", "start_time": "2026-09-19T06:31:00Z"},
+        {"event_id": "invalid", "start_time": "not-a-time"},
+    ]
+
+    kept = backend._current_luma_event_rows(rows, now=now)
+
+    assert [row["event_id"] for row in kept] == ["current"]
