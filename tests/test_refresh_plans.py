@@ -53,9 +53,18 @@ def test_alert_system_build_is_blocking():
 
 def test_keyed_and_waf_gated_steps_are_optional():
     """Steps that need a credential or a permissioned network path warn and continue."""
-    for step in (refresh.STEP_WATERS_ENRICH, refresh.STEP_AEE_FETCH, refresh.STEP_OSHA,
-                 refresh.STEP_NEON_PRODUCTS, refresh.STEP_USGS_SAMPLES,
-                 refresh.STEP_USGS_FIELD_MEAS, refresh.STEP_USGS_PEAKS, refresh.STEP_NHC):
+    for step in (
+        refresh.STEP_WATERS_ENRICH,
+        refresh.STEP_AEE_FETCH,
+        refresh.STEP_AEE_INGEST,
+        refresh.STEP_LUMA_REGIONS_INGEST,
+        refresh.STEP_OSHA,
+        refresh.STEP_NEON_PRODUCTS,
+        refresh.STEP_USGS_SAMPLES,
+        refresh.STEP_USGS_FIELD_MEAS,
+        refresh.STEP_USGS_PEAKS,
+        refresh.STEP_NHC,
+    ):
         assert step[2] is True, f"{_script_of(step)} must be optional"
 
 
@@ -135,3 +144,27 @@ def test_readings_producers_are_scheduled():
     scheduled = {_script_of(s) for plan in refresh.PLANS.values() for s in plan}
     for kind, script in producers.items():
         assert script in scheduled, f"{kind}: {script} is never run by any cadence"
+
+
+
+def test_miluma_live_chain_is_all_only_and_dependency_ordered():
+    """Low-frequency MiLUMA access stays manual/all; fetch must precede both ingests."""
+    scripts = [_script_of(step) for step in refresh.PLANS["all"]]
+    fetch_i = scripts.index("scripts/fetch_luma_live.py")
+    towns_i = scripts.index("scripts/ingest_aee.py")
+    regions_i = scripts.index("scripts/ingest_luma_regions.py")
+    assert fetch_i < towns_i < regions_i
+
+    for cadence in ("fast", "daily", "weekly"):
+        scheduled = {_script_of(step) for step in refresh.PLANS[cadence]}
+        assert "scripts/fetch_luma_live.py" not in scheduled
+        assert "scripts/ingest_aee.py" not in scheduled
+        assert "scripts/ingest_luma_regions.py" not in scheduled
+
+
+def test_live_town_ingest_uses_fetch_receipt_not_wall_clock_or_historical_default():
+    argv = refresh.STEP_AEE_INGEST[1]
+    assert "--snapshot-meta" in argv
+    assert "/tmp/luma_snapshot_manifest.json" in argv
+    assert "--snapshot-ts" not in argv
+    assert "--source-ref" not in argv
