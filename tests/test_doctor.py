@@ -45,7 +45,7 @@ def test_not_automatable_checks_are_always_info_and_carry_last_known_state():
     either, only the recorded state was echoed back."""
     report = run(_REPO_ROOT)
     expected_as_of = {
-        "miluma_waf_gated": "2026-08-25",
+        "miluma_waf_gated": "2026-09-19",
         "aee_incidents_mirror_staleness": "2025-03-03",
     }
     for check_id, as_of in expected_as_of.items():

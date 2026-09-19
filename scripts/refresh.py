@@ -162,6 +162,8 @@ STEP_AEE_FETCH = (
         "/tmp/outages_by_town.json",
         "--status-out",
         "/tmp/luma_regions_without_service.json",
+        "--manifest-out",
+        "/tmp/luma_snapshot_manifest.json",
     ],
     True,
 )
@@ -171,8 +173,8 @@ STEP_LUMA_STATUS_INGEST = (
         "scripts/ingest_luma_status.py",
         "--src",
         "/tmp/luma_regions_without_service.json",
-        "--snapshot-ts",
-        _NOW_TS,
+        "--snapshot-meta",
+        "/tmp/luma_snapshot_manifest.json",
     ],
     True,
 )
@@ -182,8 +184,10 @@ STEP_AEE_INGEST = (
         "scripts/ingest_aee.py",
         "--src",
         "/tmp/outages_by_town.json",
-        "--snapshot-ts",
-        _NOW_TS,
+        "--snapshot-meta",
+        "/tmp/luma_snapshot_manifest.json",
+        "--out",
+        "data/luma_live_incidents.jsonl",
     ],
     True,
 )
