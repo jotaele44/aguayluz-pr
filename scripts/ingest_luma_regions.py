@@ -156,6 +156,9 @@ def main() -> int:
     args = ap.parse_args()
 
     src = Path(args.src)
+    out = Path(args.out)
+    # Never retain an older live regional snapshot after a source-access/schema failure.
+    out.unlink(missing_ok=True)
     try:
         receipt = resolve_receipt(src, Path(args.snapshot_meta))
         if receipt is None:
@@ -167,7 +170,6 @@ def main() -> int:
         print(f"regional-ingest-invalid: {exc}", file=sys.stderr)
         return 2
 
-    out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(
         "".join(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n" for row in rows),
