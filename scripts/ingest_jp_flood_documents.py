@@ -14,6 +14,7 @@ Current bounded model:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
@@ -28,6 +29,59 @@ QUEBRADILLAS_FROZEN_BYTE_SIZE = 51_199_142
 QUEBRADILLAS_FROZEN_SHA256 = (
     "a1a2ccbfe0097da6f531e78f834d01be5a1555700b809d8f68b162db83d23e7a"
 )
+PRODUCER_CONTRACT_SCHEMA = "jp-flood-producer-contract/1.0"
+PRODUCER_CONTRACT_SHA256 = "f665aba3176f9defbdce322b1e480c8db596df666ea130ccb435bf46a66a2e78"
+PRODUCER_MERGE_SHA = "d6326c04e8ecc585b4068f8252a903246498dbb3"
+DEFAULT_PRODUCER_CONTRACT = Path("data/jp_flood_documents_producer_contract.json")
+
+
+def validate_producer_contract(path: Path) -> dict[str, Any]:
+    """Validate the immutable Spiderweb producer-contract manifestation by bytes and semantics."""
+    raw = path.read_bytes()
+    digest = hashlib.sha256(raw).hexdigest()
+    if digest != PRODUCER_CONTRACT_SHA256:
+        raise ValueError(
+            f"producer contract SHA256 mismatch: expected={PRODUCER_CONTRACT_SHA256} got={digest}"
+        )
+    contract = json.loads(raw)
+    if contract.get("schema_version") != PRODUCER_CONTRACT_SCHEMA:
+        raise ValueError("producer contract schema mismatch")
+    if contract.get("producer") != "spiderweb-pr":
+        raise ValueError("producer contract producer mismatch")
+    if contract.get("producer_merge_sha") != PRODUCER_MERGE_SHA:
+        raise ValueError("producer merge lineage mismatch")
+
+    source = contract.get("source_contract") or {}
+    expected = {
+        "manifest_version": "2.1",
+        "municipalities": EXPECTED_TOTAL,
+        "series_listed": 77,
+        "series_available": EXPECTED_AVAILABLE,
+        "listed_but_missing": EXPECTED_LISTED_BUT_MISSING,
+        "not_listed": EXPECTED_NOT_LISTED,
+        "authoritative_fallbacks": 2,
+        "operational_coverage": EXPECTED_TOTAL,
+    }
+    for key, value in expected.items():
+        if source.get(key) != value:
+            raise ValueError(f"producer source contract {key} mismatch")
+    if source["series_available"] + source["listed_but_missing"] + source["not_listed"] != EXPECTED_TOTAL:
+        raise ValueError("producer source contract arithmetic mismatch")
+
+    q = contract.get("quebradillas_receipt") or {}
+    if q.get("pdf_sha256") != QUEBRADILLAS_FROZEN_SHA256:
+        raise ValueError("producer contract Quebradillas SHA256 mismatch")
+    if q.get("pdf_byte_size") != QUEBRADILLAS_FROZEN_BYTE_SIZE:
+        raise ValueError("producer contract Quebradillas byte-size mismatch")
+
+    rules = contract.get("identity_rules") or {}
+    if rules.get("quebradillas_source_state") != "LISTED_BUT_MISSING":
+        raise ValueError("producer contract Quebradillas source state mismatch")
+    if rules.get("florida_source_state") != "NOT_LISTED":
+        raise ValueError("producer contract Florida source state mismatch")
+    if rules.get("fallback_is_not_equivalent_series_member") is not True:
+        raise ValueError("producer contract fallback identity rule mismatch")
+    return contract
 
 def validate_manifest(manifest: dict[str, Any]) -> list[dict[str, Any]]:
     docs = manifest.get("documents")
@@ -160,11 +214,24 @@ def build_lookup(manifest: dict[str, Any]) -> dict[str, Any]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--manifest", required=True)
+    parser.add_argument(
+        "--producer-contract",
+        type=Path,
+        default=DEFAULT_PRODUCER_CONTRACT,
+        help="Immutable Spiderweb producer-contract manifestation; exact SHA256 required.",
+    )
     parser.add_argument("--out", default="data/jp_flood_documents.json")
     args = parser.parse_args()
 
+    producer_contract = validate_producer_contract(args.producer_contract)
     manifest = json.loads(Path(args.manifest).read_text(encoding="utf-8"))
     lookup = build_lookup(manifest)
+    lookup["producer_contract"] = {
+        "schema_version": producer_contract["schema_version"],
+        "producer": producer_contract["producer"],
+        "producer_merge_sha": producer_contract["producer_merge_sha"],
+        "sha256": PRODUCER_CONTRACT_SHA256,
+    }
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(lookup, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -172,7 +239,7 @@ def main() -> int:
     print(
         "JP_FLOOD_DOCUMENT_CONSUMER_GATE = PASS "
         "(76 AVAILABLE + 1 LISTED_BUT_MISSING + 1 NOT_LISTED = 78; "
-        "Quebradillas frozen fallback)"
+        f"Quebradillas frozen fallback; producer_contract_sha256={PRODUCER_CONTRACT_SHA256})"
     )
     return 0
 
