@@ -1,13 +1,14 @@
 """Canonical AguaYLuz ASGI application with metric-safe monitoring contracts."""
 from __future__ import annotations
 
+import json
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from fastapi import Depends, FastAPI, HTTPException, Query
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 
 from server.backend import main as legacy
@@ -64,6 +65,28 @@ app.include_router(environmental_exposure_router)
 # while it stayed in `legacy.READINGS_FILES` — GET /readings?kind=neon 400'd on this app
 # (the one desktop/config.py actually serves) even though the data existed.
 READING_VECTOR_REGISTRY: dict[str, dict[str, Any]] = legacy.READING_VECTOR_REGISTRY
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+JP_FLOOD_LOOKUP_PATH = REPO_ROOT / "data" / "jp_flood_documents.json"
+JP_FLOOD_RAW_DIR = REPO_ROOT / "data" / "jp_flood_documents" / "raw"
+
+
+def _jp_flood_document_for_municipio(name: str) -> dict[str, Any] | None:
+    """Return one municipality flood-document binding without inventing absent data."""
+    if not JP_FLOOD_LOOKUP_PATH.is_file():
+        return None
+    try:
+        payload = json.loads(JP_FLOOD_LOOKUP_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    rows = payload.get("by_municipality")
+    if not isinstance(rows, dict):
+        return None
+    target = name.casefold()
+    for municipality, row in rows.items():
+        if isinstance(municipality, str) and municipality.casefold() == target and isinstance(row, dict):
+            return row
+    return None
 
 # `utility_asset.asset_id` prefix -> the reading `kind`(s) whose `site_no` it identifies.
 # One physical USGS stream gage backs both the daily-values `reservoir` vector
@@ -168,7 +191,23 @@ def municipio_summary(name: str) -> JSONResponse:
         "event_count": len(mun_events),
         "asset_types": list({a.get("asset_type") for a in mun_assets if a.get("asset_type")}),
         "monitoring": _monitoring_readings_for_assets(mun_assets),
+        "flood_document": _jp_flood_document_for_municipio(name),
     })
+
+
+@app.get("/municipios/{name}/flood-document/file")
+def municipio_flood_document_file(name: str):
+    """Serve a cached/frozen flood document by manifest filename; never trust arbitrary local_path."""
+    row = _jp_flood_document_for_municipio(name)
+    if row is None:
+        raise HTTPException(status_code=404, detail={"error": "flood_document_not_found", "municipality": name})
+    filename = row.get("filename")
+    if not isinstance(filename, str) or not filename:
+        raise HTTPException(status_code=404, detail={"error": "flood_document_file_not_available", "municipality": name})
+    candidate = JP_FLOOD_RAW_DIR / Path(filename).name
+    if not candidate.is_file():
+        raise HTTPException(status_code=404, detail={"error": "flood_document_file_not_available", "municipality": name})
+    return FileResponse(candidate, media_type="application/pdf", filename=Path(filename).name)
 
 
 class IncidentTransition(BaseModel):

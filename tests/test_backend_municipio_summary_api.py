@@ -76,6 +76,38 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setitem(backend.READING_VECTOR_REGISTRY["usgs_peaks"], "path", peaks)
     monkeypatch.setattr(backend.legacy, "_assets", MUN_ASSETS)
     monkeypatch.setattr(backend.legacy, "_events", [])
+
+    flood_raw = tmp_path / "jp_flood_documents" / "raw"
+    flood_raw.mkdir(parents=True)
+    q_pdf = flood_raw / "Quebradillas.pdf"
+    q_pdf.write_bytes(b"%PDF-1.4 fixture")
+    flood_lookup = tmp_path / "jp_flood_documents.json"
+    flood_lookup.write_text(
+        json.dumps({
+            "by_municipality": {
+                "Adjuntas": {
+                    "municipality": "Adjuntas",
+                    "source_state": "AVAILABLE",
+                    "operational_document_class": "flood_risk_zone_map",
+                    "operational_source_url": "https://example.test/adjuntas.pdf",
+                    "filename": None,
+                },
+                "Quebradillas": {
+                    "municipality": "Quebradillas",
+                    "source_state": "LISTED_BUT_MISSING",
+                    "operational_document_class": "hazard_mitigation_plan",
+                    "operational_access_mode": "frozen_local_manifestation",
+                    "operational_source_url": None,
+                    "filename": "Quebradillas.pdf",
+                    "sha256": "fixture",
+                    "byte_size": 16,
+                },
+            }
+        }),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(backend, "JP_FLOOD_LOOKUP_PATH", flood_lookup)
+    monkeypatch.setattr(backend, "JP_FLOOD_RAW_DIR", flood_raw)
     with TestClient(backend.app) as test_client:
         yield test_client
 
@@ -99,6 +131,8 @@ def test_monitoring_join_picks_latest_reading_per_site(client):
     assert ("reservoir", "50038290") in kinds
     assert ("usgs_peaks", "50038290") in kinds
     assert len(monitoring) == 3  # drought + reservoir + usgs_peaks; no entry for PWR00099
+    assert body["flood_document"]["source_state"] == "AVAILABLE"
+    assert body["flood_document"]["operational_document_class"] == "flood_risk_zone_map"
 
 
 def test_municipio_with_no_monitoring_stations_returns_empty_list_not_error(client):
@@ -107,3 +141,16 @@ def test_municipio_with_no_monitoring_stations_returns_empty_list_not_error(clie
     body = response.json()
     assert body["asset_count"] == 0
     assert body["monitoring"] == []
+
+
+def test_frozen_flood_document_file_is_served_from_bounded_cache(client):
+    response = client.get("/municipios/Quebradillas/flood-document/file")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("application/pdf")
+    assert response.content == b"%PDF-1.4 fixture"
+
+
+def test_unknown_flood_document_file_fails_closed(client):
+    response = client.get("/municipios/Florida/flood-document/file")
+    assert response.status_code == 404
+    assert response.json()["detail"]["error"] == "flood_document_not_found"
