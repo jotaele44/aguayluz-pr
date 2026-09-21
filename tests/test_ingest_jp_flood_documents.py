@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.util
+import json
 from pathlib import Path
 
 import pytest
@@ -107,3 +109,37 @@ def test_duplicate_municipality_fails_closed() -> None:
     manifest["documents"][1]["municipality"] = manifest["documents"][0]["municipality"]
     with pytest.raises(ValueError):
         mod.build_lookup(manifest)
+
+
+def test_canonical_producer_contract_is_bound_by_exact_bytes() -> None:
+    contract_path = ROOT / "data" / "jp_flood_documents_producer_contract.json"
+    contract = mod.validate_producer_contract(contract_path)
+    assert contract["schema_version"] == mod.PRODUCER_CONTRACT_SCHEMA
+    assert contract["producer_merge_sha"] == mod.PRODUCER_MERGE_SHA
+    assert hashlib.sha256(contract_path.read_bytes()).hexdigest() == mod.PRODUCER_CONTRACT_SHA256
+
+
+def test_wrong_producer_contract_hash_fails_closed(tmp_path) -> None:
+    source = ROOT / "data" / "jp_flood_documents_producer_contract.json"
+    payload = json.loads(source.read_text(encoding="utf-8"))
+    payload["producer"] = "tampered-producer"
+    bad = tmp_path / "producer_contract.json"
+    bad.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="producer contract SHA256 mismatch"):
+        mod.validate_producer_contract(bad)
+
+
+def test_altered_producer_contract_arithmetic_fails_even_with_matching_hash(
+    tmp_path, monkeypatch
+) -> None:
+    source = ROOT / "data" / "jp_flood_documents_producer_contract.json"
+    payload = json.loads(source.read_text(encoding="utf-8"))
+    payload["source_contract"]["series_available"] = 75
+    bad = tmp_path / "producer_contract.json"
+    raw = (json.dumps(payload, indent=2, sort_keys=True) + "\n").encode()
+    bad.write_bytes(raw)
+
+    monkeypatch.setattr(mod, "PRODUCER_CONTRACT_SHA256", hashlib.sha256(raw).hexdigest())
+    with pytest.raises(ValueError, match="series_available mismatch"):
+        mod.validate_producer_contract(bad)
