@@ -72,7 +72,8 @@
           "GET /municipios.geojson",
           "GET /barrios.geojson",
           "GET /municipios/event_density",
-          "GET /municipios/{name}/summary"
+          "GET /municipios/{name}/summary",
+          "GET /municipios/{name}/flood-document/file"
         ],
         "symbols": [
           "server/backend/app.py:municipio_summary",
@@ -84,7 +85,8 @@
           "src/aguayluz/spatial_analysis.py:impacted_assets",
           "src/aguayluz/spatial_analysis.py:raster_layer_contract",
           "src/aguayluz/spatial_analysis.py:trace_downstream",
-          "src/aguayluz/spatial_analysis.py:trace_upstream"
+          "src/aguayluz/spatial_analysis.py:trace_upstream",
+          "server/backend/app.py:municipio_flood_document_file"
         ]
       },
       "frontend": {
@@ -124,7 +126,8 @@
           "tests/test_pr_geo_boundaries.py",
           "tests/test_backend_municipio_summary_api.py",
           "tests/test_federation_spatial_core.py",
-          "tests/test_spatial_analysis.py"
+          "tests/test_spatial_analysis.py",
+          "tests/test_ingest_jp_flood_documents.py"
         ],
         "contract": [
           "tests/test_navigation.py",
@@ -138,6 +141,16 @@
         ],
         "e2e": [
           "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/ingest_jp_flood_documents.py"
+        ],
+        "symbols": [
+          "scripts/ingest_jp_flood_documents.py:build_lookup",
+          "scripts/ingest_jp_flood_documents.py:main",
+          "scripts/ingest_jp_flood_documents.py:validate_manifest"
         ]
       }
     },

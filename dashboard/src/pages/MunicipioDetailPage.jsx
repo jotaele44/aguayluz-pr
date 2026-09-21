@@ -3,10 +3,11 @@ import { Link, useParams } from 'react-router-dom'
 import { useMunicipioSummary, useAssets, useEventsPaged } from '@/lib/hooks'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, AlertTriangle, Database, MapPin, Activity } from 'lucide-react'
+import { ArrowLeft, AlertTriangle, Database, MapPin, Activity, FileText, ExternalLink } from 'lucide-react'
 import { FederationStatCard } from '@pr-federation/react'
 import { fmtDate, droughtCategoryMeta, CONTAMINATION_EVENT_TYPES } from '@/lib/format'
 import { MONITORING_SERIES, filterSeriesReadings } from '@/lib/monitoring'
+import { API_BASE } from '@/lib/api'
 
 // Thin wrapper over the shared metric tile so the call sites below keep reading
 // the same. `tone` is now a canonical federation status role rather than a
@@ -86,6 +87,74 @@ export default function MunicipioDetailPage() {
           value={events.filter((e) => CONTAMINATION_EVENT_TYPES.includes(e.event_type) && !e.end_time).length}
           tone="danger" />
       </div>
+
+      {summary?.flood_document && (() => {
+        const flood = summary.flood_document
+        const localUrl = flood.filename
+          ? `${API_BASE}/municipios/${encodeURIComponent(decoded)}/flood-document/file`
+          : null
+        const openUrl = localUrl || flood.operational_source_url
+        const stateLabel = flood.source_state === 'AVAILABLE'
+          ? 'Available'
+          : flood.source_state === 'LISTED_BUT_MISSING'
+            ? 'Listed · source file missing'
+            : 'Not listed in source series'
+        return (
+          <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+            <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
+              <FileText className="h-3.5 w-3.5" /> Flood Risk Document
+              <Badge variant="outline" className="ml-auto text-[10px] border-slate-700">{stateLabel}</Badge>
+            </h2>
+            <div className="grid sm:grid-cols-2 gap-3 text-xs">
+              <div>
+                <div className="text-slate-500">Operational document</div>
+                <div className="mt-1 text-slate-200">
+                  {(flood.operational_document_class || 'unknown').replace(/_/g, ' ')}
+                </div>
+                <div className="mt-1 text-[10px] text-slate-500">
+                  {(flood.operational_access_mode || 'unknown').replace(/_/g, ' ')}
+                </div>
+              </div>
+              <div>
+                <div className="text-slate-500">Provenance</div>
+                <div className="mt-1 text-slate-300 break-all">
+                  {flood.sha256 ? `SHA256 ${flood.sha256.slice(0, 16)}…` : 'No local hash recorded'}
+                </div>
+                {flood.byte_size ? (
+                  <div className="mt-1 text-[10px] text-slate-500">{Number(flood.byte_size).toLocaleString()} bytes</div>
+                ) : null}
+              </div>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {openUrl ? (
+                <a
+                  href={openUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-sky-800 px-3 py-1.5 text-xs text-sky-300 hover:bg-sky-950/50"
+                >
+                  <ExternalLink className="h-3 w-3" /> Open document
+                </a>
+              ) : null}
+              {flood.provenance_fallback_source_url ? (
+                <a
+                  href={flood.provenance_fallback_source_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-slate-700 px-3 py-1.5 text-xs text-slate-400 hover:bg-slate-800/50"
+                >
+                  Source provenance
+                </a>
+              ) : null}
+            </div>
+            {flood.fallback_relationship ? (
+              <p className="mt-3 text-[10px] text-slate-500">
+                {flood.fallback_relationship.replace(/_/g, ' ')}
+              </p>
+            ) : null}
+          </div>
+        )
+      })()}
 
       <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
         <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">

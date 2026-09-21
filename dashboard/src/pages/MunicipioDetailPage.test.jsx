@@ -30,7 +30,7 @@ const renderAt = (municipio) =>
 
 beforeEach(() => {
   vi.spyOn(console, 'error').mockImplementation(() => undefined)
-  summaryData = { municipality: 'Adjuntas', asset_count: 0, active_assets: 0, event_count: 0, asset_types: [], monitoring: [] }
+  summaryData = { municipality: 'Adjuntas', asset_count: 0, active_assets: 0, event_count: 0, asset_types: [], monitoring: [], flood_document: null }
   eventsData = { items: [], total: 0 }
 })
 
@@ -75,6 +75,41 @@ describe('MunicipioDetailPage — monitoring section', () => {
     const card = screen.getByText('Contamination').closest('.fd-stat-card')
     expect(card).not.toBeNull()
     expect(card.querySelector('.fd-stat-card__value')).toHaveTextContent('2')
+  })
+
+  it('renders a frozen offline flood-document fallback with provenance', () => {
+    summaryData = {
+      ...summaryData,
+      municipality: 'Quebradillas',
+      flood_document: {
+        municipality: 'Quebradillas',
+        source_state: 'LISTED_BUT_MISSING',
+        operational_document_class: 'hazard_mitigation_plan',
+        operational_access_mode: 'frozen_local_manifestation',
+        operational_source_url: null,
+        provenance_fallback_source_url: 'https://example.test/quebradillas-hmp.pdf',
+        fallback_relationship: 'authoritative_fallback_not_equivalent',
+        filename: 'Quebradillas.pdf',
+        sha256: 'a1a2ccbfe0097da6f531e78f834d01be5a1555700b809d8f68b162db83d23e7a',
+        byte_size: 51199142,
+      },
+    }
+
+    renderAt('Quebradillas')
+
+    expect(screen.getByText('Flood Risk Document')).toBeInTheDocument()
+    expect(screen.getByText(/Listed · source file missing/)).toBeInTheDocument()
+    expect(screen.getByText(/hazard mitigation plan/)).toBeInTheDocument()
+    expect(screen.getByText(/frozen local manifestation/)).toBeInTheDocument()
+    expect(screen.getByText(/SHA256 a1a2ccbfe0097da6/)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Open document/i })).toHaveAttribute(
+      'href',
+      expect.stringContaining('/municipios/Quebradillas/flood-document/file'),
+    )
+    expect(screen.getByRole('link', { name: /Source provenance/i })).toHaveAttribute(
+      'href',
+      'https://example.test/quebradillas-hmp.pdf',
+    )
   })
 
   it('does not throw and shows the empty state for a municipio name typed as a prototype key', () => {
