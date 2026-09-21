@@ -1,0 +1,43 @@
+{
+  "acquisition_script": {
+    "git_blob_sha": "a04f892a704ff474480ee01a1dbf284093c063ad",
+    "path": "scripts/acquire_jp_flood_documents.py"
+  },
+  "identity_rules": {
+    "fallback_is_not_equivalent_series_member": true,
+    "florida_source_state": "NOT_LISTED",
+    "quebradillas_fallback_relationship": "authoritative_fallback_not_equivalent",
+    "quebradillas_source_state": "LISTED_BUT_MISSING"
+  },
+  "producer": "spiderweb-pr",
+  "producer_merge_sha": "d6326c04e8ecc585b4068f8252a903246498dbb3",
+  "quebradillas_receipt": {
+    "git_blob_sha": "409a8a3589180bef1134640f7648c7d836dccb2f",
+    "path": "data/jp_flood_documents/quebradillas_frozen_manifestation.json",
+    "pdf_byte_size": 51199142,
+    "pdf_sha256": "a1a2ccbfe0097da6f531e78f834d01be5a1555700b809d8f68b162db83d23e7a"
+  },
+  "schema_version": "jp-flood-producer-contract/1.0",
+  "scope": {
+    "contract_identity": "stable_producer_contract",
+    "mutable_portal_snapshot": "data/jp_flood_documents/manifest.json",
+    "mutable_snapshot_is_separate_identity": true
+  },
+  "source_contract": {
+    "authoritative_fallbacks": 2,
+    "authority": "Junta de Planificación de Puerto Rico",
+    "listed_but_missing": 1,
+    "manifest_version": "2.1",
+    "municipalities": 78,
+    "not_listed": 1,
+    "operational_coverage": 78,
+    "series_available": 76,
+    "series_listed": 77,
+    "source_series": "JP_SECTORES_EN_ZONA_INUNDABLES",
+    "source_state_enum": [
+      "AVAILABLE",
+      "LISTED_BUT_MISSING",
+      "NOT_LISTED"
+    ]
+  }
+}
