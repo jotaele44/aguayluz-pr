@@ -143,3 +143,39 @@ def test_altered_producer_contract_arithmetic_fails_even_with_matching_hash(
     monkeypatch.setattr(mod, "PRODUCER_CONTRACT_SHA256", hashlib.sha256(raw).hexdigest())
     with pytest.raises(ValueError, match="series_available mismatch"):
         mod.validate_producer_contract(bad)
+
+
+def test_canonical_byte_certification_is_bound_by_exact_bytes() -> None:
+    cert_path = ROOT / "data" / "jp_flood_documents_byte_certification.json"
+    cert = mod.validate_byte_certification(cert_path)
+    assert cert["schema_version"] == mod.BYTE_CERTIFICATION_SCHEMA
+    assert cert["certification_state"] == "PASS"
+    assert cert["counts"]["byte_verified_count"] == 78
+    assert cert["counts"]["failure_count"] == 0
+    assert hashlib.sha256(cert_path.read_bytes()).hexdigest() == mod.BYTE_CERTIFICATION_SHA256
+
+
+def test_wrong_byte_certification_hash_fails_closed(tmp_path) -> None:
+    source = ROOT / "data" / "jp_flood_documents_byte_certification.json"
+    payload = json.loads(source.read_text(encoding="utf-8"))
+    payload["certification_state"] = "FAIL"
+    bad = tmp_path / "byte_certification.json"
+    bad.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="byte certification SHA256 mismatch"):
+        mod.validate_byte_certification(bad)
+
+
+def test_altered_byte_certification_denominator_fails_even_with_matching_hash(
+    tmp_path, monkeypatch
+) -> None:
+    source = ROOT / "data" / "jp_flood_documents_byte_certification.json"
+    payload = json.loads(source.read_text(encoding="utf-8"))
+    payload["counts"]["byte_verified_count"] = 77
+    bad = tmp_path / "byte_certification.json"
+    raw = (json.dumps(payload, indent=2) + "\n").encode()
+    bad.write_bytes(raw)
+
+    monkeypatch.setattr(mod, "BYTE_CERTIFICATION_SHA256", hashlib.sha256(raw).hexdigest())
+    with pytest.raises(ValueError, match="byte_verified_count mismatch"):
+        mod.validate_byte_certification(bad)

@@ -84,6 +84,17 @@ def client(tmp_path, monkeypatch):
     flood_lookup = tmp_path / "jp_flood_documents.json"
     flood_lookup.write_text(
         json.dumps({
+            "byte_certification": {
+                "schema_version": "spiderweb.jp-flood-byte-certification/v1",
+                "certification_state": "PASS",
+                "source_main_sha": "edf35847cd3e031ed9be4b733083e4b7c0c18dbf",
+                "sha256": "fixture-cert",
+                "counts": {
+                    "municipality_denominator": 78,
+                    "byte_verified_count": 78,
+                    "failure_count": 0,
+                },
+            },
             "by_municipality": {
                 "Adjuntas": {
                     "municipality": "Adjuntas",
@@ -133,6 +144,8 @@ def test_monitoring_join_picks_latest_reading_per_site(client):
     assert len(monitoring) == 3  # drought + reservoir + usgs_peaks; no entry for PWR00099
     assert body["flood_document"]["source_state"] == "AVAILABLE"
     assert body["flood_document"]["operational_document_class"] == "flood_risk_zone_map"
+    assert body["flood_document"]["byte_certification"]["certification_state"] == "PASS"
+    assert body["flood_document"]["byte_certification"]["counts"]["byte_verified_count"] == 78
 
 
 def test_municipio_with_no_monitoring_stations_returns_empty_list_not_error(client):

@@ -85,7 +85,11 @@ def _jp_flood_document_for_municipio(name: str) -> dict[str, Any] | None:
     target = name.casefold()
     for municipality, row in rows.items():
         if isinstance(municipality, str) and municipality.casefold() == target and isinstance(row, dict):
-            return row
+            result = dict(row)
+            certification = payload.get("byte_certification")
+            if isinstance(certification, dict):
+                result["byte_certification"] = certification
+            return result
     return None
 
 # `utility_asset.asset_id` prefix -> the reading `kind`(s) whose `site_no` it identifies.

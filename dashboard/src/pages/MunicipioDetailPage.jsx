@@ -103,7 +103,15 @@ export default function MunicipioDetailPage() {
           <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
             <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
               <FileText className="h-3.5 w-3.5" /> Flood Risk Document
-              <Badge variant="outline" className="ml-auto text-[10px] border-slate-700">{stateLabel}</Badge>
+              {flood.byte_certification?.certification_state === 'PASS' ? (
+                <Badge variant="outline" className="ml-auto text-[10px] border-emerald-800 text-emerald-300">
+                  Byte certified {flood.byte_certification?.counts?.byte_verified_count ?? 78}/
+                  {flood.byte_certification?.counts?.municipality_denominator ?? 78}
+                </Badge>
+              ) : null}
+              <Badge variant="outline" className={flood.byte_certification?.certification_state === 'PASS'
+                ? 'text-[10px] border-slate-700'
+                : 'ml-auto text-[10px] border-slate-700'}>{stateLabel}</Badge>
             </h2>
             <div className="grid sm:grid-cols-2 gap-3 text-xs">
               <div>

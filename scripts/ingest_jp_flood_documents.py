@@ -33,6 +33,13 @@ PRODUCER_CONTRACT_SCHEMA = "jp-flood-producer-contract/1.0"
 PRODUCER_CONTRACT_SHA256 = "f665aba3176f9defbdce322b1e480c8db596df666ea130ccb435bf46a66a2e78"
 PRODUCER_MERGE_SHA = "d6326c04e8ecc585b4068f8252a903246498dbb3"
 DEFAULT_PRODUCER_CONTRACT = Path("data/jp_flood_documents_producer_contract.json")
+BYTE_CERTIFICATION_SCHEMA = "spiderweb.jp-flood-byte-certification/v1"
+BYTE_CERTIFICATION_SHA256 = "e6832834f875900dda4c3f5f3b25444e39e9f804d1279ffb45ddecee9082c60c"
+BYTE_CERTIFICATION_SOURCE_MAIN_SHA = "edf35847cd3e031ed9be4b733083e4b7c0c18dbf"
+BYTE_CERTIFIED_PRODUCER_SHA = "d6326c04e8ecc585b4068f8252a903246498dbb3"
+BYTE_CERTIFIED_CONSUMER_SHA = "324b7057cc8466db061443e1e008bf3f39bb83b3"
+BYTE_CERTIFIED_TOTAL_BYTES = 914_381_842
+DEFAULT_BYTE_CERTIFICATION = Path("data/jp_flood_documents_byte_certification.json")
 
 
 def validate_producer_contract(path: Path) -> dict[str, Any]:
@@ -82,6 +89,59 @@ def validate_producer_contract(path: Path) -> dict[str, Any]:
     if rules.get("fallback_is_not_equivalent_series_member") is not True:
         raise ValueError("producer contract fallback identity rule mismatch")
     return contract
+
+
+def validate_byte_certification(path: Path) -> dict[str, Any]:
+    """Validate Spiderweb's immutable 78/78 byte-certification receipt."""
+    raw = path.read_bytes()
+    digest = hashlib.sha256(raw).hexdigest()
+    if digest != BYTE_CERTIFICATION_SHA256:
+        raise ValueError(
+            f"byte certification SHA256 mismatch: expected={BYTE_CERTIFICATION_SHA256} got={digest}"
+        )
+    cert = json.loads(raw)
+    if cert.get("schema_version") != BYTE_CERTIFICATION_SCHEMA:
+        raise ValueError("byte certification schema mismatch")
+    if cert.get("certification_state") != "PASS":
+        raise ValueError("byte certification state must be PASS")
+    if cert.get("producer_main_sha") != BYTE_CERTIFIED_PRODUCER_SHA:
+        raise ValueError("byte certification producer lineage mismatch")
+    if cert.get("aguayluz_consumer_main_sha") != BYTE_CERTIFIED_CONSUMER_SHA:
+        raise ValueError("byte certification consumer baseline mismatch")
+
+    counts = cert.get("counts") or {}
+    expected = {
+        "municipality_denominator": EXPECTED_TOTAL,
+        "series_listed": 77,
+        "available": EXPECTED_AVAILABLE,
+        "listed_but_missing": EXPECTED_LISTED_BUT_MISSING,
+        "not_listed": EXPECTED_NOT_LISTED,
+        "operational_document_count": EXPECTED_TOTAL,
+        "byte_verified_count": EXPECTED_TOTAL,
+        "failure_count": 0,
+        "total_bytes": BYTE_CERTIFIED_TOTAL_BYTES,
+    }
+    for key, value in expected.items():
+        if counts.get(key) != value:
+            raise ValueError(f"byte certification {key} mismatch")
+
+    gates = cert.get("gates") or {}
+    for key in (
+        "municipality_denominator",
+        "series_listed",
+        "available",
+        "listed_but_missing",
+        "not_listed",
+        "operational_document_count",
+        "byte_verified_count",
+        "failure_count",
+    ):
+        if gates.get(key) != expected[key]:
+            raise ValueError(f"byte certification gate {key} mismatch")
+
+    if cert.get("sha256sums_sha256") != "118fa90880747177cf0349db19ad21bcc8432110b1032dc4d3e5d420cb7fb305":
+        raise ValueError("byte certification SHA256SUMS lineage mismatch")
+    return cert
 
 def validate_manifest(manifest: dict[str, Any]) -> list[dict[str, Any]]:
     docs = manifest.get("documents")
@@ -220,10 +280,17 @@ def main() -> int:
         default=DEFAULT_PRODUCER_CONTRACT,
         help="Immutable Spiderweb producer-contract manifestation; exact SHA256 required.",
     )
+    parser.add_argument(
+        "--byte-certification",
+        type=Path,
+        default=DEFAULT_BYTE_CERTIFICATION,
+        help="Immutable Spiderweb 78/78 byte-certification receipt; exact SHA256 required.",
+    )
     parser.add_argument("--out", default="data/jp_flood_documents.json")
     args = parser.parse_args()
 
     producer_contract = validate_producer_contract(args.producer_contract)
+    byte_certification = validate_byte_certification(args.byte_certification)
     manifest = json.loads(Path(args.manifest).read_text(encoding="utf-8"))
     lookup = build_lookup(manifest)
     lookup["producer_contract"] = {
@@ -232,6 +299,18 @@ def main() -> int:
         "producer_merge_sha": producer_contract["producer_merge_sha"],
         "sha256": PRODUCER_CONTRACT_SHA256,
     }
+    lookup["byte_certification"] = {
+        "schema_version": byte_certification["schema_version"],
+        "certification_state": byte_certification["certification_state"],
+        "source_repository": "jotaele44/spiderweb-pr",
+        "source_path": "data/jp_flood_documents/certification/2026-09-21/certification.json",
+        "source_main_sha": BYTE_CERTIFICATION_SOURCE_MAIN_SHA,
+        "certified_producer_sha": byte_certification["producer_main_sha"],
+        "certified_consumer_baseline_sha": byte_certification["aguayluz_consumer_main_sha"],
+        "sha256": BYTE_CERTIFICATION_SHA256,
+        "counts": byte_certification["counts"],
+        "sha256sums_sha256": byte_certification["sha256sums_sha256"],
+    }
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(lookup, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -239,7 +318,8 @@ def main() -> int:
     print(
         "JP_FLOOD_DOCUMENT_CONSUMER_GATE = PASS "
         "(76 AVAILABLE + 1 LISTED_BUT_MISSING + 1 NOT_LISTED = 78; "
-        f"Quebradillas frozen fallback; producer_contract_sha256={PRODUCER_CONTRACT_SHA256})"
+        f"Quebradillas frozen fallback; producer_contract_sha256={PRODUCER_CONTRACT_SHA256}; "
+        f"byte_certification_sha256={BYTE_CERTIFICATION_SHA256})"
     )
     return 0
 
