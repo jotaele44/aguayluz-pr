@@ -92,6 +92,14 @@ describe('MunicipioDetailPage — monitoring section', () => {
         filename: 'Quebradillas.pdf',
         sha256: 'a1a2ccbfe0097da6f531e78f834d01be5a1555700b809d8f68b162db83d23e7a',
         byte_size: 51199142,
+        byte_certification: {
+          certification_state: 'PASS',
+          counts: {
+            municipality_denominator: 78,
+            byte_verified_count: 78,
+            failure_count: 0,
+          },
+        },
       },
     }
 
@@ -102,6 +110,7 @@ describe('MunicipioDetailPage — monitoring section', () => {
     expect(screen.getByText(/hazard mitigation plan/)).toBeInTheDocument()
     expect(screen.getByText(/frozen local manifestation/)).toBeInTheDocument()
     expect(screen.getByText(/SHA256 a1a2ccbfe0097da6/)).toBeInTheDocument()
+    expect(screen.getByText(/Byte certified 78\/78/)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Open document/i })).toHaveAttribute(
       'href',
       expect.stringContaining('/municipios/Quebradillas/flood-document/file'),
