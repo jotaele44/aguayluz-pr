@@ -14,6 +14,15 @@ import { fmtDate, CHART_TOOLTIP_STYLE } from '@/lib/format'
 import { SECTOR_META } from '@/lib/sectors'
 import Panel from '@/components/common/Panel'
 import StatTile from '@/components/common/StatTile'
+import ProgramTimeline from '@/components/ProgramTimeline'
+
+const PROGRAM_TIMELINE = [
+  { id:'agua-water', phase:'NOW', title:'Water disruption state', detail:'Track bounded water-system disruptions, infrastructure context, and recovery evidence.', category:'Water', href:'/water-disruption' },
+  { id:'agua-energy', phase:'NEXT', title:'Energy and utility status', detail:'Reconcile generation, grid, outage, and infrastructure observations against dated authoritative sources.', category:'Energy', href:'/' },
+  { id:'agua-hydro', phase:'NEXT', title:'Hydrology source closure', detail:'Bind reservoirs, watersheds, routes, pumps, and environmental context to validated spatial identities.', category:'Hydrology', href:'/environmental' },
+  { id:'agua-map', phase:'QUEUED', title:'Infrastructure map reconciliation', detail:'Refresh map relationships only after identity and geometry gates close.', category:'GIS', href:'/map' },
+  { id:'agua-cert', phase:'BLOCKED', title:'Production source certification', detail:'Final certification waits on current authoritative source closure, credentials, and rendered QA.', category:'Certification', href:'/system' },
+]
 
 export default function OverviewPage() {
   const { data: health, isLoading: healthLoading } = useHealth()
@@ -143,6 +152,8 @@ export default function OverviewPage() {
           )}
         </p>
       )}
+
+      <ProgramTimeline items={PROGRAM_TIMELINE} />
 
       {/* AI status recap + notifications */}
       <div className="flex items-start gap-3 flex-wrap">
