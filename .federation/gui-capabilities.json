@@ -145,14 +145,19 @@
       },
       "analysis": {
         "files": [
-          "scripts/ingest_jp_flood_documents.py"
+          "scripts/ingest_jp_flood_documents.py",
+          "scripts/check_jp_flood_consumer_v3.py"
         ],
         "symbols": [
           "scripts/ingest_jp_flood_documents.py:build_lookup",
           "scripts/ingest_jp_flood_documents.py:main",
           "scripts/ingest_jp_flood_documents.py:validate_manifest",
           "scripts/ingest_jp_flood_documents.py:validate_producer_contract",
-          "scripts/ingest_jp_flood_documents.py:validate_byte_certification"
+          "scripts/ingest_jp_flood_documents.py:validate_byte_certification",
+          "scripts/check_jp_flood_consumer_v3.py:run",
+          "scripts/check_jp_flood_consumer_v3.py:main",
+          "scripts/check_jp_flood_consumer_v3.py:GateError",
+          "scripts/check_jp_flood_consumer_v3.py:sha256"
         ]
       }
     },

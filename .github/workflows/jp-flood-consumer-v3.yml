@@ -1,0 +1,58 @@
+name: JP flood consumer V3
+
+on:
+  pull_request:
+    paths:
+      - "data/jp_flood_documents_producer_contract.json"
+      - "data/jp_flood_documents_byte_certification.json"
+      - "scripts/ingest_jp_flood_documents.py"
+      - "scripts/check_jp_flood_consumer_v3.py"
+      - "server/backend/app.py"
+      - "dashboard/src/pages/MunicipioDetailPage.jsx"
+      - "dashboard/src/pages/MunicipioDetailPage.test.jsx"
+      - "tests/test_ingest_jp_flood_documents.py"
+      - ".federation/gui-capabilities.json"
+      - ".github/workflows/jp-flood-consumer-v3.yml"
+  push:
+    branches: [main]
+    paths:
+      - "data/jp_flood_documents_producer_contract.json"
+      - "data/jp_flood_documents_byte_certification.json"
+      - "scripts/ingest_jp_flood_documents.py"
+      - "scripts/check_jp_flood_consumer_v3.py"
+
+permissions:
+  contents: read
+
+jobs:
+  consumer-v3:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+      - name: Install Python test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Run cross-repo and UI semantic contract gate
+        run: python scripts/check_jp_flood_consumer_v3.py --report artifacts/jp-flood-consumer-v3.json
+      - name: Run producer and byte-certification regressions
+        run: python -m pytest -q tests/test_ingest_jp_flood_documents.py
+      - name: Install dashboard dependencies
+        working-directory: dashboard
+        run: npm ci
+      - name: Run three-state municipio UI semantics tests
+        working-directory: dashboard
+        run: npm test -- src/pages/MunicipioDetailPage.test.jsx
+      - name: Upload consumer V3 receipt
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: jp-flood-consumer-v3
+          path: artifacts/jp-flood-consumer-v3.json
+          retention-days: 90
