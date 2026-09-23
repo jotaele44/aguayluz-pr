@@ -138,6 +138,7 @@ def iter_ogc_pages(
     current_url: str | None = url
     current_params: Mapping[str, Any] | None = request_params
     for _ in range(max_pages):
+        assert current_url is not None  # noqa: S101 — only ever reassigned to a truthy href
         response = request_with_retry(
             client, "GET", current_url, params=current_params, headers=api_headers()
         )

@@ -17,6 +17,7 @@ from __future__ import annotations
 import logging
 import random
 import time
+from collections.abc import Mapping
 from typing import Any
 
 import httpx
@@ -54,8 +55,8 @@ def request_with_retry(
     method: str,
     url: str,
     *,
-    params: dict[str, Any] | None = None,
-    headers: dict[str, str] | None = None,
+    params: Mapping[str, Any] | None = None,
+    headers: Mapping[str, str] | None = None,
     max_retries: int = DEFAULT_MAX_RETRIES,
     backoff_schedule: tuple[float, ...] = DEFAULT_BACKOFF_SCHEDULE_S,
     sleep_fn: Any = time.sleep,
@@ -97,8 +98,8 @@ def request_with_retry(
 def get_with_retry(
     url: str,
     *,
-    params: dict[str, Any] | None = None,
-    headers: dict[str, str] | None = None,
+    params: Mapping[str, Any] | None = None,
+    headers: Mapping[str, str] | None = None,
     timeout: float = 60.0,
     follow_redirects: bool = True,
     client: httpx.Client | None = None,
