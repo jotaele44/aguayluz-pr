@@ -237,6 +237,15 @@ PLANS: dict[str, list[tuple]] = {
         STEP_USGS_CONTINUOUS,
         STEP_USGS_RTFI,
         STEP_NOAA_TIDES,
+        # LUMA live outages are the single most volatile source in the corpus —
+        # power restoration status changes on a minutes timescale, not hours —
+        # so it belongs in the 15-minute cadence, not only the manual --all
+        # dispatch. All four steps are optional=True (WAF blocks are routine),
+        # so a failure here warns and continues rather than failing the run.
+        STEP_AEE_FETCH,
+        STEP_LUMA_STATUS_INGEST,
+        STEP_LUMA_STATUS_CHANGES,
+        STEP_AEE_INGEST,
         STEP_USGS_COVERAGE_GATE,
         *_DERIVE,
     ],

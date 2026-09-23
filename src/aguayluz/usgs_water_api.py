@@ -15,6 +15,8 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from .http_retry import request_with_retry
+
 OGC_COLLECTIONS = "https://api.waterdata.usgs.gov/ogcapi/v0/collections"
 STATISTICS_ROOT = "https://api.waterdata.usgs.gov/statistics/v0"
 RTFI_ROOT = "https://api.waterdata.usgs.gov/rtfi-api"
@@ -136,7 +138,10 @@ def iter_ogc_pages(
     current_url: str | None = url
     current_params: Mapping[str, Any] | None = request_params
     for _ in range(max_pages):
-        response = client.get(current_url, params=current_params, headers=api_headers())
+        assert current_url is not None  # noqa: S101 — only ever reassigned to a truthy href
+        response = request_with_retry(
+            client, "GET", current_url, params=current_params, headers=api_headers()
+        )
         response.raise_for_status()
         document = response.json()
         if not isinstance(document, dict):
