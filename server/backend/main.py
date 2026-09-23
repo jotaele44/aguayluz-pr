@@ -16,6 +16,7 @@ import io
 import json
 import logging
 import os as _os
+import secrets
 import smtplib as _smtplib
 import sys
 import urllib.request as _notify_urllib
@@ -166,7 +167,7 @@ async def _require_key(request: Request):
     if not _API_KEY:
         return  # auth disabled globally
     auth = request.headers.get("Authorization", "")
-    if not auth.startswith("Bearer ") or auth[7:] != _API_KEY:
+    if not auth.startswith("Bearer ") or not secrets.compare_digest(auth[7:], _API_KEY):
         raise HTTPException(status_code=401, detail="Invalid or missing API key")
 
 
@@ -252,6 +253,30 @@ for _row in _load_jsonl(_live_event_path):
         _live_event_rows.append(_row)
 _event_sources.append((_live_event_path, _live_event_rows))
 _events: list[dict[str, Any]] = [row for _, rows in _event_sources for row in rows]
+_non_live_event_rows: list[dict[str, Any]] = [
+    row for path, rows in _event_sources if path != _live_event_path for row in rows
+]
+
+
+def _current_events() -> list[dict[str, Any]]:
+    """`_events` (above) freezes the live-incident 1h window at process import
+    time: fine for a short-lived process, but the live source file is
+    refreshed hourly by cron and a live server can run for days, so that
+    frozen filter goes stale. This recomputes the cutoff and reloads/re-filters
+    the live-incident file on every call, so callers that need current live
+    data (GET /events, GET /municipios/event_density) see it. Non-live event
+    sources (service_events.jsonl, aee_incidents.jsonl) don't change at
+    runtime, so they're read once at startup like everywhere else in this
+    module."""
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=1)
+    live_rows = []
+    for row in _load_jsonl(_live_event_path):
+        dt = _parse_dt(row.get("start_time"))
+        if dt is not None and dt >= cutoff:
+            live_rows.append(row)
+    return _non_live_event_rows + live_rows
+
+
 _luma_status_snapshots: list[dict[str, Any]] = _load_jsonl(
     DATA / "luma_status_snapshots.jsonl"
 )
@@ -472,7 +497,7 @@ def municipios_event_density(
     accurate representation, not the client trying to plot every event as a
     fake-precise dot. Same filter semantics as GET /events, minus limit/offset/
     municipio (which would defeat the purpose of an aggregate)."""
-    result = _events
+    result = _current_events()
     if type:
         result = [e for e in result if e.get("event_type") == type]
     since_dt = _parse_dt(since)
@@ -594,7 +619,7 @@ def events(
     limit: int | None = Query(default=None),
     offset: int = Query(default=0),
 ) -> JSONResponse:
-    result = _events
+    result = _current_events()
     since_dt = _parse_dt(since)
     until_dt = _parse_dt(until)
     if type:
