@@ -16,6 +16,7 @@ import io
 import json
 import logging
 import os as _os
+import secrets
 import smtplib as _smtplib
 import sys
 import urllib.request as _notify_urllib
@@ -166,7 +167,7 @@ async def _require_key(request: Request):
     if not _API_KEY:
         return  # auth disabled globally
     auth = request.headers.get("Authorization", "")
-    if not auth.startswith("Bearer ") or auth[7:] != _API_KEY:
+    if not auth.startswith("Bearer ") or not secrets.compare_digest(auth[7:], _API_KEY):
         raise HTTPException(status_code=401, detail="Invalid or missing API key")
 
 
@@ -277,10 +278,13 @@ _events: list[dict[str, Any]] = [row for _, rows in _event_sources for row in ro
 
 def _current_events() -> list[dict[str, Any]]:
     """Re-read event sources from disk, unlike the ``_events`` snapshot above
-    (built once at import time — every other endpoint intentionally keeps
-    reading that fixed snapshot until the process restarts). Used by the SSE
-    ``/events/stream`` endpoint, whose whole point is to reflect new data
-    without a restart; cheap because ``_load_jsonl`` caches on unchanged mtime.
+    (built once at import time). The live-incident source is refreshed hourly
+    by cron and a live server can run for days, so a cutoff computed once at
+    import time goes stale; this recomputes it and re-filters on every call.
+    Used by the SSE ``/events/stream`` endpoint (whose whole point is to
+    reflect new data without a restart) and by GET /events and GET
+    /municipios/event_density, so their live-incident window doesn't go
+    stale either. Cheap because ``_load_jsonl`` caches on unchanged mtime.
     """
     cutoff = datetime.now(timezone.utc) - timedelta(hours=1)
     live_rows = [
@@ -512,7 +516,7 @@ def municipios_event_density(
     accurate representation, not the client trying to plot every event as a
     fake-precise dot. Same filter semantics as GET /events, minus limit/offset/
     municipio (which would defeat the purpose of an aggregate)."""
-    result = _events
+    result = _current_events()
     if type:
         result = [e for e in result if e.get("event_type") == type]
     since_dt = _parse_dt(since)
@@ -595,9 +599,11 @@ def municipio_summary(name: str) -> JSONResponse:
 async def events_stream(request: Request) -> StreamingResponse:
     """SSE endpoint: pushes the latest 20 events every 5 s.
 
-    Re-reads from disk each tick (via ``_current_events``) rather than the
-    startup-frozen ``_events`` snapshot other endpoints use, so a scheduled
-    refresh commit shows up here without a server restart.
+    Re-reads from disk each tick via ``_current_events``, so a scheduled
+    refresh commit shows up here without a server restart. GET /events and
+    GET /municipios/event_density use the same helper for the same reason;
+    only endpoints that read the startup-frozen ``_events`` snapshot directly
+    stay fixed until restart.
     """
     async def generator():
         while True:
@@ -641,7 +647,7 @@ def events(
     limit: int | None = Query(default=None),
     offset: int = Query(default=0),
 ) -> JSONResponse:
-    result = _events
+    result = _current_events()
     since_dt = _parse_dt(since)
     until_dt = _parse_dt(until)
     if type:
