@@ -72,7 +72,8 @@ def _iso_from_epoch_ms(raw: Any) -> str | None:
 
 
 def _fetch_live(min_magnitude: float, days: int) -> dict[str, Any]:
-    import httpx
+    sys.path.insert(0, str(REPO / "src"))
+    from aguayluz.http_retry import get_with_retry
 
     now = datetime.now(timezone.utc)
     params = {
@@ -84,7 +85,7 @@ def _fetch_live(min_magnitude: float, days: int) -> dict[str, Any]:
         ),
         **PR_BBOX,
     }
-    r = httpx.get(
+    r = get_with_retry(
         FDSN_URL,
         params=params,
         headers={"User-Agent": "aguayluz-pr/0.1 (github.com/jotaele44/aguayluz-pr)"},

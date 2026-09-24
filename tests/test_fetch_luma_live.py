@@ -62,8 +62,56 @@ def test_non_403_http_error_still_typed(monkeypatch):
     err = urllib.error.HTTPError(fetch_luma_live.TOWNS_URL, 500, "Server Error", {}, None)
     monkeypatch.setattr(fetch_luma_live.urllib.request, "urlopen", _raise(err))
     with pytest.raises(SourceUnavailable) as ei:
-        fetch_towns(["SAN JUAN"], timeout=1.0)
+        fetch_towns(["SAN JUAN"], timeout=1.0, max_retries=0, sleep_fn=lambda _s: None)
     assert "500" in str(ei.value)
+
+
+class _FakeResponse:
+    def __init__(self, body: bytes):
+        self._body = body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_exc):
+        return False
+
+    def read(self) -> bytes:
+        return self._body
+
+
+def test_5xx_retries_then_succeeds(monkeypatch):
+    """A transient 503 recovers on retry instead of failing the whole snapshot."""
+    err = urllib.error.HTTPError(fetch_luma_live.TOWNS_URL, 503, "Service Unavailable", {}, None)
+    calls = {"n": 0}
+
+    def _flaky(*_args, **_kwargs):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise err
+        return _FakeResponse(b'{"SAN JUAN": []}')
+
+    monkeypatch.setattr(fetch_luma_live.urllib.request, "urlopen", _flaky)
+    slept: list[float] = []
+    doc = fetch_towns(["SAN JUAN"], timeout=1.0, sleep_fn=slept.append)
+    assert doc == {"SAN JUAN": []}
+    assert calls["n"] == 2
+    assert slept == [0.5]
+
+
+def test_403_is_never_retried(monkeypatch):
+    """The Incapsula WAF block is not transient — retrying it wastes the budget."""
+    err = urllib.error.HTTPError(fetch_luma_live.TOWNS_URL, 403, "Forbidden", {}, None)
+    calls = {"n": 0}
+
+    def _always_403(*_args, **_kwargs):
+        calls["n"] += 1
+        raise err
+
+    monkeypatch.setattr(fetch_luma_live.urllib.request, "urlopen", _always_403)
+    with pytest.raises(SourceUnavailable):
+        fetch_towns(["SAN JUAN"], timeout=1.0, sleep_fn=lambda _s: None)
+    assert calls["n"] == 1
 
 
 def test_read_timeout_becomes_typed_source_unavailable(monkeypatch):

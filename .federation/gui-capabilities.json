@@ -626,6 +626,27 @@
       }
     },
     {
+      "id": "http-retry-helper",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Shared HTTP retry/backoff helper (429/5xx + transport-error retry, honors Retry-After) extracted from src/aguayluz/neon/client.py for reuse by keyless ingest producers. It exposes no endpoint, route or control of its own -- it is only ever called by scripts/ingest_usgs_quakes.py, scripts/ingest_nws_alerts.py, scripts/ingest_nhc_storms.py, scripts/ingest_noaa_tides.py, and src/aguayluz/usgs_water_api.py:iter_ogc_pages, all scheduled producers under scripts/refresh.py. Its effect (fewer spurious ingest-step failures during hazard events, when traffic to these same government APIs spikes) reaches operators through the GUI surfaces those producers already populate -- service events on the events/map views and alerts derived from them -- not through a new surface.",
+      "backend": {
+        "files": [
+          "src/aguayluz/http_retry.py"
+        ],
+        "symbols": [
+          "src/aguayluz/http_retry.py:request_with_retry",
+          "src/aguayluz/http_retry.py:get_with_retry"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_http_retry.py"
+        ]
+      }
+    },
+    {
       "id": "neon-publication-ingest",
       "classification": "internal",
       "status": "active",
