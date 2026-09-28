@@ -10,14 +10,21 @@
     "federation_export_manifest@1",
     "federation_cell_index@1",
     "cell_domain_summary@1",
-    "record_cell_binding@1",
+    "record_cell_binding@2",
     "cell_profile@1"
   ],
   "spatial_generation": "federation-spatial-index/1",
-  "spatial_note": "Compatible with the federation spatial index generation. This repository consumes the canonical Cell_ID address space and publishes no geometry of its own; its CELL_PROFILE index lands in a later wave.",
+  "spatial_note": "Compatible with federation spatial binding v0.2. While Spiderweb's transform is PROVISIONAL, this repository forbids exact Cell_ID ground claims and preserves full content-addressed uncertainty Cell_Set membership; identity remains CANDIDATE_NOT_IDENTITY.",
   "local_review": {
     "date": "2026-09-19",
     "change": "Receipt-bound MiLUMA adjacent-snapshot change derivative and read-only change API",
     "result": "All declared federation and spatial contracts remain compatible; derivative adds no geometry and does not alter canonical exports"
+  },
+  "spatial_binding_v0_2": {
+    "authority_commit": "bb8463c8d8cf4b54486674ee9b665ce3d2502e8b",
+    "certification_state": "PROVISIONAL",
+    "exact_cell_claims_permitted": false,
+    "cell_set_required": true,
+    "independent_validation_state": "FAIL_KILL_CRITERIA"
   }
 }
