@@ -2,6 +2,8 @@
 
 **Audit date:** 2026-09-28 · **`main` at audit:** `7e11961` (not branch-protected) · **Production status:** `PRODUCTION_REAL_DATA_PARTIAL`
 
+**Post-audit update (2026-09-28 20:35Z):** the record_cell_binding v0.2 series was pushed straight to `main` after the audit. The Cell_Set PR #299 now conflicts with `main` and is superseded (X-05). The same series left `ruff check .` red on `main` (X-10); this PR carries the one-line fix.
+
 This document lists every blocker that the repository, its CI, and its GitHub issues and pull requests recorded as of the audit date, then gives an ordered plan to clear them. It changes no code, gate, ledger, or status file.
 
 Cross-repository blockers (IDs `X-nn`) are described in full in
@@ -56,7 +58,7 @@ Each blocker is counted once, under its primary type.
 
 | PR | State | Action |
 |---|---|---|
-| #299 Cell_Set uncertainty contract | Head checks green | Merge together with the other five repos (X-05) |
+| #299 Cell_Set uncertainty contract | Conflicts with `main` since the post-audit v0.2 series, which already carries the contract in `federation/spatial/registry_version.json` | Confirm v0.2 covers it, then close as superseded (X-05) |
 | #280 MiLUMA historical schema evidence | RED: Federation GUI Capability Parity | Register its capability in `.federation/gui-capabilities.json`, rerun |
 | #284 npm minor/patch group | Green | Update the branch and merge |
 | #288 recharts 3 | Green | Update the branch and merge |
@@ -112,8 +114,9 @@ Each blocker is counted once, under its primary type.
 - X-01: completion gate, made worse by AY-02.
 - X-02: dependabot backlog and template drift.
 - X-03: `main` is unprotected.
-- X-05: the Cell_Set PR set.
+- X-05: the Cell_Set PR set, now superseded by v0.2 on `main`.
 - X-07: stale ledgers.
+- X-10: `main` lint is red since the v0.2 series; this PR carries the fix.
 
 See the thehub document for details.
 
