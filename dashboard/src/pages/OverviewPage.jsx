@@ -153,7 +153,7 @@ export default function OverviewPage() {
         </p>
       )}
 
-      <ProgramTimeline items={PROGRAM_TIMELINE} />
+      <ProgramTimeline producerId="aguayluz-pr" items={PROGRAM_TIMELINE} />
 
       {/* AI status recap + notifications */}
       <div className="flex items-start gap-3 flex-wrap">
