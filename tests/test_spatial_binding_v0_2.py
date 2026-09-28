@@ -1,5 +1,6 @@
 """Regression gates for federation record-cell binding v0.2."""
 from __future__ import annotations
+
 import json
 from pathlib import Path
 
