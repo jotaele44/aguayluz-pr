@@ -121,6 +121,6 @@ Each blocker is counted once, under its primary type.
 See the thehub document for details.
 
 ## Not verifiable with the access used for this audit
-- Code-scanning and Dependabot security-alert inventories.
+- Code-scanning and Dependabot security-alert inventories. Post-audit: GitHub's push notice on 2026-09-28 reports 12 open Dependabot alerts on `main` (2 critical, 5 high, 5 moderate). Triage them at `https://github.com/jotaele44/aguayluz-pr/security/dependabot`; the per-alert detail is not visible with this access.
 - Which Actions secrets exist (the NEON token state is taken from #220).
 - The Floot deployment's status, inferred from the TLS failure and the archive branches.
