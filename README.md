@@ -108,6 +108,30 @@ installs dependencies, later runs work offline):
 `schemas/federation_export_manifest.schema.json`
 (`tests/test_federation_contract_compat.py`).
 
+Every exported row also carries an additive `evidence_state` declaration.
+It conforms to thehub-pr's candidate epistemic-state contract, vendored
+byte-identically at `schemas/federation_epistemic_state.v1.schema.json`.
+
+Each row declares its epistemic class:
+
+- **CURATED:** records, sources and attribute-derived edges.
+- **COMPUTED:** promoter-generated alerts, plant-code duplicates and
+  nearest-feed `energized_by` edges. The `energized_by` edges also carry
+  `match_basis: spatial_proximity`.
+
+A geometry precision is declared only where the pipeline records how the
+point was made:
+
+| Point | Precision |
+|---|---|
+| Monitoring-location coordinates published by the source | OBSERVED_POINT |
+| Polygon or line features | REPRESENTATIVE_POINT |
+| Municipio centroids | REPRESENTATIVE_POINT |
+| Approximate alert points | REPRESENTATIVE_POINT |
+
+Every other coordinate is left undeclared (the Hub shows it as UNKNOWN).
+Tests: `tests/test_federation_evidence_state.py`.
+
 <!-- PROJECT-OPERATING-CONTRACT:START -->
 ## Current development and certification contract
 
