@@ -149,7 +149,7 @@ export default function MunicipalOverviewMap({
           <svg
             viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
             className="block h-auto w-full"
-            role="img"
+            role="group"
             aria-label={`Puerto Rico municipios colored by ${metricMeta.label.toLowerCase()}`}
           >
             {features.map((feature) => {
@@ -186,7 +186,7 @@ export default function MunicipalOverviewMap({
           </svg>
           <div className="mt-2 flex items-center justify-between gap-3 text-[10px] text-slate-500">
             <span>{features.length} geometry features · {summary?.unique_geoid_count ?? 0} summary GEOIDs</span>
-            <span>{metricMeta.label}: darker → higher relative count</span>
+            <span>{metricMeta.label}: brighter → higher relative count</span>
           </div>
         </div>
 
