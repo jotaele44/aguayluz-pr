@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useHealth, useAssets, useEvents, useReadings, useSummarySectors, useCoverage } from '@/lib/hooks'
+import { useHealth, useAssets, useEvents, useReadings, useSummarySectors, useCoverage, useMunicipiosGeojson, useMunicipiosSummary, useMunicipioSummary } from '@/lib/hooks'
 import { postAiQuery, postNotify } from '@/lib/api'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/use-toast'
@@ -15,6 +15,7 @@ import { SECTOR_META } from '@/lib/sectors'
 import Panel from '@/components/common/Panel'
 import StatTile from '@/components/common/StatTile'
 import ProgramTimeline from '@/components/ProgramTimeline'
+import MunicipalOverviewMap from '@/components/MunicipalOverviewMap'
 
 const PROGRAM_TIMELINE = [
   { id:'agua-water', phase:'NOW', title:'Water disruption state', detail:'Track bounded water-system disruptions, infrastructure context, and recovery evidence.', category:'Water', href:'/water-disruption' },
@@ -30,6 +31,15 @@ export default function OverviewPage() {
   const { data: events = [], isLoading: eventsLoading } = useEvents()
   const { data: sectors } = useSummarySectors()
   const { data: coverage } = useCoverage()
+  const { data: municipiosGeojson } = useMunicipiosGeojson()
+  const { data: municipiosSummary } = useMunicipiosSummary()
+  const [municipalMetric, setMunicipalMetric] = useState('assets')
+  const [selectedMunicipioGeoid, setSelectedMunicipioGeoid] = useState(null)
+  const selectedMunicipio = useMemo(
+    () => municipiosSummary?.items?.find((row) => String(row.geoid) === String(selectedMunicipioGeoid)) ?? null,
+    [municipiosSummary, selectedMunicipioGeoid],
+  )
+  const { data: selectedMunicipioDetail, isLoading: selectedMunicipioDetailLoading } = useMunicipioSummary(selectedMunicipio?.name)
   const { data: readings = [] } = useReadings({ kind: 'reservoir' })
   const [aiSummary, setAiSummary] = useState(null)
   const [aiLoading, setAiLoading] = useState(false)
@@ -152,6 +162,17 @@ export default function OverviewPage() {
           )}
         </p>
       )}
+
+      <MunicipalOverviewMap
+        geojson={municipiosGeojson}
+        summary={municipiosSummary}
+        metric={municipalMetric}
+        onMetricChange={setMunicipalMetric}
+        selectedGeoid={selectedMunicipioGeoid}
+        onSelect={(row) => setSelectedMunicipioGeoid(row.geoid)}
+        detail={selectedMunicipioDetail}
+        detailLoading={selectedMunicipioDetailLoading}
+      />
 
       <ProgramTimeline producerId="aguayluz-pr" items={PROGRAM_TIMELINE} />
 
