@@ -51,7 +51,7 @@ describe('MunicipalOverviewMap', () => {
   it('changes municipal metric without inventing a composite score', () => {
     const onMetricChange = vi.fn()
     renderMap({ metric: 'outages', onMetricChange })
-    expect(screen.getByRole('img', { name: /colored by active outages/i })).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: /colored by active outages/i })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Events' }))
     expect(onMetricChange).toHaveBeenCalledWith('events')
   })
