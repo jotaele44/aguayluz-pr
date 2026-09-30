@@ -209,7 +209,7 @@ def process_pages(
                 key
                 for row in rows
                 if isinstance(row, dict)
-                for key in row.keys()
+                for key in row
             }),
         }
         manifestation_id = f"FDA_FOOD:{stamp}:P{page_number:04d}:{page_sha[:20]}"
