@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timedelta, timezone
 
 from scripts import ingest_fda_food_recalls as ingest
 
@@ -13,6 +14,16 @@ def _page(rows):
 
 
 def _configure_paths(monkeypatch, tmp_path):
+    class DeterministicDatetime:
+        current = datetime(2026, 9, 30, 15, 30, tzinfo=timezone.utc)
+
+        @classmethod
+        def now(cls, tz=None):
+            value = cls.current
+            cls.current += timedelta(microseconds=1)
+            return value if tz is None else value.astimezone(tz)
+
+    monkeypatch.setattr(ingest, "datetime", DeterministicDatetime)
     monkeypatch.setattr(ingest, "RECORDS_PATH", tmp_path / "hazard_records.jsonl")
     monkeypatch.setattr(ingest, "MANIFESTATIONS_PATH", tmp_path / "hazard_manifestations.jsonl")
     monkeypatch.setattr(ingest, "LEDGER_PATH", tmp_path / "hazard_source_accounting.jsonl")
