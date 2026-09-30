@@ -471,11 +471,14 @@ def crawl_archive(
             else:
                 page_dates.append(published)
 
-        if page_dates and previous_page_oldest is not None:
-            if max(page_dates) > previous_page_oldest:
-                raise ValueError(
-                    "DRNA archive publication order is not monotonically non-increasing"
-                )
+        if (
+            page_dates
+            and previous_page_oldest is not None
+            and max(page_dates) > previous_page_oldest
+        ):
+            raise ValueError(
+                "DRNA archive publication order is not monotonically non-increasing"
+            )
         if page_dates:
             previous_page_oldest = min(page_dates)
 
@@ -497,10 +500,9 @@ def crawl_archive(
 def _manifestation(page: FrozenPage, retrieved_at: datetime, ordinal: int) -> Manifestation:
     page_sha = sha256(page.raw).hexdigest()
     parser = _parse_html(page.raw)
-    if page.kind == "notice":
-        source_record_id = _post_id(page.url)
-    else:
-        source_record_id = f"archive-{ordinal:04d}"
+    source_record_id = (
+        _post_id(page.url) if page.kind == "notice" else f"archive-{ordinal:04d}"
+    )
     stamp = retrieved_at.strftime("%Y%m%dT%H%M%S%fZ")
     return Manifestation(
         manifestation_id=f"DRNA_BEACH:{stamp}:{page.kind.upper()}:{ordinal:04d}:{page_sha[:20]}",
