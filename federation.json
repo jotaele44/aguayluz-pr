@@ -86,7 +86,7 @@
   },
   "centinelas_pr_only_gaps": [
     "PREB (Puerto Rico Energy Bureau) regulatory filings: document-based portal, no structured API — centinelas-pr monitors filings and sends signals via ingest_news_event.py until PREB publishes a machine-readable feed",
-    "AAA/PRASA boil-water notices: the AAA portal is a Webflow marketing site with no public API — SDWIS T1 microbial violations (ingest_sdwis_violations.py) are the authoritative regulatory boil-water signal; individual AAA press-release notices route through centinelas-pr -> ingest_news_event.py at T3"
+    "AAA/PRASA boil-water, do-not-drink, and do-not-use advisories: no certified complete machine-readable AAA advisory denominator is bound in this repository. EPA SDWIS violations are regulatory events only and do not establish an operational advisory; explicit AAA/PRASA or Puerto Rico Department of Health manifestations remain required. Until authoritative advisory acquisition is certified, this source-family denominator remains OPEN and discovery/news signals cannot be promoted to authoritative advisory evidence without source binding."
   ],
   "waf_blocked_sources": [
     "MiLUMA / api.miluma.lumapr.com: Incapsula WAF blocks plain automated access; GET /miluma-outage-api/outage/regionsWithoutService returned HTTP 403 on 2026-09-19. The two independently corroborated outage surfaces are municipality/towns and regionsWithoutService. fetch_luma_live.py treats them independently, removes stale temp outputs, freezes exact successful response bytes + SHA-256 receipts, and never maps source failure to zero. A formal PREB/LUMA data-sharing arrangement remains the durable path to T1 attribution.",
