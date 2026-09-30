@@ -81,6 +81,8 @@ def normalize(
     if isinstance(published_at, str) and published_at:
         try:
             issued_at = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
+            if issued_at.tzinfo is None:
+                issued_at = issued_at.replace(tzinfo=PR_TZ)
         except ValueError:
             issued_at = None
     else:
