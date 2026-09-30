@@ -1,7 +1,6 @@
 import json
 
 import pytest
-
 from aguayluz.hazard_plane import HazardRecord, RecordKind, current_records
 from scripts.ingest_sdwis_hazard_plane import (
     FrozenPage,
