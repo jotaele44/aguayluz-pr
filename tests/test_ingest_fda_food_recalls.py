@@ -1,7 +1,8 @@
 import json
 
-from aguayluz.hazard_plane import HazardRecord, current_records
 from scripts import ingest_fda_food_recalls as ingest
+
+from aguayluz.hazard_plane import HazardRecord, current_records
 
 
 def _page(rows):
