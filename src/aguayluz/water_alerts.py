@@ -5,8 +5,8 @@ active, but ``data/alert_events.jsonl`` historically held only hand-authored see
 placeholders. This module closes that gap by projecting the producer's *real* water
 signals into the alert layer:
 
-* **CONTAMINATION** — EPA SDWIS boil-water advisories and health-based
-  water-quality violations (``data/service_events.jsonl``, evidence tier T1).
+* **CONTAMINATION** — EPA SDWIS Tier-1 microbial and other health-based
+  drinking-water violations (``data/service_events.jsonl``, evidence tier T1).
 * **HYDRO_OPS** — USGS daily reservoir readings (``data/reservoir_levels.jsonl``,
   T1) flagged low by a transparent *per-site statistical proxy*.
 
@@ -20,8 +20,9 @@ Provenance honesty:
   relative to that site's *own* recorded history — it never invents an absolute
   operating threshold.
 * Non-health monitoring/reporting violations are **not** promoted to alerts; they
-  remain in the service-event stream. Only acute (boil-water) and health-based
-  quality events become CONTAMINATION alerts.
+  remain in the service-event stream. The legacy ``boil_water`` event label is
+  retained only as a routing compatibility marker for Tier-1 microbial violations;
+  it is not evidence that an advisory was issued.
 
 The functions here are pure (no I/O, no wall-clock); ``scripts/build_water_alerts.py``
 is the CLI that loads data, calls :func:`build_water_alerts`, and merges the result
@@ -40,8 +41,8 @@ from .impact import MODULE_RADIUS_KM, AssetIndex, link_impact, merge_asset_ids
 
 # Contamination severities on the workbook's 0-5 operational floor. The
 # CONTAMINATION module's default floor is 3 (see config/alert_modules.yaml); an
-# acute microbial boil-water notice with a tier-1 public-notification requirement
-# is the most urgent, a non-acute health-based quality violation the least.
+# Tier-1 microbial health violation is the most urgent; the legacy boil_water
+# routing label does not itself establish that a public advisory was issued.
 _SEV_BOIL_WATER_ACUTE = 4
 _SEV_BOIL_WATER = 3
 _SEV_HEALTH_VIOLATION_ACUTE = 3
@@ -136,7 +137,7 @@ def contamination_alert(
 
     if etype == "boil_water":
         severity = _SEV_BOIL_WATER_ACUTE if acute else _SEV_BOIL_WATER
-        title = "Boil-water advisory"
+        title = "Tier-1 microbial drinking-water violation"
     else:  # water_quality_violation
         if not health_based:
             return None  # monitoring/reporting violation — not alert-worthy
@@ -192,7 +193,11 @@ def contamination_alert(
         review_status=review_status,
         evidence_tier=event.get("evidence_tier") or "T1",
         linked_asset_ids=merge_asset_ids(event.get("linked_asset_ids"), linked),
-        validation_notes="Derived from EPA SDWIS violation record; health-based/acute filter applied.",
+        validation_notes=(
+            "Derived from an EPA SDWIS violation record; health-based/acute filter applied. "
+            "Legacy boil_water routing label only; this record does not prove that a "
+            "boil-water, do-not-drink, or do-not-use advisory was issued."
+        ),
     )
 
 
