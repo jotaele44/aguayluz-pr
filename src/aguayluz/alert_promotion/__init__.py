@@ -60,8 +60,9 @@ GENERATED_MARKERS: tuple[str, ...] = (
 )
 
 #: Operational-severity floor (0-5 scale) at or above which an alert is life-safety
-#: critical and eligible for push / SMS fan-out. Boil-water acute (4), major quake
-#: (M5+ -> 4/5) and hurricane/tsunami/tornado warnings (4/5) clear this bar.
+#: critical and eligible for push / SMS fan-out. Tier-1 microbial SDWIS routing
+#: signals (4), major quakes (M5+ -> 4/5), and hurricane/tsunami/tornado warnings
+#: (4/5) clear this bar; SDWIS routing does not prove an advisory was issued.
 CRITICAL_SEVERITY = 4
 #: Alert statuses that are no longer actionable (never critical regardless of severity).
 _INACTIVE_STATUS = frozenset({"closed", "rejected"})
