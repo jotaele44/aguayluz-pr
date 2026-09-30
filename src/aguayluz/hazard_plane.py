@@ -166,7 +166,7 @@ class HazardRecord(BaseModel):
     raw_attributes: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
-    def validate_temporal_and_case_semantics(self) -> "HazardRecord":
+    def validate_temporal_and_case_semantics(self) -> HazardRecord:
         if self.observed_from and self.observed_to and self.observed_to < self.observed_from:
             raise ValueError("observed_to cannot precede observed_from")
         if self.effective_from and self.effective_to and self.effective_to < self.effective_from:
@@ -203,24 +203,28 @@ class HazardRelationship(BaseModel):
     confounders: list[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
-    def enforce_causality_firewall(self) -> "HazardRelationship":
-        if self.predicate in CAUSAL_RELATIONSHIPS:
-            if self.evidence_class in {
-                EvidenceClass.PROXIMITY,
-                EvidenceClass.DISCOVERY_ONLY,
-                EvidenceClass.UNRESOLVED,
-                EvidenceClass.POINT_IN_POLYGON,
-            }:
-                raise ValueError("causal/epidemiological predicates require independent evidence")
-        if self.predicate == RelationshipType.STATISTICAL_ASSOCIATION:
-            if self.method is None or self.sample_size is None:
-                raise ValueError("statistical association requires method and sample_size")
-        if self.predicate == RelationshipType.CAUSALLY_CONFIRMED:
-            if self.evidence_class not in {
+    def enforce_causality_firewall(self) -> HazardRelationship:
+        if self.predicate in CAUSAL_RELATIONSHIPS and self.evidence_class in {
+            EvidenceClass.PROXIMITY,
+            EvidenceClass.DISCOVERY_ONLY,
+            EvidenceClass.UNRESOLVED,
+            EvidenceClass.POINT_IN_POLYGON,
+        }:
+            raise ValueError("causal/epidemiological predicates require independent evidence")
+        if (
+            self.predicate == RelationshipType.STATISTICAL_ASSOCIATION
+            and (self.method is None or self.sample_size is None)
+        ):
+            raise ValueError("statistical association requires method and sample_size")
+        if (
+            self.predicate == RelationshipType.CAUSALLY_CONFIRMED
+            and self.evidence_class
+            not in {
                 EvidenceClass.STABLE_ID,
                 EvidenceClass.AUTHORITATIVE_BINDING,
-            }:
-                raise ValueError("causal confirmation requires authoritative evidence")
+            }
+        ):
+            raise ValueError("causal confirmation requires authoritative evidence")
         return self
 
 
