@@ -16,7 +16,6 @@ import json
 import re
 import sys
 import unicodedata
-from collections import deque
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from hashlib import sha256
@@ -403,33 +402,96 @@ def _fetch(client: httpx.Client, url: str) -> FrozenPage:
     )
 
 
-def crawl_archive(client: httpx.Client, max_pages: int) -> tuple[list[FrozenPage], list[str]]:
-    queue: deque[str] = deque([CATEGORY_URL])
-    seen: set[str] = set()
-    archive_pages: list[FrozenPage] = []
-    candidates: set[str] = set()
+def crawl_archive(
+    client: httpx.Client,
+    max_pages: int,
+    target_year: int,
+) -> tuple[list[FrozenPage], list[str], dict[str, FrozenPage], dict[str, str]]:
+    """Traverse archive pages until one complete monotonic page is before target_year.
 
-    while queue:
-        if len(seen) >= max_pages:
+    Every candidate notice on each visited archive page is fetched before the stop
+    decision. This proves the boundary from notice publication metadata rather than
+    assuming archive-card text or URL numbering encodes chronology.
+    """
+    archive_pages: list[FrozenPage] = []
+    candidate_urls: list[str] = []
+    notice_pages: dict[str, FrozenPage] = {}
+    fetch_errors: dict[str, str] = {}
+    seen_candidates: set[str] = set()
+    previous_page_oldest: date | None = None
+    page_number = 1
+    url = CATEGORY_URL
+
+    while url:
+        if page_number > max_pages:
             raise ValueError(f"archive pagination did not exhaust within max_pages={max_pages}")
-        url = queue.popleft()
-        if url in seen:
-            continue
-        seen.add(url)
-        page = _fetch(client, url)
-        archive_pages.append(FrozenPage(page.url, page.raw, page.headers, "archive"))
-        parser = _parse_html(page.raw)
+        fetched_archive = _fetch(client, url)
+        archive = FrozenPage(
+            fetched_archive.url,
+            fetched_archive.raw,
+            fetched_archive.headers,
+            "archive",
+        )
+        archive_pages.append(archive)
+        parser = _parse_html(archive.raw)
+
+        page_candidates: list[str] = []
+        next_url: str | None = None
         for href in parser.hrefs:
-            canonical = _canonical_url(page.url, href)
+            canonical = _canonical_url(archive.url, href)
             if canonical is None:
                 continue
             path = urlparse(canonical).path
-            if POST_RE.search(path):
-                candidates.add(canonical)
-            elif PAGE_RE.search(path) and canonical not in seen:
-                queue.append(canonical)
+            if POST_RE.search(path) and canonical not in seen_candidates:
+                seen_candidates.add(canonical)
+                candidate_urls.append(canonical)
+                page_candidates.append(canonical)
+            elif PAGE_RE.search(path) and path.rstrip("/").endswith(f"/page/{page_number + 1}"):
+                next_url = canonical
 
-    return archive_pages, sorted(candidates)
+        page_dates: list[date] = []
+        page_has_unresolved_date = False
+        for candidate_url in page_candidates:
+            try:
+                fetched_notice = _fetch(client, candidate_url)
+            except (httpx.HTTPError, ValueError) as exc:
+                fetch_errors[candidate_url] = f"FETCH_FAILED:{type(exc).__name__}"
+                page_has_unresolved_date = True
+                continue
+            notice = FrozenPage(
+                fetched_notice.url,
+                fetched_notice.raw,
+                fetched_notice.headers,
+                "notice",
+            )
+            notice_pages[candidate_url] = notice
+            published = _published_date(_parse_html(notice.raw))
+            if published is None:
+                page_has_unresolved_date = True
+            else:
+                page_dates.append(published)
+
+        if page_dates and previous_page_oldest is not None:
+            if max(page_dates) > previous_page_oldest:
+                raise ValueError(
+                    "DRNA archive publication order is not monotonically non-increasing"
+                )
+        if page_dates:
+            previous_page_oldest = min(page_dates)
+
+        complete_page = (
+            bool(page_candidates)
+            and len(page_dates) == len(page_candidates)
+            and not page_has_unresolved_date
+        )
+        if complete_page and max(page_dates).year < target_year:
+            break
+        if next_url is None:
+            break
+        url = next_url
+        page_number += 1
+
+    return archive_pages, candidate_urls, notice_pages, fetch_errors
 
 
 def _manifestation(page: FrozenPage, retrieved_at: datetime, ordinal: int) -> Manifestation:
@@ -487,7 +549,11 @@ def run(
         follow_redirects=True,
         headers={"User-Agent": USER_AGENT},
     ) as client:
-        archive_pages, candidate_urls = crawl_archive(client, max_pages=max_pages)
+        archive_pages, candidate_urls, notice_pages, fetch_errors = crawl_archive(
+            client,
+            max_pages=max_pages,
+            target_year=year,
+        )
         ordinal = 0
         for page in archive_pages:
             ordinal += 1
@@ -506,19 +572,17 @@ def run(
 
         for url in candidate_urls:
             ordinal += 1
-            try:
-                fetched = _fetch(client, url)
-            except (httpx.HTTPError, ValueError) as exc:
+            if url in fetch_errors:
                 classifications.append(
                     {
                         "url": url,
                         "disposition": "UNRESOLVED",
-                        "reason": f"FETCH_FAILED:{type(exc).__name__}",
+                        "reason": fetch_errors[url],
                     }
                 )
                 continue
 
-            page = FrozenPage(fetched.url, fetched.raw, fetched.headers, "notice")
+            page = notice_pages[url]
             manifestation = _manifestation(page, retrieved_at, ordinal)
             manifestations.append(manifestation)
             raw_file = _freeze_raw(paths, page, manifestation)
@@ -600,6 +664,7 @@ def run(
         "target_year": year,
         "archive_url": CATEGORY_URL,
         "archive_pages_frozen": len(archive_pages),
+        "archive_boundary_rule": "monotonic notice publication dates + one complete prior-year page",
         "discovered_notice_urls": len(candidate_urls),
         "manifestations_frozen": len(manifestations),
         "new_record_revisions": len(new_records),
