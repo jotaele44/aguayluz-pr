@@ -1189,14 +1189,22 @@
           "server/backend/environmental_exposure_api.py",
           "server/backend/app.py",
           "src/aguayluz/environmental_exposure.py",
-          "src/aguayluz/environmental_exposure_db.py"
+          "src/aguayluz/environmental_exposure_db.py",
+          "server/backend/hazard_advisory_api.py",
+          "src/aguayluz/hazard_plane.py",
+          "src/aguayluz/hazard_plane_db.py"
         ],
         "endpoints": [
           "GET /environmental-exposure/summary",
           "GET /environmental-exposure/entities",
           "GET /environmental-exposure/entities/{entity_id}",
           "GET /environmental-exposure/relationships",
-          "GET /environmental-exposure/integrity"
+          "GET /environmental-exposure/integrity",
+          "GET /hazards/summary",
+          "GET /hazards/events",
+          "GET /hazards/relationships",
+          "GET /hazards/sources",
+          "GET /hazards/integrity"
         ],
         "symbols": [
           "server/backend/environmental_exposure_api.py:environmental_exposure_summary",
@@ -1212,7 +1220,31 @@
           "src/aguayluz/environmental_exposure_db.py:load",
           "src/aguayluz/environmental_exposure_db.py:merge",
           "src/aguayluz/environmental_exposure_db.py:write",
-          "src/aguayluz/environmental_exposure_db.py:graph_integrity"
+          "src/aguayluz/environmental_exposure_db.py:graph_integrity",
+          "server/backend/hazard_advisory_api.py:hazard_summary",
+          "server/backend/hazard_advisory_api.py:hazard_events",
+          "server/backend/hazard_advisory_api.py:hazard_relationships",
+          "server/backend/hazard_advisory_api.py:hazard_sources",
+          "server/backend/hazard_advisory_api.py:hazard_integrity",
+          "src/aguayluz/hazard_plane.py:HazardFamily",
+          "src/aguayluz/hazard_plane.py:RecordKind",
+          "src/aguayluz/hazard_plane.py:RecordStatus",
+          "src/aguayluz/hazard_plane.py:CaseClass",
+          "src/aguayluz/hazard_plane.py:EntityKind",
+          "src/aguayluz/hazard_plane.py:EvidenceClass",
+          "src/aguayluz/hazard_plane.py:RelationshipType",
+          "src/aguayluz/hazard_plane.py:Manifestation",
+          "src/aguayluz/hazard_plane.py:HazardRecord",
+          "src/aguayluz/hazard_plane.py:HazardRelationship",
+          "src/aguayluz/hazard_plane.py:canonical_json_sha256",
+          "src/aguayluz/hazard_plane.py:current_records",
+          "src/aguayluz/hazard_plane.py:validate_identity_uniqueness",
+          "src/aguayluz/hazard_plane.py:source_arithmetic",
+          "src/aguayluz/hazard_plane.py:integrity_report",
+          "src/aguayluz/hazard_plane_db.py:load_records",
+          "src/aguayluz/hazard_plane_db.py:load_relationships",
+          "src/aguayluz/hazard_plane_db.py:load_manifestations",
+          "src/aguayluz/hazard_plane_db.py:graph_integrity"
         ]
       },
       "frontend": {
@@ -1233,14 +1265,17 @@
       },
       "tests": {
         "backend": [
-          "tests/test_environmental_exposure_api.py"
+          "tests/test_environmental_exposure_api.py",
+          "tests/test_hazard_advisory_api.py"
         ],
         "contract": [
           "tests/test_environmental_exposure.py",
-          "tests/test_gui_parity.py"
+          "tests/test_gui_parity.py",
+          "tests/test_hazard_plane.py"
         ],
         "e2e": [
-          "dashboard/tests/gui-parity.spec.mjs"
+          "dashboard/tests/gui-parity.spec.mjs",
+          "dashboard/tests/hazard-advisory.spec.mjs"
         ]
       }
     },
@@ -1369,6 +1404,44 @@
           "tests/test_ingest_hifld_power.py",
           "tests/test_ingest_osm_power.py",
           "tests/test_local_hydro_assets.py"
+        ]
+      }
+    },
+    {
+      "id": "fda-food-hazard-ingest",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Bounded keyless FDA enforcement ingestion and normalization feeding the existing Environmental Exposure hazard plane. It is a producer/provenance workflow rather than a separate user control surface; normal users consume materialized results through /environmental-exposure. The source adapter preserves raw FDA rows and Puerto Rico relevance states, while the CLI freezes source manifestations and closes source arithmetic.",
+      "backend": {
+        "files": [
+          "src/aguayluz/hazard_adapters/__init__.py",
+          "src/aguayluz/hazard_adapters/fda_food.py"
+        ],
+        "symbols": [
+          "src/aguayluz/hazard_adapters/fda_food.py:classify_pr_relevance",
+          "src/aguayluz/hazard_adapters/fda_food.py:row_digest",
+          "src/aguayluz/hazard_adapters/fda_food.py:canonical_event_id",
+          "src/aguayluz/hazard_adapters/fda_food.py:stable_record_id",
+          "src/aguayluz/hazard_adapters/fda_food.py:normalize"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/ingest_fda_food_recalls.py"
+        ],
+        "symbols": [
+          "scripts/ingest_fda_food_recalls.py:fetch_pages",
+          "scripts/ingest_fda_food_recalls.py:load_offline",
+          "scripts/ingest_fda_food_recalls.py:classify_row",
+          "scripts/ingest_fda_food_recalls.py:process_pages",
+          "scripts/ingest_fda_food_recalls.py:main"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_hazard_adapter_fda_food.py",
+          "tests/test_ingest_fda_food_recalls.py"
         ]
       }
     }
