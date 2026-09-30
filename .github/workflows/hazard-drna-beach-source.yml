@@ -15,6 +15,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: drna-beach-source-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   freeze-2026-source:
     runs-on: ubuntu-latest
