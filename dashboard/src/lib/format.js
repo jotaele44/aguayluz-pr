@@ -100,8 +100,8 @@ const EVENT_PILL = {
 }
 export const eventPill = (t) => lookup(EVENT_PILL, t, 'bg-slate-900 border-slate-800 text-slate-400')
 
-// `water_quality_violation` is scripts/ingest_sdwis_violations.py's non-boil-water SDWIS
-// category (boil_water notices already had their own type before this ingest existed).
+// SDWIS violations project as `water_quality_violation`; `boil_water` is reserved for
+// explicitly sourced advisory events rather than inferred from SDWIS classification.
 export const EVENT_TYPES = ['all', 'outage', 'service_interruption', 'restoration', 'boil_water', 'water_quality_violation', 'project_update']
 
 // Contamination-adjacent event types the municipio detail page rolls into one
