@@ -2,14 +2,13 @@ import json
 
 import pytest
 
+from aguayluz.hazard_plane import HazardRecord, RecordKind, current_records
 from scripts.ingest_sdwis_hazard_plane import (
     FrozenPage,
     classify_row,
     fetch_pages,
     process_pages,
 )
-
-from aguayluz.hazard_plane import HazardRecord, RecordKind, current_records
 
 
 def _raw(rows):
