@@ -4,7 +4,7 @@
 Projects the producer's real, already-ingested water signals into the operational
 alert layer (see :mod:`aguayluz.water_alerts`):
 
-  * EPA SDWIS boil-water advisories + health-based water-quality violations
+  * Explicitly sourced boil-water advisories + EPA SDWIS health-based water-quality violations
     (data/service_events.jsonl, T1) -> CONTAMINATION alerts.
   * USGS daily reservoir readings (data/reservoir_levels.jsonl, T1) -> HYDRO_OPS
     reservoir-low alerts (statistical proxy, T2/needs_review).
