@@ -88,6 +88,26 @@ jobs:
           NEON_API_TOKEN: ${{ secrets.NEON_API_TOKEN }}
         run: python scripts/refresh.py --all
 
+      - name: Preserve hazard source evidence artifact
+        if: >-
+          always() &&
+          (
+            (github.event_name == 'schedule' && github.event.schedule == '0 7 * * 1') ||
+            (github.event_name == 'workflow_dispatch' &&
+              (github.event.inputs.cadence == 'weekly' ||
+               github.event.inputs.cadence == 'all'))
+          )
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
+        with:
+          name: hazard-source-evidence-${{ github.run_id }}
+          path: |
+            data/hazard_source_snapshots/
+            data/hazard_manifestations.jsonl
+            data/hazard_source_accounting.jsonl
+            data/hazard_records.jsonl
+          if-no-files-found: ignore
+          retention-days: 90
+
       - name: Commit updated data
         id: commit
         run: |
