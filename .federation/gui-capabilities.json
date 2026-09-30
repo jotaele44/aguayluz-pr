@@ -1482,6 +1482,44 @@
           "tests/test_ingest_drna_beach_monitoring.py"
         ]
       }
+    },
+    {
+      "id": "epa-sdwis-hazard-ingest",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Keyless provenance-frozen EPA SDWIS/Fed VIOLATION ingestion feeds the existing Environmental Exposure hazard plane. It is an internal producer, not a second user control surface. SDWIS rows are regulatory observations; public-notification tier never becomes a boil-water/do-not-drink/do-not-use advisory without explicit notice evidence.",
+      "backend": {
+        "files": [
+          "src/aguayluz/hazard_adapters/epa_sdwis.py"
+        ],
+        "symbols": [
+          "src/aguayluz/hazard_adapters/epa_sdwis.py:row_digest",
+          "src/aguayluz/hazard_adapters/epa_sdwis.py:canonical_event_id",
+          "src/aguayluz/hazard_adapters/epa_sdwis.py:stable_record_id",
+          "src/aguayluz/hazard_adapters/epa_sdwis.py:normalize"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/ingest_sdwis_hazard_plane.py"
+        ],
+        "symbols": [
+          "scripts/ingest_sdwis_hazard_plane.py:fetch_pages",
+          "scripts/ingest_sdwis_hazard_plane.py:load_offline",
+          "scripts/ingest_sdwis_hazard_plane.py:classify_row",
+          "scripts/ingest_sdwis_hazard_plane.py:process_pages",
+          "scripts/ingest_sdwis_hazard_plane.py:main",
+          "scripts/ingest_sdwis_hazard_plane.py:FrozenPage",
+          "scripts/ingest_sdwis_hazard_plane.py:OutputPaths"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_hazard_adapter_epa_sdwis.py",
+          "tests/test_ingest_sdwis_hazard_plane.py"
+        ]
+      }
     }
   ],
   "exceptions": []
