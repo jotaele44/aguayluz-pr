@@ -1,7 +1,6 @@
+import server.backend.hazard_advisory_api as hazard_api
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-
-import server.backend.hazard_advisory_api as hazard_api
 
 
 def client() -> TestClient:
