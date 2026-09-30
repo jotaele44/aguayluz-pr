@@ -1444,6 +1444,41 @@
           "tests/test_ingest_fda_food_recalls.py"
         ]
       }
+    },
+    {
+      "id": "drna-beach-hazard-ingest",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Keyless provenance-frozen DRNA beach-monitoring ingestion feeds the existing Environmental Exposure hazard plane. It is an internal producer workflow, not a second user control surface. Station and municipality text remain source evidence until independently bound.",
+      "backend": {
+        "files": [
+          "src/aguayluz/hazard_adapters/drna_beach.py"
+        ],
+        "symbols": [
+          "src/aguayluz/hazard_adapters/drna_beach.py:row_digest",
+          "src/aguayluz/hazard_adapters/drna_beach.py:canonical_event_id",
+          "src/aguayluz/hazard_adapters/drna_beach.py:stable_record_id",
+          "src/aguayluz/hazard_adapters/drna_beach.py:normalize"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/ingest_drna_beach_monitoring.py"
+        ],
+        "symbols": [
+          "scripts/ingest_drna_beach_monitoring.py:parse_notice",
+          "scripts/ingest_drna_beach_monitoring.py:crawl_archive",
+          "scripts/ingest_drna_beach_monitoring.py:run",
+          "scripts/ingest_drna_beach_monitoring.py:main"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_hazard_adapter_drna_beach.py",
+          "tests/test_ingest_drna_beach_monitoring.py"
+        ]
+      }
     }
   ],
   "exceptions": []
