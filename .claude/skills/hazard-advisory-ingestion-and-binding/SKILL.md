@@ -53,3 +53,18 @@ When an authoritative advisory source is published as a reverse-chronological pa
 7. Preserve program-wide all-clear notices as source states without fabricating station-level negative observations.
 8. Certify only the bounded publication denominator demonstrated by the receipt. Historical backfill and broader source-universe completeness remain separate OPEN vectors unless independently exhausted.
 
+## Verified public-notification semantic firewall
+
+For drinking-water regulatory data, preserve the distinction between a violation, a
+public-notification tier, and the consumer instruction in a notice:
+
+1. A Tier 1 public-notification requirement establishes urgency, not a specific consumer action.
+2. Never infer BOIL_WATER, DO_NOT_DRINK, or DO_NOT_USE solely from health-based status,
+   notification tier, contaminant/rule family, or compliance status.
+3. SDWIS VIOLATION rows normalize as regulatory OBSERVATION records unless an independent,
+   explicit notice manifestation supports ADVISORY semantics.
+4. Preserve PWSID as an authoritative source identifier, but do not silently equate it with a
+   federation water-system identity without an explicit crosswalk/binding.
+5. A bounded SDWIS source receipt may certify source arithmetic while the consumer-action
+   advisory denominator remains OPEN; do not conflate those certifications.
+
