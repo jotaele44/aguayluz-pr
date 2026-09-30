@@ -1,4 +1,4 @@
-from scripts.ingest_drna_beach_monitoring import parse_notice
+from scripts.ingest_drna_beach_monitoring import CATEGORY_URL, crawl_archive, parse_notice
 
 
 def test_parser_preserves_bav_exceedance_and_separate_non_bav_advisory():
@@ -81,3 +81,61 @@ def test_parser_fails_closed_when_sampling_date_is_missing():
 
     assert len(rows) == 1
     assert issue == "SAMPLING_DATE_UNRESOLVED"
+
+class _FakeResponse:
+    def __init__(self, url, content):
+        self.url = url
+        self.content = content
+        self.headers = {}
+
+    def raise_for_status(self):
+        return None
+
+
+class _FakeClient:
+    def __init__(self, pages):
+        self.pages = pages
+        self.requested = []
+
+    def get(self, url):
+        self.requested.append(url)
+        return _FakeResponse(url, self.pages[url])
+
+
+def test_archive_crawl_stops_after_complete_prior_year_overlap_page():
+    page2 = f"{CATEGORY_URL}page/2/"
+    page3 = f"{CATEGORY_URL}page/3/"
+    post2026 = (
+        "https://www.drna.pr.gov/programas-y-proyectos/monitoria-de-playas/"
+        "notificaciones-ambientales/notificacion-monitoria-de-playas-900/"
+    )
+    post2025 = (
+        "https://www.drna.pr.gov/programas-y-proyectos/monitoria-de-playas/"
+        "notificaciones-ambientales/notificacion-monitoria-de-playas-899/"
+    )
+    pages = {
+        CATEGORY_URL: f"""
+          <a href="{post2026}">notice</a>
+          <a href="{page2}">2</a>
+        """.encode(),
+        page2: f"""
+          <a href="{post2025}">notice</a>
+          <a href="{page3}">3</a>
+        """.encode(),
+        post2026: b'<meta property="article:published_time" content="2026-01-20T08:00:00-04:00">',
+        post2025: b'<meta property="article:published_time" content="2025-12-18T08:00:00-04:00">',
+    }
+    client = _FakeClient(pages)
+
+    archive, candidates, notices, errors = crawl_archive(
+        client,
+        max_pages=10,
+        target_year=2026,
+    )
+
+    assert len(archive) == 2
+    assert candidates == [post2026, post2025]
+    assert set(notices) == {post2026, post2025}
+    assert errors == {}
+    assert page3 not in client.requested
+
