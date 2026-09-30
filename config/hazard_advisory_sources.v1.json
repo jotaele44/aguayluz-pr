@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "scope": "Puerto Rico food, agricultural, animal, human infectious-disease, wastewater, water-health and environmental-health advisory source-family denominator",
-  "as_of": "2026-09-05",
+  "as_of": "2026-09-30",
   "certification_state": "OPEN",
   "completeness_claimed": false,
   "product_capability_id": "hazard-advisory-plane",
@@ -52,9 +52,11 @@
       "family": "DRNA_BEACH_MONITORING",
       "authority": "Puerto Rico DRNA",
       "hazard_family": "WATER_HEALTH",
-      "access": "public notification pages",
+      "access": "public notification archive + notice pages",
       "url": "https://www.drna.pr.gov/cat/programas-y-proyectos/monitoria-de-playas/notificaciones-ambientales/",
-      "status": "BOUND"
+      "status": "IMPLEMENTED_LIVE_2026_DENOMINATOR_GATE",
+      "update_semantics": "periodic sampling notifications; publication pages may be revised",
+      "binding_semantics": "station/municipality text remains unbound until independently mapped"
     },
     {
       "family": "USDA_APHIS_PLANT_HEALTH",
@@ -90,6 +92,7 @@
     }
   ],
   "unresolved_material": [
+    "DRNA_BEACH_2026_LIVE_SOURCE_FREEZE_AND_ZERO_UNRESOLVED_GATE",
     "PRDOH_COMPLETE_MACHINE_READABLE_ENDPOINT_ENUMERATION",
     "CDC_NWSS_PUERTO_RICO_SITE_DENOMINATOR",
     "APHIS_PUERTO_RICO_PLANT_AND_ANIMAL_ADVISORY_DENOMINATORS",
