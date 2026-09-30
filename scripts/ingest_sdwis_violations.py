@@ -85,10 +85,10 @@ def _fetch_table_live(table: str) -> list[dict[str, Any]]:
 def _offline_pages(path: Path) -> list[SourcePage]:
     raw = path.read_bytes()
     payload = json.loads(raw)
-    if not isinstance(payload, list):
-        payload = [payload]
-    canonical = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-    return [(str(path), canonical, {})]
+    if isinstance(payload, list):
+        return [(str(path), raw, {})]
+    wrapped = json.dumps([payload], ensure_ascii=False).encode("utf-8")
+    return [(str(path), wrapped, {})]
 
 
 def _rows_from_pages(pages: list[SourcePage], table: str) -> list[dict[str, Any]]:
