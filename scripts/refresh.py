@@ -143,7 +143,7 @@ STEP_NEON_PRODUCTS = (
     True,
 )
 STEP_SDWIS = (
-    "EPA SDWIS violations → service_events",
+    "EPA SDWIS violations → canonical hazard plane + service_events",
     ["scripts/ingest_sdwis_violations.py"],
     False,
 )
