@@ -32,8 +32,8 @@ from typing import Any
 from aguayluz.hazard_adapters.epa_sdwis import (
     MICROBIAL_RULE_GROUPS,
     canonical_event_id,
-    normalize as normalize_hazard,
 )
+from aguayluz.hazard_adapters.epa_sdwis import normalize as normalize_hazard
 from aguayluz.hazard_plane import (
     HazardRecord,
     Manifestation,
