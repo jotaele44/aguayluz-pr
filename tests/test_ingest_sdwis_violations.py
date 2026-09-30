@@ -36,18 +36,17 @@ def test_municipality_resolved_to_canonical_accented():
     assert muni == "Bayamón"
 
 
-def test_tier1_microbial_acute_maps_to_boil_water():
+def test_public_notification_tier_does_not_infer_consumer_action():
     rows = {r["event_id"]: r for r in _events()}
-    # PR0002000 9100777: health_based=Y, tier=1, rule_group=100 (coliform) -> boil_water
-    bw = rows["AYL_EVT_20240915_PR0002000_9100777"]
-    assert bw["event_type"] == "boil_water"
-    assert bw["review_status"] == "needs_review"  # health-based + unresolved
-    # PR0002591 9001234: health_based=Y but tier=2 -> stays water_quality_violation
-    assert rows["AYL_EVT_20230401_PR0002591_9001234"]["event_type"] == "water_quality_violation"
-    # PR0002000 9200888: health_based=Y, tier=1, but rule_group=210 (Disinfection
-    # Byproducts / chlorine dioxide — acute but "do NOT boil") -> water_quality_violation,
-    # NOT boil_water. Regression guard: 210 was in the old over-broad rule-group set.
+    # Tier 1 means immediate public notification; the SDWIS VIOLATION row does not
+    # establish whether the source notice said boil water, do not drink, or do not use.
+    microbial = rows["AYL_EVT_20240915_PR0002000_9100777"]
+    assert microbial["event_type"] == "water_quality_violation"
+    assert microbial["review_status"] == "needs_review"
+    assert "pn_tier=1" in microbial["status_text"]
+    # The same fail-closed rule applies to non-microbial Tier-1 rows.
     assert rows["AYL_EVT_20241001_PR0002000_9200888"]["event_type"] == "water_quality_violation"
+    assert rows["AYL_EVT_20230401_PR0002591_9001234"]["event_type"] == "water_quality_violation"
 
 
 def test_events_are_schema_shaped():
@@ -61,7 +60,7 @@ def test_events_are_schema_shaped():
     pat = re.compile(SCHEMA["properties"]["event_id"]["pattern"])
     for r in rows:
         assert req <= set(r) and set(r) <= allowed
-        assert r["event_type"] in ("water_quality_violation", "boil_water")
+        assert r["event_type"] == "water_quality_violation"
         for k, choices in enums.items():
             if k in r:
                 assert r[k] in choices
