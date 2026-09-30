@@ -30,9 +30,9 @@ def test_tier1_microbial_violation_is_event_not_advisory():
     record = normalize(
         row,
         "EPA_SDWIS:VIOLATION:manifest-1",
-        geo_row={"pwsid": "PR0002000", "county_served": "Bayamon Municipio"},
+        geo_rows=[{"pwsid": "PR0002000", "county_served": "Bayamon Municipio"}],
         municipality_name="Bayamón",
-        geography_manifestation_id="EPA_SDWIS:GEOGRAPHIC_AREA:manifest-1",
+        geography_manifestation_ids=["EPA_SDWIS:GEOGRAPHIC_AREA:manifest-1"],
     )
 
     assert is_tier1_microbial_health_violation(row) is True
