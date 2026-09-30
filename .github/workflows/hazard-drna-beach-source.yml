@@ -54,6 +54,8 @@ jobs:
           assert receipt["certification_state"] == "PASS", receipt
           assert receipt["archive_pages_frozen"] > 0, receipt
           assert receipt["manifestations_frozen"] >= receipt["archive_pages_frozen"], receipt
+          assert len(receipt["frozen_files"]) == receipt["manifestations_frozen"], receipt
+          assert all(row["byte_sha256"] and row["raw_file"] for row in receipt["frozen_files"]), receipt
           print(json.dumps({
               "certification_state": receipt["certification_state"],
               "source_arithmetic": arithmetic,
