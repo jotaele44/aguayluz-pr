@@ -1444,6 +1444,50 @@
           "tests/test_ingest_fda_food_recalls.py"
         ]
       }
+    },
+    {
+      "id": "epa-sdwis-water-health-hazard-ingest",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Keyless EPA SDWIS producer/provenance workflow feeding the existing Environmental Exposure hazard plane and legacy water-alert stream. It does not create a second operator control surface. The canonical adapter preserves SDWA violation identity, revision history, public-notification tier semantics, multi-municipio geography cardinality, source manifestations, and source arithmetic while explicitly refusing to treat a violation record as proof that a boil-water/do-not-drink/do-not-use advisory was issued.",
+      "backend": {
+        "files": [
+          "src/aguayluz/hazard_adapters/epa_sdwis.py"
+        ],
+        "symbols": [
+          "src/aguayluz/hazard_adapters/epa_sdwis.py:parse_sdwis_datetime",
+          "src/aguayluz/hazard_adapters/epa_sdwis.py:row_digest",
+          "src/aguayluz/hazard_adapters/epa_sdwis.py:canonical_event_id",
+          "src/aguayluz/hazard_adapters/epa_sdwis.py:stable_record_id",
+          "src/aguayluz/hazard_adapters/epa_sdwis.py:is_health_based",
+          "src/aguayluz/hazard_adapters/epa_sdwis.py:public_notification_tier",
+          "src/aguayluz/hazard_adapters/epa_sdwis.py:is_tier1_microbial_health_violation",
+          "src/aguayluz/hazard_adapters/epa_sdwis.py:record_status",
+          "src/aguayluz/hazard_adapters/epa_sdwis.py:hazard_type",
+          "src/aguayluz/hazard_adapters/epa_sdwis.py:normalize"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/ingest_sdwis_violations.py"
+        ],
+        "symbols": [
+          "scripts/ingest_sdwis_violations.py:load_muni_canonical",
+          "scripts/ingest_sdwis_violations.py:municipality_from_geo",
+          "scripts/ingest_sdwis_violations.py:build_events",
+          "scripts/ingest_sdwis_violations.py:materialize_hazard_plane",
+          "scripts/ingest_sdwis_violations.py:merge",
+          "scripts/ingest_sdwis_violations.py:main"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_ingest_sdwis_violations.py",
+          "tests/test_hazard_adapter_epa_sdwis.py",
+          "tests/test_ingest_sdwis_hazard_plane.py"
+        ]
+      }
     }
   ],
   "exceptions": []
