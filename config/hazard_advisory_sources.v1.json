@@ -102,9 +102,18 @@
       "family": "EPA_DRINKING_WATER_HEALTH",
       "authority": "EPA",
       "hazard_family": "WATER_HEALTH",
-      "access": "federal drinking-water and enforcement data",
-      "url": "https://www.epa.gov/ground-water-and-drinking-water",
-      "status": "OPEN_PR_EVENT_DENOMINATOR"
+      "access": "EPA SDWIS/Fed Envirofacts VIOLATION + explicit public notices when independently acquired",
+      "url": "https://data.epa.gov/efservice",
+      "status": "CANONICAL_INGEST_IMPLEMENTED_SOURCE_CERTIFICATION_PENDING",
+      "update_semantics": "regulatory violation rows may be revised; public-notification instructions are separate source manifestations",
+      "binding_semantics": "PWSID is an authoritative source identifier but is not silently promoted to a federation water_system_id",
+      "consumer_action_semantics": "Tier 1 means immediate public notification; boil-water/do-not-drink/do-not-use requires explicit notice evidence",
+      "bounded_scope": {
+        "target_year": 2026,
+        "source_query": "SDWIS VIOLATION rows where PWSID begins PR",
+        "canonical_retention": "target-year health-based violations",
+        "certification_state": "PENDING_LIVE_ZERO_UNRESOLVED_GATE"
+      }
     }
   ],
   "unresolved_material": [
