@@ -185,7 +185,7 @@ def process_pages(
     dry_run: bool,
 ) -> dict[str, Any]:
     retrieved_at = datetime.now(timezone.utc)
-    stamp = retrieved_at.strftime("%Y%m%dT%H%M%SZ")
+    stamp = retrieved_at.strftime("%Y%m%dT%H%M%S%fZ")
     existing_current = _existing_current_by_event()
     manifestations: list[Manifestation] = []
     retained: list[HazardRecord] = []
@@ -197,10 +197,21 @@ def process_pages(
     for page_number, (url, raw, headers) in enumerate(pages, start=1):
         page_sha = sha256(raw).hexdigest()
         payload = json.loads(raw)
+        if not isinstance(payload, dict):
+            raise ValueError("openFDA page must be a JSON object")
         rows = payload.get("results") or []
         if not isinstance(rows, list):
             raise ValueError("results must be a list")
         source_count += len(rows)
+        schema_payload = {
+            "top_level_keys": sorted(payload.keys()),
+            "result_keys": sorted({
+                key
+                for row in rows
+                if isinstance(row, dict)
+                for key in row.keys()
+            }),
+        }
         manifestation_id = f"FDA_FOOD:{stamp}:P{page_number:04d}:{page_sha[:20]}"
         manifestation = Manifestation(
             manifestation_id=manifestation_id,
@@ -212,7 +223,7 @@ def process_pages(
             retrieved_at_utc=retrieved_at,
             byte_sha256=page_sha,
             schema_signature=sha256(
-                _canonical_json_bytes(sorted(payload.keys()))
+                _canonical_json_bytes(schema_payload)
             ).hexdigest(),
             record_count=len(rows),
             http_etag=headers.get("etag"),
@@ -260,7 +271,6 @@ def process_pages(
             retained.append(candidate)
             existing_current[event_id] = candidate
 
-    accounting = source_arithmetic(source_count, len(retained) + excluded * 0, excluded, unresolved)
     # Repeated unchanged rows are valid retained source rows even when they do not create
     # a new logical revision. Recompute accounting on dispositions, not inserted records.
     retained_source = source_count - excluded - unresolved
