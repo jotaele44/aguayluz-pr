@@ -31,23 +31,24 @@ def test_isodate_normalizes_and_handles_null():
 
 
 def test_municipality_resolved_to_canonical_accented():
-    # county_served "Bayamon Municipio,..." (unaccented) -> canonical "Bayamón".
+    # Legacy-only geographic projection: source county text -> canonical display name.
     muni = municipality_from_geo(GEO_BY["PR0002000"], CANON)
     assert muni == "Bayamón"
 
 
-def test_tier1_microbial_acute_maps_to_boil_water():
-    rows = {r["event_id"]: r for r in _events()}
-    # PR0002000 9100777: health_based=Y, tier=1, rule_group=100 (coliform) -> boil_water
-    bw = rows["AYL_EVT_20240915_PR0002000_9100777"]
-    assert bw["event_type"] == "boil_water"
-    assert bw["review_status"] == "needs_review"  # health-based + unresolved
-    # PR0002591 9001234: health_based=Y but tier=2 -> stays water_quality_violation
-    assert rows["AYL_EVT_20230401_PR0002591_9001234"]["event_type"] == "water_quality_violation"
-    # PR0002000 9200888: health_based=Y, tier=1, but rule_group=210 (Disinfection
-    # Byproducts / chlorine dioxide — acute but "do NOT boil") -> water_quality_violation,
-    # NOT boil_water. Regression guard: 210 was in the old over-broad rule-group set.
-    assert rows["AYL_EVT_20241001_PR0002000_9200888"]["event_type"] == "water_quality_violation"
+def test_sdwis_violation_never_infers_boil_water_advisory():
+    rows = {row["event_id"]: row for row in _events()}
+
+    microbial = rows["AYL_EVT_20240915_PR0002000_9100777"]
+    assert microbial["event_type"] == "water_quality_violation"
+    assert microbial["review_status"] == "needs_review"
+    assert "advisory=not_established_by_sdwis_violation_alone" in microbial["status_text"]
+
+    tier2 = rows["AYL_EVT_20230401_PR0002591_9001234"]
+    assert tier2["event_type"] == "water_quality_violation"
+
+    disinfectant = rows["AYL_EVT_20241001_PR0002000_9200888"]
+    assert disinfectant["event_type"] == "water_quality_violation"
 
 
 def test_events_are_schema_shaped():
@@ -57,37 +58,46 @@ def test_events_are_schema_shaped():
     assert len(rows) == 5
     req = set(SCHEMA["required"])
     allowed = set(SCHEMA["properties"])
-    enums = {k: set(v["enum"]) for k, v in SCHEMA["properties"].items() if "enum" in v}
-    pat = re.compile(SCHEMA["properties"]["event_id"]["pattern"])
-    for r in rows:
-        assert req <= set(r) and set(r) <= allowed
-        assert r["event_type"] in ("water_quality_violation", "boil_water")
-        for k, choices in enums.items():
-            if k in r:
-                assert r[k] in choices
-        assert pat.match(r["event_id"])
+    enums = {
+        key: set(value["enum"])
+        for key, value in SCHEMA["properties"].items()
+        if "enum" in value
+    }
+    pattern = re.compile(SCHEMA["properties"]["event_id"]["pattern"])
+    for row in rows:
+        assert req <= set(row) and set(row) <= allowed
+        assert row["event_type"] == "water_quality_violation"
+        for key, choices in enums.items():
+            if key in row:
+                assert row[key] in choices
+        assert pattern.match(row["event_id"])
 
 
 def test_health_based_unresolved_routes_to_review():
-    rows = {r["event_id"]: r for r in _events()}
-    # PR0002591 violation 9001234: health_based=Y, compliance=O (open) -> needs_review
+    rows = {row["event_id"]: row for row in _events()}
     assert rows["AYL_EVT_20230401_PR0002591_9001234"]["review_status"] == "needs_review"
-    # PR0002000 7613411: health_based=N, compliance=R -> accepted
     assert rows["AYL_EVT_20140701_PR0002000_7613411"]["review_status"] == "accepted"
 
 
 def test_population_carried_as_int():
-    rows = {r["event_id"]: r for r in _events()}
+    rows = {row["event_id"]: row for row in _events()}
     assert rows["AYL_EVT_20230401_PR0002591_9001234"]["reported_customers_or_users"] == 1200
 
 
 def test_merge_replaces_sdwis_preserves_others():
     existing = [
-        {"event_id": "AYL_EVT_20260606_toa_alta_outage", "event_type": "outage",
-         "source_ref": "LUMA outages_by_town"},
-        {"event_id": "AYL_EVT_20140701_PR0002000_7613411", "event_type": "water_quality_violation",
-         "source_ref": "EPA SDWIS VIOLATION pwsid=PR0002000 violation_id=7613411", "confidence": 1},
+        {
+            "event_id": "AYL_EVT_20260606_toa_alta_outage",
+            "event_type": "outage",
+            "source_ref": "LUMA outages_by_town",
+        },
+        {
+            "event_id": "AYL_EVT_20140701_PR0002000_7613411",
+            "event_type": "water_quality_violation",
+            "source_ref": "EPA SDWIS VIOLATION pwsid=PR0002000 violation_id=7613411",
+            "confidence": 1,
+        },
     ]
-    out = {e["event_id"]: e for e in merge(existing, _events())}
-    assert "AYL_EVT_20260606_toa_alta_outage" in out  # non-SDWIS preserved
-    assert out["AYL_EVT_20140701_PR0002000_7613411"]["confidence"] == 80  # SDWIS replaced
+    out = {event["event_id"]: event for event in merge(existing, _events())}
+    assert "AYL_EVT_20260606_toa_alta_outage" in out
+    assert out["AYL_EVT_20140701_PR0002000_7613411"]["confidence"] == 80
