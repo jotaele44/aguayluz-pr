@@ -86,8 +86,45 @@
       "hazard_family": "WATER_HEALTH",
       "access": "keyless Envirofacts SDWIS VIOLATION + GEOGRAPHIC_AREA; enforcement/public-notification actions remain a separate open denominator",
       "url": "https://data.epa.gov/efservice",
-      "status": "IMPLEMENTED_PR_VIOLATION_DENOMINATOR_LIVE_FREEZE_PENDING",
-      "update_semantics": "federal SDWIS/ECHO compliance data are quarterly and may lag source events by multiple months; historical rows may be revised"
+      "status": "VERIFIED_CURRENT_PR_SDWIS_TABLE_SNAPSHOT",
+      "update_semantics": "federal SDWIS/ECHO compliance data are quarterly and may lag source events by multiple months; historical rows may be revised",
+      "live_certification": {
+        "retrieved_at_utc": "2026-09-30T16:16:41.707288+00:00",
+        "source_scope": [
+          "Envirofacts SDWIS VIOLATION where PWSID begins PR",
+          "Envirofacts SDWIS GEOGRAPHIC_AREA where PWSID begins PR"
+        ],
+        "source_arithmetic": {
+          "VIOLATION": {
+            "source": 25230,
+            "retained": 25230,
+            "excluded": 0,
+            "unresolved": 0,
+            "accounted": 25230,
+            "delta": 0,
+            "state": "PASS"
+          },
+          "GEOGRAPHIC_AREA": {
+            "source": 951,
+            "retained": 951,
+            "excluded": 0,
+            "unresolved": 0,
+            "accounted": 951,
+            "delta": 0,
+            "state": "PASS"
+          }
+        },
+        "canonical_record_revisions": 25230,
+        "source_manifestations": 4,
+        "advisory_issuance_claimed": false,
+        "enforcement_action_denominator_closed": false,
+        "evidence": {
+          "workflow_run_id": 36742860675,
+          "artifact_id": 11110734750,
+          "artifact_sha256": "e255356759b039b311689280c623645348412338f6544afcdf5c1ca08450a4d4",
+          "tested_head_sha": "5de6fee291d66841279d6d70a0beb27fc0b59390"
+        }
+      }
     }
   ],
   "unresolved_material": [
@@ -98,7 +135,6 @@
     "HARMFUL_ALGAL_BLOOM_AND_CYANOBACTERIA_AUTHORITY_DENOMINATOR",
     "HISTORICAL_BACKFILL_DENOMINATOR_PER_SOURCE_FAMILY",
     "EPA_SDWIS_PUERTO_RICO_ENFORCEMENT_ACTION_AND_VIOLATION_ASSOCIATION_DENOMINATOR",
-    "PRASA_BOIL_WATER_DO_NOT_DRINK_DO_NOT_USE_NOTICE_DENOMINATOR",
-    "EPA_SDWIS_PUERTO_RICO_VIOLATION_LIVE_FREEZE_EXECUTION"
+    "PRASA_BOIL_WATER_DO_NOT_DRINK_DO_NOT_USE_NOTICE_DENOMINATOR"
   ]
 }
