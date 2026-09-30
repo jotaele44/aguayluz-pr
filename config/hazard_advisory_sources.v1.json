@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "scope": "Puerto Rico food, agricultural, animal, human infectious-disease, wastewater, water-health and environmental-health advisory source-family denominator",
-  "as_of": "2026-09-05",
+  "as_of": "2026-09-30",
   "certification_state": "OPEN",
   "completeness_claimed": false,
   "product_capability_id": "hazard-advisory-plane",
@@ -84,9 +84,10 @@
       "family": "EPA_DRINKING_WATER_HEALTH",
       "authority": "EPA",
       "hazard_family": "WATER_HEALTH",
-      "access": "federal drinking-water and enforcement data",
-      "url": "https://www.epa.gov/ground-water-and-drinking-water",
-      "status": "OPEN_PR_EVENT_DENOMINATOR"
+      "access": "keyless Envirofacts SDWIS VIOLATION + GEOGRAPHIC_AREA; enforcement/public-notification actions remain a separate open denominator",
+      "url": "https://data.epa.gov/efservice",
+      "status": "IMPLEMENTED_PR_VIOLATION_DENOMINATOR_LIVE_FREEZE_PENDING",
+      "update_semantics": "federal SDWIS/ECHO compliance data are quarterly and may lag source events by multiple months; historical rows may be revised"
     }
   ],
   "unresolved_material": [
@@ -94,8 +95,10 @@
     "CDC_NWSS_PUERTO_RICO_SITE_DENOMINATOR",
     "APHIS_PUERTO_RICO_PLANT_AND_ANIMAL_ADVISORY_DENOMINATORS",
     "PR_DEPARTMENT_OF_AGRICULTURE_COMPLETE_ADVISORY_DENOMINATOR",
-    "EPA_AND_PRASA_BOIL_WATER_DO_NOT_DRINK_DO_NOT_USE_EVENT_DENOMINATOR",
     "HARMFUL_ALGAL_BLOOM_AND_CYANOBACTERIA_AUTHORITY_DENOMINATOR",
-    "HISTORICAL_BACKFILL_DENOMINATOR_PER_SOURCE_FAMILY"
+    "HISTORICAL_BACKFILL_DENOMINATOR_PER_SOURCE_FAMILY",
+    "EPA_SDWIS_PUERTO_RICO_ENFORCEMENT_ACTION_AND_VIOLATION_ASSOCIATION_DENOMINATOR",
+    "PRASA_BOIL_WATER_DO_NOT_DRINK_DO_NOT_USE_NOTICE_DENOMINATOR",
+    "EPA_SDWIS_PUERTO_RICO_VIOLATION_LIVE_FREEZE_EXECUTION"
   ]
 }
