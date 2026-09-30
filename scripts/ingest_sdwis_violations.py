@@ -143,9 +143,16 @@ def _municipality_candidates(
 
 
 def municipality_from_geo(geo_row: dict[str, Any], canon: dict[str, str]) -> str | None:
-    """First county_served entry, mapped to a canonical accented municipio."""
-    candidates = _municipality_candidates([geo_row], canon)
-    return candidates[0] if candidates else None
+    """First source-ordered county_served entry mapped to a canonical municipio."""
+    counties = str((geo_row or {}).get("county_served") or "")
+    for raw in counties.split(","):
+        name = raw.strip()
+        if name.upper().endswith(" MUNICIPIO"):
+            name = name[: -len(" Municipio")].strip()
+        canonical = canon.get(_unaccent(name))
+        if canonical:
+            return canonical
+    return None
 
 
 def _confidence() -> int:
@@ -442,7 +449,9 @@ def materialize_hazard_plane(
                 if len(municipality_candidates) == 1
                 else None
             )
-            geo_manifestation_ids = geo_manifestations_by_pwsid.get(pwsid, [])
+            geo_manifestation_ids = sorted(
+                set(geo_manifestations_by_pwsid.get(pwsid, []))
+            )
             candidate = normalize_hazard(
                 row,
                 manifest.manifestation_id,
