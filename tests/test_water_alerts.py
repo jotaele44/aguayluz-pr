@@ -56,6 +56,9 @@ def test_boil_water_acute_maps_to_contamination_alert():
     assert a.latitude == 18.398 and a.longitude == -66.155
     assert a.coord_confidence == "approximate"
     assert a.alert_id.startswith("AYL_ALR_20150701_sdwis_")
+    assert "Tier-1 microbial drinking-water violation" in a.source_title
+    assert "advisory" not in a.source_title.lower()
+    assert "does not prove" in (a.validation_notes or "")
 
 
 def test_boil_water_non_acute_lower_severity():

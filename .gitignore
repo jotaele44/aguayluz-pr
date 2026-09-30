@@ -280,6 +280,11 @@ exports/federation/
 # documentation, never from a response — actually matched. Column names and counts only;
 # no token, no URL, no row values.
 !data/neon_ingest_receipt.json
+# Hazard-plane provenance receipts are intentionally versioned. Raw source bytes
+# remain ignored under data/* and are preserved by the refresh workflow as artifacts.
+!data/hazard_manifestations.jsonl
+!data/hazard_source_accounting.jsonl
+!data/hazard_records.jsonl
 # Census-derived PR geodata: centroids (normalization/spatial joins) + boundary polygons (map layer)
 !data/geo/
 !data/geo/pr_municipios.json

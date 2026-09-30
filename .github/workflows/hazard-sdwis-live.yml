@@ -1,0 +1,127 @@
+name: SDWIS Water Health Live Source Gate
+
+on:
+  pull_request:
+    paths:
+      - "scripts/ingest_sdwis_violations.py"
+      - "src/aguayluz/hazard_adapters/epa_sdwis.py"
+      - "src/aguayluz/hazard_plane.py"
+      - "src/aguayluz/hazard_plane_db.py"
+      - "config/hazard_advisory_sources.v1.json"
+      - ".github/workflows/hazard-sdwis-live.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sdwis-live-source-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install uv
+        run: python -m pip install uv
+
+      - name: Install dependencies
+        run: uv pip install --system -e ".[dev]"
+
+      - name: Execute live bounded SDWIS acquisition
+        run: python scripts/ingest_sdwis_violations.py --out /tmp/sdwis_service_events.jsonl
+
+      - name: Verify frozen source arithmetic and fail-closed semantics
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          ledger = Path("data/hazard_source_accounting.jsonl")
+          records_path = Path("data/hazard_records.jsonl")
+          manifestations_path = Path("data/hazard_manifestations.jsonl")
+          snapshots = Path("data/hazard_source_snapshots/epa_sdwis")
+
+          assert ledger.is_file(), "hazard source accounting ledger missing"
+          rows = [
+              json.loads(line)
+              for line in ledger.read_text(encoding="utf-8").splitlines()
+              if line.strip()
+          ]
+          receipt = rows[-1]
+          assert receipt["source_family"] == "EPA_DRINKING_WATER_HEALTH"
+          assert receipt["advisory_issuance_claimed"] is False
+          assert receipt["enforcement_action_denominator_closed"] is False
+
+          for table in ("VIOLATION", "GEOGRAPHIC_AREA"):
+              arithmetic = receipt["source_arithmetic"][table]
+              assert arithmetic["state"] == "PASS", (table, arithmetic)
+              assert arithmetic["delta"] == 0, (table, arithmetic)
+              assert arithmetic["source"] == (
+                  arithmetic["retained"]
+                  + arithmetic["excluded"]
+                  + arithmetic["unresolved"]
+              )
+
+          records = [
+              json.loads(line)
+              for line in records_path.read_text(encoding="utf-8").splitlines()
+              if line.strip()
+          ]
+          manifestations = [
+              json.loads(line)
+              for line in manifestations_path.read_text(encoding="utf-8").splitlines()
+              if line.strip()
+          ]
+          assert records, "live SDWIS acquisition produced zero hazard records"
+          assert manifestations, "live SDWIS acquisition produced zero manifestations"
+          assert list(snapshots.rglob("*.json")), "exact SDWIS source snapshots missing"
+
+          sdwis_records = [
+              row
+              for row in records
+              if str(row.get("canonical_event_id", "")).startswith("EPA_SDWIS:")
+          ]
+          assert sdwis_records, "no canonical EPA_SDWIS records materialized"
+          assert all(
+              row.get("raw_attributes", {}).get("advisory_issued") is False
+              for row in sdwis_records
+          ), "SDWIS violation was promoted to advisory issuance"
+
+          Path("artifacts").mkdir(exist_ok=True)
+          Path("artifacts/sdwis-live-source-receipt.json").write_text(
+              json.dumps(
+                  {
+                      "source_family": receipt["source_family"],
+                      "retrieved_at_utc": receipt["retrieved_at_utc"],
+                      "source_arithmetic": receipt["source_arithmetic"],
+                      "record_count": len(sdwis_records),
+                      "manifestation_count": len(manifestations),
+                      "snapshot_count": len(list(snapshots.rglob("*.json"))),
+                      "advisory_issuance_claimed": False,
+                      "enforcement_action_denominator_closed": False,
+                  },
+                  indent=2,
+                  sort_keys=True,
+              )
+              + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Upload immutable SDWIS source evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
+        with:
+          name: sdwis-water-health-live-source-evidence
+          path: |
+            artifacts/sdwis-live-source-receipt.json
+            data/hazard_source_snapshots/epa_sdwis/
+            data/hazard_manifestations.jsonl
+            data/hazard_source_accounting.jsonl
+            data/hazard_records.jsonl
+          if-no-files-found: error
+          retention-days: 90

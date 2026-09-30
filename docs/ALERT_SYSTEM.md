@@ -29,7 +29,7 @@ by `scripts/build_alerts.py`, see [`src/aguayluz/alert_promotion/`](../src/aguay
 
 | Module | Source | Promoter |
 |---|---|---|
-| `CONTAMINATION` | EPA SDWIS boil-water / health-based violations | `water_alerts.contamination_alert` |
+| `CONTAMINATION` | EPA SDWIS Tier-1 microbial / other health-based violations (not proof of an issued advisory) | `water_alerts.contamination_alert` |
 | `HYDRO_OPS` | USGS reservoir levels (statistical low proxy, T2) | `water_alerts.reservoir_alerts` |
 | `SEISMIC_GEO` | USGS FDSN earthquakes (severity from magnitude) | `alert_promotion.seismic` |
 | `WEATHER_HAZARD` | NWS active hazard alerts (severity from hazard type + urgency) | `alert_promotion.weather` |
@@ -97,7 +97,7 @@ already-ingested corpus into the alert/dependency layer (run automatically by
 `scripts/refresh.py` after ingest, before export):
 
 ```bash
-# EPA SDWIS boil-water + health-based quality violations -> CONTAMINATION alerts;
+# EPA SDWIS Tier-1 microbial + other health-based violations -> CONTAMINATION alerts; issued-advisory status is separate.
 # USGS reservoir readings -> HYDRO_OPS reservoir-low alerts (statistical proxy).
 python scripts/build_water_alerts.py
 
