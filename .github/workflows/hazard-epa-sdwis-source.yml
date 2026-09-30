@@ -1,0 +1,98 @@
+name: EPA SDWIS Source Freeze
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/ingest_sdwis_violations.py"
+      - "src/aguayluz/hazard_adapters/epa_sdwis.py"
+      - "config/hazard_advisory_sources.v1.json"
+      - "tests/test_hazard_adapter_epa_sdwis.py"
+      - "tests/test_ingest_sdwis_violations.py"
+      - "tests/test_ingest_sdwis_hazard.py"
+      - ".github/workflows/hazard-epa-sdwis-source.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: epa-sdwis-source-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  freeze-pr-source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Install bounded runtime
+        run: python -m pip install "httpx>=0.27" "pydantic>=2" "pytest>=8"
+
+      - name: Run SDWIS semantic and provenance regressions
+        env:
+          PYTHONPATH: src:.
+        run: |
+          python -m pytest \
+            tests/test_hazard_adapter_epa_sdwis.py \
+            tests/test_ingest_sdwis_violations.py \
+            tests/test_ingest_sdwis_hazard.py \
+            -q
+
+      - name: Freeze Puerto Rico SDWIS violation denominator
+        env:
+          PYTHONPATH: src:.
+        run: |
+          python scripts/ingest_sdwis_violations.py \
+            --output-root artifacts/epa_sdwis_pr \
+            --no-legacy \
+            --require-zero-unresolved
+
+      - name: Validate source receipt
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+
+          path = Path("artifacts/epa_sdwis_pr/receipt.json")
+          receipt = json.loads(path.read_text(encoding="utf-8"))
+          arithmetic = receipt["source_arithmetic"]
+          guards = receipt["semantic_guardrails"]
+          assert arithmetic["state"] == "PASS", arithmetic
+          assert arithmetic["delta"] == 0, arithmetic
+          assert arithmetic["source"] > 0, arithmetic
+          assert arithmetic["retained"] > 0, arithmetic
+          assert arithmetic["unresolved"] == 0, arithmetic
+          assert receipt["certification_state"] == "PASS", receipt
+          assert receipt["violation_pages_frozen"] > 0, receipt
+          assert receipt["manifestations_frozen"] >= receipt["violation_pages_frozen"], receipt
+          assert len(receipt["frozen_files"]) == receipt["manifestations_frozen"], receipt
+          assert all(row["byte_sha256"] and row["raw_file"] for row in receipt["frozen_files"])
+          assert guards["sdwis_violation_is_advisory"] is False
+          assert guards["tier1_microbial_implies_boil_water_advisory"] is False
+          assert guards["pwsid_is_authoritative_water_system_identity"] is True
+          assert guards["municipality_text_is_canonical_binding"] is False
+          assert guards["absence_of_reported_violation_proves_safety"] is False
+          print(json.dumps({
+              "certification_state": receipt["certification_state"],
+              "source_arithmetic": arithmetic,
+              "violation_pages_frozen": receipt["violation_pages_frozen"],
+              "geography_pages_frozen": receipt["geography_pages_frozen"],
+              "manifestations_frozen": receipt["manifestations_frozen"],
+              "new_record_revisions": receipt["new_record_revisions"],
+              "unique_current_events_in_snapshot": receipt["unique_current_events_in_snapshot"],
+          }, indent=2, sort_keys=True))
+
+      - name: Upload EPA SDWIS source evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: epa-sdwis-source-freeze-pr
+          path: artifacts/epa_sdwis_pr
+          if-no-files-found: error
+          retention-days: 90
