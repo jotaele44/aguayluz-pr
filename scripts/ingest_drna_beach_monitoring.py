@@ -456,13 +456,15 @@ def _manifestation(page: FrozenPage, retrieved_at: datetime, ordinal: int) -> Ma
     )
 
 
-def _freeze_raw(paths: OutputPaths, page: FrozenPage, manifestation: Manifestation) -> None:
-    safe = re.sub(r"[^A-Za-z0-9._-]+", "_", manifestation.source_record_id)
-    target = paths.raw_root / f"{manifestation.manifestation_id}_{safe}.html"
+def _freeze_raw(paths: OutputPaths, page: FrozenPage, manifestation: Manifestation) -> str:
+    manifest_safe = re.sub(r"[^A-Za-z0-9._-]+", "_", manifestation.manifestation_id)
+    source_safe = re.sub(r"[^A-Za-z0-9._-]+", "_", manifestation.source_record_id)
+    target = paths.raw_root / f"{manifest_safe}_{source_safe}.html"
     target.parent.mkdir(parents=True, exist_ok=True)
     if target.exists() and target.read_bytes() != page.raw:
         raise ValueError(f"raw snapshot collision at {target}")
     target.write_bytes(page.raw)
+    return target.name
 
 
 def run(
@@ -478,6 +480,7 @@ def run(
     manifestations: list[Manifestation] = []
     new_records: list[HazardRecord] = []
     classifications: list[dict[str, Any]] = []
+    frozen_files: list[dict[str, Any]] = []
 
     with httpx.Client(
         timeout=45,
@@ -490,7 +493,16 @@ def run(
             ordinal += 1
             manifestation = _manifestation(page, retrieved_at, ordinal)
             manifestations.append(manifestation)
-            _freeze_raw(paths, page, manifestation)
+            raw_file = _freeze_raw(paths, page, manifestation)
+            frozen_files.append(
+                {
+                    "manifestation_id": manifestation.manifestation_id,
+                    "source_url": manifestation.source_url,
+                    "byte_sha256": manifestation.byte_sha256,
+                    "raw_file": raw_file,
+                    "kind": page.kind,
+                }
+            )
 
         for url in candidate_urls:
             ordinal += 1
@@ -509,7 +521,16 @@ def run(
             page = FrozenPage(fetched.url, fetched.raw, fetched.headers, "notice")
             manifestation = _manifestation(page, retrieved_at, ordinal)
             manifestations.append(manifestation)
-            _freeze_raw(paths, page, manifestation)
+            raw_file = _freeze_raw(paths, page, manifestation)
+            frozen_files.append(
+                {
+                    "manifestation_id": manifestation.manifestation_id,
+                    "source_url": manifestation.source_url,
+                    "byte_sha256": manifestation.byte_sha256,
+                    "raw_file": raw_file,
+                    "kind": page.kind,
+                }
+            )
 
             published, parsed_rows, parse_issue = parse_notice(page.raw, page.url)
             if published is None:
@@ -582,6 +603,7 @@ def run(
         "discovered_notice_urls": len(candidate_urls),
         "manifestations_frozen": len(manifestations),
         "new_record_revisions": len(new_records),
+        "frozen_files": frozen_files,
         "source_arithmetic": accounting,
         "certification_state": (
             "PASS"
