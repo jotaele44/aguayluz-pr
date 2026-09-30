@@ -4,8 +4,9 @@
 Projects the producer's real, already-ingested water signals into the operational
 alert layer (see :mod:`aguayluz.water_alerts`):
 
-  * EPA SDWIS boil-water advisories + health-based water-quality violations
-    (data/service_events.jsonl, T1) -> CONTAMINATION alerts.
+  * Explicitly sourced boil-water events + EPA SDWIS health-based water-quality
+    violations (data/service_events.jsonl, T1) -> CONTAMINATION alerts. SDWIS
+    public-notification tier controls urgency only; it does not infer a consumer action.
   * USGS daily reservoir readings (data/reservoir_levels.jsonl, T1) -> HYDRO_OPS
     reservoir-low alerts (statistical proxy, T2/needs_review).
 
@@ -66,7 +67,7 @@ def merge(existing: list[dict[str, Any]], generated: list[dict[str, Any]]) -> li
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--events", default="data/service_events.jsonl",
-                    help="SDWIS/PREPS service events (source of CONTAMINATION alerts)")
+                    help="drinking-water service events (source of CONTAMINATION alerts)")
     ap.add_argument("--reservoir", default="data/reservoir_levels.jsonl",
                     help="USGS reservoir readings (source of HYDRO_OPS proxy alerts); optional")
     ap.add_argument("--geo", default="data/geo/pr_municipios.json",
