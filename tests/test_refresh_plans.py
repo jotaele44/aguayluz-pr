@@ -204,3 +204,13 @@ def test_luma_change_derivation_is_co_scheduled_with_status_ingest():
         has_status = "scripts/ingest_luma_status.py" in scripts
         has_change = "scripts/derive_luma_status_changes.py" in scripts
         assert has_status == has_change, cadence
+
+def test_drna_beach_monitoring_is_weekly_optional_and_not_fast():
+    """DRNA sampling notices are periodic, not a 15-minute operational feed."""
+    script = "scripts/ingest_drna_beach_monitoring.py"
+    assert refresh.STEP_DRNA_BEACH[2] is True
+    for cadence in ("weekly", "all"):
+        assert script in {_script_of(step) for step in refresh.PLANS[cadence]}, cadence
+    for cadence in ("fast", "daily"):
+        assert script not in {_script_of(step) for step in refresh.PLANS[cadence]}, cadence
+

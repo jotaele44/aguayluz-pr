@@ -39,3 +39,17 @@ Script success is not certification. Certification requires bounded source scope
 
 ## AguaYLuz integration rule
 AguaYLuz is a consumer of the canonical hazard plane, not the substantive authority for epidemiology, food safety, agriculture, or animal health. The environmental-exposure GUI may render the hazard plane, but source authority and causal semantics remain external and provenance-bound.
+
+## Verified bounded periodic-archive pattern
+
+When an authoritative advisory source is published as a reverse-chronological paginated archive rather than a structured API:
+
+1. Derive chronology from authoritative notice metadata, not URL numbering, search ranking, or archive-card text.
+2. For a bounded publication-year certification, traverse sequentially and fetch every candidate notice on each visited page.
+3. Verify notice publication dates are monotonically non-increasing across the traversed page boundary.
+4. Stop only after one complete out-of-range overlap page has been frozen and every notice on that page has a resolved publication date. Any unresolved boundary date or ordering violation fails closed and requires continued traversal or adjudication.
+5. Freeze both archive-index pages and notice pages with manifestation IDs, byte hashes, and raw-file mappings.
+6. Threshold observations and advisories are independent semantics. A source may issue an advisory for a reason other than a numeric threshold exceedance; never infer one from the other.
+7. Preserve program-wide all-clear notices as source states without fabricating station-level negative observations.
+8. Certify only the bounded publication denominator demonstrated by the receipt. Historical backfill and broader source-universe completeness remain separate OPEN vectors unless independently exhausted.
+
