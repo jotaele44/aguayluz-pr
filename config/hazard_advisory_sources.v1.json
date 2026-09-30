@@ -54,9 +54,25 @@
       "hazard_family": "WATER_HEALTH",
       "access": "public notification archive + notice pages",
       "url": "https://www.drna.pr.gov/cat/programas-y-proyectos/monitoria-de-playas/notificaciones-ambientales/",
-      "status": "IMPLEMENTED_LIVE_2026_DENOMINATOR_GATE",
+      "status": "CERTIFIED_2026_PUBLICATION_DENOMINATOR",
       "update_semantics": "periodic sampling notifications; publication pages may be revised",
-      "binding_semantics": "station/municipality text remains unbound until independently mapped"
+      "binding_semantics": "station/municipality text remains unbound until independently mapped",
+      "bounded_scope": {
+        "publication_year": 2026,
+        "archive_boundary_rule": "monotonic notice publication dates plus one complete prior-year overlap page",
+        "discovered_notice_urls": 47,
+        "retained": 31,
+        "excluded": 16,
+        "unresolved": 0,
+        "manifestations_frozen": 51,
+        "normalized_record_revisions": 79
+      },
+      "certification_evidence": {
+        "verified_head": "5e6601bf6842eb1e71156dd15a30121f7dde71ec",
+        "verified_at_utc": "2026-09-30T20:11:30Z",
+        "artifact_name": "drna-beach-source-freeze-2026",
+        "artifact_sha256": "ac9c1b8ccedab9c6c7b7031591fbac2e724bcad4fbe689248d71fd1ecbf9c798"
+      }
     },
     {
       "family": "USDA_APHIS_PLANT_HEALTH",
@@ -92,7 +108,6 @@
     }
   ],
   "unresolved_material": [
-    "DRNA_BEACH_2026_LIVE_SOURCE_FREEZE_AND_ZERO_UNRESOLVED_GATE",
     "PRDOH_COMPLETE_MACHINE_READABLE_ENDPOINT_ENUMERATION",
     "CDC_NWSS_PUERTO_RICO_SITE_DENOMINATOR",
     "APHIS_PUERTO_RICO_PLANT_AND_ANIMAL_ADVISORY_DENOMINATORS",
