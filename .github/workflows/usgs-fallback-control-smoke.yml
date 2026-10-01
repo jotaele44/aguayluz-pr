@@ -1,0 +1,164 @@
+name: USGS fallback control-flow smoke
+
+on:
+  push:
+    branches:
+      - "audit/usgs-fallback-control-smoke-20261001"
+
+permissions:
+  contents: read
+
+jobs:
+  fallback-control-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Install smoke dependency
+        run: python -m pip install httpx
+
+      - name: Force legacy failure and verify modern fallback
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          python - <<'PY'
+          import contextlib
+          import hashlib
+          import io
+          import json
+          import os
+          import sys
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          sys.path.insert(0, str(Path("scripts").resolve()))
+          import ingest_usgs_levels as levels
+
+          canonical_candidates = set(
+              levels.reservoir_site_nos(Path("data/utility_assets.jsonl"))
+          )
+          if not canonical_candidates:
+              raise SystemExit("no canonical USGS water candidates")
+
+          recent = {}
+          for line in Path("data/reservoir_levels.jsonl").read_text().splitlines():
+              if not line.strip():
+                  continue
+              row = json.loads(line)
+              site = str(row.get("site_no") or "")
+              observed = str(row.get("observed_date") or "")
+              if site in canonical_candidates and observed:
+                  recent[site] = max(observed, recent.get(site, ""))
+
+          sites = sorted(
+              recent,
+              key=lambda site: (recent[site], site),
+              reverse=True,
+          )[:10]
+          if len(sites) != 10:
+              raise SystemExit(f"expected 10 bounded candidate sites, found {len(sites)}")
+
+          assets_path = Path("/tmp/usgs-fallback-smoke-assets.jsonl")
+          assets_path.write_text(
+              "".join(
+                  json.dumps({"asset_id": f"USGS_{site}", "asset_type": "water"}) + "\n"
+                  for site in sites
+              )
+          )
+          out_path = Path("artifacts/usgs-fallback-control-output.jsonl")
+
+          def forced_legacy_failure(*_args, **_kwargs):
+              raise RuntimeError("forced_smoke_legacy_failure")
+
+          levels.fetch_dv_live = forced_legacy_failure
+          sys.argv = [
+              "ingest_usgs_levels.py",
+              "--assets", str(assets_path),
+              "--out", str(out_path),
+              "--days", "14",
+          ]
+
+          stdout = io.StringIO()
+          stderr = io.StringIO()
+          with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+              rc = levels.main()
+
+          stdout_text = stdout.getvalue()
+          stderr_text = stderr.getvalue()
+          Path("artifacts/stdout.txt").write_text(stdout_text)
+          Path("artifacts/stderr.txt").write_text(stderr_text)
+
+          if rc != 0:
+              raise SystemExit(
+                  f"fallback main() returned {rc}; stderr={stderr_text[-2000:]}"
+              )
+          if "forced_smoke_legacy_failure" not in stderr_text:
+              raise SystemExit("forced legacy failure not preserved in stderr")
+          if "used modern USGS Water Data API fallback" not in stderr_text:
+              raise SystemExit("modern fallback control path was not observed")
+          if "source: live modern USGS daily (10 sites, 14d)" not in stdout_text:
+              raise SystemExit("modern source origin not reported by main()")
+
+          rows = [
+              json.loads(line)
+              for line in out_path.read_text().splitlines()
+              if line.strip()
+          ]
+          if not rows:
+              raise SystemExit("fallback produced zero rows")
+
+          ids = [str(row["reading_id"]) for row in rows]
+          if len(ids) != len(set(ids)):
+              raise SystemExit("duplicate reading_id in fallback output")
+          output_sites = {str(row["site_no"]) for row in rows}
+          outside = sorted(output_sites - set(sites))
+          if outside:
+              raise SystemExit(f"fallback output escaped candidate set: {outside}")
+
+          dates = sorted({str(row["observed_date"]) for row in rows})
+          script_bytes = Path("scripts/ingest_usgs_levels.py").read_bytes()
+          output_bytes = out_path.read_bytes()
+          receipt = {
+              "schema": "aguayluz-usgs-fallback-control-smoke/v1",
+              "base_main_sha": "b067d9480674503de6d7fb0aa5b9be6cdf6d2a3b",
+              "audit_head_sha": os.environ["GITHUB_SHA"],
+              "executed_function": "ingest_usgs_levels.main",
+              "legacy_path": "FORCED_FAILURE",
+              "legacy_failure_marker": "forced_smoke_legacy_failure",
+              "fallback_path": "LIVE_MODERN_USGS_V1",
+              "candidate_selection": "10 MOST_RECENT_EXISTING_SITES_INTERSECT_CANONICAL_UTILITY_ASSETS",
+              "candidate_sites": sites,
+              "output_site_count": len(output_sites),
+              "normalized_row_count": len(rows),
+              "unique_reading_id_count": len(set(ids)),
+              "min_observed_date": dates[0],
+              "max_observed_date": dates[-1],
+              "script_sha256": hashlib.sha256(script_bytes).hexdigest(),
+              "output_jsonl_sha256": hashlib.sha256(output_bytes).hexdigest(),
+              "stdout_sha256": hashlib.sha256(stdout_text.encode()).hexdigest(),
+              "stderr_sha256": hashlib.sha256(stderr_text.encode()).hexdigest(),
+              "retrieved_at_utc": datetime.now(timezone.utc).isoformat(),
+              "source_transport_bytes_preserved": False,
+              "classification": "CONTROL_FLOW_LIVE_FALLBACK_PROOF_NOT_SOURCE_BYTE_IDENTITY",
+          }
+          Path("artifacts/usgs-fallback-control-smoke.json").write_text(
+              json.dumps(receipt, sort_keys=True, indent=2) + "\n"
+          )
+          print(json.dumps(receipt, sort_keys=True))
+          PY
+
+      - name: Upload control-flow receipt
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: usgs-fallback-control-smoke
+          path: |
+            artifacts/usgs-fallback-control-smoke.json
+            artifacts/stdout.txt
+            artifacts/stderr.txt
+          if-no-files-found: error
