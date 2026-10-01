@@ -10,7 +10,7 @@ from ingest_usgs_levels import (  # noqa: E402
     merge,
     reservoir_site_nos,
     rows_from_doc,
-    rows_from_modern_doc,
+    _rows_from_modern_doc,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -118,7 +118,7 @@ def test_modern_daily_prefers_exactly_one_daily_mean_without_identity_change():
             _modern_feature(statistic_id="00003", value="42.5"),
         ]
     }
-    rows = rows_from_modern_doc(doc)
+    rows = _rows_from_modern_doc(doc)
     assert len(rows) == 1
     row = rows[0]
     assert row["reading_id"] == "AYL_RDG_20261001_50059000_00060"
@@ -138,14 +138,14 @@ def test_modern_daily_fails_closed_on_ambiguous_nonmean_statistics():
         ]
     }
     with pytest.raises(ValueError, match="ambiguous_daily_statistic"):
-        rows_from_modern_doc(doc)
+        _rows_from_modern_doc(doc)
 
 
 def test_modern_daily_treats_unknown_or_provisional_approval_as_provisional():
-    provisional = rows_from_modern_doc(
+    provisional = _rows_from_modern_doc(
         {"features": [_modern_feature(approval_status="Provisional")]}
     )[0]
-    unknown = rows_from_modern_doc(
+    unknown = _rows_from_modern_doc(
         {"features": [_modern_feature(approval_status=None)]}
     )[0]
     assert provisional["provisional"] is True
@@ -158,4 +158,4 @@ def test_modern_daily_rejects_non_usgs_monitoring_location():
     feature = _modern_feature()
     feature["properties"]["monitoring_location_id"] = "OTHER-50059000"
     with pytest.raises(ValueError, match="unexpected_monitoring_location_id"):
-        rows_from_modern_doc({"features": [feature]})
+        _rows_from_modern_doc({"features": [feature]})
