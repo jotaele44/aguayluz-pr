@@ -7,10 +7,10 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from ingest_usgs_levels import (  # noqa: E402
+    _rows_from_modern_doc,
     merge,
     reservoir_site_nos,
     rows_from_doc,
-    _rows_from_modern_doc,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
