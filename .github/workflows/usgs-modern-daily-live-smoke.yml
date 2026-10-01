@@ -1,0 +1,138 @@
+name: USGS modern daily live smoke
+
+on:
+  push:
+    branches:
+      - "fix/usgs-modern-daily-fallback-20261001"
+
+permissions:
+  contents: read
+
+jobs:
+  live-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Install smoke dependency
+        run: python -m pip install httpx
+
+      - name: Exercise bounded modern daily acquisition
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import sys
+          from datetime import date, timedelta, timezone, datetime
+          from pathlib import Path
+
+          sys.path.insert(0, str(Path("scripts").resolve()))
+          from ingest_usgs_levels import (
+              ALL_PARAMS,
+              USGS_DAILY_URL,
+              _fetch_modern_dv_live,
+              _rows_from_modern_docs,
+              reservoir_site_nos,
+          )
+
+          days = 14
+          sites = reservoir_site_nos(Path("data/utility_assets.jsonl"))
+          if not sites:
+              raise SystemExit("no requested USGS sites found")
+          if len(sites) != len(set(sites)):
+              raise SystemExit("duplicate requested USGS site ids")
+
+          docs = _fetch_modern_dv_live(sites, days)
+          rows = _rows_from_modern_docs(docs, allowed_sites=set(sites))
+          if not docs:
+              raise SystemExit("modern USGS returned zero logical response pages")
+          if not rows:
+              raise SystemExit("modern USGS returned zero admissible daily rows")
+
+          ids = [row["reading_id"] for row in rows]
+          if len(ids) != len(set(ids)):
+              raise SystemExit("duplicate reading_id after modern normalization")
+          observed_sites = {row["site_no"] for row in rows}
+          outside = sorted(observed_sites - set(sites))
+          if outside:
+              raise SystemExit(f"response contained sites outside request set: {outside[:20]}")
+          bad_params = sorted({row["parameter_code"] for row in rows} - set(ALL_PARAMS))
+          if bad_params:
+              raise SystemExit(f"unexpected parameter codes: {bad_params}")
+
+          end = date.today()
+          start = end - timedelta(days=days)
+          dates = sorted({date.fromisoformat(row["observed_date"]) for row in rows})
+          if dates[0] < start or dates[-1] > end:
+              raise SystemExit(
+                  f"observation date outside bounded window: {dates[0]}..{dates[-1]}"
+              )
+
+          required = {
+              "reading_id", "asset_id", "metric", "value", "unit",
+              "observed_date", "source_ref", "evidence_tier",
+              "confidence", "review_status",
+          }
+          for index, row in enumerate(rows):
+              missing = required - set(row)
+              if missing:
+                  raise SystemExit(f"row {index} missing required fields: {sorted(missing)}")
+              if not 0 <= int(row["confidence"]) <= 100:
+                  raise SystemExit(f"row {index} confidence outside range")
+
+          canonical_docs = json.dumps(
+              docs, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+          ).encode("utf-8")
+          canonical_rows = json.dumps(
+              rows, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+          ).encode("utf-8")
+          receipt = {
+              "schema": "aguayluz-usgs-modern-daily-live-smoke/v1",
+              "source_endpoint": USGS_DAILY_URL,
+              "source_api_version": "v1",
+              "source_manifestation_class": "LOGICAL_JSON_REENCODING_NOT_HTTP_RAW_BYTES",
+              "source_transport_bytes_preserved": False,
+              "retrieved_at_utc": datetime.now(timezone.utc).isoformat(),
+              "git_head_sha": os.environ["GITHUB_SHA"],
+              "days": days,
+              "requested_site_count": len(sites),
+              "observed_site_count": len(observed_sites),
+              "parameter_codes": sorted(ALL_PARAMS),
+              "logical_page_count": len(docs),
+              "normalized_row_count": len(rows),
+              "unique_reading_id_count": len(set(ids)),
+              "min_observed_date": dates[0].isoformat(),
+              "max_observed_date": dates[-1].isoformat(),
+              "logical_documents_sha256": hashlib.sha256(canonical_docs).hexdigest(),
+              "normalized_rows_sha256": hashlib.sha256(canonical_rows).hexdigest(),
+              "candidate_scope_closed": not outside,
+              "reading_id_unique": len(ids) == len(set(ids)),
+              "date_window_closed": dates[0] >= start and dates[-1] <= end,
+              "note": (
+                  "Live functional acquisition receipt only. Hashes identify canonical "
+                  "logical JSON serializations created after HTTP parsing; they do not "
+                  "identify original USGS transport bytes."
+              ),
+          }
+          Path("artifacts/usgs-modern-daily-live-smoke.json").write_text(
+              json.dumps(receipt, sort_keys=True, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(receipt, sort_keys=True))
+          PY
+
+      - name: Upload bounded live receipt
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: usgs-modern-daily-live-smoke
+          path: artifacts/usgs-modern-daily-live-smoke.json
+          if-no-files-found: error
