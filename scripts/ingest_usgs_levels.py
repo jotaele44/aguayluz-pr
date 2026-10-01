@@ -181,10 +181,16 @@ def _modern_provisional(value: Any) -> bool:
     return not bool(tokens & {"approved", "a"})
 
 
-def _rows_from_modern_doc(doc: dict[str, Any]) -> list[dict]:
-    """Normalize modern USGS daily features without silently collapsing statistics."""
+def _rows_from_modern_docs(docs: list[dict[str, Any]]) -> list[dict]:
+    """Normalize all modern pages together so cross-page statistic ties fail closed."""
     grouped: dict[tuple[str, str, str], list[dict[str, Any]]] = {}
-    for feature in doc.get("features") or []:
+    features = [
+        feature
+        for doc in docs
+        for feature in (doc.get("features") or [])
+        if isinstance(feature, dict)
+    ]
+    for feature in features:
         props = feature.get("properties") or {}
         location_id = str(props.get("monitoring_location_id") or "")
         if not location_id.startswith("USGS-"):
@@ -345,8 +351,7 @@ def main() -> int:
             try:
                 docs = _fetch_modern_dv_live(sites, args.days)
                 origin = f"live modern USGS daily ({len(sites)} sites, {args.days}d)"
-                for doc in docs:
-                    rows.extend(_rows_from_modern_doc(doc))
+                rows.extend(_rows_from_modern_docs(docs))
                 print(
                     f"legacy NWIS dv unavailable ({legacy_error}); "
                     "used modern USGS Water Data API fallback",
