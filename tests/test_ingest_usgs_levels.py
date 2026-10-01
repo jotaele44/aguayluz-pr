@@ -105,7 +105,7 @@ def _modern_feature(
             "time": "2026-10-01",
             "value": value,
             "unit_of_measure": "ft^3/s",
-            "approval_status": approval_status,
+            "approvals_status": approval_status,
             "qualifier": None,
         },
     }
@@ -159,3 +159,25 @@ def test_modern_daily_rejects_non_usgs_monitoring_location():
     feature["properties"]["monitoring_location_id"] = "OTHER-50059000"
     with pytest.raises(ValueError, match="unexpected_monitoring_location_id"):
         _rows_from_modern_doc({"features": [feature]})
+
+
+
+def test_modern_daily_rows_remain_monitoring_schema_valid():
+    import re
+
+    row = _rows_from_modern_doc({"features": [_modern_feature()]})[0]
+    required = set(SCHEMA["required"])
+    allowed = set(SCHEMA["properties"])
+    enums = {
+        key: set(value["enum"])
+        for key, value in SCHEMA["properties"].items()
+        if "enum" in value
+    }
+    assert required <= set(row)
+    assert set(row) <= allowed
+    assert re.compile(SCHEMA["properties"]["reading_id"]["pattern"]).match(
+        row["reading_id"]
+    )
+    for key, choices in enums.items():
+        if key in row:
+            assert row[key] in choices
