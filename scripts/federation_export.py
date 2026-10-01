@@ -192,7 +192,7 @@ def _temporal_precision(value: Any) -> str | None:
             datetime.fromisoformat(text.replace("Z", "+00:00"))
             return "EXACT_TIMESTAMP"
     except ValueError:
-        pass
+        return None  # unparseable time: leave the precision undeclared
     return None
 
 
