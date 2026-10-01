@@ -42,6 +42,7 @@ from typing import Any
 NWIS_DV_URL = "https://waterservices.usgs.gov/nwis/dv/"
 USGS_DAILY_URL = "https://api.waterdata.usgs.gov/ogcapi/v1/collections/daily/items"
 MODERN_PAGE_LIMIT = 10_000
+MODERN_MAX_PAGES = 200
 RESERVOIR_PARAMS = ["72375", "72379", "00054", "62614", "62615"]
 FLOW_PARAMS = ["00060", "00065"]
 ALL_PARAMS = RESERVOIR_PARAMS + FLOW_PARAMS
@@ -109,18 +110,6 @@ def _fetch_modern_dv_live(sites: list[str], days: int) -> list[dict[str, Any]]:
     end = date.today()
     start = end - timedelta(days=days)
     docs: list[dict[str, Any]] = []
-    properties = ",".join(
-        [
-            "monitoring_location_id",
-            "parameter_code",
-            "statistic_id",
-            "time",
-            "value",
-            "unit_of_measure",
-            "approval_status",
-            "qualifier",
-        ]
-    )
     for i in range(0, len(sites), 50):
         chunk = sites[i : i + 50]
         query = {
@@ -143,13 +132,12 @@ def _fetch_modern_dv_live(sites: list[str], days: int) -> list[dict[str, Any]]:
             ],
         }
         offset = 0
-        while True:
+        for _page in range(MODERN_MAX_PAGES):
             params = {
                 "f": "json",
                 "limit": MODERN_PAGE_LIMIT,
                 "offset": offset,
                 "datetime": f"{start.isoformat()}/{end.isoformat()}",
-                "properties": properties,
             }
             response = httpx.post(
                 USGS_DAILY_URL,
@@ -165,6 +153,11 @@ def _fetch_modern_dv_live(sites: list[str], days: int) -> list[dict[str, Any]]:
             if returned <= 0 or returned < MODERN_PAGE_LIMIT:
                 break
             offset += returned
+        else:
+            raise RuntimeError(
+                f"modern_usgs_pagination_exceeded:{MODERN_MAX_PAGES}:"
+                f"sites={len(chunk)}"
+            )
     return docs
 
 
