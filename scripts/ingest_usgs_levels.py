@@ -40,6 +40,8 @@ from pathlib import Path
 from typing import Any
 
 NWIS_DV_URL = "https://waterservices.usgs.gov/nwis/dv/"
+USGS_DAILY_URL = "https://api.waterdata.usgs.gov/ogcapi/v1/collections/daily/items"
+MODERN_PAGE_LIMIT = 10_000
 RESERVOIR_PARAMS = ["72375", "72379", "00054", "62614", "62615"]
 FLOW_PARAMS = ["00060", "00065"]
 ALL_PARAMS = RESERVOIR_PARAMS + FLOW_PARAMS
@@ -100,7 +102,7 @@ def read_dv_files(paths: list[Path]) -> list[dict[str, Any]]:
     return [json.loads(p.read_text()) for p in paths]
 
 
-def fetch_modern_dv_live(sites: list[str], days: int) -> list[dict[str, Any]]:
+def _fetch_modern_dv_live(sites: list[str], days: int) -> list[dict[str, Any]]:
     """Fetch the same bounded site/parameter window from the modern USGS daily API."""
     import httpx
 
@@ -186,7 +188,7 @@ def _modern_provisional(value: Any) -> bool:
     return not bool(tokens & {"approved", "a"})
 
 
-def rows_from_modern_doc(doc: dict[str, Any]) -> list[dict]:
+def _rows_from_modern_doc(doc: dict[str, Any]) -> list[dict]:
     """Normalize modern USGS daily features without silently collapsing statistics."""
     grouped: dict[tuple[str, str, str], list[dict[str, Any]]] = {}
     for feature in doc.get("features") or []:
@@ -348,10 +350,10 @@ def main() -> int:
                 rows.extend(rows_from_doc(doc))
         except Exception as legacy_error:  # noqa: BLE001
             try:
-                docs = fetch_modern_dv_live(sites, args.days)
+                docs = _fetch_modern_dv_live(sites, args.days)
                 origin = f"live modern USGS daily ({len(sites)} sites, {args.days}d)"
                 for doc in docs:
-                    rows.extend(rows_from_modern_doc(doc))
+                    rows.extend(_rows_from_modern_doc(doc))
                 print(
                     f"legacy NWIS dv unavailable ({legacy_error}); "
                     "used modern USGS Water Data API fallback",
