@@ -7,7 +7,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from ingest_usgs_levels import (  # noqa: E402
-    _rows_from_modern_doc,
+    _rows_from_modern_docs,
     merge,
     reservoir_site_nos,
     rows_from_doc,
@@ -118,7 +118,7 @@ def test_modern_daily_prefers_exactly_one_daily_mean_without_identity_change():
             _modern_feature(statistic_id="00003", value="42.5"),
         ]
     }
-    rows = _rows_from_modern_doc(doc)
+    rows = _rows_from_modern_docs([doc])
     assert len(rows) == 1
     row = rows[0]
     assert row["reading_id"] == "AYL_RDG_20261001_50059000_00060"
@@ -138,15 +138,15 @@ def test_modern_daily_fails_closed_on_ambiguous_nonmean_statistics():
         ]
     }
     with pytest.raises(ValueError, match="ambiguous_daily_statistic"):
-        _rows_from_modern_doc(doc)
+        _rows_from_modern_docs([doc])
 
 
 def test_modern_daily_treats_unknown_or_provisional_approval_as_provisional():
-    provisional = _rows_from_modern_doc(
-        {"features": [_modern_feature(approval_status="Provisional")]}
+    provisional = _rows_from_modern_docs(
+        [{"features": [_modern_feature(approval_status="Provisional")]}]
     )[0]
-    unknown = _rows_from_modern_doc(
-        {"features": [_modern_feature(approval_status=None)]}
+    unknown = _rows_from_modern_docs(
+        [{"features": [_modern_feature(approval_status=None)]}]
     )[0]
     assert provisional["provisional"] is True
     assert unknown["provisional"] is True
@@ -158,14 +158,14 @@ def test_modern_daily_rejects_non_usgs_monitoring_location():
     feature = _modern_feature()
     feature["properties"]["monitoring_location_id"] = "OTHER-50059000"
     with pytest.raises(ValueError, match="unexpected_monitoring_location_id"):
-        _rows_from_modern_doc({"features": [feature]})
+        _rows_from_modern_docs([{"features": [feature]}])
 
 
 
 def test_modern_daily_rows_remain_monitoring_schema_valid():
     import re
 
-    row = _rows_from_modern_doc({"features": [_modern_feature()]})[0]
+    row = _rows_from_modern_docs([{"features": [_modern_feature()]})[0]
     required = set(SCHEMA["required"])
     allowed = set(SCHEMA["properties"])
     enums = {
@@ -181,3 +181,13 @@ def test_modern_daily_rows_remain_monitoring_schema_valid():
     for key, choices in enums.items():
         if key in row:
             assert row[key] in choices
+
+
+
+def test_modern_daily_detects_statistic_ambiguity_across_pages():
+    docs = [
+        {"features": [_modern_feature(statistic_id="00001", value="55.0")]},
+        {"features": [_modern_feature(statistic_id="00002", value="30.0")]},
+    ]
+    with pytest.raises(ValueError, match="ambiguous_daily_statistic"):
+        _rows_from_modern_docs(docs)
