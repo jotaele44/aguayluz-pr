@@ -197,7 +197,6 @@ def test_modern_daily_detects_statistic_ambiguity_across_pages():
         _rows_from_modern_docs(docs)
 
 
-
 def test_modern_daily_rejects_usgs_site_outside_requested_candidate_set():
     with pytest.raises(ValueError, match="unexpected_monitoring_location"):
         _rows_from_modern_docs(
