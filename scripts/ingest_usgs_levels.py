@@ -100,6 +100,72 @@ def read_dv_files(paths: list[Path]) -> list[dict[str, Any]]:
     return [json.loads(p.read_text()) for p in paths]
 
 
+def fetch_modern_dv_live(sites: list[str], days: int) -> list[dict[str, Any]]:
+    """Fetch the same bounded site/parameter window from the modern USGS daily API."""
+    import httpx
+
+    end = date.today()
+    start = end - timedelta(days=days)
+    docs: list[dict[str, Any]] = []
+    properties = ",".join(
+        [
+            "monitoring_location_id",
+            "parameter_code",
+            "statistic_id",
+            "time",
+            "value",
+            "unit_of_measure",
+            "approval_status",
+            "qualifier",
+        ]
+    )
+    for i in range(0, len(sites), 50):
+        chunk = sites[i : i + 50]
+        query = {
+            "op": "and",
+            "args": [
+                {
+                    "op": "in",
+                    "args": [
+                        {"property": "monitoring_location_id"},
+                        [f"USGS-{site}" for site in chunk],
+                    ],
+                },
+                {
+                    "op": "in",
+                    "args": [
+                        {"property": "parameter_code"},
+                        ALL_PARAMS,
+                    ],
+                },
+            ],
+        }
+        offset = 0
+        while True:
+            params = {
+                "f": "json",
+                "limit": MODERN_PAGE_LIMIT,
+                "offset": offset,
+                "datetime": f"{start.isoformat()}/{end.isoformat()}",
+                "properties": properties,
+            }
+            response = httpx.post(
+                USGS_DAILY_URL,
+                params=params,
+                headers={"Content-Type": "application/query-cql-json"},
+                json=query,
+                timeout=120,
+            )
+            response.raise_for_status()
+            doc = response.json()
+            docs.append(doc)
+            returned = int(doc.get("numberReturned") or len(doc.get("features") or []))
+            if returned <= 0 or returned < MODERN_PAGE_LIMIT:
+                break
+            offset += returned
+    return docs
+
+
 # ── parse WaterML-JSON → rows ─────────────────────────────────────────────────
 def _confidence(provisional: bool) -> int:
     try:
@@ -110,6 +176,90 @@ def _confidence(provisional: bool) -> int:
     except Exception:
         base = 80
     return max(0, base - (5 if provisional else 0))
+
+
+def _modern_provisional(value: Any) -> bool:
+    if value is None:
+        return True
+    values = value if isinstance(value, list) else [value]
+    tokens = {str(item).strip().lower() for item in values if str(item).strip()}
+    return not bool(tokens & {"approved", "a"})
+
+
+def rows_from_modern_doc(doc: dict[str, Any]) -> list[dict]:
+    """Normalize modern USGS daily features without silently collapsing statistics."""
+    grouped: dict[tuple[str, str, str], list[dict[str, Any]]] = {}
+    for feature in doc.get("features") or []:
+        props = feature.get("properties") or {}
+        location_id = str(props.get("monitoring_location_id") or "")
+        if not location_id.startswith("USGS-"):
+            raise ValueError(f"unexpected_monitoring_location_id:{location_id or 'EMPTY'}")
+        site_no = location_id.removeprefix("USGS-")
+        pcode = str(props.get("parameter_code") or "")
+        if pcode not in METRIC_BY_PARAM:
+            continue
+        day = str(props.get("time") or "")[:10]
+        if not day:
+            continue
+        raw = props.get("value")
+        if raw in (None, "", "-999999", "-999999.0"):
+            continue
+        try:
+            value = float(raw)
+        except (TypeError, ValueError):
+            continue
+        _metric, default_unit = METRIC_BY_PARAM[pcode]
+        candidate = {
+            "value": value,
+            "unit": str(props.get("unit_of_measure") or default_unit or "unknown"),
+            "statistic_id": str(props.get("statistic_id") or ""),
+            "provisional": _modern_provisional(
+                props.get("approval_status", props.get("approvals_status"))
+            ),
+        }
+        grouped.setdefault((site_no, pcode, day), []).append(candidate)
+
+    rows: list[dict] = []
+    for (site_no, pcode, day), candidates in sorted(grouped.items()):
+        unique = {
+            (c["statistic_id"], c["value"], c["unit"], c["provisional"]): c
+            for c in candidates
+        }
+        values = list(unique.values())
+        daily_mean = [c for c in values if c["statistic_id"] == "00003"]
+        if len(daily_mean) == 1:
+            chosen = daily_mean[0]
+        elif len(values) == 1:
+            chosen = values[0]
+        else:
+            stats = sorted({c["statistic_id"] or "UNKNOWN" for c in values})
+            raise ValueError(
+                f"ambiguous_daily_statistic:{site_no}:{pcode}:{day}:{','.join(stats)}"
+            )
+        metric, _default_unit = METRIC_BY_PARAM[pcode]
+        rid = f"AYL_RDG_{day.replace('-', '')}_{site_no}_{pcode}"
+        stat = chosen["statistic_id"] or "unknown"
+        rows.append(
+            {
+                "reading_id": rid,
+                "asset_id": f"USGS_{site_no}",
+                "site_no": site_no,
+                "metric": metric,
+                "parameter_code": pcode,
+                "value": chosen["value"],
+                "unit": chosen["unit"],
+                "observed_date": day,
+                "provisional": chosen["provisional"],
+                "source_ref": (
+                    f"USGS Water Data API Daily Values, site {site_no} "
+                    f"parm {pcode} stat {stat}"
+                ),
+                "evidence_tier": "T1",
+                "confidence": _confidence(chosen["provisional"]),
+                "review_status": "accepted",
+            }
+        )
+    return rows
 
 
 def rows_from_doc(doc: dict[str, Any]) -> list[dict]:
@@ -180,9 +330,12 @@ def main() -> int:
     ap.add_argument("--days", type=int, default=60)
     args = ap.parse_args()
 
+    rows: list[dict] = []
     if args.src:
         docs = read_dv_files(args.src)
         origin = ", ".join(str(p) for p in args.src)
+        for doc in docs:
+            rows.extend(rows_from_doc(doc))
     else:
         sites = reservoir_site_nos(Path(args.assets))
         if not sites:
@@ -190,14 +343,28 @@ def main() -> int:
             return 1
         try:
             docs = fetch_dv_live(sites, args.days)
-            origin = f"live NWIS dv ({len(sites)} sites, {args.days}d)"
-        except Exception as e:  # noqa: BLE001
-            print(f"live fetch failed ({e}); pass --src <dv.json> to run offline", file=sys.stderr)
-            return 1
-
-    rows: list[dict] = []
-    for d in docs:
-        rows.extend(rows_from_doc(d))
+            origin = f"live legacy NWIS dv ({len(sites)} sites, {args.days}d)"
+            for doc in docs:
+                rows.extend(rows_from_doc(doc))
+        except Exception as legacy_error:  # noqa: BLE001
+            try:
+                docs = fetch_modern_dv_live(sites, args.days)
+                origin = f"live modern USGS daily ({len(sites)} sites, {args.days}d)"
+                for doc in docs:
+                    rows.extend(rows_from_modern_doc(doc))
+                print(
+                    f"legacy NWIS dv unavailable ({legacy_error}); "
+                    "used modern USGS Water Data API fallback",
+                    file=sys.stderr,
+                )
+            except Exception as modern_error:  # noqa: BLE001
+                print(
+                    "live fetch failed "
+                    f"(legacy={legacy_error}; modern={modern_error}); "
+                    "pass --src <dv.json> to run offline",
+                    file=sys.stderr,
+                )
+                return 1
 
     out = Path(args.out)
     combined = merge(_read_jsonl(out), rows)
