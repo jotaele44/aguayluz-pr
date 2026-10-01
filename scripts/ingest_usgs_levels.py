@@ -181,7 +181,9 @@ def _modern_provisional(value: Any) -> bool:
     return not bool(tokens & {"approved", "a"})
 
 
-def _rows_from_modern_docs(docs: list[dict[str, Any]]) -> list[dict]:
+def _rows_from_modern_docs(
+    docs: list[dict[str, Any]], *, allowed_sites: set[str] | None = None
+) -> list[dict]:
     """Normalize all modern pages together so cross-page statistic ties fail closed."""
     grouped: dict[tuple[str, str, str], list[dict[str, Any]]] = {}
     features = [
@@ -196,6 +198,8 @@ def _rows_from_modern_docs(docs: list[dict[str, Any]]) -> list[dict]:
         if not location_id.startswith("USGS-"):
             raise ValueError(f"unexpected_monitoring_location_id:{location_id or 'EMPTY'}")
         site_no = location_id.removeprefix("USGS-")
+        if allowed_sites is not None and site_no not in allowed_sites:
+            raise ValueError(f"unexpected_monitoring_location:{site_no}")
         pcode = str(props.get("parameter_code") or "")
         if pcode not in METRIC_BY_PARAM:
             continue
@@ -351,7 +355,12 @@ def main() -> int:
             try:
                 docs = _fetch_modern_dv_live(sites, args.days)
                 origin = f"live modern USGS daily ({len(sites)} sites, {args.days}d)"
-                rows.extend(_rows_from_modern_docs(docs))
+                modern_rows = _rows_from_modern_docs(
+                    docs, allowed_sites=set(sites)
+                )
+                if not modern_rows:
+                    raise RuntimeError("modern_usgs_daily_empty")
+                rows.extend(modern_rows)
                 print(
                     f"legacy NWIS dv unavailable ({legacy_error}); "
                     "used modern USGS Water Data API fallback",
