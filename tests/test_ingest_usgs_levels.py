@@ -153,6 +153,12 @@ def test_modern_daily_treats_unknown_or_provisional_approval_as_provisional():
     assert provisional["confidence"] == 75
     assert unknown["confidence"] == 75
 
+    singular = _modern_feature(approval_status=None)
+    singular["properties"].pop("approvals_status")
+    singular["properties"]["approval_status"] = "Approved"
+    row = _rows_from_modern_docs([{"features": [singular]}])[0]
+    assert row["provisional"] is False
+
 
 def test_modern_daily_rejects_non_usgs_monitoring_location():
     feature = _modern_feature()
@@ -161,11 +167,10 @@ def test_modern_daily_rejects_non_usgs_monitoring_location():
         _rows_from_modern_docs([{"features": [feature]}])
 
 
-
 def test_modern_daily_rows_remain_monitoring_schema_valid():
     import re
 
-    row = _rows_from_modern_docs([{"features": [_modern_feature()]})[0]
+    row = _rows_from_modern_docs([{"features": [_modern_feature()]}])[0]
     required = set(SCHEMA["required"])
     allowed = set(SCHEMA["properties"])
     enums = {
@@ -181,7 +186,6 @@ def test_modern_daily_rows_remain_monitoring_schema_valid():
     for key, choices in enums.items():
         if key in row:
             assert row[key] in choices
-
 
 
 def test_modern_daily_detects_statistic_ambiguity_across_pages():
