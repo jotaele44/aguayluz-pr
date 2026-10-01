@@ -195,3 +195,20 @@ def test_modern_daily_detects_statistic_ambiguity_across_pages():
     ]
     with pytest.raises(ValueError, match="ambiguous_daily_statistic"):
         _rows_from_modern_docs(docs)
+
+
+
+def test_modern_daily_rejects_usgs_site_outside_requested_candidate_set():
+    with pytest.raises(ValueError, match="unexpected_monitoring_location"):
+        _rows_from_modern_docs(
+            [{"features": [_modern_feature()]}],
+            allowed_sites={"50027100"},
+        )
+
+
+def test_modern_daily_accepts_requested_candidate_set():
+    rows = _rows_from_modern_docs(
+        [{"features": [_modern_feature()]}],
+        allowed_sites={"50059000"},
+    )
+    assert [row["site_no"] for row in rows] == ["50059000"]
