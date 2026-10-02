@@ -22,6 +22,8 @@ which jobs are blocking and which are report-only.
 - [ ] `pytest -q` passes
 - [ ] Coverage at or above the `fail_under` floor in `pyproject.toml`
 - [ ] Lockfile regenerated if dependencies changed
+- [ ] `python3 tools/check_docs_sync.py --base origin/main` clean — docs that describe
+      this change are updated, or a `Docs-Impact: none - <reason>` line says why not
 - [ ] No rendered file hand-edited (template drift check passes)
 
 ## Scope & risk
