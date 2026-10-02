@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useHealth, useAssets, useEvents, useReadings, useSummarySectors, useCoverage } from '@/lib/hooks'
+import { useHealth, useEvents, useReadings, useActiveOutageCount, useSummarySectors, useCoverage } from '@/lib/hooks'
+import { reservoirStorageSeries } from '@/lib/overview-series'
 import { postAiQuery, postNotify } from '@/lib/api'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/use-toast'
@@ -26,17 +27,21 @@ const PROGRAM_TIMELINE = [
 
 export default function OverviewPage() {
   const { data: health, isLoading: healthLoading } = useHealth()
-  const { data: assets = [], isLoading: assetsLoading } = useAssets()
   const { data: events = [], isLoading: eventsLoading } = useEvents()
   const { data: sectors } = useSummarySectors()
   const { data: coverage } = useCoverage()
-  const { data: readings = [] } = useReadings({ kind: 'reservoir' })
+  const { data: readings = [] } = useReadings({ kind: 'reservoir', metric: 'reservoir_storage_pct' })
+  const { data: outageCount } = useActiveOutageCount()
+  const [selectedSite, setSelectedSite] = useState('')
+  const sites = useMemo(() => [...new Set(readings.map((row) => row?.site_no).filter((site) => typeof site === 'string' && site.length))].sort(), [readings])
+  const site = sites.includes(selectedSite) ? selectedSite : sites[0]
+  const storage = useMemo(() => reservoirStorageSeries(readings, site), [readings, site])
   const [aiSummary, setAiSummary] = useState(null)
   const [aiLoading, setAiLoading] = useState(false)
   const [notifying, setNotifying] = useState(false)
   const { toast } = useToast()
 
-  const isLoading = healthLoading || assetsLoading || eventsLoading
+  const isLoading = healthLoading || eventsLoading
 
   const c = health?.counts ?? {}
   const r = health?.readiness ?? {}
@@ -50,8 +55,8 @@ export default function OverviewPage() {
     setAiLoading(true)
     setAiSummary(null)
     const result = await postAiQuery(
-      `AguaYLuz-PR dashboard status: ${c.assets ?? assets.length} assets tracked, ` +
-      `${activeOutages.length} active outages, ${c.events ?? events.length} events recorded, ` +
+      `AguaYLuz-PR dashboard status: ${c.assets ?? cov?.total ?? 'unknown'} assets tracked, ` +
+      `${outageCount?.total ?? 'unknown'} active outage records in the loaded corpus, ${c.events ?? 'unknown'} events recorded, ` +
       `${r.records_review ?? 0} records awaiting human review, ` +
       `grid coverage ${r.coverage_pct != null ? r.coverage_pct + '%' : 'unknown'}. ` +
       `Provide a 2-3 sentence plain-language status brief for a Puerto Rico infrastructure operator, ` +
@@ -61,15 +66,10 @@ export default function OverviewPage() {
     setAiLoading(false)
   }
 
-  const activeOutages = useMemo(
-    () => events.filter((e) => e.event_type === 'outage'),
-    [events],
-  )
-
   const handleNotify = async () => {
     setNotifying(true)
-    const msg = `AguaYLuz-PR Dashboard Alert: ${activeOutages.length} active outages across Puerto Rico. ` +
-      `${c.assets ?? assets.length} assets tracked. ${r.records_review ?? 0} records awaiting review.`
+    const msg = `AguaYLuz-PR Dashboard Alert: ${outageCount?.total ?? 'unknown'} active outage records in the loaded corpus. ` +
+      `${c.assets ?? cov?.total ?? 'unknown'} assets tracked. ${r.records_review ?? 0} records awaiting review.`
     const result = await postNotify({ message: msg, title: 'AguaYLuz-PR Status Alert' })
     setNotifying(false)
     if (result?.channels_active) {
@@ -84,15 +84,7 @@ export default function OverviewPage() {
     [events],
   )
 
-  const chartData = useMemo(() => {
-    if (!readings.length) return []
-    return readings
-      .slice(-30)
-      .map((r) => ({
-        t: r.timestamp ?? r.date ?? '',
-        v: r.level_pct ?? r.value ?? 0,
-      }))
-  }, [readings])
+  const chartData = storage.points
 
   if (isLoading) {
     return (
@@ -217,14 +209,23 @@ export default function OverviewPage() {
 
       {/* Chart + Alerts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Panel title="Reservoir Levels (last 30 readings)" className="lg:col-span-2">
+        <Panel title="Reservoir storage (last 30 eligible readings)" className="lg:col-span-2">
+          <label className="text-sm text-slate-400">Reservoir site
+            <select aria-label="Reservoir site" value={site ?? ''} onChange={(event) => setSelectedSite(event.target.value)} className="ml-2 bg-slate-900 border border-slate-700 rounded p-1" disabled={!sites.length}>
+              {!sites.length && <option value="">No sites available</option>}
+              {sites.map((id) => <option key={id} value={id}>{id}</option>)}
+            </select>
+          </label>
+          <p className="text-xs text-slate-500 mt-2">Storage percentage for one recorded site. No elevation or streamflow conversion. <Link to="/monitoring" className="text-sky-400">Inspect monitoring provenance</Link>.</p>
+          <p data-testid="reservoir-series-scope" className="text-xs text-slate-400">{chartData.length} plotted storage readings for site {site ?? 'unknown'} (%)</p>
+          {storage.excluded > 0 && <p role="status" className="text-xs text-amber-300">{storage.excluded} readings excluded from this chart because values, units, dates, or duplicate timestamps require review.</p>}
           {chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
               <AreaChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis dataKey="t" hide />
                 <YAxis tick={{ fill: '#64748b', fontSize: 10 }} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={CHART_TOOLTIP_STYLE} labelFormatter={() => ''} formatter={(v) => [`${v}%`, 'Level']} />
+                <Tooltip contentStyle={CHART_TOOLTIP_STYLE} formatter={(v) => [`${v}%`, 'Storage']} />
                 <Area type="monotone" dataKey="v" stroke="#38bdf8" fill="#38bdf8" fillOpacity={0.1} strokeWidth={1.5} dot={false} />
               </AreaChart>
             </ResponsiveContainer>

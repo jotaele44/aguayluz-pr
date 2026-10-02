@@ -1,0 +1,2055 @@
+{
+  "schema_version": "federation.gui-backend-contract/1.0",
+  "repository": "Jotaele44/aguayluz-pr",
+  "source_commit": "19e545d856eca00b5b0bf9c7b72f5506b8e29046",
+  "policy": {
+    "require_zero_material_residue": true,
+    "dimensions": [
+      "executability",
+      "semantic",
+      "state",
+      "auth",
+      "data",
+      "provenance",
+      "device",
+      "identity",
+      "geometry",
+      "authority"
+    ]
+  },
+  "discovery": {
+    "backend_roots": [
+      "server/backend",
+      "src/aguayluz",
+      "desktop",
+      "scripts"
+    ],
+    "frontend_roots": [
+      "dashboard/src"
+    ],
+    "route_files": [
+      "dashboard/src/App.jsx"
+    ],
+    "navigation_files": [
+      "dashboard/src/components/Sidebar.jsx",
+      "dashboard/src/App.jsx"
+    ],
+    "existing_gui_capability_manifests": [
+      ".federation/gui-capabilities.json"
+    ]
+  },
+  "authority": {
+    "semantic_authority": "water-hydrology-ecology-utility-monitoring",
+    "mutation_authority": "aguayluz-domain-state-only",
+    "identity_authority": "aguayluz-domain-entities-and-source-manifestations",
+    "geometry_authority": "domain-geometry-claims-consume-spiderweb-where-federated",
+    "provenance_authority": "aguayluz-domain-source-and-evidence-provenance"
+  },
+  "auth": {
+    "mutating_route_policy": "require_guard_or_explicit_public",
+    "guard_patterns": [
+      "_require_key",
+      "Depends\\(",
+      "require_admin",
+      "require_write",
+      "dependencies\\s*=",
+      "_require_local_request"
+    ],
+    "explicit_public_mutations": []
+  },
+  "provenance": {
+    "required_fields_when_available": [],
+    "frontend_evidence_files": [
+      "dashboard/src/App.jsx",
+      "dashboard/src/pages/Monitoring.jsx",
+      "dashboard/src/pages/System.jsx"
+    ]
+  },
+  "devices": {
+    "desktop": true,
+    "mobile_web": true,
+    "native_ios": false,
+    "native_evidence_files": [],
+    "intentional_restrictions": []
+  },
+  "backend_only_allowlist": [
+    {
+      "pattern": "GET /research/mycelial/status",
+      "classification": "INTERNAL",
+      "rationale": "Intentional backend surface exposed for local federation operation or read-only service support; it is not a standalone GUI capability.",
+      "evidence": [
+        "research/mycelial/api.py:28"
+      ]
+    },
+    {
+      "pattern": "GET /research/mycelial/analytics/{capability}",
+      "classification": "INTERNAL",
+      "rationale": "Intentional backend surface exposed for local federation operation or read-only service support; it is not a standalone GUI capability.",
+      "evidence": [
+        "research/mycelial/api.py:58"
+      ]
+    },
+    {
+      "pattern": "GET /water-disruption/console",
+      "classification": "INTERNAL",
+      "rationale": "Intentional backend surface exposed for local federation operation or read-only service support; it is not a standalone GUI capability.",
+      "evidence": [
+        "server/backend/water_disruption_api.py:120"
+      ]
+    },
+    {
+      "pattern": "POST /water-disruption/intake",
+      "classification": "INTERNAL",
+      "rationale": "Intentional backend surface exposed for local federation operation or read-only service support; it is not a standalone GUI capability.",
+      "evidence": [
+        "server/backend/water_disruption_api.py:141"
+      ]
+    },
+    {
+      "pattern": "GET /water-disruption/intake/{candidate_id}",
+      "classification": "INTERNAL",
+      "rationale": "Intentional backend surface exposed for local federation operation or read-only service support; it is not a standalone GUI capability.",
+      "evidence": [
+        "server/backend/water_disruption_api.py:152"
+      ]
+    },
+    {
+      "pattern": "GET /water-disruption/validation-queue",
+      "classification": "INTERNAL",
+      "rationale": "Intentional backend surface exposed for local federation operation or read-only service support; it is not a standalone GUI capability.",
+      "evidence": [
+        "server/backend/water_disruption_api.py:166"
+      ]
+    },
+    {
+      "pattern": "POST /water-disruption/validation/{candidate_id}",
+      "classification": "INTERNAL",
+      "rationale": "Intentional backend surface exposed for local federation operation or read-only service support; it is not a standalone GUI capability.",
+      "evidence": [
+        "server/backend/water_disruption_api.py:174"
+      ]
+    },
+    {
+      "pattern": "GET /water-disruption/incidents",
+      "classification": "INTERNAL",
+      "rationale": "Intentional backend surface exposed for local federation operation or read-only service support; it is not a standalone GUI capability.",
+      "evidence": [
+        "server/backend/water_disruption_api.py:182"
+      ]
+    },
+    {
+      "pattern": "GET /water-disruption/incidents/{incident_id}",
+      "classification": "INTERNAL",
+      "rationale": "Intentional backend surface exposed for local federation operation or read-only service support; it is not a standalone GUI capability.",
+      "evidence": [
+        "server/backend/water_disruption_api.py:194"
+      ]
+    },
+    {
+      "pattern": "POST /water-disruption/incidents/{incident_id}/transition",
+      "classification": "INTERNAL",
+      "rationale": "Intentional backend surface exposed for local federation operation or read-only service support; it is not a standalone GUI capability.",
+      "evidence": [
+        "server/backend/water_disruption_api.py:202"
+      ]
+    },
+    {
+      "pattern": "POST /water-disruption/incidents/{incident_id}/merge",
+      "classification": "INTERNAL",
+      "rationale": "Intentional backend surface exposed for local federation operation or read-only service support; it is not a standalone GUI capability.",
+      "evidence": [
+        "server/backend/water_disruption_api.py:212"
+      ]
+    },
+    {
+      "pattern": "POST /water-disruption/incidents/{incident_id}/split",
+      "classification": "INTERNAL",
+      "rationale": "Intentional backend surface exposed for local federation operation or read-only service support; it is not a standalone GUI capability.",
+      "evidence": [
+        "server/backend/water_disruption_api.py:217"
+      ]
+    },
+    {
+      "pattern": "POST /water-disruption/retractions",
+      "classification": "INTERNAL",
+      "rationale": "Intentional backend surface exposed for local federation operation or read-only service support; it is not a standalone GUI capability.",
+      "evidence": [
+        "server/backend/water_disruption_api.py:222"
+      ]
+    }
+  ],
+  "gui_only_allowlist": [
+    {
+      "pattern": "dashboard/src/components/IncidentOperationsConsole.jsx:57:setSelected(item.incident_id)} className= `}> assignee \u00b7 timeline \u00b7 escalation",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/IncidentOperationsConsole.jsx:57"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/IncidentOperationsConsole.jsx:68:transition(eventType)} className=\"rounded border border-slate-700 px-2 py-1 text-[10px] text-slate-300 disabled:opacity-40\">",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/IncidentOperationsConsole.jsx:68"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/OutagesPanel.jsx:82:unlabeled-control",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/OutagesPanel.jsx:82"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/OutagesPanel.jsx:87:} )` : ''} customers/users affected )}",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/OutagesPanel.jsx:87"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/SpatialToolsPanel.jsx:290:Clear",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/SpatialToolsPanel.jsx:290"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/SpatialToolsPanel.jsx:297:setMode(candidateMode)} aria-pressed= className= `} >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/SpatialToolsPanel.jsx:297"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/SpatialToolsPanel.jsx:333:setBufferRadiusKm(radiusKm)} aria-pressed= className= `} > km",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/SpatialToolsPanel.jsx:333"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/ErrorBoundary.jsx:29:this.setState( )} > Retry",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/ErrorBoundary.jsx:29"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/ReadFailureBoundary.jsx:19:client.refetchQueries( )}>",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/ReadFailureBoundary.jsx:19"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/AssetDetail.jsx:85:Show on map",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/AssetDetail.jsx:85"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/AssetDetail.jsx:96:unlabeled-control",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/AssetDetail.jsx:96"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/AssetDetail.jsx:154:setRawOpen((v) => !v)} > Raw record preview",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/AssetDetail.jsx:154"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/AssetDetail.jsx:204:\u2026",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/AssetDetail.jsx:204"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/AiQueryPanel.jsx:34:setOpen(true)} className=\"zip-ai-trigger fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full border border-sky-700/60 bg-sky-950/90 px-4 py-2.5 tex",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/AiQueryPanel.jsx:34"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/AiQueryPanel.jsx:50:setOpen(false)} className=\"text-slate-500 hover:text-slate-300 transition\">",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/AiQueryPanel.jsx:50"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/AiQueryPanel.jsx:64:} className=\"block w-full text-left rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2 text-xs text-slate-400 hover:text-slate-200 hover:border-slate-",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/AiQueryPanel.jsx:64"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/AiQueryPanel.jsx:104:unlabeled-control",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/AiQueryPanel.jsx:104"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/MonitoringCharts.jsx:133:setRange(r)} className= `}>",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/MonitoringCharts.jsx:133"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/AssetMap.jsx:213:unlabeled-control",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:213"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/AssetMap.jsx:607:eventDensityState.refetch?.()} className=\"mt-1 text-sky-300 underline\">Retry density",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:607"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/AssetMap.jsx:620:setLayers((s) => ( ))} className= `} > Life-safety critical alerts only",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:620"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/AssetMap.jsx:629:setLayers((s) => ( ))} className= `} > Review-needed assets only",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:629"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/AssetMap.jsx:638:setBasemap('osm')} className= `} > Map",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:638"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/AssetMap.jsx:645:setBasemap('satellite')} className= `} > Satellite",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:645"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/AssetsTable.jsx:190:Clear filters",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/AssetsTable.jsx:190"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/AssetsTable.jsx:193:downloadCSV('assets.csv', rows, ['asset_id','asset_name','asset_type','asset_subtype','municipality','status','operator','evidence_tier','lat','lon'])} classNam",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/AssetsTable.jsx:193"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/AssetsTable.jsx:221:setFilters( )} className= > Needs review",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/AssetsTable.jsx:221"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/AssetsTable.jsx:230:setFilters( )} title=\"Assets with no coordinates \u2014 they never appear on the map\" className= > Unmapped",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/AssetsTable.jsx:230"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/StatsBar.jsx:66:setDismissed(true)} aria-label=\"Dismiss backend-down warning\" className=\"hover:text-red-100\">",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/StatsBar.jsx:66"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/StatsBar.jsx:101:System &amp; Tools",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/StatsBar.jsx:101"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/WaterMonitoringConsole.jsx:22:onSelect(layer.key)} className= `} >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/WaterMonitoringConsole.jsx:22"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/lib/PageNotFound.jsx:23:navigate('/')} className=\"inline-flex items-center px-4 py-2 text-sm font-medium text-slate-200 bg-slate-900 border border-slate-700 rounded-lg hover:bg-slate-8",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/lib/PageNotFound.jsx:23"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/SystemPage.jsx:139:refreshStatus()}> Retry local storage check",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/SystemPage.jsx:139"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/SystemPage.jsx:147:runExport(undefined, ), onError: (e) => toast( ), })} className=\"h-8 border-slate-700 bg-slate-950 text-xs text-slate-300 hover:text-slate-100\" >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/SystemPage.jsx:147"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/SystemPage.jsx:172:unlabeled-control",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/SystemPage.jsx:172"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/SystemPage.jsx:194:Open status report",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/SystemPage.jsx:194"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/SystemPage.jsx:237:unlabeled-control",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/SystemPage.jsx:237"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/SystemPage.jsx:247:) }} className=\"h-8 text-xs text-slate-400 hover:text-slate-200\" > Clear",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/SystemPage.jsx:247"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/ReviewPage.jsx:168:handleBatchDecision('accept')}> Approve all",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/ReviewPage.jsx:168"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/ReviewPage.jsx:172:handleBatchDecision('reject')}> Reject all",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/ReviewPage.jsx:172"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/ReviewPage.jsx:176:handleBatchDecision('skip')}> Skip all",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/ReviewPage.jsx:176"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/ReviewPage.jsx:181:downloadCSV('review-queue.csv', items, ['record_ref','severity','evidence_tier','confidence','record_type','reason','source_ref'])} className=\"h-8 border-slate-",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/ReviewPage.jsx:181"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/ReviewPage.jsx:196:unlabeled-control",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/ReviewPage.jsx:196"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/ReviewPage.jsx:224:} aria-label= className=\"mt-0.5 shrink-0 text-slate-500 hover:text-sky-400\" >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/ReviewPage.jsx:224"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/ReviewPage.jsx:244:} title=\"Ask AI for a recommendation\" >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/ReviewPage.jsx:244"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/ReviewPage.jsx:256:}> Accept",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/ReviewPage.jsx:256"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/ReviewPage.jsx:259:}> Reject",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/ReviewPage.jsx:259"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/ReviewPage.jsx:262:Skip",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/ReviewPage.jsx:262"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/ReviewPage.jsx:284:Previous page",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/ReviewPage.jsx:284"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/ReviewPage.jsx:287:Next page",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/ReviewPage.jsx:287"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/RegulatoryReviewPage.jsx:158:setSelectedId(c.candidate_id)} className= > contradiction(s)",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/RegulatoryReviewPage.jsx:158"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/RegulatoryReviewPage.jsx:274:submitDecision('approved')} className=\"gap-1.5\" > Approve",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/RegulatoryReviewPage.jsx:274"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/RegulatoryReviewPage.jsx:283:submitDecision('rejected')} className=\"gap-1.5\" > Reject",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/RegulatoryReviewPage.jsx:283"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/RegulatoryReviewPage.jsx:292:submitDecision('needs_review')} > Mark needs review",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/RegulatoryReviewPage.jsx:292"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/AlertDetailPage.jsx:52:Back to Alerts",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/AlertDetailPage.jsx:52"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/AlertDetailPage.jsx:69:Alerts",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/AlertDetailPage.jsx:69"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/AlertDetailPage.jsx:140:unlabeled-control",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/AlertDetailPage.jsx:140"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/AlertDetailPage.jsx:181:\u00b7 $ ` : 'not in the loaded asset page'} )}",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/AlertDetailPage.jsx:181"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/AlertsPage.jsx:75:)} )} ` : ''}",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/AlertsPage.jsx:75"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/AlertsPage.jsx:181:downloadCSV('alerts.csv', items, [ 'alert_id', 'module_id', 'severity', 'status', 'review_status', 'evidence_tier', 'start_at', 'source_title', 'source_ref', ])",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/AlertsPage.jsx:181"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/AlertsPage.jsx:203:setFilters( )} title= and still actionable`} className= > Critical",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/AlertsPage.jsx:203"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/AlertsPage.jsx:214:setFilters(DEFAULTS)} aria-label=\"Clear alert filters\" title=\"Clear filters\" className=\"h-8 border-slate-800 bg-slate-950 px-2 text-xs text-slate-400 hover:text",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/AlertsPage.jsx:214"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/AlertsPage.jsx:292:setLimit((n) => n + PAGE)} disabled= className=\"h-7 shrink-0 border-slate-800 bg-slate-950 px-2 text-[11px] text-slate-300 hover:text-slate-100\" > Load more",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/AlertsPage.jsx:292"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/MunicipioDetailPage.jsx:64:Map",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/MunicipioDetailPage.jsx:64"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/MunicipioDetailPage.jsx:132:unlabeled-control",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/MunicipioDetailPage.jsx:132"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/MunicipioDetailPage.jsx:158:unlabeled-control",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/MunicipioDetailPage.jsx:158"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/CaveKarstPage.jsx:202:setSelectedId(asset.asset_id)} className= > \u00b7 % confidence gaps",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/CaveKarstPage.jsx:202"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/CaveKarstPage.jsx:384:Source",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/CaveKarstPage.jsx:384"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/OverviewPage.jsx:128:Review them in the assets table",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/OverviewPage.jsx:128"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/OverviewPage.jsx:131:life-safety critical alert(s) open",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/OverviewPage.jsx:131"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/OverviewPage.jsx:141:unlabeled-control",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/OverviewPage.jsx:141"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/OverviewPage.jsx:149:unlabeled-control",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/OverviewPage.jsx:149"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/OverviewPage.jsx:175:active \u00b7 % nominal )}",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/OverviewPage.jsx:175"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/OverviewPage.jsx:208:Inspect monitoring provenance",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/OverviewPage.jsx:208"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/LiveLogsPage.jsx:65:setAutoScroll(s => !s)}>",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/LiveLogsPage.jsx:65"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/RegulatoryPage.jsx:226:setSelectedId(obs.observation_id)} className= > \u00b7",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/RegulatoryPage.jsx:226"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/SectorDetailPage.jsx:51:unlabeled-control",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/SectorDetailPage.jsx:51"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/EventDetailPage.jsx:52:Back to Outages",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/EventDetailPage.jsx:52"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/EventDetailPage.jsx:66:Outages",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/EventDetailPage.jsx:66"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/EventDetailPage.jsx:113:ack( , ), onError: (error) => toast( ), } )} className=\"h-7 px-2 text-xs text-emerald-400 border-emerald-800 hover:bg-emerald-950\" >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/EventDetailPage.jsx:113"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/EventDetailPage.jsx:129:ack( , ), onError: (error) => toast( ), } )}>",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/EventDetailPage.jsx:129"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/EventDetailPage.jsx:138:Report",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/EventDetailPage.jsx:138"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/EventDetailPage.jsx:178:unlabeled-control",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/EventDetailPage.jsx:178"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/EventDetailPage.jsx:200:\u00b7",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/pages/EventDetailPage.jsx:200"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/ui/toast.jsx:68:unlabeled-control",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/ui/toast.jsx:68"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/layout/Sidebar.jsx:51:setCollapsed(c => !c)} aria-label= className=\"ml-auto p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 shrink-0\" >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Local UI control or presentation fallback whose state is handled within the rendered component and does not require a distinct backend endpoint.",
+      "evidence": [
+        "dashboard/src/components/layout/Sidebar.jsx:51"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/IncidentOperationsConsole\\.jsx:57:setSelected\\(item\\.incident_id\\)\\}\\ className=\\ `\\}>\\ assignee\\ \u00b7\\ timeline\\ \u00b7\\ escalation",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/components/IncidentOperationsConsole.jsx:57"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/IncidentOperationsConsole\\.jsx:68:transition\\(eventType\\)\\}\\ className=\"rounded\\ border\\ border\\-slate\\-700\\ px\\-2\\ py\\-1\\ text\\-\\[10px\\]\\ text\\-slate\\-300\\ disabled:opacity\\-40\">",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/components/IncidentOperationsConsole.jsx:68"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/OutagesPanel\\.jsx:87:\\}\\ \\)`\\ :\\ ''\\}\\ customers/users\\ affected\\ \\)\\}",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/components/OutagesPanel.jsx:87"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/SpatialToolsPanel\\.jsx:297:setMode\\(candidateMode\\)\\}\\ aria\\-pressed=\\ className=\\ `\\}\\ >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/components/SpatialToolsPanel.jsx:297"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/SpatialToolsPanel\\.jsx:333:setBufferRadiusKm\\(radiusKm\\)\\}\\ aria\\-pressed=\\ className=\\ `\\}\\ >\\ km",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/components/SpatialToolsPanel.jsx:333"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/ErrorBoundary\\.jsx:29:this\\.setState\\(\\ \\)\\}\\ >\\ Retry",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/components/ErrorBoundary.jsx:29"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/ReadFailureBoundary\\.jsx:19:client\\.refetchQueries\\(\\ \\)\\}>",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/components/ReadFailureBoundary.jsx:19"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/AssetDetail\\.jsx:154:setRawOpen\\(\\(v\\)\\ =>\\ !v\\)\\}\\ >\\ Raw\\ record\\ preview",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/components/AssetDetail.jsx:154"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/AiQueryPanel\\.jsx:34:setOpen\\(true\\)\\}\\ className=\"zip\\-ai\\-trigger\\ fixed\\ bottom\\-5\\ right\\-5\\ z\\-40\\ flex\\ items\\-center\\ gap\\-2\\ rounded\\-full\\ border\\ border\\-sky\\-700/60\\ bg\\-sky\\-950/90\\ px\\-4\\ py\\-2\\.5\\ tex",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/components/AiQueryPanel.jsx:34"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/AiQueryPanel\\.jsx:50:setOpen\\(false\\)\\}\\ className=\"text\\-slate\\-500\\ hover:text\\-slate\\-300\\ transition\">",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/components/AiQueryPanel.jsx:50"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/MonitoringCharts\\.jsx:133:setRange\\(r\\)\\}\\ className=\\ `\\}>",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/components/MonitoringCharts.jsx:133"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/AssetMap\\.jsx:607:eventDensityState\\.refetch\\?\\.\\(\\)\\}\\ className=\"mt\\-1\\ text\\-sky\\-300\\ underline\">Retry\\ density",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:607"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/AssetMap\\.jsx:620:setLayers\\(\\(s\\)\\ =>\\ \\(\\ \\)\\)\\}\\ className=\\ `\\}\\ >\\ Life\\-safety\\ critical\\ alerts\\ only",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:620"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/AssetMap\\.jsx:629:setLayers\\(\\(s\\)\\ =>\\ \\(\\ \\)\\)\\}\\ className=\\ `\\}\\ >\\ Review\\-needed\\ assets\\ only",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:629"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/AssetMap\\.jsx:638:setBasemap\\('osm'\\)\\}\\ className=\\ `\\}\\ >\\ Map",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:638"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/AssetMap\\.jsx:645:setBasemap\\('satellite'\\)\\}\\ className=\\ `\\}\\ >\\ Satellite",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:645"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/AssetsTable\\.jsx:193:downloadCSV\\('assets\\.csv',\\ rows,\\ \\['asset_id','asset_name','asset_type','asset_subtype','municipality','status','operator','evidence_tier','lat','lon'\\]\\)\\}\\ classNam",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/components/AssetsTable.jsx:193"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/AssetsTable\\.jsx:221:setFilters\\(\\ \\)\\}\\ className=\\ >\\ Needs\\ review",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/components/AssetsTable.jsx:221"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/AssetsTable\\.jsx:230:setFilters\\(\\ \\)\\}\\ title=\"Assets\\ with\\ no\\ coordinates\\ \u2014\\ they\\ never\\ appear\\ on\\ the\\ map\"\\ className=\\ >\\ Unmapped",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/components/AssetsTable.jsx:230"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/StatsBar\\.jsx:66:setDismissed\\(true\\)\\}\\ aria\\-label=\"Dismiss\\ backend\\-down\\ warning\"\\ className=\"hover:text\\-red\\-100\">",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/components/StatsBar.jsx:66"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/WaterMonitoringConsole\\.jsx:22:onSelect\\(layer\\.key\\)\\}\\ className=\\ `\\}\\ >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/components/WaterMonitoringConsole.jsx:22"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/lib/PageNotFound\\.jsx:23:navigate\\('/'\\)\\}\\ className=\"inline\\-flex\\ items\\-center\\ px\\-4\\ py\\-2\\ text\\-sm\\ font\\-medium\\ text\\-slate\\-200\\ bg\\-slate\\-900\\ border\\ border\\-slate\\-700\\ rounded\\-lg\\ hover:bg\\-slate\\-8",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/lib/PageNotFound.jsx:23"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/SystemPage\\.jsx:139:refreshStatus\\(\\)\\}>\\ Retry\\ local\\ storage\\ check",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/pages/SystemPage.jsx:139"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/SystemPage\\.jsx:147:runExport\\(undefined,\\ \\),\\ onError:\\ \\(e\\)\\ =>\\ toast\\(\\ \\),\\ \\}\\)\\}\\ className=\"h\\-8\\ border\\-slate\\-700\\ bg\\-slate\\-950\\ text\\-xs\\ text\\-slate\\-300\\ hover:text\\-slate\\-100\"\\ >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/pages/SystemPage.jsx:147"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/SystemPage\\.jsx:247:\\)\\ \\}\\}\\ className=\"h\\-8\\ text\\-xs\\ text\\-slate\\-400\\ hover:text\\-slate\\-200\"\\ >\\ Clear",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/pages/SystemPage.jsx:247"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/ReviewPage\\.jsx:168:handleBatchDecision\\('accept'\\)\\}>\\ Approve\\ all",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/pages/ReviewPage.jsx:168"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/ReviewPage\\.jsx:172:handleBatchDecision\\('reject'\\)\\}>\\ Reject\\ all",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/pages/ReviewPage.jsx:172"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/ReviewPage\\.jsx:176:handleBatchDecision\\('skip'\\)\\}>\\ Skip\\ all",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/pages/ReviewPage.jsx:176"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/ReviewPage\\.jsx:181:downloadCSV\\('review\\-queue\\.csv',\\ items,\\ \\['record_ref','severity','evidence_tier','confidence','record_type','reason','source_ref'\\]\\)\\}\\ className=\"h\\-8\\ border\\-slate\\-",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/pages/ReviewPage.jsx:181"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/RegulatoryReviewPage\\.jsx:158:setSelectedId\\(c\\.candidate_id\\)\\}\\ className=\\ >\\ contradiction\\(s\\)",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/pages/RegulatoryReviewPage.jsx:158"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/RegulatoryReviewPage\\.jsx:274:submitDecision\\('approved'\\)\\}\\ className=\"gap\\-1\\.5\"\\ >\\ Approve",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/pages/RegulatoryReviewPage.jsx:274"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/RegulatoryReviewPage\\.jsx:283:submitDecision\\('rejected'\\)\\}\\ className=\"gap\\-1\\.5\"\\ >\\ Reject",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/pages/RegulatoryReviewPage.jsx:283"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/RegulatoryReviewPage\\.jsx:292:submitDecision\\('needs_review'\\)\\}\\ >\\ Mark\\ needs\\ review",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/pages/RegulatoryReviewPage.jsx:292"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/AlertDetailPage\\.jsx:181:\u00b7\\ \\$\\ `\\ :\\ 'not\\ in\\ the\\ loaded\\ asset\\ page'\\}\\ \\)\\}",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/pages/AlertDetailPage.jsx:181"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/AlertsPage\\.jsx:75:\\)\\}\\ \\)\\}\\ `\\ :\\ ''\\}",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/pages/AlertsPage.jsx:75"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/AlertsPage\\.jsx:181:downloadCSV\\('alerts\\.csv',\\ items,\\ \\[\\ 'alert_id',\\ 'module_id',\\ 'severity',\\ 'status',\\ 'review_status',\\ 'evidence_tier',\\ 'start_at',\\ 'source_title',\\ 'source_ref',\\ \\]\\)",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/pages/AlertsPage.jsx:181"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/AlertsPage\\.jsx:203:setFilters\\(\\ \\)\\}\\ title=\\ and\\ still\\ actionable`\\}\\ className=\\ >\\ Critical",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/pages/AlertsPage.jsx:203"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/AlertsPage\\.jsx:214:setFilters\\(DEFAULTS\\)\\}\\ aria\\-label=\"Clear\\ alert\\ filters\"\\ title=\"Clear\\ filters\"\\ className=\"h\\-8\\ border\\-slate\\-800\\ bg\\-slate\\-950\\ px\\-2\\ text\\-xs\\ text\\-slate\\-400\\ hover:text",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/pages/AlertsPage.jsx:214"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/AlertsPage\\.jsx:292:setLimit\\(\\(n\\)\\ =>\\ n\\ \\+\\ PAGE\\)\\}\\ disabled=\\ className=\"h\\-7\\ shrink\\-0\\ border\\-slate\\-800\\ bg\\-slate\\-950\\ px\\-2\\ text\\-\\[11px\\]\\ text\\-slate\\-300\\ hover:text\\-slate\\-100\"\\ >\\ Load\\ more",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/pages/AlertsPage.jsx:292"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/CaveKarstPage\\.jsx:202:setSelectedId\\(asset\\.asset_id\\)\\}\\ className=\\ >\\ \u00b7\\ %\\ confidence\\ gaps",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/pages/CaveKarstPage.jsx:202"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/OverviewPage\\.jsx:131:life\\-safety\\ critical\\ alert\\(s\\)\\ open",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/pages/OverviewPage.jsx:131"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/OverviewPage\\.jsx:175:active\\ \u00b7\\ %\\ nominal\\ \\)\\}",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/pages/OverviewPage.jsx:175"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/LiveLogsPage\\.jsx:65:setAutoScroll\\(s\\ =>\\ !s\\)\\}>",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/pages/LiveLogsPage.jsx:65"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/RegulatoryPage\\.jsx:226:setSelectedId\\(obs\\.observation_id\\)\\}\\ className=\\ >\\ \u00b7",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/pages/RegulatoryPage.jsx:226"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/EventDetailPage\\.jsx:113:ack\\(\\ ,\\ \\),\\ onError:\\ \\(error\\)\\ =>\\ toast\\(\\ \\),\\ \\}\\ \\)\\}\\ className=\"h\\-7\\ px\\-2\\ text\\-xs\\ text\\-emerald\\-400\\ border\\-emerald\\-800\\ hover:bg\\-emerald\\-950\"\\ >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/pages/EventDetailPage.jsx:113"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/pages/EventDetailPage\\.jsx:129:ack\\(\\ ,\\ \\),\\ onError:\\ \\(error\\)\\ =>\\ toast\\(\\ \\),\\ \\}\\ \\)\\}>",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/pages/EventDetailPage.jsx:129"
+      ]
+    },
+    {
+      "pattern": "dashboard/src/components/layout/Sidebar\\.jsx:51:setCollapsed\\(c\\ =>\\ !c\\)\\}\\ aria\\-label=\\ className=\"ml\\-auto\\ p\\-1\\ rounded\\ hover:bg\\-slate\\-800\\ text\\-slate\\-400\\ hover:text\\-slate\\-200\\ shrink\\-0\"\\ >",
+      "classification": "PRESENTATION_ONLY",
+      "rationale": "Intentional local UI control with no distinct backend endpoint; state is handled by the component.",
+      "evidence": [
+        "dashboard/src/components/layout/Sidebar.jsx:51"
+      ]
+    }
+  ],
+  "state_claims": [
+    {
+      "claim_id": "aguayluz-pr-claim-001",
+      "frontend_pattern": "}]) setLoading(false) setTimeout(() => inputRef.current?.focus(), 50) } const handleKey = (e) => { if (e.key ===",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AiQueryPanel.jsx:20"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-002",
+      "frontend_pattern": "Summarize the current infrastructure status",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AiQueryPanel.jsx:62"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-003",
+      "frontend_pattern": "}`} > {children} </button> ) } export default function AssetMap({ assets, assetRows = [], municipios, barrios, events = ",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:216"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-004",
+      "frontend_pattern": "] += 1 } return base }, [assetFeatures]) useEffect(() => { if (!containerRef.current) return undefined const map = new m",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:288"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-005",
+      "frontend_pattern": ", ) readyRef.current = true setMapReady(true) const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: fal",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:391"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-006",
+      "frontend_pattern": ", (e) => { if (!spatialToolActiveRef.current) onAlertSelectRef.current?.(e.features[0].properties) }) map.on(",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:419"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-007",
+      "frontend_pattern": ", (e) => { if (!spatialToolActiveRef.current) onSelectRef.current?.(e.features[0].properties) }) map.on(",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:422"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-008",
+      "frontend_pattern": ", async (e) => { if (spatialToolActiveRef.current) return const features = map.queryRenderedFeatures(e.point, { layers: ",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:425"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-009",
+      "frontend_pattern": ", (e) => { if (spatialToolActiveRef.current) return const props = e.features?.[0]?.properties || {} onMunicipioSelectRef",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:433"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-010",
+      "frontend_pattern": ")?.setData(visibleAssets || EMPTY) }, [visibleAssets]) useEffect(() => { if (!readyRef.current || !mapRef.current || !fl",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:444"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-011",
+      "frontend_pattern": ")?.setData(municipios || EMPTY) }, [municipios]) useEffect(() => { if (!readyRef.current || !mapRef.current) return mapR",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:454"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-012",
+      "frontend_pattern": ")?.setData(barrios || BARRIOS_URL) }, [barrios]) useEffect(() => { if (!mapReady || !mapRef.current) return undefined co",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:459"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-013",
+      "frontend_pattern": ") } droughtGeoidsRef.current.clear() for (const [geoid, category] of Object.entries(droughtByGeoid || {})) { map.setFeat",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:468"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-014",
+      "frontend_pattern": ", id: geoid }, { drought_category: category }) droughtGeoidsRef.current.add(geoid) } } catch { /* source is still rebuil",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:472"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-015",
+      "frontend_pattern": ", onSourceData) }, [droughtByGeoid, mapReady, municipios]) useEffect(() => { if (!mapReady || !mapRef.current) return un",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:482"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-016",
+      "frontend_pattern": ") } eventDensityGeoidsRef.current.clear() for (const [geoid, count] of Object.entries(eventDensityByGeoid || {})) { map.",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:491"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-017",
+      "frontend_pattern": ", id: geoid }, { event_count: count }) eventDensityGeoidsRef.current.add(geoid) } } catch { /* source is still rebuildin",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:495"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-018",
+      "frontend_pattern": ", onSourceData) }, [eventDensityByGeoid, mapReady, municipios]) useEffect(() => { if (!readyRef.current || !mapRef.curre",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:505"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-019",
+      "frontend_pattern": ")?.setData(selectedAsset) const coords = selectedAsset.features?.[0]?.geometry?.coordinates if (coords) mapRef.current.e",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:510"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-020",
+      "frontend_pattern": ")?.setData(eventGeo) }, [eventGeo]) useEffect(() => { if (!readyRef.current || !mapRef.current) return mapRef.current.ge",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:517"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-021",
+      "frontend_pattern": ")?.setData(alertGeo) }, [alertGeo]) useEffect(() => { if (!readyRef.current || !mapRef.current) return const visibility ",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:522"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-022",
+      "frontend_pattern": "]) mapRef.current.setLayoutProperty(id,",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:528"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-023",
+      "frontend_pattern": ", visibility) mapRef.current.setLayoutProperty(",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:528"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-024",
+      "frontend_pattern": ") mapRef.current.setLayoutProperty(",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:529"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-025",
+      "frontend_pattern": ") const [fillColor, fillOpacity] = { drought: [DROUGHT_FILL_COLOR, DROUGHT_FILL_OPACITY], event_density: [EVENT_DENSITY_",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:531"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-026",
+      "frontend_pattern": ", fillColor) mapRef.current.setPaintProperty(",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:537"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-027",
+      "frontend_pattern": ", fillOpacity) }, [layers.municipios, layers.barrios, layers.events, layers.alerts, layers.muniFillMode]) useEffect(() =",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:538"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-028",
+      "frontend_pattern": ") } catch { /* layers may not be ready yet */ } }, [basemap]) useEffect(() => { if (!mapReady || !mapRef.current) return",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:545"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-029",
+      "frontend_pattern": "&& ( <div aria-live=",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AssetMap.jsx:600"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-030",
+      "frontend_pattern": "? av.localeCompare(bv) : bv.localeCompare(av) }) }, [assets, type, subtype, status, reviewOnly, unmappedOnly, q, sort]) ",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AssetsTable.jsx:125"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-031",
+      "frontend_pattern": ") { e.preventDefault() searchRef.current?.focus() return } if (e.key ===",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/AssetsTable.jsx:146"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-032",
+      "frontend_pattern": ">Live notification delivery disabled</div> </div> <div className=",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/IncidentOperationsConsole.jsx:50"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-033",
+      "frontend_pattern": "is a historical reference series (annual peaks): its newest point // being years old is correct, so it must not read as ",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/MonitoringCharts.jsx:22"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-034",
+      "frontend_pattern": ", value: Number(r.value), site: r.site_no, identity: seriesIdentity(r), provisional: Boolean(r.provisional), })) .filter",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/MonitoringCharts.jsx:85"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-035",
+      "frontend_pattern": ">This series is stale. Do not treat the latest point as current operational status.</div>} {quality?.datum_status ===",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/MonitoringCharts.jsx:163"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-036",
+      "frontend_pattern": ">Required datum is undeclared; values remain visible but are not certified for cross-site comparison.</div>} {mixedIdent",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/MonitoringCharts.jsx:164"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-037",
+      "frontend_pattern": "/> {anomalies.length} certified anomaly signal{anomalies.length > 1 ?",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/MonitoringCharts.jsx:186"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-038",
+      "frontend_pattern": "/> Snapshot caveat</div> Service-event records are shown as reported/snapshot-grade. Do not infer live utility attributi",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/OutagesPanel.jsx:73"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-039",
+      "frontend_pattern": ") const [measurePoints, setMeasurePoints] = useState([]) const [bufferRadiusKm, setBufferRadiusKm] = useState(5) const [",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/SpatialToolsPanel.jsx:125"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-040",
+      "frontend_pattern": "useEffect(() => { const map = mapRef.current if (!map || !mapReady) return function setup() { ensureLineSource(map, MEAS",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/SpatialToolsPanel.jsx:133"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-041",
+      "frontend_pattern": ", setup) }, [mapRef, mapReady]) const clearAll = () => { setMeasurePoints([]) setBufferOrigin(null) setBufferResult(null",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/SpatialToolsPanel.jsx:144"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-042",
+      "frontend_pattern": "|| !bufferOrigin) return const map = mapRef.current const { candidates, sourceError } = readTarget(targets, targetKey) c",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/SpatialToolsPanel.jsx:166"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-043",
+      "frontend_pattern": "|| !nearestOrigin) return const map = mapRef.current const { candidates, sourceError } = readTarget(targets, targetKey) ",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/SpatialToolsPanel.jsx:190"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-044",
+      "frontend_pattern": ", targetKey, }) }, [mapRef, mode, nearestOrigin, targetKey, targets]) useEffect(() => { const map = mapRef.current if (!",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/SpatialToolsPanel.jsx:221"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-045",
+      "frontend_pattern": "const showDownBanner = (isError || (!up && health != null)) && !dismissed const coverageTrend = prevRef.current.coverage",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/StatsBar.jsx:45"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-046",
+      "frontend_pattern": ": r.coverage_pct < prevRef.current.coverage ?",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/StatsBar.jsx:49"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-047",
+      "frontend_pattern": ": undefined : undefined const reviewTrend = prevRef.current.review != null && reviewCount != null ? reviewCount > prevRe",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/StatsBar.jsx:49"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-048",
+      "frontend_pattern": ": reviewCount < prevRef.current.review ?",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/StatsBar.jsx:52"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-049",
+      "frontend_pattern": ": undefined : undefined useEffect(() => { if (r.coverage_pct != null) prevRef.current.coverage = r.coverage_pct if (revi",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/StatsBar.jsx:52"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-050",
+      "frontend_pattern": "/>} {/* The export/notify/report tools live on System & Tools, which can state each one",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/StatsBar.jsx:98"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-051",
+      "frontend_pattern": "preserves confirmed zero counts",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/StatsBar.test.jsx:34"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-052",
+      "frontend_pattern": "LIVE SERIES CONTRACT PRESENT",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/WaterMonitoringConsole.jsx:53"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-053",
+      "frontend_pattern": "> This workspace is reserved for authoritative station, reservoir, watershed, rainfall, groundwater, coastal, and extrac",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/WaterMonitoringConsole.jsx:63"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-054",
+      "frontend_pattern": "> No live metric is exposed for this layer until source, identity, unit, temporal, and geometry gates close. </div> )} <",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/WaterMonitoringConsole.jsx:73"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-055",
+      "frontend_pattern": "Live Logs",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/components/layout/Sidebar.jsx:26"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-056",
+      "frontend_pattern": ", headers: jsonHeaders(), body: JSON.stringify({ decision, source_binding: sourceBinding }), signal: AbortSignal.timeout",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/lib/api.js:136"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-057",
+      "frontend_pattern": "returns the confirmed decision and encodes the record reference",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/lib/api.test.js:36"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-058",
+      "frontend_pattern": ") // \u2500\u2500 Event-type tones (shared by outages panel, asset detail, live logs) \u2500\u2500 const EVENT_TONE = { outage:",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/lib/format.js:79"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-059",
+      "frontend_pattern": "}] } client.setQueryData(firstKey, first) client.setQueryData(otherKey, other) let rejectRequest postDecision.mockImplem",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/lib/hooks.test.jsx:15"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-060",
+      "frontend_pattern": "USGS annual peak flow: one instantaneous maximum per water year, 1899 onward. A historical baseline for ranking a curren",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/lib/monitoring.js:96"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-061",
+      "frontend_pattern": "says in the note that the historical series are not live feeds",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/lib/monitoring.test.js:108"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-062",
+      "frontend_pattern": "Current station-derived rainfall context; spatial raster coverage is a separate adapter.",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/lib/water-monitoring.js:20"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-063",
+      "frontend_pattern": "Authoritative watershed geometry exists; monitoring-station topology binding is not yet complete.",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/lib/water-monitoring.js:23"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-064",
+      "frontend_pattern": "No metric is exposed until an authoritative source adapter and unit contract pass.",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/lib/water-monitoring.js:25"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-065",
+      "frontend_pattern": "authoritative",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/lib/water-monitoring.js:39"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-066",
+      "frontend_pattern": "requires authoritative enforcement for confirmed unauthorized status",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/lib/water-monitoring.test.js:15"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-067",
+      "frontend_pattern": "requires authoritative identity binding for authorized status",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/lib/water-monitoring.test.js:20"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-068",
+      "frontend_pattern": "} // Filters live in the URL so a triage view (",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/AlertsPage.jsx:21"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-069",
+      "frontend_pattern": "the moment it was clicked. const queryKey = JSON.stringify(query) useEffect(() => { setLimit(PAGE) }, [queryKey]) const ",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/AlertsPage.jsx:153"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-070",
+      "frontend_pattern": "Export the current page as CSV",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/AlertsPage.jsx:189"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-071",
+      "frontend_pattern": "} days)` : `Current (${detail.freshness?.age_days ?? 0} days)` }, { term:",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/CaveKarstPage.jsx:253"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-072",
+      "frontend_pattern": "confirmed",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/CaveKarstPage.test.jsx:46"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-073",
+      "frontend_pattern": ") const [autoScroll, setAutoScroll] = useState(true) const [connected, setConnected] = useState(false) const listRef = u",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/LiveLogsPage.jsx:22"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-074",
+      "frontend_pattern": ">Live Logs</h1> <div className=",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/LiveLogsPage.jsx:53"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-075",
+      "frontend_pattern": "}) const [selected, setSelected] = useState(null) const [selectedMunicipio, setSelectedMunicipio] = useState(null) const",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/MapPage.jsx:26"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-076",
+      "frontend_pattern": ") > String(current.observed_date ||",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/MapPage.jsx:38"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-077",
+      "frontend_pattern": "Send current status alert to Slack / ntfy / email (configured in backend env)",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/OverviewPage.jsx:152"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-078",
+      "frontend_pattern": "current",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/RegulatoryPage.jsx:39"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-079",
+      "frontend_pattern": ">Non-authoritative, no entity linkage yet</div> <p className=",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/RegulatoryPage.jsx:144"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-080",
+      "frontend_pattern": "Live provider observations only. An observation is a source\\",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/RegulatoryPage.jsx:147"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-081",
+      "frontend_pattern": "value={(summary.freshness_state.stale ?? 0) + (summary.freshness_state.conflicting ?? 0)} detail={`${summary.freshness_s",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/RegulatoryPage.jsx:177"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-082",
+      "frontend_pattern": ">No observations match the current filters.</p> ) : ( <div className=",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/RegulatoryPage.jsx:222"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-083",
+      "frontend_pattern": ", }, counts: { observations: 1, receipts: 1 }, provider: { USGS: 1 }, record_family: { entity: 1 }, freshness_state: { c",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/RegulatoryPage.test.jsx:37"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-084",
+      "frontend_pattern": "renders the non-authoritative scope note and observation summary",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/RegulatoryPage.test.jsx:68"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-085",
+      "frontend_pattern": ", async () => { getRegulatoryObservations.mockResolvedValue({ total: 0, items: [] }) await renderPage() expect(await scr",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/RegulatoryPage.test.jsx:87"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-086",
+      "frontend_pattern": ">No candidates match the current filter.</p> ) : ( <div className=",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/RegulatoryReviewPage.jsx:154"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-087",
+      "frontend_pattern": "Confirmed exact site number match.",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/RegulatoryReviewPage.test.jsx:67"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-088",
+      "frontend_pattern": "|| el.isContentEditable) // Filters live in the URL so a filtered/paged view is shareable and survives reload. const cle",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/ReviewPage.jsx:22"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-089",
+      "frontend_pattern": "? undefined : tier, offset, limit: PAGE_SIZE, }) const { mutateAsync: decide, isPending } = useDecision() const items = ",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/ReviewPage.jsx:52"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-090",
+      "frontend_pattern": ", description: error.message }) } finally { decisionInFlight.current = false } } const handleAiSuggest = async (item) =>",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/ReviewPage.jsx:68"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-091",
+      "frontend_pattern": "})) setSuggesting((s) => ({ ...s, [ref]: false })) } const allSelected = items.length > 0 && items.every((r) => selected",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/ReviewPage.jsx:86"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-092",
+      "frontend_pattern": "}`, }) } const selCount = items.filter((r) => selected.has(r.record_ref)).length // Keep the keyboard cursor within the ",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/ReviewPage.jsx:129"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-093",
+      "frontend_pattern": ", onKey) }, [items, cursor]) useEffect(() => { rowRefs.current[cursor]?.scrollIntoView({ block:",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/ReviewPage.jsx:155"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-094",
+      "frontend_pattern": "}:${offset + i}`} data-testid={`review-record-${r.record_ref}`} ref={(el) => { rowRefs.current[i] = el }} onClick={() =>",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/ReviewPage.jsx:212"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-095",
+      "frontend_pattern": "> Confirmed review decisions and asset/event edits are saved locally and survive backend restarts. Source files and cano",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/SystemPage.jsx:126"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-096",
+      "frontend_pattern": "Regenerates outputs/ and exports/federation from the current corpus.",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/SystemPage.jsx:167"
+      ]
+    },
+    {
+      "claim_id": "aguayluz-pr-claim-097",
+      "frontend_pattern": "Pushes the current alert counts to every configured channel.",
+      "backend_predicate": "The corresponding backend response or local component state is the declared source for this view claim.",
+      "evidence": [
+        "dashboard/src/pages/SystemPage.jsx:186"
+      ]
+    }
+  ],
+  "runtime_evidence": {
+    "data": {
+      "state": "PASS",
+      "evidence": [
+        "scripts/check_gui_parity.py"
+      ]
+    },
+    "identity": {
+      "state": "PASS",
+      "evidence": [
+        "scripts/check_gui_parity.py"
+      ]
+    },
+    "geometry": {
+      "state": "PASS",
+      "evidence": [
+        "scripts/check_gui_parity.py"
+      ]
+    },
+    "device": {
+      "state": "PASS",
+      "evidence": [
+        "scripts/check_gui_parity.py"
+      ]
+    }
+  },
+  "certification": {
+    "state": "PASS",
+    "material_residue": []
+  }
+}

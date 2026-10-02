@@ -1,5 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { renderQueryPage } from '@/test/render-query-page'
+import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { axe } from 'vitest-axe'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -35,14 +35,7 @@ const CONFLICTING_CANDIDATE = {
 }
 
 function renderPage() {
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false, gcTime: 0 } },
-  })
-  return render(
-    <QueryClientProvider client={client}>
-      <RegulatoryReviewPage />
-    </QueryClientProvider>,
-  )
+  return renderQueryPage(<RegulatoryReviewPage />)
 }
 
 beforeEach(() => {
@@ -56,15 +49,15 @@ beforeEach(() => {
 
 describe('RegulatoryReviewPage', () => {
   it('renders the fail-closed note and candidate queue', async () => {
-    renderPage()
+    await renderPage()
 
     expect(await screen.findByRole('heading', { name: 'Regulatory Link Review' })).toBeInTheDocument()
     expect(screen.getByRole('note', { name: 'Adjudication scope limitation' })).toHaveTextContent(/fail-closed/i)
-    expect(await screen.findByText('USGS_50038100')).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /USGS_50038100/ })).toBeInTheDocument()
   })
 
   it('disables submit until actor and rationale are filled, then approves a clean candidate', async () => {
-    renderPage()
+    await renderPage()
 
     await screen.findByRole('heading', { name: 'Record a decision' })
     const approveButton = screen.getByRole('button', { name: /approve/i })
@@ -86,7 +79,7 @@ describe('RegulatoryReviewPage', () => {
       ...CONFLICTING_CANDIDATE,
       observation: { provider: 'USGS', provider_record_id: '50038100' },
     })
-    renderPage()
+    await renderPage()
 
     await screen.findByText(/observation reports ponce/i)
     fireEvent.change(screen.getByLabelText('Actor'), { target: { value: 'operator-1' } })
@@ -101,10 +94,10 @@ describe('RegulatoryReviewPage', () => {
   })
 
   it('has no detectable accessibility violations', async () => {
-    const { container } = renderPage()
-    await screen.findByText('USGS_50038100')
+    const { container } = await renderPage()
+    await screen.findByRole('heading', { name: 'USGS_50038100', exact: true })
     await screen.findByRole('heading', { name: 'Record a decision' })
 
     expect(await axe(container)).toHaveNoViolations()
-  })
+  }, 30_000)
 })

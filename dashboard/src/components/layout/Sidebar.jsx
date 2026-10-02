@@ -9,7 +9,7 @@ import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
 import brandMark from "@/assets/icon-64.png?inline";
 
-const NAV = [
+export const NAV = [
   { to: '/', icon: LayoutDashboard, label: 'Overview', end: true },
   { to: '/map', icon: Map, label: 'Map' },
   { to: '/assets', icon: Database, label: 'Assets' },

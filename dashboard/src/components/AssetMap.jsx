@@ -227,7 +227,7 @@ function ControlButton({ active, children, onClick, tone }) {
   )
 }
 
-export default function AssetMap({ assets, assetRows = [], municipios, barrios, events = [], alerts, droughtByGeoid, eventDensityByGeoid, eventDensityState, selectedAssetId, selectedMunicipio, onSelect, onMunicipioSelect, onAlertSelect, flyTo }) {
+export default function AssetMap({ assets, assetRows = [], municipios, barrios, events = [], alerts, droughtByGeoid, eventDensityByGeoid, eventDensityState, onRetryDensity, selectedAssetId, selectedMunicipio, onSelect, onMunicipioSelect, onAlertSelect, flyTo }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const readyRef = useRef(false)
@@ -612,7 +612,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
                 <div>
                   <div className="text-red-300">Density unavailable; no zero-event inference was made.</div>
                   <div className="truncate" title={String(eventDensityState.error)}>{String(eventDensityState.error)}</div>
-                  <button type="button" onClick={() => eventDensityState.refetch?.()} className="mt-1 text-sky-300 underline">Retry density</button>
+                  <button type="button" onClick={() => onRetryDensity()} className="mt-1 text-sky-300 underline">Retry density</button>
                 </div>
               )}
               {!eventDensityState?.isError && !eventDensityState?.isLoading && !eventDensityState?.isFetching && eventDensityState?.data && (

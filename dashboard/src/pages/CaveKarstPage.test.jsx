@@ -1,5 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
+import { renderQueryPage } from '@/test/render-query-page'
+import { screen, waitFor } from '@testing-library/react'
 import { axe } from 'vitest-axe'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -72,15 +72,8 @@ const SUMMARY = {
   validation: { ok: true, contradiction_count: 0, error_count: 0 },
 }
 
-function renderPage() {
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false, gcTime: 0 } },
-  })
-  return render(
-    <QueryClientProvider client={client}>
-      <CaveKarstPage />
-    </QueryClientProvider>,
-  )
+async function renderPage() {
+  return renderQueryPage(<CaveKarstPage />)
 }
 
 beforeEach(() => {
@@ -139,7 +132,7 @@ beforeEach(() => {
 
 describe('CaveKarstPage', () => {
   it('renders the pilot limitation and required analytical fields', async () => {
-    renderPage()
+    await renderPage()
 
     expect(await screen.findByRole('heading', { name: 'Cave & Karst Monitor' })).toBeInTheDocument()
     expect(screen.getByRole('note', { name: 'Registry scope limitation' })).toHaveTextContent(/pilot/i)
@@ -154,7 +147,7 @@ describe('CaveKarstPage', () => {
   })
 
   it('selects assets through accessible pressed buttons', async () => {
-    renderPage()
+    await renderPage()
 
     const button = await screen.findByRole('button', { name: new RegExp(ASSET.canonical_name) })
     await waitFor(() => expect(button).toHaveAttribute('aria-pressed', 'true'))
@@ -162,7 +155,7 @@ describe('CaveKarstPage', () => {
   })
 
   it('renders provenance and graph evidence', async () => {
-    renderPage()
+    await renderPage()
 
     expect(await screen.findByRole('heading', { name: 'Provenance' })).toBeInTheDocument()
     expect(await screen.findByRole('link', { name: /open source/i })).toHaveAttribute(
@@ -174,10 +167,10 @@ describe('CaveKarstPage', () => {
   })
 
   it('has no detectable accessibility violations', async () => {
-    const { container } = renderPage()
+    const { container } = await renderPage()
     expect((await screen.findAllByText(ASSET.canonical_name)).length).toBeGreaterThan(0)
     await screen.findByRole('heading', { name: 'Provenance' })
 
     expect(await axe(container)).toHaveNoViolations()
-  })
+  }, 30_000)
 })

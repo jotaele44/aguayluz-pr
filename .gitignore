@@ -235,6 +235,7 @@ tile_cache/
 # Fixtures ARE versioned (sanitized API recordings) — keep tests/fixtures/ tracked.
 # Block everything else that could carry secrets or large binaries.
 *.sqlite
+.aguayluz/operator_state.sqlite*
 *.db
 *.parquet
 *.pem

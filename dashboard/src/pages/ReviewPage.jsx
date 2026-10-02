@@ -17,9 +17,14 @@ import PageHeader from '@/components/common/PageHeader'
 
 const PAGE_SIZE = 25
 
-// Ignore shortcuts while the operator is typing in a field or menu.
+// Ignore shortcuts while the operator is typing or focused on another control.
 const isTypingTarget = (el) =>
-  el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.getAttribute?.('role') === 'combobox' || el.isContentEditable)
+  el && (
+    el.tagName === 'INPUT'
+    || el.tagName === 'TEXTAREA'
+    || el.isContentEditable
+    || el.closest?.('button, a, select, [role="button"], [role="combobox"], [role="menu"], [role="menuitem"], [role="option"]')
+  )
 
 // Filters live in the URL so a filtered/paged view is shareable and survives reload.
 const cleanParams = (prev, patch) => {
@@ -45,6 +50,7 @@ export default function ReviewPage() {
   const [batchPending, setBatchPending] = useState(false)
   const { toast } = useToast()
   const rowRefs = useRef([])
+  const decisionInFlight = useRef(false)
 
   const { data, isLoading } = useReviewQueuePaged({
     severity: sev === 'all' ? undefined : sev,
@@ -52,17 +58,22 @@ export default function ReviewPage() {
     offset,
     limit: PAGE_SIZE,
   })
-  const { mutate: decide, isPending } = useDecision()
+  const { mutateAsync: decide, isPending } = useDecision()
 
   const items = data?.items ?? []
   const total = data?.total ?? 0
 
-  const handleDecision = (ref, decision) => {
-    if (!ref) return
-    decide({ ref, decision }, {
-      onSuccess: () => toast({ title: `Marked ${decision}`, description: ref }),
-      onError: () => toast({ variant: 'destructive', title: 'Decision failed' }),
-    })
+  const handleDecision = async (ref, decision) => {
+    if (!ref || decisionInFlight.current) return
+    decisionInFlight.current = true
+    try {
+      await decide({ ref, decision, sourceBinding: items.find((item) => item.record_ref === ref)?.review_binding })
+      toast({ title: `Marked ${decision}`, description: ref })
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Decision failed', description: error.message })
+    } finally {
+      decisionInFlight.current = false
+    }
   }
 
   const handleAiSuggest = async (item) => {
@@ -102,15 +113,26 @@ export default function ReviewPage() {
   }
 
   const handleBatchDecision = async (decision) => {
-    const refs = items.filter((r) => selected.has(r.record_ref)).map((r) => r.record_ref)
-    if (!refs.length) return
+    const refs = [...new Set(items.filter((r) => selected.has(r.record_ref)).map((r) => r.record_ref))]
+    if (!refs.length || decisionInFlight.current) return
+    decisionInFlight.current = true
     setBatchPending(true)
+    const failed = new Set()
     for (const ref of refs) {
-      await new Promise((resolve) => decide({ ref, decision }, { onSuccess: resolve, onError: resolve }))
+      try {
+        await decide({ ref, decision, sourceBinding: items.find((item) => item.record_ref === ref)?.review_binding })
+      } catch {
+        failed.add(ref)
+      }
     }
-    setSelected(new Set())
+    setSelected((previous) => new Set([...previous].filter((ref) => !refs.includes(ref) || failed.has(ref))))
     setBatchPending(false)
-    toast({ title: `Batch ${decision}`, description: `${refs.length} items processed` })
+    decisionInFlight.current = false
+    toast({
+      variant: failed.size ? 'destructive' : 'default',
+      title: failed.size ? 'Batch incomplete' : `Batch ${decision}`,
+      description: `${refs.length - failed.size} succeeded; ${failed.size} failed.${failed.size ? ' Failed records remain selected for retry.' : ''}`,
+    })
   }
 
   const selCount = items.filter((r) => selected.has(r.record_ref)).length
@@ -192,7 +214,8 @@ export default function ReviewPage() {
           ? Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-md" />)
           : items.map((r, i) => (
             <div
-              key={r.record_ref ?? i}
+              key={`${r.record_ref ?? ''}:${offset + i}`}
+              data-testid={`review-record-${r.record_ref}`}
               ref={(el) => { rowRefs.current[i] = el }}
               onClick={() => setCursor(i)}
               className={cn(

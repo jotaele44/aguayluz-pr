@@ -58,7 +58,7 @@ export default function EventDetailPage() {
   }
 
   const typeClass = TYPE_COLOR[event.event_type] ?? 'text-slate-400 border-slate-700 bg-slate-800/20'
-  const isActive = !event.end_time || event.resolution_status !== 'resolved'
+  const isActive = event.resolution_status ? event.resolution_status !== 'resolved' : !event.end_time
 
   return (
     <div className="p-6 space-y-6 max-w-3xl">
@@ -82,6 +82,26 @@ export default function EventDetailPage() {
             <Badge variant="outline" className={`text-xs capitalize ${typeClass}`}>
               {event.resolution_status ?? (isActive ? 'active' : 'closed')}
             </Badge>
+            {event.operator_override && (
+              <p role="note" className="mt-2 text-xs text-amber-300">
+                {event.operator_override.state === 'local'
+                  ? 'Saved local edit. Original source values are preserved; this does not update the canonical export.'
+                  : 'Local edit unresolved: duplicate stable ID.'}
+              </p>
+            )}
+            {event.operator_override?.state === 'local' && (
+              <details className="mt-2 text-xs text-slate-400">
+                <summary className="cursor-pointer">Compare with source</summary>
+                <ul className="mt-1 space-y-1">
+                  {Object.entries(event.operator_override.original_values ?? {}).map(([key, value]) => (
+                    <li key={key}>{key.replace(/_/g, ' ')}: {value === null ? 'null' : String(value)}</li>
+                  ))}
+                  {(event.operator_override.source_fields_absent ?? []).map((key) => (
+                    <li key={key}>{key.replace(/_/g, ' ')}: absent in source</li>
+                  ))}
+                </ul>
+              </details>
+            )}
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             {isActive && (
@@ -93,15 +113,27 @@ export default function EventDetailPage() {
             <Button
               size="sm"
               variant="outline"
-              disabled={acking || event.resolution_status === 'resolved'}
+              disabled={acking || event.resolution_status === 'acknowledged' || event.resolution_status === 'resolved'}
               onClick={() => ack(
-                { id: String(event.event_id), status: 'resolved' },
-                { onSuccess: () => toast({ title: 'Event acknowledged', description: 'Marked as resolved' }) }
+                { id: String(event.event_id), status: 'acknowledged' },
+                {
+                  onSuccess: () => toast({ title: 'Event acknowledged', description: 'Saved locally; resolution is unchanged.' }),
+                  onError: (error) => toast({ variant: 'destructive', title: 'Edit not saved', description: error.message }),
+                }
               )}
               className="h-7 px-2 text-xs text-emerald-400 border-emerald-800 hover:bg-emerald-950"
             >
               <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-              {event.resolution_status === 'resolved' ? 'Resolved' : 'ACK'}
+              {event.resolution_status === 'acknowledged' ? 'Acknowledged' : 'Acknowledge'}
+            </Button>
+            <Button size="sm" variant="outline" disabled={acking || event.resolution_status === 'resolved'} onClick={() => ack(
+              { id: String(event.event_id), status: 'resolved' },
+              {
+                onSuccess: () => toast({ title: 'Event resolved', description: 'Saved as a local diagnostic edit.' }),
+                onError: (error) => toast({ variant: 'destructive', title: 'Edit not saved', description: error.message }),
+              }
+            )}>
+              {event.resolution_status === 'resolved' ? 'Resolved' : 'Mark resolved'}
             </Button>
             <a
               href={getReportUrl()}

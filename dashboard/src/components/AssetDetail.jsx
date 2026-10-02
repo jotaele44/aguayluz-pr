@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { tierBadge, fmtDate, typeMeta, statusTone, eventTone } from '@/lib/format'
-import { useAssetEvents, useFlagAsset } from '@/lib/hooks'
+import { useAssets, useAssetEvents, useFlagAsset } from '@/lib/hooks'
 import { useToast } from '@/components/ui/use-toast'
 import { cn } from '@/lib/utils'
 import { ChevronDown, ChevronRight, Database, ExternalLink, Flag, Map, MapPin, Zap } from 'lucide-react'
@@ -34,7 +34,10 @@ function RelatedEvents({ assetId }) {
   )
 }
 
-export default function AssetDetail({ asset: a, onClose }) {
+export default function AssetDetail({ asset, onClose }) {
+  const { data: currentAssets = [] } = useAssets()
+  const matches = asset ? currentAssets.filter((row) => row.asset_id === asset.asset_id) : []
+  const a = matches.length === 1 ? matches[0] : asset
   const [rawOpen, setRawOpen] = useState(false)
   const { mutate: flagAsset, isPending: flagging } = useFlagAsset()
   const { toast } = useToast()
@@ -60,7 +63,10 @@ export default function AssetDetail({ asset: a, onClose }) {
     const next = a.review_status === 'needs_review' ? 'accepted' : 'needs_review'
     flagAsset(
       { id: a.asset_id, reviewStatus: next },
-      { onSuccess: () => toast({ title: next === 'needs_review' ? 'Flagged for review' : 'Flag cleared', description: a.asset_name }) }
+      {
+        onSuccess: () => toast({ title: next === 'needs_review' ? 'Flagged for review' : 'Flag cleared', description: a.asset_name }),
+        onError: (error) => toast({ variant: 'destructive', title: 'Edit not saved', description: error.message }),
+      }
     )
   }
 
@@ -131,6 +137,13 @@ export default function AssetDetail({ asset: a, onClose }) {
                 <Row k="Review status" v={a.review_status} />
                 <SourceRow sourceRef={a.source_ref} />
                 <Row k="Source hash" v={a.source_hash} mono />
+                {a.operator_override && (
+                  <p role="note" className="text-xs text-amber-300">
+                    {a.operator_override.state === 'local'
+                      ? `Saved local edit · ${fmtDate(a.operator_override.updated_at)}. Source values are preserved in the record details.`
+                      : 'Local edit unresolved: this stable ID matches multiple source records.'}
+                  </p>
+                )}
               </Section>
 
               <Section title="Related events">

@@ -181,9 +181,9 @@ def _monitoring_readings_for_assets(assets: list[dict[str, Any]]) -> list[dict[s
 @app.get("/municipios/{name}/summary")
 def municipio_summary(name: str) -> JSONResponse:
     name_lower = name.lower()
-    mun_assets = [a for a in legacy._assets if (a.get("municipality") or "").lower() == name_lower]
+    mun_assets = [a for a in legacy._current_assets() if (a.get("municipality") or "").lower() == name_lower]
     mun_events = [
-        e for e in legacy._events
+        e for e in legacy._current_events()
         if (e.get("municipality") or "").lower() == name_lower
         or name_lower in (e.get("affected_area") or "").lower()
     ]

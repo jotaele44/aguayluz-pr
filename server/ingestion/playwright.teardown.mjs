@@ -12,15 +12,12 @@ export default function globalTeardown() {
     stdio: "inherit",
   });
 
-  // Never fail the run on teardown — the tests have already reported. But do
-  // say something in every failure mode: a silent teardown that did not run
-  // leaves the seeded fixture on disk, where a later backend run would serve
-  // SEED-* records as real review data. Both the "could not start" and the
-  // "started and exited non-zero" cases have to surface.
+  // Cleanup is part of the gate: a successful browser run cannot leave
+  // unverified fixture data behind and still report complete success.
   if (result.error) {
-    console.warn(`gui-parity teardown could not run: ${result.error.message}`);
+    throw new Error(`gui-parity teardown could not run: ${result.error.message}`);
   } else if (result.status !== 0) {
-    console.warn(
+    throw new Error(
       `gui-parity teardown exited ${result.status}${
         result.signal ? ` (signal ${result.signal})` : ""
       } — the seeded fixture may still be on disk.`,

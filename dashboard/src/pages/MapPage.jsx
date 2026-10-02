@@ -16,6 +16,10 @@ export default function MapPage() {
   // paginated for the map's point layer) — this is what drives the "Density"
   // municipio fill mode, since individual events are structurally area-level.
   const eventDensityQuery = useEventDensity()
+  const retryEventDensity = useCallback(
+    () => eventDensityQuery.refetch(),
+    [eventDensityQuery.refetch],
+  )
   const { data: eventDensity } = eventDensityQuery
   const eventDensityByGeoid = eventDensity?.by_geoid ?? {}
   const { data: alertsGeo } = useAlertsGeojson()
@@ -72,8 +76,8 @@ export default function MapPage() {
             isError: eventDensityQuery.isError,
             isFetching: eventDensityQuery.isFetching,
             isLoading: eventDensityQuery.isLoading,
-            refetch: eventDensityQuery.refetch,
           }}
+          onRetryDensity={retryEventDensity}
           selectedAssetId={selected?.asset_id}
           selectedMunicipio={selectedMunicipio}
           onSelect={selectByProps}

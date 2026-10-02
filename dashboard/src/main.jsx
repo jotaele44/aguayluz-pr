@@ -30,3 +30,7 @@ if (SENTRY_DSN) {
 ReactDOM.createRoot(document.getElementById('root')).render(
   <App />
 )
+
+// Archive design is isolated from the existing backend and semantic tokens.
+import "./zip-design/tokens.css";
+import "./zip-design/adaptation.css";

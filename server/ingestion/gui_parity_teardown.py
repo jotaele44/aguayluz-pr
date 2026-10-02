@@ -1,9 +1,8 @@
 """Remove the review-queue fixture that seed_demo.py created, and nothing else.
 
-Run as Playwright's globalTeardown. The guard is the marker file: this deletes
-``review_queue.json`` only when ``.review_queue.seeded`` sits beside it, which
-only ``seed_demo.py`` writes and only after it has created the queue file
-itself. A real export never has the marker, so it can never be deleted here.
+Run as Playwright's globalTeardown. Cleanup requires both the seed marker and
+its SHA-256 binding to the current queue bytes. If a real export has replaced
+the fixture, or a legacy marker has no hash, both files are preserved for review.
 
 Without this, a developer who ran ``npm run test:gui-parity`` on a checkout with
 no export would be left holding three ``SEED-*`` records in
@@ -14,6 +13,8 @@ then skip forever — a fixture quietly promoted to real data.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import sys
 from pathlib import Path
@@ -34,13 +35,19 @@ def main() -> int:
         return 0
 
     try:
+        marker = json.loads(SEED_MARKER.read_text(encoding="utf-8"))
+        expected = marker.get("sha256") if isinstance(marker, dict) else None
+        if REVIEW_QUEUE.exists():
+            actual = hashlib.sha256(REVIEW_QUEUE.read_bytes()).hexdigest()
+            if actual != expected:
+                print("gui_parity_teardown: queue changed or marker is unverified; preserving it", file=sys.stderr)
+                return 1
         REVIEW_QUEUE.unlink(missing_ok=True)
         SEED_MARKER.unlink(missing_ok=True)
-    except OSError as exc:
-        # Teardown failure must not fail the run — the tests already passed or
-        # failed on their own merits. Report and move on.
+    except (OSError, ValueError) as exc:
+        # Signal failed cleanup to the caller; preserve anything unverified.
         print(f"gui_parity_teardown: could not remove the fixture: {exc}", file=sys.stderr)
-        return 0
+        return 1
 
     print(f"gui_parity_teardown: removed the seeded fixture at {REVIEW_QUEUE}")
     return 0

@@ -16,7 +16,7 @@ function findRepositoryRoot(start) {
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = findRepositoryRoot(here);
-const backendUrl = "http://127.0.0.1:8000";
+const backendUrl = `http://127.0.0.1:${process.env.GUI_BACKEND_PORT || "8000"}`;
 const manifest = JSON.parse(
   fs.readFileSync(
     path.join(repositoryRoot, ".federation", "gui-capabilities.json"),
@@ -39,9 +39,112 @@ test("manifest exposes at least one active GUI route", () => {
   expect(routes.length).toBeGreaterThan(0);
 });
 
+test("System opens the printable status report", async ({ page }) => {
+  await page.goto("/system");
+  const reportReady = page.waitForEvent("popup");
+  await page.getByRole("link", { name: "Open status report", exact: true }).click();
+  const report = await reportReady;
+  await expect(report.getByRole("heading", { name: "AguaYLuz-PR Infrastructure Status Report", exact: true })).toBeVisible();
+  await expect(report.getByRole("heading", { name: "Recent Events (last 20)", exact: true })).toBeVisible();
+  await report.close();
+});
+
+test("failed asset reads hide false empty results and recover through retry", async ({ page }) => {
+  let failing = true;
+  await page.route(`${backendUrl}/assets**`, async (route) => {
+    if (failing) return route.fulfill({ status: 503, contentType: "application/json", body: '{"detail":"unavailable"}' });
+    return route.continue();
+  });
+  await page.goto("/assets");
+  await expect(page.getByRole("alert").filter({ hasText: "Data unavailable" })).toBeVisible();
+  await expect(page.locator("main")).toBeHidden();
+  await expect(page.getByRole("navigation", { name: "Main navigation", exact: true })).toBeVisible();
+  failing = false;
+  const recoveredResponse = page.waitForResponse((response) =>
+    new URL(response.url()).pathname === "/assets" && response.status() === 200);
+  await page.getByRole("button", { name: "Retry data", exact: true }).click();
+  expect(await (await recoveredResponse).finished()).toBeNull();
+  await expect(page.getByRole("heading", { name: "Assets", exact: true })).toBeVisible();
+  await expect(page.getByRole("alert").filter({ hasText: "Data unavailable" })).toHaveCount(0);
+  const viewport = page.getByTestId("asset-scroll-viewport");
+  await expect(viewport).toBeVisible();
+  expect(await viewport.evaluate((element) => element.clientHeight <= innerHeight && element.scrollHeight > element.clientHeight)).toBe(true);
+  expect(await viewport.locator("tr[data-index]").count()).toBeLessThan(100);
+  await viewport.evaluate((element) => { element.scrollTop = element.scrollHeight; });
+  await expect.poll(async () => Number(await viewport.locator("tr[data-index]").first().getAttribute("data-index"))).toBeGreaterThan(0);
+});
+
+test("asset search and CSV export have explicit accessible names", async ({ page }) => {
+  await page.goto("/assets", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("textbox", { name: "Search assets", exact: true })).toBeVisible();
+
+  const downloadReady = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export assets as CSV", exact: true }).click();
+  const download = await downloadReady;
+  expect(download.suggestedFilename()).toBe("assets.csv");
+});
+
+test("navigation remains available while the overview module is loading", async ({ page }) => {
+  let releaseModule;
+  const pending = new Promise((resolve) => { releaseModule = resolve; });
+  await page.route("**/src/pages/OverviewPage.jsx*", async (route) => {
+    await pending;
+    await route.continue();
+  });
+  try {
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("status").filter({ hasText: "Loading view" })).toBeVisible();
+    const assets = page.getByRole("navigation", { name: "Main navigation", exact: true }).getByRole("link", { name: "Assets", exact: true });
+    await expect(assets).toBeVisible();
+    await assets.click();
+    await expect(page).toHaveURL(/\/assets$/);
+    await expect(page.getByRole("heading", { name: "Assets", exact: true })).toBeVisible();
+  } finally {
+    releaseModule();
+  }
+});
+
+test("overview keeps reservoir sites separate and reports the complete active outage total", async ({ page }) => {
+  await page.route(`${backendUrl}/readings?**`, async (route) => {
+    const url = new URL(route.request().url());
+    expect(url.searchParams.get("metric")).toBe("reservoir_storage_pct");
+    await route.fulfill({ json: { items: [
+      { site_no: "001", metric: "reservoir_storage_pct", unit: "%", value: 35, observed_date: "2026-09-01" },
+      { site_no: "002", metric: "reservoir_storage_pct", unit: "%", value: 80, observed_date: "2026-09-01" },
+      { site_no: "001", metric: "reservoir_elevation", unit: "ft", value: 400, observed_date: "2026-09-02" },
+    ] } });
+  });
+  await page.route(`${backendUrl}/events?**`, async (route) => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get("active") === "true") {
+      expect(url.searchParams.get("limit")).toBe("0");
+      await route.fulfill({ json: { total: 702, offset: 0, items: [] } });
+    } else await route.fulfill({ json: { total: 1500, offset: 0, items: [] } });
+  });
+  let query;
+  await page.route(`${backendUrl}/ai/query`, async (route) => {
+    query = route.request().postDataJSON().query;
+    await route.fulfill({ json: { answer: "Test recap" } });
+  });
+  await page.goto("/");
+  await expect(page.getByTestId("reservoir-series-scope")).toHaveText("1 plotted storage readings for site 001 (%)");
+  await expect(page.getByRole("status")).toContainText("1 readings excluded");
+  await page.getByLabel("Reservoir site").selectOption("002");
+  await expect(page.getByTestId("reservoir-series-scope")).toHaveText("1 plotted storage readings for site 002 (%)");
+  await page.getByRole("button", { name: "AI Status Recap", exact: true }).click();
+  await expect(page.getByText("Test recap", { exact: true })).toBeVisible();
+  expect(query).toContain("702 active outage records in the loaded corpus");
+});
+
 for (const route of routes) {
   test(`GUI route ${route} is rendered and discoverable`, async ({ page, request }) => {
     const runtimeFailures = [];
+    const bulkAssetRequests = [];
+    page.on("request", (request) => {
+      if (["/assets", "/assets.geojson"].includes(new URL(request.url()).pathname)) {
+        bulkAssetRequests.push(request.url());
+      }
+    });
     page.on("pageerror", (error) => {
       runtimeFailures.push(`page error: ${error.message}`);
     });
@@ -71,6 +174,7 @@ for (const route of routes) {
     );
 
     if (route === "/cave-karst") {
+      expect(bulkAssetRequests, "Overview and global counts must not download the full asset corpus").toEqual([]);
       await expect(page.getByRole("heading", { name: "Cave & Karst Monitor" })).toBeVisible();
       await expect(page.getByRole("note", { name: "Registry scope limitation" })).toContainText(/pilot/i);
       await expect(page.locator("body")).toContainText(/not a statewide cave census/i);
@@ -214,6 +318,39 @@ test("map spatial controls expose density failure, retry, and evidence state", a
   expect(consoleErrors).toEqual([]);
 });
 
+test("alert critical filter is reflected in the API request and clear action", async ({ page }) => {
+  await page.route(`${backendUrl}/alerts?*`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      headers: { "access-control-allow-origin": "*" },
+      body: JSON.stringify({ total: 0, offset: 0, items: [] }),
+    });
+  });
+  await page.goto("/alerts", { waitUntil: "domcontentloaded" });
+
+  const critical = page.getByRole("button", { name: "Critical", exact: true });
+  const filteredRequest = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return url.pathname === "/alerts" && url.searchParams.get("critical_only") === "true";
+  });
+  await critical.click();
+  await filteredRequest;
+  await expect(critical).toHaveAttribute("aria-pressed", "true");
+  await expect(page).toHaveURL(/critical=1/);
+
+  await page.getByRole("button", { name: "Clear alert filters" }).click();
+  await expect(critical).toHaveAttribute("aria-pressed", "false");
+  await expect(page).not.toHaveURL(/critical=1/);
+
+  const unfilteredRequest = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return url.pathname === "/alerts" && !url.searchParams.has("critical_only");
+  });
+  await page.reload();
+  await unfilteredRequest;
+});
+
 // ── Severity rendering on /review ────────────────────────────────────────────
 //
 // Everything above is generated from the manifest and asserts reachability: the
@@ -241,18 +378,94 @@ const REVIEW_STUB = {
   items: [
     {
       record_ref: "STUB-BLOCK-0001",
+      review_binding: "a".repeat(64),
       reason: "stubbed blocking record",
       severity: "block",
       evidence_tier: "T1",
     },
     {
       record_ref: "STUB-WARN-0001",
+      review_binding: "b".repeat(64),
       reason: "stubbed warning record",
       severity: "warn",
       evidence_tier: "T2",
     },
   ],
 };
+
+test("review hotkeys do not trigger when an action control has focus", async ({ page }) => {
+  let decisionRequests = 0;
+  let accepted = false;
+  await page.route("**/review-queue**", async (route) => {
+    const isDecision = route.request().method() === "POST";
+    if (isDecision) {
+      decisionRequests += 1;
+      accepted = true;
+    }
+    const items = accepted ? [] : REVIEW_STUB.items;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      headers: { "access-control-allow-origin": "*" },
+      body: JSON.stringify(isDecision ? { ok: true } : { total: items.length, offset: 0, items }),
+    });
+  });
+  await page.goto("/review", { waitUntil: "domcontentloaded" });
+
+  const accept = page.getByRole("button", { name: "Accept", exact: true }).first();
+  await accept.focus();
+  await page.keyboard.press("a");
+  expect(decisionRequests).toBe(0);
+  await expect(page.getByText("STUB-BLOCK-0001")).toBeVisible();
+
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("a");
+  await expect.poll(() => decisionRequests).toBe(1);
+  await expect(page.getByText("STUB-BLOCK-0001")).toHaveCount(0);
+});
+
+test("review failures restore rows and preserve failed batch selections for retry", async ({ page }) => {
+  let failRef = "all";
+  const accepted = new Set();
+  let decisionRequests = 0;
+  await page.route("**/review-queue**", async (route) => {
+    const isDecision = route.request().method() === "POST";
+    const ref = decodeURIComponent(new URL(route.request().url()).pathname.split("/")[2] || "");
+    const fail = isDecision && (failRef === "all" || ref === failRef);
+    if (isDecision) {
+      decisionRequests += 1;
+      expect(route.request().postDataJSON().source_binding).toBe(REVIEW_STUB.items.find((item) => item.record_ref === ref).review_binding);
+    }
+    if (isDecision && !fail) accepted.add(ref);
+    const items = REVIEW_STUB.items.filter((item) => !accepted.has(item.record_ref));
+    await route.fulfill({
+      status: fail ? 503 : 200,
+      contentType: "application/json",
+      headers: { "access-control-allow-origin": "*" },
+      body: JSON.stringify(isDecision ? (fail ? { detail: "unavailable" } : { ok: true }) : { total: items.length, offset: 0, items }),
+    });
+  });
+  await page.goto("/review", { waitUntil: "domcontentloaded" });
+  await expect(page.getByText("STUB-BLOCK-0001")).toBeVisible();
+  await page.getByRole("button", { name: "Accept", exact: true }).first().click();
+  await expect(page.getByText("Decision failed", { exact: true })).toBeVisible();
+  await expect(page.getByText("STUB-BLOCK-0001")).toBeVisible();
+  failRef = "STUB-WARN-0001";
+  await page.getByRole("button", { name: "Select all on page" }).click();
+  await page.getByRole("button", { name: "Approve all" }).click();
+  await expect.poll(() => decisionRequests).toBe(3);
+  await expect(page.getByText("1 succeeded; 1 failed. Failed records remain selected for retry.")).toBeVisible();
+  await expect(page.getByText("1 selected", { exact: true })).toBeVisible();
+  await expect(page.getByText("STUB-BLOCK-0001")).toHaveCount(0);
+  await expect(page.getByText("STUB-WARN-0001")).toBeVisible();
+  expect(decisionRequests).toBe(3);
+  failRef = null;
+  await page.getByRole("button", { name: "Approve all" }).click();
+  await expect.poll(() => decisionRequests).toBe(4);
+  await expect(page.getByText("1 succeeded; 0 failed.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Approve all" })).toHaveCount(0);
+  expect(decisionRequests).toBe(4);
+});
 
 test("review queue serves real records to the page, unstubbed", async ({ page }) => {
   // Codex was right that the stubbed test below cannot prove the backend reaches
@@ -326,4 +539,53 @@ test("review queue renders block and warn with different severity tones", async 
   // And neither may be the fallback — equal-but-both-wrong would pass the check
   // above only if the two happened to differ, so pin the fallback out explicitly.
   expect(blockTone).not.toContain("text-slate-400");
+});
+
+test("saved local review decisions reach System & Tools and survive reload", async ({ page, request }) => {
+  const before = await (await request.get(`${backendUrl}/system/status`)).json();
+  const queue = await (await request.get(`${backendUrl}/review-queue?limit=25`)).json();
+  expect(queue.items.length).toBeGreaterThan(0);
+  const ref = queue.items[0].record_ref;
+  await page.goto("/review");
+  const row = page.getByTestId(`review-record-${ref}`);
+  await expect(row).toBeVisible();
+  const committed = page.waitForResponse((response) => response.request().method() === "POST" && response.url().endsWith(`/review-queue/${encodeURIComponent(ref)}/decision`));
+  await row.getByRole("button", { name: "Accept", exact: true }).click();
+  expect((await committed).status()).toBe(200);
+  await expect(row).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Review Queue" })).toBeVisible();
+  await expect(row).toHaveCount(0);
+  await page.getByRole("link", { name: "System & Tools", exact: true }).first().click();
+  await expect(page.getByText("Saved local changes", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Retry local storage check" })).toBeVisible();
+  await expect(page.getByText(/saved records · .*saved changes/)).toBeVisible();
+  const after = await (await request.get(`${backendUrl}/system/status`)).json();
+  expect(after.operator_state.state).toBe("ready");
+  expect(after.operator_state.audit_entries).toBe(before.operator_state.audit_entries + 1);
+});
+
+test("event acknowledgment remains active until explicit resolution", async ({ page }) => {
+  let event = { event_id: "OPERATOR-TEST", event_type: "outage", affected_area: "Persistence test", start_time: "2026-01-01T00:00:00Z", linked_asset_ids: [] };
+  const statuses = [];
+  await page.route("**/events**", async (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (route.request().method() === "PATCH") {
+      const patch = route.request().postDataJSON();
+      statuses.push(patch.resolution_status);
+      event = { ...event, ...patch, operator_override: { state: "local" } };
+    }
+    await route.fulfill({ status: 200, contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: JSON.stringify(pathname.endsWith("/OPERATOR-TEST") ? event : { total: 1, offset: 0, items: [event] }) });
+  });
+  await page.goto("/outages");
+  await page.locator('a[href="/events/OPERATOR-TEST"]').click();
+  await page.getByRole("button", { name: "Acknowledge", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Acknowledged", exact: true })).toBeDisabled();
+  await expect(page.locator("main").getByText("Active", { exact: true })).toBeVisible();
+  expect(statuses).toEqual(["acknowledged"]);
+  await page.getByRole("button", { name: "Mark resolved", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Resolved", exact: true })).toBeDisabled();
+  await expect(page.locator("main").getByText("Active", { exact: true })).toHaveCount(0);
+  expect(statuses).toEqual(["acknowledged", "resolved"]);
+  await expect(page.getByRole("note")).toContainText("Saved local edit");
 });

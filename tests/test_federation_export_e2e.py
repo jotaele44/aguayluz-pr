@@ -89,14 +89,6 @@ def test_outputs_deliverable_against_real_corpus(real_corpus, tmp_path, monkeypa
     now = "2026-06-08T13:45:24Z"
     outputs = tmp_path / "outputs"
 
-    # build_outputs invokes `aguayluz.validation.run_gates()` for the
-    # bootstrap dance (delete stale hub_export+integration_report, sweep gates,
-    # record real statuses). The gate sweep reads the OUTPUTS_DIR module
-    # constant — repoint it at our tmp dir so the inspection matches the
-    # writes; otherwise the assertions on G05/G06 below test the wrong place.
-    from aguayluz import validation as ayl_validation
-    monkeypatch.setattr(ayl_validation, "OUTPUTS_DIR", outputs)
-
     reading_files = [REPO_ROOT / "data/reservoir_levels.jsonl"] + sorted(
         (REPO_ROOT / "data").glob("*_readings.jsonl"))
     readings = [r for p in reading_files for r in _load_jsonl(p)]
@@ -173,6 +165,11 @@ def test_outputs_deliverable_against_real_corpus(real_corpus, tmp_path, monkeypa
              "COVERAGE_LEDGER", "HUB_EXPORT", "NO_SECRETS", "TESTS"], start=1)
     }
     statuses = {g["id"]: g["status"] for g in report["gates"]}
+    provenance = next(g for g in report["gates"] if g["id"] == "G02_SOURCE_MANIFEST")
+    coverage = json.loads(provenance["details"])
+    assert provenance["status"] in {"PASS", "WARN"}
+    assert coverage["entities"] == coverage["bound"] == len(assets) + len(events) + len(readings)
+    assert coverage["missing"] == coverage["invalid"] == 0
     assert all(s in {"PASS", "WARN", "FAIL", "SKIP"} for s in statuses.values())
     assert statuses["G05_COVERAGE_LEDGER"] == "SKIP", (
         "G05 must report SKIP at build time (the integration_report we are "
@@ -184,6 +181,29 @@ def test_outputs_deliverable_against_real_corpus(real_corpus, tmp_path, monkeypa
     assert report["coverage"]["coverage_pct"] == _coverage_pct(
         aggregates["located"], aggregates["records_total"]
     )
+
+
+def test_monitoring_manifest_preserves_source_versions(tmp_path, monkeypatch):
+    from aguayluz import validation as gates
+    reading = {
+        "reading_id": "AYL_RDG_20260912_fixture", "asset_id": "fixture:asset",
+        "metric": "reservoir_storage_pct", "value": 0, "unit": "%",
+        "observed_date": "2026-09-12", "source_ref": "fixture:readings",
+        "evidence_tier": "T1", "confidence": 90, "review_status": "accepted",
+    }
+    rows = [dict(reading, source_hash=digest) for digest in ("a" * 64, "b" * 64, "a" * 64)]
+    build_outputs([], [], _compute_aggregates([], []), "2026-09-12T00:00:00Z", tmp_path, rows)
+    manifest = json.loads((tmp_path / "source_manifest.json").read_text())
+    assert len(manifest["entries"]) == 2
+    assert {e["source_hash"] for e in manifest["entries"]} == {"a" * 64, "b" * 64}
+    result = gates.gate_g02_source_manifest(outputs_dir=tmp_path)
+    assert result.status == "WARN"
+    details = json.loads(result.details)
+    assert details["entities"] == details["bound"] == details["multiple_candidates"] == 3
+    assert details["missing"] == details["invalid"] == 0
+    assert json.loads((tmp_path / "monitoring_readings.json").read_text()) == rows
+    ledger = json.loads((tmp_path / "integration_report.json").read_text())
+    assert next(g for g in ledger["gates"] if g["id"] == "G02_SOURCE_MANIFEST")["status"] == "WARN"
 
 
 class _FakeGate:

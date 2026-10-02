@@ -69,8 +69,69 @@ def test_current_events_picks_up_a_newly_written_row(tmp_path, monkeypatch):
     backend._file_cache.clear()
     monkeypatch.setattr(backend, "_EVENT_SOURCE_PATHS", (service_events, aee_incidents))
     monkeypatch.setattr(backend, "_live_event_path", live_incidents)
+    monkeypatch.setattr(backend, "OPERATOR_STATE_PATH", tmp_path / "operator.sqlite")
 
     assert backend._current_events() == []
 
     service_events.write_text(json.dumps({"event_id": "NEW_ROW"}) + "\n", encoding="utf-8")
     assert backend._current_events() == [{"event_id": "NEW_ROW"}]
+
+
+def test_stream_stops_before_reading_when_client_disconnects(monkeypatch):
+    class DisconnectedRequest:
+        async def is_disconnected(self):
+            return True
+
+    def unexpected_read():
+        pytest.fail("Disconnected streams must not read source or operator state")
+
+    monkeypatch.setattr(backend, "_current_events", unexpected_read)
+
+    async def run():
+        response = await backend.events_stream(DisconnectedRequest())
+        with pytest.raises(StopAsyncIteration):
+            await response.body_iterator.__anext__()
+
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("duplicate_first", [False, True])
+def test_refreshed_events_preserve_edits_and_reject_new_id_collisions(tmp_path, monkeypatch, duplicate_first):
+    from starlette.testclient import TestClient
+
+    source = tmp_path / "events.jsonl"
+    source.write_text("", encoding="utf-8")
+    monkeypatch.setattr(backend, "_EVENT_SOURCE_PATHS", (source,))
+    monkeypatch.setattr(backend, "_live_event_path", tmp_path / "live.jsonl")
+    monkeypatch.setattr(backend, "OPERATOR_STATE_PATH", tmp_path / "operator.sqlite")
+    monkeypatch.setattr(backend, "_API_KEY", "")
+    monkeypatch.setattr(backend, "_file_cache", {})
+    monkeypatch.setattr(backend, "_events", [])
+
+    with TestClient(backend.app) as client:
+        assert client.get("/events").json()["total"] == 0
+        row = {"event_id": "NEW", "event_type": "outage", "municipality": "Ponce"}
+        source.write_text(json.dumps(row) + "\n", encoding="utf-8")
+        patch = {"resolution_status": "acknowledged"}
+        assert client.patch("/events/NEW", json=patch).status_code == 200
+
+        refreshed = {**row, "source_ref": "updated-source"}
+        source.write_text(json.dumps(refreshed) + "\n", encoding="utf-8")
+        current = client.get("/events/NEW").json()
+        assert current["source_ref"] == "updated-source"
+        assert current["resolution_status"] == "acknowledged"
+        assert _first_sse_payload() == [current]
+        assert json.loads(source.read_text()) == refreshed
+
+        duplicate = {**row, "municipality": "San Juan"}
+        rows = [duplicate, refreshed] if duplicate_first else [refreshed, duplicate]
+        frozen = "".join(json.dumps(item) + "\n" for item in rows)
+        source.write_text(frozen, encoding="utf-8")
+        result = client.get("/events").json()
+        assert result["total"] == len(result["items"]) == 2
+        assert all(item["operator_override"]["state"] == "UNRESOLVED" for item in result["items"])
+        assert all("resolution_status" not in item for item in result["items"])
+        assert client.patch("/events/NEW", json=patch).status_code == 409
+        assert client.get("/events/NEW").status_code == 409
+        assert backend._operator_store().status()["audit_entries"] == 1
+        assert source.read_text() == frozen

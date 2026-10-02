@@ -184,13 +184,14 @@ export default function AssetsTable({ assets = [], isLoading, selectedId, onSele
             value={q}
             onChange={(e) => setFilters({ q: e.target.value })}
             ref={searchRef}
+            aria-label="Search assets"
             placeholder="Search asset, municipio, operator, source… (press / to focus)"
             className="h-8 flex-1 border-slate-800 bg-slate-950 text-xs"
           />
           <Button size="sm" variant="outline" onClick={clear} aria-label="Clear filters" title="Clear filters" className="h-8 border-slate-800 bg-slate-950 px-2 text-xs text-slate-400 hover:text-slate-100">
             <FilterX className="h-3.5 w-3.5" />
           </Button>
-          <Button size="sm" variant="outline" onClick={() => downloadCSV('assets.csv', rows, ['asset_id','asset_name','asset_type','asset_subtype','municipality','status','operator','evidence_tier','lat','lon'])} className="h-8 border-slate-800 bg-slate-950 px-2 text-xs text-slate-400 hover:text-slate-100" title="Export CSV">
+          <Button size="sm" variant="outline" aria-label="Export assets as CSV" onClick={() => downloadCSV('assets.csv', rows, ['asset_id','asset_name','asset_type','asset_subtype','municipality','status','operator','evidence_tier','lat','lon'])} className="h-8 border-slate-800 bg-slate-950 px-2 text-xs text-slate-400 hover:text-slate-100" title="Export CSV">
             <Download className="h-3.5 w-3.5" />
           </Button>
         </div>
@@ -240,7 +241,7 @@ export default function AssetsTable({ assets = [], isLoading, selectedId, onSele
         </div>
       </div>
 
-      <div ref={scrollRef} className="flex-1 overflow-auto">
+      <div ref={scrollRef} data-testid="asset-scroll-viewport" className="min-h-0 flex-1 overflow-auto" style={{ maxHeight: '65vh' }}>
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-slate-900 shadow-xs shadow-slate-950">
             <TableRow className="border-slate-800 hover:bg-transparent">

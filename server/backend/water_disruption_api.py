@@ -2,17 +2,48 @@
 from __future__ import annotations
 
 import html
+import ipaddress
 import os
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
 from server.backend.water_disruption import WaterIncidentService
 
-router = APIRouter(prefix="/water-disruption", tags=["water-disruption"])
+_LOCAL_NETWORKS = tuple(
+    ipaddress.ip_network(network)
+    for network in (
+        "127.0.0.0/8",
+        "10.0.0.0/8",
+        "172.16.0.0/12",
+        "192.168.0.0/16",
+        "169.254.0.0/16",
+        "::1/128",
+        "fc00::/7",
+        "fe80::/10",
+    )
+)
+
+
+def _require_local_request(request: Request) -> None:
+    host = request.client.host if request.client else ""
+    try:
+        ip = ipaddress.ip_address(host)
+        allowed = any(network.version == ip.version and ip in network for network in _LOCAL_NETWORKS)
+    except ValueError:
+        allowed = host in {"localhost", "testclient"}
+    if not allowed:
+        raise HTTPException(status_code=403, detail="water-disruption writes are local-only")
+
+
+router = APIRouter(
+    prefix="/water-disruption",
+    tags=["water-disruption"],
+    dependencies=[Depends(_require_local_request)],
+)
 service = WaterIncidentService(Path(os.environ.get("AGUAYLUZ_DATA_DIR", ".aguayluz")) / "water-disruption")
 
 
