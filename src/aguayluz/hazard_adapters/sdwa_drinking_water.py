@@ -70,10 +70,10 @@ def _status(row: dict[str, Any]) -> RecordStatus:
     ).casefold()
     if not raw:
         return RecordStatus.UNRESOLVED
-    if any(token in raw for token in ("resolved", "addressed", "returned to compliance", "rtc")):
-        return RecordStatus.INACTIVE
     if any(token in raw for token in ("unresolved", "unaddressed", "open", "active")):
         return RecordStatus.ACTIVE
+    if any(token in raw for token in ("resolved", "addressed", "returned to compliance", "rtc")):
+        return RecordStatus.INACTIVE
     if any(token in raw for token in ("archived", "historical")):
         return RecordStatus.FINAL
     return RecordStatus.UNRESOLVED
