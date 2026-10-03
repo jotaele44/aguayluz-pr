@@ -1,4 +1,5 @@
 import csv
+import json
 from pathlib import Path
 
 import pytest
@@ -64,7 +65,7 @@ def test_sdwis_row_classification_is_bounded_by_pwsid_and_calendar_overlap():
     ) == ("UNRESOLVED", "NONCOMPLIANCE_PERIOD_MISSING")
 
 
-def test_blocked_salud_locators_and_sdwis_source_arithmetic_are_preserved(tmp_path):
+def test_live_unfrozen_salud_locators_and_sdwis_source_arithmetic_are_preserved(tmp_path):
     csv_path = tmp_path / "sdwis.csv"
     _write_csv(
         csv_path,
@@ -94,15 +95,15 @@ def test_blocked_salud_locators_and_sdwis_source_arithmetic_are_preserved(tmp_pa
     assert receipt["salud_artifact_arithmetic"] == {
         "source": 3,
         "frozen": 0,
-        "blocked": 2,
-        "present_unfrozen": 1,
+        "blocked": 0,
+        "present_unfrozen": 3,
         "accounted": 3,
         "delta": 0,
         "state": "PASS",
     }
     by_id = {row["source_record_id"]: row for row in receipt["salud_artifacts"]}
-    assert by_id["10747"]["status"] == "BLOCKED_ACQUISITION"
-    assert by_id["10748"]["status"] == "BLOCKED_ACQUISITION"
+    assert by_id["10747"]["status"] == "SOURCE_PRESENT_BYTES_NOT_FROZEN"
+    assert by_id["10748"]["status"] == "SOURCE_PRESENT_BYTES_NOT_FROZEN"
     assert by_id["10747"]["byte_sha256"] is None
     assert receipt["sdwis_source_arithmetic"] == {
         "source": 4,
@@ -185,3 +186,50 @@ def test_sdwis_source_url_is_required_for_traceability(tmp_path):
             output_root=tmp_path / "out",
             sdwis_violations=csv_path,
         )
+
+
+def test_full_official_sdwis_member_can_be_scoped_to_pr_without_rewriting_source_identity(tmp_path):
+    csv_path = tmp_path / "sdwis.csv"
+    _write_csv(
+        csv_path,
+        [
+            _base(VIOLATION_ID="PR-KEEP"),
+            _base(
+                PWSID="PR0000002",
+                VIOLATION_ID="PR-OLD",
+                NON_COMPL_PER_BEGIN_DATE="2024-01-01",
+                NON_COMPL_PER_END_DATE="2024-12-31",
+            ),
+            _base(PWSID="NY0000001", VIOLATION_ID="NY-OUT"),
+        ],
+    )
+
+    receipt = run(
+        year=2025,
+        output_root=tmp_path / "out",
+        sdwis_violations=csv_path,
+        sdwis_source_url="https://example.invalid/SDWA_latest_downloads.zip#SDWA_VIOLATIONS_ENFORCEMENT.csv",
+        sdwis_scope_pws_prefix="PR",
+    )
+
+    arithmetic = receipt["sdwis_source_arithmetic"]
+    assert arithmetic["manifestation_record_count"] == 3
+    assert arithmetic["scoped_record_count"] == 2
+    assert arithmetic["source"] == 2
+    assert arithmetic["retained"] == 1
+    assert arithmetic["excluded"] == 1
+    assert arithmetic["unresolved"] == 0
+    assert arithmetic["delta"] == 0
+    assert arithmetic["scope_pws_prefix"] == "PR"
+
+    manifestations = [
+        json.loads(line)
+        for line in (tmp_path / "out" / "hazard_manifestations.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+        if line.strip()
+    ]
+    sdwis = next(
+        row for row in manifestations if row["source_record_id"] == "SDWA_VIOLATIONS_ENFORCEMENT.csv"
+    )
+    assert sdwis["record_count"] == 3
