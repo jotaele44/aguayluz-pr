@@ -5,6 +5,7 @@ Puerto Rico Department of Health annual-report manifestations separate from late
 federal SDWIS snapshots: federal rows reconcile identity and revision state; they do
 not overwrite what a state annual report published for its own frozen reporting year.
 """
+
 from __future__ import annotations
 
 import json
