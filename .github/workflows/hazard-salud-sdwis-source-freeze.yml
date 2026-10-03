@@ -80,6 +80,11 @@ jobs:
           assert arithmetic["scope_pws_prefix"] == "PR", arithmetic
           assert arithmetic["manifestation_record_count"] >= arithmetic["scoped_record_count"] > 0, arithmetic
           assert arithmetic["source"] == arithmetic["scoped_record_count"], arithmetic
+          assert arithmetic["retained_source_row_count"] == arithmetic["retained"], arithmetic
+          assert arithmetic["retained_violation_identity_count"] <= arithmetic["retained_source_row_count"], arithmetic
+          assert arithmetic["enforcement_duplicate_source_rows"] == (
+              arithmetic["retained_source_row_count"] - arithmetic["retained_violation_identity_count"]
+          ), arithmetic
           assert arithmetic["delta"] == 0, arithmetic
           salud_arithmetic = receipt["salud_artifact_arithmetic"]
           assert salud_arithmetic["state"] == "PASS", salud_arithmetic
@@ -117,5 +122,6 @@ jobs:
             artifacts/salud_sdwis_2025/ingest/hazard_manifestations.jsonl
             artifacts/salud_sdwis_2025/ingest/hazard_records.jsonl
             artifacts/salud_sdwis_2025/ingest/hazard_source_accounting.jsonl
+            artifacts/salud_sdwis_2025/ingest/sdwis_source_classifications.jsonl
           if-no-files-found: error
           retention-days: 90
