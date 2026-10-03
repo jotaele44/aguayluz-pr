@@ -11,7 +11,7 @@
     },
     {
       "date": "2026-10-02",
-      "summary": "Adopted the change-coupled documentation gate defined by thehub-pr ADR 0010: the shared tools/check_docs_sync.py, a docs-sync workflow, a Claude Code Stop hook, CLAUDE.md, and this repo's .federation/docs-sync.json. Re-pinned PRII_TEMPLATE_REF to thehub-pr a86951e. Tooling and workflow change only: no contract, schema or dependency edge changed. PROVISIONAL until docs-sync is a required status check on main.",
+      "summary": "Adopted the change-coupled documentation gate defined by thehub-pr ADR 0010: the shared tools/check_docs_sync.py, a docs-sync workflow, a Claude Code Stop hook, CLAUDE.md, and this repo's .federation/docs-sync.json. Re-pinned PRII_TEMPLATE_REF to thehub-pr 09e2e54, which carries the checker's fix for path:symbol references and the prii-desktop pin bump in requirements-desktop.txt (a desktop startup failure now shows an error screen instead of hanging Setup). Tooling and workflow change plus that pin bump: no contract, schema or dependency edge changed. PROVISIONAL until docs-sync is a required status check on main.",
       "files": [
         "tools/check_docs_sync.py",
         ".github/workflows/docs-sync.yml",
@@ -19,6 +19,7 @@
         ".claude/settings.json",
         "CLAUDE.md",
         ".federation/docs-sync.json",
+        "requirements-desktop.txt",
         "governance/change_log.json"
       ]
     }
