@@ -16,9 +16,35 @@ from typing import Any
 from aguayluz.hazard_plane import HazardFamily, HazardRecord, RecordKind, RecordStatus
 
 
+ENFORCEMENT_FIELDS = frozenset(
+    {
+        "ENFORCEMENT_ID",
+        "ENFORCEMENT_DATE",
+        "ENFORCEMENT_ACTION_TYPE_CODE",
+        "ENF_ACTION_CATEGORY",
+        "ENF_ORIGINATOR_CODE",
+        "ENF_FIRST_REPORTED_DATE",
+        "ENF_LAST_REPORTED_DATE",
+    }
+)
+
+
 def row_digest(row: dict[str, Any]) -> str:
     payload = json.dumps(row, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     return sha256(payload.encode("utf-8")).hexdigest()
+
+
+def violation_projection(row: dict[str, Any]) -> dict[str, Any]:
+    """Return the violation-level fields, excluding one-to-many enforcement columns."""
+    return {
+        str(key): value
+        for key, value in row.items()
+        if str(key).upper() not in ENFORCEMENT_FIELDS and not str(key).startswith("_")
+    }
+
+
+def violation_digest(row: dict[str, Any]) -> str:
+    return row_digest(violation_projection(row))
 
 
 def _value(row: dict[str, Any], *names: str) -> str:
@@ -32,7 +58,7 @@ def _value(row: dict[str, Any], *names: str) -> str:
 
 def _date(value: Any) -> datetime | None:
     text = str(value or "").strip()
-    if not text:
+    if not text or text == "--->":
         return None
     for fmt in (
         "%Y-%m-%d",
@@ -57,7 +83,7 @@ def canonical_event_id(row: dict[str, Any]) -> str:
 
 
 def stable_record_id(row: dict[str, Any]) -> str:
-    return f"{canonical_event_id(row)}:REV:{row_digest(row)[:20]}"
+    return f"{canonical_event_id(row)}:REV:{violation_digest(row)[:20]}"
 
 
 def _status(row: dict[str, Any]) -> RecordStatus:
@@ -109,6 +135,7 @@ def normalize(
     manifestation_id: str,
     *,
     supersedes_record_id: str | None = None,
+    enforcement_rows: list[dict[str, Any]] | None = None,
 ) -> HazardRecord:
     """Normalize one SDWIS violation row without converting compliance failures into exposure."""
     pwsid = _value(row, "PWSID")
@@ -122,6 +149,21 @@ def normalize(
     title = violation_name or hazard_type.replace("_", " ").title()
     if system_name:
         title = f"{system_name}: {title}"
+
+    enforcement_rows = enforcement_rows or []
+    enforcement_actions = [
+        {
+            "enforcement_id": _value(item, "ENFORCEMENT_ID") or None,
+            "enforcement_date": _value(item, "ENFORCEMENT_DATE") or None,
+            "action_type_code": _value(item, "ENFORCEMENT_ACTION_TYPE_CODE") or None,
+            "action_category": _value(item, "ENF_ACTION_CATEGORY") or None,
+            "originator_code": _value(item, "ENF_ORIGINATOR_CODE") or None,
+            "first_reported_date": _value(item, "ENF_FIRST_REPORTED_DATE") or None,
+            "last_reported_date": _value(item, "ENF_LAST_REPORTED_DATE") or None,
+            "source_row_sha256": row_digest(item),
+        }
+        for item in enforcement_rows
+    ]
 
     return HazardRecord(
         record_id=stable_record_id(row),
@@ -170,10 +212,11 @@ def normalize(
             "unit_of_measure": _value(row, "UNIT_OF_MEASURE") or None,
             "federal_mcl": _value(row, "FEDERAL_MCL") or None,
             "state_mcl": _value(row, "STATE_MCL") or None,
-            "latest_enforcement_id": _value(row, "LATEST_ENFORCEMENT_ID") or None,
-            "rtc_enforcement_id": _value(row, "RTC_ENFORCEMENT_ID") or None,
+            "violation_revision_sha256": violation_digest(row),
             "source_row_sha256": row_digest(row),
             "source_row": row,
+            "source_row_count": max(1, len(enforcement_rows)),
+            "enforcement_actions": enforcement_actions,
             "semantic_guardrail": (
                 "Compliance/monitoring/public-notification violations do not by themselves "
                 "establish contaminant exposure or measured exceedance."
