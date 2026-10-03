@@ -5,11 +5,13 @@ on:
     branches: [main]
     paths:
       - "scripts/ingest_salud_sdwis_water.py"
+      - "scripts/acquire_salud_sdwis_water.py"
       - "src/aguayluz/hazard_adapters/sdwa_drinking_water.py"
       - "config/hazard_advisory_sources.v1.json"
       - ".federation/gui-capabilities.json"
       - "tests/test_hazard_adapter_sdwa_drinking_water.py"
       - "tests/test_ingest_salud_sdwis_water.py"
+      - "tests/test_acquire_salud_sdwis_water.py"
       - ".github/workflows/hazard-salud-sdwis-water.yml"
   workflow_dispatch:
 
@@ -38,13 +40,18 @@ jobs:
         env:
           PYTHONPATH: src:.
         run: |
-          pytest -q             tests/test_hazard_adapter_sdwa_drinking_water.py             tests/test_ingest_salud_sdwis_water.py
+          pytest -q \
+            tests/test_hazard_adapter_sdwa_drinking_water.py \
+            tests/test_ingest_salud_sdwis_water.py \
+            tests/test_acquire_salud_sdwis_water.py
 
-      - name: Verify blocked-source receipt without fabricating manifestations
+      - name: Verify live-unfrozen source receipt without fabricating manifestations
         env:
           PYTHONPATH: src:.
         run: |
-          python scripts/ingest_salud_sdwis_water.py             --year 2025             --output-root artifacts/salud_sdwis_contract
+          python scripts/ingest_salud_sdwis_water.py \
+            --year 2025 \
+            --output-root artifacts/salud_sdwis_contract
 
       - name: Validate receipt guardrails
         shell: python
@@ -58,8 +65,8 @@ jobs:
           assert arithmetic["state"] == "PASS", arithmetic
           assert arithmetic["source"] == 3, arithmetic
           assert arithmetic["frozen"] == 0, arithmetic
-          assert arithmetic["blocked"] == 2, arithmetic
-          assert arithmetic["present_unfrozen"] == 1, arithmetic
+          assert arithmetic["blocked"] == 0, arithmetic
+          assert arithmetic["present_unfrozen"] == 3, arithmetic
           assert receipt["sdwis_source_arithmetic"] is None, receipt
           assert receipt["source_universe_completeness_claimed"] is False, receipt
           assert receipt["certification_state"] == "OPEN", receipt

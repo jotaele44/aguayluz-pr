@@ -1488,7 +1488,7 @@
       "classification": "internal",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Offline-first Puerto Rico Department of Health annual drinking-water artifact freeze and EPA SDWIS reconciliation feeding the existing Environmental Exposure hazard plane. This is a producer/provenance workflow, not a second user-facing control. Unfrozen Salud locators remain explicit BLOCKED/PRESENT states; federal snapshots preserve PWSID/VIOLATION_ID revision identity and cannot substitute for the state annual-report manifestation.",
+      "rationale": "Offline-first Puerto Rico Department of Health annual drinking-water artifact freeze and EPA SDWIS reconciliation feeding the existing Environmental Exposure hazard plane. This is a producer/provenance workflow, not a second user-facing control. Unfrozen official Salud locators remain explicit PRESENT states; acquisition freezes exact bytes before parsing; federal snapshots preserve PWSID/VIOLATION_ID revision identity and cannot substitute for the state annual-report manifestation.",
       "backend": {
         "files": [
           "src/aguayluz/hazard_adapters/sdwa_drinking_water.py"
@@ -1497,23 +1497,32 @@
           "src/aguayluz/hazard_adapters/sdwa_drinking_water.py:row_digest",
           "src/aguayluz/hazard_adapters/sdwa_drinking_water.py:canonical_event_id",
           "src/aguayluz/hazard_adapters/sdwa_drinking_water.py:stable_record_id",
-          "src/aguayluz/hazard_adapters/sdwa_drinking_water.py:normalize"
+          "src/aguayluz/hazard_adapters/sdwa_drinking_water.py:normalize",
+          "src/aguayluz/hazard_adapters/sdwa_drinking_water.py:violation_projection",
+          "src/aguayluz/hazard_adapters/sdwa_drinking_water.py:violation_digest"
         ]
       },
       "analysis": {
         "files": [
-          "scripts/ingest_salud_sdwis_water.py"
+          "scripts/ingest_salud_sdwis_water.py",
+          "scripts/acquire_salud_sdwis_water.py"
         ],
         "symbols": [
           "scripts/ingest_salud_sdwis_water.py:classify_sdwis_row",
           "scripts/ingest_salud_sdwis_water.py:run",
-          "scripts/ingest_salud_sdwis_water.py:main"
+          "scripts/ingest_salud_sdwis_water.py:main",
+          "scripts/acquire_salud_sdwis_water.py:sha256_file",
+          "scripts/acquire_salud_sdwis_water.py:locate_member",
+          "scripts/acquire_salud_sdwis_water.py:extract_member",
+          "scripts/acquire_salud_sdwis_water.py:run",
+          "scripts/acquire_salud_sdwis_water.py:main"
         ]
       },
       "tests": {
         "contract": [
           "tests/test_hazard_adapter_sdwa_drinking_water.py",
-          "tests/test_ingest_salud_sdwis_water.py"
+          "tests/test_ingest_salud_sdwis_water.py",
+          "tests/test_acquire_salud_sdwis_water.py"
         ]
       }
     }
