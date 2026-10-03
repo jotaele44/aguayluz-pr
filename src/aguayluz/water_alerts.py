@@ -5,7 +5,7 @@ active, but ``data/alert_events.jsonl`` historically held only hand-authored see
 placeholders. This module closes that gap by projecting the producer's *real* water
 signals into the alert layer:
 
-* **CONTAMINATION** — EPA SDWIS boil-water advisories and health-based
+* **CONTAMINATION** — explicitly sourced boil-water advisories plus EPA SDWIS health-based
   water-quality violations (``data/service_events.jsonl``, evidence tier T1).
 * **HYDRO_OPS** — USGS daily reservoir readings (``data/reservoir_levels.jsonl``,
   T1) flagged low by a transparent *per-site statistical proxy*.
@@ -20,8 +20,8 @@ Provenance honesty:
   relative to that site's *own* recorded history — it never invents an absolute
   operating threshold.
 * Non-health monitoring/reporting violations are **not** promoted to alerts; they
-  remain in the service-event stream. Only acute (boil-water) and health-based
-  quality events become CONTAMINATION alerts.
+  remain in the service-event stream. A ``boil_water`` event must already be an explicitly sourced advisory;
+  SDWIS violations promote only as health-based regulatory quality events.
 
 The functions here are pure (no I/O, no wall-clock); ``scripts/build_water_alerts.py``
 is the CLI that loads data, calls :func:`build_water_alerts`, and merges the result
@@ -120,7 +120,7 @@ def contamination_alert(
     geo: dict[str, dict[str, Any]],
     index: AssetIndex | None = None,
 ) -> AlertEvent | None:
-    """Project one SDWIS service event into a CONTAMINATION AlertEvent.
+    """Project one water-quality/advisory service event into a CONTAMINATION AlertEvent.
 
     Returns ``None`` for events that are not acute and not health-based — those
     stay in the service-event stream rather than becoming alerts.
@@ -192,7 +192,7 @@ def contamination_alert(
         review_status=review_status,
         evidence_tier=event.get("evidence_tier") or "T1",
         linked_asset_ids=merge_asset_ids(event.get("linked_asset_ids"), linked),
-        validation_notes="Derived from EPA SDWIS violation record; health-based/acute filter applied.",
+        validation_notes="Promoted from an already-ingested source event; SDWIS stays a regulatory violation and boil-water status must be explicit upstream.",
     )
 
 

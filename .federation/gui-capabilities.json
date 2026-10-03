@@ -1482,6 +1482,46 @@
           "tests/test_ingest_drna_beach_monitoring.py"
         ]
       }
+    },
+    {
+      "id": "epa-sdwis-hazard-ingest",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Keyless provenance-frozen EPA SDWIS ingestion feeds the existing Environmental Exposure hazard plane and the legacy service-event compatibility projection from one acquisition stack. It is an internal producer, not a second user control surface. PWSID is authoritative water-system identity; regulatory violations are never promoted to boil-water, do-not-drink, do-not-use, exposure, or causal advisory semantics without an explicit authoritative advisory manifestation.",
+      "backend": {
+        "files": [
+          "src/aguayluz/hazard_adapters/epa_sdwis.py"
+        ],
+        "symbols": [
+          "src/aguayluz/hazard_adapters/epa_sdwis.py:row_digest",
+          "src/aguayluz/hazard_adapters/epa_sdwis.py:canonical_event_id",
+          "src/aguayluz/hazard_adapters/epa_sdwis.py:stable_record_id",
+          "src/aguayluz/hazard_adapters/epa_sdwis.py:normalize"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/ingest_sdwis_violations.py"
+        ],
+        "symbols": [
+          "scripts/ingest_sdwis_violations.py:FrozenPage",
+          "scripts/ingest_sdwis_violations.py:OutputPaths",
+          "scripts/ingest_sdwis_violations.py:_fetch_table_live",
+          "scripts/ingest_sdwis_violations.py:classify_violation_row",
+          "scripts/ingest_sdwis_violations.py:build_events",
+          "scripts/ingest_sdwis_violations.py:process_pages",
+          "scripts/ingest_sdwis_violations.py:run",
+          "scripts/ingest_sdwis_violations.py:main"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_hazard_adapter_epa_sdwis.py",
+          "tests/test_ingest_sdwis_violations.py",
+          "tests/test_ingest_sdwis_hazard.py"
+        ]
+      }
     }
   ],
   "exceptions": []

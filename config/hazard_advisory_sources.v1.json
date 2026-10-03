@@ -102,9 +102,13 @@
       "family": "EPA_DRINKING_WATER_HEALTH",
       "authority": "EPA",
       "hazard_family": "WATER_HEALTH",
-      "access": "federal drinking-water and enforcement data",
-      "url": "https://www.epa.gov/ground-water-and-drinking-water",
-      "status": "OPEN_PR_EVENT_DENOMINATOR"
+      "access": "EPA Envirofacts SDWIS public API; federal drinking-water violation and enforcement data",
+      "url": "https://data.epa.gov/efservice/",
+      "status": "BOUND_PR_VIOLATION_SNAPSHOT_SOURCE_CERTIFICATION_PENDING",
+      "update_semantics": "SDWIS/Fed is reported on a periodic federal cycle and is not a real-time operational advisory feed",
+      "identity_semantics": "PWSID + violation_id is canonical regulatory event identity; source-row changes create revisions",
+      "binding_semantics": "PWSID is authoritative water-system identity; municipality text is not promoted to canonical geographic identity without independent binding",
+      "advisory_semantics": "a SDWIS violation, including a Tier-1 microbial health-based violation, does not by itself establish a boil-water, do-not-drink, or do-not-use advisory"
     }
   ],
   "unresolved_material": [
