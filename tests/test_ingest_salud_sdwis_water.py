@@ -72,6 +72,87 @@ def test_sdwis_row_classification_is_bounded_by_pwsid_and_calendar_overlap():
     ) == ("UNRESOLVED", "NONCOMPLIANCE_PERIOD_MISSING")
 
 
+
+def test_open_ended_epa_sentinel_is_retained_when_period_starts_in_target_year():
+    disposition, reason = classify_sdwis_row(
+        _base(
+            NON_COMPL_PER_BEGIN_DATE="07/01/2025",
+            NON_COMPL_PER_END_DATE="--->",
+            VIOLATION_STATUS="Unaddressed",
+        ),
+        2025,
+    )
+
+    assert disposition == "RETAINED"
+    assert reason == "PUERTO_RICO_NONCOMPLIANCE_OVERLAPS_2025"
+
+
+def test_reversed_noncompliance_dates_remain_unresolved():
+    disposition, reason = classify_sdwis_row(
+        _base(
+            NON_COMPL_PER_BEGIN_DATE="10/01/2025",
+            NON_COMPL_PER_END_DATE="09/30/2025",
+        ),
+        2025,
+    )
+
+    assert disposition == "UNRESOLVED"
+    assert reason == "NONCOMPLIANCE_END_PRECEDES_BEGIN"
+
+
+def test_enforcement_multiplicity_closes_source_rows_to_one_violation_identity(tmp_path):
+    csv_path = tmp_path / "sdwis.csv"
+    _write_csv(
+        csv_path,
+        [
+            _base(
+                ENFORCEMENT_ID="E-1",
+                ENFORCEMENT_DATE="2025-03-02",
+                ENFORCEMENT_ACTION_TYPE_CODE="SIE",
+            ),
+            _base(
+                ENFORCEMENT_ID="E-2",
+                ENFORCEMENT_DATE="2025-03-10",
+                ENFORCEMENT_ACTION_TYPE_CODE="SOX",
+            ),
+        ],
+    )
+
+    receipt = run(
+        year=2025,
+        output_root=tmp_path / "out",
+        sdwis_violations=csv_path,
+        sdwis_source_url="https://example.invalid/official-sdwis.csv",
+        sdwis_scope_pws_prefix="PR",
+    )
+
+    arithmetic = receipt["sdwis_source_arithmetic"]
+    assert arithmetic["source"] == 2
+    assert arithmetic["retained"] == 2
+    assert arithmetic["unresolved"] == 0
+    assert arithmetic["retained_source_row_count"] == 2
+    assert arithmetic["retained_violation_identity_count"] == 1
+    assert arithmetic["enforcement_duplicate_source_rows"] == 1
+    assert receipt["new_record_revisions"] == 1
+    assert receipt["sdwis_classification_ledger"]["record_count"] == 2
+    assert receipt["sdwis_classification_ledger"]["reason_counts"] == {
+        "PUERTO_RICO_NONCOMPLIANCE_OVERLAPS_2025": 2
+    }
+
+    records = [
+        HazardRecord.model_validate_json(line)
+        for line in (tmp_path / "out" / "hazard_records.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+        if line.strip()
+    ]
+    assert len(records) == 1
+    assert records[0].raw_attributes["source_row_count"] == 2
+    assert [item["enforcement_id"] for item in records[0].raw_attributes["enforcement_actions"]] == [
+        "E-1",
+        "E-2",
+    ]
+
 def test_live_unfrozen_salud_locators_and_sdwis_source_arithmetic_are_preserved(tmp_path):
     csv_path = tmp_path / "sdwis.csv"
     _write_csv(
