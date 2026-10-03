@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "scope": "Puerto Rico food, agricultural, animal, human infectious-disease, wastewater, water-health and environmental-health advisory source-family denominator",
-  "as_of": "2026-09-30",
+  "as_of": "2026-10-03",
   "certification_state": "OPEN",
   "completeness_claimed": false,
   "product_capability_id": "hazard-advisory-plane",
@@ -99,12 +99,35 @@
       "status": "OPEN_ENDPOINT_ENUMERATION"
     },
     {
+      "family": "PRDOH_DRINKING_WATER_ANNUAL_VIOLATIONS",
+      "authority": "Puerto Rico Department of Health",
+      "hazard_family": "WATER_HEALTH",
+      "access": "annual report + annexes + public notice; exact source bytes required before manifestation promotion",
+      "url": "https://www.salud.pr.gov/CMS/611",
+      "status": "BOUND_2025_ARTIFACT_FAMILY_BYTES_PARTIAL_OPEN",
+      "bounded_scope": {
+        "reporting_period": "2025-01-01/2025-12-31",
+        "public_notice_id": "10746",
+        "annual_report_id": "10747",
+        "annexes_id": "10748",
+        "source_artifacts": 3,
+        "source_present": 3,
+        "bytes_frozen": 0,
+        "blocked_acquisition": 2,
+        "present_bytes_not_frozen": 1,
+        "source_universe_completeness_claimed": false
+      },
+      "binding_semantics": "state annual-report rows bind to PWSID/VIOLATION_ID only when those identifiers are present or independently reconciled; names alone are aliases"
+    },
+    {
       "family": "EPA_DRINKING_WATER_HEALTH",
       "authority": "EPA",
       "hazard_family": "WATER_HEALTH",
-      "access": "federal drinking-water and enforcement data",
-      "url": "https://www.epa.gov/ground-water-and-drinking-water",
-      "status": "OPEN_PR_EVENT_DENOMINATOR"
+      "access": "SDWA quarterly downloads / SDWIS Federal Reporting Services; federal reconciliation plane",
+      "url": "https://echo.epa.gov/tools/data-downloads/sdwa-download-summary",
+      "status": "BOUND_RECONCILIATION_SCHEMA_SOURCE_DENOMINATOR_OPEN",
+      "update_semantics": "quarterly SDWIS snapshots may revise violation, enforcement and return-to-compliance fields",
+      "binding_semantics": "PWSID is system identity; PWSID + FACILITY_ID is facility identity; VIOLATION_ID is violation identity within versioned federal snapshots"
     }
   ],
   "unresolved_material": [
@@ -114,6 +137,9 @@
     "PR_DEPARTMENT_OF_AGRICULTURE_COMPLETE_ADVISORY_DENOMINATOR",
     "EPA_AND_PRASA_BOIL_WATER_DO_NOT_DRINK_DO_NOT_USE_EVENT_DENOMINATOR",
     "HARMFUL_ALGAL_BLOOM_AND_CYANOBACTERIA_AUTHORITY_DENOMINATOR",
-    "HISTORICAL_BACKFILL_DENOMINATOR_PER_SOURCE_FAMILY"
+    "HISTORICAL_BACKFILL_DENOMINATOR_PER_SOURCE_FAMILY",
+    "PRDOH_2025_ANNUAL_VIOLATIONS_REPORT_10747_BYTES_AND_ROW_DENOMINATOR",
+    "PRDOH_2025_ANNEXES_10748_BYTES_AND_ROW_DENOMINATOR",
+    "EPA_SDWIS_PUERTO_RICO_2025_RECONCILIATION_DENOMINATOR"
   ]
 }
