@@ -1,14 +1,25 @@
+import importlib.util
+import sys
 import zipfile
+from pathlib import Path
 
 import pytest
-from scripts.acquire_salud_sdwis_water import (
-    EPA_MEMBER_BASENAME,
-    _validate_pdf,
-    _validate_zip,
-    extract_member,
-    locate_member,
-    sha256_file,
-)
+
+ROOT = Path(__file__).resolve().parents[1]
+SCRIPT = ROOT / "scripts" / "acquire_salud_sdwis_water.py"
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+SPEC = importlib.util.spec_from_file_location("acquire_salud_sdwis_water_under_test", SCRIPT)
+assert SPEC is not None and SPEC.loader is not None
+MODULE = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(MODULE)
+
+EPA_MEMBER_BASENAME = MODULE.EPA_MEMBER_BASENAME
+_validate_pdf = MODULE._validate_pdf
+_validate_zip = MODULE._validate_zip
+extract_member = MODULE.extract_member
+locate_member = MODULE.locate_member
+sha256_file = MODULE.sha256_file
 
 
 def test_pdf_validation_rejects_non_pdf(tmp_path):
