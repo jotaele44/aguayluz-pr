@@ -29,7 +29,11 @@ from pathlib import Path
 from typing import Any
 
 from aguayluz import DATA_DIR
-from aguayluz.hazard_adapters.sdwa_drinking_water import canonical_event_id, normalize
+from aguayluz.hazard_adapters.sdwa_drinking_water import (
+    canonical_event_id,
+    normalize,
+    violation_digest,
+)
 from aguayluz.hazard_plane import HazardRecord, Manifestation, current_records, source_arithmetic
 
 SALUD_ARTIFACTS = {
@@ -109,9 +113,12 @@ def _existing_current_by_event(path: Path) -> dict[str, HazardRecord]:
     return result
 
 
+OPEN_END_SENTINELS = frozenset({"--->"})
+
+
 def _parse_date(value: str) -> datetime | None:
     text = value.strip()
-    if not text:
+    if not text or text in OPEN_END_SENTINELS:
         return None
     for fmt in ("%Y-%m-%d", "%m/%d/%Y", "%d-%b-%Y", "%d-%b-%y", "%Y%m%d"):
         try:
@@ -143,10 +150,12 @@ def classify_sdwis_row(row: dict[str, Any], year: int) -> tuple[str, str]:
     end = _parse_date(end_raw)
     if begin_raw and begin is None:
         return "UNRESOLVED", "INVALID_NONCOMPLIANCE_BEGIN_DATE"
-    if end_raw and end is None:
+    if end_raw and end_raw not in OPEN_END_SENTINELS and end is None:
         return "UNRESOLVED", "INVALID_NONCOMPLIANCE_END_DATE"
-    if begin is None and end is None:
+    if begin is None and end is None and end_raw not in OPEN_END_SENTINELS:
         return "UNRESOLVED", "NONCOMPLIANCE_PERIOD_MISSING"
+    if begin is not None and end is not None and end < begin:
+        return "UNRESOLVED", "NONCOMPLIANCE_END_PRECEDES_BEGIN"
 
     year_start = datetime(year, 1, 1, tzinfo=timezone.utc)
     year_end = datetime(year, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
@@ -266,6 +275,7 @@ def _process_sdwis(
     )
     existing_current = _existing_current_by_event(records_path)
     retained: list[HazardRecord] = []
+    retained_groups: dict[str, dict[str, Any]] = {}
     classifications: list[dict[str, Any]] = []
     excluded = 0
     unresolved = 0
@@ -321,18 +331,44 @@ def _process_sdwis(
             if disposition == "UNRESOLVED":
                 unresolved += 1
                 continue
-            candidate = normalize(row, manifestation_id)
-            prior = existing_current.get(canonical_event_id(row))
-            if prior is not None:
-                if prior.record_id == candidate.record_id:
-                    continue
-                candidate = normalize(
-                    row,
-                    manifestation_id,
-                    supersedes_record_id=prior.record_id,
-                )
-            retained.append(candidate)
-            existing_current[candidate.canonical_event_id] = candidate
+            event_id = canonical_event_id(row)
+            group = retained_groups.get(event_id)
+            if group is None:
+                retained_groups[event_id] = {
+                    "base_row": row,
+                    "rows": [row],
+                    "source_lines": [ordinal],
+                    "violation_digest": violation_digest(row),
+                }
+            else:
+                digest = violation_digest(row)
+                if digest != group["violation_digest"]:
+                    raise ValueError(
+                        "conflicting violation-level rows within one SDWIS manifestation "
+                        f"for {event_id}: lines={group['source_lines'] + [ordinal]}"
+                    )
+                group["rows"].append(row)
+                group["source_lines"].append(ordinal)
+
+    for event_id, group in retained_groups.items():
+        base_row = group["base_row"]
+        candidate = normalize(
+            base_row,
+            manifestation_id,
+            enforcement_rows=group["rows"],
+        )
+        prior = existing_current.get(event_id)
+        if prior is not None:
+            if prior.record_id == candidate.record_id:
+                continue
+            candidate = normalize(
+                base_row,
+                manifestation_id,
+                supersedes_record_id=prior.record_id,
+                enforcement_rows=group["rows"],
+            )
+        retained.append(candidate)
+        existing_current[event_id] = candidate
 
     manifestation = Manifestation(
         manifestation_id=manifestation_id,
@@ -364,6 +400,13 @@ def _process_sdwis(
         retained_source,
         excluded,
         unresolved,
+    )
+    accounting.update(
+        {
+            "retained_source_row_count": retained_source,
+            "retained_violation_identity_count": len(retained_groups),
+            "enforcement_duplicate_source_rows": retained_source - len(retained_groups),
+        }
     )
     if scope_pws_prefix:
         ordered_quarters = sorted(submission_year_quarters)
@@ -398,6 +441,7 @@ def run(
     records_path = output_root / "hazard_records.jsonl"
     manifestations_path = output_root / "hazard_manifestations.jsonl"
     ledger_path = output_root / "hazard_source_accounting.jsonl"
+    classifications_path = output_root / "sdwis_source_classifications.jsonl"
     receipt_path = output_root / "salud_sdwis_water_receipt.json"
 
     manifestations, salud_artifacts, salud_arithmetic = _salud_artifact_receipt(
@@ -439,15 +483,40 @@ def run(
         "record_id",
     )
 
+    classification_reason_counts: dict[str, int] = {}
+    for row in sdwis_classifications:
+        reason = str(row["reason"])
+        classification_reason_counts[reason] = classification_reason_counts.get(reason, 0) + 1
+    if sdwis_classifications:
+        classifications_path.write_text(
+            "".join(
+                json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n"
+                for row in sdwis_classifications
+            ),
+            encoding="utf-8",
+        )
+        classifications_sha256 = _sha256_file(classifications_path)
+    else:
+        classifications_sha256 = None
+
     receipt = {
-        "schema_version": "aguayluz.salud_sdwis_water/v1",
+        "schema_version": "aguayluz.salud_sdwis_water/v2",
         "retrieved_at_utc": retrieved_at.isoformat(),
         "target_calendar_year": year,
         "salud_artifacts": salud_artifacts,
         "salud_artifact_arithmetic": salud_arithmetic,
         "sdwis_schema_url": EPA_SCHEMA_URL,
         "sdwis_source_arithmetic": sdwis_accounting,
-        "sdwis_classifications": sdwis_classifications,
+        "sdwis_classification_ledger": (
+            {
+                "path": classifications_path.name,
+                "record_count": len(sdwis_classifications),
+                "sha256": classifications_sha256,
+                "reason_counts": classification_reason_counts,
+            }
+            if sdwis_classifications
+            else None
+        ),
         "new_record_revisions": len(new_records),
         "source_universe_completeness_claimed": False,
         "certification_state": (
@@ -461,6 +530,9 @@ def run(
             "A later SDWIS snapshot does not overwrite a frozen Salud annual publication.",
             "Monitoring/reporting/public-notification violations do not establish contaminant exposure.",
             "The supplied SDWIS manifestation is a reconciliation denominator, not proof of Salud report membership.",
+            "SDWIS source-row arithmetic and canonical violation-identity arithmetic are preserved separately.",
+            "One-to-many enforcement rows do not create synthetic violation revisions.",
+            "Reversed noncompliance dates remain UNRESOLVED and are never coerced.",
             "No Manifestation is created for a locator whose bytes were not frozen.",
         ],
     }
