@@ -8,9 +8,9 @@ This script deliberately keeps two evidence planes separate:
 * EPA SDWIS is a versioned federal reconciliation snapshot.  A later federal row can
   revise status or enforcement metadata without rewriting a frozen Salud publication.
 
-The script can run before the large Salud PDFs are available.  In that case their exact
-official locators remain BLOCKED_ACQUISITION in the receipt and no Manifestation object
-is fabricated.  Once files are supplied, exact bytes are frozen and hashed.
+The script can run before the large Salud PDFs are available. In that case their exact
+official locators remain SOURCE_PRESENT_BYTES_NOT_FROZEN and no Manifestation object is
+fabricated. Once files are supplied, exact bytes are frozen and hashed.
 
 SDWIS input is the official SDWA_VIOLATIONS_ENFORCEMENT CSV (or a byte-identical
 extraction of that member from an official EPA archive).  The supplied file itself is
@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import argparse
 import csv
-import io
 import json
 import shutil
 import sys
@@ -168,8 +167,7 @@ def _freeze_file(
     retrieved_at: datetime,
     raw_root: Path,
 ) -> tuple[Manifestation, dict[str, Any]]:
-    raw = path.read_bytes()
-    digest = sha256(raw).hexdigest()
+    digest = _sha256_file(path)
     manifestation_id = (
         f"{source_system.upper().replace(' ', '_')}:{source_record_id}:"
         f"{retrieved_at.strftime('%Y%m%dT%H%M%S%fZ')}:{digest[:20]}"
@@ -185,7 +183,7 @@ def _freeze_file(
     )
     raw_root.mkdir(parents=True, exist_ok=True)
     target = raw_root / f"{source_record_id}-{digest}{path.suffix.lower()}"
-    if target.exists() and target.read_bytes() != raw:
+    if target.exists() and _sha256_file(target) != digest:
         raise ValueError(f"raw snapshot collision at {target}")
     if not target.exists():
         shutil.copyfile(path, target)
@@ -194,7 +192,7 @@ def _freeze_file(
         "source_url": source_url,
         "status": "FROZEN",
         "byte_sha256": digest,
-        "byte_length": len(raw),
+        "byte_length": path.stat().st_size,
         "raw_file": target.name,
         "manifestation_id": manifestation_id,
     }
