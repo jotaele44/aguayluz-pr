@@ -3,9 +3,8 @@ from pathlib import Path
 
 import pytest
 
-from scripts.ingest_salud_sdwis_water import classify_sdwis_row, run
-
 from aguayluz.hazard_plane import HazardRecord, current_records
+from scripts.ingest_salud_sdwis_water import classify_sdwis_row, run
 
 
 def _write_csv(path: Path, rows: list[dict[str, str]]) -> None:
