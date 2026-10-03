@@ -120,7 +120,12 @@ def extract_member(zip_path: Path, output_path: Path) -> dict[str, Any]:
     }
 
 
-def run(*, output_root: Path, year: int = 2025) -> dict[str, Any]:
+def run(
+    *,
+    output_root: Path,
+    year: int = 2025,
+    discard_epa_archive_after_extract: bool = False,
+) -> dict[str, Any]:
     retrieved_at = datetime.now(timezone.utc)
     raw_root = output_root / "raw"
     salud_root = raw_root / "salud"
@@ -145,6 +150,11 @@ def run(*, output_root: Path, year: int = 2025) -> dict[str, Any]:
 
     epa_member = epa_root / EPA_MEMBER_BASENAME
     member_receipt = extract_member(epa_zip, epa_member)
+    if discard_epa_archive_after_extract:
+        epa_zip.unlink()
+        epa_download["retained_after_member_extraction"] = False
+    else:
+        epa_download["retained_after_member_extraction"] = True
 
     ingest_output = output_root / "ingest"
     ingestion = ingest_run(
@@ -190,9 +200,14 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--year", type=int, default=2025)
+    parser.add_argument("--discard-epa-archive-after-extract", action="store_true")
     args = parser.parse_args()
     try:
-        receipt = run(output_root=args.output_root, year=args.year)
+        receipt = run(
+            output_root=args.output_root,
+            year=args.year,
+            discard_epa_archive_after_extract=args.discard_epa_archive_after_extract,
+        )
     except Exception as exc:  # noqa: BLE001
         print(f"Salud/SDWIS acquisition failed: {exc}", file=sys.stderr)
         return 1
