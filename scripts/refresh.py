@@ -147,6 +147,11 @@ STEP_SDWIS = (
     ["scripts/ingest_sdwis_violations.py"],
     False,
 )
+STEP_SDWIS_HAZARD = (
+    "EPA SDWIS health-based violations → canonical hazard plane",
+    ["scripts/ingest_sdwis_hazard_plane.py", "--year", "2026"],
+    True,
+)
 STEP_DRNA_BEACH = (
     "DRNA beach monitoring → canonical hazard plane",
     ["scripts/ingest_drna_beach_monitoring.py", "--year", "2026"],
@@ -298,6 +303,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_PRECIP_NCEI,
         STEP_SOIL_ENRICH,
         STEP_SDWIS,
+        STEP_SDWIS_HAZARD,
         STEP_DRNA_BEACH,
         STEP_ECHO,
         STEP_FEMA,
@@ -333,6 +339,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_PRECIP_NCEI,
         STEP_SOIL_ENRICH,
         STEP_SDWIS,
+        STEP_SDWIS_HAZARD,
         STEP_DRNA_BEACH,
         STEP_ECHO,
         STEP_FEMA,

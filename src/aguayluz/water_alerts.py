@@ -5,23 +5,24 @@ active, but ``data/alert_events.jsonl`` historically held only hand-authored see
 placeholders. This module closes that gap by projecting the producer's *real* water
 signals into the alert layer:
 
-* **CONTAMINATION** — EPA SDWIS boil-water advisories and health-based
-  water-quality violations (``data/service_events.jsonl``, evidence tier T1).
+* **CONTAMINATION** — explicitly sourced boil-water advisories plus EPA SDWIS
+  health-based water-quality violations (``data/service_events.jsonl``, evidence tier T1).
 * **HYDRO_OPS** — USGS daily reservoir readings (``data/reservoir_levels.jsonl``,
   T1) flagged low by a transparent *per-site statistical proxy*.
 
 Provenance honesty:
 
-* SDWIS-derived alerts inherit the source event's T1 tier and confidence — real
-  federal data, not fabricated.
+* SDWIS-derived alerts inherit the source event's T1 evidence tier and confidence.
+  Public-notification Tier 1 is treated as urgency metadata only; it never creates a
+  boil-water consumer instruction without an explicit notice source.
 * The reservoir proxy is deliberately stamped **T2 / needs_review** with a
   ``validation_notes`` disclaimer, because official AAA operating levels (niveles
   de observación / ajuste / control) are not public. It flags a reading only
   relative to that site's *own* recorded history — it never invents an absolute
   operating threshold.
 * Non-health monitoring/reporting violations are **not** promoted to alerts; they
-  remain in the service-event stream. Only acute (boil-water) and health-based
-  quality events become CONTAMINATION alerts.
+  remain in the service-event stream. Only explicitly sourced boil-water events and
+  health-based quality violations become CONTAMINATION alerts.
 
 The functions here are pure (no I/O, no wall-clock); ``scripts/build_water_alerts.py``
 is the CLI that loads data, calls :func:`build_water_alerts`, and merges the result
@@ -40,8 +41,9 @@ from .impact import MODULE_RADIUS_KM, AssetIndex, link_impact, merge_asset_ids
 
 # Contamination severities on the workbook's 0-5 operational floor. The
 # CONTAMINATION module's default floor is 3 (see config/alert_modules.yaml); an
-# acute microbial boil-water notice with a tier-1 public-notification requirement
-# is the most urgent, a non-acute health-based quality violation the least.
+# explicitly sourced boil-water notice is the most urgent. For SDWIS regulatory
+# violations, Tier 1 raises urgency but never changes the event into a boil-water
+# notice; a non-acute health-based quality violation is the least urgent here.
 _SEV_BOIL_WATER_ACUTE = 4
 _SEV_BOIL_WATER = 3
 _SEV_HEALTH_VIOLATION_ACUTE = 3
@@ -120,10 +122,11 @@ def contamination_alert(
     geo: dict[str, dict[str, Any]],
     index: AssetIndex | None = None,
 ) -> AlertEvent | None:
-    """Project one SDWIS service event into a CONTAMINATION AlertEvent.
+    """Project one drinking-water service event into a CONTAMINATION AlertEvent.
 
-    Returns ``None`` for events that are not acute and not health-based — those
-    stay in the service-event stream rather than becoming alerts.
+    Explicit boil-water events preserve their source classification. SDWIS
+    water-quality violations use health/notification-tier metadata for prioritization
+    only; notification tier never changes the consumer action.
     """
     index = index or AssetIndex()
     etype = event.get("event_type")
@@ -165,13 +168,25 @@ def contamination_alert(
         None, None, munis, index, radius_km=MODULE_RADIUS_KM["CONTAMINATION"]
     )
 
+    source_ref = str(event.get("source_ref") or "")
+    if source_ref.startswith("EPA SDWIS VIOLATION"):
+        validation_notes = (
+            "Derived from EPA SDWIS violation record; health-based/notification-tier "
+            "filter applied. Tier 1 is notice urgency only; no consumer action inferred."
+        )
+    else:
+        validation_notes = (
+            "Derived from source-classified drinking-water event; any consumer action "
+            "must be supported by that explicit source classification."
+        )
+
     return AlertEvent(
         alert_id=alert_id,
         module_id="CONTAMINATION",
         event_type="quality",
         status=status,
         source_title=f"{title} @ {area}".strip(),
-        source_ref=event.get("source_ref") or "EPA SDWIS",
+        source_ref=source_ref or "drinking-water source",
         source_hash=event.get("source_hash"),
         published_at=None,
         start_at=event.get("start_time"),
@@ -192,7 +207,7 @@ def contamination_alert(
         review_status=review_status,
         evidence_tier=event.get("evidence_tier") or "T1",
         linked_asset_ids=merge_asset_ids(event.get("linked_asset_ids"), linked),
-        validation_notes="Derived from EPA SDWIS violation record; health-based/acute filter applied.",
+        validation_notes=validation_notes,
     )
 
 

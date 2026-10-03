@@ -29,7 +29,7 @@ by `scripts/build_alerts.py`, see [`src/aguayluz/alert_promotion/`](../src/aguay
 
 | Module | Source | Promoter |
 |---|---|---|
-| `CONTAMINATION` | EPA SDWIS boil-water / health-based violations | `water_alerts.contamination_alert` |
+| `CONTAMINATION` | Explicit boil-water notices + EPA SDWIS health-based violations | `water_alerts.contamination_alert` |
 | `HYDRO_OPS` | USGS reservoir levels (statistical low proxy, T2) | `water_alerts.reservoir_alerts` |
 | `SEISMIC_GEO` | USGS FDSN earthquakes (severity from magnitude) | `alert_promotion.seismic` |
 | `WEATHER_HAZARD` | NWS active hazard alerts (severity from hazard type + urgency) | `alert_promotion.weather` |
@@ -97,7 +97,7 @@ already-ingested corpus into the alert/dependency layer (run automatically by
 `scripts/refresh.py` after ingest, before export):
 
 ```bash
-# EPA SDWIS boil-water + health-based quality violations -> CONTAMINATION alerts;
+# Explicit boil-water events + EPA SDWIS health-based quality violations -> CONTAMINATION alerts;
 # USGS reservoir readings -> HYDRO_OPS reservoir-low alerts (statistical proxy).
 python scripts/build_water_alerts.py
 
@@ -108,10 +108,11 @@ python scripts/build_water_power_crosswalk.py
 
 Provenance rules the builders honor:
 
-- SDWIS-derived CONTAMINATION alerts inherit the source event's **T1** tier and
-  confidence. Only acute (boil-water) and **health-based** quality violations are
-  promoted; non-health monitoring/reporting violations stay in the service-event
-  stream.
+- SDWIS-derived CONTAMINATION alerts inherit the source event's **T1 evidence tier**
+  and confidence. EPA public-notification Tier 1 is urgency metadata, not a boil-water
+  instruction. Only explicitly sourced boil-water events and **health-based** SDWIS
+  violations are promoted; non-health monitoring/reporting violations stay in the
+  service-event stream.
 - Reservoir-low alerts are a **statistical proxy** stamped **T2 / needs_review**
   (a reading in the site's own lower percentile), not an official AAA operating
   level. `validation_notes` records the disclaimer and the T1 unblock.

@@ -214,3 +214,12 @@ def test_drna_beach_monitoring_is_weekly_optional_and_not_fast():
     for cadence in ("fast", "daily"):
         assert script not in {_script_of(step) for step in refresh.PLANS[cadence]}, cadence
 
+def test_sdwis_hazard_plane_is_weekly_optional_and_not_fast():
+    """Canonical SDWIS hazard observations are periodic and fail-soft at refresh time."""
+    script = "scripts/ingest_sdwis_hazard_plane.py"
+    assert refresh.STEP_SDWIS_HAZARD[2] is True
+    for cadence in ("weekly", "all"):
+        assert script in {_script_of(step) for step in refresh.PLANS[cadence]}, cadence
+    for cadence in ("fast", "daily"):
+        assert script not in {_script_of(step) for step in refresh.PLANS[cadence]}, cadence
+

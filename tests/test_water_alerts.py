@@ -33,7 +33,7 @@ def _boil_water(**over):
         "status_text": "viol=21 contaminant=3100 health_based=Y pn_tier=1 compliance=A",
         "start_time": "2015-07-01T00:00:00Z",
         "end_time": "2015-07-31T00:00:00Z",
-        "source_ref": "EPA SDWIS VIOLATION pwsid=PR0002591 violation_id=7613967",
+        "source_ref": "FIXTURE EXPLICIT BOIL WATER NOTICE notice_id=BWA-1",
         "evidence_tier": "T1",
         "confidence": 80,
         "review_status": "accepted",
@@ -43,7 +43,7 @@ def _boil_water(**over):
     return ev
 
 
-def test_boil_water_acute_maps_to_contamination_alert():
+def test_explicit_boil_water_acute_maps_to_contamination_alert():
     a = contamination_alert(_boil_water(), GEO)
     assert a is not None
     assert a.module_id == "CONTAMINATION"
@@ -71,6 +71,20 @@ def test_health_based_quality_violation_becomes_alert():
     assert a is not None
     assert a.module_id == "CONTAMINATION"
     assert a.severity == 2
+
+
+def test_sdwis_tier1_health_violation_is_urgent_but_not_named_boil_water():
+    ev = _boil_water(
+        event_type="water_quality_violation",
+        source_ref="EPA SDWIS VIOLATION pwsid=PR0002591 violation_id=7613967",
+        status_text="health_based=Y pn_tier=1 compliance=A",
+    )
+    a = contamination_alert(ev, GEO)
+    assert a is not None
+    assert a.severity == 3
+    assert "Health-based water-quality violation" in a.source_title
+    assert "Boil-water" not in a.source_title
+    assert "Tier 1 is notice urgency only" in (a.validation_notes or "")
 
 
 def test_non_health_violation_is_not_alerted():
