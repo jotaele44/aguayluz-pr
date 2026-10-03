@@ -73,7 +73,8 @@
           "GET /barrios.geojson",
           "GET /municipios/event_density",
           "GET /municipios/{name}/summary",
-          "GET /municipios/{name}/flood-document/file"
+          "GET /municipios/{name}/flood-document/file",
+          "GET /municipios/summary"
         ],
         "symbols": [
           "server/backend/app.py:municipio_summary",
@@ -86,7 +87,8 @@
           "src/aguayluz/spatial_analysis.py:raster_layer_contract",
           "src/aguayluz/spatial_analysis.py:trace_downstream",
           "src/aguayluz/spatial_analysis.py:trace_upstream",
-          "server/backend/app.py:municipio_flood_document_file"
+          "server/backend/app.py:municipio_flood_document_file",
+          "server/backend/main.py:municipios_summary"
         ]
       },
       "frontend": {
@@ -114,7 +116,8 @@
           "dashboard/src/components/SpatialToolsPanel.jsx",
           "dashboard/src/components/AssetsTable.jsx",
           "dashboard/src/components/AssetDetail.jsx",
-          "dashboard/src/components/ProgramTimeline.jsx"
+          "dashboard/src/components/ProgramTimeline.jsx",
+          "dashboard/src/components/MunicipalOverviewMap.jsx"
         ],
         "discoverability": [
           "dashboard/src/components/layout/Sidebar.jsx",
@@ -138,7 +141,8 @@
           "dashboard/src/components/AssetMap.test.jsx",
           "dashboard/src/components/SpatialToolsPanel.test.jsx",
           "dashboard/src/lib/api.test.js",
-          "dashboard/src/pages/MunicipioDetailPage.test.jsx"
+          "dashboard/src/pages/MunicipioDetailPage.test.jsx",
+          "dashboard/src/components/MunicipalOverviewMap.test.jsx"
         ],
         "e2e": [
           "dashboard/tests/gui-parity.spec.mjs"

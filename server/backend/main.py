@@ -576,6 +576,111 @@ def municipios_event_density(
     })
 
 
+@app.get("/municipios/summary")
+def municipios_summary() -> JSONResponse:
+    """Return one lightweight, GEOID-bound dashboard row per Puerto Rico municipio.
+
+    Geometry is the denominator authority. Asset/event municipality strings are
+    aggregated only when they exactly equal a canonical GeoJSON feature name;
+    there is no accent folding, fuzzy matching, nearest-neighbor assignment, or
+    other identity promotion in this endpoint.
+    """
+    features = _municipios_geojson.get("features", [])
+    if not isinstance(features, list):
+        raise HTTPException(status_code=503, detail={"error": "municipio_geometry_invalid"})
+
+    rows_by_geoid: dict[str, dict[str, Any]] = {}
+    name_to_geoid: dict[str, str] = {}
+    duplicate_geoids: list[str] = []
+    duplicate_names: list[str] = []
+    invalid_features: list[int] = []
+
+    for index, feature in enumerate(features):
+        props = feature.get("properties") if isinstance(feature, dict) else None
+        name = props.get("name") if isinstance(props, dict) else None
+        geoid = props.get("geoid") if isinstance(props, dict) else None
+        if not isinstance(name, str) or not name or not isinstance(geoid, str) or not geoid:
+            invalid_features.append(index)
+            continue
+        if geoid in rows_by_geoid:
+            duplicate_geoids.append(geoid)
+            continue
+        if name in name_to_geoid:
+            duplicate_names.append(name)
+            continue
+        name_to_geoid[name] = geoid
+        rows_by_geoid[geoid] = {
+            "geoid": geoid,
+            "name": name,
+            "asset_count": 0,
+            "active_asset_count": 0,
+            "event_count": 0,
+            "active_outage_count": 0,
+        }
+
+    if invalid_features or duplicate_geoids or duplicate_names or len(rows_by_geoid) != 78:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error": "municipio_denominator_contract_failed",
+                "expected": 78,
+                "feature_count": len(features),
+                "valid_unique_geoid_count": len(rows_by_geoid),
+                "invalid_feature_indexes": invalid_features,
+                "duplicate_geoids": sorted(set(duplicate_geoids)),
+                "duplicate_names": sorted(set(duplicate_names)),
+            },
+        )
+
+    unmatched_assets: Counter[str] = Counter()
+    for asset in _assets:
+        source_name = asset.get("municipality")
+        if not isinstance(source_name, str) or source_name not in name_to_geoid:
+            unmatched_assets[source_name if isinstance(source_name, str) and source_name else "__NULL__"] += 1
+            continue
+        row = rows_by_geoid[name_to_geoid[source_name]]
+        row["asset_count"] += 1
+        if asset.get("status") in {"active", "operational"}:
+            row["active_asset_count"] += 1
+
+    unmatched_events: Counter[str] = Counter()
+    for event in _current_events():
+        source_name = event.get("municipality")
+        if not isinstance(source_name, str) or source_name not in name_to_geoid:
+            unmatched_events[source_name if isinstance(source_name, str) and source_name else "__NULL__"] += 1
+            continue
+        row = rows_by_geoid[name_to_geoid[source_name]]
+        row["event_count"] += 1
+        if event.get("event_type") == "outage" and not event.get("end_time"):
+            row["active_outage_count"] += 1
+
+    unmatched_asset_count = sum(unmatched_assets.values())
+    unmatched_event_count = sum(unmatched_events.values())
+    return JSONResponse({
+        "municipality_denominator": 78,
+        "geometry_feature_count": len(features),
+        "unique_geoid_count": len(rows_by_geoid),
+        "join_state": "PASS" if not unmatched_asset_count and not unmatched_event_count else "PROVISIONAL",
+        "unmatched_asset_count": unmatched_asset_count,
+        "unmatched_event_count": unmatched_event_count,
+        "unmatched_assets_by_name": dict(unmatched_assets),
+        "unmatched_events_by_name": dict(unmatched_events),
+        "items": [rows_by_geoid[geoid] for geoid in sorted(rows_by_geoid)],
+        "scope": {
+            "binding_key": "municipio GeoJSON properties.geoid",
+            "aggregation_key": "exact source municipality string -> canonical GeoJSON name",
+            "normalization": "NONE",
+            "identity_effect": "NONE",
+            "geometry_effect": "NONE",
+        },
+        "provenance": {
+            "municipio_source": _MUNICIPIO_SOURCE_MANIFESTATION,
+            "event_sources": _EVENT_DENSITY_SOURCE_MANIFESTATIONS,
+            "loaded_at": "process_startup",
+        },
+    })
+
+
 @app.get("/municipios/{name}/summary")
 def municipio_summary(name: str) -> JSONResponse:
     name_lower = name.lower()
