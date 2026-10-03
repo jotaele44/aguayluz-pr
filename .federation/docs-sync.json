@@ -1,0 +1,61 @@
+{
+  "_comment": "Documentation-sync policy for aguayluz-pr (thehub-pr ADR 0010). Read by tools/check_docs_sync.py. couplings: when a covered path changes, the doc must change in the same diff, or the commit/PR says 'Docs-Impact: none - <reason>'. Seeded conservatively: each coupling was replayed over this repo's recent human-authored changes. All but one never fired; README <- scripts/ingest_*.py (add) would have flagged 2 of 26, both new data sources the README's Real-data status never mentions, so it is the first to drop if it proves noisy. Add couplings for docs that enumerate things; do not add ones that fire on routine work.",
+  "schema_version": "prii_docs_sync_v1",
+  "mode": "enforce",
+  "base_branch": "main",
+  "exempt_docs": [
+    "AUDIT.md",
+    "docs/*AUDIT*.md",
+    "docs/*PLAN*.md",
+    "docs/*LEDGER*",
+    "docs/**/*20[0-9][0-9]-[0-9][0-9]*"
+  ],
+  "ignore_refs": [
+    "data/**",
+    "outputs/**",
+    "reports/**",
+    "exports/**",
+    "node_modules/**",
+    "dashboard/dist/**"
+  ],
+  "couplings": [
+    {
+      "doc": "README.md",
+      "covers": [
+        "PRII-AGUAYLUZ.*",
+        "PRII-AGUAYLUZ.app/**"
+      ],
+      "on": ["add", "delete", "rename"],
+      "why": "'Desktop app' lists one double-click launcher per platform."
+    },
+    {
+      "doc": "README.md",
+      "covers": ["scripts/ingest_*.py"],
+      "on": ["add"],
+      "why": "'Real-data status' enumerates the ingest scripts and the data each one brings in; deleting or renaming a named one is already caught by the reference check."
+    },
+    {
+      "doc": "README.md",
+      "covers": ["scripts/validate_repo.py"],
+      "on": ["delete", "rename"],
+      "why": "'Run' tells contributors to run the validation gates with this script, inside a code block that the reference check does not read."
+    },
+    {
+      "doc": "docs/ALERT_SYSTEM.md",
+      "covers": ["config/alert_modules.yaml"],
+      "on": ["add", "delete", "rename", "modify"],
+      "why": "States how many sector modules exist and lists them; the modules are defined in this file."
+    },
+    {
+      "doc": "docs/GUI_CAPABILITY_PARITY.md",
+      "covers": [
+        ".federation/gui-*.json",
+        "scripts/check_gui_parity.py",
+        "tests/test_gui_parity.py",
+        ".github/workflows/gui-capability-parity.yml"
+      ],
+      "on": ["add", "delete", "rename"],
+      "why": "'Repository files' lists the parity manifest, baseline, detector, tests and gate."
+    }
+  ]
+}
