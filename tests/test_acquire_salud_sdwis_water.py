@@ -1,6 +1,4 @@
 import zipfile
-from pathlib import Path
-
 import pytest
 from scripts.acquire_salud_sdwis_water import (
     EPA_MEMBER_BASENAME,
@@ -46,6 +44,8 @@ def test_member_selection_fails_closed_on_duplicate_basename(tmp_path):
         archive.writestr(f"a/{EPA_MEMBER_BASENAME}", b"a")
         archive.writestr(f"b/{EPA_MEMBER_BASENAME}", b"b")
 
-    with zipfile.ZipFile(archive_path) as archive:
-        with pytest.raises(ValueError, match="expected exactly one"):
-            locate_member(archive)
+    with (
+        zipfile.ZipFile(archive_path) as archive,
+        pytest.raises(ValueError, match="expected exactly one"),
+    ):
+        locate_member(archive)
