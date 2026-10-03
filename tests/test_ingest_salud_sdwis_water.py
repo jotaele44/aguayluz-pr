@@ -21,6 +21,13 @@ def _write_csv(path: Path, rows: list[dict[str, str]]) -> None:
         "VIOLATION_NAME",
         "IS_HEALTH_BASED_IND",
         "VIOLATION_STATUS",
+        "ENFORCEMENT_ID",
+        "ENFORCEMENT_DATE",
+        "ENFORCEMENT_ACTION_TYPE_CODE",
+        "ENF_ACTION_CATEGORY",
+        "ENF_ORIGINATOR_CODE",
+        "ENF_FIRST_REPORTED_DATE",
+        "ENF_LAST_REPORTED_DATE",
     ]
     with path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
@@ -105,15 +112,17 @@ def test_live_unfrozen_salud_locators_and_sdwis_source_arithmetic_are_preserved(
     assert by_id["10747"]["status"] == "SOURCE_PRESENT_BYTES_NOT_FROZEN"
     assert by_id["10748"]["status"] == "SOURCE_PRESENT_BYTES_NOT_FROZEN"
     assert by_id["10747"]["byte_sha256"] is None
-    assert receipt["sdwis_source_arithmetic"] == {
-        "source": 4,
-        "retained": 1,
-        "excluded": 2,
-        "unresolved": 1,
-        "accounted": 4,
-        "delta": 0,
-        "state": "PASS",
-    }
+    arithmetic = receipt["sdwis_source_arithmetic"]
+    assert arithmetic["source"] == 4
+    assert arithmetic["retained"] == 1
+    assert arithmetic["excluded"] == 2
+    assert arithmetic["unresolved"] == 1
+    assert arithmetic["accounted"] == 4
+    assert arithmetic["delta"] == 0
+    assert arithmetic["state"] == "PASS"
+    assert arithmetic["retained_source_row_count"] == 1
+    assert arithmetic["retained_violation_identity_count"] == 1
+    assert arithmetic["enforcement_duplicate_source_rows"] == 0
     assert receipt["certification_state"] == "OPEN"
 
 
