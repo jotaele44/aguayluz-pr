@@ -44,6 +44,7 @@ def sha256_file(path: Path) -> str:
 
 def _download(url: str, destination: Path) -> dict[str, Any]:
     destination.parent.mkdir(parents=True, exist_ok=True)
+    print(f"ACQUIRE_START url={url} destination={destination}", flush=True)
     partial = destination.with_suffix(destination.suffix + ".part")
     request = urllib.request.Request(
         url,
@@ -65,6 +66,10 @@ def _download(url: str, destination: Path) -> dict[str, Any]:
         headers = {key.lower(): value for key, value in response.headers.items()}
         final_url = response.geturl()
     partial.replace(destination)
+    print(
+        f"ACQUIRE_DONE url={url} bytes={byte_length} sha256={digest.hexdigest()} final_url={final_url}",
+        flush=True,
+    )
     return {
         "requested_url": url,
         "final_url": final_url,
@@ -136,20 +141,30 @@ def run(
     salud_paths: dict[str, Path] = {}
     for source_id, url in SALUD.items():
         path = salud_root / f"{source_id}.pdf"
+        print(f"SALUD_ARTIFACT_START id={source_id}", flush=True)
         receipt = _download(url, path)
         _validate_pdf(path)
+        print(f"SALUD_ARTIFACT_VALID id={source_id}", flush=True)
         receipt["source_record_id"] = source_id
         receipt["content_magic"] = "%PDF-"
         salud_receipts.append(receipt)
         salud_paths[source_id] = path
 
     epa_zip = epa_root / "SDWA_latest_downloads.zip"
+    print("EPA_ARCHIVE_START", flush=True)
     epa_download = _download(EPA_ZIP_URL, epa_zip)
     _validate_zip(epa_zip)
+    print("EPA_ARCHIVE_VALID", flush=True)
     epa_download["archive_valid"] = True
 
     epa_member = epa_root / EPA_MEMBER_BASENAME
     member_receipt = extract_member(epa_zip, epa_member)
+    print(
+        f"EPA_MEMBER_FROZEN member={member_receipt['member_name']} "
+        f"bytes={member_receipt['member_uncompressed_size']} "
+        f"sha256={member_receipt['member_sha256']}",
+        flush=True,
+    )
     if discard_epa_archive_after_extract:
         epa_zip.unlink()
         epa_download["retained_after_member_extraction"] = False
