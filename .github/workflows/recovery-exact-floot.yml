@@ -1,0 +1,53 @@
+name: Exact Floot recovery - AguaYLuz
+on:
+  push:
+    branches:
+      - recovery/floot-baseline-2026-09-30
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  exact-floot-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout recovery branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: "22"
+      - name: Execute exact recovered tree
+        shell: bash
+        run: bash .recovery/aguayluz-exact/run_exact.sh
+      - name: Stage recovery evidence
+        if: always()
+        shell: bash
+        run: |
+          rm -rf .recovery-output
+          mkdir -p .recovery-output
+          if [ -d "$RUNNER_TEMP/recovered" ]; then
+            cp "$RUNNER_TEMP/recovered"/package.original.json .recovery-output/ 2>/dev/null || true
+            cp "$RUNNER_TEMP/recovered"/package.json .recovery-output/ 2>/dev/null || true
+            cp "$RUNNER_TEMP/recovered"/package-lock.json .recovery-output/ 2>/dev/null || true
+            cp "$RUNNER_TEMP/recovered"/recovery-member-manifest.txt .recovery-output/ 2>/dev/null || true
+            cp "$RUNNER_TEMP/recovered"/recovery-hashes.txt .recovery-output/ 2>/dev/null || true
+            cp "$RUNNER_TEMP/recovered"/recovery-environment.txt .recovery-output/ 2>/dev/null || true
+            cp "$RUNNER_TEMP/recovered"/recovery-vitest.log .recovery-output/ 2>/dev/null || true
+            cp "$RUNNER_TEMP/recovered"/recovery-test-exit.txt .recovery-output/ 2>/dev/null || true
+            cp "$RUNNER_TEMP/recovered"/recovery-spec-files.txt .recovery-output/ 2>/dev/null || true
+            cp "$RUNNER_TEMP/recovered"/recovery-spec-classification.tsv .recovery-output/ 2>/dev/null || true
+          fi
+      - name: Upload recovery evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aguayluz-exact-floot-recovery
+          if-no-files-found: error
+          path: .recovery-output
+      - name: Enforce suite result
+        if: always()
+        shell: bash
+        run: |
+          test -f "$RUNNER_TEMP/recovered/recovery-test-exit.txt"
+          exit "$(cat "$RUNNER_TEMP/recovered/recovery-test-exit.txt")"
