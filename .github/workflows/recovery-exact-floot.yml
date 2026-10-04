@@ -24,19 +24,19 @@ jobs:
         if: always()
         shell: bash
         run: |
-          rm -rf .recovery-output
-          mkdir -p .recovery-output
+          rm -rf recovery-output
+          mkdir -p recovery-output
           if [ -d "$RUNNER_TEMP/recovered" ]; then
-            cp "$RUNNER_TEMP/recovered"/package.original.json .recovery-output/ 2>/dev/null || true
-            cp "$RUNNER_TEMP/recovered"/package.json .recovery-output/ 2>/dev/null || true
-            cp "$RUNNER_TEMP/recovered"/package-lock.json .recovery-output/ 2>/dev/null || true
-            cp "$RUNNER_TEMP/recovered"/recovery-member-manifest.txt .recovery-output/ 2>/dev/null || true
-            cp "$RUNNER_TEMP/recovered"/recovery-hashes.txt .recovery-output/ 2>/dev/null || true
-            cp "$RUNNER_TEMP/recovered"/recovery-environment.txt .recovery-output/ 2>/dev/null || true
-            cp "$RUNNER_TEMP/recovered"/recovery-vitest.log .recovery-output/ 2>/dev/null || true
-            cp "$RUNNER_TEMP/recovered"/recovery-test-exit.txt .recovery-output/ 2>/dev/null || true
-            cp "$RUNNER_TEMP/recovered"/recovery-spec-files.txt .recovery-output/ 2>/dev/null || true
-            cp "$RUNNER_TEMP/recovered"/recovery-spec-classification.tsv .recovery-output/ 2>/dev/null || true
+            cp "$RUNNER_TEMP/recovered"/package.original.json recovery-output/ 2>/dev/null || true
+            cp "$RUNNER_TEMP/recovered"/package.json recovery-output/ 2>/dev/null || true
+            cp "$RUNNER_TEMP/recovered"/package-lock.json recovery-output/ 2>/dev/null || true
+            cp "$RUNNER_TEMP/recovered"/recovery-member-manifest.txt recovery-output/ 2>/dev/null || true
+            cp "$RUNNER_TEMP/recovered"/recovery-hashes.txt recovery-output/ 2>/dev/null || true
+            cp "$RUNNER_TEMP/recovered"/recovery-environment.txt recovery-output/ 2>/dev/null || true
+            cp "$RUNNER_TEMP/recovered"/recovery-vitest.log recovery-output/ 2>/dev/null || true
+            cp "$RUNNER_TEMP/recovered"/recovery-test-exit.txt recovery-output/ 2>/dev/null || true
+            cp "$RUNNER_TEMP/recovered"/recovery-spec-files.txt recovery-output/ 2>/dev/null || true
+            cp "$RUNNER_TEMP/recovered"/recovery-spec-classification.tsv recovery-output/ 2>/dev/null || true
           fi
       - name: Upload recovery evidence
         if: always()
@@ -44,7 +44,7 @@ jobs:
         with:
           name: aguayluz-exact-floot-recovery
           if-no-files-found: error
-          path: .recovery-output
+          path: recovery-output
       - name: Enforce suite result
         if: always()
         shell: bash
