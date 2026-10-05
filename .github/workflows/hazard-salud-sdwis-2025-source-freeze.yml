@@ -1,6 +1,11 @@
 name: Salud SDWIS 2025 Source Freeze
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/hazard-salud-sdwis-2025-source-freeze.yml"
+      - "scripts/freeze_salud_sdwis_2025_sources.py"
   pull_request:
     branches: [main]
     paths:
