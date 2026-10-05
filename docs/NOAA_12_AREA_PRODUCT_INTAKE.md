@@ -128,3 +128,12 @@ requiring speculative adapters now.
 
 This document changes no scheduler, API, GUI, geometry authority or certification
 state. Documentation-only planning adds no shipped human-facing capability.
+
+## Follow-up qualification
+
+The [bounded coverage snapshot](evidence/noaa-coverage-20261005/README.md)
+supersedes the earlier unresolved content-conflict concern for its frozen Git
+inputs and adds eight preserved NOAA/AWC payloads. It covers the eight-entry
+existing airport registry and one NWS discovery point, not all Puerto Rico
+products. Station-level METAR and TAF coverage differ despite equal row counts.
+Live-source certification remains OPEN.
