@@ -1488,7 +1488,7 @@
       "classification": "internal",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Offline-first Puerto Rico Department of Health annual drinking-water artifact freeze and EPA SDWIS reconciliation feeding the existing Environmental Exposure hazard plane. This is a producer/provenance workflow, not a second user-facing control. Unfrozen Salud locators remain explicit BLOCKED/PRESENT states; federal snapshots preserve PWSID/VIOLATION_ID revision identity and cannot substitute for the state annual-report manifestation.",
+      "rationale": "Offline-first Puerto Rico Department of Health annual drinking-water artifact freeze and EPA SDWIS reconciliation feeding the existing Environmental Exposure hazard plane. The source-freeze script is CI/provenance infrastructure, not an operator feature: it freezes official Salud bytes and a bounded EPA violations-member manifestation, while user consumption remains on the existing Environmental Exposure hazard surface. No duplicate route or terminal workflow is required.",
       "backend": {
         "files": [
           "src/aguayluz/hazard_adapters/sdwa_drinking_water.py"
@@ -1502,12 +1502,23 @@
       },
       "analysis": {
         "files": [
-          "scripts/ingest_salud_sdwis_water.py"
+          "scripts/ingest_salud_sdwis_water.py",
+          "scripts/freeze_salud_sdwis_2025_sources.py"
         ],
         "symbols": [
           "scripts/ingest_salud_sdwis_water.py:classify_sdwis_row",
           "scripts/ingest_salud_sdwis_water.py:run",
-          "scripts/ingest_salud_sdwis_water.py:main"
+          "scripts/ingest_salud_sdwis_water.py:main",
+          "scripts/freeze_salud_sdwis_2025_sources.py:sha256_file",
+          "scripts/freeze_salud_sdwis_2025_sources.py:request",
+          "scripts/freeze_salud_sdwis_2025_sources.py:download",
+          "scripts/freeze_salud_sdwis_2025_sources.py:pdf_meta",
+          "scripts/freeze_salud_sdwis_2025_sources.py:archive_identity",
+          "scripts/freeze_salud_sdwis_2025_sources.py:get_range",
+          "scripts/freeze_salud_sdwis_2025_sources.py:locate_member",
+          "scripts/freeze_salud_sdwis_2025_sources.py:classify_pr_row",
+          "scripts/freeze_salud_sdwis_2025_sources.py:stream_member_and_filter_pr",
+          "scripts/freeze_salud_sdwis_2025_sources.py:main"
         ]
       },
       "tests": {
