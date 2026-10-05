@@ -1,0 +1,66 @@
+name: Salud SDWIS 2025 Source Freeze
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/hazard-salud-sdwis-2025-source-freeze.yml"
+      - "scripts/freeze_salud_sdwis_2025_sources.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: salud-sdwis-2025-source-freeze-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+          python -m pip install pydantic
+
+      - name: Freeze Salud and EPA source manifestations
+        env:
+          PYTHONPATH: src:.
+        run: |
+          python scripts/freeze_salud_sdwis_2025_sources.py             --output-root artifacts/salud_sdwis_2025_source_freeze
+
+      - name: Verify frozen-source arithmetic
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+
+          receipt = json.loads(
+              Path("artifacts/salud_sdwis_2025_source_freeze/source_freeze_receipt.json")
+              .read_text(encoding="utf-8")
+          )
+          assert receipt["salud"]["source"] == 2, receipt
+          assert receipt["salud"]["frozen"] == 2, receipt
+          assert receipt["salud"]["delta"] == 0, receipt
+          assert receipt["epa"]["zip_frozen"] is True, receipt
+          assert receipt["epa"]["violations_member_found"] is True, receipt
+          assert receipt["epa"]["pr_2025_arithmetic"]["state"] == "PASS", receipt
+          print(json.dumps(receipt, indent=2, sort_keys=True))
+
+      - name: Upload frozen source evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: salud-sdwis-2025-source-freeze
+          path: artifacts/salud_sdwis_2025_source_freeze
+          if-no-files-found: error
+          retention-days: 90
