@@ -1,0 +1,111 @@
+{
+  "scope": "Frozen eight-ICAO registry query and one NWS point; not island-wide availability",
+  "verification": "PASS",
+  "certification": "OPEN",
+  "payload_hashes_verified": 8,
+  "products": {
+    "stationinfo": {
+      "requested": 8,
+      "returned": 6,
+      "not_returned": [
+        "TJCP",
+        "TJVQ"
+      ]
+    },
+    "metar": {
+      "requested": 8,
+      "returned": 4,
+      "not_returned": [
+        "TJCP",
+        "TJMZ",
+        "TJRV",
+        "TJVQ"
+      ]
+    },
+    "taf": {
+      "requested": 8,
+      "returned": 4,
+      "not_returned": [
+        "TJCP",
+        "TJIG",
+        "TJMZ",
+        "TJVQ"
+      ]
+    }
+  },
+  "metar_taf_sets": {
+    "intersection": [
+      "TJBQ",
+      "TJPS",
+      "TJSJ"
+    ],
+    "metar_only": [
+      "TJIG"
+    ],
+    "taf_only": [
+      "TJRV"
+    ],
+    "union": [
+      "TJBQ",
+      "TJIG",
+      "TJPS",
+      "TJRV",
+      "TJSJ"
+    ],
+    "symmetric_difference": [
+      "TJIG",
+      "TJRV"
+    ]
+  },
+  "nws_forecast_periods": 14,
+  "station_rows": [
+    {
+      "icao": "TJBQ",
+      "stationinfo": true,
+      "metar": true,
+      "taf": true
+    },
+    {
+      "icao": "TJCP",
+      "stationinfo": false,
+      "metar": false,
+      "taf": false
+    },
+    {
+      "icao": "TJIG",
+      "stationinfo": true,
+      "metar": true,
+      "taf": false
+    },
+    {
+      "icao": "TJMZ",
+      "stationinfo": true,
+      "metar": false,
+      "taf": false
+    },
+    {
+      "icao": "TJPS",
+      "stationinfo": true,
+      "metar": true,
+      "taf": true
+    },
+    {
+      "icao": "TJRV",
+      "stationinfo": true,
+      "metar": false,
+      "taf": true
+    },
+    {
+      "icao": "TJSJ",
+      "stationinfo": true,
+      "metar": true,
+      "taf": true
+    },
+    {
+      "icao": "TJVQ",
+      "stationinfo": false,
+      "metar": false,
+      "taf": false
+    }
+  ]
+}

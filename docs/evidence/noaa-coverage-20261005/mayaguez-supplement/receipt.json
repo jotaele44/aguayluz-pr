@@ -1,0 +1,125 @@
+{
+  "scope": "TJMZ supplement closes the eight-ICAO existing airport-registry query scope; not island-wide coverage",
+  "certification": "OPEN",
+  "snapshots": [
+    {
+      "key": "stationinfo",
+      "url": "https://aviationweather.gov/api/data/stationinfo?ids=TJMZ&format=json",
+      "requested_utc": "2026-10-05T15:36:41.327534+00:00",
+      "certification": "OPEN",
+      "http_status": 200,
+      "headers": {
+        "Date": "Mon, 05 Oct 2026 15:36:49 GMT",
+        "Content-Type": "application/json; charset=utf-8",
+        "Content-Length": "208",
+        "Connection": "close",
+        "Cache-control": "max-age=300",
+        "ETag": "W/\"d0-IiAemlp3MMF2BAfuiWwiGMHHgas\"",
+        "X-Frame-Options": "SAMEORIGIN",
+        "Content-Security-Policy": "frame-ancestors 'self' *.weather.gov",
+        "Strict-Transport-Security": "max-age=63072000; includeSubDomains",
+        "x-azure-ref": "20261005T153649Z-r197cbcd5969h85qhC1BY17y100000000wm00000000008g6",
+        "x-fd-int-roxy-purgeid": "66959005",
+        "X-Cache": "TCP_MISS",
+        "Accept-Ranges": "bytes"
+      },
+      "final_url": "https://aviationweather.gov/api/data/stationinfo?ids=TJMZ&format=json",
+      "retrieved_utc": "2026-10-05T15:36:49.612578+00:00",
+      "bytes": 208,
+      "sha256": "763436b024b9e1173740d113c94dcb55ef95d87efcdff778a9dfae4e5d3af56e",
+      "identity": "BYTE",
+      "payload_file": "stationinfo.raw",
+      "schema_type": "list",
+      "count": 1,
+      "fields": [
+        "country",
+        "elev",
+        "faaId",
+        "iataId",
+        "icaoId",
+        "id",
+        "lat",
+        "lon",
+        "priority",
+        "site",
+        "siteType",
+        "state",
+        "wmoId"
+      ],
+      "requested_ids": [
+        "TJMZ"
+      ],
+      "returned_ids": [
+        "TJMZ"
+      ],
+      "missing_in_response": [],
+      "unexpected_ids": [],
+      "duplicate_ids": 0
+    },
+    {
+      "key": "metar",
+      "url": "https://aviationweather.gov/api/data/metar?ids=TJMZ&format=json",
+      "requested_utc": "2026-10-05T15:36:41.328286+00:00",
+      "certification": "OPEN",
+      "http_status": 204,
+      "headers": {
+        "Date": "Mon, 05 Oct 2026 15:36:49 GMT",
+        "Connection": "close",
+        "Cache-control": "max-age=60",
+        "X-Frame-Options": "SAMEORIGIN",
+        "Content-Security-Policy": "frame-ancestors 'self' *.weather.gov",
+        "Strict-Transport-Security": "max-age=63072000; includeSubDomains",
+        "x-azure-ref": "20261005T153649Z-r197cbcd596dc874hC1BY1kns00000000u3g000000006gub",
+        "x-fd-int-roxy-purgeid": "66959005",
+        "X-Cache": "TCP_MISS"
+      },
+      "final_url": "https://aviationweather.gov/api/data/metar?ids=TJMZ&format=json",
+      "retrieved_utc": "2026-10-05T15:36:49.338131+00:00",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "identity": "BYTE",
+      "payload_file": "metar.raw",
+      "state": "HTTP_ERROR_OR_NO_DATA"
+    },
+    {
+      "key": "taf",
+      "url": "https://aviationweather.gov/api/data/taf?ids=TJMZ&format=json",
+      "requested_utc": "2026-10-05T15:36:41.329110+00:00",
+      "certification": "OPEN",
+      "http_status": 200,
+      "headers": {
+        "Date": "Mon, 05 Oct 2026 15:36:49 GMT",
+        "Content-Type": "application/json; charset=utf-8",
+        "Content-Length": "2",
+        "Connection": "close",
+        "Cache-control": "max-age=60",
+        "ETag": "W/\"2-l9Fw4VUO7kr8CvBlt4zaMCqXZ0w\"",
+        "X-Frame-Options": "SAMEORIGIN",
+        "Content-Security-Policy": "frame-ancestors 'self' *.weather.gov",
+        "Strict-Transport-Security": "max-age=63072000; includeSubDomains",
+        "x-azure-ref": "20261005T153649Z-r197cbcd596bnqwghC1BY1azcn0000000cr000000000m1e6",
+        "x-fd-int-roxy-purgeid": "66959005",
+        "X-Cache": "TCP_MISS",
+        "Accept-Ranges": "bytes"
+      },
+      "final_url": "https://aviationweather.gov/api/data/taf?ids=TJMZ&format=json",
+      "retrieved_utc": "2026-10-05T15:36:49.616873+00:00",
+      "bytes": 2,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "identity": "BYTE",
+      "payload_file": "taf.raw",
+      "schema_type": "list",
+      "count": 0,
+      "fields": [],
+      "requested_ids": [
+        "TJMZ"
+      ],
+      "returned_ids": [],
+      "missing_in_response": [
+        "TJMZ"
+      ],
+      "unexpected_ids": [],
+      "duplicate_ids": 0
+    }
+  ]
+}
