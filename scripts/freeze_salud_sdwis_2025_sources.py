@@ -5,7 +5,6 @@ import argparse
 import binascii
 import csv
 import hashlib
-import io
 import json
 import shutil
 import struct
