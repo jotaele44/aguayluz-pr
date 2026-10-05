@@ -38,6 +38,50 @@ jobs:
           sudo apt-get install -y poppler-utils
           python -m pip install pydantic
 
+      - name: Probe official ECHO Drinking Water REST schema
+        shell: python
+        run: |
+          import json
+          import urllib.parse
+          import urllib.request
+
+          ua = {"User-Agent": "AguaYLuz-SourceProbe/1.0"}
+          def get(endpoint, params):
+              url = "https://echodata.epa.gov/echo/" + endpoint + "?" + urllib.parse.urlencode(params)
+              req = urllib.request.Request(url, headers=ua)
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  data = json.load(response)
+              print("URL", url)
+              print("TOP_KEYS", sorted(data) if isinstance(data, dict) else type(data).__name__)
+              print("RESULT_KEYS", sorted(data.get("Results", {})) if isinstance(data, dict) and isinstance(data.get("Results"), dict) else None)
+              return data
+
+          facilities = get(
+              "sdw_rest_services.get_facilities",
+              {"output": "JSON", "p_st": "PR", "responseset": 5},
+          )
+          payload = facilities.get("Results", {}) if isinstance(facilities, dict) else {}
+          rows = payload.get("Results", []) if isinstance(payload, dict) else []
+          print("FACILITY_COUNT_RETURNED", len(rows) if isinstance(rows, list) else "NOT_LIST")
+          if isinstance(rows, list) and rows:
+              print("FACILITY_SAMPLE_KEYS", sorted(rows[0]))
+              print("FACILITY_SAMPLE", json.dumps(rows[0], sort_keys=True)[:4000])
+              pwsid = (
+                  rows[0].get("PWSId")
+                  or rows[0].get("PWSID")
+                  or rows[0].get("SourceID")
+                  or rows[0].get("RegistryID")
+              )
+              print("PWSID_CANDIDATE", pwsid)
+              if pwsid:
+                  detail = get(
+                      "sdw_rest_services.get_facility_info",
+                      {"output": "JSON", "p_id": pwsid},
+                  )
+                  dres = detail.get("Results", {}) if isinstance(detail, dict) else {}
+                  print("DETAIL_RESULT_KEYS", sorted(dres) if isinstance(dres, dict) else None)
+                  print("DETAIL_TRUNCATED", json.dumps(detail, sort_keys=True)[:12000])
+
       - name: Freeze Salud and EPA source manifestations
         env:
           PYTHONPATH: src:.
