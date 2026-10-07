@@ -25,10 +25,10 @@ jobs:
           set -euo pipefail
           bash .recovery/aguayluz-exact/run_exact.sh
           ROOT="$RUNNER_TEMP/recovered"
-cp .recovery/aguayluz-successor-v1/aguaSourceHealth.tsx "$ROOT/helpers/aguaSourceHealth.tsx"
-cp .recovery/aguayluz-successor-v1/aguaSourceHealth.spec.tsx "$ROOT/helpers/aguaSourceHealth.spec.tsx"
-cp .recovery/aguayluz-successor-v1/aguaWaterMutationGuard.tsx "$ROOT/helpers/aguaWaterMutationGuard.tsx"
-cp .recovery/aguayluz-successor-v1/aguaWaterMutationGuard.spec.tsx "$ROOT/helpers/aguaWaterMutationGuard.spec.tsx"
+          cp .recovery/aguayluz-successor-v1/aguaSourceHealth.tsx "$ROOT/helpers/aguaSourceHealth.tsx"
+          cp .recovery/aguayluz-successor-v1/aguaSourceHealth.spec.tsx "$ROOT/helpers/aguaSourceHealth.spec.tsx"
+          cp .recovery/aguayluz-successor-v1/aguaWaterMutationGuard.tsx "$ROOT/helpers/aguaWaterMutationGuard.tsx"
+          cp .recovery/aguayluz-successor-v1/aguaWaterMutationGuard.spec.tsx "$ROOT/helpers/aguaWaterMutationGuard.spec.tsx"
           cd "$RUNNER_TEMP/recovered"
           npx vite build
           NPM_CONFIG_LEGACY_PEER_DEPS=true npm install --save-dev --no-audit --no-fund --ignore-scripts playwright@1.55.0
