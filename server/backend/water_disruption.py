@@ -357,6 +357,14 @@ class WaterIncidentService:
             self.store.append('incident_truth_events', {'truth_event_id': stable_id('WDT', {'incident_id': incident_id, 'truth_state': truth_state, 'validation_id': validation_id}), 'incident_id': incident_id, 'from_truth_state': None, 'to_truth_state': truth_state, 'validation_id': validation_id, 'reason': 'incident_created'})
             self.store.append('lifecycle_events', {'incident_id': incident_id, 'from_state': None, 'to_state': lifecycle_state, 'reason': 'incident_created'})
             return existing
+        candidate_ids = list(dict.fromkeys([*existing['candidate_ids'], candidate['candidate_id']]))
+        evidence_ids = list(dict.fromkeys([*existing['evidence_ids'], *candidate['evidence_ids']]))
+        if candidate_ids != existing['candidate_ids'] or evidence_ids != existing['evidence_ids']:
+            # Preserve historical manifestations; the latest revision retains every
+            # contributing report so provenance and later retractions can find it.
+            revised = {key: value for key, value in existing.items() if key not in {'record_hash', 'recorded_at'}}
+            revised.update(candidate_ids=candidate_ids, evidence_ids=evidence_ids)
+            existing = self.store.append('incidents', revised)
         self._reconcile_truth(existing, decision['decision'], validation_id)
         return self.current_incident(incident_id)
 
@@ -417,7 +425,7 @@ class WaterIncidentService:
         prior = self.store.latest('retraction_events', 'idempotency_key', idempotency_key)
         if prior:
             return prior
-        affected = [row['incident_id'] for row in self.store.read('incidents') if candidate_id in row.get('candidate_ids', [])]
+        affected = list(dict.fromkeys(row['incident_id'] for row in self.store.read('incidents') if candidate_id in row.get('candidate_ids', [])))
         event = self.store.append('retraction_events', {'retraction_id': stable_id('WDRT', {'candidate_id': candidate_id, 'key': idempotency_key}), 'candidate_id': candidate_id, 'affected_incident_ids': affected, 'reason': reason, 'idempotency_key': idempotency_key, 'destructive': False, 'correction_notifications_queued': False})
         for incident_id in affected:
             current = self.current_incident(incident_id)

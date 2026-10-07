@@ -93,3 +93,22 @@ def test_merge_and_split_are_append_only(tmp_path):
     assert merged["operation"] == "merge"
     assert split["operation"] == "split"
     assert len(service.store.read("merge_split_events")) == 2
+
+
+def test_dedup_retains_later_candidate_and_evidence_and_retracts_once(tmp_path):
+    service = WaterIncidentService(tmp_path)
+    first = candidate()
+    decision = service.validation_policy(first, authoritative_scope_match=True)
+    original = service.resolve_incident(first, decision)
+    second = candidate("WDC-2")
+    second["evidence_ids"] = ["EVD-2", "EVD-1"]
+    updated = service.resolve_incident(second, decision)
+    assert updated["candidate_ids"] == ["WDC-1", "WDC-2"]
+    assert updated["evidence_ids"] == ["EVD-1", "EVD-2"]
+    assert len(service.store.read("incidents")) == 2
+    service.resolve_incident(second, decision)
+    assert len(service.store.read("incidents")) == 2
+    event = service.retract("WDC-2", "source correction", "RET-2")
+    assert event["affected_incident_ids"] == [original["incident_id"]]
+    assert service.current_incident(original["incident_id"])["truth_state"] == "retracted"
+    assert service.store.read("incidents")[0]["candidate_ids"] == ["WDC-1"]

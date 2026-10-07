@@ -327,3 +327,15 @@ test("review queue renders block and warn with different severity tones", async 
   // above only if the two happened to differ, so pin the fallback out explicitly.
   expect(blockTone).not.toContain("text-slate-400");
 });
+
+test("water incident console exposes deduplicated provenance", async ({ page, request }) => {
+  await page.goto("/water-disruption", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("heading", { name: "Water Disruption Validation Console" })).toBeVisible();
+  const response = await request.get(`${backendUrl}/water-disruption/incidents`);
+  expect(response.status()).toBe(200);
+  for (const incident of (await response.json()).items) {
+    expect(incident.candidate_ids.length).toBeGreaterThan(0);
+    expect(new Set(incident.candidate_ids).size).toBe(incident.candidate_ids.length);
+    expect(new Set(incident.evidence_ids).size).toBe(incident.evidence_ids.length);
+  }
+});

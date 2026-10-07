@@ -533,7 +533,8 @@
           "tests/test_water_disruption_api.py"
         ],
         "contract": [
-          "tests/test_gui_parity.py"
+          "tests/test_gui_parity.py",
+          "tests/test_water_disruption.py"
         ],
         "e2e": [
           "dashboard/tests/gui-parity.spec.mjs"
@@ -1502,12 +1503,18 @@
       },
       "analysis": {
         "files": [
-          "scripts/ingest_salud_sdwis_water.py"
+          "scripts/ingest_salud_sdwis_water.py",
+          "scripts/freeze_salud_sdwis_2025_sources.py"
         ],
         "symbols": [
           "scripts/ingest_salud_sdwis_water.py:classify_sdwis_row",
           "scripts/ingest_salud_sdwis_water.py:run",
-          "scripts/ingest_salud_sdwis_water.py:main"
+          "scripts/ingest_salud_sdwis_water.py:main",
+          "scripts/freeze_salud_sdwis_2025_sources.py:classify",
+          "scripts/freeze_salud_sdwis_2025_sources.py:download",
+          "scripts/freeze_salud_sdwis_2025_sources.py:main",
+          "scripts/freeze_salud_sdwis_2025_sources.py:pdf_meta",
+          "scripts/freeze_salud_sdwis_2025_sources.py:sha256_file"
         ]
       },
       "tests": {
