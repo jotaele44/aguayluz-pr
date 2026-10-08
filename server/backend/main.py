@@ -16,6 +16,7 @@ import io
 import json
 import logging
 import os as _os
+import secrets
 import smtplib as _smtplib
 import sys
 import urllib.request as _notify_urllib
@@ -166,20 +167,41 @@ async def _require_key(request: Request):
     if not _API_KEY:
         return  # auth disabled globally
     auth = request.headers.get("Authorization", "")
-    if not auth.startswith("Bearer ") or auth[7:] != _API_KEY:
+    if not auth.startswith("Bearer ") or not secrets.compare_digest(auth[7:], _API_KEY):
         raise HTTPException(status_code=401, detail="Invalid or missing API key")
+
+
+#: (resolved path) -> (mtime_ns, parsed value) for _load_jsonl/_load_json. The dashboard
+#: polls /health every 15s and /system/status every 30s (dashboard/src/lib/hooks.js),
+#: each of which re-parses several JSONL corpora; those files only change when the
+#: cron refresh job commits, so a request between commits is always a cache hit.
+_file_cache: dict[Path, tuple[int, Any]] = {}
 
 
 def _load_jsonl(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
+        _file_cache.pop(path, None)
         return []
-    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    mtime_ns = path.stat().st_mtime_ns
+    cached = _file_cache.get(path)
+    if cached is not None and cached[0] == mtime_ns:
+        return cached[1]
+    rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    _file_cache[path] = (mtime_ns, rows)
+    return rows
 
 
 def _load_json(path: Path, default: Any = None) -> Any:
     if not path.exists():
+        _file_cache.pop(path, None)
         return default
-    return json.loads(path.read_text(encoding="utf-8"))
+    mtime_ns = path.stat().st_mtime_ns
+    cached = _file_cache.get(path)
+    if cached is not None and cached[0] == mtime_ns:
+        return cached[1]
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    _file_cache[path] = (mtime_ns, doc)
+    return doc
 
 
 def _source_manifestation(path: Path, row_count: int | None = None) -> dict[str, Any]:
@@ -252,6 +274,28 @@ for _row in _load_jsonl(_live_event_path):
         _live_event_rows.append(_row)
 _event_sources.append((_live_event_path, _live_event_rows))
 _events: list[dict[str, Any]] = [row for _, rows in _event_sources for row in rows]
+
+
+def _current_events() -> list[dict[str, Any]]:
+    """Re-read event sources from disk, unlike the ``_events`` snapshot above
+    (built once at import time). The live-incident source is refreshed hourly
+    by cron and a live server can run for days, so a cutoff computed once at
+    import time goes stale; this recomputes it and re-filters on every call.
+    Used by the SSE ``/events/stream`` endpoint (whose whole point is to
+    reflect new data without a restart) and by GET /events and GET
+    /municipios/event_density, so their live-incident window doesn't go
+    stale either. Cheap because ``_load_jsonl`` caches on unchanged mtime.
+    """
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=1)
+    live_rows = [
+        row
+        for row in _load_jsonl(_live_event_path)
+        if (dt := _parse_dt(row.get("start_time"))) is not None and dt >= cutoff
+    ]
+    fixed_rows = [row for path in _EVENT_SOURCE_PATHS for row in _load_jsonl(path)]
+    return fixed_rows + live_rows
+
+
 _luma_status_snapshots: list[dict[str, Any]] = _load_jsonl(
     DATA / "luma_status_snapshots.jsonl"
 )
@@ -472,7 +516,7 @@ def municipios_event_density(
     accurate representation, not the client trying to plot every event as a
     fake-precise dot. Same filter semantics as GET /events, minus limit/offset/
     municipio (which would defeat the purpose of an aggregate)."""
-    result = _events
+    result = _current_events()
     if type:
         result = [e for e in result if e.get("event_type") == type]
     since_dt = _parse_dt(since)
@@ -552,11 +596,20 @@ def municipio_summary(name: str) -> JSONResponse:
 
 
 @app.get("/events/stream")
-async def events_stream() -> StreamingResponse:
-    """SSE endpoint: pushes latest 20 events every 5 s."""
+async def events_stream(request: Request) -> StreamingResponse:
+    """SSE endpoint: pushes the latest 20 events every 5 s.
+
+    Re-reads from disk each tick via ``_current_events``, so a scheduled
+    refresh commit shows up here without a server restart. GET /events and
+    GET /municipios/event_density use the same helper for the same reason;
+    only endpoints that read the startup-frozen ``_events`` snapshot directly
+    stay fixed until restart.
+    """
     async def generator():
         while True:
-            payload = _events[-20:]
+            if await request.is_disconnected():
+                break
+            payload = _current_events()[-20:]
             yield f"data: {json.dumps(payload)}\n\n"
             await asyncio.sleep(5)
 
@@ -594,7 +647,7 @@ def events(
     limit: int | None = Query(default=None),
     offset: int = Query(default=0),
 ) -> JSONResponse:
-    result = _events
+    result = _current_events()
     since_dt = _parse_dt(since)
     until_dt = _parse_dt(until)
     if type:

@@ -72,7 +72,8 @@
           "GET /municipios.geojson",
           "GET /barrios.geojson",
           "GET /municipios/event_density",
-          "GET /municipios/{name}/summary"
+          "GET /municipios/{name}/summary",
+          "GET /municipios/{name}/flood-document/file"
         ],
         "symbols": [
           "server/backend/app.py:municipio_summary",
@@ -84,7 +85,8 @@
           "src/aguayluz/spatial_analysis.py:impacted_assets",
           "src/aguayluz/spatial_analysis.py:raster_layer_contract",
           "src/aguayluz/spatial_analysis.py:trace_downstream",
-          "src/aguayluz/spatial_analysis.py:trace_upstream"
+          "src/aguayluz/spatial_analysis.py:trace_upstream",
+          "server/backend/app.py:municipio_flood_document_file"
         ]
       },
       "frontend": {
@@ -111,7 +113,8 @@
           "dashboard/src/components/AssetMap.jsx",
           "dashboard/src/components/SpatialToolsPanel.jsx",
           "dashboard/src/components/AssetsTable.jsx",
-          "dashboard/src/components/AssetDetail.jsx"
+          "dashboard/src/components/AssetDetail.jsx",
+          "dashboard/src/components/ProgramTimeline.jsx"
         ],
         "discoverability": [
           "dashboard/src/components/layout/Sidebar.jsx",
@@ -124,7 +127,8 @@
           "tests/test_pr_geo_boundaries.py",
           "tests/test_backend_municipio_summary_api.py",
           "tests/test_federation_spatial_core.py",
-          "tests/test_spatial_analysis.py"
+          "tests/test_spatial_analysis.py",
+          "tests/test_ingest_jp_flood_documents.py"
         ],
         "contract": [
           "tests/test_navigation.py",
@@ -138,6 +142,23 @@
         ],
         "e2e": [
           "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/ingest_jp_flood_documents.py",
+          "scripts/check_jp_flood_consumer_v3.py"
+        ],
+        "symbols": [
+          "scripts/ingest_jp_flood_documents.py:build_lookup",
+          "scripts/ingest_jp_flood_documents.py:main",
+          "scripts/ingest_jp_flood_documents.py:validate_manifest",
+          "scripts/ingest_jp_flood_documents.py:validate_producer_contract",
+          "scripts/ingest_jp_flood_documents.py:validate_byte_certification",
+          "scripts/check_jp_flood_consumer_v3.py:run",
+          "scripts/check_jp_flood_consumer_v3.py:main",
+          "scripts/check_jp_flood_consumer_v3.py:GateError",
+          "scripts/check_jp_flood_consumer_v3.py:sha256"
         ]
       }
     },
@@ -601,6 +622,27 @@
         "contract": [
           "tests/test_neon_client.py",
           "tests/test_neon_health.py"
+        ]
+      }
+    },
+    {
+      "id": "http-retry-helper",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Shared HTTP retry/backoff helper (429/5xx + transport-error retry, honors Retry-After) extracted from src/aguayluz/neon/client.py for reuse by keyless ingest producers. It exposes no endpoint, route or control of its own -- it is only ever called by scripts/ingest_usgs_quakes.py, scripts/ingest_nws_alerts.py, scripts/ingest_nhc_storms.py, scripts/ingest_noaa_tides.py, and src/aguayluz/usgs_water_api.py:iter_ogc_pages, all scheduled producers under scripts/refresh.py. Its effect (fewer spurious ingest-step failures during hazard events, when traffic to these same government APIs spikes) reaches operators through the GUI surfaces those producers already populate -- service events on the events/map views and alerts derived from them -- not through a new surface.",
+      "backend": {
+        "files": [
+          "src/aguayluz/http_retry.py"
+        ],
+        "symbols": [
+          "src/aguayluz/http_retry.py:request_with_retry",
+          "src/aguayluz/http_retry.py:get_with_retry"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_http_retry.py"
         ]
       }
     },
@@ -1147,14 +1189,22 @@
           "server/backend/environmental_exposure_api.py",
           "server/backend/app.py",
           "src/aguayluz/environmental_exposure.py",
-          "src/aguayluz/environmental_exposure_db.py"
+          "src/aguayluz/environmental_exposure_db.py",
+          "server/backend/hazard_advisory_api.py",
+          "src/aguayluz/hazard_plane.py",
+          "src/aguayluz/hazard_plane_db.py"
         ],
         "endpoints": [
           "GET /environmental-exposure/summary",
           "GET /environmental-exposure/entities",
           "GET /environmental-exposure/entities/{entity_id}",
           "GET /environmental-exposure/relationships",
-          "GET /environmental-exposure/integrity"
+          "GET /environmental-exposure/integrity",
+          "GET /hazards/summary",
+          "GET /hazards/events",
+          "GET /hazards/relationships",
+          "GET /hazards/sources",
+          "GET /hazards/integrity"
         ],
         "symbols": [
           "server/backend/environmental_exposure_api.py:environmental_exposure_summary",
@@ -1170,7 +1220,31 @@
           "src/aguayluz/environmental_exposure_db.py:load",
           "src/aguayluz/environmental_exposure_db.py:merge",
           "src/aguayluz/environmental_exposure_db.py:write",
-          "src/aguayluz/environmental_exposure_db.py:graph_integrity"
+          "src/aguayluz/environmental_exposure_db.py:graph_integrity",
+          "server/backend/hazard_advisory_api.py:hazard_summary",
+          "server/backend/hazard_advisory_api.py:hazard_events",
+          "server/backend/hazard_advisory_api.py:hazard_relationships",
+          "server/backend/hazard_advisory_api.py:hazard_sources",
+          "server/backend/hazard_advisory_api.py:hazard_integrity",
+          "src/aguayluz/hazard_plane.py:HazardFamily",
+          "src/aguayluz/hazard_plane.py:RecordKind",
+          "src/aguayluz/hazard_plane.py:RecordStatus",
+          "src/aguayluz/hazard_plane.py:CaseClass",
+          "src/aguayluz/hazard_plane.py:EntityKind",
+          "src/aguayluz/hazard_plane.py:EvidenceClass",
+          "src/aguayluz/hazard_plane.py:RelationshipType",
+          "src/aguayluz/hazard_plane.py:Manifestation",
+          "src/aguayluz/hazard_plane.py:HazardRecord",
+          "src/aguayluz/hazard_plane.py:HazardRelationship",
+          "src/aguayluz/hazard_plane.py:canonical_json_sha256",
+          "src/aguayluz/hazard_plane.py:current_records",
+          "src/aguayluz/hazard_plane.py:validate_identity_uniqueness",
+          "src/aguayluz/hazard_plane.py:source_arithmetic",
+          "src/aguayluz/hazard_plane.py:integrity_report",
+          "src/aguayluz/hazard_plane_db.py:load_records",
+          "src/aguayluz/hazard_plane_db.py:load_relationships",
+          "src/aguayluz/hazard_plane_db.py:load_manifestations",
+          "src/aguayluz/hazard_plane_db.py:graph_integrity"
         ]
       },
       "frontend": {
@@ -1191,14 +1265,17 @@
       },
       "tests": {
         "backend": [
-          "tests/test_environmental_exposure_api.py"
+          "tests/test_environmental_exposure_api.py",
+          "tests/test_hazard_advisory_api.py"
         ],
         "contract": [
           "tests/test_environmental_exposure.py",
-          "tests/test_gui_parity.py"
+          "tests/test_gui_parity.py",
+          "tests/test_hazard_plane.py"
         ],
         "e2e": [
-          "dashboard/tests/gui-parity.spec.mjs"
+          "dashboard/tests/gui-parity.spec.mjs",
+          "dashboard/tests/hazard-advisory.spec.mjs"
         ]
       }
     },
@@ -1327,6 +1404,116 @@
           "tests/test_ingest_hifld_power.py",
           "tests/test_ingest_osm_power.py",
           "tests/test_local_hydro_assets.py"
+        ]
+      }
+    },
+    {
+      "id": "fda-food-hazard-ingest",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Bounded keyless FDA enforcement ingestion and normalization feeding the existing Environmental Exposure hazard plane. It is a producer/provenance workflow rather than a separate user control surface; normal users consume materialized results through /environmental-exposure. The source adapter preserves raw FDA rows and Puerto Rico relevance states, while the CLI freezes source manifestations and closes source arithmetic.",
+      "backend": {
+        "files": [
+          "src/aguayluz/hazard_adapters/__init__.py",
+          "src/aguayluz/hazard_adapters/fda_food.py"
+        ],
+        "symbols": [
+          "src/aguayluz/hazard_adapters/fda_food.py:classify_pr_relevance",
+          "src/aguayluz/hazard_adapters/fda_food.py:row_digest",
+          "src/aguayluz/hazard_adapters/fda_food.py:canonical_event_id",
+          "src/aguayluz/hazard_adapters/fda_food.py:stable_record_id",
+          "src/aguayluz/hazard_adapters/fda_food.py:normalize"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/ingest_fda_food_recalls.py"
+        ],
+        "symbols": [
+          "scripts/ingest_fda_food_recalls.py:fetch_pages",
+          "scripts/ingest_fda_food_recalls.py:load_offline",
+          "scripts/ingest_fda_food_recalls.py:classify_row",
+          "scripts/ingest_fda_food_recalls.py:process_pages",
+          "scripts/ingest_fda_food_recalls.py:main"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_hazard_adapter_fda_food.py",
+          "tests/test_ingest_fda_food_recalls.py"
+        ]
+      }
+    },
+    {
+      "id": "drna-beach-hazard-ingest",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Keyless provenance-frozen DRNA beach-monitoring ingestion feeds the existing Environmental Exposure hazard plane. It is an internal producer workflow, not a second user control surface. Station and municipality text remain source evidence until independently bound.",
+      "backend": {
+        "files": [
+          "src/aguayluz/hazard_adapters/drna_beach.py"
+        ],
+        "symbols": [
+          "src/aguayluz/hazard_adapters/drna_beach.py:row_digest",
+          "src/aguayluz/hazard_adapters/drna_beach.py:canonical_event_id",
+          "src/aguayluz/hazard_adapters/drna_beach.py:stable_record_id",
+          "src/aguayluz/hazard_adapters/drna_beach.py:normalize"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/ingest_drna_beach_monitoring.py"
+        ],
+        "symbols": [
+          "scripts/ingest_drna_beach_monitoring.py:parse_notice",
+          "scripts/ingest_drna_beach_monitoring.py:crawl_archive",
+          "scripts/ingest_drna_beach_monitoring.py:run",
+          "scripts/ingest_drna_beach_monitoring.py:main",
+          "scripts/ingest_drna_beach_monitoring.py:FrozenPage",
+          "scripts/ingest_drna_beach_monitoring.py:OutputPaths",
+          "scripts/ingest_drna_beach_monitoring.py:PageParser"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_hazard_adapter_drna_beach.py",
+          "tests/test_ingest_drna_beach_monitoring.py"
+        ]
+      }
+    },
+    {
+      "id": "salud-sdwis-water-ingest",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Offline-first Puerto Rico Department of Health annual drinking-water artifact freeze and EPA SDWIS reconciliation feeding the existing Environmental Exposure hazard plane. This is a producer/provenance workflow, not a second user-facing control. Unfrozen Salud locators remain explicit BLOCKED/PRESENT states; federal snapshots preserve PWSID/VIOLATION_ID revision identity and cannot substitute for the state annual-report manifestation.",
+      "backend": {
+        "files": [
+          "src/aguayluz/hazard_adapters/sdwa_drinking_water.py"
+        ],
+        "symbols": [
+          "src/aguayluz/hazard_adapters/sdwa_drinking_water.py:row_digest",
+          "src/aguayluz/hazard_adapters/sdwa_drinking_water.py:canonical_event_id",
+          "src/aguayluz/hazard_adapters/sdwa_drinking_water.py:stable_record_id",
+          "src/aguayluz/hazard_adapters/sdwa_drinking_water.py:normalize"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/ingest_salud_sdwis_water.py"
+        ],
+        "symbols": [
+          "scripts/ingest_salud_sdwis_water.py:classify_sdwis_row",
+          "scripts/ingest_salud_sdwis_water.py:run",
+          "scripts/ingest_salud_sdwis_water.py:main"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_hazard_adapter_sdwa_drinking_water.py",
+          "tests/test_ingest_salud_sdwis_water.py"
         ]
       }
     }

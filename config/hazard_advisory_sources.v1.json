@@ -1,0 +1,145 @@
+{
+  "schema_version": "1.0.0",
+  "scope": "Puerto Rico food, agricultural, animal, human infectious-disease, wastewater, water-health and environmental-health advisory source-family denominator",
+  "as_of": "2026-10-03",
+  "certification_state": "OPEN",
+  "completeness_claimed": false,
+  "product_capability_id": "hazard-advisory-plane",
+  "product_route": "/hazards",
+  "families": [
+    {
+      "family": "FDA_FOOD_ENFORCEMENT",
+      "authority": "FDA",
+      "hazard_family": "FOOD_SAFETY",
+      "access": "structured_api_and_bulk_json",
+      "url": "https://open.fda.gov/apis/food/enforcement/",
+      "update_semantics": "weekly; historical records may be revised",
+      "status": "BOUND"
+    },
+    {
+      "family": "USDA_FSIS_RECALLS",
+      "authority": "USDA-FSIS",
+      "hazard_family": "FOOD_SAFETY",
+      "access": "public_api_and_web",
+      "url": "https://www.fsis.usda.gov/recalls",
+      "status": "BOUND"
+    },
+    {
+      "family": "PRDOH_ARBOVIRAL",
+      "authority": "Puerto Rico Department of Health",
+      "hazard_family": "HUMAN_INFECTIOUS_DISEASE",
+      "access": "BioData surveillance publication/dashboard",
+      "url": "https://www.salud.pr.gov/",
+      "status": "BOUND_SOURCE_FAMILY_ENDPOINT_ENUMERATION_OPEN"
+    },
+    {
+      "family": "PRDOH_INFLUENZA",
+      "authority": "Puerto Rico Department of Health",
+      "hazard_family": "HUMAN_INFECTIOUS_DISEASE",
+      "access": "BioData surveillance publication/dashboard",
+      "url": "https://www.salud.pr.gov/",
+      "status": "BOUND_SOURCE_FAMILY_ENDPOINT_ENUMERATION_OPEN"
+    },
+    {
+      "family": "CDC_NWSS",
+      "authority": "CDC",
+      "hazard_family": "WASTEWATER_SURVEILLANCE",
+      "access": "public surveillance datasets/dashboard",
+      "url": "https://www.cdc.gov/nwss/",
+      "status": "BOUND_PR_SITE_DENOMINATOR_OPEN"
+    },
+    {
+      "family": "DRNA_BEACH_MONITORING",
+      "authority": "Puerto Rico DRNA",
+      "hazard_family": "WATER_HEALTH",
+      "access": "public notification archive + notice pages",
+      "url": "https://www.drna.pr.gov/cat/programas-y-proyectos/monitoria-de-playas/notificaciones-ambientales/",
+      "status": "CERTIFIED_2026_PUBLICATION_DENOMINATOR",
+      "update_semantics": "periodic sampling notifications; publication pages may be revised",
+      "binding_semantics": "station/municipality text remains unbound until independently mapped",
+      "bounded_scope": {
+        "publication_year": 2026,
+        "archive_boundary_rule": "monotonic notice publication dates plus one complete prior-year overlap page",
+        "discovered_notice_urls": 47,
+        "retained": 31,
+        "excluded": 16,
+        "unresolved": 0,
+        "manifestations_frozen": 51,
+        "normalized_record_revisions": 79
+      },
+      "certification_evidence": {
+        "verified_head": "5e6601bf6842eb1e71156dd15a30121f7dde71ec",
+        "verified_at_utc": "2026-09-30T20:11:30Z",
+        "artifact_name": "drna-beach-source-freeze-2026",
+        "artifact_sha256": "ac9c1b8ccedab9c6c7b7031591fbac2e724bcad4fbe689248d71fd1ecbf9c798"
+      }
+    },
+    {
+      "family": "USDA_APHIS_PLANT_HEALTH",
+      "authority": "USDA-APHIS",
+      "hazard_family": "AGRICULTURAL_HEALTH",
+      "access": "public notices/data",
+      "url": "https://www.aphis.usda.gov/plant-pests-diseases",
+      "status": "OPEN_PR_DENOMINATOR"
+    },
+    {
+      "family": "USDA_APHIS_ANIMAL_HEALTH",
+      "authority": "USDA-APHIS",
+      "hazard_family": "ANIMAL_HEALTH",
+      "access": "public notices/data",
+      "url": "https://www.aphis.usda.gov/livestock-poultry-disease",
+      "status": "OPEN_PR_DENOMINATOR"
+    },
+    {
+      "family": "PR_AGRICULTURE_ADVISORIES",
+      "authority": "Puerto Rico Department of Agriculture",
+      "hazard_family": "AGRICULTURAL_HEALTH",
+      "access": "public web/publications",
+      "url": "https://www.agricultura.pr.gov/",
+      "status": "OPEN_ENDPOINT_ENUMERATION"
+    },
+    {
+      "family": "PRDOH_DRINKING_WATER_ANNUAL_VIOLATIONS",
+      "authority": "Puerto Rico Department of Health",
+      "hazard_family": "WATER_HEALTH",
+      "access": "annual report + annexes + public notice; exact source bytes required before manifestation promotion",
+      "url": "https://www.salud.pr.gov/CMS/611",
+      "status": "BOUND_2025_ARTIFACT_FAMILY_BYTES_PARTIAL_OPEN",
+      "bounded_scope": {
+        "reporting_period": "2025-01-01/2025-12-31",
+        "public_notice_id": "10746",
+        "annual_report_id": "10747",
+        "annexes_id": "10748",
+        "source_artifacts": 3,
+        "source_present": 3,
+        "bytes_frozen": 0,
+        "blocked_acquisition": 2,
+        "present_bytes_not_frozen": 1,
+        "source_universe_completeness_claimed": false
+      },
+      "binding_semantics": "state annual-report rows bind to PWSID/VIOLATION_ID only when those identifiers are present or independently reconciled; names alone are aliases"
+    },
+    {
+      "family": "EPA_DRINKING_WATER_HEALTH",
+      "authority": "EPA",
+      "hazard_family": "WATER_HEALTH",
+      "access": "SDWA quarterly downloads / SDWIS Federal Reporting Services; federal reconciliation plane",
+      "url": "https://echo.epa.gov/tools/data-downloads/sdwa-download-summary",
+      "status": "BOUND_RECONCILIATION_SCHEMA_SOURCE_DENOMINATOR_OPEN",
+      "update_semantics": "quarterly SDWIS snapshots may revise violation, enforcement and return-to-compliance fields",
+      "binding_semantics": "PWSID is system identity; PWSID + FACILITY_ID is facility identity; VIOLATION_ID is violation identity within versioned federal snapshots"
+    }
+  ],
+  "unresolved_material": [
+    "PRDOH_COMPLETE_MACHINE_READABLE_ENDPOINT_ENUMERATION",
+    "CDC_NWSS_PUERTO_RICO_SITE_DENOMINATOR",
+    "APHIS_PUERTO_RICO_PLANT_AND_ANIMAL_ADVISORY_DENOMINATORS",
+    "PR_DEPARTMENT_OF_AGRICULTURE_COMPLETE_ADVISORY_DENOMINATOR",
+    "EPA_AND_PRASA_BOIL_WATER_DO_NOT_DRINK_DO_NOT_USE_EVENT_DENOMINATOR",
+    "HARMFUL_ALGAL_BLOOM_AND_CYANOBACTERIA_AUTHORITY_DENOMINATOR",
+    "HISTORICAL_BACKFILL_DENOMINATOR_PER_SOURCE_FAMILY",
+    "PRDOH_2025_ANNUAL_VIOLATIONS_REPORT_10747_BYTES_AND_ROW_DENOMINATOR",
+    "PRDOH_2025_ANNEXES_10748_BYTES_AND_ROW_DENOMINATOR",
+    "EPA_SDWIS_PUERTO_RICO_2025_RECONCILIATION_DENOMINATOR"
+  ]
+}

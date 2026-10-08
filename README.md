@@ -107,3 +107,37 @@ installs dependencies, later runs work offline):
 `manifest.json` validated against the vendored hub schema
 `schemas/federation_export_manifest.schema.json`
 (`tests/test_federation_contract_compat.py`).
+
+Every exported row also carries an additive `evidence_state` declaration.
+It conforms to thehub-pr's candidate epistemic-state contract, vendored
+byte-identically at `schemas/federation_epistemic_state.v1.schema.json`.
+
+Each row declares its epistemic class:
+
+- **CURATED:** records, sources and attribute-derived edges.
+- **COMPUTED:** promoter-generated alerts, plant-code duplicates and
+  nearest-feed `energized_by` edges. The `energized_by` edges also carry
+  `match_basis: spatial_proximity`.
+
+A geometry precision is declared only where the pipeline records how the
+point was made:
+
+| Point | Precision |
+|---|---|
+| Monitoring-location coordinates published by the source | OBSERVED_POINT |
+| Polygon or line features | REPRESENTATIVE_POINT |
+| Municipio centroids | REPRESENTATIVE_POINT |
+| Approximate alert points | REPRESENTATIVE_POINT |
+
+Every other coordinate is left undeclared (the Hub shows it as UNKNOWN).
+Tests: `tests/test_federation_evidence_state.py`.
+
+<!-- PROJECT-OPERATING-CONTRACT:START -->
+## Current development and certification contract
+
+AguaYLuz is developed as the Puerto Rico utility-infrastructure producer: water, wastewater, power, outages, recovery, hydroelectric, environmental, and spatial/temporal utility evidence. Current development must recompute live source/runtime state rather than treating historical monitoring receipts as current health.
+
+**Operating rules:** preserve raw/normalized/canonical values separately; prefer stable IDs and authoritative bindings over name/proximity heuristics; freeze material source manifestations and SHA-256; close source/retained/excluded arithmetic, schema/null/FK/cardinality gates, GIS validity, temporal validity, contradiction handling, and federation-export lineage. Historical PASS evidence is preserved after downstream failure but does not certify a later runtime manifestation.
+
+**Release discipline:** credential-free feature/data work comes first unless a feature intrinsically requires authentication. Desktop and iPhone are first-class manifestations. PASS means a bounded gate passed; repository certification requires frozen scope/inputs, explicit inclusion/exclusion, validated identifiers, arithmetic closure, positive/negative regression evidence, current rendered QA, and zero material unresolved residue inside the claim.
+<!-- PROJECT-OPERATING-CONTRACT:END -->

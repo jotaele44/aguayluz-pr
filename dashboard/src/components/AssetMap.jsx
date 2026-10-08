@@ -1,7 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import maplibregl from 'maplibre-gl'
+import * as maplibregl from 'maplibre-gl'
+import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { Activity, Layers, MapPinned, Satellite } from 'lucide-react'
 import { useSpatialTools, SpatialToolsPanel } from './SpatialToolsPanel'
+
+// maplibre-gl 6 is ESM-only and loads its worker from a separate module that
+// it locates through `import.meta.url`, which a bundle does not preserve. Hand
+// it the self-contained worker chunk that Vite's worker pipeline emits instead
+// (plain `?url` would ship the worker without the shared chunk it imports).
+maplibregl.setWorkerUrl(maplibreWorkerUrl)
 
 // Resolve against the configured base so it works in the normal build
 // (served from '/') and the VITE_OFFLINE single-file file:// export (base './').

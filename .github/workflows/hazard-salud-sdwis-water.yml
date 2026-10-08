@@ -1,0 +1,82 @@
+name: Salud SDWIS Water Contract
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/ingest_salud_sdwis_water.py"
+      - "src/aguayluz/hazard_adapters/sdwa_drinking_water.py"
+      - "config/hazard_advisory_sources.v1.json"
+      - ".federation/gui-capabilities.json"
+      - "tests/test_hazard_adapter_sdwa_drinking_water.py"
+      - "tests/test_ingest_salud_sdwis_water.py"
+      - ".github/workflows/hazard-salud-sdwis-water.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: salud-sdwis-water-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Install bounded runtime
+        run: python -m pip install "pydantic>=2" pytest
+
+      - name: Run Salud/SDWIS contract tests
+        env:
+          PYTHONPATH: src:.
+        run: |
+          pytest -q             tests/test_hazard_adapter_sdwa_drinking_water.py             tests/test_ingest_salud_sdwis_water.py
+
+      - name: Verify blocked-source receipt without fabricating manifestations
+        env:
+          PYTHONPATH: src:.
+        run: |
+          python scripts/ingest_salud_sdwis_water.py             --year 2025             --output-root artifacts/salud_sdwis_contract
+
+      - name: Validate receipt guardrails
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+
+          path = Path("artifacts/salud_sdwis_contract/salud_sdwis_water_receipt.json")
+          receipt = json.loads(path.read_text(encoding="utf-8"))
+          arithmetic = receipt["salud_artifact_arithmetic"]
+          assert arithmetic["state"] == "PASS", arithmetic
+          assert arithmetic["source"] == 3, arithmetic
+          assert arithmetic["frozen"] == 0, arithmetic
+          assert arithmetic["blocked"] == 2, arithmetic
+          assert arithmetic["present_unfrozen"] == 1, arithmetic
+          assert receipt["sdwis_source_arithmetic"] is None, receipt
+          assert receipt["source_universe_completeness_claimed"] is False, receipt
+          assert receipt["certification_state"] == "OPEN", receipt
+          assert not Path("artifacts/salud_sdwis_contract/hazard_manifestations.jsonl").read_text(
+              encoding="utf-8"
+          ).strip(), receipt
+          print(json.dumps({
+              "certification_state": receipt["certification_state"],
+              "salud_artifact_arithmetic": arithmetic,
+              "sdwis_source_arithmetic": receipt["sdwis_source_arithmetic"],
+          }, indent=2, sort_keys=True))
+
+      - name: Upload contract evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: salud-sdwis-water-contract
+          path: artifacts/salud_sdwis_contract
+          if-no-files-found: error
+          retention-days: 90

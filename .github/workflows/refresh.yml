@@ -25,6 +25,12 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    # No explicit limit previously meant GitHub's 360-minute default, and
+    # `cancel-in-progress: false` above means a single hung run can back up
+    # the 15-minute fast-cadence queue for hours. 45 min comfortably covers
+    # the heaviest `--all` cadence (~50 sources, each with its own 60-180s
+    # per-request timeout) while bounding the worst case far below 360.
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -47,7 +53,7 @@ jobs:
           uv pip install --system -e ".[dev]"
           test ! -e "$GITHUB_WORKSPACE/../thehub-pr"
 
-      - name: Fast refresh (near-real-time hazard feeds — NWS + quakes)
+      - name: Fast refresh (near-real-time hazard feeds — NWS + quakes + LUMA outages)
         if: >
           (github.event_name == 'schedule' && github.event.schedule == '*/15 * * * *') ||
           (github.event_name == 'workflow_dispatch' && github.event.inputs.cadence == 'fast')

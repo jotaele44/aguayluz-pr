@@ -63,8 +63,10 @@ def _isodate(raw: Any) -> str | None:
 
 
 def _fetch_live() -> dict[str, Any]:
-    import httpx
-    r = httpx.get(
+    sys.path.insert(0, str(REPO / "src"))
+    from aguayluz.http_retry import get_with_retry
+
+    r = get_with_retry(
         NWS_URL,
         headers={"User-Agent": "aguayluz-pr/0.1 (github.com/jotaele44/aguayluz-pr)"},
         timeout=60,

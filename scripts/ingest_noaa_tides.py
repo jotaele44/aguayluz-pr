@@ -72,7 +72,7 @@ def fetch_station_live(station_id: str, days: int) -> dict[str, Any]:
     Returns one merged datagetter-shaped doc (metadata + concatenated data), so the rest
     of the pipeline treats it exactly like a single response or an offline ``--src`` file.
     """
-    import httpx
+    from aguayluz.http_retry import get_with_retry
 
     end = date.today()
     start = end - timedelta(days=days)
@@ -93,7 +93,7 @@ def fetch_station_live(station_id: str, days: int) -> dict[str, Any]:
             "begin_date": window_start.strftime("%Y%m%d"),
             "end_date": window_end.strftime("%Y%m%d"),
         }
-        r = httpx.get(DATAGETTER_URL, params=params, timeout=120)
+        r = get_with_retry(DATAGETTER_URL, params=params, timeout=120)
         r.raise_for_status()
         doc = r.json()
         metadata = metadata or (doc.get("metadata") or {})
