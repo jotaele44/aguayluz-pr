@@ -5,6 +5,7 @@ This gate deliberately distinguishes a third-party archival transform from curre
 receipt-verified MiLUMA source bytes. Historical field observations may harden parser
 tests, but they cannot promote the live endpoint out of RAW_UNFROZEN.
 """
+
 from __future__ import annotations
 
 import json
@@ -15,9 +16,7 @@ RECEIPT = REPO / "governance" / "miluma_schema_evidence.json"
 
 EXPECTED_RAW_FIELDS = {"name", "totalClients", "totalClientsWithoutService"}
 EXPECTED_NORMALIZED_FIELDS = {"region", "total_customers", "affected_customers"}
-EXPECTED_REGIONS = {
-    "ARECIBO", "BAYAMON", "CAROLINA", "CAGUAS", "MAYAGUEZ", "PONCE", "SAN JUAN"
-}
+EXPECTED_REGIONS = {"ARECIBO", "BAYAMON", "CAROLINA", "CAGUAS", "MAYAGUEZ", "PONCE", "SAN JUAN"}
 
 
 def validate(doc: dict) -> None:
