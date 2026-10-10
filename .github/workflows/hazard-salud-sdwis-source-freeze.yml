@@ -1,0 +1,127 @@
+name: Salud SDWIS 2025 Source Freeze
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/acquire_salud_sdwis_water.py"
+      - "scripts/ingest_salud_sdwis_water.py"
+      - "tests/test_acquire_salud_sdwis_water.py"
+      - "tests/test_ingest_salud_sdwis_water.py"
+      - ".github/workflows/hazard-salud-sdwis-source-freeze.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: salud-sdwis-source-freeze-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  freeze-2025-source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Install bounded runtime
+        run: |
+          python -m pip install "pydantic>=2" pytest
+          sudo apt-get update -y
+          sudo apt-get install -y poppler-utils
+
+      - name: Run acquisition helper tests
+        env:
+          PYTHONPATH: src:.
+        run: |
+          pytest -q \
+            tests/test_acquire_salud_sdwis_water.py \
+            tests/test_ingest_salud_sdwis_water.py
+
+      - name: Freeze Salud 2025 and EPA SDWIS source bytes
+        env:
+          PYTHONPATH: src:.
+        run: |
+          python scripts/acquire_salud_sdwis_water.py \
+            --year 2025 \
+            --output-root artifacts/salud_sdwis_2025 \
+            --discard-epa-archive-after-extract
+
+      - name: Render PDF metadata and layout text
+        run: |
+          mkdir -p artifacts/salud_sdwis_2025/pdf_text
+          for id in 10746 10747 10748; do
+            pdf="artifacts/salud_sdwis_2025/raw/salud/${id}.pdf"
+            pdfinfo "${pdf}" > "artifacts/salud_sdwis_2025/pdf_text/${id}.pdfinfo.txt"
+            pdftotext -layout "${pdf}" "artifacts/salud_sdwis_2025/pdf_text/${id}.txt"
+          done
+
+      - name: Validate acquisition receipt
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+
+          root = Path("artifacts/salud_sdwis_2025")
+          receipt = json.loads((root / "acquisition_receipt.json").read_text(encoding="utf-8"))
+          assert len(receipt["salud"]) == 3, receipt
+          assert all(row["sha256"] and row["byte_length"] > 0 for row in receipt["salud"]), receipt
+          assert receipt["epa_archive"]["sha256"], receipt
+          assert receipt["epa_archive"]["retained_after_member_extraction"] is False, receipt
+          assert receipt["epa_member"]["member_sha256"], receipt
+          assert receipt["epa_member"]["member_uncompressed_size"] > 0, receipt
+          arithmetic = receipt["sdwis_source_arithmetic"]
+          assert arithmetic["state"] == "PASS", arithmetic
+          assert arithmetic["scope_pws_prefix"] == "PR", arithmetic
+          assert arithmetic["manifestation_record_count"] >= arithmetic["scoped_record_count"] > 0, arithmetic
+          assert arithmetic["source"] == arithmetic["scoped_record_count"], arithmetic
+          assert arithmetic["retained_source_row_count"] == arithmetic["retained"], arithmetic
+          assert arithmetic["retained_violation_identity_count"] <= arithmetic["retained_source_row_count"], arithmetic
+          assert arithmetic["enforcement_duplicate_source_rows"] == (
+              arithmetic["retained_source_row_count"] - arithmetic["retained_violation_identity_count"]
+          ), arithmetic
+          assert arithmetic["delta"] == 0, arithmetic
+          salud_arithmetic = receipt["salud_artifact_arithmetic"]
+          assert salud_arithmetic["state"] == "PASS", salud_arithmetic
+          assert salud_arithmetic["frozen"] == 3, salud_arithmetic
+          assert salud_arithmetic["blocked"] == 0, salud_arithmetic
+          assert salud_arithmetic["present_unfrozen"] == 0, salud_arithmetic
+          print(json.dumps({
+              "salud": receipt["salud"],
+              "epa_archive": {
+                  "sha256": receipt["epa_archive"]["sha256"],
+                  "byte_length": receipt["epa_archive"]["byte_length"],
+                  "retained_after_member_extraction": receipt["epa_archive"]["retained_after_member_extraction"],
+              },
+              "epa_member": receipt["epa_member"],
+              "sdwis_source_arithmetic": arithmetic,
+              "salud_artifact_arithmetic": salud_arithmetic,
+              "certification_state": receipt["certification_state"],
+          }, indent=2, sort_keys=True))
+
+      - name: Remove duplicate ingestion raw copies
+        run: |
+          rm -rf artifacts/salud_sdwis_2025/ingest/raw
+
+      - name: Upload source freeze evidence
+        if: success()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: salud-sdwis-source-freeze-2025
+          path: |
+            artifacts/salud_sdwis_2025/acquisition_receipt.json
+            artifacts/salud_sdwis_2025/raw/salud
+            artifacts/salud_sdwis_2025/raw/epa/SDWA_VIOLATIONS_ENFORCEMENT.csv
+            artifacts/salud_sdwis_2025/pdf_text
+            artifacts/salud_sdwis_2025/ingest/salud_sdwis_water_receipt.json
+            artifacts/salud_sdwis_2025/ingest/hazard_manifestations.jsonl
+            artifacts/salud_sdwis_2025/ingest/hazard_records.jsonl
+            artifacts/salud_sdwis_2025/ingest/hazard_source_accounting.jsonl
+            artifacts/salud_sdwis_2025/ingest/sdwis_source_classifications.jsonl
+          if-no-files-found: error
+          retention-days: 90

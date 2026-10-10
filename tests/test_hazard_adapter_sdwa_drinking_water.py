@@ -60,12 +60,45 @@ def test_monitoring_failure_is_not_promoted_to_contaminant_exceedance():
     assert record.raw_attributes["violation_measure"] is None
 
 
-def test_same_violation_keeps_event_identity_but_changed_row_gets_new_revision_identity():
+def test_same_violation_keeps_event_identity_but_changed_violation_gets_new_revision_identity():
     original = _row(VIOLATION_STATUS="Unaddressed")
     revised = _row(VIOLATION_STATUS="Resolved")
 
     assert canonical_event_id(original) == canonical_event_id(revised)
     assert stable_record_id(original) != stable_record_id(revised)
+
+
+def test_enforcement_action_changes_do_not_create_new_violation_revision():
+    first = _row(
+        ENFORCEMENT_ID="E-1",
+        ENFORCEMENT_DATE="2025-03-02",
+        ENFORCEMENT_ACTION_TYPE_CODE="SIE",
+    )
+    second = _row(
+        ENFORCEMENT_ID="E-2",
+        ENFORCEMENT_DATE="2025-03-10",
+        ENFORCEMENT_ACTION_TYPE_CODE="SOX",
+    )
+
+    assert canonical_event_id(first) == canonical_event_id(second)
+    assert stable_record_id(first) == stable_record_id(second)
+
+
+def test_normalize_preserves_multiple_enforcement_rows_without_revision_fanout():
+    first = _row(ENFORCEMENT_ID="E-1", ENFORCEMENT_DATE="2025-03-02")
+    second = _row(ENFORCEMENT_ID="E-2", ENFORCEMENT_DATE="2025-03-10")
+
+    record = normalize(
+        first,
+        "manifest-sdwis-enforcement",
+        enforcement_rows=[first, second],
+    )
+
+    assert record.raw_attributes["source_row_count"] == 2
+    assert [item["enforcement_id"] for item in record.raw_attributes["enforcement_actions"]] == [
+        "E-1",
+        "E-2",
+    ]
 
 
 def test_unresolved_status_does_not_match_resolved_by_substring():

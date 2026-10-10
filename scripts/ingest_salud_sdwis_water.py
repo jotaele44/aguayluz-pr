@@ -8,9 +8,9 @@ This script deliberately keeps two evidence planes separate:
 * EPA SDWIS is a versioned federal reconciliation snapshot.  A later federal row can
   revise status or enforcement metadata without rewriting a frozen Salud publication.
 
-The script can run before the large Salud PDFs are available.  In that case their exact
-official locators remain BLOCKED_ACQUISITION in the receipt and no Manifestation object
-is fabricated.  Once files are supplied, exact bytes are frozen and hashed.
+The script can run before the large Salud PDFs are available. In that case their exact
+official locators remain SOURCE_PRESENT_BYTES_NOT_FROZEN and no Manifestation object is
+fabricated. Once files are supplied, exact bytes are frozen and hashed.
 
 SDWIS input is the official SDWA_VIOLATIONS_ENFORCEMENT CSV (or a byte-identical
 extraction of that member from an official EPA archive).  The supplied file itself is
@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import argparse
 import csv
-import io
 import json
 import shutil
 import sys
@@ -30,7 +29,11 @@ from pathlib import Path
 from typing import Any
 
 from aguayluz import DATA_DIR
-from aguayluz.hazard_adapters.sdwa_drinking_water import canonical_event_id, normalize
+from aguayluz.hazard_adapters.sdwa_drinking_water import (
+    canonical_event_id,
+    normalize,
+    violation_digest,
+)
 from aguayluz.hazard_plane import HazardRecord, Manifestation, current_records, source_arithmetic
 
 SALUD_ARTIFACTS = {
@@ -42,12 +45,12 @@ SALUD_ARTIFACTS = {
     "10747": {
         "role": "ANNUAL_VIOLATIONS_REPORT_2025",
         "url": "https://www.salud.pr.gov/CMS/DOWNLOAD/10747",
-        "default_state": "BLOCKED_ACQUISITION",
+        "default_state": "SOURCE_PRESENT_BYTES_NOT_FROZEN",
     },
     "10748": {
         "role": "ANEJOS_APENDICES_2025",
         "url": "https://www.salud.pr.gov/CMS/DOWNLOAD/10748",
-        "default_state": "BLOCKED_ACQUISITION",
+        "default_state": "SOURCE_PRESENT_BYTES_NOT_FROZEN",
     },
 }
 EPA_SCHEMA_URL = "https://echo.epa.gov/tools/data-downloads/sdwa-download-summary"
@@ -55,6 +58,14 @@ EPA_SCHEMA_URL = "https://echo.epa.gov/tools/data-downloads/sdwa-download-summar
 
 def _canonical_json_bytes(value: Any) -> bytes:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+
+
+def _sha256_file(path: Path) -> str:
+    digest = sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -102,9 +113,12 @@ def _existing_current_by_event(path: Path) -> dict[str, HazardRecord]:
     return result
 
 
+OPEN_END_SENTINELS = frozenset({"--->"})
+
+
 def _parse_date(value: str) -> datetime | None:
     text = value.strip()
-    if not text:
+    if not text or text in OPEN_END_SENTINELS:
         return None
     for fmt in ("%Y-%m-%d", "%m/%d/%Y", "%d-%b-%Y", "%d-%b-%y", "%Y%m%d"):
         try:
@@ -136,10 +150,12 @@ def classify_sdwis_row(row: dict[str, Any], year: int) -> tuple[str, str]:
     end = _parse_date(end_raw)
     if begin_raw and begin is None:
         return "UNRESOLVED", "INVALID_NONCOMPLIANCE_BEGIN_DATE"
-    if end_raw and end is None:
+    if end_raw and end_raw not in OPEN_END_SENTINELS and end is None:
         return "UNRESOLVED", "INVALID_NONCOMPLIANCE_END_DATE"
-    if begin is None and end is None:
+    if begin is None and end is None and end_raw not in OPEN_END_SENTINELS:
         return "UNRESOLVED", "NONCOMPLIANCE_PERIOD_MISSING"
+    if begin is not None and end is not None and end < begin:
+        return "UNRESOLVED", "NONCOMPLIANCE_END_PRECEDES_BEGIN"
 
     year_start = datetime(year, 1, 1, tzinfo=timezone.utc)
     year_end = datetime(year, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
@@ -160,8 +176,7 @@ def _freeze_file(
     retrieved_at: datetime,
     raw_root: Path,
 ) -> tuple[Manifestation, dict[str, Any]]:
-    raw = path.read_bytes()
-    digest = sha256(raw).hexdigest()
+    digest = _sha256_file(path)
     manifestation_id = (
         f"{source_system.upper().replace(' ', '_')}:{source_record_id}:"
         f"{retrieved_at.strftime('%Y%m%dT%H%M%S%fZ')}:{digest[:20]}"
@@ -177,7 +192,7 @@ def _freeze_file(
     )
     raw_root.mkdir(parents=True, exist_ok=True)
     target = raw_root / f"{source_record_id}-{digest}{path.suffix.lower()}"
-    if target.exists() and target.read_bytes() != raw:
+    if target.exists() and _sha256_file(target) != digest:
         raise ValueError(f"raw snapshot collision at {target}")
     if not target.exists():
         shutil.copyfile(path, target)
@@ -186,7 +201,7 @@ def _freeze_file(
         "source_url": source_url,
         "status": "FROZEN",
         "byte_sha256": digest,
-        "byte_length": len(raw),
+        "byte_length": path.stat().st_size,
         "raw_file": target.name,
         "manifestation_id": manifestation_id,
     }
@@ -252,87 +267,158 @@ def _process_sdwis(
     retrieved_at: datetime,
     raw_root: Path,
     records_path: Path,
+    scope_pws_prefix: str | None = None,
 ) -> tuple[Manifestation, list[HazardRecord], dict[str, Any], list[dict[str, Any]]]:
-    raw = path.read_bytes()
-    digest = sha256(raw).hexdigest()
-    text = raw.decode("utf-8-sig")
-    reader = csv.DictReader(io.StringIO(text))
-    if not reader.fieldnames:
-        raise ValueError("SDWIS CSV has no header")
-    normalized_fields = {field.strip().upper() for field in reader.fieldnames if field}
-    required = {"PWSID", "VIOLATION_ID", "NON_COMPL_PER_BEGIN_DATE", "NON_COMPL_PER_END_DATE"}
-    missing = sorted(required - normalized_fields)
-    if missing:
-        raise ValueError(f"SDWIS CSV missing required fields: {missing}")
-
-    source_rows = [dict(row) for row in reader]
-    schema_signature = sha256(
-        _canonical_json_bytes({"fieldnames": sorted(normalized_fields)})
-    ).hexdigest()
+    digest = _sha256_file(path)
     manifestation_id = (
         f"EPA_SDWIS_VIOLATIONS:{retrieved_at.strftime('%Y%m%dT%H%M%S%fZ')}:{digest[:20]}"
     )
+    existing_current = _existing_current_by_event(records_path)
+    retained: list[HazardRecord] = []
+    retained_groups: dict[str, dict[str, Any]] = {}
+    classifications: list[dict[str, Any]] = []
+    excluded = 0
+    unresolved = 0
+    manifestation_records = 0
+    scoped_records = 0
+    submission_year_quarters: set[str] = set()
+
+    with path.open("r", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        if not reader.fieldnames:
+            raise ValueError("SDWIS CSV has no header")
+        normalized_fields = {field.strip().upper() for field in reader.fieldnames if field}
+        required = {
+            "PWSID",
+            "VIOLATION_ID",
+            "NON_COMPL_PER_BEGIN_DATE",
+            "NON_COMPL_PER_END_DATE",
+        }
+        missing = sorted(required - normalized_fields)
+        if missing:
+            raise ValueError(f"SDWIS CSV missing required fields: {missing}")
+        schema_signature = sha256(
+            _canonical_json_bytes({"fieldnames": sorted(normalized_fields)})
+        ).hexdigest()
+
+        scope_upper = scope_pws_prefix.upper() if scope_pws_prefix else None
+        for ordinal, raw_row in enumerate(reader, start=2):
+            row = dict(raw_row)
+            manifestation_records += 1
+            quarter = _row_value(row, "SUBMISSIONYEARQUARTER")
+            if quarter:
+                submission_year_quarters.add(quarter)
+
+            if scope_upper:
+                pwsid = _row_value(row, "PWSID").upper()
+                if not pwsid.startswith(scope_upper):
+                    continue
+            scoped_records += 1
+
+            disposition, reason = classify_sdwis_row(row, year)
+            classifications.append(
+                {
+                    "source_line": ordinal,
+                    "pwsid": _row_value(row, "PWSID") or None,
+                    "violation_id": _row_value(row, "VIOLATION_ID") or None,
+                    "disposition": disposition,
+                    "reason": reason,
+                }
+            )
+            if disposition == "EXCLUDED":
+                excluded += 1
+                continue
+            if disposition == "UNRESOLVED":
+                unresolved += 1
+                continue
+            event_id = canonical_event_id(row)
+            group = retained_groups.get(event_id)
+            if group is None:
+                retained_groups[event_id] = {
+                    "base_row": row,
+                    "rows": [row],
+                    "source_lines": [ordinal],
+                    "violation_digest": violation_digest(row),
+                }
+            else:
+                digest = violation_digest(row)
+                if digest != group["violation_digest"]:
+                    raise ValueError(
+                        "conflicting violation-level rows within one SDWIS manifestation "
+                        f"for {event_id}: lines={group['source_lines'] + [ordinal]}"
+                    )
+                group["rows"].append(row)
+                group["source_lines"].append(ordinal)
+
+    for event_id, group in retained_groups.items():
+        base_row = group["base_row"]
+        candidate = normalize(
+            base_row,
+            manifestation_id,
+            enforcement_rows=group["rows"],
+        )
+        prior = existing_current.get(event_id)
+        if prior is not None:
+            if prior.record_id == candidate.record_id:
+                continue
+            candidate = normalize(
+                base_row,
+                manifestation_id,
+                supersedes_record_id=prior.record_id,
+                enforcement_rows=group["rows"],
+            )
+        retained.append(candidate)
+        existing_current[event_id] = candidate
+
     manifestation = Manifestation(
         manifestation_id=manifestation_id,
         source_authority="US EPA",
         source_system="SDWA_VIOLATIONS_ENFORCEMENT.csv",
         source_record_id="SDWA_VIOLATIONS_ENFORCEMENT.csv",
         source_url=source_url,
-        retrieval_query=f"reconciliation_year={year};scope=supplied_manifestation",
+        retrieval_query=(
+            f"reconciliation_year={year};scope_pws_prefix={scope_pws_prefix}"
+            if scope_pws_prefix
+            else f"reconciliation_year={year};scope=supplied_manifestation"
+        ),
         retrieved_at_utc=retrieved_at,
         byte_sha256=digest,
         schema_signature=schema_signature,
-        record_count=len(source_rows),
+        record_count=manifestation_records,
     )
     raw_root.mkdir(parents=True, exist_ok=True)
     target = raw_root / f"SDWA_VIOLATIONS_ENFORCEMENT-{digest}.csv"
-    if target.exists() and target.read_bytes() != raw:
+    if target.exists() and _sha256_file(target) != digest:
         raise ValueError(f"raw snapshot collision at {target}")
     if not target.exists():
-        target.write_bytes(raw)
+        shutil.copyfile(path, target)
 
-    existing_current = _existing_current_by_event(records_path)
-    retained: list[HazardRecord] = []
-    classifications: list[dict[str, Any]] = []
-    excluded = 0
-    unresolved = 0
-    for ordinal, row in enumerate(source_rows, start=2):
-        disposition, reason = classify_sdwis_row(row, year)
-        classifications.append(
-            {
-                "source_line": ordinal,
-                "pwsid": _row_value(row, "PWSID") or None,
-                "violation_id": _row_value(row, "VIOLATION_ID") or None,
-                "disposition": disposition,
-                "reason": reason,
-            }
-        )
-        if disposition == "EXCLUDED":
-            excluded += 1
-            continue
-        if disposition == "UNRESOLVED":
-            unresolved += 1
-            continue
-        candidate = normalize(row, manifestation_id)
-        prior = existing_current.get(canonical_event_id(row))
-        if prior is not None:
-            if prior.record_id == candidate.record_id:
-                continue
-            candidate = normalize(
-                row,
-                manifestation_id,
-                supersedes_record_id=prior.record_id,
-            )
-        retained.append(candidate)
-        existing_current[candidate.canonical_event_id] = candidate
-
-    retained_source = len(source_rows) - excluded - unresolved
+    source_denominator = scoped_records if scope_pws_prefix else manifestation_records
+    retained_source = source_denominator - excluded - unresolved
     accounting = source_arithmetic(
-        len(source_rows),
+        source_denominator,
         retained_source,
         excluded,
         unresolved,
     )
+    accounting.update(
+        {
+            "retained_source_row_count": retained_source,
+            "retained_violation_identity_count": len(retained_groups),
+            "enforcement_duplicate_source_rows": retained_source - len(retained_groups),
+        }
+    )
+    if scope_pws_prefix:
+        ordered_quarters = sorted(submission_year_quarters)
+        accounting.update(
+            {
+                "scope_pws_prefix": scope_pws_prefix,
+                "manifestation_record_count": manifestation_records,
+                "scoped_record_count": scoped_records,
+                "submission_year_quarters": ordered_quarters,
+                "latest_submission_year_quarter": ordered_quarters[-1] if ordered_quarters else None,
+            }
+        )
     if accounting["state"] != "PASS":
         raise ValueError(f"SDWIS source arithmetic failed: {accounting}")
     return manifestation, retained, accounting, classifications
@@ -347,6 +433,7 @@ def run(
     salud_annex: Path | None = None,
     sdwis_violations: Path | None = None,
     sdwis_source_url: str | None = None,
+    sdwis_scope_pws_prefix: str | None = None,
     require_zero_unresolved: bool = False,
 ) -> dict[str, Any]:
     retrieved_at = datetime.now(timezone.utc)
@@ -354,6 +441,7 @@ def run(
     records_path = output_root / "hazard_records.jsonl"
     manifestations_path = output_root / "hazard_manifestations.jsonl"
     ledger_path = output_root / "hazard_source_accounting.jsonl"
+    classifications_path = output_root / "sdwis_source_classifications.jsonl"
     receipt_path = output_root / "salud_sdwis_water_receipt.json"
 
     manifestations, salud_artifacts, salud_arithmetic = _salud_artifact_receipt(
@@ -378,6 +466,7 @@ def run(
             retrieved_at=retrieved_at,
             raw_root=raw_root / "epa_sdwis",
             records_path=records_path,
+            scope_pws_prefix=sdwis_scope_pws_prefix,
         )
         manifestations.append(sdwis_manifestation)
         new_records.extend(records)
@@ -394,15 +483,40 @@ def run(
         "record_id",
     )
 
+    classification_reason_counts: dict[str, int] = {}
+    for row in sdwis_classifications:
+        reason = str(row["reason"])
+        classification_reason_counts[reason] = classification_reason_counts.get(reason, 0) + 1
+    if sdwis_classifications:
+        classifications_path.write_text(
+            "".join(
+                json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n"
+                for row in sdwis_classifications
+            ),
+            encoding="utf-8",
+        )
+        classifications_sha256 = _sha256_file(classifications_path)
+    else:
+        classifications_sha256 = None
+
     receipt = {
-        "schema_version": "aguayluz.salud_sdwis_water/v1",
+        "schema_version": "aguayluz.salud_sdwis_water/v2",
         "retrieved_at_utc": retrieved_at.isoformat(),
         "target_calendar_year": year,
         "salud_artifacts": salud_artifacts,
         "salud_artifact_arithmetic": salud_arithmetic,
         "sdwis_schema_url": EPA_SCHEMA_URL,
         "sdwis_source_arithmetic": sdwis_accounting,
-        "sdwis_classifications": sdwis_classifications,
+        "sdwis_classification_ledger": (
+            {
+                "path": classifications_path.name,
+                "record_count": len(sdwis_classifications),
+                "sha256": classifications_sha256,
+                "reason_counts": classification_reason_counts,
+            }
+            if sdwis_classifications
+            else None
+        ),
         "new_record_revisions": len(new_records),
         "source_universe_completeness_claimed": False,
         "certification_state": (
@@ -416,6 +530,9 @@ def run(
             "A later SDWIS snapshot does not overwrite a frozen Salud annual publication.",
             "Monitoring/reporting/public-notification violations do not establish contaminant exposure.",
             "The supplied SDWIS manifestation is a reconciliation denominator, not proof of Salud report membership.",
+            "SDWIS source-row arithmetic and canonical violation-identity arithmetic are preserved separately.",
+            "One-to-many enforcement rows do not create synthetic violation revisions.",
+            "Reversed noncompliance dates remain UNRESOLVED and are never coerced.",
             "No Manifestation is created for a locator whose bytes were not frozen.",
         ],
     }
@@ -449,6 +566,7 @@ def main() -> int:
     parser.add_argument("--salud-annex", type=Path)
     parser.add_argument("--sdwis-violations", type=Path)
     parser.add_argument("--sdwis-source-url")
+    parser.add_argument("--sdwis-scope-pws-prefix")
     parser.add_argument("--require-zero-unresolved", action="store_true")
     args = parser.parse_args()
     try:
@@ -460,6 +578,7 @@ def main() -> int:
             salud_annex=args.salud_annex,
             sdwis_violations=args.sdwis_violations,
             sdwis_source_url=args.sdwis_source_url,
+            sdwis_scope_pws_prefix=args.sdwis_scope_pws_prefix,
             require_zero_unresolved=args.require_zero_unresolved,
         )
     except Exception as exc:  # noqa: BLE001
