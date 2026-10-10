@@ -57,9 +57,14 @@ jobs:
           assert receipt["salud"]["source"] == 2, receipt
           assert receipt["salud"]["frozen"] == 2, receipt
           assert receipt["salud"]["delta"] == 0, receipt
-          assert receipt["epa"]["zip_frozen"] is True, receipt
-          assert receipt["epa"]["violations_member_found"] is True, receipt
+          assert receipt["epa"]["zip_full_sha256_status"] == "OPEN_NOT_DOWNLOADED", receipt
+          assert receipt["epa"]["target_member"]["member_name"].upper().endswith(
+              "SDWA_VIOLATIONS_ENFORCEMENT.CSV"
+          ), receipt
+          assert receipt["epa"]["compressed_sha256"], receipt
+          assert receipt["epa"]["uncompressed_sha256"], receipt
           assert receipt["epa"]["pr_2025_arithmetic"]["state"] == "PASS", receipt
+          assert receipt["epa"]["pr_2025_arithmetic"]["delta"] == 0, receipt
           print(json.dumps(receipt, indent=2, sort_keys=True))
 
       - name: Upload frozen source evidence
