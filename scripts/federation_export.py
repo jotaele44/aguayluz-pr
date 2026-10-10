@@ -115,7 +115,7 @@ _CRITICAL_SEVERITY = 4
 _ALERT_INACTIVE_STATUS = frozenset({"closed", "rejected"})
 
 
-def _alert_is_critical(severity: Any, status: Any) -> bool:
+def _alert_is_critical(severity: Any, status: Any, end_at: Any = None) -> bool:
     """True when an alert clears the life-safety threshold and is still actionable."""
     try:
         sev = int(severity)
@@ -123,6 +123,13 @@ def _alert_is_critical(severity: Any, status: Any) -> bool:
         return False
     if str(status) in _ALERT_INACTIVE_STATUS:
         return False
+    if end_at:
+        try:
+            end = datetime.fromisoformat(str(end_at).replace("Z", "+00:00"))
+            if end.tzinfo is None or end <= datetime.now(timezone.utc):
+                return False
+        except ValueError:
+            return False
     return sev >= _CRITICAL_SEVERITY
 
 
@@ -423,7 +430,7 @@ def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], no
             "module": al.get("module_id"),
             "alert_type": al.get("event_type"),
             "severity": al.get("severity"),
-            "is_critical": _alert_is_critical(al.get("severity"), al.get("status")),
+            "is_critical": _alert_is_critical(al.get("severity"), al.get("status"), al.get("end_at")),
             "status": al.get("status"),
             "gap_status": al.get("gap_status"),
             "start_at": al.get("start_at"),

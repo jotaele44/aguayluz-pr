@@ -221,7 +221,8 @@
           "tests/test_backend_alerts_api.py",
           "tests/test_backend_events_api.py",
           "tests/test_alerts.py",
-          "tests/test_luma_status_api.py"
+          "tests/test_luma_status_api.py",
+          "tests/test_nws_snapshot_lifecycle.py"
         ],
         "contract": [
           "tests/test_gui_parity.py",
@@ -251,7 +252,8 @@
           "scripts/derive_luma_status_changes.py:main",
           "scripts/derive_luma_status_changes.py:write_rows"
         ]
-      }
+      },
+      "rationale": " NWS source identities use complete-ID digests; complete snapshots retain retired history and fail closed on malformed or paginated responses. Time-aware alert APIs project expired evidence as closed, preserving source status; the GUI keeps it inspectable without a critical badge."
     },
     {
       "id": "monitoring-analytics-and-system-state",
