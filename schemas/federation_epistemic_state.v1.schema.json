@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:prii:federation:epistemic_state:v1",
+  "title": "FEDERATION_EPISTEMIC_STATE_CONTRACT_V1",
+  "description": "Candidate shared vocabulary for the Federation evidence-state axes. Axes are independent: data stage, epistemic class, identity, source, temporal state and precision, observation semantics, geometry precision, edge state and contradiction state never collapse into one another. Missing or invalid values fail closed to the sentinel of their axis. Status: CANDIDATE (not frozen) until producer adoption and Federation compatibility pass (directive §42). Canonical owner: thehub-pr. Python mirror: src/hub/epistemic.py.",
+  "x-contract-id": "federation-evidence-state-v1",
+  "x-status": "CANDIDATE",
+  "$defs": {
+    "data_stage": {
+      "description": "Pipeline stage of the record. RAW ≠ NORMALIZED ≠ CANONICAL ≠ INTERPRETATION.",
+      "enum": ["RAW", "NORMALIZED", "CANONICAL", "EVIDENCE_CLASSIFICATION", "FINDING", "COMPUTATION", "INTERPRETATION", "REPORT", "UNKNOWN"]
+    },
+    "epistemic_class": {
+      "description": "How the content came to be known. UNCLASSIFIED is the fail-closed sentinel and is never one of the four classes.",
+      "enum": ["MEASURED", "COMPUTED", "CURATED", "INTERPRETIVE", "UNCLASSIFIED"]
+    },
+    "epistemic_class_basis": {
+      "enum": ["PRODUCER_DECLARED", "HUB_CROSSWALK", "NONE"]
+    },
+    "identity_state": {
+      "enum": ["BOUND", "CANDIDATE", "UNRESOLVED", "CONFLICTING"]
+    },
+    "identity_scope": {
+      "description": "PRODUCER_LOCAL: identity as asserted by the producing repo. FEDERATION: identity as adjudicated by the TheHub identity registry (ADR 0009: federation ids never replace producer ids).",
+      "enum": ["PRODUCER_LOCAL", "FEDERATION"]
+    },
+    "source_state": {
+      "enum": ["SOURCE_BOUND", "SOURCE_REPORTED", "SOURCE_MISSING", "SOURCE_BLOCKED"]
+    },
+    "temporal_state": {
+      "description": "Computed at read time against an explicit 'now'. Query recency is never source freshness.",
+      "enum": ["LIVE", "CURRENT", "STALE", "HISTORICAL", "UNKNOWN"]
+    },
+    "temporal_precision": {
+      "description": "YEAR_ONLY extends the directive's list so year-only records are not collapsed into a coarser or finer class.",
+      "enum": ["EXACT_TIMESTAMP", "BOUNDED_INTERVAL", "DATE_ONLY", "MONTH_YEAR", "YEAR_ONLY", "APPROXIMATE", "UNKNOWN"]
+    },
+    "observation_state": {
+      "description": "NOT_OBSERVED never becomes OBSERVED_ABSENT. OBSERVED_ABSENT requires an explicit absence basis (coverage) declared by the producer.",
+      "enum": ["OBSERVED_PRESENT", "OBSERVED_ABSENT", "NOT_OBSERVED", "UNKNOWN"]
+    },
+    "geometry_precision": {
+      "description": "REPRESENTATIVE_POINT ≠ OBSERVED_POINT. Precision is never promoted because coordinates repeat.",
+      "enum": ["OBSERVED_POINT", "INTERPRETED_POINT", "AREA_REFERENCE", "REPRESENTATIVE_POINT", "UNKNOWN"]
+    },
+    "edge_state": {
+      "description": "Proximity, temporal adjacency or name similarity alone can never make an edge DOCUMENTED or COMPUTED.",
+      "enum": ["DOCUMENTED", "COMPUTED", "CANDIDATE", "CONFLICTING", "REJECTED", "UNKNOWN"]
+    },
+    "contradiction_state": {
+      "enum": ["OPEN", "NARROWED", "RESOLVED", "SUPERSEDED", "UNRESOLVABLE"]
+    },
+    "producer_declaration": {
+      "description": "Additive `evidence_state` object a producer may attach to any federation stream row. Every key is optional; the Hub derives or fails closed for anything omitted. Invalid values are ignored and reported, never trusted.",
+      "type": "object",
+      "properties": {
+        "contract": {"const": "federation-evidence-state-v1"},
+        "data_stage": {"$ref": "#/$defs/data_stage"},
+        "epistemic_class": {"$ref": "#/$defs/epistemic_class"},
+        "identity_state": {"$ref": "#/$defs/identity_state"},
+        "observation_state": {"$ref": "#/$defs/observation_state"},
+        "observation_absence_basis": {"type": "string", "minLength": 1},
+        "geometry_precision": {"$ref": "#/$defs/geometry_precision"},
+        "coordinate_method": {"type": "string", "minLength": 1},
+        "temporal_precision": {"$ref": "#/$defs/temporal_precision"},
+        "expected_cadence_seconds": {"type": "number", "exclusiveMinimum": 0},
+        "live_feed": {"type": "boolean"},
+        "valid_from": {"type": "string"},
+        "valid_to": {"type": "string"},
+        "interpretation_basis": {"type": "string", "minLength": 1},
+        "basis_note": {"type": "string"}
+      }
+    }
+  }
+}
