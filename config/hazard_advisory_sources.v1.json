@@ -104,7 +104,7 @@
       "hazard_family": "WATER_HEALTH",
       "access": "annual report + annexes + public notice; exact source bytes required before manifestation promotion",
       "url": "https://www.salud.pr.gov/CMS/611",
-      "status": "BOUND_2025_ARTIFACT_FAMILY_BYTES_PARTIAL_OPEN",
+      "status": "BOUND_2025_ARTIFACT_FAMILY_LIVE_LOCATORS_BYTES_OPEN",
       "bounded_scope": {
         "reporting_period": "2025-01-01/2025-12-31",
         "public_notice_id": "10746",
@@ -113,9 +113,19 @@
         "source_artifacts": 3,
         "source_present": 3,
         "bytes_frozen": 0,
-        "blocked_acquisition": 2,
-        "present_bytes_not_frozen": 1,
-        "source_universe_completeness_claimed": false
+        "blocked_acquisition": 0,
+        "present_bytes_not_frozen": 3,
+        "source_universe_completeness_claimed": false,
+        "locator_verification": {
+          "verified_on": "2026-10-03",
+          "official_index": "https://www.salud.pr.gov/CMS/611",
+          "artifact_ids": [
+            "10746",
+            "10747",
+            "10748"
+          ],
+          "state": "LIVE_OFFICIAL_LOCATORS"
+        }
       },
       "binding_semantics": "state annual-report rows bind to PWSID/VIOLATION_ID only when those identifiers are present or independently reconciled; names alone are aliases"
     },
@@ -125,9 +135,17 @@
       "hazard_family": "WATER_HEALTH",
       "access": "SDWA quarterly downloads / SDWIS Federal Reporting Services; federal reconciliation plane",
       "url": "https://echo.epa.gov/tools/data-downloads/sdwa-download-summary",
-      "status": "BOUND_RECONCILIATION_SCHEMA_SOURCE_DENOMINATOR_OPEN",
+      "status": "BOUND_RECONCILIATION_SOURCE_LOCATOR_BYTES_OPEN",
       "update_semantics": "quarterly SDWIS snapshots may revise violation, enforcement and return-to-compliance fields",
-      "binding_semantics": "PWSID is system identity; PWSID + FACILITY_ID is facility identity; VIOLATION_ID is violation identity within versioned federal snapshots"
+      "binding_semantics": "PWSID is system identity; PWSID + FACILITY_ID is facility identity; VIOLATION_ID is violation identity within versioned federal snapshots",
+      "direct_dataset_url": "https://echo.epa.gov/files/echodownloads/SDWA_latest_downloads.zip",
+      "bounded_scope": {
+        "transport": "SDWA_latest_downloads.zip",
+        "authoritative_member": "SDWA_VIOLATIONS_ENFORCEMENT.csv",
+        "scope_rule": "PWSID starts with PR",
+        "reconciliation_year": 2025,
+        "source_universe_completeness_claimed": false
+      }
     }
   ],
   "unresolved_material": [
