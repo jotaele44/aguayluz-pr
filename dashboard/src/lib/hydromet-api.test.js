@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { getRiverGauges, getRiverGaugesGeojson, postHydrometRefresh } from './hydromet-api'
+import { getRainfall, getRiverGauges, getRiverGaugesGeojson, postHydrometRefresh } from './hydromet-api'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -21,6 +21,20 @@ describe('hydromet API client', () => {
     expect(fetchMock.mock.calls[0][0]).toMatch(/\/hydromet\/gauges$/)
     await getRiverGauges({ flooding_only: true })
     expect(fetchMock.mock.calls[1][0]).toMatch(/\/hydromet\/gauges\?flooding_only=true$/)
+  })
+
+  it('asks for a rainfall window and day, and returns an empty table when down', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(respond(200, { window: 'last7days', items: [] }))
+    vi.stubGlobal('fetch', fetchMock)
+    await getRainfall({ window: 'last7days' })
+    expect(fetchMock.mock.calls[0][0]).toMatch(/\/hydromet\/rainfall\?window=last7days$/)
+    await getRainfall({ window: '1day', date: '2026-10-08' })
+    expect(fetchMock.mock.calls[1][0]).toMatch(/\/hydromet\/rainfall\?window=1day&date=2026-10-08$/)
+
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
+    const empty = await getRainfall()
+    expect(empty.items).toEqual([])
+    expect(empty.data_date).toBeNull()
   })
 
   it('falls back to an empty collection when the backend is down', async () => {

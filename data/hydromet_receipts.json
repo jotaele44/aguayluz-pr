@@ -170,6 +170,65 @@
         "HYDROMET:nwps_gauges:fe3bf541c6c21e1cce8e560cd2f85709"
       ],
       "source_id": "nwps_gauges"
+    },
+    "stage_iv_pr": {
+      "last_attempt_utc": "2026-10-11T04:26:14.579157Z",
+      "last_error": null,
+      "last_status": "PASS",
+      "last_success": {
+        "arithmetic": {
+          "accounted": 234,
+          "delta": 0,
+          "excluded": 0,
+          "retained": 234,
+          "source": 234,
+          "state": "PASS",
+          "unresolved": 0
+        },
+        "byte_sha256": "0d1515595e40456733c2408c5e348597c84123261e79c45f834921c0f50b655d",
+        "data_date": "2026-10-10",
+        "events_pruned": 0,
+        "files": [
+          {
+            "byte_sha256": "0d1515595e40456733c2408c5e348597c84123261e79c45f834921c0f50b655d",
+            "data_date": "2026-10-10",
+            "manifestation_id": "HYDROMET:stage_iv_pr:0d1515595e40456733c2408c5e348597",
+            "retained": 78,
+            "url": "https://water.noaa.gov/resources/downloads/precip/stageIV/2026/10/10/nws_precip_1day_20261010_pr.tif",
+            "window": "1day",
+            "zones": 78
+          },
+          {
+            "byte_sha256": "29aa5d8bedd0ffece0bce69bb4af7988059e353177b1192fca9cc96304566883",
+            "data_date": "2026-10-10",
+            "manifestation_id": "HYDROMET:stage_iv_pr:29aa5d8bedd0ffece0bce69bb4af7988",
+            "retained": 78,
+            "url": "https://water.noaa.gov/resources/downloads/precip/stageIV/2026/10/10/nws_precip_last7days_20261010_pr.tif",
+            "window": "last7days",
+            "zones": 78
+          },
+          {
+            "byte_sha256": "d072162224863343deb7362aa13415542cf7d5018ff7c877276ec1f1f7c4d1ed",
+            "data_date": "2026-10-10",
+            "manifestation_id": "HYDROMET:stage_iv_pr:d072162224863343deb7362aa1341554",
+            "retained": 78,
+            "url": "https://water.noaa.gov/resources/downloads/precip/stageIV/2026/10/10/nws_precip_last30days_20261010_pr.tif",
+            "window": "last30days",
+            "zones": 78
+          }
+        ],
+        "integrity": "PASS",
+        "manifestations_added": 0,
+        "manifestations_pruned": 0,
+        "new_revisions": 0,
+        "records_added": 0,
+        "relationships_added": 0,
+        "source_url": "https://water.noaa.gov/resources/downloads/precip/stageIV/2026/10/10/nws_precip_1day_20261010_pr.tif",
+        "windows_missing": []
+      },
+      "last_success_utc": "2026-10-11T04:26:14.579157Z",
+      "referenced_manifestation_ids": [],
+      "source_id": "stage_iv_pr"
     }
   }
 }

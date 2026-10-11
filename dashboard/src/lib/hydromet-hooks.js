@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   getHydrometSources,
   getHydrometSummary,
+  getRainfall,
   getRiverGauges,
   getRiverGaugesGeojson,
   postHydrometRefresh,
@@ -32,6 +33,15 @@ export const useRiverGaugesGeojson = () => useQuery({
   queryKey: ['hydromet', 'gauges.geojson'],
   queryFn: getRiverGaugesGeojson,
   refetchInterval: GAUGE_REFETCH_MS,
+})
+
+// Stage IV is a once-a-day product; an hourly refetch is plenty.
+const RAINFALL_REFETCH_MS = 60 * 60_000
+
+export const useRainfall = ({ window = '1day', date } = {}) => useQuery({
+  queryKey: ['hydromet', 'rainfall', window, date ?? 'latest'],
+  queryFn: () => getRainfall({ window, date }),
+  refetchInterval: RAINFALL_REFETCH_MS,
 })
 
 export const useHydrometRefresh = () => {

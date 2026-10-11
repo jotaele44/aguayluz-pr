@@ -20,6 +20,22 @@ River flood (NWPS)
     pool gauge (SHEF ``HP*``) the category reads as pool elevation against the dam's
     published flood stages.
 
+Heavy rain (Stage IV)
+    One alert per municipio and 12Z-12Z day whose Stage IV 1-day rainfall, summarised
+    over the HRAP cells assigned to the municipio, reaches either threshold:
+
+    ===================================== ========
+    municipio mean ≥ HEAVY_RAIN_MEAN_IN   2
+    any cell ≥ HEAVY_RAIN_CELL_MAX_IN     3
+    ===================================== ========
+
+    Stage IV is a post-event analysis (radar + gauges, provisional), published after the
+    day closes, so these alerts stay below the critical push/SMS floor: they prompt
+    turbidity, reservoir-inflow and landslide follow-up, not warning. Each stays
+    ``active`` for HEAVY_RAIN_FOLLOW_UP after the window ends, then ``closed``. A
+    municipio summarised over cells its polygon only touches (too small to hold a cell
+    centre) is routed to review.
+
 Pure functions: no I/O. ``now`` is passed in by ``scripts/build_alerts.py`` and only
 decides staleness notes and which closed episodes are still reported.
 """
@@ -30,15 +46,22 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Literal
 
 from ..alerts import AlertEvent
+from ..hazard_adapters import stage_iv_qpe
 from ..hazard_adapters.nwps_gauges import (
     CANONICAL_PREFIX,
     FLOOD_CATEGORIES,
     NON_FLOOD_CATEGORIES,
     parse_time,
 )
+from ..hazard_adapters.stage_iv_qpe import (
+    HEAVY_RAIN_CELL_MAX_IN,
+    HEAVY_RAIN_MEAN_IN,
+    heavy_rain_severity,
+)
 from ..hazard_plane import HazardRecord
-from ..hydromet.store import revision_chains
+from ..hydromet.store import current_by_event, revision_chains
 from ..impact import AssetIndex, in_alert_bounds, link_impact, merge_asset_ids
+from ..water_alerts import _centroid, _slug
 
 NWPS_FLOOD_MARKER = "_nwpsflood_"
 
@@ -50,6 +73,11 @@ CLOSED_RETENTION = timedelta(days=30)
 
 #: An open episode whose latest observation is older than this is flagged for review.
 STALE_OBSERVATION = timedelta(hours=6)
+
+HEAVY_RAIN_MARKER = "_qpeheavy_"
+
+#: A heavy-rain alert stays active this long after its 12Z window ends.
+HEAVY_RAIN_FOLLOW_UP = timedelta(hours=72)
 
 
 @dataclass(frozen=True)
@@ -226,23 +254,126 @@ def river_flood_alerts(
     return out
 
 
+def heavy_rain_alert(
+    record: HazardRecord,
+    severity: int,
+    geo: dict[str, dict[str, Any]],
+    index: AssetIndex,
+    now: datetime | None,
+) -> AlertEvent:
+    values = record.normalized_values
+    municipio = str(values.get("municipio") or record.normalized_label)
+    if record.observed_to is None:
+        raise ValueError(f"{record.record_id}: Stage IV record without a window end")
+    end = record.observed_to
+    start = record.observed_from or end - timedelta(days=1)
+    follow_up_end = end + HEAVY_RAIN_FOLLOW_UP
+    closed = now is not None and now > follow_up_end
+    lat, lon = _centroid(municipio, geo)
+    linked, sectors = link_impact(None, None, [municipio], index, radius_km=None)
+    centres = values.get("method") == "raster_cell_centres_in_polygon"
+    review: Literal["accepted", "needs_review"] = "accepted" if centres else "needs_review"
+    pct = values.get("pct_of_normal")
+    pct_text = f", {pct:g}% of the PRISM normal" if isinstance(pct, (int, float)) else ""
+    url = record.raw_attributes.get("url")
+    notes = [
+        f"Stage IV 1-day rainfall {start:%Y-%m-%d} 12Z → {end:%Y-%m-%d} 12Z: "
+        f"municipio mean {values.get('obs_mean_in')} in over {values.get('cell_count')} HRAP "
+        f"cell(s), wettest cell {values.get('obs_max_in')} in{pct_text}.",
+        f"Thresholds: mean ≥ {HEAVY_RAIN_MEAN_IN:g} in → 2, any cell ≥ "
+        f"{HEAVY_RAIN_CELL_MAX_IN:g} in → 3.",
+        "Post-event analysis (radar + gauges, provisional), not an NWS warning; supports "
+        "turbidity, reservoir-inflow and landslide follow-up.",
+        f"Municipio binding: {values.get('method') or 'UNRESOLVED'}.",
+    ]
+    if not centres:
+        notes.append("Summarised over cells the polygon only touches; routed to review.")
+    return AlertEvent(
+        alert_id=f"AYL_ALR_{end:%Y%m%d}{HEAVY_RAIN_MARKER}{_slug(municipio)}",
+        module_id="WEATHER_HAZARD",
+        event_type="hazard",
+        status="closed" if closed else "active",
+        source_title=f"{municipio} — heavy rain, {values.get('obs_mean_in')} in municipio mean (Stage IV 1-day)",
+        source_ref=f"NWS Stage IV PR {record.source_record_id}" + (f"; {url}" if url else ""),
+        source_hash=None,
+        published_at=None,
+        start_at=_utc(start),
+        end_at=_utc(follow_up_end) if closed else None,
+        asset_name=municipio,
+        asset_id=None,
+        operator="NOAA/NWS Stage IV",
+        municipalities=[municipio],
+        sectors_impacted=sectors,
+        latitude=lat,
+        longitude=lon,
+        coord_confidence="approximate" if lat is not None else "unknown",
+        severity=severity,
+        confidence=75,
+        ilap_score=None,
+        covert_flags=[],
+        gap_status="none",
+        review_status=review,
+        evidence_tier="T1",
+        linked_asset_ids=merge_asset_ids([], linked),
+        validation_notes=" ".join(notes),
+    )
+
+
+def heavy_rain_alerts(
+    inputs: HydrometInputs | None,
+    geo: dict[str, dict[str, Any]] | None = None,
+    index: AssetIndex | None = None,
+) -> list[AlertEvent]:
+    """One alert per municipio × 1-day window at or above a heavy-rain threshold.
+
+    Reads the current revision of each Stage IV 1-day event; closed alerts are reported
+    for CLOSED_RETENTION after their follow-up period ends. Unbound zones never alert.
+    """
+    if inputs is None:
+        return []
+    geo = geo or {}
+    index = index or AssetIndex()
+    out: list[AlertEvent] = []
+    for record in current_by_event(inputs.records, stage_iv_qpe.CANONICAL_PREFIX).values():
+        values = record.normalized_values
+        if values.get("window") != "1day" or not record.municipality_id or record.observed_to is None:
+            continue
+        severity = heavy_rain_severity(values)
+        if severity is None:
+            continue
+        if (
+            inputs.now is not None
+            and inputs.now - (record.observed_to + HEAVY_RAIN_FOLLOW_UP) > CLOSED_RETENTION
+        ):
+            continue
+        out.append(heavy_rain_alert(record, severity, geo, index, inputs.now))
+    return sorted(out, key=lambda a: a.alert_id)
+
+
 def hydromet_alerts(
     inputs: HydrometInputs | None,
     geo: dict[str, dict[str, Any]] | None = None,
     index: AssetIndex | None = None,
 ) -> list[AlertEvent]:
     """Every hydromet promoter, for the registry in :mod:`aguayluz.alert_promotion`."""
-    return river_flood_alerts(inputs, geo, index)
+    return river_flood_alerts(inputs, geo, index) + heavy_rain_alerts(inputs, geo, index)
 
 
 __all__ = [
     "CLOSED_RETENTION",
     "FLOOD_SEVERITY",
     "FloodEpisode",
+    "HEAVY_RAIN_CELL_MAX_IN",
+    "HEAVY_RAIN_FOLLOW_UP",
+    "HEAVY_RAIN_MARKER",
+    "HEAVY_RAIN_MEAN_IN",
     "HydrometInputs",
     "NWPS_FLOOD_MARKER",
     "STALE_OBSERVATION",
     "flood_episodes",
+    "heavy_rain_alert",
+    "heavy_rain_alerts",
+    "heavy_rain_severity",
     "hydromet_alerts",
     "river_flood_alert",
     "river_flood_alerts",

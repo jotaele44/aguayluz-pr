@@ -32,6 +32,13 @@ export const getRiverGauges = (filters = {}) => getJSON(
 
 export const getRiverGaugesGeojson = () => getJSON('/hydromet/gauges.geojson', EMPTY_FC)
 
+// Stage IV rainfall per municipio for one window ('1day' | 'last7days' | 'last30days')
+// and data day (YYYY-MM-DD; omitted = latest).
+export const getRainfall = ({ window = '1day', date } = {}) => getJSON(
+  `/hydromet/rainfall${qs({ window, date })}`,
+  { window, data_date: null, available_dates: [], windows: [], thresholds: null, files: [], total: 0, items: [] },
+)
+
 export const getHydrometRefreshStatus = () => getJSON('/hydromet/refresh/status', null)
 
 // Runs the source's ingest on the backend, then rebuilds alerts. Throws on any

@@ -128,7 +128,9 @@ def write_json(path: Path, payload: Any) -> None:
 
 
 def _dump(model: Any) -> dict[str, Any]:
-    return model.model_dump(mode="json")
+    # Every optional plane field defaults to None, so dropping nulls round-trips and keeps
+    # the committed files (30 days of per-municipio rainfall) about a third smaller.
+    return model.model_dump(mode="json", exclude_none=True)
 
 
 # --------------------------------------------------------------------- registry

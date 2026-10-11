@@ -8,6 +8,7 @@ import HydrometPage from '@/pages/HydrometPage'
 import {
   getHydrometSources,
   getHydrometSummary,
+  getRainfall,
   getRiverGauges,
   postHydrometRefresh,
 } from '@/lib/hydromet-api'
@@ -16,6 +17,7 @@ import { getApiKey } from '@/lib/api'
 vi.mock('@/lib/hydromet-api', () => ({
   getHydrometSummary: vi.fn(),
   getHydrometSources: vi.fn(),
+  getRainfall: vi.fn(),
   getRiverGauges: vi.fn(),
   getRiverGaugesGeojson: vi.fn(),
   postHydrometRefresh: vi.fn(),
@@ -68,6 +70,29 @@ const GAUGE = {
   longitude: -66.92,
 }
 
+// Mayagüez is CONSTRUCTED to cross the heavy-rain threshold; Aguada is the real
+// 2026-10-09 Stage IV summary.
+const RAINFALL = {
+  window: '1day',
+  window_days: 1,
+  windows: ['1day', 'last7days', 'last30days'],
+  data_date: '2026-10-09',
+  available_dates: ['2026-10-09', '2026-10-08'],
+  thresholds: { mean_in: 3, cell_max_in: 6, applies_to: '1day' },
+  files: [{
+    manifestation_id: 'HYDROMET:stage_iv_pr:8ad7d7b0793ea1e3b422b1af26fd163a',
+    source_record_id: 'nws_precip_1day_20261009_pr.tif',
+    source_url: 'https://water.noaa.gov/resources/downloads/precip/stageIV/2026/10/09/nws_precip_1day_20261009_pr.tif',
+    byte_sha256: '8ad7d7b0793ea1e3b422b1af26fd163a1a1213c3b754995eaa2d2c46ecd738eb',
+    retrieved_at: '2026-10-11T04:12:00Z',
+  }],
+  total: 2,
+  items: [
+    { geoid: '72097', municipio: 'Mayagüez', obs_mean_in: 3.4, obs_max_in: 4.2, normal_mean_in: 0.3, pct_of_normal: 1133.3, cell_count: 12, method: 'raster_cell_centres_in_polygon', heavy_rain_severity: 2, record_id: 'r1' },
+    { geoid: '72003', municipio: 'Aguada', obs_mean_in: 1.064, obs_max_in: 1.606, normal_mean_in: 0.278, pct_of_normal: 382.3, cell_count: 9, method: 'raster_cell_centres_in_polygon', heavy_rain_severity: null, record_id: 'r2' },
+  ],
+}
+
 function renderPage() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
   return render(
@@ -90,6 +115,7 @@ beforeEach(() => {
   })
   getHydrometSources.mockResolvedValue({ sources: [SOURCE] })
   getRiverGauges.mockResolvedValue({ total: 1, items: [GAUGE] })
+  getRainfall.mockResolvedValue(RAINFALL)
   postHydrometRefresh.mockResolvedValue({ ok: true, receipt: SOURCE.receipt })
 })
 
@@ -140,9 +166,38 @@ describe('HydrometPage', () => {
     expect(screen.getByText('FAILED')).toBeInTheDocument()
   })
 
+  it('ranks municipio rainfall with heavy-rain flags and file provenance', async () => {
+    renderPage()
+    const table = await screen.findByRole('table', { name: 'Stage IV rainfall by municipio' })
+    expect(table).toHaveTextContent('Mayagüez')
+    expect(table).toHaveTextContent('3.40 in')
+    expect(table).toHaveTextContent('severity 2')
+    expect(screen.getByRole('link', { name: 'Aguada' })).toHaveAttribute('href', '/municipios/Aguada')
+    expect(screen.getByTestId('rainfall-provenance')).toHaveTextContent('1 at a heavy-rain threshold')
+    expect(screen.getByTestId('rainfall-provenance')).toHaveTextContent('SHA-256 8ad7d7b0793ea1e3')
+    expect(screen.getByText(/any cell ≥ 6 in \(severity 3\)/)).toBeInTheDocument()
+  })
+
+  it('switches rainfall window and data day', async () => {
+    renderPage()
+    await screen.findByRole('table', { name: 'Stage IV rainfall by municipio' })
+    fireEvent.change(screen.getByRole('combobox', { name: 'Rainfall data day' }), { target: { value: '2026-10-08' } })
+    await waitFor(() => expect(getRainfall).toHaveBeenCalledWith({ window: '1day', date: '2026-10-08' }))
+    fireEvent.click(screen.getByRole('button', { name: '7 days' }))
+    await waitFor(() => expect(getRainfall).toHaveBeenCalledWith({ window: 'last7days', date: undefined }))
+    expect(screen.getByRole('button', { name: '7 days' })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('explains an empty rainfall plane', async () => {
+    getRainfall.mockResolvedValue({ ...RAINFALL, data_date: null, available_dates: [], files: [], total: 0, items: [] })
+    renderPage()
+    expect(await screen.findByText(/No Stage IV rainfall ingested yet/)).toBeInTheDocument()
+  })
+
   it('has no detectable accessibility violations', async () => {
     const { container } = renderPage()
     await screen.findByText('Lago Guajataca at Damsite')
+    await screen.findByRole('table', { name: 'Stage IV rainfall by municipio' })
     expect(await axe(container)).toHaveNoViolations()
   })
 })

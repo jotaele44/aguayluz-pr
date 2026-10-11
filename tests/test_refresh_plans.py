@@ -224,3 +224,14 @@ def test_nwps_gauges_run_every_cadence_optionally_before_alerts():
         scripts = [_script_of(s) for s in plan]
         assert "scripts/ingest_nwps_gauges.py" in scripts, f"{cadence}: NWPS gauges missing"
         assert scripts.index("scripts/ingest_nwps_gauges.py") < scripts.index("scripts/build_alerts.py")
+
+
+def test_stage_iv_runs_daily_and_up_optionally_before_alerts():
+    """Stage IV is a once-a-day 12Z product: daily/weekly/all only, before build_alerts.py
+    (heavy-rain alerts); a missing file writes a FAIL receipt without aborting the run."""
+    assert refresh.STEP_STAGE_IV[2] is True
+    assert "scripts/ingest_stage_iv_pr.py" not in [_script_of(s) for s in refresh.PLANS["fast"]]
+    for cadence in ("daily", "weekly", "all"):
+        scripts = [_script_of(s) for s in refresh.PLANS[cadence]]
+        assert "scripts/ingest_stage_iv_pr.py" in scripts, f"{cadence}: Stage IV missing"
+        assert scripts.index("scripts/ingest_stage_iv_pr.py") < scripts.index("scripts/build_alerts.py")

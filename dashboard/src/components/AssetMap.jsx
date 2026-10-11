@@ -163,6 +163,33 @@ const EVENT_DENSITY_FILL_OPACITY = [
   0.55,
 ]
 
+// Stage IV 1-day municipio mean rainfall (inches) for the "Rainfall" fill. The top break
+// is the heavy-rain alert threshold (stage_iv_qpe.HEAVY_RAIN_MEAN_IN); feature-state is
+// only set for municipios the latest Stage IV day actually summarised.
+const RAINFALL_FILL_COLOR = [
+  'case', ['==', ['feature-state', 'rain_in'], null], NO_DROUGHT_DATA_FILL,
+  ['step', ['feature-state', 'rain_in'],
+    '#334155',
+    0.1, '#7dd3fc',
+    0.5, '#38bdf8',
+    1, '#2563eb',
+    2, '#7c3aed',
+    3, '#db2777',
+  ],
+]
+const RAINFALL_FILL_OPACITY = [
+  'case', ['==', ['feature-state', 'rain_in'], null], 0.08,
+  0.6,
+]
+const RAINFALL_LEGEND = [
+  { label: '≥ 3 in · heavy-rain alert', color: '#db2777' },
+  { label: '2–3 in', color: '#7c3aed' },
+  { label: '1–2 in', color: '#2563eb' },
+  { label: '0.5–1 in', color: '#38bdf8' },
+  { label: '0.1–0.5 in', color: '#7dd3fc' },
+  { label: '< 0.1 in', color: '#334155' },
+]
+
 // MapLibre's setHTML parses its argument as HTML, and popup content comes from
 // ingested records — an alert's source_title originates in a third-party feed
 // (Centinelas/news/regulatory), so an `<img onerror=...>` in a headline would
@@ -246,6 +273,7 @@ function ControlButton({ active, children, onClick, tone }) {
   return (
     <button
       type="button"
+      aria-pressed={Boolean(active)}
       onClick={onClick}
       className={`rounded border px-2 py-1 text-[11px] transition ${active ? `${tone} bg-slate-900` : 'border-slate-800 bg-slate-950/70 text-slate-500 hover:text-slate-300'}`}
     >
@@ -254,12 +282,13 @@ function ControlButton({ active, children, onClick, tone }) {
   )
 }
 
-export default function AssetMap({ assets, assetRows = [], municipios, barrios, events = [], alerts, gauges, droughtByGeoid, eventDensityByGeoid, eventDensityState, selectedAssetId, selectedMunicipio, onSelect, onMunicipioSelect, onAlertSelect, flyTo }) {
+export default function AssetMap({ assets, assetRows = [], municipios, barrios, events = [], alerts, gauges, droughtByGeoid, rainByGeoid, rainfallDate, eventDensityByGeoid, eventDensityState, selectedAssetId, selectedMunicipio, onSelect, onMunicipioSelect, onAlertSelect, flyTo }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const readyRef = useRef(false)
   const spatialToolActiveRef = useRef(false)
   const droughtGeoidsRef = useRef(new Set())
+  const rainGeoidsRef = useRef(new Set())
   const eventDensityGeoidsRef = useRef(new Set())
   const onSelectRef = useRef(onSelect); onSelectRef.current = onSelect
   const onMunicipioSelectRef = useRef(onMunicipioSelect); onMunicipioSelectRef.current = onMunicipioSelect
@@ -574,6 +603,29 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
     const map = mapRef.current
     const apply = () => {
       try {
+        for (const geoid of rainGeoidsRef.current) {
+          map.removeFeatureState({ source: 'municipios', id: geoid }, 'rain_in')
+        }
+        rainGeoidsRef.current.clear()
+        for (const [geoid, inches] of Object.entries(rainByGeoid || {})) {
+          map.setFeatureState({ source: 'municipios', id: geoid }, { rain_in: inches })
+          rainGeoidsRef.current.add(geoid)
+        }
+      } catch { /* source is still rebuilding; sourcedata retries below */ }
+    }
+    const onSourceData = (event) => {
+      if (event.sourceId === 'municipios' && event.isSourceLoaded) apply()
+    }
+    apply()
+    map.on('sourcedata', onSourceData)
+    return () => map.off('sourcedata', onSourceData)
+  }, [rainByGeoid, mapReady, municipios])
+
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return undefined
+    const map = mapRef.current
+    const apply = () => {
+      try {
         for (const geoid of eventDensityGeoidsRef.current) {
           map.removeFeatureState({ source: 'municipios', id: geoid }, 'event_count')
         }
@@ -625,6 +677,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
     const [fillColor, fillOpacity] = {
       drought: [DROUGHT_FILL_COLOR, DROUGHT_FILL_OPACITY],
       event_density: [EVENT_DENSITY_FILL_COLOR, EVENT_DENSITY_FILL_OPACITY],
+      rainfall: [RAINFALL_FILL_COLOR, RAINFALL_FILL_OPACITY],
       off: [NO_DROUGHT_DATA_FILL, 0.08],
     }[layers.muniFillMode]
     mapRef.current.setPaintProperty('muni-fill', 'fill-color', fillColor)
@@ -711,11 +764,19 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
         </div>
         <div className="mt-1.5">
           <div className="mb-1 text-[10px] uppercase tracking-wide text-slate-500">Municipio fill</div>
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className="grid grid-cols-4 gap-1.5">
             <ControlButton active={layers.muniFillMode === 'off'} tone="border-slate-500/40 text-slate-300" onClick={() => setLayers((s) => ({ ...s, muniFillMode: 'off' }))}>Off</ControlButton>
             <ControlButton active={layers.muniFillMode === 'drought'} tone="border-amber-500/40 text-amber-300" onClick={() => setLayers((s) => ({ ...s, muniFillMode: 'drought' }))}>Drought</ControlButton>
             <ControlButton active={layers.muniFillMode === 'event_density'} tone="border-blue-500/40 text-blue-300" onClick={() => setLayers((s) => ({ ...s, muniFillMode: 'event_density' }))}>Density</ControlButton>
+            <ControlButton active={layers.muniFillMode === 'rainfall'} tone="border-pink-500/40 text-pink-300" onClick={() => setLayers((s) => ({ ...s, muniFillMode: 'rainfall' }))}>Rainfall</ControlButton>
           </div>
+          {layers.muniFillMode === 'rainfall' && (
+            <div aria-live="polite" className="mt-1.5 rounded border border-slate-800 bg-slate-950/60 p-1.5 text-[10px] leading-relaxed text-slate-500">
+              {rainfallDate && Object.keys(rainByGeoid || {}).length > 0
+                ? <span>NWS Stage IV 1-day municipio mean, 12Z → <span className="text-slate-300">{rainfallDate} 12Z</span> · {Object.keys(rainByGeoid).length} municipios</span>
+                : <span>No Stage IV rainfall ingested yet; refresh it from the NWS Hydromet page.</span>}
+            </div>
+          )}
           {layers.muniFillMode === 'event_density' && (
             <div aria-live="polite" className="mt-1.5 rounded border border-slate-800 bg-slate-950/60 p-1.5 text-[10px] leading-relaxed text-slate-500">
               {(eventDensityState?.isLoading || eventDensityState?.isFetching) && <div className="text-blue-300">Loading full-corpus density…</div>}
@@ -773,7 +834,8 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
         </div>
       </div>
 
-      <div className="absolute bottom-3 left-3 rounded-lg border border-slate-700/70 bg-slate-950/85 px-2.5 py-2 shadow-xl backdrop-blur">
+      {/* bottom-9 clears MapPage's "N of M assets mapped" footer, which sits on top of the map. */}
+      <div className="absolute bottom-9 left-3 rounded-lg border border-slate-700/70 bg-slate-950/85 px-2.5 py-2 shadow-xl backdrop-blur">
         <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-1.5">Asset type</div>
         {[
           { type: 'power', label: 'Power', color: '#f59e0b' },
@@ -827,6 +889,17 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
               { label: 'D0 · Abnormally dry', color: '#ffff00' },
               { label: 'No drought', color: '#64748b' },
             ].map(({ label, color }) => (
+              <div key={label} className="mb-0.5 flex items-center gap-1.5 text-[11px] text-slate-300 last:mb-0">
+                <span style={{ background: color }} className="inline-block h-2 w-2 rounded-full shrink-0" />
+                {label}
+              </div>
+            ))}
+          </>
+        )}
+        {layers.muniFillMode === 'rainfall' && rainByGeoid && Object.keys(rainByGeoid).length > 0 && (
+          <>
+            <div className="mb-1.5 mt-2 border-t border-slate-800 pt-2 text-[10px] uppercase tracking-wide text-slate-500">Rainfall · Stage IV 1-day mean</div>
+            {RAINFALL_LEGEND.map(({ label, color }) => (
               <div key={label} className="mb-0.5 flex items-center gap-1.5 text-[11px] text-slate-300 last:mb-0">
                 <span style={{ background: color }} className="inline-block h-2 w-2 rounded-full shrink-0" />
                 {label}

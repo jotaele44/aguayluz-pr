@@ -48,6 +48,34 @@ test('NWS Hydromet is reachable from the sidebar and shows freshness, provenance
   expect(failures, failures.join('\n')).toEqual([])
 })
 
+test('Stage IV rainfall is listed per municipio with its source health and window controls', async ({ page, request }) => {
+  const failures = trackRuntimeFailures(page)
+  await page.goto('/hydromet', { waitUntil: 'domcontentloaded' })
+
+  const card = page.getByTestId('hydromet-source-stage_iv_pr')
+  await expect(card).toBeVisible()
+  await expect(card.getByText(/^(FRESH|STALE|FAILED|NEVER)$/)).toBeVisible()
+  await expect(card.getByRole('button', { name: /refresh now/i })).toBeVisible()
+
+  await expect(page.getByRole('heading', { name: /Rainfall by municipio/ })).toBeVisible()
+  const rainfall = await (await request.get(`${backendUrl}/hydromet/rainfall`)).json()
+  const table = page.getByRole('table', { name: 'Stage IV rainfall by municipio' })
+  if (rainfall.items.length) {
+    await expect(table).toBeVisible()
+    expect(await table.locator('tbody tr').count()).toBe(rainfall.items.length)
+    await expect(page.getByTestId('rainfall-provenance')).toContainText('SHA-256')
+  } else {
+    await expect(page.getByText(/No Stage IV rainfall ingested yet/)).toBeVisible()
+  }
+
+  const sevenDays = page.getByRole('button', { name: '7 days' })
+  await sevenDays.click()
+  await expect(sevenDays).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('combobox', { name: 'Rainfall data day' })).toBeVisible()
+
+  expect(failures, failures.join('\n')).toEqual([])
+})
+
 test('river gauges layer toggles on the map without runtime errors', async ({ page }) => {
   const failures = trackRuntimeFailures(page)
   await page.goto('/map', { waitUntil: 'domcontentloaded' })
@@ -55,6 +83,23 @@ test('river gauges layer toggles on the map without runtime errors', async ({ pa
   await expect(toggle).toBeVisible()
   await toggle.click()
   await expect(page.getByText('River gauges (NWS NWPS)')).toBeVisible()
+  expect(failures, failures.join('\n')).toEqual([])
+})
+
+test('rainfall municipio fill states its Stage IV day or that none is ingested', async ({ page, request }) => {
+  const failures = trackRuntimeFailures(page)
+  const rainfall = await (await request.get(`${backendUrl}/hydromet/rainfall`)).json()
+  await page.goto('/map', { waitUntil: 'domcontentloaded' })
+  const fill = page.getByRole('button', { name: 'Rainfall', exact: true })
+  await expect(fill).toBeVisible()
+  await fill.click()
+  await expect(fill).toHaveAttribute('aria-pressed', 'true')
+  if (rainfall.items.length) {
+    await expect(page.getByText(`${rainfall.data_date} 12Z`)).toBeVisible()
+    await expect(page.getByText('Rainfall · Stage IV 1-day mean')).toBeVisible()
+  } else {
+    await expect(page.getByText(/No Stage IV rainfall ingested yet/)).toBeVisible()
+  }
   expect(failures, failures.join('\n')).toEqual([])
 })
 
