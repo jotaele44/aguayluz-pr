@@ -6,7 +6,6 @@ import csv
 import hashlib
 import io
 import json
-import os
 import shutil
 import subprocess
 import urllib.request
