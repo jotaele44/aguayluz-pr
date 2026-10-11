@@ -33,6 +33,7 @@ by `scripts/build_alerts.py`, see [`src/aguayluz/alert_promotion/`](../src/aguay
 | `HYDRO_OPS` | USGS reservoir levels (statistical low proxy, T2) | `water_alerts.reservoir_alerts` |
 | `SEISMIC_GEO` | USGS FDSN earthquakes (severity from magnitude) | `alert_promotion.seismic` |
 | `WEATHER_HAZARD` | NWS active hazard alerts (severity from hazard type + urgency) | `alert_promotion.weather` |
+| `WEATHER_HAZARD` | NWS NWPS gauge flood episodes (severity from the peak NWS flood category; closed on recession) | `alert_promotion.hydromet` |
 
 `POWER_OPS` and `INDUSTRIAL` promoters are ready in the registry but gated on their
 sources (live outage feed / EPA ECHO), which are currently unavailable. Every alert with

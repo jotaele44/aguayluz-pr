@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAssets, useAssetsGeojson, useMunicipiosGeojson, useBarriosGeojson, useEvents, useEventDensity, useAlertsGeojson, useCoverage, useReadingsEnvelope } from '@/lib/hooks'
+import { useRiverGaugesGeojson } from '@/lib/hydromet-hooks'
 import AssetMap from '@/components/AssetMap'
 import AssetsTable from '@/components/AssetsTable'
 import AssetDetail from '@/components/AssetDetail'
@@ -19,6 +20,8 @@ export default function MapPage() {
   const { data: eventDensity } = eventDensityQuery
   const eventDensityByGeoid = eventDensity?.by_geoid ?? {}
   const { data: alertsGeo } = useAlertsGeojson()
+  // NWS NWPS river/reservoir gauges from the hydromet plane (off by default on the map).
+  const { data: gaugesGeo } = useRiverGaugesGeojson()
   const { data: coverage } = useCoverage()
   // drought_category's `site_no` is the municipio's FIPS, which is also
   // pr_municipios.geojson's `geoid` (scripts/ingest_drought_usdm.py) — the one series
@@ -64,6 +67,7 @@ export default function MapPage() {
           barrios={barrios}
           events={events}
           alerts={alertsGeo}
+          gauges={gaugesGeo}
           droughtByGeoid={droughtByGeoid}
           eventDensityByGeoid={eventDensityByGeoid}
           eventDensityState={{

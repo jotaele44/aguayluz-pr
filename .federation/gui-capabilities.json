@@ -29,7 +29,8 @@
     "frontend_api_roots": [
       "dashboard/src/lib/api.js",
       "dashboard/src/lib/cave-karst-api.js",
-      "dashboard/src/lib/environmental-exposure-api.js"
+      "dashboard/src/lib/environmental-exposure-api.js",
+      "dashboard/src/lib/hydromet-api.js"
     ],
     "route_files": [
       "dashboard/src/App.jsx"
@@ -1543,6 +1544,144 @@
         "contract": [
           "tests/test_hazard_adapter_sdwa_drinking_water.py",
           "tests/test_ingest_salud_sdwis_water.py"
+        ]
+      }
+    },
+    {
+      "id": "nws-hydromet-plane",
+      "classification": "analysis",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Puerto Rico NOAA/NWS hydrometeorological observations (NWPS river/reservoir gauge flood status) frozen with byte SHA-256 provenance, source arithmetic and evidence-classed bindings to USGS_ assets (stable ID) and municipios (point-in-polygon + source alias). The NWS Hydromet page exposes results, freshness, failures and a guarded refresh; the map shows gauges by flood category; flood episodes promote into WEATHER_HAZARD alerts. Observations are hazard context, not confirmed impact.",
+      "backend": {
+        "files": [
+          "server/backend/hydromet_api.py",
+          "server/backend/app.py",
+          "src/aguayluz/hydromet/__init__.py",
+          "src/aguayluz/hydromet/store.py",
+          "src/aguayluz/hydromet/spatial.py",
+          "src/aguayluz/hazard_adapters/nwps_gauges.py",
+          "src/aguayluz/alert_promotion/hydromet.py",
+          "src/aguayluz/hazard_plane.py"
+        ],
+        "endpoints": [
+          "GET /hydromet/gauges",
+          "GET /hydromet/gauges.geojson",
+          "GET /hydromet/refresh/status",
+          "GET /hydromet/sources",
+          "GET /hydromet/summary",
+          "POST /hydromet/refresh/{source_id}"
+        ],
+        "symbols": [
+          "server/backend/hydromet_api.py:hydromet_gauges",
+          "server/backend/hydromet_api.py:hydromet_gauges_geojson",
+          "server/backend/hydromet_api.py:hydromet_refresh",
+          "server/backend/hydromet_api.py:hydromet_refresh_status",
+          "server/backend/hydromet_api.py:hydromet_sources",
+          "server/backend/hydromet_api.py:hydromet_summary",
+          "src/aguayluz/alert_promotion/hydromet.py:FloodEpisode",
+          "src/aguayluz/alert_promotion/hydromet.py:HydrometInputs",
+          "src/aguayluz/alert_promotion/hydromet.py:flood_episodes",
+          "src/aguayluz/alert_promotion/hydromet.py:hydromet_alerts",
+          "src/aguayluz/alert_promotion/hydromet.py:river_flood_alert",
+          "src/aguayluz/alert_promotion/hydromet.py:river_flood_alerts",
+          "src/aguayluz/hazard_adapters/nwps_gauges.py:canonical_event_id",
+          "src/aguayluz/hazard_adapters/nwps_gauges.py:clean_number",
+          "src/aguayluz/hazard_adapters/nwps_gauges.py:compact_detail",
+          "src/aguayluz/hazard_adapters/nwps_gauges.py:flood_thresholds",
+          "src/aguayluz/hazard_adapters/nwps_gauges.py:in_service",
+          "src/aguayluz/hazard_adapters/nwps_gauges.py:material_digest",
+          "src/aguayluz/hazard_adapters/nwps_gauges.py:material_state",
+          "src/aguayluz/hazard_adapters/nwps_gauges.py:normalize",
+          "src/aguayluz/hazard_adapters/nwps_gauges.py:observed_category",
+          "src/aguayluz/hazard_adapters/nwps_gauges.py:parse_time",
+          "src/aguayluz/hazard_adapters/nwps_gauges.py:stable_record_id",
+          "src/aguayluz/hazard_plane.py:SpatialState",
+          "src/aguayluz/hydromet/spatial.py:Municipio",
+          "src/aguayluz/hydromet/spatial.py:MunicipioIndex",
+          "src/aguayluz/hydromet/spatial.py:PointBinding",
+          "src/aguayluz/hydromet/spatial.py:municipio_key",
+          "src/aguayluz/hydromet/store.py:HydrometPaths",
+          "src/aguayluz/hydromet/store.py:SourceRun",
+          "src/aguayluz/hydromet/store.py:append_accounting",
+          "src/aguayluz/hydromet/store.py:apply_source_run",
+          "src/aguayluz/hydromet/store.py:current_by_event",
+          "src/aguayluz/hydromet/store.py:freeze_bytes",
+          "src/aguayluz/hydromet/store.py:freshness",
+          "src/aguayluz/hydromet/store.py:hydromet_paths",
+          "src/aguayluz/hydromet/store.py:integrity",
+          "src/aguayluz/hydromet/store.py:load_gauge_state",
+          "src/aguayluz/hydromet/store.py:load_manifestations",
+          "src/aguayluz/hydromet/store.py:load_receipts",
+          "src/aguayluz/hydromet/store.py:load_records",
+          "src/aguayluz/hydromet/store.py:load_relationships",
+          "src/aguayluz/hydromet/store.py:load_source_registry",
+          "src/aguayluz/hydromet/store.py:manifestation_id",
+          "src/aguayluz/hydromet/store.py:read_json",
+          "src/aguayluz/hydromet/store.py:read_jsonl",
+          "src/aguayluz/hydromet/store.py:record_receipt",
+          "src/aguayluz/hydromet/store.py:registry_source",
+          "src/aguayluz/hydromet/store.py:relationship_id",
+          "src/aguayluz/hydromet/store.py:revision_chains",
+          "src/aguayluz/hydromet/store.py:write_json",
+          "src/aguayluz/hydromet/store.py:write_jsonl"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/ingest_nwps_gauges.py"
+        ],
+        "symbols": [
+          "scripts/ingest_nwps_gauges.py:BuildResult",
+          "scripts/ingest_nwps_gauges.py:DetailResult",
+          "scripts/ingest_nwps_gauges.py:build_run",
+          "scripts/ingest_nwps_gauges.py:classify",
+          "scripts/ingest_nwps_gauges.py:load_usgs_asset_ids",
+          "scripts/ingest_nwps_gauges.py:main",
+          "scripts/ingest_nwps_gauges.py:needs_detail",
+          "scripts/ingest_nwps_gauges.py:schema_signature"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/hydromet",
+          "/map"
+        ],
+        "e2e_routes": [
+          "/hydromet"
+        ],
+        "components": [
+          "dashboard/src/pages/HydrometPage.jsx",
+          "dashboard/src/lib/hydromet-api.js",
+          "dashboard/src/lib/hydromet-hooks.js",
+          "dashboard/src/components/layout/Sidebar.jsx",
+          "dashboard/src/pages/MapPage.jsx",
+          "dashboard/src/components/AssetMap.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_hydromet_api.py"
+        ],
+        "contract": [
+          "tests/test_hydromet_store.py",
+          "tests/test_hydromet_spatial.py",
+          "tests/test_hazard_adapter_nwps_gauges.py",
+          "tests/test_ingest_nwps_gauges.py",
+          "tests/test_alert_promotion_hydromet.py",
+          "tests/test_refresh_plans.py",
+          "tests/test_gui_parity.py"
+        ],
+        "unit": [
+          "dashboard/src/pages/HydrometPage.test.jsx",
+          "dashboard/src/lib/hydromet-api.test.js"
+        ],
+        "e2e": [
+          "dashboard/tests/nws-hydromet.spec.mjs",
+          "dashboard/tests/gui-parity.spec.mjs"
         ]
       }
     }

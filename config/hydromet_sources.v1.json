@@ -1,0 +1,40 @@
+{
+  "schema_version": "aguayluz.hydromet-sources/v1",
+  "scope": "Puerto Rico hydrometeorological observations and outlooks published by NOAA/NWS, frozen with byte SHA-256 provenance and bound to municipios and utility assets by recorded evidence class. Observations and outlooks are hazard context, not confirmed impact or causation.",
+  "legacy_catalog": {
+    "url": "https://www.weather.gov/gis/IDP-GISRestMetadata",
+    "note": "Legacy IDP-GIS metadata (ISO 19115, stamped 2020-03-12) pointing at idpgis.ncep.noaa.gov, which NWS shut down on 2023-06-30 (SCN 23-01). Live CloudGIS services are on mapservices.weather.noaa.gov. Only the Puerto Rico-relevant entries are wired here, each from its authoritative endpoint; see docs/NWS_HYDROMET_INTEGRATION.md for what was not wired and why."
+  },
+  "sources": [
+    {
+      "source_id": "nwps_gauges",
+      "label": "NWPS river gauges (flood status)",
+      "authority": "NOAA/NWS National Water Prediction Service",
+      "family": "HYDROMETEOROLOGY",
+      "hazard_type": "RIVER_STAGE_FLOOD_CATEGORY",
+      "replaces_catalog_entry": "AHPS River Gauge Current and Forecast Flood Stages (ahps_riv_gauges)",
+      "endpoints": {
+        "gauges": "https://api.water.noaa.gov/nwps/v1/gauges",
+        "gauge_detail": "https://api.water.noaa.gov/nwps/v1/gauges/{lid}",
+        "api_spec": "https://api.water.noaa.gov/nwps/v1/docs/swagger.json"
+      },
+      "query": {
+        "bbox.xmin": -67.95,
+        "bbox.ymin": 17.85,
+        "bbox.xmax": -65.2,
+        "bbox.ymax": 18.55,
+        "srid": "EPSG_4326"
+      },
+      "cadence_seconds": 900,
+      "max_age_seconds": 7200,
+      "detail_max_age_hours": 24,
+      "observation_stale_after_seconds": 21600,
+      "refresh_script": "scripts/ingest_nwps_gauges.py",
+      "binding_semantics": "Gauge -> USGS_<usgsId> asset by stable ID (NWPS publishes the USGS site number). Gauge -> municipio by point-in-polygon against the Census municipio boundary, corroborated by the NWPS county name; a disagreement stays UNRESOLVED.",
+      "update_semantics": "Bulk status every run; per-gauge detail (flood thresholds, crests, usgsId) refreshed when missing or older than detail_max_age_hours. A record revision is written only when the flood category, thresholds, service state or usgsId change; the current stage lives in data/nwps_gauge_state.jsonl.",
+      "known_limits": "Observed stages only: NWS issues no stage forecasts for Puerto Rico points (every forecast category is fcst_not_current). Gauges without published thresholds report not_defined and never raise a flood alert.",
+      "raw_snapshot_policy": "Raw response bytes under data/hydromet_snapshots/nwps_gauges/ (gitignored); byte SHA-256 committed in data/hydromet_manifestations.jsonl.",
+      "license": "U.S. Government work (public domain)"
+    }
+  ]
+}

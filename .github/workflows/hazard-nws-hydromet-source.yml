@@ -1,0 +1,89 @@
+name: NWS Hydromet Source Freeze
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/ingest_nwps_gauges.py"
+      - "src/aguayluz/hazard_adapters/nwps_gauges.py"
+      - "src/aguayluz/hydromet/**"
+      - "config/hydromet_sources.v1.json"
+      - "tests/test_ingest_nwps_gauges.py"
+      - "tests/test_hazard_adapter_nwps_gauges.py"
+      - ".github/workflows/hazard-nws-hydromet-source.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nws-hydromet-source-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  freeze-nwps-gauges:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Install bounded runtime
+        run: python -m pip install "httpx>=0.27" "pydantic>=2" "shapely>=2"
+
+      - name: Freeze NWPS Puerto Rico gauges
+        env:
+          PYTHONPATH: src:.
+        run: |
+          python scripts/ingest_nwps_gauges.py \
+            --data-dir artifacts/nwps_gauges \
+            --assets data/utility_assets.jsonl
+
+      - name: Validate source receipt and frozen bytes
+        env:
+          PYTHONPATH: src:.
+        shell: python
+        run: |
+          import hashlib
+          import json
+          from pathlib import Path
+
+          from aguayluz.hydromet import store
+
+          root = Path("artifacts/nwps_gauges")
+          receipt = store.load_receipts(root)["sources"]["nwps_gauges"]
+          assert receipt["last_status"] == "PASS", receipt
+          summary = receipt["last_success"]
+          arithmetic = summary["arithmetic"]
+          assert arithmetic["state"] == "PASS" and arithmetic["delta"] == 0, arithmetic
+          assert arithmetic["retained"] > 0, arithmetic
+          assert summary["integrity"] == "PASS", summary
+          assert store.integrity(root)["state"] == "PASS"
+
+          snapshots = {p.stem: p for p in store.hydromet_paths(root).snapshot_dir("nwps_gauges").glob("*.json")}
+          frozen = store.load_manifestations(root)
+          assert frozen, "no manifestations frozen"
+          for man in frozen:
+              raw = snapshots.get(man.byte_sha256)
+              assert raw is not None, f"missing raw bytes for {man.manifestation_id}"
+              assert hashlib.sha256(raw.read_bytes()).hexdigest() == man.byte_sha256, man.manifestation_id
+          print(json.dumps({
+              "source_arithmetic": arithmetic,
+              "manifestations_frozen": len(frozen),
+              "details_fetched": summary["details_fetched"],
+              "detail_failures": summary["detail_failures"],
+              "bindings": summary["bindings"],
+              "flood_categories": summary["flood_categories"],
+          }, indent=2, sort_keys=True))
+
+      - name: Upload NWPS source evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: nws-hydromet-nwps-gauges-freeze
+          path: artifacts/nwps_gauges
+          if-no-files-found: error
+          retention-days: 90
