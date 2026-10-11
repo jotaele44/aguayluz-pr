@@ -26,8 +26,8 @@ Rico (live probes, 2026-10-06/07):
 | River Forecast Centers Daily QPE | Planned (Stage IV PR GeoTIFF) | dedicated PR grid on `water.noaa.gov`; the CloudGIS `rfc_qpe` mosaic does not cover PR |
 | Active Atlantic & Caribbean Hurricanes | Planned (NHC cone footprint) | cone KMZ is already linked from `CurrentStorms.json` |
 | Drought Outlook | Planned (CPC, "US and Puerto Rico" layer) | PR polygons present |
-| Watches, Warnings and Advisories | Not wired as data | already ingested from `api.weather.gov`; planned as a display-only map overlay |
-| Radar Base Reflectivity | Not wired as data | display raster; planned as a display-only map overlay |
+| Watches, Warnings and Advisories | **Display-only overlay** (not data) | already ingested from `api.weather.gov`; the CloudGIS layer is shown on the map, off by default |
+| Radar Base Reflectivity | **Display-only overlay** (not data) | MRMS mosaic covers PR (TJUA); shown on the map, off by default |
 | WPC excessive rainfall / QPF / winter, RFC flash-flood guidance, CPC hazards and temperature outlooks, NDFD, SPC, NOHRSC, APRFC | Not wired | CONUS-only per their own extents |
 | NDGD air quality (PM2.5, ozone, dust, smoke) | Not wired | PR coverage unverified; outside the water/power scope |
 | Reference maps (zones, CWA, NWM lakes) | Not wired | no utility signal by themselves |
@@ -76,6 +76,22 @@ push/SMS), major 5. Boundary-river gauges name both candidate municipios and go 
 NEVER), last attempt and success, source arithmetic, byte SHA-256, the latest error, a
 **Refresh now** control (key-gated when `API_SECRET_KEY` is set), and the gauge table with
 an in-flood filter. On **Map**, the **River gauges** layer colours gauges by flood category.
+
+## Display-only map overlays
+
+**Map → NWS live overlays** offers **NWS radar** and **NWS warnings**. The browser loads
+them straight from CloudGIS as ArcGIS `export` image tiles:
+
+| Overlay | Service |
+|---|---|
+| NWS radar | `https://mapservices.weather.noaa.gov/eventdriven/rest/services/radar/radar_base_reflectivity/MapServer` |
+| NWS warnings | `https://mapservices.weather.noaa.gov/eventdriven/rest/services/WWA/watch_warn_adv/MapServer` (layer 1, all watches/warnings/advisories) |
+
+They are off by default, so the map makes no request to NWS until one is turned on. While
+shown, tiles are re-requested every 5 minutes, the panel shows when they were requested and
+any tile failure, and it states they are not stored or validated. They are classified
+`client_only` in `.federation/gui-capabilities.json` (`nws-cloudgis-map-overlays`): no
+backend, no ingestion, no alerts.
 
 ## Known limitations
 
