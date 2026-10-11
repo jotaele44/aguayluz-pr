@@ -1,6 +1,7 @@
 """Hydromet store: append-only merge, whole-event retention, manifestation closure,
 fail-closed integrity, receipts and freshness."""
 import hashlib
+import stat
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -209,3 +210,13 @@ def test_accounting_appends(tmp_path):
     store.append_accounting({"run": 1}, tmp_path)
     store.append_accounting({"run": 2}, tmp_path)
     assert len(store.read_jsonl(store.hydromet_paths(tmp_path).accounting)) == 2
+
+
+def test_atomic_write_keeps_an_existing_files_mode_and_never_widens(tmp_path):
+    target = tmp_path / "rows.jsonl"
+    store.write_jsonl(target, [{"a": 1}])
+    assert stat.S_IMODE(target.stat().st_mode) == 0o600  # new file: owner-only
+    target.chmod(0o640)
+    store.write_jsonl(target, [{"a": 2}])
+    assert stat.S_IMODE(target.stat().st_mode) == 0o640  # replacement keeps the mode
+    assert store.read_jsonl(target) == [{"a": 2}]
