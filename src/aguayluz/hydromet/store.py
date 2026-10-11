@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import os
+import stat
 import tempfile
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
@@ -102,7 +103,10 @@ def _atomic_write(path: Path, text: str) -> None:
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
             handle.write(text)
-        os.chmod(tmp, 0o644)  # mkstemp creates 0600; these are ordinary repo files
+        # mkstemp creates the file owner-only. Replacing a file keeps that file's own
+        # mode; a new file stays owner-only rather than being widened here.
+        if path.exists():
+            os.chmod(tmp, stat.S_IMODE(path.stat().st_mode))
         os.replace(tmp, path)
     except BaseException:
         Path(tmp).unlink(missing_ok=True)
