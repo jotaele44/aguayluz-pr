@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { getRiverGauges, getRiverGaugesGeojson, postHydrometRefresh } from './hydromet-api'
+import { getRainfall, getRiverGauges, getRiverGaugesGeojson, postHydrometRefresh } from './hydromet-api'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -21,6 +21,21 @@ describe('hydromet API client', () => {
     expect(fetchMock.mock.calls[0][0]).toMatch(/\/hydromet\/gauges$/)
     await getRiverGauges({ flooding_only: true })
     expect(fetchMock.mock.calls[1][0]).toMatch(/\/hydromet\/gauges\?flooding_only=true$/)
+  })
+
+  it('asks for a rainfall window and day, and reports a live failure', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(respond(200, { window: 'last7days', items: [] }))
+    vi.stubGlobal('fetch', fetchMock)
+    await getRainfall({ window: 'last7days' })
+    expect(fetchMock.mock.calls[0][0]).toMatch(/\/hydromet\/rainfall\?window=last7days$/)
+    await getRainfall({ window: '1day', date: '2026-10-08' })
+    expect(fetchMock.mock.calls[1][0]).toMatch(/\/hydromet\/rainfall\?window=1day&date=2026-10-08$/)
+
+    // A live failure surfaces as an error rather than an empty table.
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(respond(502, {})))
+    await expect(getRainfall()).rejects.toThrow(/HTTP 502 from \/hydromet\/rainfall/)
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')))
+    await expect(getRainfall()).rejects.toThrow(/network down/)
   })
 
   it('falls back to an empty collection when the backend is down', async () => {

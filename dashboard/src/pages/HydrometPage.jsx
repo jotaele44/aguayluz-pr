@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, CloudRain, Database, Loader2, RefreshCw, ShieldCheck, Waves } from 'lucide-react'
+import { AlertTriangle, CloudRain, Database, Droplets, Loader2, RefreshCw, ShieldCheck, Waves } from 'lucide-react'
 
 import ErrorBoundary from '@/components/ErrorBoundary'
 import PageHeader from '@/components/common/PageHeader'
@@ -15,6 +15,7 @@ import {
   useHydrometRefresh,
   useHydrometSources,
   useHydrometSummary,
+  useRainfall,
   useRiverGauges,
 } from '@/lib/hydromet-hooks'
 import { cn } from '@/lib/utils'
@@ -42,6 +43,24 @@ const FLOOD_CATEGORY_STYLE = {
 const THRESHOLD_ORDER = ['action', 'minor', 'moderate', 'major']
 
 const pretty = (value) => String(value || 'unknown').replaceAll('_', ' ')
+
+const RAIN_WINDOWS = [
+  { id: '1day', label: '1 day' },
+  { id: 'last7days', label: '7 days' },
+  { id: 'last30days', label: '30 days' },
+]
+
+const HEAVY_RAIN_STYLE = {
+  3: 'border-fuchsia-500/50 bg-fuchsia-500/15 text-fuchsia-200',
+  2: 'border-orange-500/50 bg-orange-500/15 text-orange-200',
+}
+
+const inches = (value) => (value == null ? '—' : `${Number(value).toFixed(2)} in`)
+
+const cadenceText = (seconds) => {
+  const minutes = Math.round((seconds ?? 0) / 60)
+  return minutes >= 120 ? `${Math.round(minutes / 60)} h` : `${minutes} min`
+}
 
 const ageText = (seconds) => {
   if (seconds == null) return '—'
@@ -76,9 +95,9 @@ function SourceCard({ source, refreshReady, refreshHint, refreshing, onRefresh }
         <div><dt className="inline text-slate-500">Last success: </dt><dd className="inline text-slate-300">{receipt?.last_success_utc ? `${fmtDate(receipt.last_success_utc)} (${ageText(source.freshness?.age_seconds)})` : 'never'}</dd></div>
         <div><dt className="inline text-slate-500">Last attempt: </dt><dd className="inline text-slate-300">{receipt?.last_attempt_utc ? `${fmtDate(receipt.last_attempt_utc)} — ${receipt.last_status}` : 'never'}</dd></div>
         <div><dt className="inline text-slate-500">Arithmetic: </dt><dd className="inline text-slate-300">{arithmetic ? `${arithmetic.source} source = ${arithmetic.retained} retained + ${arithmetic.excluded} excluded + ${arithmetic.unresolved} unresolved (${arithmetic.state})` : '—'}</dd></div>
-        <div><dt className="inline text-slate-500">Expected cadence: </dt><dd className="inline text-slate-300">every {Math.round((source.cadence_seconds ?? 0) / 60)} min, stale after {Math.round((source.max_age_seconds ?? 0) / 3600)} h</dd></div>
+        <div><dt className="inline text-slate-500">Expected cadence: </dt><dd className="inline text-slate-300">every {cadenceText(source.cadence_seconds)}, stale after {Math.round((source.max_age_seconds ?? 0) / 3600)} h</dd></div>
         <div className="sm:col-span-2"><dt className="inline text-slate-500">Source bytes SHA-256: </dt><dd className="inline break-all font-mono text-[11px] text-slate-400">{success?.byte_sha256 ?? '—'}</dd></div>
-        <div className="sm:col-span-2"><dt className="inline text-slate-500">Endpoint: </dt><dd className="inline break-all font-mono text-[11px] text-slate-400">{success?.source_url ?? source.endpoints?.gauges ?? '—'}</dd></div>
+        <div className="sm:col-span-2"><dt className="inline text-slate-500">Endpoint: </dt><dd className="inline break-all font-mono text-[11px] text-slate-400">{success?.source_url ?? source.endpoints?.gauges ?? source.endpoints?.grid ?? '—'}</dd></div>
       </dl>
       {receipt?.last_status === 'FAIL' && (
         <div role="alert" className="mt-3 rounded border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-200">
@@ -161,6 +180,128 @@ function GaugeTable({ gauges }) {
   )
 }
 
+function RainfallTable({ rows, windowDays }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[760px] text-left text-xs" aria-label="Stage IV rainfall by municipio">
+        <thead className="text-[11px] uppercase tracking-wide text-slate-500">
+          <tr className="border-b border-slate-800">
+            <th className="py-2 pr-3 font-medium">Municipio</th>
+            <th className="py-2 pr-3 font-medium">Mean ({windowDays} d)</th>
+            <th className="py-2 pr-3 font-medium">Wettest cell</th>
+            <th className="py-2 pr-3 font-medium">PRISM normal</th>
+            <th className="py-2 pr-3 font-medium">% of normal</th>
+            <th className="py-2 pr-3 font-medium">HRAP cells</th>
+            <th className="py-2 pr-3 font-medium">Heavy rain</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.record_id} className="border-b border-slate-900 align-top">
+              <td className="py-2 pr-3">
+                <Link className="font-medium text-sky-300 hover:underline" to={`/municipios/${encodeURIComponent(r.municipio)}`}>{r.municipio}</Link>
+                <div className="font-mono text-[11px] text-slate-500">{r.geoid}</div>
+              </td>
+              <td className="py-2 pr-3 text-slate-200">{inches(r.obs_mean_in)}</td>
+              <td className="py-2 pr-3 text-slate-300">{inches(r.obs_max_in)}</td>
+              <td className="py-2 pr-3 text-slate-400">{inches(r.normal_mean_in)}</td>
+              <td className="py-2 pr-3 text-slate-400">{r.pct_of_normal == null ? '—' : `${r.pct_of_normal}%`}</td>
+              <td className="py-2 pr-3 text-slate-400">
+                {r.cell_count ?? '—'}
+                {r.method && r.method !== 'raster_cell_centres_in_polygon' && <div className="text-[11px] text-amber-300">{pretty(r.method)}</div>}
+              </td>
+              <td className="py-2 pr-3">
+                {r.heavy_rain_severity
+                  ? <Badge className={HEAVY_RAIN_STYLE[r.heavy_rain_severity]}>severity {r.heavy_rain_severity}</Badge>
+                  : <span className="text-slate-600">—</span>}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function RainfallPanel({ up }) {
+  const [rainWindow, setRainWindow] = useState('1day')
+  const [day, setDay] = useState('')
+  const rainfallQuery = useRainfall({ window: rainWindow, date: day || undefined })
+  const rainfall = rainfallQuery.data
+  const rows = rainfall?.items ?? []
+  const thresholds = rainfall?.thresholds
+  const heavy = rows.filter((r) => r.heavy_rain_severity).length
+  return (
+    <Panel>
+      <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-slate-400">Rainfall by municipio (Stage IV)</h2>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <p className="max-w-2xl text-xs text-slate-500">
+          NWS Stage IV radar + gauge analysis, 12Z to 12Z, summarised over the 4.76 km HRAP cells whose centres fall
+          inside each municipio. Normal and % of normal compare only the cells that carry a PRISM normal (land).
+          Published after the day closes: use it for follow-up, not warning.
+          {thresholds && ` Heavy rain: municipio mean ≥ ${thresholds.mean_in} in (severity 2) or any cell ≥ ${thresholds.cell_max_in} in (severity 3), 1-day window only.`}
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex gap-1" role="group" aria-label="Rainfall window">
+            {RAIN_WINDOWS.map((w) => (
+              <Button
+                key={w.id}
+                size="sm"
+                variant="outline"
+                aria-pressed={rainWindow === w.id}
+                onClick={() => { setRainWindow(w.id); setDay('') }}
+                className={cn('h-7 border-slate-700 text-xs', rainWindow === w.id ? 'bg-sky-500/15 text-sky-200' : 'bg-slate-950 text-slate-300')}
+              >
+                {w.label}
+              </Button>
+            ))}
+          </div>
+          <select
+            aria-label="Rainfall data day"
+            value={day || rainfall?.data_date || ''}
+            onChange={(event) => setDay(event.target.value)}
+            disabled={!(rainfall?.available_dates?.length > 1)}
+            className="h-7 rounded border border-slate-700 bg-slate-950 px-2 text-xs text-slate-300 disabled:opacity-50"
+          >
+            {(rainfall?.available_dates?.length ? rainfall.available_dates : ['']).map((d) => (
+              <option key={d || 'none'} value={d}>{d ? `ending ${d} 12Z` : 'no data day'}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      {rainfall?.data_date && (
+        <div className="mb-3 text-[11px] text-slate-500" data-testid="rainfall-provenance">
+          {rows.length} municipios · {rainWindow === '1day' ? `${heavy} at a heavy-rain threshold` : 'heavy-rain flags apply to the 1-day window'}
+          {(rainfall.files ?? []).map((f) => (
+            <div key={f.manifestation_id} className="mt-1 break-all font-mono">
+              {String(f.source_url || '').startsWith('https://')
+                ? <a className="text-sky-300 hover:underline" href={f.source_url} target="_blank" rel="noopener noreferrer">{f.source_record_id}</a>
+                : f.source_record_id}
+              {' · SHA-256 '}{f.byte_sha256}{' · retrieved '}{fmtDate(f.retrieved_at)}
+            </div>
+          ))}
+        </div>
+      )}
+      <PanelState
+        isLoading={rainfallQuery.isLoading}
+        isError={rainfallQuery.isError || (!up && !rows.length)}
+        errorText={rainfallQuery.isError ? (
+          <div className="space-y-1">
+            <div>Rainfall unavailable: {String(rainfallQuery.error?.message ?? rainfallQuery.error)}</div>
+            <Button size="sm" variant="outline" onClick={() => rainfallQuery.refetch()} className="h-7 border-slate-700 bg-slate-950 text-xs text-slate-300">
+              Retry rainfall
+            </Button>
+          </div>
+        ) : undefined}
+        isEmpty={!rows.length}
+        emptyText="No Stage IV rainfall ingested yet. Use Refresh now on the Stage IV source above."
+      >
+        <RainfallTable rows={rows} windowDays={rainfall?.window_days ?? 1} />
+      </PanelState>
+    </Panel>
+  )
+}
+
 export default function HydrometPage() {
   const [floodingOnly, setFloodingOnly] = useState(false)
   const summaryQuery = useHydrometSummary()
@@ -196,7 +337,7 @@ export default function HydrometPage() {
     <div className="flex h-full flex-col">
       <PageHeader
         title="NWS Hydromet"
-        subtitle="Puerto Rico river and reservoir flood status from NOAA/NWS, with source freshness and provenance"
+        subtitle="Puerto Rico river and reservoir flood status and rainfall from NOAA/NWS, with source freshness and provenance"
       />
       <div className="min-h-0 flex-1 space-y-5 overflow-auto p-6">
         <ErrorBoundary label="NWS hydromet plane">
@@ -207,11 +348,12 @@ export default function HydrometPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
             {[
               { label: 'Gauges', value: counts?.gauges ?? '—', icon: Waves },
               { label: 'In flood', value: counts?.gauges_in_flood ?? '—', icon: CloudRain },
               { label: 'Stale observations', value: counts?.gauges_stale ?? '—', icon: Database },
+              { label: 'Heavy rain (1 day)', value: summary?.rainfall_latest_date ? counts?.rainfall_heavy ?? 0 : '—', icon: Droplets },
               { label: 'Integrity', value: summary?.integrity?.state ?? '—', icon: ShieldCheck },
             ].map(({ label, value, icon: Icon }) => (
               <div key={label} className="rounded-lg border border-slate-800 bg-slate-900/70 p-4">
@@ -264,6 +406,8 @@ export default function HydrometPage() {
               <GaugeTable gauges={gauges} />
             </PanelState>
           </Panel>
+
+          <RainfallPanel up={up} />
         </ErrorBoundary>
       </div>
     </div>

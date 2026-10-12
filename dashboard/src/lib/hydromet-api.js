@@ -14,6 +14,15 @@ async function getJSON(path, fallback) {
   }
 }
 
+// Like getJSON, but a live request failure throws so the query reaches its error state
+// (and the panel shows it with a retry) instead of reading as "no data".
+async function getJSONOrThrow(path, offlineFallback) {
+  if (OFFLINE) return offlineFallback
+  const response = await fetch(`${API_BASE}${path}`, { signal: AbortSignal.timeout(8000) })
+  if (!response.ok) throw new Error(`HTTP ${response.status} from ${path}`)
+  return response.json()
+}
+
 const qs = (params) => {
   const pairs = Object.entries(params).filter(([, value]) => value != null && value !== '' && value !== false)
   return pairs.length ? `?${new URLSearchParams(pairs).toString()}` : ''
@@ -31,6 +40,13 @@ export const getRiverGauges = (filters = {}) => getJSON(
 )
 
 export const getRiverGaugesGeojson = () => getJSON('/hydromet/gauges.geojson', EMPTY_FC)
+
+// Stage IV rainfall per municipio for one window ('1day' | 'last7days' | 'last30days')
+// and data day (YYYY-MM-DD; omitted = latest).
+export const getRainfall = ({ window = '1day', date } = {}) => getJSONOrThrow(
+  `/hydromet/rainfall${qs({ window, date })}`,
+  { window, data_date: null, available_dates: [], windows: [], thresholds: null, files: [], total: 0, items: [] },
+)
 
 export const getHydrometRefreshStatus = () => getJSON('/hydromet/refresh/status', null)
 

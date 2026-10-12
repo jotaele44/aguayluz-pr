@@ -21,6 +21,7 @@ from __future__ import annotations
 #: canonical_event_id prefix → owning source. Each ingest only rewrites its own prefix.
 SOURCE_PREFIXES: dict[str, str] = {
     "nwps_gauges": "NWPS_GAUGE:",
+    "stage_iv_pr": "STAGEIV_QPE:",
 }
 
 #: Puerto Rico query envelope (lon/lat, EPSG:4326) shared by every hydromet source.

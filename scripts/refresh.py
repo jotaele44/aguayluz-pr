@@ -32,6 +32,11 @@ STEP_NWPS_GAUGES = (
     ["scripts/ingest_nwps_gauges.py"],
     True,
 )
+STEP_STAGE_IV = (
+    "NWS Stage IV PR rainfall → hydromet plane",
+    ["scripts/ingest_stage_iv_pr.py"],
+    True,
+)
 STEP_USGS_QUAKES = (
     "USGS earthquakes → service_events",
     ["scripts/ingest_usgs_quakes.py"],
@@ -266,6 +271,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_NWS,
         STEP_NHC,
         STEP_NWPS_GAUGES,
+        STEP_STAGE_IV,
         STEP_USGS_QUAKES,
         STEP_USGS_LEVELS,
         STEP_USGS_GW,
@@ -284,6 +290,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_NWS,
         STEP_NHC,
         STEP_NWPS_GAUGES,
+        STEP_STAGE_IV,
         STEP_USGS_QUAKES,
         STEP_USGS_ASSETS,
         STEP_USGS_LEVELS,
@@ -320,6 +327,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_NWS,
         STEP_NHC,
         STEP_NWPS_GAUGES,
+        STEP_STAGE_IV,
         STEP_USGS_QUAKES,
         STEP_USGS_ASSETS,
         STEP_USGS_LEVELS,

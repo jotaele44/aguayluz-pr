@@ -23,7 +23,7 @@ Rico (live probes, 2026-10-06/07):
 | Catalog entry | Decision | Reason |
 |---|---|---|
 | AHPS River Gauge Current and Forecast Flood Stages | **Wired** via the NWPS API | 118 PR gauges, 82 with published thresholds; AHPS became NWPS in 2024 |
-| River Forecast Centers Daily QPE | Planned (Stage IV PR GeoTIFF) | dedicated PR grid on `water.noaa.gov`; the CloudGIS `rfc_qpe` mosaic does not cover PR |
+| River Forecast Centers Daily QPE | **Wired** via the Stage IV PR GeoTIFFs | dedicated PR grid on `water.noaa.gov`; the CloudGIS `rfc_qpe` mosaic does not cover PR |
 | Active Atlantic & Caribbean Hurricanes | Planned (NHC cone footprint) | cone KMZ is already linked from `CurrentStorms.json` |
 | Drought Outlook | Planned (CPC, "US and Puerto Rico" layer) | PR polygons present |
 | Watches, Warnings and Advisories | **Display-only overlay** (not data) | already ingested from `api.weather.gov`; the CloudGIS layer is shown on the map, off by default |
@@ -77,6 +77,58 @@ NEVER), last attempt and success, source arithmetic, byte SHA-256, the latest er
 **Refresh now** control (key-gated when `API_SECRET_KEY` is set), and the gauge table with
 an in-flood filter. On **Map**, the **River gauges** layer colours gauges by flood category.
 
+## Stage IV rainfall (wired)
+
+| Step | Endpoint / file |
+|---|---|
+| Daily grids | `GET https://water.noaa.gov/resources/downloads/precip/stageIV/YYYY/MM/DD/nws_precip_{1day,last7days,last30days}_YYYYMMDD_pr.tif` |
+| Registry | `config/hydromet_sources.v1.json` (`stage_iv_pr`: URL template, windows, cadence 24 h, stale after 48 h) |
+| Ingest | `scripts/ingest_stage_iv_pr.py` (`--dry-run`, `--src-dir` + `--date`, `--data-dir`, `--lookback-days`, `--backfill-days`) |
+| Schedule | `scripts/refresh.py` daily, weekly and all cadences, optional |
+
+**The grid.** Each file is a 205 × 205 HRAP grid (polar stereographic, 4.76 km cells) with
+four float32 bands in inches: observation, PRISM normal, departure from normal and
+percent of normal. The GDAL `data_time` tag is the window's closing 12Z; a file whose tag
+disagrees with its dated name fails closed. The run finds the newest day with a 1-day
+file (looking back 4 days), fetches its 7- and 30-day files, and back-fills missing 1-day
+files for the 3 days before it.
+
+**Pipeline.** File bytes are hashed (and kept under `data/hydromet_snapshots/stage_iv_pr/`,
+gitignored) before they are opened. A file must carry exactly the four named bands and a
+`data_time` of 12:00 UTC on its file date, or the run fails closed. Each file is
+summarised per municipio: mean and maximum observed rainfall and cell count over every
+cell with an observation; mean PRISM normal, departure and percent of normal over the
+cells that also carry a normal (PRISM covers land only, so offshore cells inside a coastal
+polygon never skew the comparison).
+Arithmetic per file is 78 municipio zones = RETAINED (valid cells) + UNRESOLVED. One
+record per municipio × window × data day; a re-processed file supersedes the earlier
+record for the same event. 1-day history is kept 33 days (the 72 h heavy-rain follow-up plus
+30 days of closed-alert reporting); 7- and 30-day windows keep only
+the newest day.
+
+**Bindings and evidence.**
+
+| Binding | Evidence class | Notes |
+|---|---|---|
+| zone → municipio, HRAP cell centres inside the Census polygon | `POINT_IN_POLYGON`, `FULLY_WITHIN` | every one of the 78 municipios holds at least one cell centre (Cataño: 1) |
+| zone → municipio, cells the polygon only touches | `PROXIMITY`, `PARTIAL` | fallback for a municipio too small to hold a centre; alerts go to review |
+| no cell at all | none (`UNRESOLVED` record) | never widened to island-wide |
+
+**Alerts** (marker `_qpeheavy_`). One alert per municipio and 1-day window at a threshold:
+municipio mean ≥ 3 in → severity 2, any cell ≥ 6 in → severity 3. Stage IV is a
+post-event analysis published after the 12Z day closes, so these stay below the critical
+push/SMS floor and serve turbidity, reservoir-inflow and landslide follow-up. An alert is
+`active` for 72 h after the window ends, then `closed`. Coordinates are the municipio
+centroid (`approximate`); linked assets are those in the municipio. The thresholds are
+named constants in `src/aguayluz/hazard_adapters/stage_iv_qpe.py`.
+
+**Dashboard.** **NWS Hydromet → Rainfall by municipio**: 1-, 7- or 30-day window, data
+day picker (1-day history), municipio mean, wettest cell, PRISM normal, percent of
+normal, cell count, heavy-rain flag, and the source file's SHA-256 and retrieval time.
+The Stage IV source card shows freshness, arithmetic and **Refresh now**. On **Map →
+Municipio fill → Rainfall**, municipios are tinted by the latest 1-day mean, with the
+data day stated.
+
 ## Display-only map overlays
 
 **Map → NWS live overlays** offers **NWS radar** and **NWS warnings**. The browser loads
@@ -101,3 +153,8 @@ backend, no ingestion, no alerts.
 - Gauges without published thresholds report `not_defined` and never raise an alert.
 - The first observed revision of a flood already in progress starts the episode at that
   observation, not at the true onset.
+- Stage IV arrives after the 12Z day closes and is provisional; it reports rainfall that
+  fell, not impact. HRAP cells are 4.76 km, so a municipio mean smooths convective peaks
+  (the wettest-cell value is kept for that reason). PRISM normals cover land cells only.
+- At 33 days of 1-day history the Stage IV rows add about 5 MB to the committed hydromet
+  files; rows are written without null fields to keep that down.

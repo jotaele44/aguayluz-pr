@@ -1,4 +1,4 @@
-"""API for the NWS hydromet plane (NWPS gauges and, later, rainfall/cones/outlooks).
+"""API for the NWS hydromet plane (NWPS gauges, Stage IV rainfall; later cones/outlooks).
 
 Reads only the committed files written by the ``scripts/ingest_*`` hydromet producers;
 imports nothing heavier than pydantic so the gui-parity CI backend boots without the
@@ -20,6 +20,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 
+from aguayluz.hazard_adapters import stage_iv_qpe
 from aguayluz.hazard_adapters.nwps_gauges import FLOOD_CATEGORIES, parse_time
 from aguayluz.hazard_plane import current_records
 from aguayluz.hydromet import store
@@ -33,9 +34,9 @@ SCRIPTS: Path = legacy.SCRIPTS
 
 SCOPE_STATEMENT = (
     "NOAA/NWS hydrometeorological observations and outlooks for Puerto Rico, frozen with "
-    "byte SHA-256 provenance. A gauge above a flood threshold is an observed hazard "
-    "condition, not confirmed damage or service impact; bindings to assets and municipios "
-    "carry their evidence class."
+    "byte SHA-256 provenance. A gauge above a flood threshold or a heavy-rain municipio is "
+    "an observed hazard condition, not confirmed damage or service impact; bindings to "
+    "assets and municipios carry their evidence class."
 )
 
 _refresh_lock = threading.Lock()
@@ -83,12 +84,44 @@ def _gauge_rows(now: datetime) -> list[dict[str, Any]]:
     return rows
 
 
+def _rainfall_records(records: list[Any], window: str) -> dict[str, list[Any]]:
+    """Current Stage IV records for ``window``, grouped by data date (YYYY-MM-DD)."""
+    by_date: dict[str, list[Any]] = {}
+    for record in store.current_by_event(records, stage_iv_qpe.CANONICAL_PREFIX).values():
+        values = record.normalized_values
+        if values.get("window") == window and values.get("data_date"):
+            by_date.setdefault(str(values["data_date"]), []).append(record)
+    return by_date
+
+
+def _rainfall_row(record: Any, window: str) -> dict[str, Any]:
+    values = record.normalized_values
+    return {
+        "geoid": record.municipality_id or record.source_record_id.rsplit("#", 1)[-1],
+        "municipio": values.get("municipio") or record.normalized_label,
+        "data_date": values.get("data_date"),
+        "observed_from": _iso(record.observed_from) if record.observed_from else None,
+        "observed_to": _iso(record.observed_to) if record.observed_to else None,
+        **{key: values.get(key) for key in (
+            "obs_mean_in", "obs_max_in", "normal_mean_in", "departure_mean_in",
+            "pct_of_normal", "cell_count", "method",
+        )},
+        "status": record.status.value,
+        "heavy_rain_severity": stage_iv_qpe.heavy_rain_severity(values) if window == "1day" else None,
+        "record_id": record.record_id,
+        "manifestation_id": record.manifestation_id,
+    }
+
+
 @router.get("/hydromet/summary")
 def hydromet_summary() -> JSONResponse:
     now = _now()
     records = store.load_records(DATA_DIR)
     integrity = store.integrity(DATA_DIR)
     gauges = _gauge_rows(now)
+    rain_days = _rainfall_records(records, "1day")
+    rain_date = max(rain_days) if rain_days else None
+    rain_latest = [_rainfall_row(r, "1day") for r in rain_days.get(rain_date or "", [])]
     categories: dict[str, int] = {}
     for row in gauges:
         key = row.get("flood_category") or "blank"
@@ -114,7 +147,10 @@ def hydromet_summary() -> JSONResponse:
             "gauges": len(gauges),
             "gauges_in_flood": sum(1 for g in gauges if g["flooding"]),
             "gauges_stale": sum(1 for g in gauges if g["observation_stale"]),
+            "rainfall_zones": len(rain_latest),
+            "rainfall_heavy": sum(1 for r in rain_latest if r["heavy_rain_severity"]),
         },
+        "rainfall_latest_date": rain_date,
         "flood_categories": dict(sorted(categories.items())),
         "integrity": {"state": integrity["state"], "unresolved": integrity["unresolved"]},
     })
@@ -173,6 +209,51 @@ def hydromet_gauges_geojson() -> JSONResponse:
             },
         })
     return JSONResponse({"type": "FeatureCollection", "features": features})
+
+
+@router.get("/hydromet/rainfall")
+def hydromet_rainfall(
+    window: str = Query("1day"),
+    date: str | None = Query(None, description="data day YYYY-MM-DD; default: latest"),
+) -> JSONResponse:
+    """Stage IV rainfall per municipio for one window and 12Z-12Z data day."""
+    if window not in stage_iv_qpe.WINDOW_DAYS:
+        raise HTTPException(status_code=422, detail=f"window must be one of {list(stage_iv_qpe.WINDOW_DAYS)}")
+    by_date = _rainfall_records(store.load_records(DATA_DIR), window)
+    dates = sorted(by_date, reverse=True)
+    chosen = date or (dates[0] if dates else None)
+    if date and date not in by_date:
+        raise HTTPException(status_code=404, detail=f"no {window} Stage IV data for {date}")
+    rows = [_rainfall_row(r, window) for r in by_date.get(chosen or "", [])]
+    rows.sort(key=lambda r: (-(r["obs_mean_in"] if isinstance(r["obs_mean_in"], (int, float)) else -1),
+                             str(r["municipio"])))
+    manifestations = {m.manifestation_id: m for m in store.load_manifestations(DATA_DIR)}
+    files = []
+    for man_id in dict.fromkeys(r["manifestation_id"] for r in rows):
+        man = manifestations.get(man_id)
+        if man is not None:
+            files.append({
+                "manifestation_id": man_id,
+                "source_record_id": man.source_record_id,
+                "source_url": man.source_url,
+                "byte_sha256": man.byte_sha256,
+                "retrieved_at": _iso(man.retrieved_at_utc),
+            })
+    return JSONResponse({
+        "window": window,
+        "window_days": stage_iv_qpe.WINDOW_DAYS[window],
+        "windows": list(stage_iv_qpe.WINDOW_DAYS),
+        "data_date": chosen,
+        "available_dates": dates,
+        "thresholds": {
+            "mean_in": stage_iv_qpe.HEAVY_RAIN_MEAN_IN,
+            "cell_max_in": stage_iv_qpe.HEAVY_RAIN_CELL_MAX_IN,
+            "applies_to": "1day",
+        },
+        "files": files,
+        "total": len(rows),
+        "items": rows,
+    })
 
 
 def _load_script(script: Path, module_name: str) -> Any:

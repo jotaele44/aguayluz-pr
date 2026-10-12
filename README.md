@@ -78,6 +78,12 @@ corpus is real public data, with some sources external or point-in-time.
   and a refresh control. This is the PR-relevant part of the legacy NWS IDP-GIS catalog; see
   [`docs/NWS_HYDROMET_INTEGRATION.md`](docs/NWS_HYDROMET_INTEGRATION.md) for what else on that
   catalog was and was not wired.
+- NWS **Stage IV Puerto Rico rainfall** (`scripts/ingest_stage_iv_pr.py`, keyless) — the daily
+  1-, 7- and 30-day radar + gauge rainfall grids NWPS publishes for Puerto Rico, summarised per
+  municipio over the HRAP cells inside each Census polygon (with PRISM normal and percent of
+  normal). Heavy-rain days (municipio mean ≥ 3 in, or any cell ≥ 6 in) become sub-critical
+  `WEATHER_HAZARD` follow-up alerts; the **NWS Hydromet** page lists rainfall by municipio and the
+  map has a **Rainfall** municipio fill.
 - Operational alert events (`docs/ALERT_SYSTEM.md`) and the 78-municipio /
   901-barrio geo layer under `data/geo/` (U.S. Census cartographic boundaries).
 

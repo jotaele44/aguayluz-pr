@@ -1563,7 +1563,7 @@
       "classification": "analysis",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Puerto Rico NOAA/NWS hydrometeorological observations (NWPS river/reservoir gauge flood status) frozen with byte SHA-256 provenance, source arithmetic and evidence-classed bindings to USGS_ assets (stable ID) and municipios (point-in-polygon + source alias). The NWS Hydromet page exposes results, freshness, failures and a guarded refresh; the map shows gauges by flood category; flood episodes promote into WEATHER_HAZARD alerts. Observations are hazard context, not confirmed impact.",
+      "rationale": "Puerto Rico NOAA/NWS hydrometeorological observations (NWPS river/reservoir gauge flood status; Stage IV daily rainfall summarised per municipio over HRAP cells) frozen with byte SHA-256 provenance, source arithmetic and evidence-classed bindings to USGS_ assets (stable ID) and municipios (point-in-polygon + source alias; raster cell centres in polygon). The NWS Hydromet page exposes results, freshness, failures and a guarded refresh per source; the map shows gauges by flood category and a Stage IV rainfall municipio fill; gauge flood episodes and heavy-rain days promote into WEATHER_HAZARD alerts. Observations are hazard context, not confirmed impact.",
       "backend": {
         "files": [
           "server/backend/hydromet_api.py",
@@ -1572,12 +1572,14 @@
           "src/aguayluz/hydromet/store.py",
           "src/aguayluz/hydromet/spatial.py",
           "src/aguayluz/hazard_adapters/nwps_gauges.py",
+          "src/aguayluz/hazard_adapters/stage_iv_qpe.py",
           "src/aguayluz/alert_promotion/hydromet.py",
           "src/aguayluz/hazard_plane.py"
         ],
         "endpoints": [
           "GET /hydromet/gauges",
           "GET /hydromet/gauges.geojson",
+          "GET /hydromet/rainfall",
           "GET /hydromet/refresh/status",
           "GET /hydromet/sources",
           "GET /hydromet/summary",
@@ -1586,6 +1588,7 @@
         "symbols": [
           "server/backend/hydromet_api.py:hydromet_gauges",
           "server/backend/hydromet_api.py:hydromet_gauges_geojson",
+          "server/backend/hydromet_api.py:hydromet_rainfall",
           "server/backend/hydromet_api.py:hydromet_refresh",
           "server/backend/hydromet_api.py:hydromet_refresh_status",
           "server/backend/hydromet_api.py:hydromet_sources",
@@ -1593,6 +1596,8 @@
           "src/aguayluz/alert_promotion/hydromet.py:FloodEpisode",
           "src/aguayluz/alert_promotion/hydromet.py:HydrometInputs",
           "src/aguayluz/alert_promotion/hydromet.py:flood_episodes",
+          "src/aguayluz/alert_promotion/hydromet.py:heavy_rain_alert",
+          "src/aguayluz/alert_promotion/hydromet.py:heavy_rain_alerts",
           "src/aguayluz/alert_promotion/hydromet.py:hydromet_alerts",
           "src/aguayluz/alert_promotion/hydromet.py:river_flood_alert",
           "src/aguayluz/alert_promotion/hydromet.py:river_flood_alerts",
@@ -1607,11 +1612,21 @@
           "src/aguayluz/hazard_adapters/nwps_gauges.py:observed_category",
           "src/aguayluz/hazard_adapters/nwps_gauges.py:parse_time",
           "src/aguayluz/hazard_adapters/nwps_gauges.py:stable_record_id",
+          "src/aguayluz/hazard_adapters/stage_iv_qpe.py:canonical_event_id",
+          "src/aguayluz/hazard_adapters/stage_iv_qpe.py:heavy_rain_severity",
+          "src/aguayluz/hazard_adapters/stage_iv_qpe.py:normalize",
+          "src/aguayluz/hazard_adapters/stage_iv_qpe.py:parse_data_time",
+          "src/aguayluz/hazard_adapters/stage_iv_qpe.py:stable_record_id",
+          "src/aguayluz/hazard_adapters/stage_iv_qpe.py:values_digest",
+          "src/aguayluz/hazard_adapters/stage_iv_qpe.py:window_bounds",
+          "src/aguayluz/hazard_adapters/stage_iv_qpe.py:zone_values",
           "src/aguayluz/hazard_plane.py:SpatialState",
+          "src/aguayluz/hydromet/spatial.py:CellSelection",
           "src/aguayluz/hydromet/spatial.py:Municipio",
           "src/aguayluz/hydromet/spatial.py:MunicipioIndex",
           "src/aguayluz/hydromet/spatial.py:PointBinding",
           "src/aguayluz/hydromet/spatial.py:municipio_key",
+          "src/aguayluz/hydromet/spatial.py:raster_cells_by_municipio",
           "src/aguayluz/hydromet/store.py:HydrometPaths",
           "src/aguayluz/hydromet/store.py:SourceRun",
           "src/aguayluz/hydromet/store.py:append_accounting",
@@ -1640,7 +1655,8 @@
       },
       "analysis": {
         "files": [
-          "scripts/ingest_nwps_gauges.py"
+          "scripts/ingest_nwps_gauges.py",
+          "scripts/ingest_stage_iv_pr.py"
         ],
         "symbols": [
           "scripts/ingest_nwps_gauges.py:BuildResult",
@@ -1650,7 +1666,15 @@
           "scripts/ingest_nwps_gauges.py:load_usgs_asset_ids",
           "scripts/ingest_nwps_gauges.py:main",
           "scripts/ingest_nwps_gauges.py:needs_detail",
-          "scripts/ingest_nwps_gauges.py:schema_signature"
+          "scripts/ingest_nwps_gauges.py:schema_signature",
+          "scripts/ingest_stage_iv_pr.py:BuildResult",
+          "scripts/ingest_stage_iv_pr.py:GridFile",
+          "scripts/ingest_stage_iv_pr.py:build_run",
+          "scripts/ingest_stage_iv_pr.py:file_name",
+          "scripts/ingest_stage_iv_pr.py:grid_url",
+          "scripts/ingest_stage_iv_pr.py:main",
+          "scripts/ingest_stage_iv_pr.py:retention_policy",
+          "scripts/ingest_stage_iv_pr.py:summarise_grid"
         ]
       },
       "frontend": {
@@ -1659,7 +1683,8 @@
           "/map"
         ],
         "e2e_routes": [
-          "/hydromet"
+          "/hydromet",
+          "/map"
         ],
         "components": [
           "dashboard/src/pages/HydrometPage.jsx",
@@ -1682,6 +1707,8 @@
           "tests/test_hydromet_spatial.py",
           "tests/test_hazard_adapter_nwps_gauges.py",
           "tests/test_ingest_nwps_gauges.py",
+          "tests/test_hazard_adapter_stage_iv_qpe.py",
+          "tests/test_ingest_stage_iv_pr.py",
           "tests/test_alert_promotion_hydromet.py",
           "tests/test_refresh_plans.py",
           "tests/test_gui_parity.py"

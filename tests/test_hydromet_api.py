@@ -134,3 +134,77 @@ def test_run_script_captures_output_and_exit(tmp_path):
     crashing = tmp_path / "crash.py"
     crashing.write_text("def main():\n    raise RuntimeError('boom')\n")
     assert "boom" in hydromet_api._run_script(crashing, [])["stderr_tail"]
+
+
+@pytest.fixture
+def rainfall(tmp_path, monkeypatch):
+    """Two 1-day data days and one 7-day window, CONSTRUCTED with the Stage IV adapter
+    (values only); the manifestation hashes the real fixture grid's bytes."""
+    from datetime import datetime, timezone
+
+    from aguayluz.hazard_adapters import stage_iv_qpe
+    from aguayluz.hydromet import store
+
+    payload = (FIXTURES / "stage_iv_pr" / "nws_precip_1day_20261009_pr.tif").read_bytes()
+    url = "https://water.noaa.gov/resources/downloads/precip/stageIV/2026/10/09/nws_precip_1day_20261009_pr.tif"
+    man = store.freeze_bytes(
+        "stage_iv_pr", payload, source_authority=stage_iv_qpe.SOURCE_AUTHORITY,
+        source_system="test", source_record_id="nws_precip_1day_20261009_pr.tif",
+        source_url=url, retrieved_at=datetime(2026, 10, 11, 4, tzinfo=timezone.utc), extension="tif",
+    )
+    records = []
+    for day, window, town, geoid, mean, peak in [
+        (9, "1day", "Aguada", "72003", 1.064, 1.606),
+        (9, "1day", "Mayagüez", "72097", 3.4, 4.2),
+        (9, "1day", "Añasco", "72011", 2.1, 6.4),
+        (8, "1day", "Aguada", "72003", 0.2, 0.4),
+        (9, "last7days", "Aguada", "72003", 2.5, 3.9),
+    ]:
+        values = stage_iv_qpe.zone_values(obs_mean=mean, obs_max=peak, cell_count=9,
+                                          obs_mean_paired=mean, normal_mean_paired=0.3, paired_cell_count=9)
+        records.append(stage_iv_qpe.normalize(
+            values, man.manifestation_id, window=window, geoid=geoid, municipio=town,
+            data_time=datetime(2026, 10, day, 12, tzinfo=timezone.utc),
+            source_file=f"nws_precip_{window}_202610{day:02d}_pr.tif",
+            method="raster_cell_centres_in_polygon", source_url=url,
+        ))
+    store.apply_source_run(store.SourceRun("stage_iv_pr", manifestations=[man], records=records), tmp_path)
+    monkeypatch.setattr(hydromet_api, "DATA_DIR", tmp_path)
+    return tmp_path
+
+
+def test_rainfall_latest_day_ranked_with_heavy_rain_flags_and_provenance(rainfall):
+    body = client().get("/hydromet/rainfall").json()
+    assert body["window"] == "1day" and body["data_date"] == "2026-10-09"
+    assert body["available_dates"] == ["2026-10-09", "2026-10-08"]
+    assert body["windows"] == ["1day", "last7days", "last30days"]
+    assert body["thresholds"] == {"mean_in": 3.0, "cell_max_in": 6.0, "applies_to": "1day"}
+    assert [r["municipio"] for r in body["items"]] == ["Mayagüez", "Añasco", "Aguada"]
+    sev = {r["municipio"]: r["heavy_rain_severity"] for r in body["items"]}
+    assert sev == {"Mayagüez": 2, "Añasco": 3, "Aguada": None}
+    assert body["items"][0]["geoid"] == "72097" and body["items"][0]["status"] == "PROVISIONAL"
+    (file,) = body["files"]
+    assert len(file["byte_sha256"]) == 64 and file["source_url"].endswith("_pr.tif")
+
+
+def test_rainfall_window_and_date_selection(rainfall):
+    older = client().get("/hydromet/rainfall", params={"date": "2026-10-08"}).json()
+    assert [r["obs_mean_in"] for r in older["items"]] == [0.2]
+    seven = client().get("/hydromet/rainfall", params={"window": "last7days"}).json()
+    assert seven["window_days"] == 7 and seven["items"][0]["heavy_rain_severity"] is None
+    assert client().get("/hydromet/rainfall", params={"window": "hourly"}).status_code == 422
+    assert client().get("/hydromet/rainfall", params={"date": "2026-01-01"}).status_code == 404
+
+
+def test_rainfall_counts_in_summary(rainfall):
+    body = client().get("/hydromet/summary").json()
+    assert body["rainfall_latest_date"] == "2026-10-09"
+    assert body["counts"]["rainfall_zones"] == 3 and body["counts"]["rainfall_heavy"] == 2
+    assert body["integrity"]["state"] == "PASS"
+
+
+def test_empty_rainfall_is_empty_not_an_error(tmp_path, monkeypatch):
+    monkeypatch.setattr(hydromet_api, "DATA_DIR", tmp_path)
+    body = client().get("/hydromet/rainfall").json()
+    assert body["data_date"] is None and body["items"] == [] and body["available_dates"] == []
+    assert client().get("/hydromet/summary").json()["rainfall_latest_date"] is None

@@ -154,8 +154,51 @@ class MunicipioIndex:
                             candidate_municipio=near[0].name if near else None)
 
 
+@dataclass(frozen=True)
+class CellSelection:
+    """Raster cells summarising one municipio, and how they were chosen."""
+
+    geoid: str
+    municipio: str
+    mask: Any  # numpy bool array, raster shape; True = cell belongs to the municipio
+    method: str
+    spatial_state: SpatialState
+
+    @property
+    def cell_count(self) -> int:
+        return int(self.mask.sum())
+
+
+def raster_cells_by_municipio(index: MunicipioIndex, crs: Any, transform: Any,
+                              shape: tuple[int, int]) -> list[CellSelection]:
+    """Cells per municipio on a raster grid (rasterio; ingest-side only).
+
+    Cells whose centres fall inside the polygon (``FULLY_WITHIN``); a municipio too
+    small to hold a cell centre falls back to the cells its polygon touches
+    (``PARTIAL``); none at all is ``NULL_EMPTY``, which the caller must not widen.
+    """
+    from rasterio.features import geometry_mask
+    from rasterio.warp import transform_geom
+    from shapely.geometry import mapping
+
+    selections: list[CellSelection] = []
+    for municipio, geom in zip(index.municipios, index._geoms, strict=True):
+        projected = transform_geom("EPSG:4326", crs, mapping(geom))
+        inside = ~geometry_mask([projected], out_shape=shape, transform=transform, all_touched=False)
+        method, state = "raster_cell_centres_in_polygon", SpatialState.FULLY_WITHIN
+        if not inside.any():
+            inside = ~geometry_mask([projected], out_shape=shape, transform=transform, all_touched=True)
+            method, state = "raster_cells_touching_polygon", SpatialState.PARTIAL
+        if not inside.any():
+            method, state = "no_raster_cell", SpatialState.NULL_EMPTY
+        selections.append(CellSelection(municipio.geoid, municipio.name, inside, method, state))
+    return selections
+
+
 __all__ = [
     "COASTAL_SNAP_M",
+    "CellSelection",
+    "raster_cells_by_municipio",
     "MUNICIPIOS_GEOJSON",
     "Municipio",
     "MunicipioIndex",

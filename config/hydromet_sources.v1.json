@@ -35,6 +35,31 @@
       "known_limits": "Observed stages only: NWS issues no stage forecasts for Puerto Rico points (every forecast category is fcst_not_current). Gauges without published thresholds report not_defined and never raise a flood alert.",
       "raw_snapshot_policy": "Raw response bytes under data/hydromet_snapshots/nwps_gauges/ (gitignored); byte SHA-256 committed in data/hydromet_manifestations.jsonl.",
       "license": "U.S. Government work (public domain)"
+    },
+    {
+      "source_id": "stage_iv_pr",
+      "label": "Stage IV Puerto Rico rainfall (QPE)",
+      "authority": "NOAA/NWS River Forecast Centers (SERFC) via the National Water Prediction Service",
+      "family": "HYDROMETEOROLOGY",
+      "hazard_type": "PRECIPITATION_ACCUMULATION",
+      "replaces_catalog_entry": "River Forecast Centers Daily Quantitative Precipitation Estimates (rfc_dly_qpe)",
+      "endpoints": {
+        "day_directory": "https://water.noaa.gov/resources/downloads/precip/stageIV/{yyyy}/{mm}/{dd}/",
+        "grid": "https://water.noaa.gov/resources/downloads/precip/stageIV/{yyyy}/{mm}/{dd}/nws_precip_{window}_{yyyymmdd}_pr.tif"
+      },
+      "windows": [
+        "1day",
+        "last7days",
+        "last30days"
+      ],
+      "cadence_seconds": 86400,
+      "max_age_seconds": 172800,
+      "refresh_script": "scripts/ingest_stage_iv_pr.py",
+      "binding_semantics": "Each municipio is summarised over the HRAP (4.76 km) cells whose centres fall inside its Census polygon (normal, departure and percent of normal over the subset of those cells that carry a PRISM normal); a municipio too small to contain a cell centre uses the cells its polygon touches (PARTIAL); no cell at all is NULL_EMPTY, never island-wide.",
+      "update_semantics": "One GeoTIFF per window per 12Z-12Z data day (bands: observation, PRISM normal, departure, percent of normal, inches). A re-processed file supersedes the earlier record for the same municipio/window/day. A file must carry exactly these four named bands and a data_time of 12:00 UTC on its file date, or the run fails closed. 1-day history is kept 33 days (72 h heavy-rain follow-up + 30 days of closed-alert reporting); 7- and 30-day windows keep only the latest day.",
+      "known_limits": "Post-event analysis published after the 12Z day closes, so it supports turbidity, inflow and landslide follow-up rather than warning. PRISM normals cover land cells only.",
+      "raw_snapshot_policy": "Raw GeoTIFF bytes under data/hydromet_snapshots/stage_iv_pr/ (gitignored); byte SHA-256 committed in data/hydromet_manifestations.jsonl; the dated NWPS download URL is the immutable reference.",
+      "license": "U.S. Government work (public domain)"
     }
   ]
 }
