@@ -189,6 +189,22 @@ def test_water_quality_nondetect_is_preserved_not_zero():
     assert skipped["nondetect"] == 1
 
 
+def test_rtfi_state_lookup_requires_authoritative_integer_id():
+    module = load_script("ingest_usgs_rtfi.py")
+    assert module.state_id_from_count(
+        {
+            "state_id": 72,
+            "state_name": "Puerto Rico",
+            "state_abbreviation": "PR",
+            "reference_point_count": 0,
+        }
+    ) == 72
+    with pytest.raises(ValueError):
+        module.state_id_from_count({"state_id": "PR", "state_abbreviation": "PR"})
+    with pytest.raises(ValueError):
+        module.state_id_from_count({"state_id": 72, "state_abbreviation": "TX"})
+
+
 def test_rtfi_only_creates_declared_nwis_edges():
     module = load_script("ingest_usgs_rtfi.py")
     document = [
