@@ -109,12 +109,19 @@ jobs:
       # the current snapshot or duplicate a completed promotion.
       - name: Promote refreshed snapshot to Floot
         if: steps.commit.outputs.changed == 'true'
+        env:
+          AGUAYLUZ_SYNC_TOKEN: ${{ secrets.AGUAYLUZ_SYNC_TOKEN }}
         run: |
+          if [ -z "${AGUAYLUZ_SYNC_TOKEN:-}" ]; then
+            echo "::error::AGUAYLUZ_SYNC_TOKEN repository secret is not configured."
+            exit 1
+          fi
           SYNC_COMMIT="$(git rev-parse HEAD)"
           curl --fail-with-body --show-error --silent \
             --retry 3 --retry-all-errors --retry-delay 2 \
             -X POST \
             -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $AGUAYLUZ_SYNC_TOKEN" \
             https://aguayluz-pr.floot.app/_api/sync/github \
             --data "{\"commitSha\":\"${SYNC_COMMIT}\",\"trigger\":\"github_action\"}"
 
