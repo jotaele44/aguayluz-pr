@@ -100,6 +100,10 @@ test('NWS CloudGIS overlays are opt-in and request tiles only when toggled on', 
   await expect(radar).toBeVisible()
   await expect(radar).toHaveAttribute('aria-pressed', 'false')
   await expect(page.getByText(/NWS live overlays · display only/)).toBeVisible()
+  // The overlay sources exist once the map style has loaded; give an off-by-default
+  // source time to misbehave before asserting nothing reached NWS.
+  await expect(page.locator('[data-map-ready="true"]')).toHaveCount(1)
+  await page.waitForTimeout(1500)
   expect(requested).toEqual([])
 
   await radar.click()
@@ -110,7 +114,7 @@ test('NWS CloudGIS overlays are opt-in and request tiles only when toggled on', 
   await warnings.click()
   await expect(warnings).toHaveAttribute('aria-pressed', 'true')
   await expect.poll(() => requested.some((url) => url.includes('/WWA/watch_warn_adv/MapServer/export'))).toBe(true)
-  await expect(page.getByText(/NWS radar: live/)).toBeVisible()
+  await expect(page.getByText(/NWS radar: live · tiles loaded/)).toBeVisible()
   await expect(page.getByText(/not stored or validated by AguaYLuz/)).toBeVisible()
 
   expect(consoleErrors, consoleErrors.join('\n')).toEqual([])

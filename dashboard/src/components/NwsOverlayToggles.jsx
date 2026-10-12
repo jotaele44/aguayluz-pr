@@ -1,9 +1,17 @@
 import { NWS_CLOUDGIS_OVERLAYS, OVERLAY_ATTRIBUTION } from '@/lib/nws-cloudgis-overlays'
 
+const timeOf = (ms) => new Date(ms).toLocaleTimeString()
+
+function statusText(overlay, status) {
+  if (status?.state === 'error') return `${overlay.label}: unavailable from NWS (${status.message})`
+  if (status?.state === 'live') return `${overlay.label}: live · tiles loaded ${timeOf(status.at)}`
+  return `${overlay.label}: loading from NWS…`
+}
+
 // Toggles for the display-only NWS CloudGIS overlays on the map. State lives in
-// AssetMap; this component only renders the controls, the per-overlay load status and
-// the "not stored or validated" note.
-export default function NwsOverlayToggles({ active = {}, errors = {}, loadedAt = {}, onToggle }) {
+// AssetMap (from the map's tile events); this component only renders the controls, the
+// per-overlay load status and the "not stored or validated" note.
+export default function NwsOverlayToggles({ active = {}, status = {}, onToggle }) {
   return (
     <div className="mt-1.5" data-testid="nws-overlay-toggles">
       <div className="mb-1 text-[10px] uppercase tracking-wide text-slate-500">NWS live overlays · display only</div>
@@ -26,9 +34,9 @@ export default function NwsOverlayToggles({ active = {}, errors = {}, loadedAt =
       </div>
       {NWS_CLOUDGIS_OVERLAYS.filter((o) => active[o.id]).map((overlay) => (
         <div key={overlay.id} aria-live="polite" className="mt-1 text-[10px] leading-relaxed">
-          {errors[overlay.id]
-            ? <span className="text-red-300">{overlay.label}: unavailable from NWS ({errors[overlay.id]})</span>
-            : <span className="text-slate-500">{overlay.label}: live{loadedAt[overlay.id] ? ` · requested ${new Date(loadedAt[overlay.id]).toLocaleTimeString()}` : ''}</span>}
+          <span className={status[overlay.id]?.state === 'error' ? 'text-red-300' : 'text-slate-500'}>
+            {statusText(overlay, status[overlay.id])}
+          </span>
         </div>
       ))}
       {NWS_CLOUDGIS_OVERLAYS.some((o) => active[o.id]) && (
