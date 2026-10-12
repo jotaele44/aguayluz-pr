@@ -1695,6 +1695,38 @@
           "dashboard/tests/gui-parity.spec.mjs"
         ]
       }
+    },
+    {
+      "id": "nws-cloudgis-map-overlays",
+      "classification": "client_only",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Display-only NWS radar and watch/warning/advisory overlays on the Map page, loaded by the browser directly from NOAA/NWS CloudGIS (mapservices.weather.noaa.gov). Off by default; the page states they are not stored or validated, shows per-overlay request time and failures, and re-requests tiles every 5 minutes while shown. No backend binding: warnings AguaYLuz ingests arrive through scripts/ingest_nws_alerts.py.",
+      "frontend": {
+        "routes": [
+          "/map"
+        ],
+        "e2e_routes": [
+          "/map"
+        ],
+        "components": [
+          "dashboard/src/components/NwsOverlayToggles.jsx",
+          "dashboard/src/lib/nws-cloudgis-overlays.js",
+          "dashboard/src/components/AssetMap.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "unit": [
+          "dashboard/src/components/NwsOverlayToggles.test.jsx"
+        ],
+        "e2e": [
+          "dashboard/tests/nws-hydromet.spec.mjs",
+          "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
     }
   ],
   "exceptions": []

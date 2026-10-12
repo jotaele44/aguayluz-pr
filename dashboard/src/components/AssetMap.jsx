@@ -3,6 +3,11 @@ import * as maplibregl from 'maplibre-gl'
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { Activity, Layers, MapPinned, Satellite } from 'lucide-react'
 import { useSpatialTools, SpatialToolsPanel } from './SpatialToolsPanel'
+import NwsOverlayToggles from './NwsOverlayToggles'
+import {
+  NWS_CLOUDGIS_OVERLAYS, OVERLAY_ATTRIBUTION, OVERLAY_REFRESH_MS,
+  overlayForEvent, overlayLayerId, overlaySourceId, overlayTileUrl,
+} from '@/lib/nws-cloudgis-overlays'
 
 // maplibre-gl 6 is ESM-only and loads its worker from a separate module that
 // it locates through `import.meta.url`, which a bundle does not preserve. Hand
@@ -269,6 +274,12 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
   // barrio outline alone would only add visual noise, not more signal.
   const [layers, setLayers] = useState({ power: true, water: true, wastewater: true, other: true, municipios: true, barrios: false, events: true, review: false, alerts: false, gauges: false, criticalAlertsOnly: false, muniFillMode: 'drought' })
   const [basemap, setBasemap] = useState('osm')
+  // Display-only NWS CloudGIS overlays: off by default so the map makes no request to
+  // the NWS host until someone asks for it.
+  const [nwsOverlays, setNwsOverlays] = useState({})
+  // Per active overlay: { state: 'loading' | 'live' | 'error', at, message } — from the
+  // map's own tile events, so a recovered overlay reads live again and a hung one never does.
+  const [nwsOverlayStatus, setNwsOverlayStatus] = useState({})
   const [showTerrain, setShowTerrain] = useState(false)
   const [showTools, setShowTools] = useState(false)
   const [mapReady, setMapReady] = useState(false)
@@ -419,6 +430,32 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
           'circle-stroke-color': '#e0f2fe',
           'circle-stroke-width': 2.4,
         },
+      })
+
+      // NWS CloudGIS overlays sit above the basemap and below every data layer.
+      for (const overlay of NWS_CLOUDGIS_OVERLAYS) {
+        map.addSource(overlaySourceId(overlay.id), {
+          type: 'raster', tiles: [overlayTileUrl(overlay)], tileSize: 256, attribution: OVERLAY_ATTRIBUTION,
+        })
+        map.addLayer(
+          {
+            id: overlayLayerId(overlay.id), type: 'raster', source: overlaySourceId(overlay.id),
+            layout: { visibility: 'none' }, paint: { 'raster-opacity': overlay.opacity },
+          },
+          'muni-fill',
+        )
+      }
+      map.on('error', (e) => {
+        const overlayId = overlayForEvent(e)
+        if (overlayId) {
+          setNwsOverlayStatus((prev) => ({
+            ...prev, [overlayId]: { state: 'error', at: Date.now(), message: e?.error?.message || 'tile request failed' },
+          }))
+        }
+      })
+      map.on('sourcedata', (e) => {
+        const overlayId = e?.tile ? overlayForEvent(e) : null
+        if (overlayId) setNwsOverlayStatus((prev) => ({ ...prev, [overlayId]: { state: 'live', at: Date.now() } }))
       })
 
       map.addSource('terrain-dem', {
@@ -604,6 +641,34 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
   }, [layers.municipios, layers.barrios, layers.events, layers.alerts, layers.gauges, layers.muniFillMode])
 
   useEffect(() => {
+    if (!mapReady || !mapRef.current) return undefined
+    const map = mapRef.current
+    const refreshTiles = () => {
+      const now = Date.now()
+      for (const overlay of NWS_CLOUDGIS_OVERLAYS) {
+        const on = Boolean(nwsOverlays[overlay.id])
+        map.setLayoutProperty(overlayLayerId(overlay.id), 'visibility', on ? 'visible' : 'none')
+        if (on) map.getSource(overlaySourceId(overlay.id))?.setTiles?.([overlayTileUrl(overlay, now)])
+      }
+    }
+    refreshTiles()
+    if (!Object.values(nwsOverlays).some(Boolean)) return undefined
+    const timer = setInterval(refreshTiles, OVERLAY_REFRESH_MS)
+    return () => clearInterval(timer)
+  }, [nwsOverlays, mapReady])
+
+  const toggleNwsOverlay = (id) => {
+    const on = !nwsOverlays[id]
+    setNwsOverlayStatus((prev) => {
+      const next = { ...prev }
+      if (on) next[id] = { state: 'loading', at: Date.now() }
+      else delete next[id]
+      return next
+    })
+    setNwsOverlays((prev) => ({ ...prev, [id]: on }))
+  }
+
+  useEffect(() => {
     if (!readyRef.current || !mapRef.current) return
     try {
       mapRef.current.setLayoutProperty('osm', 'visibility', basemap === 'osm' ? 'visible' : 'none')
@@ -636,7 +701,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
 
   return (
     <div className="relative h-full w-full">
-      <div ref={containerRef} className="h-full w-full" />
+      <div ref={containerRef} className="h-full w-full" data-map-ready={mapReady ? 'true' : 'false'} />
 
       <div className="absolute left-3 top-3 w-[250px] rounded-xl border border-slate-700/70 bg-slate-950/85 p-3 shadow-xl backdrop-blur">
         <div className="mb-2 flex items-center justify-between">
@@ -682,6 +747,8 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
             </div>
           )}
         </div>
+        {/* After the density status so the retry control keeps its place above the legend. */}
+        <NwsOverlayToggles active={nwsOverlays} status={nwsOverlayStatus} onToggle={toggleNwsOverlay} />
         {layers.alerts && (
           <button
             type="button"

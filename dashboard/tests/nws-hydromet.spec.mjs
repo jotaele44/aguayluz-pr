@@ -57,3 +57,66 @@ test('river gauges layer toggles on the map without runtime errors', async ({ pa
   await expect(page.getByText('River gauges (NWS NWPS)')).toBeVisible()
   expect(failures, failures.join('\n')).toEqual([])
 })
+
+// 1×1 transparent PNG: the CloudGIS host is stubbed so CI never depends on NWS uptime.
+const CLOUDGIS_HOSTNAME = 'mapservices.weather.noaa.gov'
+
+// Exact hostname comparison on the parsed URL (a substring test would also match
+// look-alike hosts).
+function isCloudGisUrl(value) {
+  try {
+    return new URL(value).hostname === CLOUDGIS_HOSTNAME
+  } catch {
+    return false
+  }
+}
+
+const TRANSPARENT_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+  'base64',
+)
+
+test('NWS CloudGIS overlays are opt-in and request tiles only when toggled on', async ({ page }) => {
+  const failures = trackRuntimeFailures(page)
+  const consoleErrors = []
+  page.on('console', (message) => {
+    if (message.type() !== 'error') return
+    const urls = [message.location()?.url, ...(message.text().match(/https?:\/\/[^\s"')]+/g) ?? [])]
+    if (urls.some((url) => url && isCloudGisUrl(url))) consoleErrors.push(message.text())
+  })
+  const requested = []
+  await page.route((url) => url.hostname === CLOUDGIS_HOSTNAME, async (route) => {
+    requested.push(route.request().url())
+    await route.fulfill({
+      status: 200,
+      contentType: 'image/png',
+      headers: { 'access-control-allow-origin': '*' },
+      body: TRANSPARENT_PNG,
+    })
+  })
+
+  await page.goto('/map', { waitUntil: 'domcontentloaded' })
+  const radar = page.getByRole('button', { name: 'NWS radar' })
+  await expect(radar).toBeVisible()
+  await expect(radar).toHaveAttribute('aria-pressed', 'false')
+  await expect(page.getByText(/NWS live overlays · display only/)).toBeVisible()
+  // The overlay sources exist once the map style has loaded; give an off-by-default
+  // source time to misbehave before asserting nothing reached NWS.
+  await expect(page.locator('[data-map-ready="true"]')).toHaveCount(1)
+  await page.waitForTimeout(1500)
+  expect(requested).toEqual([])
+
+  await radar.click()
+  await expect(radar).toHaveAttribute('aria-pressed', 'true')
+  await expect.poll(() => requested.some((url) => url.includes('/radar/radar_base_reflectivity/MapServer/export'))).toBe(true)
+
+  const warnings = page.getByRole('button', { name: 'NWS warnings' })
+  await warnings.click()
+  await expect(warnings).toHaveAttribute('aria-pressed', 'true')
+  await expect.poll(() => requested.some((url) => url.includes('/WWA/watch_warn_adv/MapServer/export'))).toBe(true)
+  await expect(page.getByText(/NWS radar: live · tiles loaded/)).toBeVisible()
+  await expect(page.getByText(/not stored or validated by AguaYLuz/)).toBeVisible()
+
+  expect(consoleErrors, consoleErrors.join('\n')).toEqual([])
+  expect(failures, failures.join('\n')).toEqual([])
+})
