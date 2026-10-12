@@ -47,8 +47,8 @@ export function overlayTileUrl(overlay, now = Date.now()) {
   return `${overlay.tiles}&_t=${bucket}`
 }
 
-// Which overlay (if any) a MapLibre `error` event belongs to.
-export function overlayForError(event) {
+// Which overlay (if any) a MapLibre `error` or `sourcedata` event belongs to.
+export function overlayForEvent(event) {
   const sourceId = event?.sourceId ?? event?.source?.id
   return NWS_CLOUDGIS_OVERLAYS.find((o) => overlaySourceId(o.id) === sourceId)?.id ?? null
 }

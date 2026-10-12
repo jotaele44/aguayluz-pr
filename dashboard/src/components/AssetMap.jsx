@@ -6,7 +6,7 @@ import { useSpatialTools, SpatialToolsPanel } from './SpatialToolsPanel'
 import NwsOverlayToggles from './NwsOverlayToggles'
 import {
   NWS_CLOUDGIS_OVERLAYS, OVERLAY_ATTRIBUTION, OVERLAY_REFRESH_MS,
-  overlayForError, overlayLayerId, overlaySourceId, overlayTileUrl,
+  overlayForEvent, overlayLayerId, overlaySourceId, overlayTileUrl,
 } from '@/lib/nws-cloudgis-overlays'
 
 // maplibre-gl 6 is ESM-only and loads its worker from a separate module that
@@ -306,8 +306,9 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
   // Display-only NWS CloudGIS overlays: off by default so the map makes no request to
   // the NWS host until someone asks for it.
   const [nwsOverlays, setNwsOverlays] = useState({})
-  const [nwsOverlayErrors, setNwsOverlayErrors] = useState({})
-  const [nwsOverlayLoadedAt, setNwsOverlayLoadedAt] = useState({})
+  // Per active overlay: { state: 'loading' | 'live' | 'error', at, message } — from the
+  // map's own tile events, so a recovered overlay reads live again and a hung one never does.
+  const [nwsOverlayStatus, setNwsOverlayStatus] = useState({})
   const [showTerrain, setShowTerrain] = useState(false)
   const [showTools, setShowTools] = useState(false)
   const [mapReady, setMapReady] = useState(false)
@@ -474,8 +475,16 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
         )
       }
       map.on('error', (e) => {
-        const overlayId = overlayForError(e)
-        if (overlayId) setNwsOverlayErrors((prev) => ({ ...prev, [overlayId]: e?.error?.message || 'tile request failed' }))
+        const overlayId = overlayForEvent(e)
+        if (overlayId) {
+          setNwsOverlayStatus((prev) => ({
+            ...prev, [overlayId]: { state: 'error', at: Date.now(), message: e?.error?.message || 'tile request failed' },
+          }))
+        }
+      })
+      map.on('sourcedata', (e) => {
+        const overlayId = e?.tile ? overlayForEvent(e) : null
+        if (overlayId) setNwsOverlayStatus((prev) => ({ ...prev, [overlayId]: { state: 'live', at: Date.now() } }))
       })
 
       map.addSource('terrain-dem', {
@@ -694,9 +703,6 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
         map.setLayoutProperty(overlayLayerId(overlay.id), 'visibility', on ? 'visible' : 'none')
         if (on) map.getSource(overlaySourceId(overlay.id))?.setTiles?.([overlayTileUrl(overlay, now)])
       }
-      setNwsOverlayLoadedAt(Object.fromEntries(
-        NWS_CLOUDGIS_OVERLAYS.filter((o) => nwsOverlays[o.id]).map((o) => [o.id, now]),
-      ))
     }
     refreshTiles()
     if (!Object.values(nwsOverlays).some(Boolean)) return undefined
@@ -705,8 +711,14 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
   }, [nwsOverlays, mapReady])
 
   const toggleNwsOverlay = (id) => {
-    setNwsOverlayErrors((prev) => ({ ...prev, [id]: undefined }))
-    setNwsOverlays((prev) => ({ ...prev, [id]: !prev[id] }))
+    const on = !nwsOverlays[id]
+    setNwsOverlayStatus((prev) => {
+      const next = { ...prev }
+      if (on) next[id] = { state: 'loading', at: Date.now() }
+      else delete next[id]
+      return next
+    })
+    setNwsOverlays((prev) => ({ ...prev, [id]: on }))
   }
 
   useEffect(() => {
@@ -742,7 +754,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
 
   return (
     <div className="relative h-full w-full">
-      <div ref={containerRef} className="h-full w-full" />
+      <div ref={containerRef} className="h-full w-full" data-map-ready={mapReady ? 'true' : 'false'} />
 
       <div className="absolute left-3 top-3 w-[250px] rounded-xl border border-slate-700/70 bg-slate-950/85 p-3 shadow-xl backdrop-blur">
         <div className="mb-2 flex items-center justify-between">
@@ -797,7 +809,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
           )}
         </div>
         {/* After the density status so the retry control keeps its place above the legend. */}
-        <NwsOverlayToggles active={nwsOverlays} errors={nwsOverlayErrors} loadedAt={nwsOverlayLoadedAt} onToggle={toggleNwsOverlay} />
+        <NwsOverlayToggles active={nwsOverlays} status={nwsOverlayStatus} onToggle={toggleNwsOverlay} />
         {layers.alerts && (
           <button
             type="button"
