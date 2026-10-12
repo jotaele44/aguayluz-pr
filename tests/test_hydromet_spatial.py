@@ -77,3 +77,34 @@ def test_far_offshore_point_is_unresolved(index):
 def test_name_key_ignores_accents_and_case():
     assert municipio_key("Mayagüez") == municipio_key("MAYAGUEZ") == "mayaguez"
     assert index is not None
+
+
+def test_raster_cells_fall_back_to_touching_cells_and_never_widen_an_empty_zone():
+    # CONSTRUCTED: a 4×4 grid of 1° cells (x 0-4, y 0-4) and three polygons — one holding
+    # four cell centres, one too small to hold a centre that touches a single cell, and
+    # one off the grid.
+    pytest.importorskip("rasterio")
+    from rasterio.transform import from_origin
+    from shapely.geometry import box, mapping
+
+    from aguayluz.hydromet.spatial import raster_cells_by_municipio
+
+    def feature(name, geoid, geom):
+        return {"type": "Feature", "properties": {"name": name, "geoid": geoid}, "geometry": mapping(geom)}
+
+    synthetic = MunicipioIndex([
+        feature("Grande", "1", box(0.1, 0.1, 1.9, 1.9)),
+        feature("Pequeño", "2", box(2.1, 2.1, 2.3, 2.3)),
+        feature("Lejos", "3", box(10, 10, 11, 11)),
+    ])
+    by_name = {s.municipio: s for s in raster_cells_by_municipio(synthetic, "EPSG:4326", from_origin(0, 4, 1, 1), (4, 4))}
+
+    grande, pequeno, lejos = by_name["Grande"], by_name["Pequeño"], by_name["Lejos"]
+    assert (grande.method, grande.spatial_state, grande.cell_count) == (
+        "raster_cell_centres_in_polygon", SpatialState.FULLY_WITHIN, 4)
+    assert grande.mask[2:4, 0:2].all()  # rows 2-3 = y 0-2, columns 0-1 = x 0-2
+    assert (pequeno.method, pequeno.spatial_state, pequeno.cell_count) == (
+        "raster_cells_touching_polygon", SpatialState.PARTIAL, 1)
+    assert pequeno.mask[1, 2]  # the cell spanning x 2-3, y 2-3
+    assert (lejos.method, lejos.spatial_state, lejos.cell_count) == (
+        "no_raster_cell", SpatialState.NULL_EMPTY, 0)

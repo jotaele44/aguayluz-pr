@@ -160,8 +160,8 @@ def rainfall(tmp_path, monkeypatch):
         (8, "1day", "Aguada", "72003", 0.2, 0.4),
         (9, "last7days", "Aguada", "72003", 2.5, 3.9),
     ]:
-        values = stage_iv_qpe.zone_values(obs_mean=mean, obs_max=peak, normal_mean=0.3,
-                                          cell_count=9, normal_cell_count=9)
+        values = stage_iv_qpe.zone_values(obs_mean=mean, obs_max=peak, cell_count=9,
+                                          obs_mean_paired=mean, normal_mean_paired=0.3, paired_cell_count=9)
         records.append(stage_iv_qpe.normalize(
             values, man.manifestation_id, window=window, geoid=geoid, municipio=town,
             data_time=datetime(2026, 10, day, 12, tzinfo=timezone.utc),

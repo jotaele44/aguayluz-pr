@@ -13,8 +13,8 @@ MAN = "HYDROMET:stage_iv_pr:" + "a" * 32
 
 
 def aguada_values(**over):
-    base = dict(obs_mean=1.0643, obs_max=1.6062, normal_mean=0.2784,
-                cell_count=9, normal_cell_count=9)
+    base = dict(obs_mean=1.0643, obs_max=1.6062, cell_count=9,
+                obs_mean_paired=1.0643, normal_mean_paired=0.2784, paired_cell_count=9)
     base.update(over)
     return adapter.zone_values(**base)
 
@@ -39,10 +39,20 @@ def test_zone_values_derive_departure_and_percent_of_normal():
     assert values["departure_mean_in"] == round(1.0643 - 0.2784, 3)
     assert values["pct_of_normal"] == round(1.0643 / 0.2784 * 100, 1)
     # no normal (ocean-only cells) or no observation → no derived values, never zero
-    assert aguada_values(normal_mean=None)["pct_of_normal"] is None
-    assert aguada_values(normal_mean=0.0)["departure_mean_in"] is None
-    empty = aguada_values(obs_mean=None, obs_max=None, cell_count=0)
+    assert aguada_values(normal_mean_paired=None)["pct_of_normal"] is None
+    assert aguada_values(normal_mean_paired=0.0)["departure_mean_in"] is None
+    empty = aguada_values(obs_mean=None, obs_max=None, cell_count=0, obs_mean_paired=None, paired_cell_count=0)
     assert empty["obs_mean_in"] is None and empty["pct_of_normal"] is None
+
+
+def test_percent_of_normal_compares_only_cells_that_have_a_normal():
+    # CONSTRUCTED: 17 observed cells (6 offshore) averaging 1.2 in, 11 land cells averaging
+    # 1.5 in against a 0.5 in normal. The ratio uses the 11 paired cells only.
+    values = aguada_values(obs_mean=1.2, cell_count=17, obs_mean_paired=1.5,
+                           normal_mean_paired=0.5, paired_cell_count=11)
+    assert values["obs_mean_in"] == 1.2 and values["cell_count"] == 17
+    assert values["pct_of_normal"] == 300.0 and values["departure_mean_in"] == 1.0
+    assert values["paired_cell_count"] == 11
 
 
 def test_normalize_shapes_a_provisional_hydromet_observation():
@@ -66,7 +76,7 @@ def test_normalize_shapes_a_provisional_hydromet_observation():
 
 def test_zone_without_cells_stays_unresolved_and_unbound():
     record = adapter.normalize(
-        aguada_values(obs_mean=None, obs_max=None, cell_count=0, normal_cell_count=0), MAN,
+        aguada_values(obs_mean=None, obs_max=None, cell_count=0, obs_mean_paired=None, paired_cell_count=0), MAN,
         window="1day", geoid="72003", municipio="Aguada", data_time=DATA_TIME,
         source_file="f.tif", method="no_raster_cell",
     )

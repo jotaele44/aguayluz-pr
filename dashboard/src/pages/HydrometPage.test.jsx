@@ -174,7 +174,12 @@ describe('HydrometPage', () => {
     expect(table).toHaveTextContent('severity 2')
     expect(screen.getByRole('link', { name: 'Aguada' })).toHaveAttribute('href', '/municipios/Aguada')
     expect(screen.getByTestId('rainfall-provenance')).toHaveTextContent('1 at a heavy-rain threshold')
-    expect(screen.getByTestId('rainfall-provenance')).toHaveTextContent('SHA-256 8ad7d7b0793ea1e3')
+    expect(screen.getByTestId('rainfall-provenance')).toHaveTextContent(
+      'SHA-256 8ad7d7b0793ea1e3b422b1af26fd163a1a1213c3b754995eaa2d2c46ecd738eb',
+    )
+    expect(screen.getByRole('link', { name: 'nws_precip_1day_20261009_pr.tif' })).toHaveAttribute(
+      'href', RAINFALL.files[0].source_url,
+    )
     expect(screen.getByText(/any cell ≥ 6 in \(severity 3\)/)).toBeInTheDocument()
   })
 
@@ -186,6 +191,15 @@ describe('HydrometPage', () => {
     fireEvent.click(screen.getByRole('button', { name: '7 days' }))
     await waitFor(() => expect(getRainfall).toHaveBeenCalledWith({ window: 'last7days', date: undefined }))
     expect(screen.getByRole('button', { name: '7 days' })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('shows a rainfall request failure with a retry instead of an empty table', async () => {
+    getRainfall.mockRejectedValueOnce(new Error('HTTP 502 from /hydromet/rainfall?window=1day'))
+    renderPage()
+    expect(await screen.findByText(/Rainfall unavailable: HTTP 502/)).toBeInTheDocument()
+    expect(screen.queryByText(/No Stage IV rainfall ingested yet/)).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Retry rainfall' }))
+    expect(await screen.findByRole('table', { name: 'Stage IV rainfall by municipio' })).toBeInTheDocument()
   })
 
   it('explains an empty rainfall plane', async () => {

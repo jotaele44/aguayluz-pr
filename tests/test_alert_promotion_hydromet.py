@@ -156,8 +156,8 @@ GEO_FILE = Path(__file__).resolve().parent.parent / "data" / "geo" / "pr_municip
 
 def rain(municipio="Aguada", geoid="72003", *, mean=1.064, peak=1.606, window="1day",
          method="raster_cell_centres_in_polygon", end=RAIN_END, cells=9):
-    values = stage_iv.zone_values(obs_mean=mean, obs_max=peak, normal_mean=0.28,
-                                  cell_count=cells, normal_cell_count=cells)
+    values = stage_iv.zone_values(obs_mean=mean, obs_max=peak, cell_count=cells,
+                                  obs_mean_paired=mean, normal_mean_paired=0.28, paired_cell_count=cells)
     return stage_iv.normalize(values, RAIN_MAN, window=window, geoid=geoid, municipio=municipio,
                               data_time=end, source_file=f"nws_precip_{window}_{end:%Y%m%d}_pr.tif",
                               method=method)
@@ -208,7 +208,8 @@ def test_heavy_rain_skips_longer_windows_and_unbound_zones_and_reviews_touching_
 
 def test_heavy_rain_reads_only_the_current_revision():
     first = rain(mean=3.6, peak=4.0)
-    values = stage_iv.zone_values(obs_mean=1.1, obs_max=1.7, normal_mean=0.28, cell_count=9, normal_cell_count=9)
+    values = stage_iv.zone_values(obs_mean=1.1, obs_max=1.7, cell_count=9,
+                                  obs_mean_paired=1.1, normal_mean_paired=0.28, paired_cell_count=9)
     reprocessed = stage_iv.normalize(values, RAIN_MAN, window="1day", geoid="72003", municipio="Aguada",
                                      data_time=RAIN_END, source_file="f.tif",
                                      method="raster_cell_centres_in_polygon",

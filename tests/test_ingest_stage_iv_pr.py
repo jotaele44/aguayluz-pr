@@ -30,18 +30,21 @@ sys.modules[_SPEC.name] = ingest  # dataclasses resolve annotations through sys.
 _SPEC.loader.exec_module(ingest)
 
 
-def constructed(dest_dir: Path, *, window="1day", day="20261009", scale=1.0, tag_day=None) -> Path:
-    """CONSTRUCTED variant of the real grid: observation band × ``scale``, new name/tag."""
+def constructed(dest_dir: Path, *, window="1day", day="20261009", scale=1.0, tag_day=None,
+                tag_time="12:00:00", bands_kept=4) -> Path:
+    """CONSTRUCTED variant of the real grid: observation band × ``scale``, new name/tag,
+    optionally only the first ``bands_kept`` bands."""
     dest_dir.mkdir(parents=True, exist_ok=True)
     out = dest_dir / f"nws_precip_{window}_{day}_pr.tif"
     with rasterio.open(REAL) as src:
         profile = src.profile
-        bands = [src.read(i) for i in range(1, src.count + 1)]
+        bands = [src.read(i) for i in range(1, src.count + 1)][:bands_kept]
         tags = src.tags()
-        band_tags = [src.tags(i) for i in range(1, src.count + 1)]
+        band_tags = [src.tags(i) for i in range(1, src.count + 1)][:bands_kept]
+    profile["count"] = len(bands)
     valid = bands[0] > -1e30
     bands[0][valid] = bands[0][valid] * scale
-    tags["data_time"] = f"{tag_day or day}T12:00:00"
+    tags["data_time"] = f"{tag_day or day}T{tag_time}"
     with rasterio.open(out, "w", **profile) as dst:
         for i, band in enumerate(bands, start=1):
             dst.write(band, i)
@@ -134,6 +137,39 @@ def test_tag_that_disagrees_with_the_file_date_fails_closed(tmp_path):
     assert stage_iv_records(data) == []
 
 
+def test_window_not_closing_at_12z_fails_closed(tmp_path):
+    data = tmp_path / "data"
+    midnight = constructed(tmp_path / "midnight", tag_time="00:00:00")  # CONSTRUCTED
+    assert run(data, midnight.parent) == 1
+    assert "12:00 UTC" in store.load_receipts(data)["sources"]["stage_iv_pr"]["last_error"]
+
+
+def test_grid_without_the_four_named_bands_fails_closed(tmp_path):
+    data = tmp_path / "data"
+    two_band = constructed(tmp_path / "two", bands_kept=2)  # CONSTRUCTED: schema change upstream
+    assert run(data, two_band.parent) == 1
+    assert "expected 4 bands" in store.load_receipts(data)["sources"]["stage_iv_pr"]["last_error"]
+
+
+def test_percent_of_normal_uses_cells_with_a_prism_normal(tmp_path):
+    data = tmp_path / "data"
+    assert run(data, real_dir(tmp_path)) == 0
+    values = {r.normalized_values["municipio"]: r.normalized_values for r in stage_iv_records(data)}
+    # Offshore cells inside a coastal polygon have an observation but no (land) normal.
+    assert any(v["paired_cell_count"] < v["cell_count"] for v in values.values())
+    for v in values.values():
+        assert 0 < v["paired_cell_count"] <= v["cell_count"]
+        expected = round(v["obs_mean_paired_in"] / v["normal_mean_in"] * 100, 1)
+        # inputs are stored at 1e-3 in, so small normals move the recomputed ratio a little
+        assert v["pct_of_normal"] == pytest.approx(expected, rel=0.03, abs=0.5)
+
+
+def test_one_day_history_outlives_the_closed_heavy_rain_alert():
+    from aguayluz.alert_promotion.hydromet import CLOSED_RETENTION, HEAVY_RAIN_FOLLOW_UP
+
+    assert ingest.ONE_DAY_RETENTION >= HEAVY_RAIN_FOLLOW_UP + CLOSED_RETENTION
+
+
 def test_no_file_writes_a_fail_receipt(tmp_path):
     data, empty = tmp_path / "data", tmp_path / "empty"
     empty.mkdir()
@@ -141,7 +177,7 @@ def test_no_file_writes_a_fail_receipt(tmp_path):
     assert store.load_receipts(data)["sources"]["stage_iv_pr"]["last_status"] == "FAIL"
 
 
-def test_retention_keeps_30_days_of_1day_and_only_the_latest_longer_window(tmp_path):
+def test_retention_keeps_33_days_of_1day_and_only_the_latest_longer_window(tmp_path):
     data = tmp_path / "data"
     assert run(data, real_dir(tmp_path)) == 0
     src = tmp_path / "later"

@@ -70,24 +70,31 @@ def zone_values(
     *,
     obs_mean: float | None,
     obs_max: float | None,
-    normal_mean: float | None,
     cell_count: int,
-    normal_cell_count: int,
+    obs_mean_paired: float | None,
+    normal_mean_paired: float | None,
+    paired_cell_count: int,
 ) -> dict[str, Any]:
-    """Normalized rainfall values for one municipio (inches; percent of normal)."""
+    """Normalized rainfall values for one municipio (inches; percent of normal).
+
+    ``obs_*`` and ``cell_count`` cover every cell with a valid observation. The normal,
+    departure and percent of normal use only the *paired* cells — valid observation and
+    a PRISM normal (land) — so the two means always describe the same cells.
+    """
     pct = None
     departure = None
-    if obs_mean is not None and normal_mean:
-        pct = obs_mean / normal_mean * 100.0
-        departure = obs_mean - normal_mean
+    if obs_mean_paired is not None and normal_mean_paired:
+        pct = obs_mean_paired / normal_mean_paired * 100.0
+        departure = obs_mean_paired - normal_mean_paired
     return {
         "obs_mean_in": _round(obs_mean),
         "obs_max_in": _round(obs_max),
-        "normal_mean_in": _round(normal_mean),
+        "cell_count": int(cell_count),
+        "obs_mean_paired_in": _round(obs_mean_paired),
+        "normal_mean_in": _round(normal_mean_paired),
         "departure_mean_in": _round(departure),
         "pct_of_normal": _round(pct, 1),
-        "cell_count": int(cell_count),
-        "normal_cell_count": int(normal_cell_count),
+        "paired_cell_count": int(paired_cell_count),
     }
 
 

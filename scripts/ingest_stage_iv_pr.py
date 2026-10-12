@@ -19,9 +19,12 @@ Per run:
    ``--backfill-days`` days. Bytes are hashed before they are opened.
 2. Summarise each window per municipio over the HRAP cells whose centres fall inside the
    Census polygon (aguayluz.hydromet.spatial.raster_cells_by_municipio).
-3. Arithmetic per file: 78 municipio zones = RETAINED (valid cells) + UNRESOLVED.
+3. Arithmetic per file: 78 municipio zones = RETAINED (valid cells) + UNRESOLVED. A file
+   with other than the four named bands, or whose ``data_time`` is not 12:00 UTC on its
+   file date, fails closed.
 4. One record per municipio × window × day; a re-processed file supersedes it.
-   1-day history is kept 30 days, 7- and 30-day windows only for the latest day.
+   1-day history is kept 33 days (heavy-rain follow-up + closed-alert reporting), 7- and
+   30-day windows only for the latest day.
 
 Usage:
     python scripts/ingest_stage_iv_pr.py                     # live
@@ -34,7 +37,7 @@ import argparse
 import json
 import sys
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -59,7 +62,13 @@ from aguayluz.hydromet import USER_AGENT, store  # noqa: E402
 
 SOURCE_ID = "stage_iv_pr"
 SOURCE_SYSTEM = "NWPS Stage IV downloads (PR GeoTIFF)"
-ONE_DAY_RETENTION = timedelta(days=30)
+#: 1-day history outlives the heavy-rain alert it can raise: 72 h of follow-up plus the
+#: 30 days a closed alert keeps being reported (alert_promotion.hydromet).
+ONE_DAY_RETENTION = timedelta(days=33)
+#: Band order and GDAL ``name`` tags of every NWPS Stage IV PR file.
+BAND_NAMES = ("observation", "normal", "departure_from_normal", "percent_of_normal")
+#: Every Stage IV window closes at 12Z on its file date.
+WINDOW_CLOSE = time(12, 0, tzinfo=timezone.utc)
 
 
 @dataclass
@@ -97,13 +106,17 @@ def file_name(window: str, day: date) -> str:
 
 def summarise_grid(payload: bytes, selections_cache: dict[Any, Any], index: Any) -> dict[str, Any]:
     """Open one GeoTIFF from bytes and summarise it per municipio."""
+    from numpy import ma
     from rasterio.io import MemoryFile
 
     from aguayluz.hydromet.spatial import raster_cells_by_municipio
 
     with MemoryFile(payload) as memfile, memfile.open() as src:
-        if src.count < 2:
-            raise ValueError(f"expected observation + normal bands, found {src.count}")
+        if src.count != len(BAND_NAMES):
+            raise ValueError(f"expected {len(BAND_NAMES)} bands {BAND_NAMES}, found {src.count}")
+        names = tuple(src.tags(i + 1).get("name") for i in range(src.count))
+        if any(name and name != expected for name, expected in zip(names, BAND_NAMES, strict=True)):
+            raise ValueError(f"band names {names} do not match {BAND_NAMES}")
         data_time = adapter.parse_data_time(src.tags().get("data_time"))
         key = (src.crs.to_wkt(), tuple(src.transform), src.height, src.width)
         if key not in selections_cache:
@@ -113,14 +126,19 @@ def summarise_grid(payload: bytes, selections_cache: dict[Any, Any], index: Any)
         normal = src.read(2, masked=True)
     zones = []
     for sel in selections_cache[key]:
-        obs_cells = obs[sel.mask].compressed() if sel.cell_count else obs[:0].compressed()
-        normal_cells = normal[sel.mask].compressed() if sel.cell_count else normal[:0].compressed()
+        obs_sel, normal_sel = obs[sel.mask], normal[sel.mask]
+        obs_cells = obs_sel.compressed()
+        # PRISM normals cover land only: normal, departure and percent of normal compare
+        # the cells that carry both values, never ocean cells against a land normal.
+        paired = ~(ma.getmaskarray(obs_sel) | ma.getmaskarray(normal_sel))
+        obs_paired, normal_paired = obs_sel.data[paired], normal_sel.data[paired]
         values = adapter.zone_values(
             obs_mean=float(obs_cells.mean()) if obs_cells.size else None,
             obs_max=float(obs_cells.max()) if obs_cells.size else None,
-            normal_mean=float(normal_cells.mean()) if normal_cells.size else None,
             cell_count=int(obs_cells.size),
-            normal_cell_count=int(normal_cells.size),
+            obs_mean_paired=float(obs_paired.mean()) if obs_paired.size else None,
+            normal_mean_paired=float(normal_paired.mean()) if normal_paired.size else None,
+            paired_cell_count=int(obs_paired.size),
         )
         zones.append({"selection": sel, "values": values})
     return {"data_time": data_time, "zones": zones}
@@ -151,10 +169,10 @@ def build_run(
         )
         summary = summarise_grid(grid.payload, cache, index)
         data_time = summary["data_time"]
-        if data_time is None or data_time.date() != grid.data_date:
+        if data_time is None or data_time.date() != grid.data_date or data_time.timetz() != WINDOW_CLOSE:
             raise ValueError(
                 f"{file_name(grid.window, grid.data_date)}: data_time tag {data_time} does not "
-                f"match the file date"
+                f"close the window at 12:00 UTC on the file date"
             )
         man = man.model_copy(update={"record_count": len(summary["zones"])})
         result.manifestations.append(man)
@@ -210,7 +228,7 @@ def build_run(
 
 
 def retention_policy(records: list[HazardRecord]):
-    """1-day kept 30 days behind the newest 1-day; longer windows only at their newest day."""
+    """1-day kept ONE_DAY_RETENTION behind the newest 1-day; longer windows only at their newest day."""
     newest: dict[str, date] = {}
     for record in records:
         window = record.normalized_values.get("window")

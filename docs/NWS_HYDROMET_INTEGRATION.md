@@ -94,11 +94,16 @@ file (looking back 4 days), fetches its 7- and 30-day files, and back-fills miss
 files for the 3 days before it.
 
 **Pipeline.** File bytes are hashed (and kept under `data/hydromet_snapshots/stage_iv_pr/`,
-gitignored) before they are opened. Each file is summarised per municipio: mean and
-maximum observed rainfall, mean PRISM normal, departure, percent of normal and cell count.
+gitignored) before they are opened. A file must carry exactly the four named bands and a
+`data_time` of 12:00 UTC on its file date, or the run fails closed. Each file is
+summarised per municipio: mean and maximum observed rainfall and cell count over every
+cell with an observation; mean PRISM normal, departure and percent of normal over the
+cells that also carry a normal (PRISM covers land only, so offshore cells inside a coastal
+polygon never skew the comparison).
 Arithmetic per file is 78 municipio zones = RETAINED (valid cells) + UNRESOLVED. One
 record per municipio × window × data day; a re-processed file supersedes the earlier
-record for the same event. 1-day history is kept 30 days; 7- and 30-day windows keep only
+record for the same event. 1-day history is kept 33 days (the 72 h heavy-rain follow-up plus
+30 days of closed-alert reporting); 7- and 30-day windows keep only
 the newest day.
 
 **Bindings and evidence.**
@@ -151,5 +156,5 @@ backend, no ingestion, no alerts.
 - Stage IV arrives after the 12Z day closes and is provisional; it reports rainfall that
   fell, not impact. HRAP cells are 4.76 km, so a municipio mean smooths convective peaks
   (the wettest-cell value is kept for that reason). PRISM normals cover land cells only.
-- At 30 days of 1-day history the Stage IV rows add about 5 MB to the committed hydromet
+- At 33 days of 1-day history the Stage IV rows add about 5 MB to the committed hydromet
   files; rows are written without null fields to keep that down.

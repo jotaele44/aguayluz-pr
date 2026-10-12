@@ -23,7 +23,7 @@ export default function MapPage() {
   // NWS NWPS river/reservoir gauges from the hydromet plane (off by default on the map).
   const { data: gaugesGeo } = useRiverGaugesGeojson()
   // Stage IV 1-day rainfall per municipio (geoid-keyed) for the "Rainfall" fill.
-  const { data: rainfall } = useRainfall({ window: '1day' })
+  const { data: rainfall, error: rainfallError } = useRainfall({ window: '1day' })
   const { data: coverage } = useCoverage()
   // drought_category's `site_no` is the municipio's FIPS, which is also
   // pr_municipios.geojson's `geoid` (scripts/ingest_drought_usdm.py) — the one series
@@ -79,6 +79,7 @@ export default function MapPage() {
           droughtByGeoid={droughtByGeoid}
           rainByGeoid={rainByGeoid}
           rainfallDate={rainfall?.data_date}
+          rainfallError={rainfallError ? String(rainfallError.message ?? rainfallError) : null}
           eventDensityByGeoid={eventDensityByGeoid}
           eventDensityState={{
             data: eventDensity,

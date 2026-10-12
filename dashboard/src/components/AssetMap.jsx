@@ -282,7 +282,7 @@ function ControlButton({ active, children, onClick, tone }) {
   )
 }
 
-export default function AssetMap({ assets, assetRows = [], municipios, barrios, events = [], alerts, gauges, droughtByGeoid, rainByGeoid, rainfallDate, eventDensityByGeoid, eventDensityState, selectedAssetId, selectedMunicipio, onSelect, onMunicipioSelect, onAlertSelect, flyTo }) {
+export default function AssetMap({ assets, assetRows = [], municipios, barrios, events = [], alerts, gauges, droughtByGeoid, rainByGeoid, rainfallDate, rainfallError, eventDensityByGeoid, eventDensityState, selectedAssetId, selectedMunicipio, onSelect, onMunicipioSelect, onAlertSelect, flyTo }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const readyRef = useRef(false)
@@ -784,9 +784,11 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
           </div>
           {layers.muniFillMode === 'rainfall' && (
             <div aria-live="polite" className="mt-1.5 rounded border border-slate-800 bg-slate-950/60 p-1.5 text-[10px] leading-relaxed text-slate-500">
-              {rainfallDate && Object.keys(rainByGeoid || {}).length > 0
-                ? <span>NWS Stage IV 1-day municipio mean, 12Z → <span className="text-slate-300">{rainfallDate} 12Z</span> · {Object.keys(rainByGeoid).length} municipios</span>
-                : <span>No Stage IV rainfall ingested yet; refresh it from the NWS Hydromet page.</span>}
+              {rainfallError
+                ? <span className="text-red-300">Rainfall unavailable ({rainfallError}); no fill is shown.</span>
+                : rainfallDate && Object.keys(rainByGeoid || {}).length > 0
+                  ? <span>NWS Stage IV 1-day municipio mean, 12Z → <span className="text-slate-300">{rainfallDate} 12Z</span> · {Object.keys(rainByGeoid).length} municipios</span>
+                  : <span>No Stage IV rainfall ingested yet; refresh it from the NWS Hydromet page.</span>}
             </div>
           )}
           {layers.muniFillMode === 'event_density' && (

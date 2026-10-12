@@ -237,7 +237,8 @@ function RainfallPanel({ up }) {
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-2xl text-xs text-slate-500">
           NWS Stage IV radar + gauge analysis, 12Z to 12Z, summarised over the 4.76 km HRAP cells whose centres fall
-          inside each municipio. Published after the day closes: use it for follow-up, not warning.
+          inside each municipio. Normal and % of normal compare only the cells that carry a PRISM normal (land).
+          Published after the day closes: use it for follow-up, not warning.
           {thresholds && ` Heavy rain: municipio mean ≥ ${thresholds.mean_in} in (severity 2) or any cell ≥ ${thresholds.cell_max_in} in (severity 3), 1-day window only.`}
         </p>
         <div className="flex flex-wrap items-center gap-2">
@@ -273,14 +274,25 @@ function RainfallPanel({ up }) {
           {rows.length} municipios · {rainWindow === '1day' ? `${heavy} at a heavy-rain threshold` : 'heavy-rain flags apply to the 1-day window'}
           {(rainfall.files ?? []).map((f) => (
             <div key={f.manifestation_id} className="mt-1 break-all font-mono">
-              {f.source_record_id} · SHA-256 {f.byte_sha256.slice(0, 16)}… · retrieved {fmtDate(f.retrieved_at)}
+              {String(f.source_url || '').startsWith('https://')
+                ? <a className="text-sky-300 hover:underline" href={f.source_url} target="_blank" rel="noopener noreferrer">{f.source_record_id}</a>
+                : f.source_record_id}
+              {' · SHA-256 '}{f.byte_sha256}{' · retrieved '}{fmtDate(f.retrieved_at)}
             </div>
           ))}
         </div>
       )}
       <PanelState
         isLoading={rainfallQuery.isLoading}
-        isError={!up && !rows.length}
+        isError={rainfallQuery.isError || (!up && !rows.length)}
+        errorText={rainfallQuery.isError ? (
+          <div className="space-y-1">
+            <div>Rainfall unavailable: {String(rainfallQuery.error?.message ?? rainfallQuery.error)}</div>
+            <Button size="sm" variant="outline" onClick={() => rainfallQuery.refetch()} className="h-7 border-slate-700 bg-slate-950 text-xs text-slate-300">
+              Retry rainfall
+            </Button>
+          </div>
+        ) : undefined}
         isEmpty={!rows.length}
         emptyText="No Stage IV rainfall ingested yet. Use Refresh now on the Stage IV source above."
       >
