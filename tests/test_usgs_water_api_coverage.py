@@ -218,6 +218,47 @@ def test_rtfi_only_creates_declared_nwis_edges():
     assert edges[0]["from_id"] == "USGS_50059000"
 
 
+def test_rtfi_preserves_current_api_coordinates_and_flood_fields():
+    module = load_script("ingest_usgs_rtfi.py")
+    document = [
+        {
+            "id": 7,
+            "site_name": "USGS Example Gage",
+            "rp_name": "Bridge deck",
+            "description": "Surveyed bridge reference point",
+            "state_id": 72,
+            "county_id": 1,
+            "latitude": 18.1234,
+            "longitude": -66.4321,
+            "nwis_id": "USGS-50059000",
+            "nws_id": "EXMPL",
+            "rp_elevation": 12.5,
+            "unit": "ft",
+            "gage_height": 10.25,
+            "is_flooding": False,
+            "active": True,
+            "plot_param": "00065",
+            "plot_series_id": "series-1",
+        }
+    ]
+    locations, _ = module.parse(
+        document,
+        source_ref="https://api.waterdata.usgs.gov/rtfi-api/referencepoints/state/72",
+    )
+    row = locations[0]
+    assert row["name"] == "Bridge deck"
+    assert row["site_name"] == "USGS Example Gage"
+    assert row["lat"] == 18.1234
+    assert row["lon"] == -66.4321
+    assert row["elevation"] == 12.5
+    assert row["elevation_unit"] == "ft"
+    assert row["gage_height"] == 10.25
+    assert row["is_flooding"] is False
+    assert row["plot_param"] == "00065"
+    assert row["plot_series_id"] == "series-1"
+    assert row["source_ref"].endswith("/state/72")
+
+
 def test_nims_image_listing_performs_no_visual_inference():
     module = load_script("ingest_usgs_nims.py")
     camera = {
