@@ -43,6 +43,7 @@ job and in `pyproject.toml`, not hidden.
 | Tests | `pytest -q` |
 | Coverage | `pytest -q --cov` — must stay at or above the `fail_under` floor in `pyproject.toml` |
 | Lockfile | `uv lock --check` |
+| Docs sync | `python3 tools/check_docs_sync.py --base origin/main` |
 | Template drift | Run `python3 tools/render_federation_templates.py --repo aguayluz-pr --repo-root /path/to/aguayluz-pr --check` from a local Hub checkout. |
 
 ### Coverage is a ratchet
@@ -51,12 +52,36 @@ job and in `pyproject.toml`, not hidden.
 margin for variation across the CI Python matrix. Raise it as coverage improves.
 **Never lower it to make a build pass** — that defeats the point of the gate.
 
+### Documentation stays true
+
+A document that describes this repo must not contradict it. If your change makes one
+untrue, update that document in the same change. This is enforced: the `docs-sync` CI
+job, the `docs-sync` pre-commit hook and a Claude Code Stop hook all run
+`tools/check_docs_sync.py`, which checks three things.
+
+1. **Co-change.** `.federation/docs-sync.json` declares which docs cover which paths.
+   Changing a covered path without touching its doc fails, unless a commit message or
+   the PR description carries `Docs-Impact: none - <reason>` (say why no doc needs to
+   change; ten characters minimum, and reviewers will read it).
+2. **References.** A change may not leave a doc pointing at a path that no longer
+   exists. Only references *your change* broke count; older ones are not yours to fix
+   here. A deliberate reference (a generated file, say) goes in `ignore_refs`, or is
+   waived for that one doc with `Docs-Impact: <doc> - <reason>`.
+3. **The manifest itself** must stay valid, and its globs must still match something.
+
+Snapshots (dated audits, receipts, ADRs, changelogs) describe a moment rather than the
+repo, so they are listed under `exempt_docs` and never forced to change. Setting
+`"mode": "report"` in the manifest prints the same findings without failing the job;
+use it only while triaging a new manifest. A failing job blocks a merge only once
+`docs-sync` is a required status check for `main`, which is a repository setting.
+
 ### Generated files
 
 Some files in this repo are rendered from templates in `thehub-pr` and must not
 be hand-edited: the launchers (`PRII-*.command/.bat/.sh`, `Fix-Gatekeeper.command`),
-the shared schema, `.github/dependabot.yml`, the CodeQL / secret-scan / pip-audit
-workflows, `.pre-commit-config.yaml`, and the governance files including this one.
+the shared schema, `.github/dependabot.yml`, the CodeQL / secret-scan / pip-audit /
+docs-sync workflows, `tools/check_docs_sync.py`, `.claude/settings.json`, `CLAUDE.md`,
+`.pre-commit-config.yaml`, and the governance files including this one.
 Each carries a header saying so. Edit the template in
 `thehub-pr/federation-templates/baseline/`, re-render, and commit both repos —
 `template-drift.yml` fails the build if a rendered file diverges.
