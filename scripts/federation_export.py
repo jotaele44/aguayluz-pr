@@ -152,7 +152,8 @@ _SITE_COORDINATE_PREFIXES = ("USGS_", "USGSWQ_", "USGSFM_", "USGSGW_", "WQP_", "
 # inlined like _CRITICAL_SEVERITY so the exporter runs without the package.
 _GENERATED_ALERT_MARKERS = (
     "_sdwis_", "_resvlow_", "_gwlow_", "_coasthi_", "_seismic_", "_weather_",
-    "_osha_", "_neonpub_", "_nhc_", "_drought_", "_precipshort_",
+    "_osha_", "_neonpub_", "_nhc_", "_drought_", "_precipshort_", "_nwpsflood_",
+    "_qpeheavy_",
 )
 
 
