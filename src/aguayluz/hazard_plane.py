@@ -24,6 +24,7 @@ class HazardFamily(str, Enum):
     HUMAN_INFECTIOUS_DISEASE = "HUMAN_INFECTIOUS_DISEASE"
     WASTEWATER_SURVEILLANCE = "WASTEWATER_SURVEILLANCE"
     ENVIRONMENTAL_HEALTH = "ENVIRONMENTAL_HEALTH"
+    HYDROMETEOROLOGY = "HYDROMETEOROLOGY"
 
 
 class RecordKind(str, Enum):
@@ -75,6 +76,17 @@ class EvidenceClass(str, Enum):
     HISTORICAL_CONTINUITY = "HISTORICAL_CONTINUITY"
     PROXIMITY = "PROXIMITY"
     DISCOVERY_ONLY = "DISCOVERY_ONLY"
+    UNRESOLVED = "UNRESOLVED"
+
+
+class SpatialState(str, Enum):
+    """Final overlay state of a source geometry against a bound entity's geometry."""
+
+    FULLY_WITHIN = "FULLY_WITHIN"
+    PARTIAL = "PARTIAL"
+    TOUCH_ONLY = "TOUCH_ONLY"
+    OUTSIDE = "OUTSIDE"
+    NULL_EMPTY = "NULL_EMPTY"
     UNRESOLVED = "UNRESOLVED"
 
 
@@ -164,6 +176,9 @@ class HazardRecord(BaseModel):
 
     supersedes_record_id: str | None = None
     raw_attributes: dict[str, Any] = Field(default_factory=dict)
+    # Values derived from raw_attributes (units fixed, sentinels removed). Kept apart from
+    # the raw source fields so normalization never overwrites what the source said.
+    normalized_values: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_temporal_and_case_semantics(self) -> HazardRecord:
@@ -196,6 +211,8 @@ class HazardRelationship(BaseModel):
     effective_to: datetime | None = None
     distance_m: float | None = Field(default=None, ge=0)
     method: str | None = None
+    spatial_state: SpatialState | None = None
+    overlap_fraction: float | None = Field(default=None, ge=0, le=1)
     effect_size: float | None = None
     confidence_interval: str | None = None
     p_value: float | None = Field(default=None, ge=0, le=1)

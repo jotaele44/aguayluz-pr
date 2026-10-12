@@ -60,6 +60,28 @@ const BASE_STYLE = {
 }
 
 const EMPTY = { type: 'FeatureCollection', features: [] }
+
+// NWS flood category colours for NWPS river/reservoir gauges (aligned with the
+// NWS Hydromet page badges). Categories without a published threshold stay grey.
+const GAUGE_CATEGORY_COLOR = [
+  'match', ['get', 'flood_category'],
+  'major', '#d946ef',
+  'moderate', '#ef4444',
+  'minor', '#f97316',
+  'action', '#facc15',
+  'no_flooding', '#22c55e',
+  'low_threshold', '#38bdf8',
+  '#64748b',
+]
+const GAUGE_LEGEND = [
+  { label: 'Major flood', color: '#d946ef' },
+  { label: 'Moderate flood', color: '#ef4444' },
+  { label: 'Minor flood', color: '#f97316' },
+  { label: 'Action stage', color: '#facc15' },
+  { label: 'Below flood stage', color: '#22c55e' },
+  { label: 'Low water', color: '#38bdf8' },
+  { label: 'No thresholds / stale', color: '#64748b' },
+]
 const PR_CENTER = [-66.4, 18.22]
 const TYPE_HEX = {
   power: '#f59e0b',
@@ -227,7 +249,7 @@ function ControlButton({ active, children, onClick, tone }) {
   )
 }
 
-export default function AssetMap({ assets, assetRows = [], municipios, barrios, events = [], alerts, droughtByGeoid, eventDensityByGeoid, eventDensityState, selectedAssetId, selectedMunicipio, onSelect, onMunicipioSelect, onAlertSelect, flyTo }) {
+export default function AssetMap({ assets, assetRows = [], municipios, barrios, events = [], alerts, gauges, droughtByGeoid, eventDensityByGeoid, eventDensityState, selectedAssetId, selectedMunicipio, onSelect, onMunicipioSelect, onAlertSelect, flyTo }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const readyRef = useRef(false)
@@ -245,7 +267,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
   // pre-existing default). Barrios (sub-municipal boundaries) start off: event-density
   // data is only aggregated at municipio granularity today (see MapPage.jsx), so a
   // barrio outline alone would only add visual noise, not more signal.
-  const [layers, setLayers] = useState({ power: true, water: true, wastewater: true, other: true, municipios: true, barrios: false, events: true, review: false, alerts: false, criticalAlertsOnly: false, muniFillMode: 'drought' })
+  const [layers, setLayers] = useState({ power: true, water: true, wastewater: true, other: true, municipios: true, barrios: false, events: true, review: false, alerts: false, gauges: false, criticalAlertsOnly: false, muniFillMode: 'drought' })
   const [basemap, setBasemap] = useState('osm')
   const [showTerrain, setShowTerrain] = useState(false)
   const [showTools, setShowTools] = useState(false)
@@ -314,6 +336,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
       map.addSource('selected-asset', { type: 'geojson', data: selectedAsset })
       map.addSource('service-events', { type: 'geojson', data: eventGeo })
       map.addSource('alert-events', { type: 'geojson', data: alertGeo })
+      map.addSource('river-gauges', { type: 'geojson', data: gauges || EMPTY })
 
       map.addLayer({
         id: 'muni-fill', type: 'fill', source: 'municipios',
@@ -376,6 +399,18 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
           'circle-stroke-width': ['case', ['get', 'is_critical'], 2.2, 1.2],
         },
       })
+      // NWPS gauges: filled by NWS flood category; a thick ring marks a gauge in flood.
+      map.addLayer({
+        id: 'gauges-dot', type: 'circle', source: 'river-gauges',
+        layout: { visibility: 'none' },
+        paint: {
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 7, 4, 10, 6, 13, 9],
+          'circle-color': GAUGE_CATEGORY_COLOR,
+          'circle-opacity': ['case', ['get', 'observation_stale'], 0.35, 0.9],
+          'circle-stroke-color': ['case', ['get', 'flooding'], '#fef3c7', '#020617'],
+          'circle-stroke-width': ['case', ['get', 'flooding'], 2.4, 1],
+        },
+      })
       map.addLayer({
         id: 'selected-ring', type: 'circle', source: 'selected-asset',
         paint: {
@@ -423,6 +458,22 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
       map.on('mouseleave', 'alerts-dot', () => {
         map.getCanvas().style.cursor = ''
         popup.remove()
+      })
+      map.on('mouseenter', 'gauges-dot', (e) => {
+        map.getCanvas().style.cursor = 'pointer'
+        const p = e.features[0]?.properties || {}
+        const stage = p.stage == null || p.stage === 'null' ? '—' : `${p.stage} ${p.stage_unit || ''}`
+        popup.setLngLat(e.features[0].geometry.coordinates)
+          .setHTML(`<div style="font:12px/1.5 system-ui,sans-serif;color:#e2e8f0;background:#0f172a;padding:6px 8px;border-radius:6px;max-width:230px"><strong>${esc(p.name || p.lid || 'Gauge')}</strong><br/><span style="color:#94a3b8;font-size:11px">NWPS ${esc(p.lid || '')} · ${esc(String(p.flood_category || 'unknown').replace(/_/g, ' '))}<br/>stage ${esc(stage)} · ${esc(p.valid_time || 'no observation')}${p.observation_stale === true || p.observation_stale === 'true' ? ' (stale)' : ''}</span></div>`)
+          .addTo(map)
+      })
+      map.on('mouseleave', 'gauges-dot', () => {
+        map.getCanvas().style.cursor = ''
+        popup.remove()
+      })
+      map.on('click', 'gauges-dot', (e) => {
+        const p = e.features[0]?.properties || {}
+        if (!spatialToolActiveRef.current && p.asset_id && p.asset_id !== 'null') onSelectRef.current?.({ asset_id: p.asset_id })
       })
       map.on('click', 'alerts-dot', (e) => {
         if (!spatialToolActiveRef.current) onAlertSelectRef.current?.(e.features[0].properties)
@@ -532,11 +583,17 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
 
   useEffect(() => {
     if (!readyRef.current || !mapRef.current) return
+    mapRef.current.getSource('river-gauges')?.setData(gauges || EMPTY)
+  }, [gauges])
+
+  useEffect(() => {
+    if (!readyRef.current || !mapRef.current) return
     const visibility = layers.municipios ? 'visible' : 'none'
     for (const id of ['muni-fill', 'muni-line']) mapRef.current.setLayoutProperty(id, 'visibility', visibility)
     mapRef.current.setLayoutProperty('barrios-line', 'visibility', layers.barrios ? 'visible' : 'none')
     mapRef.current.setLayoutProperty('events-dot', 'visibility', layers.events ? 'visible' : 'none')
     mapRef.current.setLayoutProperty('alerts-dot', 'visibility', layers.alerts ? 'visible' : 'none')
+    mapRef.current.setLayoutProperty('gauges-dot', 'visibility', layers.gauges ? 'visible' : 'none')
     const [fillColor, fillOpacity] = {
       drought: [DROUGHT_FILL_COLOR, DROUGHT_FILL_OPACITY],
       event_density: [EVENT_DENSITY_FILL_COLOR, EVENT_DENSITY_FILL_OPACITY],
@@ -544,7 +601,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
     }[layers.muniFillMode]
     mapRef.current.setPaintProperty('muni-fill', 'fill-color', fillColor)
     mapRef.current.setPaintProperty('muni-fill', 'fill-opacity', fillOpacity)
-  }, [layers.municipios, layers.barrios, layers.events, layers.alerts, layers.muniFillMode])
+  }, [layers.municipios, layers.barrios, layers.events, layers.alerts, layers.gauges, layers.muniFillMode])
 
   useEffect(() => {
     if (!readyRef.current || !mapRef.current) return
@@ -595,6 +652,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
           <ControlButton active={layers.barrios} tone="border-violet-500/40 text-violet-300" onClick={() => setLayers((s) => ({ ...s, barrios: !s.barrios }))}>Barrios</ControlButton>
           <ControlButton active={layers.events} tone="border-red-500/40 text-red-300" onClick={() => setLayers((s) => ({ ...s, events: !s.events }))}>Events (sample) {eventGeo.features.length}</ControlButton>
           <ControlButton active={layers.alerts} tone="border-orange-500/40 text-orange-300" onClick={() => setLayers((s) => ({ ...s, alerts: !s.alerts }))}>Alerts {alertGeo.features.length}</ControlButton>
+          <ControlButton active={layers.gauges} tone="border-yellow-500/40 text-yellow-300" onClick={() => setLayers((s) => ({ ...s, gauges: !s.gauges }))}>River gauges {gauges?.features?.length ?? 0}</ControlButton>
           <ControlButton active={showTerrain} tone="border-teal-500/40 text-teal-300" onClick={() => setShowTerrain((v) => !v)}>Terrain</ControlButton>
           <ControlButton active={showTools} tone="border-pink-500/40 text-pink-300" onClick={() => setShowTools((v) => !v)}>Spatial tools</ControlButton>
         </div>
@@ -685,6 +743,17 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
             ].map(({ sev, label, color }) => (
               <div key={sev} className="mb-0.5 flex items-center gap-1.5 text-[11px] text-slate-300 last:mb-0">
                 <span style={{ borderColor: color }} className="inline-block h-2 w-2 shrink-0 rounded-full border-2" />
+                {label}
+              </div>
+            ))}
+          </>
+        )}
+        {layers.gauges && (
+          <>
+            <div className="mb-1.5 mt-2 border-t border-slate-800 pt-2 text-[10px] uppercase tracking-wide text-slate-500">River gauges (NWS NWPS)</div>
+            {GAUGE_LEGEND.map(({ label, color }) => (
+              <div key={label} className="mb-0.5 flex items-center gap-1.5 text-[11px] text-slate-300 last:mb-0">
+                <span style={{ background: color }} className="inline-block h-2 w-2 shrink-0 rounded-full" />
                 {label}
               </div>
             ))}

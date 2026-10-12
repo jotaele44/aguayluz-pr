@@ -214,3 +214,13 @@ def test_drna_beach_monitoring_is_weekly_optional_and_not_fast():
     for cadence in ("fast", "daily"):
         assert script not in {_script_of(step) for step in refresh.PLANS[cadence]}, cadence
 
+
+
+def test_nwps_gauges_run_every_cadence_optionally_before_alerts():
+    """The NWPS hydromet ingest feeds build_alerts.py (river-flood episodes); an NWPS
+    outage writes a FAIL receipt and must not abort the 15-minute run."""
+    assert refresh.STEP_NWPS_GAUGES[2] is True
+    for cadence, plan in refresh.PLANS.items():
+        scripts = [_script_of(s) for s in plan]
+        assert "scripts/ingest_nwps_gauges.py" in scripts, f"{cadence}: NWPS gauges missing"
+        assert scripts.index("scripts/ingest_nwps_gauges.py") < scripts.index("scripts/build_alerts.py")

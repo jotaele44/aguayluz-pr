@@ -25,6 +25,13 @@ STEP_NHC = (
     ["scripts/ingest_nhc_storms.py"],
     True,
 )
+# NWS NWPS river/reservoir gauges → NWS hydromet plane. Optional: an NWPS outage writes
+# a FAIL receipt (shown on the dashboard's NWS Hydromet page) and the run continues.
+STEP_NWPS_GAUGES = (
+    "NWS NWPS river gauges → hydromet plane",
+    ["scripts/ingest_nwps_gauges.py"],
+    True,
+)
 STEP_USGS_QUAKES = (
     "USGS earthquakes → service_events",
     ["scripts/ingest_usgs_quakes.py"],
@@ -238,6 +245,7 @@ PLANS: dict[str, list[tuple]] = {
     "fast": [
         STEP_NWS,
         STEP_NHC,
+        STEP_NWPS_GAUGES,
         STEP_USGS_QUAKES,
         STEP_USGS_CONTINUOUS,
         STEP_USGS_RTFI,
@@ -257,6 +265,7 @@ PLANS: dict[str, list[tuple]] = {
     "daily": [
         STEP_NWS,
         STEP_NHC,
+        STEP_NWPS_GAUGES,
         STEP_USGS_QUAKES,
         STEP_USGS_LEVELS,
         STEP_USGS_GW,
@@ -274,6 +283,7 @@ PLANS: dict[str, list[tuple]] = {
     "weekly": [
         STEP_NWS,
         STEP_NHC,
+        STEP_NWPS_GAUGES,
         STEP_USGS_QUAKES,
         STEP_USGS_ASSETS,
         STEP_USGS_LEVELS,
@@ -309,6 +319,7 @@ PLANS: dict[str, list[tuple]] = {
     "all": [
         STEP_NWS,
         STEP_NHC,
+        STEP_NWPS_GAUGES,
         STEP_USGS_QUAKES,
         STEP_USGS_ASSETS,
         STEP_USGS_LEVELS,

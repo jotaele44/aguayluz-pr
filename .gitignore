@@ -280,6 +280,16 @@ exports/federation/
 # documentation, never from a response — actually matched. Column names and counts only;
 # no token, no URL, no row values.
 !data/neon_ingest_receipt.json
+# NWS hydromet plane (scripts/ingest_nwps_gauges.py et al.). Committed like
+# service_events: the dashboard, the desktop app and build_alerts.py read these, and the
+# record revision chains are the state each run diffs against. Raw response bytes stay
+# out (data/hydromet_snapshots/ and the accounting log fall under data/*); their SHA-256
+# is what the manifestations file commits.
+!data/hydromet_records.jsonl
+!data/hydromet_relationships.jsonl
+!data/hydromet_manifestations.jsonl
+!data/hydromet_receipts.json
+!data/nwps_gauge_state.jsonl
 # Census-derived PR geodata: centroids (normalization/spatial joins) + boundary polygons (map layer)
 !data/geo/
 !data/geo/pr_municipios.json

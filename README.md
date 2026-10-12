@@ -71,6 +71,13 @@ corpus is real public data, with some sources external or point-in-time.
   `WEATHER_HAZARD` primary source in `config/alert_modules.yaml`; its value over the NWS
   feed is lead time — NWS publishes a watch ~48 h out, NHC publishes position and
   intensity from genesis.
+- NWS **NWPS river and reservoir gauges** (`scripts/ingest_nwps_gauges.py`, keyless) — observed
+  stage and NWS flood category for the 118 Puerto Rico gauges, with action/minor/moderate/major
+  thresholds, bound by `usgsId` to the existing `USGS_*` assets. Flood episodes become
+  `WEATHER_HAZARD` alerts; the dashboard's **NWS Hydromet** page shows freshness, provenance
+  and a refresh control. This is the PR-relevant part of the legacy NWS IDP-GIS catalog; see
+  [`docs/NWS_HYDROMET_INTEGRATION.md`](docs/NWS_HYDROMET_INTEGRATION.md) for what else on that
+  catalog was and was not wired.
 - Operational alert events (`docs/ALERT_SYSTEM.md`) and the 78-municipio /
   901-barrio geo layer under `data/geo/` (U.S. Census cartographic boundaries).
 
