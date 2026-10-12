@@ -104,6 +104,18 @@ test('rainfall municipio fill states its Stage IV day or that none is ingested',
 })
 
 // 1×1 transparent PNG: the CloudGIS host is stubbed so CI never depends on NWS uptime.
+const CLOUDGIS_HOSTNAME = 'mapservices.weather.noaa.gov'
+
+// Exact hostname comparison on the parsed URL (a substring test would also match
+// look-alike hosts).
+function isCloudGisUrl(value) {
+  try {
+    return new URL(value).hostname === CLOUDGIS_HOSTNAME
+  } catch {
+    return false
+  }
+}
+
 const TRANSPARENT_PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
   'base64',
@@ -113,12 +125,12 @@ test('NWS CloudGIS overlays are opt-in and request tiles only when toggled on', 
   const failures = trackRuntimeFailures(page)
   const consoleErrors = []
   page.on('console', (message) => {
-    if (message.type() === 'error' && message.text().includes('mapservices.weather.noaa.gov')) {
-      consoleErrors.push(message.text())
-    }
+    if (message.type() !== 'error') return
+    const urls = [message.location()?.url, ...(message.text().match(/https?:\/\/[^\s"')]+/g) ?? [])]
+    if (urls.some((url) => url && isCloudGisUrl(url))) consoleErrors.push(message.text())
   })
   const requested = []
-  await page.route('**://mapservices.weather.noaa.gov/**', async (route) => {
+  await page.route((url) => url.hostname === CLOUDGIS_HOSTNAME, async (route) => {
     requested.push(route.request().url())
     await route.fulfill({
       status: 200,
