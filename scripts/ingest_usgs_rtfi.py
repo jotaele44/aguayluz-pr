@@ -72,13 +72,33 @@ def parse(
             or props.get("nwis_site")
             or ""
         ).replace("USGS-", "")
+        rp_elevation = props.get("rp_elevation")
+        if rp_elevation is None:
+            rp_elevation = props.get("elevation")
         location = {
             "flood_impact_id": f"USGS_RTFI_{reference_id}",
             "reference_point_id": reference_id,
-            "name": props.get("name") or props.get("description"),
+            "name": (
+                props.get("rp_name")
+                or props.get("site_name")
+                or props.get("name")
+                or props.get("description")
+            ),
+            "site_name": props.get("site_name"),
+            "description": props.get("description"),
             "impact_type": props.get("type") or props.get("referencePointType"),
-            "elevation": props.get("elevation"),
-            "elevation_unit": props.get("elevationUnit") or props.get("elevation_unit"),
+            "elevation": rp_elevation,
+            "elevation_unit": (
+                props.get("unit")
+                or props.get("elevationUnit")
+                or props.get("elevation_unit")
+            ),
+            "gage_height": props.get("gage_height"),
+            "is_flooding": props.get("is_flooding"),
+            "plot_param": props.get("plot_param"),
+            "plot_series_id": props.get("plot_series_id"),
+            "state_id": props.get("state_id"),
+            "county_id": props.get("county_id"),
             "status": props.get("status") or ("active" if props.get("active", True) else "inactive"),
             "nwis_site_no": nwis or None,
             "nws_id": props.get("nws_id") or props.get("nwsId"),
@@ -89,6 +109,8 @@ def parse(
         coordinates = geometry.get("coordinates") if geometry.get("type") == "Point" else None
         if isinstance(coordinates, list) and len(coordinates) >= 2:
             location["lon"], location["lat"] = coordinates[0], coordinates[1]
+        elif isinstance(props.get("longitude"), (int, float)) and isinstance(props.get("latitude"), (int, float)):
+            location["lon"], location["lat"] = props["longitude"], props["latitude"]
         locations.append(location)
         if nwis:
             edges.append(
