@@ -131,10 +131,14 @@ jobs:
       # so forks and unprivileged runs stay quiet. This is the event-driven
       # federation hop that closes the "Hub is not triggered by aguayluz" gap.
       - name: Notify Hub of new export (repository_dispatch)
-        if: steps.commit.outputs.changed == 'true' && env.FEDERATION_DISPATCH_TOKEN != ''
+        if: ${{ always() && steps.commit.outputs.changed == 'true' }}
         env:
           FEDERATION_DISPATCH_TOKEN: ${{ secrets.FEDERATION_DISPATCH_TOKEN }}
         run: |
+          if [ -z "${FEDERATION_DISPATCH_TOKEN:-}" ]; then
+            echo "FEDERATION_DISPATCH_TOKEN is not configured; Hub dispatch is BLOCKED but does not erase the producer commit."
+            exit 0
+          fi
           curl -sSf -X POST \
             -H "Authorization: Bearer $FEDERATION_DISPATCH_TOKEN" \
             -H "Accept: application/vnd.github+json" \
