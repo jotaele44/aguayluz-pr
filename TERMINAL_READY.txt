@@ -1,0 +1,30 @@
+TERMINAL_READY — PR Grid V2 Domain Cell_Profile Materializer
+REPOSITORY: aguayluz-pr
+STATE: RC1_CANDIDATE / EVIDENCE_GATED
+GRID: PR_GRID_GEOGRAPHIC_V2 / 2.0.0-rc1 / EPSG:6566
+DEFAULT LEVEL: L1
+GEOMETRY AUTHORITY: spiderweb-pr
+
+MACOS / LINUX
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install pytest
+python -m pytest -q tests/test_pr_grid_v2_runtime.py tests/test_pr_grid_v2_profiles.py
+python -m compileall federation/spatial/pr_grid_v2_profiles.py
+
+WINDOWS POWERSHELL
+py -3 -m venv .venv
+.venv/Scripts/Activate.ps1
+python -m pip install pytest
+python -m pytest -q tests/test_pr_grid_v2_runtime.py tests/test_pr_grid_v2_profiles.py
+
+MATERIALIZE ONLY VERIFIED SPIDERWEB BINDINGS
+python federation/spatial/materialize_pr_grid_v2_profiles.py --level L1 --records RECORDS.jsonl --bindings SPIDERWEB_BINDINGS.jsonl --binding-receipt SPIDERWEB_RECEIPT.json --out L1.jsonl --receipt-out L1.receipt.json
+
+VERIFY OUTPUT HASH
+python -c "import hashlib,json,pathlib; p=pathlib.Path('L1.jsonl'); r=json.loads(pathlib.Path('L1.receipt.json').read_text()); assert r['Output_SHA256']==hashlib.sha256(p.read_bytes()).hexdigest(); print('PASS')"
+
+Optional --coverage VERIFIED_COVERAGE.json is required for a true
+ZERO_RECORDS classification. With no coverage evidence, missing cell data
+is NO_DATA. Preserve V1 and uncertain records without reinterpretation.
+Never recompute Spiderweb geometry. Never infer entity identity from a cell.
