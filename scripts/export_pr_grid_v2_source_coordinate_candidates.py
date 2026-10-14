@@ -11,8 +11,9 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 REPOSITORY = "aguayluz-pr"
 SOURCE_CRS = "EPSG:4326"
