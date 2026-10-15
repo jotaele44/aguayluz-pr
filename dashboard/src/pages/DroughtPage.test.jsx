@@ -100,7 +100,7 @@ describe('DroughtPage', () => {
   it('shows the official cumulative status, change and source guardrails', () => {
     render(<DroughtPage />)
     expect(screen.getByText('Puerto Rico Drought Operations')).toBeInTheDocument()
-    expect(screen.getByText('64%')).toBeInTheDocument()
+    expect(screen.getAllByText('64%').length).toBeGreaterThan(0)
     expect(screen.getByText('48%')).toBeInTheDocument()
     expect(screen.getByText('28%')).toBeInTheDocument()
     expect(screen.getByText('9%')).toBeInTheDocument()

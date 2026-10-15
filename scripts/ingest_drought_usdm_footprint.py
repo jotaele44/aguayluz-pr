@@ -24,9 +24,10 @@ import csv
 import hashlib
 import io
 import json
+from collections.abc import Iterable
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 import httpx
 
@@ -157,7 +158,7 @@ def _bounds(coords: Any) -> tuple[float, float, float, float] | None:
     points = list(_iter_points(coords))
     if not points:
         return None
-    xs, ys = zip(*points)
+    xs, ys = zip(*points, strict=False)
     return min(xs), min(ys), max(xs), max(ys)
 
 

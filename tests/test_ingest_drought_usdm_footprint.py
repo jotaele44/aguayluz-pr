@@ -26,10 +26,10 @@ def _polygon(minx: float, miny: float, maxx: float, maxy: float):
 
 def test_stats_preserve_cumulative_semantics():
     raw = (
-        "MapDate,State,None,D0,D1,D2,D3,D4,ValidStart,ValidEnd\n"
-        "20261006,Puerto Rico,39,61,43,24,5,0,2026-10-06,2026-10-13\n"
-        "20261013,Puerto Rico,36,64,48,28,9,0,2026-10-13,2026-10-20\n"
-    ).encode()
+        b"MapDate,State,None,D0,D1,D2,D3,D4,ValidStart,ValidEnd\n"
+        b"20261006,Puerto Rico,39,61,43,24,5,0,2026-10-06,2026-10-13\n"
+        b"20261013,Puerto Rico,36,64,48,28,9,0,2026-10-13,2026-10-20\n"
+    )
     rows = ingest.parse_stats(raw)
     assert [row["map_date"] for row in rows] == ["2026-10-06", "2026-10-13"]
     assert rows[-1]["D0"] == 64
@@ -79,9 +79,9 @@ def test_crossing_component_fails_closed_instead_of_clipping():
 
 def test_document_binds_statistics_and_geometry_to_same_map_date():
     stats = (
-        "MapDate,State,None,D0,D1,D2,D3,D4,ValidStart,ValidEnd\n"
-        "20261013,Puerto Rico,36,64,48,28,9,0,2026-10-13,2026-10-20\n"
-    ).encode()
+        b"MapDate,State,None,D0,D1,D2,D3,D4,ValidStart,ValidEnd\n"
+        b"20261013,Puerto Rico,36,64,48,28,9,0,2026-10-13,2026-10-20\n"
+    )
     geo = json.dumps({
         "type": "FeatureCollection",
         "features": [{

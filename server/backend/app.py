@@ -13,9 +13,9 @@ from pydantic import BaseModel, Field
 
 from server.backend import main as legacy
 from server.backend.cave_karst_api import router as cave_karst_router
+from server.backend.drought_ops_api import router as drought_ops_router
 from server.backend.environmental_exposure_api import router as environmental_exposure_router
 from server.backend.hydromet_api import router as hydromet_router
-from server.backend.drought_ops_api import router as drought_ops_router
 from server.backend.monitoring_alert_operations import federation_alert_export, lifecycle_alerts
 from server.backend.monitoring_incident_ledger import (
     ALLOWED_EVENTS,
