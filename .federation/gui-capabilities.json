@@ -1773,7 +1773,8 @@
         ],
         "symbols": [
           "server/backend/drought_ops_api.py:drought_summary",
-          "server/backend/drought_ops_api.py:drought_footprint"
+          "server/backend/drought_ops_api.py:drought_footprint",
+          "server/backend/drought_ops_api.py:drought_summary_document"
         ]
       },
       "analysis": {
@@ -1784,7 +1785,10 @@
           "scripts/ingest_drought_usdm_footprint.py:fetch_stats",
           "scripts/ingest_drought_usdm_footprint.py:extract_pr_footprint",
           "scripts/ingest_drought_usdm_footprint.py:build_document",
-          "scripts/ingest_drought_usdm_footprint.py:main"
+          "scripts/ingest_drought_usdm_footprint.py:main",
+          "scripts/ingest_drought_usdm_footprint.py:fetch_geo",
+          "scripts/ingest_drought_usdm_footprint.py:parse_stats",
+          "scripts/ingest_drought_usdm_footprint.py:write_document"
         ]
       },
       "frontend": {
