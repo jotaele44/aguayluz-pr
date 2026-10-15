@@ -15,6 +15,7 @@ const Router = OFFLINE ? HashRouter : BrowserRouter
 // single-file export inlines these async chunks back into one index.html.
 const OverviewPage = lazy(() => import('./pages/OverviewPage'))
 const MapPage = lazy(() => import('./pages/MapPage'))
+const DroughtPage = lazy(() => import('./pages/DroughtPage'))
 const AssetsPage = lazy(() => import('./pages/AssetsPage'))
 const AlertsPage = lazy(() => import('./pages/AlertsPage'))
 const AlertDetailPage = lazy(() => import('./pages/AlertDetailPage'))
@@ -56,6 +57,7 @@ function App() {
             <Route element={<DashboardLayout />}>
               <Route path="/" element={<OverviewPage />} />
               <Route path="/map" element={<MapPage />} />
+              <Route path="/drought" element={<DroughtPage />} />
               <Route path="/assets" element={<AssetsPage />} />
               <Route path="/alerts" element={<AlertsPage />} />
               <Route path="/alerts/:id" element={<AlertDetailPage />} />
