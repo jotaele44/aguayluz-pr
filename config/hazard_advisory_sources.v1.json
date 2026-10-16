@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "scope": "Puerto Rico food, agricultural, animal, human infectious-disease, wastewater, water-health and environmental-health advisory source-family denominator",
-  "as_of": "2026-10-03",
+  "as_of": "2026-10-16",
   "certification_state": "OPEN",
   "completeness_claimed": false,
   "product_capability_id": "hazard-advisory-plane",
@@ -104,7 +104,7 @@
       "hazard_family": "WATER_HEALTH",
       "access": "annual report + annexes + public notice; exact source bytes required before manifestation promotion",
       "url": "https://www.salud.pr.gov/CMS/611",
-      "status": "BOUND_2025_ARTIFACT_FAMILY_BYTES_PARTIAL_OPEN",
+      "status": "FROZEN_2025_REPORT_AND_ANNEX_BYTES_CONTENT_EXTRACTION_OPEN",
       "bounded_scope": {
         "reporting_period": "2025-01-01/2025-12-31",
         "public_notice_id": "10746",
@@ -112,12 +112,41 @@
         "annexes_id": "10748",
         "source_artifacts": 3,
         "source_present": 3,
-        "bytes_frozen": 0,
-        "blocked_acquisition": 2,
+        "bytes_frozen": 2,
+        "blocked_acquisition": 0,
         "present_bytes_not_frozen": 1,
+        "frozen_artifacts": {
+          "10747": {
+            "role": "ANNUAL_VIOLATIONS_REPORT_2025",
+            "byte_sha256": "748529762de1b6661b5484957a7662bd233a37aaf371482cdc14bbf5ac584772",
+            "byte_length": 16080577,
+            "pages": 40,
+            "text_sha256": "3241ed37e71a734205143805ec6a864aa1cab64825b15ddc6b92bfa66d5c9e05",
+            "text_bytes": 4129926,
+            "content_extraction_status": "OPEN_TEXT_LAYER_NOT_YET_CANONICALLY_PARSED"
+          },
+          "10748": {
+            "role": "ANEJOS_APENDICES_2025",
+            "byte_sha256": "9886fbed47e9f8a3564167034bedc6bc0a0d653c6f89d81d69f8101ccc3f2603",
+            "byte_length": 23689313,
+            "pages": 33,
+            "text_sha256": "405f2530037ff38a87dd78abe3f8ca1b88a5fcc1720cdcaf8f80ec319b15265d",
+            "text_bytes": 33,
+            "content_extraction_status": "OPEN_IMAGE_DOMINANT_SCAN_REQUIRES_IMAGE_AWARE_EXTRACTION"
+          }
+        },
         "source_universe_completeness_claimed": false
       },
-      "binding_semantics": "state annual-report rows bind to PWSID/VIOLATION_ID only when those identifiers are present or independently reconciled; names alone are aliases"
+      "binding_semantics": "state annual-report rows bind to PWSID/VIOLATION_ID only when those identifiers are present or independently reconciled; names alone are aliases",
+      "certification_evidence": {
+        "verified_at_utc": "2026-10-16T21:56:53Z",
+        "workflow_run_id": 38110772028,
+        "workflow_job_id": 117214265375,
+        "artifact_name": "salud-sdwis-2025-source-freeze",
+        "artifact_sha256": "e40212452091fce1ec2c80cb1cd5c352a500775ced14bf464a3858a473e19bb9",
+        "execution_head": "e99f33eeb4c536596b191174b8084bb0437b8efd",
+        "note": "Successful rerun against the Oct 14 EPA archive manifestation; the prior Oct 11 failure was caused by an upstream five-member archive that did not contain the target member."
+      }
     },
     {
       "family": "EPA_DRINKING_WATER_HEALTH",
@@ -125,9 +154,41 @@
       "hazard_family": "WATER_HEALTH",
       "access": "SDWA quarterly downloads / SDWIS Federal Reporting Services; federal reconciliation plane",
       "url": "https://echo.epa.gov/tools/data-downloads/sdwa-download-summary",
-      "status": "BOUND_RECONCILIATION_SCHEMA_SOURCE_DENOMINATOR_OPEN",
+      "status": "FROZEN_2025_TARGET_MEMBER_ARITHMETIC_PASS_UNRESOLVED_OPEN",
       "update_semantics": "quarterly SDWIS snapshots may revise violation, enforcement and return-to-compliance fields",
-      "binding_semantics": "PWSID is system identity; PWSID + FACILITY_ID is facility identity; VIOLATION_ID is violation identity within versioned federal snapshots"
+      "binding_semantics": "PWSID is system identity; PWSID + FACILITY_ID is facility identity; VIOLATION_ID is violation identity within versioned federal snapshots",
+      "bounded_scope": {
+        "source_url": "https://echo.epa.gov/files/echodownloads/SDWA_latest_downloads.zip",
+        "archive_content_length": 558010511,
+        "archive_etag": "\"2142908f-65dc2aace8981\"",
+        "archive_last_modified": "Wed, 14 Oct 2026 01:15:30 GMT",
+        "archive_full_sha256_status": "OPEN_NOT_DOWNLOADED",
+        "target_member": "SDWA_VIOLATIONS_ENFORCEMENT.csv",
+        "target_member_compressed_size": 380855927,
+        "target_member_uncompressed_size": 4146921341,
+        "target_member_compressed_sha256": "c36c19cfe9c3fac2e219ac31d122ba7215bd8e523fc480283d269ecd70707662",
+        "target_member_uncompressed_sha256": "74f6f7b45ec37c5a6e7660da97e77558d500f95a1ed97147066bc3698a27ad5b",
+        "target_member_crc32": 3894969652,
+        "national_rows": 15550611,
+        "retained_pr_2025_overlap": 3023,
+        "excluded": 15532246,
+        "excluded_non_pr": 15332403,
+        "excluded_pr_no_2025_overlap": 199843,
+        "unresolved": 15342,
+        "accounted": 15550611,
+        "delta": 0,
+        "arithmetic_state": "PASS",
+        "derived_pr_2025_csv_sha256": "22b465f6f3824ce84f1b329d4a590d7de5963cf793e3534fb6e54d394359d3d2",
+        "source_universe_completeness_claimed": false
+      },
+      "certification_evidence": {
+        "verified_at_utc": "2026-10-16T21:56:53Z",
+        "workflow_run_id": 38110772028,
+        "workflow_job_id": 117214265375,
+        "artifact_name": "salud-sdwis-2025-source-freeze",
+        "artifact_sha256": "e40212452091fce1ec2c80cb1cd5c352a500775ced14bf464a3858a473e19bb9",
+        "execution_head": "e99f33eeb4c536596b191174b8084bb0437b8efd"
+      }
     }
   ],
   "unresolved_material": [
@@ -138,8 +199,12 @@
     "EPA_AND_PRASA_BOIL_WATER_DO_NOT_DRINK_DO_NOT_USE_EVENT_DENOMINATOR",
     "HARMFUL_ALGAL_BLOOM_AND_CYANOBACTERIA_AUTHORITY_DENOMINATOR",
     "HISTORICAL_BACKFILL_DENOMINATOR_PER_SOURCE_FAMILY",
-    "PRDOH_2025_ANNUAL_VIOLATIONS_REPORT_10747_BYTES_AND_ROW_DENOMINATOR",
-    "PRDOH_2025_ANNEXES_10748_BYTES_AND_ROW_DENOMINATOR",
-    "EPA_SDWIS_PUERTO_RICO_2025_RECONCILIATION_DENOMINATOR"
+    "PRDOH_2025_PUBLIC_NOTICE_10746_BYTE_FREEZE",
+    "PRDOH_2025_ANNUAL_REPORT_10747_CANONICAL_ROW_EXTRACTION",
+    "PRDOH_2025_ANNEX_10748_IMAGE_AWARE_ROW_EXTRACTION",
+    "PRDOH_2025_REPORT_TO_ANNEX_ROW_IDENTITY_CROSSWALK",
+    "EPA_SDWIS_2025_UNRESOLVED_15342_ROW_ADJUDICATION",
+    "EPA_SDWIS_2025_FULL_ARCHIVE_SHA256_OR_DOCUMENTED_MEMBER_SCOPE_ADJUDICATION",
+    "PRDOH_TO_EPA_SDWIS_2025_PWSID_VIOLATION_ID_RECONCILIATION"
   ]
 }
