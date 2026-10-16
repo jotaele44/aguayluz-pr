@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Iterable
 from datetime import datetime, timezone
 from hashlib import sha256
-from collections.abc import Iterable
 from typing import Any
 
 from aguayluz.hazard_plane import HazardFamily, HazardRecord, RecordKind, RecordStatus
