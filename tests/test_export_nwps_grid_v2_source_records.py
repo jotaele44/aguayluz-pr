@@ -5,7 +5,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from scripts.export_nwps_grid_v2_source_records import (
     COORDINATE_EVIDENCE_STATE,
     ExportError,
