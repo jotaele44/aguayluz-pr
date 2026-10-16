@@ -65,6 +65,17 @@ jobs:
           assert receipt["epa"]["uncompressed_sha256"], receipt
           assert receipt["epa"]["pr_2025_arithmetic"]["state"] == "PASS", receipt
           assert receipt["epa"]["pr_2025_arithmetic"]["delta"] == 0, receipt
+          unresolved_path = (
+              Path("artifacts/salud_sdwis_2025_source_freeze")
+              / receipt["epa"]["unresolved_rows_file"]
+          )
+          assert unresolved_path.is_file(), receipt
+          unresolved_lines = sum(
+              1 for line in unresolved_path.open(encoding="utf-8") if line.strip()
+          )
+          assert unresolved_lines == receipt["epa"]["pr_2025_arithmetic"]["unresolved"], receipt
+          assert sum(receipt["epa"]["unresolved_reason_counts"].values()) == unresolved_lines, receipt
+          assert receipt["epa"]["unresolved_rows_file_sha256"], receipt
           print(json.dumps(receipt, indent=2, sort_keys=True))
 
       - name: Upload frozen source evidence
