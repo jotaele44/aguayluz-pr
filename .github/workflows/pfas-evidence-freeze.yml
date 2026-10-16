@@ -22,7 +22,7 @@ jobs:
           set -euo pipefail
           mkdir -p artifacts/pfas_ucmr5/raw artifacts/pfas_ucmr5/derived
           url='https://www.epa.gov/system/files/other-files/2023-08/ucmr5-occurrence-data-by-state.zip'
-          expected_archive_sha='4845eb3abf34d61d7d239e26a815c69b21e39d249840243d266274b5b5d73aaa'
+          expected_archive_sha='007ee5f6a19dd8f1dac682ded23bcd3de72c8c5f49487dbf181334091bd35d96'
           curl --fail --location --proto '=https' --tlsv1.2 \
             --retry 3 --retry-all-errors \
             --output artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip \
@@ -37,6 +37,7 @@ jobs:
             echo "EPA UCMR5 archive manifestation drift: $actual_archive_sha" >&2
             exit 1
           }
+          echo "EPA UCMR5 archive manifestation accepted only provisionally; downstream member and Puerto Rico denominator hashes must remain byte-identical."
           unzip -Z1 artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip \
             > artifacts/pfas_ucmr5/raw/archive-members.txt
 
