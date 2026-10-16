@@ -11,6 +11,7 @@ import struct
 import subprocess
 import urllib.request
 import zlib
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -217,7 +218,7 @@ def classify_pr_row(row: dict[str, str], year: int) -> tuple[str, str]:
 
 def stream_member_and_filter_pr(
     url: str, meta: dict[str, Any], root: Path
-) -> tuple[dict[str, Any], list[dict[str, str]], list[str]]:
+) -> tuple[dict[str, Any], list[dict[str, str]], list[dict[str, Any]]]:
     start = meta["data_start"]
     end = start + meta["compressed_size"] - 1
     compressed_hash = hashlib.sha256()
@@ -229,7 +230,7 @@ def stream_member_and_filter_pr(
 
     header: list[str] | None = None
     pr_rows: list[dict[str, str]] = []
-    unresolved_raw: list[str] = []
+    unresolved_rows: list[dict[str, Any]] = []
     source_rows = 0
     non_pr_rows = 0
     pr_excluded = 0
@@ -259,7 +260,11 @@ def stream_member_and_filter_pr(
         parts = record.split(b",", 2)
         if len(parts) < 3:
             pr_unresolved += 1
-            unresolved_raw.append(f"ROW_{source_rows}:MALFORMED_FIELD_PREFIX")
+            unresolved_rows.append({
+                "source_row": source_rows,
+                "reason": "MALFORMED_FIELD_PREFIX",
+                "raw_record": record.decode("utf-8", errors="replace"),
+            })
             return
         pwsid_raw = parts[1].strip().strip(b'"').upper()
         if not pwsid_raw.startswith(b"PR"):
@@ -268,7 +273,12 @@ def stream_member_and_filter_pr(
         values = next(csv.reader([record.decode("utf-8")]))
         if len(values) != len(header):
             pr_unresolved += 1
-            unresolved_raw.append(f"ROW_{source_rows}:COLUMN_COUNT_{len(values)}")
+            unresolved_rows.append({
+                "source_row": source_rows,
+                "reason": f"COLUMN_COUNT_{len(values)}",
+                "pwsid": pwsid_raw.decode("ascii", errors="replace"),
+                "raw_record": record.decode("utf-8", errors="replace"),
+            })
             return
         row = dict(zip(header, values, strict=True))
         disposition, reason = classify_pr_row(row, TARGET_YEAR)
@@ -279,9 +289,13 @@ def stream_member_and_filter_pr(
             pr_excluded += 1
         else:
             pr_unresolved += 1
-            unresolved_raw.append(
-                f"ROW_{source_rows}:{reason}:{row.get('PWSID')}:{row.get('VIOLATION_ID')}"
-            )
+            unresolved_rows.append({
+                "source_row": source_rows,
+                "reason": reason,
+                "pwsid": row.get("PWSID"),
+                "violation_id": row.get("VIOLATION_ID"),
+                "row": row,
+            })
 
     print(
         f"STREAM EPA MEMBER compressed={meta['compressed_size']} "
@@ -353,7 +367,7 @@ def stream_member_and_filter_pr(
         "uncompressed_bytes_observed": total_uncompressed,
         "pr_2025_arithmetic": accounting,
     }
-    return stream_meta, pr_rows, unresolved_raw
+    return stream_meta, pr_rows, unresolved_rows
 
 
 def main() -> int:
@@ -389,6 +403,14 @@ def main() -> int:
         EPA_ZIP, member_meta, root
     )
 
+    unresolved_path = root / "SDWA_VIOLATIONS_ENFORCEMENT_PR_2025_UNRESOLVED.jsonl"
+    with unresolved_path.open("w", encoding="utf-8") as f:
+        for item in unresolved:
+            f.write(json.dumps(item, ensure_ascii=False, sort_keys=True) + "\n")
+    unresolved_reason_counts = dict(sorted(Counter(
+        str(item.get("reason") or "UNSPECIFIED") for item in unresolved
+    ).items()))
+
     pr_csv = root / "SDWA_VIOLATIONS_ENFORCEMENT_PR_2025.csv"
     if not pr_rows:
         raise RuntimeError("bounded PR 2025 result set is empty")
@@ -418,7 +440,16 @@ def main() -> int:
             **stream_meta,
             "pr_2025_csv": pr_csv.name,
             "pr_2025_csv_sha256": sha256_file(pr_csv),
-            "unresolved_rows": unresolved,
+            "unresolved_rows": [
+                (
+                    f"ROW_{item.get('source_row')}:{item.get('reason')}:"
+                    f"{item.get('pwsid') or ''}:{item.get('violation_id') or ''}"
+                )
+                for item in unresolved
+            ],
+            "unresolved_rows_file": unresolved_path.name,
+            "unresolved_rows_file_sha256": sha256_file(unresolved_path),
+            "unresolved_reason_counts": unresolved_reason_counts,
         },
         "source_universe_completeness_claimed": False,
         "notes": [
@@ -426,6 +457,7 @@ def main() -> int:
             "EPA target-member compressed and uncompressed identities are hashed during a single validated range stream.",
             "Every logical row in SDWA_VIOLATIONS_ENFORCEMENT.csv is counted in source arithmetic; only PR-prefixed PWSID rows are fully CSV-parsed.",
             "The national ZIP full-byte SHA remains OPEN; target-member byte identity and CRC are independently closed.",
+            "Every unresolved Puerto Rico candidate row is retained with its full parsed row or raw source record for later adjudication.",
             "No equality between Salud annual-report membership and the EPA PR-derived subset is asserted.",
         ],
     }
