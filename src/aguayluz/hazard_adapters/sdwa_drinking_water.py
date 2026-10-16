@@ -11,7 +11,8 @@ import json
 import re
 from datetime import datetime, timezone
 from hashlib import sha256
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 from aguayluz.hazard_plane import HazardFamily, HazardRecord, RecordKind, RecordStatus
 
