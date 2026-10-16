@@ -68,9 +68,10 @@ jobs:
           print(json.dumps(receipt, indent=2, sort_keys=True))
 
       - name: Upload frozen source evidence
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: salud-sdwis-2025-source-freeze
           path: artifacts/salud_sdwis_2025_source_freeze
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 90
