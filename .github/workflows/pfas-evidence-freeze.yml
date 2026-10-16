@@ -76,7 +76,7 @@ jobs:
 
           member_sha = sha256_bytes(payload)
           if member_sha != expected_member_sha:
-              raise SystemExit(f'UCMR5 M-W member manifestation drift: {member_sha}')
+              print(f'UCMR5 M-W member manifestation drift: {member_sha}')
 
           selected_encoding = None
           for encoding in ('utf-8-sig', 'cp1252'):
@@ -99,7 +99,7 @@ jobs:
 
           rows = [row for row in reader if str(row.get(pws_field) or '').upper().startswith('PR')]
           if len(rows) != 21771:
-              raise SystemExit(f'Puerto Rico row-count drift: {len(rows)} != 21771')
+              print(f'Puerto Rico row-count drift: {len(rows)} != 21771')
 
           out_tsv = derived / 'ucmr5_pr.tsv'
           with out_tsv.open('w', encoding='utf-8', newline='') as handle:
@@ -109,13 +109,13 @@ jobs:
 
           derived_sha = sha256_bytes(out_tsv.read_bytes())
           if derived_sha != expected_derived_sha:
-              raise SystemExit(f'Puerto Rico derived TSV drift: {derived_sha}')
+              print(f'Puerto Rico derived TSV drift: {derived_sha}')
 
           contaminant_field = next((h for h in headers if h.lower() == 'contaminant'), None)
           sign_field = next((h for h in headers if h.lower() == 'analyticalresultssign'), None)
           pws_ids = sorted({str(row[pws_field]) for row in rows})
           if len(pws_ids) != 99:
-              raise SystemExit(f'Puerto Rico PWS cardinality drift: {len(pws_ids)} != 99')
+              print(f'Puerto Rico PWS cardinality drift: {len(pws_ids)} != 99')
           contaminants = Counter(str(row.get(contaminant_field) or '') for row in rows) if contaminant_field else Counter()
           signs = Counter(str(row.get(sign_field) or '') for row in rows) if sign_field else Counter()
 
@@ -138,6 +138,14 @@ jobs:
               'contaminant_counts': dict(sorted(contaminants.items())),
               'analytical_result_sign_counts': dict(sorted(signs.items())),
               'derived_tsv_sha256': derived_sha,
+              'expected_selected_member_sha256': expected_member_sha,
+              'expected_derived_tsv_sha256': expected_derived_sha,
+              'expected_puerto_rico_row_count': 21771,
+              'expected_puerto_rico_pws_count': 99,
+              'member_identity_matches_prior': member_sha == expected_member_sha,
+              'derived_identity_matches_prior': derived_sha == expected_derived_sha,
+              'row_count_matches_prior': len(rows) == 21771,
+              'pws_count_matches_prior': len(pws_ids) == 99,
               'selection_rule': 'PWSID starts with PR',
               'semantic_guard': 'UCMR occurrence results are not compliance determinations.',
           }
@@ -160,6 +168,27 @@ jobs:
           path: artifacts/pfas_ucmr5
           if-no-files-found: error
           retention-days: 90
+
+      - name: Enforce frozen Puerto Rico denominator identity
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+
+          manifest = json.loads(
+              Path("artifacts/pfas_ucmr5/derived/ucmr5_pr_manifest.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          checks = {
+              "member_identity_matches_prior": manifest["member_identity_matches_prior"],
+              "derived_identity_matches_prior": manifest["derived_identity_matches_prior"],
+              "row_count_matches_prior": manifest["row_count_matches_prior"],
+              "pws_count_matches_prior": manifest["pws_count_matches_prior"],
+          }
+          print(json.dumps(checks, indent=2, sort_keys=True))
+          if not all(checks.values()):
+              raise SystemExit("EPA UCMR5 current manifestation requires explicit denominator reconciliation")
 
       - name: Materialize complete Puerto Rico denominator on source branch
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
