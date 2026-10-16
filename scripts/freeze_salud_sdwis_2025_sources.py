@@ -195,25 +195,61 @@ def _parse_date(value: str):
 def classify_pr_row(row: dict[str, str], year: int) -> tuple[str, str]:
     pwsid = (row.get("PWSID") or "").strip()
     violation_id = (row.get("VIOLATION_ID") or "").strip()
-    if not pwsid or not violation_id:
-        return "UNRESOLVED", "MISSING_PWSID_OR_VIOLATION_ID"
+    enforcement_id = (row.get("ENFORCEMENT_ID") or "").strip()
+    if not pwsid:
+        return "UNRESOLVED", "MISSING_PWSID"
     if not pwsid.upper().startswith("PR"):
         return "EXCLUDED", "NON_PUERTO_RICO_PWSID"
-    b = _parse_date(row.get("NON_COMPL_PER_BEGIN_DATE", ""))
-    e = _parse_date(row.get("NON_COMPL_PER_END_DATE", ""))
+    if not violation_id:
+        violation_payload = (
+            (row.get("NON_COMPL_PER_BEGIN_DATE") or "").strip(),
+            (row.get("NON_COMPL_PER_END_DATE") or "").strip(),
+            (row.get("VIOLATION_CODE") or "").strip(),
+            (row.get("VIOLATION_CATEGORY_CODE") or "").strip(),
+            (row.get("VIOLATION_STATUS") or "").strip(),
+        )
+        if enforcement_id and not any(violation_payload):
+            return "EXCLUDED", "ENFORCEMENT_ONLY_NO_VIOLATION_ID"
+        return "UNRESOLVED", "MISSING_VIOLATION_ID"
+
+    begin_raw = (row.get("NON_COMPL_PER_BEGIN_DATE") or "").strip()
+    end_raw = (row.get("NON_COMPL_PER_END_DATE") or "").strip()
+    status = (row.get("VIOLATION_STATUS") or "").strip().casefold()
+    b = _parse_date(begin_raw)
+    if end_raw == "--->":
+        if status == "unaddressed":
+            e = None
+            open_unaddressed = True
+        else:
+            return "UNRESOLVED", "MISSING_END_DATE_ADDRESSED"
+    else:
+        e = _parse_date(end_raw)
+        open_unaddressed = False
+
     if b == "INVALID":
         return "UNRESOLVED", "INVALID_BEGIN_DATE"
     if e == "INVALID":
         return "UNRESOLVED", "INVALID_END_DATE"
-    if b is None and e is None:
+    if b is None and e is None and not open_unaddressed:
         return "UNRESOLVED", "NONCOMPLIANCE_PERIOD_MISSING"
+
     ys = datetime(year, 1, 1, tzinfo=timezone.utc)
     ye = datetime(year, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
     eb = b or datetime.min.replace(tzinfo=timezone.utc)
     ee = e or datetime.max.replace(tzinfo=timezone.utc)
     if ee < ys or eb > ye:
-        return "EXCLUDED", "NO_2025_OVERLAP"
-    return "RETAINED", "PR_2025_OVERLAP"
+        return (
+            "EXCLUDED",
+            "OPEN_UNADDRESSED_START_AFTER_TARGET_YEAR"
+            if open_unaddressed and eb > ye
+            else "NO_2025_OVERLAP",
+        )
+    return (
+        "RETAINED",
+        "PR_2025_OVERLAP_OPEN_UNADDRESSED"
+        if open_unaddressed
+        else "PR_2025_OVERLAP",
+    )
 
 
 def stream_member_and_filter_pr(
@@ -236,6 +272,8 @@ def stream_member_and_filter_pr(
     pr_excluded = 0
     pr_unresolved = 0
     retained = 0
+    excluded_reason_counts: Counter[str] = Counter()
+    unresolved_reason_counts: Counter[str] = Counter()
     logical = bytearray()
     line_buf = bytearray()
     total_uncompressed = 0
@@ -287,8 +325,10 @@ def stream_member_and_filter_pr(
             pr_rows.append(row)
         elif disposition == "EXCLUDED":
             pr_excluded += 1
+            excluded_reason_counts[reason] += 1
         else:
             pr_unresolved += 1
+            unresolved_reason_counts[reason] += 1
             unresolved_rows.append({
                 "source_row": source_rows,
                 "reason": reason,
@@ -354,8 +394,17 @@ def stream_member_and_filter_pr(
         "retained": retained,
         "excluded": non_pr_rows + pr_excluded,
         "excluded_non_pr": non_pr_rows,
-        "excluded_pr_no_2025_overlap": pr_excluded,
+        "excluded_pr": pr_excluded,
+        "excluded_pr_no_2025_overlap": (
+            excluded_reason_counts["NO_2025_OVERLAP"]
+            + excluded_reason_counts["OPEN_UNADDRESSED_START_AFTER_TARGET_YEAR"]
+        ),
+        "excluded_pr_enforcement_only": excluded_reason_counts[
+            "ENFORCEMENT_ONLY_NO_VIOLATION_ID"
+        ],
+        "excluded_reason_counts": dict(sorted(excluded_reason_counts.items())),
         "unresolved": pr_unresolved,
+        "unresolved_reason_counts": dict(sorted(unresolved_reason_counts.items())),
         "accounted": accounted,
         "delta": source_rows - accounted,
     }
