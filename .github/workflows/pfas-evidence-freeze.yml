@@ -111,6 +111,33 @@ jobs:
           if derived_sha != expected_derived_sha:
               print(f'Puerto Rico derived TSV drift: {derived_sha}')
 
+          prior_path = pathlib.Path('data/pfas_ucmr5_pr.tsv')
+          if not prior_path.is_file():
+              raise SystemExit('canonical prior Puerto Rico denominator is missing')
+          prior_reader = csv.DictReader(
+              prior_path.read_text(encoding='utf-8').splitlines(), delimiter='\t'
+          )
+          if prior_reader.fieldnames != headers:
+              raise SystemExit(
+                  f'Puerto Rico denominator schema drift: prior={prior_reader.fieldnames} current={headers}'
+              )
+          prior_rows = list(prior_reader)
+          row_key = lambda row: tuple(str(row.get(h) or '') for h in headers)
+          prior_counter = Counter(row_key(row) for row in prior_rows)
+          current_counter = Counter(row_key(row) for row in rows)
+          added_counter = current_counter - prior_counter
+          removed_counter = prior_counter - current_counter
+          added_rows = sum(added_counter.values())
+          removed_rows = sum(removed_counter.values())
+          row_multiset_matches_prior = added_rows == 0 and removed_rows == 0
+          print(json.dumps({
+              'prior_row_count': len(prior_rows),
+              'current_row_count': len(rows),
+              'added_rows': added_rows,
+              'removed_rows': removed_rows,
+              'row_multiset_matches_prior': row_multiset_matches_prior,
+          }, sort_keys=True))
+
           contaminant_field = next((h for h in headers if h.lower() == 'contaminant'), None)
           sign_field = next((h for h in headers if h.lower() == 'analyticalresultssign'), None)
           pws_ids = sorted({str(row[pws_field]) for row in rows})
@@ -146,6 +173,12 @@ jobs:
               'derived_identity_matches_prior': derived_sha == expected_derived_sha,
               'row_count_matches_prior': len(rows) == 21771,
               'pws_count_matches_prior': len(pws_ids) == 99,
+              'prior_puerto_rico_row_count': len(prior_rows),
+              'row_multiset_matches_prior': row_multiset_matches_prior,
+              'added_row_count_vs_prior': added_rows,
+              'removed_row_count_vs_prior': removed_rows,
+              'added_row_samples': [list(key) for key in list(added_counter)[:10]],
+              'removed_row_samples': [list(key) for key in list(removed_counter)[:10]],
               'selection_rule': 'PWSID starts with PR',
               'semantic_guard': 'UCMR occurrence results are not compliance determinations.',
           }
@@ -182,7 +215,7 @@ jobs:
           )
           checks = {
               "member_identity_matches_prior": manifest["member_identity_matches_prior"],
-              "derived_identity_matches_prior": manifest["derived_identity_matches_prior"],
+              "row_multiset_matches_prior": manifest["row_multiset_matches_prior"],
               "row_count_matches_prior": manifest["row_count_matches_prior"],
               "pws_count_matches_prior": manifest["pws_count_matches_prior"],
           }
