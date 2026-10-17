@@ -1755,6 +1755,77 @@
           "dashboard/tests/gui-parity.spec.mjs"
         ]
       }
+    },
+    {
+      "id": "drought-operations-page",
+      "classification": "analysis",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Standalone Puerto Rico drought intelligence surface backed by official date-bound USDM vector geometry and cumulative statistics. Weekly USDM state is kept distinct from faster rainfall, gauge, outage and alert layers; unsupported rationing geometry is shown as an explicit gap. No drought shape or causal claim is inferred.",
+      "backend": {
+        "files": [
+          "server/backend/drought_ops_api.py",
+          "server/backend/app.py"
+        ],
+        "endpoints": [
+          "GET /drought/summary",
+          "GET /drought/footprint.geojson"
+        ],
+        "symbols": [
+          "server/backend/drought_ops_api.py:drought_summary",
+          "server/backend/drought_ops_api.py:drought_footprint",
+          "server/backend/drought_ops_api.py:drought_summary_document"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/ingest_drought_usdm_footprint.py"
+        ],
+        "symbols": [
+          "scripts/ingest_drought_usdm_footprint.py:fetch_stats",
+          "scripts/ingest_drought_usdm_footprint.py:extract_pr_footprint",
+          "scripts/ingest_drought_usdm_footprint.py:build_document",
+          "scripts/ingest_drought_usdm_footprint.py:main",
+          "scripts/ingest_drought_usdm_footprint.py:fetch_geo",
+          "scripts/ingest_drought_usdm_footprint.py:parse_stats",
+          "scripts/ingest_drought_usdm_footprint.py:write_document"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/drought"
+        ],
+        "e2e_routes": [
+          "/drought"
+        ],
+        "components": [
+          "dashboard/src/pages/DroughtPage.jsx",
+          "dashboard/src/components/DroughtMap.jsx",
+          "dashboard/src/lib/drought-api.js",
+          "dashboard/src/lib/drought-hooks.js",
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_drought_ops_api.py"
+        ],
+        "contract": [
+          "tests/test_ingest_drought_usdm_footprint.py",
+          "tests/test_refresh_plans.py",
+          "tests/test_gui_parity.py"
+        ],
+        "unit": [
+          "dashboard/src/pages/DroughtPage.test.jsx"
+        ],
+        "e2e": [
+          "dashboard/tests/drought-operations.spec.mjs",
+          "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
     }
   ],
   "exceptions": []
