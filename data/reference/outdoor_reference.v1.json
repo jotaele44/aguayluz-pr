@@ -1,0 +1,2195 @@
+{
+ "schema_version": "aguayluz.outdoor-reference/v1",
+ "generated_at": "2026-10-18T17:37:19.142784Z",
+ "generated_by": "scripts/freeze_outdoor_reference.py",
+ "sources": {
+  "marine_zones": {
+   "source_url": "https://api.weather.gov/zones?type=marine&area=AM",
+   "byte_sha256": "73b17ba2408b2a70bfb1f7737b2e78f11095ab55cc6bdd53b4af1af3fc4962a4",
+   "binding": "municipio polygon within 2000 m of the zone polygon"
+  },
+  "gridpoints": {
+   "source_url": "https://api.weather.gov/points/{lat:.4f},{lon:.4f}",
+   "binding": "grid cell holding the Census internal point"
+  },
+  "uv_zips": {
+   "source_url": "https://www2.census.gov/geo/docs/maps-data/data/rel2020/zcta520/tab20_zcta520_county20_natl.txt",
+   "byte_sha256": "3ed41278d637dc249e0323306f68be8a6c234e3090f4de88ef328dee71aeaaaf",
+   "binding": "largest-land-area ZCTA inside the municipio (county GEOID) that EPA's UV service answers for",
+   "coverage_check": "https://data.epa.gov/efservice/getEnvirofactsUVDAILY/ZIP/{zip}/JSON"
+  }
+ },
+ "marine_zones": [
+  {
+   "zone_id": "AMZ711",
+   "name": "Atlantic Waters of Puerto Rico AND USVI from 10 NM to 19.5N",
+   "zone_type": "coastal",
+   "source_url": "https://api.weather.gov/zones/forecast/AMZ711",
+   "byte_sha256": "29a5df2b9e50b0ccff094e11ddd4f93b7784f149b8dd40d83519005bd527f694",
+   "municipios": []
+  },
+  {
+   "zone_id": "AMZ712",
+   "name": "Coastal Waters of Northern Puerto Rico out 10 NM",
+   "zone_type": "coastal",
+   "source_url": "https://api.weather.gov/zones/forecast/AMZ712",
+   "byte_sha256": "dfa798e1519fb9f0123e7b74ac189ce0be330a53d5caf227f71defd2d7ddcf63",
+   "municipios": [
+    {
+     "geoid": "72005",
+     "name": "Aguadilla",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72013",
+     "name": "Arecibo",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72017",
+     "name": "Barceloneta",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72021",
+     "name": "Bayamón",
+     "distance_m": 1735.4
+    },
+    {
+     "geoid": "72027",
+     "name": "Camuy",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72029",
+     "name": "Canóvanas",
+     "distance_m": 1482.8
+    },
+    {
+     "geoid": "72031",
+     "name": "Carolina",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72033",
+     "name": "Cataño",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72051",
+     "name": "Dorado",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72053",
+     "name": "Fajardo",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72061",
+     "name": "Guaynabo",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72065",
+     "name": "Hatillo",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72071",
+     "name": "Isabela",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72087",
+     "name": "Loíza",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72089",
+     "name": "Luquillo",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72091",
+     "name": "Manatí",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72115",
+     "name": "Quebradillas",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72119",
+     "name": "Río Grande",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72127",
+     "name": "San Juan",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72137",
+     "name": "Toa Baja",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72143",
+     "name": "Vega Alta",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72145",
+     "name": "Vega Baja",
+     "distance_m": 0.0
+    }
+   ]
+  },
+  {
+   "zone_id": "AMZ716",
+   "name": "Coastal Waters from Cabo San Juan to the waters between Anegada Island and Virgin Gorda and North 10 NM",
+   "zone_type": "coastal",
+   "source_url": "https://api.weather.gov/zones/forecast/AMZ716",
+   "byte_sha256": "073186d12f4c7e054d7e0495e215ab9f1a8d50500870ea74467f350cee49b2c1",
+   "municipios": [
+    {
+     "geoid": "72049",
+     "name": "Culebra",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72053",
+     "name": "Fajardo",
+     "distance_m": 0.0
+    }
+   ]
+  },
+  {
+   "zone_id": "AMZ723",
+   "name": "Anegada Passage east of Virgin Gorda and Saint Croix south to 17N",
+   "zone_type": "coastal",
+   "source_url": "https://api.weather.gov/zones/forecast/AMZ723",
+   "byte_sha256": "0bd5d59fb4864daf79eadf98641b79f203d58308ee6481d1b3f3a20a96dd4524",
+   "municipios": []
+  },
+  {
+   "zone_id": "AMZ726",
+   "name": "Coastal Waters east of Puerto Rico, around Vieques, and around and just north of Culebra and Saint John",
+   "zone_type": "coastal",
+   "source_url": "https://api.weather.gov/zones/forecast/AMZ726",
+   "byte_sha256": "004200c583533fe08d8f35821a51bc6924cc1eca3fb2585c54d3af130bb0026d",
+   "municipios": [
+    {
+     "geoid": "72037",
+     "name": "Ceiba",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72049",
+     "name": "Culebra",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72053",
+     "name": "Fajardo",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72069",
+     "name": "Humacao",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72103",
+     "name": "Naguabo",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72147",
+     "name": "Vieques",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72151",
+     "name": "Yabucoa",
+     "distance_m": 0.0
+    }
+   ]
+  },
+  {
+   "zone_id": "AMZ733",
+   "name": "Caribbean Waters of Puerto Rico from 10 NM to 17N, including the Coastal Waters of Saint Croix",
+   "zone_type": "coastal",
+   "source_url": "https://api.weather.gov/zones/forecast/AMZ733",
+   "byte_sha256": "6dff9118185e1aa30a19467b2279d7f3ef22e86065d67d89d96804596b48a28c",
+   "municipios": []
+  },
+  {
+   "zone_id": "AMZ735",
+   "name": "Coastal Waters of Southern Puerto Rico out 10 NM",
+   "zone_type": "coastal",
+   "source_url": "https://api.weather.gov/zones/forecast/AMZ735",
+   "byte_sha256": "79b85f78210740b5de32c22f30bac0c29e6b4fe18bb03671bdaf02b3f7c0e848",
+   "municipios": [
+    {
+     "geoid": "72015",
+     "name": "Arroyo",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72023",
+     "name": "Cabo Rojo",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72055",
+     "name": "Guánica",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72057",
+     "name": "Guayama",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72059",
+     "name": "Guayanilla",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72069",
+     "name": "Humacao",
+     "distance_m": 1264.7
+    },
+    {
+     "geoid": "72075",
+     "name": "Juana Díaz",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72079",
+     "name": "Lajas",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72095",
+     "name": "Maunabo",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72109",
+     "name": "Patillas",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72111",
+     "name": "Peñuelas",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72113",
+     "name": "Ponce",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72123",
+     "name": "Salinas",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72133",
+     "name": "Santa Isabel",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72151",
+     "name": "Yabucoa",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72153",
+     "name": "Yauco",
+     "distance_m": 0.0
+    }
+   ]
+  },
+  {
+   "zone_id": "AMZ741",
+   "name": "Mona Passage Southward to 17N",
+   "zone_type": "coastal",
+   "source_url": "https://api.weather.gov/zones/forecast/AMZ741",
+   "byte_sha256": "e52d0c33eebed6dc1fc3a42813ae4e61e674b0c535ee378ec221c6fb8e6b227a",
+   "municipios": [
+    {
+     "geoid": "72097",
+     "name": "Mayagüez",
+     "distance_m": 0.0
+    }
+   ]
+  },
+  {
+   "zone_id": "AMZ742",
+   "name": "Coastal Waters OF Northwestern Puerto Rico out 10 NM",
+   "zone_type": "coastal",
+   "source_url": "https://api.weather.gov/zones/forecast/AMZ742",
+   "byte_sha256": "1f02a493c7e14f5c789dd8de121059a553e5de815677cfe78f0b8e13bbcfccde",
+   "municipios": [
+    {
+     "geoid": "72003",
+     "name": "Aguada",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72005",
+     "name": "Aguadilla",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72011",
+     "name": "Añasco",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72023",
+     "name": "Cabo Rojo",
+     "distance_m": 214.5
+    },
+    {
+     "geoid": "72097",
+     "name": "Mayagüez",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72117",
+     "name": "Rincón",
+     "distance_m": 0.0
+    }
+   ]
+  },
+  {
+   "zone_id": "AMZ745",
+   "name": "Coastal Waters OF Southwestern Puerto Rico out 10 NM",
+   "zone_type": "coastal",
+   "source_url": "https://api.weather.gov/zones/forecast/AMZ745",
+   "byte_sha256": "1db95fccc9e8c8ad1ffa5c3cba7902bfb6c7c1bbd8ba9d48f0f99892efd49f9b",
+   "municipios": [
+    {
+     "geoid": "72023",
+     "name": "Cabo Rojo",
+     "distance_m": 0.0
+    },
+    {
+     "geoid": "72067",
+     "name": "Hormigueros",
+     "distance_m": 768.2
+    },
+    {
+     "geoid": "72097",
+     "name": "Mayagüez",
+     "distance_m": 0.0
+    }
+   ]
+  }
+ ],
+ "gridpoints": [
+  {
+   "geoid": "72001",
+   "name": "Adjuntas",
+   "lat": 18.181611,
+   "lon": -66.758165,
+   "grid_id": "SJU",
+   "grid_x": 107,
+   "grid_y": 107,
+   "forecast_zone": "PRZ009",
+   "county_zone": "PRC001",
+   "source_url": "https://api.weather.gov/points/18.1816,-66.7582",
+   "byte_sha256": "411618527b839459f5632c5968a046ea44ca13f42424621527d5ae9aec60e95d"
+  },
+  {
+   "geoid": "72003",
+   "name": "Aguada",
+   "lat": 18.375673,
+   "lon": -67.185745,
+   "grid_id": "SJU",
+   "grid_x": 71,
+   "grid_y": 124,
+   "forecast_zone": "PRZ010",
+   "county_zone": "PRC003",
+   "source_url": "https://api.weather.gov/points/18.3757,-67.1857",
+   "byte_sha256": "361e6e16209ed61b09bfdc2cc30c2ebad859342c18a0a1ea14adbd94f858398f"
+  },
+  {
+   "geoid": "72005",
+   "name": "Aguadilla",
+   "lat": 18.480191,
+   "lon": -67.143762,
+   "grid_id": "SJU",
+   "grid_x": 75,
+   "grid_y": 133,
+   "forecast_zone": "PRZ008",
+   "county_zone": "PRC005",
+   "source_url": "https://api.weather.gov/points/18.4802,-67.1438",
+   "byte_sha256": "fbe82700f52e598a46dea76d1ee8c68e071da295f7600aa6de8302e79e41b2e4"
+  },
+  {
+   "geoid": "72007",
+   "name": "Aguas Buenas",
+   "lat": 18.256524,
+   "lon": -66.128496,
+   "grid_id": "SJU",
+   "grid_x": 160,
+   "grid_y": 113,
+   "forecast_zone": "PRZ004",
+   "county_zone": "PRC007",
+   "source_url": "https://api.weather.gov/points/18.2565,-66.1285",
+   "byte_sha256": "758b351133c8d128979aa5f0da438d42c7b12c2e0881fbc15898e7a5b6dec4ed"
+  },
+  {
+   "geoid": "72009",
+   "name": "Aibonito",
+   "lat": 18.130723,
+   "lon": -66.26446,
+   "grid_id": "SJU",
+   "grid_x": 148,
+   "grid_y": 102,
+   "forecast_zone": "PRZ006",
+   "county_zone": "PRC009",
+   "source_url": "https://api.weather.gov/points/18.1307,-66.2645",
+   "byte_sha256": "fc317dda5ac471844aebaa0cc563bb31b44b8aeff9d7d272b62cc256c0f9e1bf"
+  },
+  {
+   "geoid": "72011",
+   "name": "Añasco",
+   "lat": 18.286905,
+   "lon": -67.131282,
+   "grid_id": "SJU",
+   "grid_x": 76,
+   "grid_y": 116,
+   "forecast_zone": "PRZ010",
+   "county_zone": "PRC011",
+   "source_url": "https://api.weather.gov/points/18.2869,-67.1313",
+   "byte_sha256": "34277aa13f48222848c53acc308a48cf59c4d8d7ac46b7b87f15dbd048ac9e0f"
+  },
+  {
+   "geoid": "72013",
+   "name": "Arecibo",
+   "lat": 18.434004,
+   "lon": -66.674994,
+   "grid_id": "SJU",
+   "grid_x": 114,
+   "grid_y": 129,
+   "forecast_zone": "PRZ005",
+   "county_zone": "PRC013",
+   "source_url": "https://api.weather.gov/points/18.4340,-66.6750",
+   "byte_sha256": "61d9ee8d83e60868701ed525ee1c684ab31af09fe24d6a5f1e042ed44361bfb2"
+  },
+  {
+   "geoid": "72015",
+   "name": "Arroyo",
+   "lat": 17.97206,
+   "lon": -66.041945,
+   "grid_id": "SJU",
+   "grid_x": 167,
+   "grid_y": 88,
+   "forecast_zone": "PRZ003",
+   "county_zone": "PRC015",
+   "source_url": "https://api.weather.gov/points/17.9721,-66.0419",
+   "byte_sha256": "ac78e1fcd7dccfdd53a5df9c3060c8af3c09e62bcb6cd2d4be5260c9543a06c8"
+  },
+  {
+   "geoid": "72017",
+   "name": "Barceloneta",
+   "lat": 18.469989,
+   "lon": -66.55823,
+   "grid_id": "SJU",
+   "grid_x": 124,
+   "grid_y": 132,
+   "forecast_zone": "PRZ005",
+   "county_zone": "PRC017",
+   "source_url": "https://api.weather.gov/points/18.4700,-66.5582",
+   "byte_sha256": "db1a5da7d25c2ddc01b98b71e9e4ca17e91747b21557bbed392726bfb759deb8"
+  },
+  {
+   "geoid": "72019",
+   "name": "Barranquitas",
+   "lat": 18.200018,
+   "lon": -66.309282,
+   "grid_id": "SJU",
+   "grid_x": 145,
+   "grid_y": 108,
+   "forecast_zone": "PRZ006",
+   "county_zone": "PRC019",
+   "source_url": "https://api.weather.gov/points/18.2000,-66.3093",
+   "byte_sha256": "27ad498ff275b7300cee98fc7241a80a8bcac1d7fa7fe5367fef36afd8840ddb"
+  },
+  {
+   "geoid": "72021",
+   "name": "Bayamón",
+   "lat": 18.34942,
+   "lon": -66.168626,
+   "grid_id": "SJU",
+   "grid_x": 156,
+   "grid_y": 121,
+   "forecast_zone": "PRZ001",
+   "county_zone": "PRC021",
+   "source_url": "https://api.weather.gov/points/18.3494,-66.1686",
+   "byte_sha256": "daa9f61479e4666674f78a6ed6c1c4fb28490845bbf0345adb966a276702c321"
+  },
+  {
+   "geoid": "72023",
+   "name": "Cabo Rojo",
+   "lat": 17.997138,
+   "lon": -67.180862,
+   "grid_id": "SJU",
+   "grid_x": 72,
+   "grid_y": 90,
+   "forecast_zone": "PRZ011",
+   "county_zone": "PRC023",
+   "source_url": "https://api.weather.gov/points/17.9971,-67.1809",
+   "byte_sha256": "5070e87837a4a8fea875614435e1f7f0c8105013023eb210ae60cd01c34ed389"
+  },
+  {
+   "geoid": "72025",
+   "name": "Caguas",
+   "lat": 18.211109,
+   "lon": -66.050964,
+   "grid_id": "SJU",
+   "grid_x": 166,
+   "grid_y": 109,
+   "forecast_zone": "PRZ004",
+   "county_zone": "PRC025",
+   "source_url": "https://api.weather.gov/points/18.2111,-66.0510",
+   "byte_sha256": "a68433939e41cd91b887106daabfbf136e3aa33a6bb8789788af65566602577f"
+  },
+  {
+   "geoid": "72027",
+   "name": "Camuy",
+   "lat": 18.445469,
+   "lon": -66.863134,
+   "grid_id": "SJU",
+   "grid_x": 98,
+   "grid_y": 130,
+   "forecast_zone": "PRZ008",
+   "county_zone": "PRC027",
+   "source_url": "https://api.weather.gov/points/18.4455,-66.8631",
+   "byte_sha256": "6c46c47d48aa0d86319493af1ac19d5d85457127e4a426ba43d563b42103bf53"
+  },
+  {
+   "geoid": "72029",
+   "name": "Canóvanas",
+   "lat": 18.330044,
+   "lon": -65.886021,
+   "grid_id": "SJU",
+   "grid_x": 180,
+   "grid_y": 120,
+   "forecast_zone": "PRZ002",
+   "county_zone": "PRC029",
+   "source_url": "https://api.weather.gov/points/18.3300,-65.8860",
+   "byte_sha256": "0b3e793738cb0cecf24fbf91dd58165e4c4e3f0ebdc5abfd42c688616eb78087"
+  },
+  {
+   "geoid": "72031",
+   "name": "Carolina",
+   "lat": 18.396776,
+   "lon": -65.968778,
+   "grid_id": "SJU",
+   "grid_x": 173,
+   "grid_y": 126,
+   "forecast_zone": "PRZ001",
+   "county_zone": "PRC031",
+   "source_url": "https://api.weather.gov/points/18.3968,-65.9688",
+   "byte_sha256": "0259eb39d822a439168b7edc5811ec03268167b1a513afdcce0196e5f88d20c7"
+  },
+  {
+   "geoid": "72033",
+   "name": "Cataño",
+   "lat": 18.444614,
+   "lon": -66.148819,
+   "grid_id": "SJU",
+   "grid_x": 158,
+   "grid_y": 130,
+   "forecast_zone": "PRZ001",
+   "county_zone": "PRC033",
+   "source_url": "https://api.weather.gov/points/18.4446,-66.1488",
+   "byte_sha256": "a189a397c0b9c0cd03c901e9f3504bc6202ac8e62243503dc75774d332dedb1a"
+  },
+  {
+   "geoid": "72035",
+   "name": "Cayey",
+   "lat": 18.103624,
+   "lon": -66.151667,
+   "grid_id": "SJU",
+   "grid_x": 158,
+   "grid_y": 100,
+   "forecast_zone": "PRZ004",
+   "county_zone": "PRC035",
+   "source_url": "https://api.weather.gov/points/18.1036,-66.1517",
+   "byte_sha256": "f989e28e6f425009c8a59ad9285c20874485c04543167e08b73c3e1171c8f186"
+  },
+  {
+   "geoid": "72037",
+   "name": "Ceiba",
+   "lat": 18.253265,
+   "lon": -65.620765,
+   "grid_id": "SJU",
+   "grid_x": 202,
+   "grid_y": 113,
+   "forecast_zone": "PRZ002",
+   "county_zone": "PRC037",
+   "source_url": "https://api.weather.gov/points/18.2533,-65.6208",
+   "byte_sha256": "ec4f493308789170f5fafdbad4e16d1b56355a5ed60ef2b6795cb9d0a330b566"
+  },
+  {
+   "geoid": "72039",
+   "name": "Ciales",
+   "lat": 18.295913,
+   "lon": -66.515588,
+   "grid_id": "SJU",
+   "grid_x": 127,
+   "grid_y": 117,
+   "forecast_zone": "PRZ006",
+   "county_zone": "PRC039",
+   "source_url": "https://api.weather.gov/points/18.2959,-66.5156",
+   "byte_sha256": "09f99bb4bb4c9a6b699fd694b4a1aa6aacb6aad5e373e7f9eafd134afec2dccd"
+  },
+  {
+   "geoid": "72041",
+   "name": "Cidra",
+   "lat": 18.174391,
+   "lon": -66.161618,
+   "grid_id": "SJU",
+   "grid_x": 157,
+   "grid_y": 106,
+   "forecast_zone": "PRZ004",
+   "county_zone": "PRC041",
+   "source_url": "https://api.weather.gov/points/18.1744,-66.1616",
+   "byte_sha256": "5c21f618ddc767f50e4af4e59e970bdfb260d56c4d78519de85cc1e09f7b9919"
+  },
+  {
+   "geoid": "72043",
+   "name": "Coamo",
+   "lat": 18.1038,
+   "lon": -66.357586,
+   "grid_id": "SJU",
+   "grid_x": 141,
+   "grid_y": 100,
+   "forecast_zone": "PRZ006",
+   "county_zone": "PRC043",
+   "source_url": "https://api.weather.gov/points/18.1038,-66.3576",
+   "byte_sha256": "8d169def0d56596eddfeaa73aa02034d1c8c8444f211ff385c16dd7201806a77"
+  },
+  {
+   "geoid": "72045",
+   "name": "Comerío",
+   "lat": 18.225032,
+   "lon": -66.219481,
+   "grid_id": "SJU",
+   "grid_x": 152,
+   "grid_y": 110,
+   "forecast_zone": "PRZ004",
+   "county_zone": "PRC045",
+   "source_url": "https://api.weather.gov/points/18.2250,-66.2195",
+   "byte_sha256": "3b846a48fa492e8d70f81b787780f0dbbcc006e108848a9c46098c6daccdaa8e"
+  },
+  {
+   "geoid": "72047",
+   "name": "Corozal",
+   "lat": 18.30391,
+   "lon": -66.326179,
+   "grid_id": "SJU",
+   "grid_x": 143,
+   "grid_y": 117,
+   "forecast_zone": "PRZ006",
+   "county_zone": "PRC047",
+   "source_url": "https://api.weather.gov/points/18.3039,-66.3262",
+   "byte_sha256": "20bb22908d7cdccff1cdf6acbde7332ee0742619350a338b419f950be552dd3f"
+  },
+  {
+   "geoid": "72049",
+   "name": "Culebra",
+   "lat": 18.326611,
+   "lon": -65.307771,
+   "grid_id": "SJU",
+   "grid_x": 228,
+   "grid_y": 119,
+   "forecast_zone": "PRZ012",
+   "county_zone": "PRC049",
+   "source_url": "https://api.weather.gov/points/18.3266,-65.3078",
+   "byte_sha256": "8599ecf683676c0c8a853db167a61e4571691aff9efb4901fcdcbe43b8184f7d"
+  },
+  {
+   "geoid": "72051",
+   "name": "Dorado",
+   "lat": 18.474376,
+   "lon": -66.261973,
+   "grid_id": "SJU",
+   "grid_x": 149,
+   "grid_y": 132,
+   "forecast_zone": "PRZ005",
+   "county_zone": "PRC051",
+   "source_url": "https://api.weather.gov/points/18.4744,-66.2620",
+   "byte_sha256": "64520eeb4f6f6b426d796c5d1bca193c99217fc5dcc325cce60fcd0610f422f2"
+  },
+  {
+   "geoid": "72053",
+   "name": "Fajardo",
+   "lat": 18.386378,
+   "lon": -65.588454,
+   "grid_id": "SJU",
+   "grid_x": 205,
+   "grid_y": 125,
+   "forecast_zone": "PRZ002",
+   "county_zone": "PRC053",
+   "source_url": "https://api.weather.gov/points/18.3864,-65.5885",
+   "byte_sha256": "bf1d7a95c985efc0672e1ecc7510e5f2907890d0fc95a2f9b46bb82261d37a22"
+  },
+  {
+   "geoid": "72054",
+   "name": "Florida",
+   "lat": 18.368659,
+   "lon": -66.562734,
+   "grid_id": "SJU",
+   "grid_x": 123,
+   "grid_y": 123,
+   "forecast_zone": "PRZ005",
+   "county_zone": "PRC054",
+   "source_url": "https://api.weather.gov/points/18.3687,-66.5627",
+   "byte_sha256": "39230cb8b847a552c73a097dfca4d1952053cfaffcf887bb536d6cabdac32319"
+  },
+  {
+   "geoid": "72055",
+   "name": "Guánica",
+   "lat": 17.948052,
+   "lon": -66.922989,
+   "grid_id": "SJU",
+   "grid_x": 93,
+   "grid_y": 86,
+   "forecast_zone": "PRZ011",
+   "county_zone": "PRC055",
+   "source_url": "https://api.weather.gov/points/17.9481,-66.9230",
+   "byte_sha256": "e3765cb15e4d92e4417e268681986cf8683939a96cd4598fe129e5c1c8887009"
+  },
+  {
+   "geoid": "72057",
+   "name": "Guayama",
+   "lat": 17.973929,
+   "lon": -66.137467,
+   "grid_id": "SJU",
+   "grid_x": 159,
+   "grid_y": 88,
+   "forecast_zone": "PRZ003",
+   "county_zone": "PRC057",
+   "source_url": "https://api.weather.gov/points/17.9739,-66.1375",
+   "byte_sha256": "386e1310ee170beecd904a92702c5482c112e57511ba5e84fd12c9b4da2d1b91"
+  },
+  {
+   "geoid": "72059",
+   "name": "Guayanilla",
+   "lat": 18.005338,
+   "lon": -66.798293,
+   "grid_id": "SJU",
+   "grid_x": 104,
+   "grid_y": 91,
+   "forecast_zone": "PRZ007",
+   "county_zone": "PRC059",
+   "source_url": "https://api.weather.gov/points/18.0053,-66.7983",
+   "byte_sha256": "01ff027c25f4e26f0eeb97fcdb5d71945e3e637fef90bb72d1c54075afda28b8"
+  },
+  {
+   "geoid": "72061",
+   "name": "Guaynabo",
+   "lat": 18.344357,
+   "lon": -66.114056,
+   "grid_id": "SJU",
+   "grid_x": 161,
+   "grid_y": 121,
+   "forecast_zone": "PRZ001",
+   "county_zone": "PRC061",
+   "source_url": "https://api.weather.gov/points/18.3444,-66.1141",
+   "byte_sha256": "e4f491cd9f86e6e23ea495c82e3fa8d04eda5f56a2bef351f6e8e2f32a57bb15"
+  },
+  {
+   "geoid": "72063",
+   "name": "Gurabo",
+   "lat": 18.272581,
+   "lon": -65.981177,
+   "grid_id": "SJU",
+   "grid_x": 172,
+   "grid_y": 115,
+   "forecast_zone": "PRZ004",
+   "county_zone": "PRC063",
+   "source_url": "https://api.weather.gov/points/18.2726,-65.9812",
+   "byte_sha256": "ff1e095cb043c21b276fa16686ddd63cf778e9d3b6180e6eda65538f60c6f881"
+  },
+  {
+   "geoid": "72065",
+   "name": "Hatillo",
+   "lat": 18.441141,
+   "lon": -66.79821,
+   "grid_id": "SJU",
+   "grid_x": 104,
+   "grid_y": 129,
+   "forecast_zone": "PRZ008",
+   "county_zone": "PRC065",
+   "source_url": "https://api.weather.gov/points/18.4411,-66.7982",
+   "byte_sha256": "a05aba316ae84127c40f84812e3b7bb674c95cde7dbfeaa23a40cdc25dd940e4"
+  },
+  {
+   "geoid": "72067",
+   "name": "Hormigueros",
+   "lat": 18.134695,
+   "lon": -67.116199,
+   "grid_id": "SJU",
+   "grid_x": 77,
+   "grid_y": 102,
+   "forecast_zone": "PRZ010",
+   "county_zone": "PRC067",
+   "source_url": "https://api.weather.gov/points/18.1347,-67.1162",
+   "byte_sha256": "a90c178ad4ed4239246c4bcef61f8b761fbfde12eb3d2286b1952f23007b7dab"
+  },
+  {
+   "geoid": "72069",
+   "name": "Humacao",
+   "lat": 18.135403,
+   "lon": -65.786229,
+   "grid_id": "SJU",
+   "grid_x": 188,
+   "grid_y": 103,
+   "forecast_zone": "PRZ002",
+   "county_zone": "PRC069",
+   "source_url": "https://api.weather.gov/points/18.1354,-65.7862",
+   "byte_sha256": "a1cd042fc1f8743cd36413d39437732b6ca3bdb301c6abdd8006c83ba19fb07b"
+  },
+  {
+   "geoid": "72071",
+   "name": "Isabela",
+   "lat": 18.483998,
+   "lon": -67.013978,
+   "grid_id": "SJU",
+   "grid_x": 86,
+   "grid_y": 133,
+   "forecast_zone": "PRZ008",
+   "county_zone": "PRC071",
+   "source_url": "https://api.weather.gov/points/18.4840,-67.0140",
+   "byte_sha256": "69e51cafb53239cc8b28116fab2487c7d2bb2d84a714f22fe706940b09ffabfb"
+  },
+  {
+   "geoid": "72073",
+   "name": "Jayuya",
+   "lat": 18.211152,
+   "lon": -66.58687,
+   "grid_id": "SJU",
+   "grid_x": 121,
+   "grid_y": 109,
+   "forecast_zone": "PRZ006",
+   "county_zone": "PRC073",
+   "source_url": "https://api.weather.gov/points/18.2112,-66.5869",
+   "byte_sha256": "2aefdd71295b3a128bf7ef2f15a82f0dc364a157c3a16767c1207d689462ccb0"
+  },
+  {
+   "geoid": "72075",
+   "name": "Juana Díaz",
+   "lat": 17.997974,
+   "lon": -66.490496,
+   "grid_id": "SJU",
+   "grid_x": 130,
+   "grid_y": 90,
+   "forecast_zone": "PRZ007",
+   "county_zone": "PRC075",
+   "source_url": "https://api.weather.gov/points/17.9980,-66.4905",
+   "byte_sha256": "49fcb830b5e19a377cb5f004172ed0d53e3cdae2346bb174371394ae0790f837"
+  },
+  {
+   "geoid": "72077",
+   "name": "Juncos",
+   "lat": 18.224133,
+   "lon": -65.908542,
+   "grid_id": "SJU",
+   "grid_x": 178,
+   "grid_y": 110,
+   "forecast_zone": "PRZ004",
+   "county_zone": "PRC077",
+   "source_url": "https://api.weather.gov/points/18.2241,-65.9085",
+   "byte_sha256": "fb4eb1712322bbbfffb0f10110c8810cf7198ad7e67c843f7ab1b9815baeecf0"
+  },
+  {
+   "geoid": "72079",
+   "name": "Lajas",
+   "lat": 17.978511,
+   "lon": -67.040111,
+   "grid_id": "SJU",
+   "grid_x": 84,
+   "grid_y": 89,
+   "forecast_zone": "PRZ011",
+   "county_zone": "PRC079",
+   "source_url": "https://api.weather.gov/points/17.9785,-67.0401",
+   "byte_sha256": "68e5a6555d6a45e5e7b4ea41502a062fb94b0b3d1256897a2f8918c686cb0586"
+  },
+  {
+   "geoid": "72081",
+   "name": "Lares",
+   "lat": 18.276925,
+   "lon": -66.869587,
+   "grid_id": "SJU",
+   "grid_x": 98,
+   "grid_y": 115,
+   "forecast_zone": "PRZ009",
+   "county_zone": "PRC081",
+   "source_url": "https://api.weather.gov/points/18.2769,-66.8696",
+   "byte_sha256": "9c3defe0bf8e3bcfe52b39a67971004d05cf9833af93d08a838b9349e56136fd"
+  },
+  {
+   "geoid": "72083",
+   "name": "Las Marías",
+   "lat": 18.227594,
+   "lon": -66.97758,
+   "grid_id": "SJU",
+   "grid_x": 89,
+   "grid_y": 111,
+   "forecast_zone": "PRZ009",
+   "county_zone": "PRC083",
+   "source_url": "https://api.weather.gov/points/18.2276,-66.9776",
+   "byte_sha256": "37f613001df507d1c82d9f71c1c82dae799a4d34a0ace46756325f8404d1ee8a"
+  },
+  {
+   "geoid": "72085",
+   "name": "Las Piedras",
+   "lat": 18.187148,
+   "lon": -65.871189,
+   "grid_id": "SJU",
+   "grid_x": 181,
+   "grid_y": 107,
+   "forecast_zone": "PRZ004",
+   "county_zone": "PRC085",
+   "source_url": "https://api.weather.gov/points/18.1871,-65.8712",
+   "byte_sha256": "491d0b8d7b6fc283096b804cc15a2ceffc18cb3818f88f5f7120350b85cf6b74"
+  },
+  {
+   "geoid": "72087",
+   "name": "Loíza",
+   "lat": 18.445503,
+   "lon": -65.942649,
+   "grid_id": "SJU",
+   "grid_x": 175,
+   "grid_y": 130,
+   "forecast_zone": "PRZ002",
+   "county_zone": "PRC087",
+   "source_url": "https://api.weather.gov/points/18.4455,-65.9426",
+   "byte_sha256": "d80f7721cf2abe6a6b06ef975e3b61a8b007b2d6351fbd67b47087cdf807e95c"
+  },
+  {
+   "geoid": "72089",
+   "name": "Luquillo",
+   "lat": 18.367996,
+   "lon": -65.709904,
+   "grid_id": "SJU",
+   "grid_x": 195,
+   "grid_y": 123,
+   "forecast_zone": "PRZ002",
+   "county_zone": "PRC089",
+   "source_url": "https://api.weather.gov/points/18.3680,-65.7099",
+   "byte_sha256": "6d4be329300f73d022a49ae659841ab2c8f3f08242691ceee13e18831492d7a7"
+  },
+  {
+   "geoid": "72091",
+   "name": "Manatí",
+   "lat": 18.444803,
+   "lon": -66.493137,
+   "grid_id": "SJU",
+   "grid_x": 129,
+   "grid_y": 130,
+   "forecast_zone": "PRZ005",
+   "county_zone": "PRC091",
+   "source_url": "https://api.weather.gov/points/18.4448,-66.4931",
+   "byte_sha256": "0c244f5a62aaf114bd706bfaa5ab1d8ce6997e289394e30b0605220a775c57ac"
+  },
+  {
+   "geoid": "72093",
+   "name": "Maricao",
+   "lat": 18.173956,
+   "lon": -66.935547,
+   "grid_id": "SJU",
+   "grid_x": 92,
+   "grid_y": 106,
+   "forecast_zone": "PRZ009",
+   "county_zone": "PRC093",
+   "source_url": "https://api.weather.gov/points/18.1740,-66.9355",
+   "byte_sha256": "5dca999d537b8752570ba76c2caef41a1d8bf8a896cf7453a2c136bbba6ba6bd"
+  },
+  {
+   "geoid": "72095",
+   "name": "Maunabo",
+   "lat": 17.999786,
+   "lon": -65.896403,
+   "grid_id": "SJU",
+   "grid_x": 179,
+   "grid_y": 91,
+   "forecast_zone": "PRZ003",
+   "county_zone": "PRC095",
+   "source_url": "https://api.weather.gov/points/17.9998,-65.8964",
+   "byte_sha256": "3c1b0207674ce6b272a979b5aae07009f0fc2b849f487c42ea1a85a11a283b56"
+  },
+  {
+   "geoid": "72097",
+   "name": "Mayagüez",
+   "lat": 18.08385,
+   "lon": -67.886337,
+   "grid_id": "SJU",
+   "grid_x": 13,
+   "grid_y": 98,
+   "forecast_zone": "PRZ010",
+   "county_zone": "PRC097",
+   "source_url": "https://api.weather.gov/points/18.0839,-67.8863",
+   "byte_sha256": "97502b4b239215c6e847583c33d7380d4fc54f33a44c2723fb5f5756c3274436"
+  },
+  {
+   "geoid": "72099",
+   "name": "Moca",
+   "lat": 18.377637,
+   "lon": -67.079574,
+   "grid_id": "SJU",
+   "grid_x": 80,
+   "grid_y": 124,
+   "forecast_zone": "PRZ010",
+   "county_zone": "PRC099",
+   "source_url": "https://api.weather.gov/points/18.3776,-67.0796",
+   "byte_sha256": "a5321a8903ddd7469a69994eb6b44d00602ace63ea5179cd41b96271a01c04f9"
+  },
+  {
+   "geoid": "72101",
+   "name": "Morovis",
+   "lat": 18.318017,
+   "lon": -66.420392,
+   "grid_id": "SJU",
+   "grid_x": 135,
+   "grid_y": 119,
+   "forecast_zone": "PRZ006",
+   "county_zone": "PRC101",
+   "source_url": "https://api.weather.gov/points/18.3180,-66.4204",
+   "byte_sha256": "d299e86798eebee72149a7f64ad745bdf42fb542aa229264b3afd3c0fea5db59"
+  },
+  {
+   "geoid": "72103",
+   "name": "Naguabo",
+   "lat": 18.21107,
+   "lon": -65.735749,
+   "grid_id": "SJU",
+   "grid_x": 193,
+   "grid_y": 109,
+   "forecast_zone": "PRZ002",
+   "county_zone": "PRC103",
+   "source_url": "https://api.weather.gov/points/18.2111,-65.7357",
+   "byte_sha256": "fb9fdf54436b7d4d48c98e8563f4fc428fb18b136d16e2751f34a949d6125677"
+  },
+  {
+   "geoid": "72105",
+   "name": "Naranjito",
+   "lat": 18.28992,
+   "lon": -66.25344,
+   "grid_id": "SJU",
+   "grid_x": 149,
+   "grid_y": 116,
+   "forecast_zone": "PRZ006",
+   "county_zone": "PRC105",
+   "source_url": "https://api.weather.gov/points/18.2899,-66.2534",
+   "byte_sha256": "94de53322c65ce1418c67c1765b4abf242efda4614d1c0d747b06e496c756820"
+  },
+  {
+   "geoid": "72107",
+   "name": "Orocovis",
+   "lat": 18.218733,
+   "lon": -66.436899,
+   "grid_id": "SJU",
+   "grid_x": 134,
+   "grid_y": 110,
+   "forecast_zone": "PRZ006",
+   "county_zone": "PRC107",
+   "source_url": "https://api.weather.gov/points/18.2187,-66.4369",
+   "byte_sha256": "c27e385bbf1def2666725dc1e6e6ec2d50a0bc81c72331b05665119e7a296092"
+  },
+  {
+   "geoid": "72109",
+   "name": "Patillas",
+   "lat": 18.000311,
+   "lon": -65.986642,
+   "grid_id": "SJU",
+   "grid_x": 172,
+   "grid_y": 91,
+   "forecast_zone": "PRZ003",
+   "county_zone": "PRC109",
+   "source_url": "https://api.weather.gov/points/18.0003,-65.9866",
+   "byte_sha256": "3a4f1c1917c6c203d58f40342c783e3daf010695ebab6a65a6c71c225ffe4eb8"
+  },
+  {
+   "geoid": "72111",
+   "name": "Peñuelas",
+   "lat": 18.026618,
+   "lon": -66.728125,
+   "grid_id": "SJU",
+   "grid_x": 110,
+   "grid_y": 93,
+   "forecast_zone": "PRZ007",
+   "county_zone": "PRC111",
+   "source_url": "https://api.weather.gov/points/18.0266,-66.7281",
+   "byte_sha256": "5ef0afbbf6887a985e258260a4eefd9a857f7e8ed4e3416c233ca188047ac20e"
+  },
+  {
+   "geoid": "72113",
+   "name": "Ponce",
+   "lat": 18.001717,
+   "lon": -66.606662,
+   "grid_id": "SJU",
+   "grid_x": 120,
+   "grid_y": 91,
+   "forecast_zone": "PRZ007",
+   "county_zone": "PRC113",
+   "source_url": "https://api.weather.gov/points/18.0017,-66.6067",
+   "byte_sha256": "6e2b8814a83e226ad5e0d48b25312a6a9f801e120fc271bdf671a301a0e8b6a5"
+  },
+  {
+   "geoid": "72115",
+   "name": "Quebradillas",
+   "lat": 18.466357,
+   "lon": -66.927603,
+   "grid_id": "SJU",
+   "grid_x": 93,
+   "grid_y": 132,
+   "forecast_zone": "PRZ008",
+   "county_zone": "PRC115",
+   "source_url": "https://api.weather.gov/points/18.4664,-66.9276",
+   "byte_sha256": "91495d8c96d565a7dd3f5ba110107e4233993e543e988b271216a0853d672ef5"
+  },
+  {
+   "geoid": "72117",
+   "name": "Rincón",
+   "lat": 18.33898,
+   "lon": -67.250771,
+   "grid_id": "SJU",
+   "grid_x": 66,
+   "grid_y": 120,
+   "forecast_zone": "PRZ010",
+   "county_zone": "PRC117",
+   "source_url": "https://api.weather.gov/points/18.3390,-67.2508",
+   "byte_sha256": "a10e9932466f9fe7109f5c4664eb548a33c543c8b0a4302aaace826522cd0e26"
+  },
+  {
+   "geoid": "72119",
+   "name": "Río Grande",
+   "lat": 18.376369,
+   "lon": -65.798434,
+   "grid_id": "SJU",
+   "grid_x": 187,
+   "grid_y": 124,
+   "forecast_zone": "PRZ002",
+   "county_zone": "PRC119",
+   "source_url": "https://api.weather.gov/points/18.3764,-65.7984",
+   "byte_sha256": "2bb3ef8c17dded0d310f3ce501bd64b3046f4be833c531aa1ddab112d6416697"
+  },
+  {
+   "geoid": "72121",
+   "name": "Sabana Grande",
+   "lat": 18.084483,
+   "lon": -66.947609,
+   "grid_id": "SJU",
+   "grid_x": 91,
+   "grid_y": 98,
+   "forecast_zone": "PRZ009",
+   "county_zone": "PRC121",
+   "source_url": "https://api.weather.gov/points/18.0845,-66.9476",
+   "byte_sha256": "e98d62f32d39b22ffe46f42d1775adf3a5096ceeab6ff88e9b116e5fee105f9a"
+  },
+  {
+   "geoid": "72123",
+   "name": "Salinas",
+   "lat": 17.971485,
+   "lon": -66.262252,
+   "grid_id": "SJU",
+   "grid_x": 149,
+   "grid_y": 88,
+   "forecast_zone": "PRZ003",
+   "county_zone": "PRC123",
+   "source_url": "https://api.weather.gov/points/17.9715,-66.2623",
+   "byte_sha256": "b9a17ea70e43eb4c9240bb23c4d10b64564058b833dd061fc98f1f1b876f7487"
+  },
+  {
+   "geoid": "72125",
+   "name": "San Germán",
+   "lat": 18.1078,
+   "lon": -67.037263,
+   "grid_id": "SJU",
+   "grid_x": 84,
+   "grid_y": 100,
+   "forecast_zone": "PRZ010",
+   "county_zone": "PRC125",
+   "source_url": "https://api.weather.gov/points/18.1078,-67.0373",
+   "byte_sha256": "e44d8704e022b3ecfc3e8d9441b105da21df2900ecd7e5c52cea272152a33e4c"
+  },
+  {
+   "geoid": "72127",
+   "name": "San Juan",
+   "lat": 18.422249,
+   "lon": -66.069081,
+   "grid_id": "SJU",
+   "grid_x": 165,
+   "grid_y": 128,
+   "forecast_zone": "PRZ001",
+   "county_zone": "PRC127",
+   "source_url": "https://api.weather.gov/points/18.4222,-66.0691",
+   "byte_sha256": "d9488021d652a079d404e07e404281afb728a2e41272c72527cdc110c26ec37d"
+  },
+  {
+   "geoid": "72129",
+   "name": "San Lorenzo",
+   "lat": 18.147107,
+   "lon": -65.976167,
+   "grid_id": "SJU",
+   "grid_x": 172,
+   "grid_y": 104,
+   "forecast_zone": "PRZ004",
+   "county_zone": "PRC129",
+   "source_url": "https://api.weather.gov/points/18.1471,-65.9762",
+   "byte_sha256": "78167e3698df80c9758ece00dd2628dc2857ade9e0e916c06beb3bc54dfe61a6"
+  },
+  {
+   "geoid": "72131",
+   "name": "San Sebastián",
+   "lat": 18.331064,
+   "lon": -66.969064,
+   "grid_id": "SJU",
+   "grid_x": 90,
+   "grid_y": 120,
+   "forecast_zone": "PRZ009",
+   "county_zone": "PRC131",
+   "source_url": "https://api.weather.gov/points/18.3311,-66.9691",
+   "byte_sha256": "3e73204eb5b4b103fc594fde04cd4260a741b2f79259a8b12c7c36341c02dc90"
+  },
+  {
+   "geoid": "72133",
+   "name": "Santa Isabel",
+   "lat": 17.952922,
+   "lon": -66.387588,
+   "grid_id": "SJU",
+   "grid_x": 138,
+   "grid_y": 86,
+   "forecast_zone": "PRZ007",
+   "county_zone": "PRC133",
+   "source_url": "https://api.weather.gov/points/17.9529,-66.3876",
+   "byte_sha256": "02a538f1ac8473e6d64806fc625fd9845758b369c7a17402fa9697b7b40bf854"
+  },
+  {
+   "geoid": "72135",
+   "name": "Toa Alta",
+   "lat": 18.364556,
+   "lon": -66.244669,
+   "grid_id": "SJU",
+   "grid_x": 150,
+   "grid_y": 123,
+   "forecast_zone": "PRZ001",
+   "county_zone": "PRC135",
+   "source_url": "https://api.weather.gov/points/18.3646,-66.2447",
+   "byte_sha256": "568c91704b98111e2ade72de3c5514efa6df1d65f2b44d927cf95566729e0d7f"
+  },
+  {
+   "geoid": "72137",
+   "name": "Toa Baja",
+   "lat": 18.45691,
+   "lon": -66.193193,
+   "grid_id": "SJU",
+   "grid_x": 154,
+   "grid_y": 131,
+   "forecast_zone": "PRZ001",
+   "county_zone": "PRC137",
+   "source_url": "https://api.weather.gov/points/18.4569,-66.1932",
+   "byte_sha256": "d9596e43524bc4a0294f39b3164d1dae43d659ebf8dbf936cfcff15fe27a1f55"
+  },
+  {
+   "geoid": "72139",
+   "name": "Trujillo Alto",
+   "lat": 18.335387,
+   "lon": -66.003787,
+   "grid_id": "SJU",
+   "grid_x": 170,
+   "grid_y": 120,
+   "forecast_zone": "PRZ001",
+   "county_zone": "PRC139",
+   "source_url": "https://api.weather.gov/points/18.3354,-66.0038",
+   "byte_sha256": "123bc6b52344e576e4dda5ac3742e16fb5c1a0b5b6b320400e2a85459a94357b"
+  },
+  {
+   "geoid": "72141",
+   "name": "Utuado",
+   "lat": 18.270865,
+   "lon": -66.702989,
+   "grid_id": "SJU",
+   "grid_x": 112,
+   "grid_y": 114,
+   "forecast_zone": "PRZ009",
+   "county_zone": "PRC141",
+   "source_url": "https://api.weather.gov/points/18.2709,-66.7030",
+   "byte_sha256": "891e74c4f4516375291c1597fe6988e0afccf3b40b50e0edcccf7194ccce9683"
+  },
+  {
+   "geoid": "72143",
+   "name": "Vega Alta",
+   "lat": 18.43622,
+   "lon": -66.336412,
+   "grid_id": "SJU",
+   "grid_x": 142,
+   "grid_y": 129,
+   "forecast_zone": "PRZ005",
+   "county_zone": "PRC143",
+   "source_url": "https://api.weather.gov/points/18.4362,-66.3364",
+   "byte_sha256": "bc2a9eb2cd1f85168f8324a60fbad5f0f2726f19b7d340ce8142c3135fa39c31"
+  },
+  {
+   "geoid": "72145",
+   "name": "Vega Baja",
+   "lat": 18.455128,
+   "lon": -66.397883,
+   "grid_id": "SJU",
+   "grid_x": 137,
+   "grid_y": 131,
+   "forecast_zone": "PRZ005",
+   "county_zone": "PRC145",
+   "source_url": "https://api.weather.gov/points/18.4551,-66.3979",
+   "byte_sha256": "2cb387f7bdcf62292e5341b4466094e9d15bd40a6e764710d9d572836e1692fe"
+  },
+  {
+   "geoid": "72147",
+   "name": "Vieques",
+   "lat": 18.125418,
+   "lon": -65.432474,
+   "grid_id": "SJU",
+   "grid_x": 218,
+   "grid_y": 102,
+   "forecast_zone": "PRZ013",
+   "county_zone": "PRC147",
+   "source_url": "https://api.weather.gov/points/18.1254,-65.4325",
+   "byte_sha256": "34dd10f3e5a626d2c4fa5b6ad033079c238a5a7b9c057a8a76279d4044941a32"
+  },
+  {
+   "geoid": "72149",
+   "name": "Villalba",
+   "lat": 18.130718,
+   "lon": -66.472244,
+   "grid_id": "SJU",
+   "grid_x": 131,
+   "grid_y": 102,
+   "forecast_zone": "PRZ006",
+   "county_zone": "PRC149",
+   "source_url": "https://api.weather.gov/points/18.1307,-66.4722",
+   "byte_sha256": "e6b2da5c9a3df832811a759e906f1a40ec7eb065626286a242ae7fc637e62cd8"
+  },
+  {
+   "geoid": "72151",
+   "name": "Yabucoa",
+   "lat": 18.059858,
+   "lon": -65.859871,
+   "grid_id": "SJU",
+   "grid_x": 182,
+   "grid_y": 96,
+   "forecast_zone": "PRZ003",
+   "county_zone": "PRC151",
+   "source_url": "https://api.weather.gov/points/18.0599,-65.8599",
+   "byte_sha256": "4aa3d96cddee5b584bd89785b0251e451b2ab758334abd61c0740908d58ba310"
+  },
+  {
+   "geoid": "72153",
+   "name": "Yauco",
+   "lat": 18.085669,
+   "lon": -66.857901,
+   "grid_id": "SJU",
+   "grid_x": 99,
+   "grid_y": 98,
+   "forecast_zone": "PRZ007",
+   "county_zone": "PRC153",
+   "source_url": "https://api.weather.gov/points/18.0857,-66.8579",
+   "byte_sha256": "b26bfef90a3b3837455276273790e4d834294bbdf6c6ffe8265e50769980d288"
+  }
+ ],
+ "uv_zips": [
+  {
+   "geoid": "72001",
+   "name": "Adjuntas",
+   "zip": "00601",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00601"
+   ],
+   "land_share_of_municipio": 0.954
+  },
+  {
+   "geoid": "72003",
+   "name": "Aguada",
+   "zip": "00602",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00602"
+   ],
+   "land_share_of_municipio": 0.9826
+  },
+  {
+   "geoid": "72005",
+   "name": "Aguadilla",
+   "zip": "00603",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00603"
+   ],
+   "land_share_of_municipio": 0.938
+  },
+  {
+   "geoid": "72007",
+   "name": "Aguas Buenas",
+   "zip": "00703",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00703"
+   ],
+   "land_share_of_municipio": 0.9607
+  },
+  {
+   "geoid": "72009",
+   "name": "Aibonito",
+   "zip": "00705",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00705"
+   ],
+   "land_share_of_municipio": 0.9437
+  },
+  {
+   "geoid": "72011",
+   "name": "Añasco",
+   "zip": "00610",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00610"
+   ],
+   "land_share_of_municipio": 0.9141
+  },
+  {
+   "geoid": "72013",
+   "name": "Arecibo",
+   "zip": "00612",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00612"
+   ],
+   "land_share_of_municipio": 0.5983
+  },
+  {
+   "geoid": "72015",
+   "name": "Arroyo",
+   "zip": "00714",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00714"
+   ],
+   "land_share_of_municipio": 0.9996
+  },
+  {
+   "geoid": "72017",
+   "name": "Barceloneta",
+   "zip": "00617",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00617"
+   ],
+   "land_share_of_municipio": 0.9783
+  },
+  {
+   "geoid": "72019",
+   "name": "Barranquitas",
+   "zip": "00794",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00794"
+   ],
+   "land_share_of_municipio": 0.9672
+  },
+  {
+   "geoid": "72021",
+   "name": "Bayamón",
+   "zip": "00956",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00956"
+   ],
+   "land_share_of_municipio": 0.6048
+  },
+  {
+   "geoid": "72023",
+   "name": "Cabo Rojo",
+   "zip": "00623",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00623"
+   ],
+   "land_share_of_municipio": 0.5571
+  },
+  {
+   "geoid": "72025",
+   "name": "Caguas",
+   "zip": "00725",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00725"
+   ],
+   "land_share_of_municipio": 0.615
+  },
+  {
+   "geoid": "72027",
+   "name": "Camuy",
+   "zip": "00627",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00627"
+   ],
+   "land_share_of_municipio": 1.0
+  },
+  {
+   "geoid": "72029",
+   "name": "Canóvanas",
+   "zip": "00729",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00729"
+   ],
+   "land_share_of_municipio": 0.9955
+  },
+  {
+   "geoid": "72031",
+   "name": "Carolina",
+   "zip": "00987",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00987"
+   ],
+   "land_share_of_municipio": 0.5706
+  },
+  {
+   "geoid": "72033",
+   "name": "Cataño",
+   "zip": "00962",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00962"
+   ],
+   "land_share_of_municipio": 0.856
+  },
+  {
+   "geoid": "72035",
+   "name": "Cayey",
+   "zip": "00736",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00736"
+   ],
+   "land_share_of_municipio": 0.9773
+  },
+  {
+   "geoid": "72037",
+   "name": "Ceiba",
+   "zip": "00735",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00735"
+   ],
+   "land_share_of_municipio": 0.8921
+  },
+  {
+   "geoid": "72039",
+   "name": "Ciales",
+   "zip": "00638",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00638"
+   ],
+   "land_share_of_municipio": 0.9862
+  },
+  {
+   "geoid": "72041",
+   "name": "Cidra",
+   "zip": "00739",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00739"
+   ],
+   "land_share_of_municipio": 0.8543
+  },
+  {
+   "geoid": "72043",
+   "name": "Coamo",
+   "zip": "00769",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00769"
+   ],
+   "land_share_of_municipio": 0.9687
+  },
+  {
+   "geoid": "72045",
+   "name": "Comerío",
+   "zip": "00782",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00782"
+   ],
+   "land_share_of_municipio": 0.9594
+  },
+  {
+   "geoid": "72047",
+   "name": "Corozal",
+   "zip": "00783",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00783"
+   ],
+   "land_share_of_municipio": 0.98
+  },
+  {
+   "geoid": "72049",
+   "name": "Culebra",
+   "zip": "00775",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00775"
+   ],
+   "land_share_of_municipio": 1.0
+  },
+  {
+   "geoid": "72051",
+   "name": "Dorado",
+   "zip": "00646",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00646"
+   ],
+   "land_share_of_municipio": 0.8848
+  },
+  {
+   "geoid": "72053",
+   "name": "Fajardo",
+   "zip": "00738",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00738"
+   ],
+   "land_share_of_municipio": 0.986
+  },
+  {
+   "geoid": "72054",
+   "name": "Florida",
+   "zip": "00650",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00650"
+   ],
+   "land_share_of_municipio": 0.9958
+  },
+  {
+   "geoid": "72055",
+   "name": "Guánica",
+   "zip": "00653",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00653"
+   ],
+   "land_share_of_municipio": 0.5809
+  },
+  {
+   "geoid": "72057",
+   "name": "Guayama",
+   "zip": "00784",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00784"
+   ],
+   "land_share_of_municipio": 0.9965
+  },
+  {
+   "geoid": "72059",
+   "name": "Guayanilla",
+   "zip": "00656",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00656"
+   ],
+   "land_share_of_municipio": 0.9675
+  },
+  {
+   "geoid": "72061",
+   "name": "Guaynabo",
+   "zip": "00971",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00971"
+   ],
+   "land_share_of_municipio": 0.581
+  },
+  {
+   "geoid": "72063",
+   "name": "Gurabo",
+   "zip": "00778",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00778"
+   ],
+   "land_share_of_municipio": 0.9954
+  },
+  {
+   "geoid": "72065",
+   "name": "Hatillo",
+   "zip": "00659",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00659"
+   ],
+   "land_share_of_municipio": 0.9828
+  },
+  {
+   "geoid": "72067",
+   "name": "Hormigueros",
+   "zip": "00660",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00660"
+   ],
+   "land_share_of_municipio": 0.9976
+  },
+  {
+   "geoid": "72069",
+   "name": "Humacao",
+   "zip": "00791",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00791"
+   ],
+   "land_share_of_municipio": 0.9331
+  },
+  {
+   "geoid": "72071",
+   "name": "Isabela",
+   "zip": "00662",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00662"
+   ],
+   "land_share_of_municipio": 0.7461
+  },
+  {
+   "geoid": "72073",
+   "name": "Jayuya",
+   "zip": "00664",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00664"
+   ],
+   "land_share_of_municipio": 1.0
+  },
+  {
+   "geoid": "72075",
+   "name": "Juana Díaz",
+   "zip": "00795",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00795"
+   ],
+   "land_share_of_municipio": 0.991
+  },
+  {
+   "geoid": "72077",
+   "name": "Juncos",
+   "zip": "00777",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00777"
+   ],
+   "land_share_of_municipio": 1.0
+  },
+  {
+   "geoid": "72079",
+   "name": "Lajas",
+   "zip": "00667",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00667"
+   ],
+   "land_share_of_municipio": 0.9848
+  },
+  {
+   "geoid": "72081",
+   "name": "Lares",
+   "zip": "00669",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00669"
+   ],
+   "land_share_of_municipio": 0.9748
+  },
+  {
+   "geoid": "72083",
+   "name": "Las Marías",
+   "zip": "00670",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00670"
+   ],
+   "land_share_of_municipio": 0.9601
+  },
+  {
+   "geoid": "72085",
+   "name": "Las Piedras",
+   "zip": "00771",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00771"
+   ],
+   "land_share_of_municipio": 0.9816
+  },
+  {
+   "geoid": "72087",
+   "name": "Loíza",
+   "zip": "00772",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00772"
+   ],
+   "land_share_of_municipio": 0.8435
+  },
+  {
+   "geoid": "72089",
+   "name": "Luquillo",
+   "zip": "00773",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00773"
+   ],
+   "land_share_of_municipio": 0.9337
+  },
+  {
+   "geoid": "72091",
+   "name": "Manatí",
+   "zip": "00674",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00674"
+   ],
+   "land_share_of_municipio": 0.9573
+  },
+  {
+   "geoid": "72093",
+   "name": "Maricao",
+   "zip": "00606",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00606"
+   ],
+   "land_share_of_municipio": 0.9959
+  },
+  {
+   "geoid": "72095",
+   "name": "Maunabo",
+   "zip": "00707",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00707"
+   ],
+   "land_share_of_municipio": 0.9887
+  },
+  {
+   "geoid": "72097",
+   "name": "Mayagüez",
+   "zip": "00680",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00680"
+   ],
+   "land_share_of_municipio": 0.7795
+  },
+  {
+   "geoid": "72099",
+   "name": "Moca",
+   "zip": "00676",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00676"
+   ],
+   "land_share_of_municipio": 0.9626
+  },
+  {
+   "geoid": "72101",
+   "name": "Morovis",
+   "zip": "00687",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00687"
+   ],
+   "land_share_of_municipio": 1.0
+  },
+  {
+   "geoid": "72103",
+   "name": "Naguabo",
+   "zip": "00718",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00718"
+   ],
+   "land_share_of_municipio": 0.9127
+  },
+  {
+   "geoid": "72105",
+   "name": "Naranjito",
+   "zip": "00719",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00719"
+   ],
+   "land_share_of_municipio": 1.0
+  },
+  {
+   "geoid": "72107",
+   "name": "Orocovis",
+   "zip": "00720",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00720"
+   ],
+   "land_share_of_municipio": 0.8761
+  },
+  {
+   "geoid": "72109",
+   "name": "Patillas",
+   "zip": "00723",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00723"
+   ],
+   "land_share_of_municipio": 0.9819
+  },
+  {
+   "geoid": "72111",
+   "name": "Peñuelas",
+   "zip": "00624",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00624"
+   ],
+   "land_share_of_municipio": 1.0
+  },
+  {
+   "geoid": "72113",
+   "name": "Ponce",
+   "zip": "00731",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00731"
+   ],
+   "land_share_of_municipio": 0.4132
+  },
+  {
+   "geoid": "72115",
+   "name": "Quebradillas",
+   "zip": "00678",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00678"
+   ],
+   "land_share_of_municipio": 0.9994
+  },
+  {
+   "geoid": "72117",
+   "name": "Rincón",
+   "zip": "00677",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00677"
+   ],
+   "land_share_of_municipio": 1.0
+  },
+  {
+   "geoid": "72119",
+   "name": "Río Grande",
+   "zip": "00745",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00745"
+   ],
+   "land_share_of_municipio": 1.0
+  },
+  {
+   "geoid": "72121",
+   "name": "Sabana Grande",
+   "zip": "00637",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00637"
+   ],
+   "land_share_of_municipio": 0.9105
+  },
+  {
+   "geoid": "72123",
+   "name": "Salinas",
+   "zip": "00751",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00751"
+   ],
+   "land_share_of_municipio": 0.8737
+  },
+  {
+   "geoid": "72125",
+   "name": "San Germán",
+   "zip": "00683",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00683"
+   ],
+   "land_share_of_municipio": 0.9044
+  },
+  {
+   "geoid": "72127",
+   "name": "San Juan",
+   "zip": "00926",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00926"
+   ],
+   "land_share_of_municipio": 0.4048
+  },
+  {
+   "geoid": "72129",
+   "name": "San Lorenzo",
+   "zip": "00754",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00754"
+   ],
+   "land_share_of_municipio": 0.9414
+  },
+  {
+   "geoid": "72131",
+   "name": "San Sebastián",
+   "zip": "00685",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00685"
+   ],
+   "land_share_of_municipio": 0.9796
+  },
+  {
+   "geoid": "72133",
+   "name": "Santa Isabel",
+   "zip": "00757",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00757"
+   ],
+   "land_share_of_municipio": 0.953
+  },
+  {
+   "geoid": "72135",
+   "name": "Toa Alta",
+   "zip": "00953",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00953"
+   ],
+   "land_share_of_municipio": 0.9726
+  },
+  {
+   "geoid": "72137",
+   "name": "Toa Baja",
+   "zip": "00949",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00949"
+   ],
+   "land_share_of_municipio": 0.8492
+  },
+  {
+   "geoid": "72139",
+   "name": "Trujillo Alto",
+   "zip": "00976",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00976"
+   ],
+   "land_share_of_municipio": 0.7949
+  },
+  {
+   "geoid": "72141",
+   "name": "Utuado",
+   "zip": "00641",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00641"
+   ],
+   "land_share_of_municipio": 0.7406
+  },
+  {
+   "geoid": "72143",
+   "name": "Vega Alta",
+   "zip": "00692",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00692"
+   ],
+   "land_share_of_municipio": 0.9553
+  },
+  {
+   "geoid": "72145",
+   "name": "Vega Baja",
+   "zip": "00693",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00693"
+   ],
+   "land_share_of_municipio": 0.952
+  },
+  {
+   "geoid": "72147",
+   "name": "Vieques",
+   "zip": "00765",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00765"
+   ],
+   "land_share_of_municipio": 0.9304
+  },
+  {
+   "geoid": "72149",
+   "name": "Villalba",
+   "zip": "00766",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00766"
+   ],
+   "land_share_of_municipio": 1.0
+  },
+  {
+   "geoid": "72151",
+   "name": "Yabucoa",
+   "zip": "00767",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00767"
+   ],
+   "land_share_of_municipio": 0.9926
+  },
+  {
+   "geoid": "72153",
+   "name": "Yauco",
+   "zip": "00698",
+   "zip_rank": 1,
+   "zips_tried": [
+    "00698"
+   ],
+   "land_share_of_municipio": 0.9052
+  }
+ ],
+ "unresolved_material": []
+}
