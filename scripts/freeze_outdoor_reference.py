@@ -12,6 +12,10 @@ from, so a rebuild that changes a binding shows which response changed.
   binding and the bytes' hash are.
 * **gridpoints** — the NWS forecast grid cell (``/points/{lat},{lon}``) holding each
   municipio's Census internal point (``data/geo/pr_municipios.json``).
+* **forecast_zones** — the name of each NWS land forecast zone those internal points fall
+  in, because NWS land alerts name zones, not municipios.
+* **access_assets** — the municipios each certified El Yunque access asset crosses,
+  from the USDA Forest Service geometry already in ``el_yunque_access_assets.json``.
 * **uv_zips** — per municipio, the ZCTA with the largest land area inside it (U.S. Census
   2020 ZCTA–county relationship file) that EPA's UV service answers for; EPA returns
   HTTP 500 for a few PR ZIPs, so the next-largest is tried. EPA's UV forecast is
@@ -48,6 +52,7 @@ from aguayluz.outdoor import (  # noqa: E402
 
 ZONES_URL = "https://api.weather.gov/zones?type=marine&area=AM"
 POINTS_URL = "https://api.weather.gov/points/{lat:.4f},{lon:.4f}"
+FORECAST_ZONE_URL = "https://api.weather.gov/zones/forecast/{zone}"
 CENSUS_ZCTA_COUNTY_URL = (
     "https://www2.census.gov/geo/docs/maps-data/data/rel2020/zcta520/"
     "tab20_zcta520_county20_natl.txt"
@@ -56,6 +61,7 @@ EPA_UV_URL = "https://data.epa.gov/efservice/getEnvirofactsUVDAILY/ZIP/{zip}/JSO
 #: ZCTAs tried per municipio, largest land area first.
 UV_ZIP_CANDIDATES = 4
 WFO = "SJU"
+ACCESS_ASSETS = REPO / "data" / "reference" / "el_yunque_access_assets.json"
 #: A marine zone applies to a municipio whose polygon lies within this gap of the zone.
 MARINE_BUFFER_M = 2000.0
 
@@ -136,6 +142,67 @@ def gridpoints(client: Any, municipios: list[dict]) -> tuple[list[dict], dict]:
     return rows, {"source_url": POINTS_URL, "binding": "grid cell holding the Census internal point"}
 
 
+def forecast_zones(client: Any, grid: list[dict]) -> tuple[list[dict], dict]:
+    """Name of each land forecast zone a municipio's internal point falls in.
+
+    NWS land alerts (Heat Advisory, Rip Current Statement) list zone names in
+    ``areaDesc`` ("San Juan and Vicinity; Northeast; ..."), not municipios.
+    """
+    rows = []
+    for zone_id in sorted({g["forecast_zone"] for g in grid if g.get("forecast_zone")}):
+        url = FORECAST_ZONE_URL.format(zone=zone_id)
+        payload = _get(client, url)
+        props = json.loads(payload).get("properties") or {}
+        rows.append({
+            "zone_id": zone_id,
+            "name": props.get("name"),
+            "municipio_geoids": sorted(g["geoid"] for g in grid if g.get("forecast_zone") == zone_id),
+            "source_url": url,
+            "byte_sha256": sha256(payload).hexdigest(),
+        })
+    return rows, {"source_url": FORECAST_ZONE_URL,
+                  "binding": "municipios whose Census internal point lies in the zone (via /points)"}
+
+
+def access_assets(municipio_shapes: list[tuple[dict, Any]]) -> tuple[list[dict], dict]:
+    """Municipios each certified El Yunque access asset (trail, road, site) crosses.
+
+    Geometry is the USDA Forest Service WKB already frozen in
+    ``data/reference/el_yunque_access_assets.json``; nothing is digitised or inferred.
+    """
+    from base64 import b64decode
+
+    from shapely import wkb
+
+    registry = json.loads(ACCESS_ASSETS.read_text(encoding="utf-8"))
+    rows = []
+    unverified: list[str] = []
+    for asset in registry.get("assets", []):
+        raw = asset.get("geometry_wkb_base64")
+        if not raw:
+            continue
+        # Some registry entries drop the base64 padding; the bytes must still hash to the
+        # registry's geometry_wkb_sha256, or the asset is not used.
+        payload = b64decode(raw + "=" * (-len(raw) % 4))
+        if sha256(payload).hexdigest() != asset.get("geometry_wkb_sha256"):
+            unverified.append(asset["asset_id"])
+            continue
+        geom = wkb.loads(payload)
+        hits = [m for m, shape_ in municipio_shapes if shape_.intersects(geom)]
+        rows.append({
+            "asset_id": asset["asset_id"],
+            "semantic_key": asset.get("semantic_key"),
+            "asset_name": asset.get("asset_name"),
+            "municipios": [{"geoid": m["geoid"], "name": m["name"]} for m in hits],
+            "geometry_wkb_sha256": asset.get("geometry_wkb_sha256"),
+        })
+    rows.sort(key=lambda r: r["asset_id"])
+    return rows, {"source_path": str(ACCESS_ASSETS.relative_to(REPO)),
+                  "byte_sha256": sha256(ACCESS_ASSETS.read_bytes()).hexdigest(),
+                  "binding": "certified USDA FS asset geometry intersects the municipio polygon",
+                  "unverified_asset_ids": unverified}
+
+
 def uv_zips(client: Any, municipios: list[dict]) -> tuple[list[dict], dict]:
     payload = _get(client, CENSUS_ZCTA_COUNTY_URL, accept="text/plain")
     text = payload.decode("utf-8-sig")
@@ -201,20 +268,30 @@ def main(argv: list[str] | None = None) -> int:
                       headers={"User-Agent": USER_AGENT}) as client:
         zones, zones_src = marine_zones(client, shapes)
         grid, grid_src = gridpoints(client, municipios)
+        land_zones, land_src = forecast_zones(client, grid)
         zips, zips_src = uv_zips(client, municipios)
+    assets, assets_src = access_assets(shapes)
 
     unresolved = []
     if any(not g["grid_id"] for g in grid):
         unresolved.append("MUNICIPIO_WITHOUT_GRIDPOINT")
     if any(not z["zip"] for z in zips):
         unresolved.append("MUNICIPIO_WITHOUT_ZCTA")
+    if assets_src["unverified_asset_ids"]:
+        # Not fatal: an access condition for that asset stays unbound, as it would be
+        # without a certified geometry at all.
+        unresolved.append("ACCESS_ASSET_WKB_DOES_NOT_MATCH_ITS_SHA256")
     payload = {
         "schema_version": REFERENCE_SCHEMA,
         "generated_at": _iso(datetime.now(timezone.utc)),
         "generated_by": "scripts/freeze_outdoor_reference.py",
-        "sources": {"marine_zones": zones_src, "gridpoints": grid_src, "uv_zips": zips_src},
+        "sources": {"marine_zones": zones_src, "gridpoints": grid_src,
+                    "forecast_zones": land_src, "uv_zips": zips_src,
+                    "access_assets": assets_src},
         "marine_zones": zones,
         "gridpoints": grid,
+        "forecast_zones": land_zones,
+        "access_assets": assets,
         "uv_zips": zips,
         "unresolved_material": unresolved,
     }
@@ -222,7 +299,9 @@ def main(argv: list[str] | None = None) -> int:
         "marine_zones": len(zones),
         "coastal_zone_bindings": sum(len(z["municipios"]) for z in zones),
         "gridpoints": sum(1 for g in grid if g["grid_id"]),
+        "forecast_zones": {z["zone_id"]: z["name"] for z in land_zones},
         "uv_zips": sum(1 for z in zips if z["zip"]),
+        "access_assets": {a["asset_name"]: [m["name"] for m in a["municipios"]] for a in assets},
         "unresolved": unresolved,
     }
     print(json.dumps(summary, indent=2))
@@ -231,7 +310,8 @@ def main(argv: list[str] | None = None) -> int:
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(payload, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"wrote {args.out}")
-    return 0 if not unresolved else 1
+    fatal = [u for u in unresolved if u != "ACCESS_ASSET_WKB_DOES_NOT_MATCH_ITS_SHA256"]
+    return 0 if not fatal else 1
 
 
 if __name__ == "__main__":

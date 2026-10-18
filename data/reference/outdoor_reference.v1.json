@@ -1,6 +1,6 @@
 {
  "schema_version": "aguayluz.outdoor-reference/v1",
- "generated_at": "2026-10-18T17:37:19.142784Z",
+ "generated_at": "2026-10-18T17:47:52.190039Z",
  "generated_by": "scripts/freeze_outdoor_reference.py",
  "sources": {
   "marine_zones": {
@@ -12,11 +12,23 @@
    "source_url": "https://api.weather.gov/points/{lat:.4f},{lon:.4f}",
    "binding": "grid cell holding the Census internal point"
   },
+  "forecast_zones": {
+   "source_url": "https://api.weather.gov/zones/forecast/{zone}",
+   "binding": "municipios whose Census internal point lies in the zone (via /points)"
+  },
   "uv_zips": {
    "source_url": "https://www2.census.gov/geo/docs/maps-data/data/rel2020/zcta520/tab20_zcta520_county20_natl.txt",
    "byte_sha256": "3ed41278d637dc249e0323306f68be8a6c234e3090f4de88ef328dee71aeaaaf",
    "binding": "largest-land-area ZCTA inside the municipio (county GEOID) that EPA's UV service answers for",
    "coverage_check": "https://data.epa.gov/efservice/getEnvirofactsUVDAILY/ZIP/{zip}/JSON"
+  },
+  "access_assets": {
+   "source_path": "data/reference/el_yunque_access_assets.json",
+   "byte_sha256": "d6fbe1014f7b69b0b3a1a39c8476477df216f36bf00875a8ae26a0e38198c1ce",
+   "binding": "certified USDA FS asset geometry intersects the municipio polygon",
+   "unverified_asset_ids": [
+    "LOCAL_b249b86bb2adeb1a"
+   ]
   }
  },
  "marine_zones": [
@@ -1409,6 +1421,228 @@
    "byte_sha256": "b26bfef90a3b3837455276273790e4d834294bbdf6c6ffe8265e50769980d288"
   }
  ],
+ "forecast_zones": [
+  {
+   "zone_id": "PRZ001",
+   "name": "San Juan and Vicinity",
+   "municipio_geoids": [
+    "72021",
+    "72031",
+    "72033",
+    "72061",
+    "72127",
+    "72135",
+    "72137",
+    "72139"
+   ],
+   "source_url": "https://api.weather.gov/zones/forecast/PRZ001",
+   "byte_sha256": "00b7ce72d7f280f405e662b52532dd42ac232e7a3f23cf9072b21cb3e1d17230"
+  },
+  {
+   "zone_id": "PRZ002",
+   "name": "Northeast",
+   "municipio_geoids": [
+    "72029",
+    "72037",
+    "72053",
+    "72069",
+    "72087",
+    "72089",
+    "72103",
+    "72119"
+   ],
+   "source_url": "https://api.weather.gov/zones/forecast/PRZ002",
+   "byte_sha256": "37e25cc783d31b9d74dfa142534fa2a606c96ea43ea59a287443f43133dc7d6d"
+  },
+  {
+   "zone_id": "PRZ003",
+   "name": "Southeast",
+   "municipio_geoids": [
+    "72015",
+    "72057",
+    "72095",
+    "72109",
+    "72123",
+    "72151"
+   ],
+   "source_url": "https://api.weather.gov/zones/forecast/PRZ003",
+   "byte_sha256": "b09e8fd271ebe83508959148e123895f365d32c733fc71c265dde5caa5b064e3"
+  },
+  {
+   "zone_id": "PRZ004",
+   "name": "Eastern Interior",
+   "municipio_geoids": [
+    "72007",
+    "72025",
+    "72035",
+    "72041",
+    "72045",
+    "72063",
+    "72077",
+    "72085",
+    "72129"
+   ],
+   "source_url": "https://api.weather.gov/zones/forecast/PRZ004",
+   "byte_sha256": "8e8f59226fe4a34297de99cf125c9f930fd026c26d678370e7790f57927a7ba7"
+  },
+  {
+   "zone_id": "PRZ005",
+   "name": "North Central",
+   "municipio_geoids": [
+    "72013",
+    "72017",
+    "72051",
+    "72054",
+    "72091",
+    "72143",
+    "72145"
+   ],
+   "source_url": "https://api.weather.gov/zones/forecast/PRZ005",
+   "byte_sha256": "dd4aa813a0dff6c639902124f90f8f9f4c45b560a22c8d256ae73eadf2ccac9f"
+  },
+  {
+   "zone_id": "PRZ006",
+   "name": "Central Interior",
+   "municipio_geoids": [
+    "72009",
+    "72019",
+    "72039",
+    "72043",
+    "72047",
+    "72073",
+    "72101",
+    "72105",
+    "72107",
+    "72149"
+   ],
+   "source_url": "https://api.weather.gov/zones/forecast/PRZ006",
+   "byte_sha256": "ef52f41c5eb14b07de6f3b6f7930c5149bd37c43322f7c305cc6417290238f41"
+  },
+  {
+   "zone_id": "PRZ007",
+   "name": "Ponce and Vicinity",
+   "municipio_geoids": [
+    "72059",
+    "72075",
+    "72111",
+    "72113",
+    "72133",
+    "72153"
+   ],
+   "source_url": "https://api.weather.gov/zones/forecast/PRZ007",
+   "byte_sha256": "335ec39013c38caadb1ba5a629e9b0e13dd10df2cdb970ea944cb3c8a254ace0"
+  },
+  {
+   "zone_id": "PRZ008",
+   "name": "Northwest",
+   "municipio_geoids": [
+    "72005",
+    "72027",
+    "72065",
+    "72071",
+    "72115"
+   ],
+   "source_url": "https://api.weather.gov/zones/forecast/PRZ008",
+   "byte_sha256": "d7015afe569575fffc1b1aba00ca8f859dc301b2b0c6a8ec989aa9fc0a2373b1"
+  },
+  {
+   "zone_id": "PRZ009",
+   "name": "Western Interior",
+   "municipio_geoids": [
+    "72001",
+    "72081",
+    "72083",
+    "72093",
+    "72121",
+    "72131",
+    "72141"
+   ],
+   "source_url": "https://api.weather.gov/zones/forecast/PRZ009",
+   "byte_sha256": "395b4146c4669534bf697f26d2050794844d7d284c9a67b03702c39671ad50d3"
+  },
+  {
+   "zone_id": "PRZ010",
+   "name": "Mayaguez and Vicinity",
+   "municipio_geoids": [
+    "72003",
+    "72011",
+    "72067",
+    "72097",
+    "72099",
+    "72117",
+    "72125"
+   ],
+   "source_url": "https://api.weather.gov/zones/forecast/PRZ010",
+   "byte_sha256": "3af0c5b8a60af3d0dd464660837f8d24dc23d1fc7c72a21faf5987b0df469445"
+  },
+  {
+   "zone_id": "PRZ011",
+   "name": "Southwest",
+   "municipio_geoids": [
+    "72023",
+    "72055",
+    "72079"
+   ],
+   "source_url": "https://api.weather.gov/zones/forecast/PRZ011",
+   "byte_sha256": "aa26705f9d481a60e4562ee28a317b2f696a4a5238d8d7e79a9b659fe1d10bb4"
+  },
+  {
+   "zone_id": "PRZ012",
+   "name": "Culebra",
+   "municipio_geoids": [
+    "72049"
+   ],
+   "source_url": "https://api.weather.gov/zones/forecast/PRZ012",
+   "byte_sha256": "9fa59c9fe629566e6f580c9f6a99be0270a95e222674924c19c2d174d8c2eec5"
+  },
+  {
+   "zone_id": "PRZ013",
+   "name": "Vieques",
+   "municipio_geoids": [
+    "72147"
+   ],
+   "source_url": "https://api.weather.gov/zones/forecast/PRZ013",
+   "byte_sha256": "9f79b3a70b7bdb2bd35bc47489165b27c5870546000e8d985e52f8fa914df19d"
+  }
+ ],
+ "access_assets": [
+  {
+   "asset_id": "LOCAL_1c4282d2a26d3548",
+   "semantic_key": "elyunque.trail.la_mina",
+   "asset_name": "La Mina Trail",
+   "municipios": [
+    {
+     "geoid": "72119",
+     "name": "Río Grande"
+    }
+   ],
+   "geometry_wkb_sha256": "2bbd20067638caeb506b40512c4a306cddc26e89ab16dad3d60d1dc2e11a49e9"
+  },
+  {
+   "asset_id": "LOCAL_3a22be084cc477e6",
+   "semantic_key": "elyunque.trail.big_tree",
+   "asset_name": "Big Tree Trail",
+   "municipios": [
+    {
+     "geoid": "72119",
+     "name": "Río Grande"
+    }
+   ],
+   "geometry_wkb_sha256": "0c61b575b419ee8ed560a4848a9f90c2eb183e0fa76b82dcf662972b0e96452a"
+  },
+  {
+   "asset_id": "LOCAL_792949c90aaf0a0f",
+   "semantic_key": "elyunque.facility.el_portal_rainforest_center",
+   "asset_name": "El Portal Rainforest Center",
+   "municipios": [
+    {
+     "geoid": "72119",
+     "name": "Río Grande"
+    }
+   ],
+   "geometry_wkb_sha256": "306df7a4a9cc8bb6db19d7ac95c7edb1c4344a1070c27f5c61bd79dfa9974454"
+  }
+ ],
  "uv_zips": [
   {
    "geoid": "72001",
@@ -2191,5 +2425,7 @@
    "land_share_of_municipio": 0.9052
   }
  ],
- "unresolved_material": []
+ "unresolved_material": [
+  "ACCESS_ASSET_WKB_DOES_NOT_MATCH_ITS_SHA256"
+ ]
 }
