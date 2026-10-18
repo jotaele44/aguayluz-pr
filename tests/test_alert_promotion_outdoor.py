@@ -8,13 +8,12 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+import test_ingest_outdoor_sources as ingests
 from aguayluz.alert_promotion import GENERATED_MARKERS, build_all_alerts, is_critical
 from aguayluz.alert_promotion.hydromet import HydrometInputs
 from aguayluz.alert_promotion.outdoor import outdoor_alerts
 from aguayluz.hydromet import store
 from aguayluz.water_alerts import load_geo
-
-import test_ingest_outdoor_sources as ingests
 
 REPO = Path(__file__).resolve().parent.parent
 GEO = load_geo(json.loads((REPO / "data" / "geo" / "pr_municipios.json").read_text())["municipios"])
