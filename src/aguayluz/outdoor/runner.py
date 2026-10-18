@@ -244,7 +244,13 @@ def run_ingest(
     if built.arithmetic.get("state") != "PASS":
         return fail(f"source arithmetic does not close: {built.arithmetic}")
 
+    # The NWS Hydromet page's source card shows one URL and one byte hash; give it the
+    # response the state rows are built from (the product, for a listing + product pair).
+    primary = ctx.responses[-1] if 0 < len(ctx.responses) <= 2 else None
     summary: dict[str, Any] = {
+        "source_url": primary.manifestation.source_url if primary
+        else next(iter((source.get("endpoints") or {}).values()), None),
+        "byte_sha256": primary.manifestation.byte_sha256 if primary else None,
         "responses": [
             {"key": r.key, "byte_sha256": r.manifestation.byte_sha256,
              "manifestation_id": r.manifestation.manifestation_id}

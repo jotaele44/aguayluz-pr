@@ -570,11 +570,9 @@ def _access(m: dict, inputs: Inputs, now: datetime) -> dict:
             continue
         status = cond.get("status")
         end, start = _parse(cond.get("effective_end")), _parse(cond.get("effective_start"))
-        if status in {"closed", "restricted"} and (end is None or end > now):
-            pass
-        elif status == "scheduled" and start is not None and start > now:
-            pass
-        else:
+        in_force = status in {"closed", "restricted"} and (end is None or end > now)
+        upcoming = status == "scheduled" and start is not None and start > now
+        if not (in_force or upcoming):
             continue
         rows.append({"asset": asset.get("asset_name"), "status": status, "scope_name": cond.get("scope_name"),
                      "effective_start": cond.get("effective_start"), "effective_end": cond.get("effective_end"),
