@@ -34,8 +34,8 @@ def category(row: dict[str, Any]) -> str | None:
 def observed_at(row: dict[str, Any]) -> datetime | None:
     try:
         day = datetime.strptime(str(row.get("DateObserved") or "").strip(), "%Y-%m-%d")
-        hour = int(row.get("HourObserved"))
-    except (TypeError, ValueError):
+        hour = int(row["HourObserved"])
+    except (KeyError, TypeError, ValueError):
         return None
     offset = _TZ_OFFSETS.get(str(row.get("LocalTimeZone") or "").strip().upper())
     if offset is None:
@@ -49,7 +49,8 @@ def classify(row: Any) -> str:
         return "unresolved:not_an_object"
     if not row.get("ReportingArea") or not row.get("ParameterName"):
         return "unresolved:missing_area_or_parameter"
-    if not isinstance(row.get("AQI"), (int, float)) or row.get("AQI") < 0:
+    aqi = row.get("AQI")
+    if not isinstance(aqi, (int, float)) or isinstance(aqi, bool) or aqi < 0:
         return "unresolved:missing_aqi"
     if str(row.get("StateCode") or "").upper() != "PR":
         return f"excluded:state_{str(row.get('StateCode') or 'blank').lower()}"

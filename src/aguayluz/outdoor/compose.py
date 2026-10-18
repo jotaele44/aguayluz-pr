@@ -377,10 +377,11 @@ def _beach(m: dict, inputs: Inputs, coastal: bool, now: datetime) -> dict:
         return _carry(inputs.previous.get(m["geoid"]), "beach_water_quality", [sid])
     beach = [r for r in current_records([r for r in inputs.hazard_records
                                          if r.canonical_event_id.startswith("DRNA_BEACH:")])]
-    dated = [r for r in beach if r.issued_at is not None]
+    issued = {r.record_id: r.issued_at for r in beach if r.issued_at is not None}
+    dated = [r for r in beach if r.record_id in issued]
     if not dated:
         return _carry(inputs.previous.get(m["geoid"]), "beach_water_quality", [sid])
-    latest_at = max(r.issued_at for r in dated)
+    latest_at = max(issued.values())
     post_id = next(r.raw_attributes.get("post_id") for r in dated if r.issued_at == latest_at)
     latest = [r for r in dated if r.raw_attributes.get("post_id") == post_id]
     mine = [r for r in latest
@@ -501,7 +502,7 @@ def _nws_alerts(m: dict, inputs: Inputs, land: dict[str, list[dict]] | None) -> 
 def _storms(inputs: Inputs, now: datetime) -> list[dict] | None:
     if inputs.service_events is None:
         return None
-    latest: dict[str, dict] = {}
+    latest: dict[str, tuple[datetime, dict[str, Any]]] = {}
     for event in inputs.service_events:
         ref = str(event.get("source_ref") or "")
         if not ref.startswith("NHC-"):
@@ -510,9 +511,9 @@ def _storms(inputs: Inputs, now: datetime) -> list[dict] | None:
         if start is None or now - start > timedelta(hours=NHC_CURRENT_HOURS) or start > now + timedelta(hours=1):
             continue
         storm = ref.split(" ", 1)[0]
-        if storm not in latest or start > _parse(latest[storm]["start_time"]):
-            latest[storm] = event
-    return [latest[k] for k in sorted(latest)]
+        if storm not in latest or start > latest[storm][0]:
+            latest[storm] = (start, event)
+    return [latest[k][1] for k in sorted(latest)]
 
 
 def _tropical(m: dict, inputs: Inputs, storms: list[dict] | None) -> dict:
@@ -534,7 +535,7 @@ def _quakes(m: dict, inputs: Inputs, now: datetime) -> dict:
     sid = "usgs_quakes"
     if inputs.service_events is None:
         return _carry(inputs.previous.get(m["geoid"]), "earthquakes", [sid])
-    rows = []
+    rows: list[dict[str, Any]] = []
     for event in inputs.service_events:
         if not str(event.get("source_ref") or "").startswith("USGS-EQ:"):
             continue
@@ -550,7 +551,7 @@ def _quakes(m: dict, inputs: Inputs, now: datetime) -> dict:
         if gap <= QUAKE_RANGE_KM:
             rows.append({"magnitude": float(mag_match.group(1)), "place": event.get("affected_area"),
                          "time": _iso(start), "distance_km": round(gap, 1), "event_id": event.get("event_id")})
-    rows.sort(key=lambda r: (-r["magnitude"], r["event_id"] or ""))
+    rows.sort(key=lambda r: (-float(r["magnitude"]), str(r["event_id"] or "")))
     return _component("REPORTED" if rows else "NONE_ACTIVE", [sid], recent=rows,
                       note=f"M{QUAKE_MIN_MAG}+ within {QUAKE_RANGE_KM:.0f} km in the last {QUAKE_WINDOW_HOURS} h (USGS).")
 

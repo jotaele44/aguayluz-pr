@@ -124,9 +124,10 @@ class RunContext:
         ``redact_query`` names query parameters (an API key) that must never reach a
         manifestation, a receipt or a log line.
         """
+        response_headers: dict[str, str] = {}
         try:
             if self.offline:
-                payload, response_headers = self._offline_bytes(key), {}
+                payload = self._offline_bytes(key)
             else:
                 payload, response_headers = self._live_bytes(url, params, headers)
         except AcquisitionError:

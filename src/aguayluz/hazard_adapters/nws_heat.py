@@ -87,7 +87,7 @@ def summarize(properties: dict[str, Any], now: datetime) -> dict[str, Any]:
             series = properties.get(field)
             value, at = window_max(series, now, end)
             if value is not None and not _uom_is_celsius(series):
-                raise ValueError(f"{field} unit {series.get('uom')!r} is not degC")
+                raise ValueError(f"{field} unit {(series or {}).get('uom')!r} is not degC")
             out[f"{key}_max_f_{label}"] = c_to_f(value)
             if key == "heat_index":
                 out[f"heat_index_peak_at_{label}"] = at

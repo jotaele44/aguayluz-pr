@@ -49,9 +49,10 @@ def parse_daily(payload: Any) -> dict[str, Any] | None:
     for row in payload:
         if not isinstance(row, dict) or str(row.get("STATE") or "").upper() != "PR":
             continue
+        index: float | None
         try:
-            index = float(row.get("UV_INDEX"))
-        except (TypeError, ValueError):
+            index = float(row["UV_INDEX"])
+        except (KeyError, TypeError, ValueError):
             index = None
         day = parse_date(row.get("DATE"))
         return {

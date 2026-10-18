@@ -39,7 +39,7 @@ modules:
       D2+ Severe alerts) and corroborated by the NCEI percent-of-normal precipitation
       feed (scripts/ingest_precip_ncei.py, needs_review shortfall proxy) — the same
       pattern SEISMIC_GEO was activated by the USGS earthquake ingest. Beach and marine
-      hazards come from the outdoor-conditions layer: NWS Surf Zone Forecast rip current
+      hazards come from the outdoor-conditions layer, as NWS Surf Zone Forecast rip current
       risk High (scripts/ingest_nws_surf_zone.py, 3) and NWS marine-zone alerts for PR waters
       (scripts/ingest_nws_marine_alerts.py, advisory/watch 2, warning 3), both below the
       push/SMS floor.
