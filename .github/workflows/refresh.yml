@@ -57,12 +57,17 @@ jobs:
         if: >
           (github.event_name == 'schedule' && github.event.schedule == '*/15 * * * *') ||
           (github.event_name == 'workflow_dispatch' && github.event.inputs.cadence == 'fast')
+        env:
+          # Optional: scripts/ingest_airnow.py skips (exit 0, no receipt) without it.
+          AIRNOW_API_KEY: ${{ secrets.AIRNOW_API_KEY }}
         run: python scripts/refresh.py --fast
 
       - name: Daily refresh (NWS alerts + USGS levels)
         if: >
           github.event_name == 'schedule' &&
           github.event.schedule == '0 7 * * *'
+        env:
+          AIRNOW_API_KEY: ${{ secrets.AIRNOW_API_KEY }}
         run: python scripts/refresh.py --daily
 
       - name: Weekly refresh (full corpus)
@@ -77,6 +82,7 @@ jobs:
         env:
           OSHA_API_KEY: ${{ secrets.OSHA_API_KEY }}
           NEON_API_TOKEN: ${{ secrets.NEON_API_TOKEN }}
+          AIRNOW_API_KEY: ${{ secrets.AIRNOW_API_KEY }}
         run: python scripts/refresh.py --weekly
 
       - name: Full refresh (includes optional MiLUMA)
@@ -86,6 +92,7 @@ jobs:
         env:
           OSHA_API_KEY: ${{ secrets.OSHA_API_KEY }}
           NEON_API_TOKEN: ${{ secrets.NEON_API_TOKEN }}
+          AIRNOW_API_KEY: ${{ secrets.AIRNOW_API_KEY }}
         run: python scripts/refresh.py --all
 
       - name: Commit updated data

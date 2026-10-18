@@ -119,9 +119,11 @@ def build(ctx: RunContext, responses: list) -> Built:
         head = current.get(event_id)
         if head is not None and head.normalized_values.get("material_digest") == adapter.material_digest(material):
             continue
+        coastal = sorted({m["name"] for z in material["zones"]
+                          for m in (zone_index.get(z) or {}).get("municipios", [])})
         record = adapter.normalize(props, pr_zones, manifestation_id,
                                    supersedes_record_id=head.record_id if head else None,
-                                   closed_at=ctx.now)
+                                   closed_at=ctx.now, coastal_municipios=coastal)
         built.records.append(record)
         built.relationships.extend(_relationships(record, material["zones"], zone_index, manifestation_id))
         current[event_id] = record

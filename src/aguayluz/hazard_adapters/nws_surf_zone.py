@@ -267,8 +267,13 @@ def normalize(
     product_id: str,
     municipality_id: str | None,
     supersedes_record_id: str | None,
+    municipios: list[str] | None = None,
 ) -> HazardRecord:
-    """One zone-day rip current forecast as a HYDROMETEOROLOGY advisory record."""
+    """One zone-day rip current forecast as a HYDROMETEOROLOGY advisory record.
+
+    ``municipios`` are the Census names the segment bound to (the same bindings the
+    ingest writes as relationships), carried so the alert promoter needs no join.
+    """
     material = material_state(zone, day, period)
     start = datetime(day.year, day.month, day.day, tzinfo=AST)
     risk = period.rip_current_risk
@@ -305,6 +310,7 @@ def normalize(
         normalized_values={
             **material,
             "rip_current_risk_raw": period.rip_current_risk_raw,
+            "municipios": sorted(municipios or []),
             "material_digest": material_digest(material),
         },
     )

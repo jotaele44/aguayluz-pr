@@ -118,6 +118,7 @@ def normalize(
     supersedes_record_id: str | None = None,
     closed: bool = False,
     closed_at: datetime | None = None,
+    coastal_municipios: list[str] | None = None,
 ) -> HazardRecord:
     material = material_state(props, pr_zones, closed=closed)
     parsed = vtec(props) or {}
@@ -166,6 +167,7 @@ def normalize(
             "phenomenon": parsed.get("phen"),
             "significance": parsed.get("sig"),
             "nws_severity": props.get("severity"),
+            "coastal_municipios": sorted(coastal_municipios or []),
             "material_digest": material_digest(material),
         },
     )

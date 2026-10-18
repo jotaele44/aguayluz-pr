@@ -153,6 +153,7 @@ def build(ctx: RunContext, responses: list) -> Built:
                     issued_at=issued_at, product_id=product_id,
                     municipality_id=bound[0]["geoid"] if len(bound) == 1 else None,
                     supersedes_record_id=head.record_id if head else None,
+                    municipios=[m["name"] for m in bound],
                 )
                 built.records.append(record)
                 current[event_id] = record
