@@ -2,7 +2,7 @@
   "schema_version": "aguayluz.hydromet-receipts/v1",
   "sources": {
     "nwps_gauges": {
-      "last_attempt_utc": "2026-10-19T07:05:23.318598Z",
+      "last_attempt_utc": "2026-10-19T07:23:14.235247Z",
       "last_error": null,
       "last_status": "PASS",
       "last_success": {
@@ -21,8 +21,8 @@
           "POINT_IN_POLYGON_WITH_ALIAS": 102,
           "UNRESOLVED": 12
         },
-        "bulk_manifestation_id": "HYDROMET:nwps_gauges:c9e839ca1212be8dc113715e1352d890",
-        "byte_sha256": "c9e839ca1212be8dc113715e1352d890faf9ed932b49695945afc09cf434466c",
+        "bulk_manifestation_id": "HYDROMET:nwps_gauges:4ca2a25f99531b7f8cffbbc854b87756",
+        "byte_sha256": "4ca2a25f99531b7f8cffbbc854b87756dfcbf46489e83fabb325661bbf11bb97",
         "detail_failures": [],
         "details_fetched": 0,
         "events_pruned": 0,
@@ -36,19 +36,19 @@
         },
         "integrity": "PASS",
         "manifestations_added": 1,
-        "manifestations_pruned": 1,
-        "new_revisions": 1,
+        "manifestations_pruned": 0,
+        "new_revisions": 0,
         "outcomes": {
           "retained": 118
         },
-        "records_added": 1,
-        "relationships_added": 2,
+        "records_added": 0,
+        "relationships_added": 0,
         "retrieval_query": "bbox.xmin=-67.95&bbox.ymin=17.85&bbox.xmax=-65.2&bbox.ymax=18.55&srid=EPSG_4326",
         "source_url": "https://api.water.noaa.gov/nwps/v1/gauges",
         "usgs_matched": 108,
         "usgs_unmatched": 0
       },
-      "last_success_utc": "2026-10-19T07:05:23.318598Z",
+      "last_success_utc": "2026-10-19T07:23:14.235247Z",
       "referenced_manifestation_ids": [
         "HYDROMET:nwps_gauges:0bd71f58fea6fcd31accaae3c33ed6d5",
         "HYDROMET:nwps_gauges:0c54cb9024317332233df476fce18e6b",
@@ -81,6 +81,7 @@
         "HYDROMET:nwps_gauges:4c04aaab2b2743ae2943067d29cec5d8",
         "HYDROMET:nwps_gauges:4c0d4c5a8ac8627068b492fd7c0b3af9",
         "HYDROMET:nwps_gauges:4c9e80996ddb72fd4670c24c5131bafe",
+        "HYDROMET:nwps_gauges:4ca2a25f99531b7f8cffbbc854b87756",
         "HYDROMET:nwps_gauges:4fbd0e284fe8bca2193e701932f02b1b",
         "HYDROMET:nwps_gauges:4fdb97a7709041a59875cf3a69efa8b8",
         "HYDROMET:nwps_gauges:510de1ab8e3a05b17efae2faead37466",
@@ -146,7 +147,6 @@
         "HYDROMET:nwps_gauges:c57b3155284c1dd62fa9f78304e3be1b",
         "HYDROMET:nwps_gauges:c7054883f1ec747a5facda22bea76aa8",
         "HYDROMET:nwps_gauges:c9cee5d9e9c47a3001143b1a168b9c7c",
-        "HYDROMET:nwps_gauges:c9e839ca1212be8dc113715e1352d890",
         "HYDROMET:nwps_gauges:ca51d36b4e7a19d952df2d94b30c5beb",
         "HYDROMET:nwps_gauges:cc5a55e96f299bbf0dd26b2b7370a15d",
         "HYDROMET:nwps_gauges:d54d98be2e89fc17ce49429e0dcd63eb",
@@ -173,7 +173,7 @@
       "source_id": "nwps_gauges"
     },
     "stage_iv_pr": {
-      "last_attempt_utc": "2026-10-18T07:06:03.114901Z",
+      "last_attempt_utc": "2026-10-19T07:23:15.997824Z",
       "last_error": null,
       "last_status": "PASS",
       "last_success": {
@@ -186,48 +186,48 @@
           "state": "PASS",
           "unresolved": 0
         },
-        "byte_sha256": "6da6ce386782ba8da75347b788c0626f97d9f2f143c5b3fb6c7ec7da8292faeb",
-        "data_date": "2026-10-17",
+        "byte_sha256": "bc5f55e48ea3ac3b77f8cbfe4ca89d87d3c2fed4c6a9108d34059ed66875e426",
+        "data_date": "2026-10-18",
         "events_pruned": 156,
         "files": [
           {
-            "byte_sha256": "6da6ce386782ba8da75347b788c0626f97d9f2f143c5b3fb6c7ec7da8292faeb",
-            "data_date": "2026-10-17",
-            "manifestation_id": "HYDROMET:stage_iv_pr:6da6ce386782ba8da75347b788c0626f",
+            "byte_sha256": "bc5f55e48ea3ac3b77f8cbfe4ca89d87d3c2fed4c6a9108d34059ed66875e426",
+            "data_date": "2026-10-18",
+            "manifestation_id": "HYDROMET:stage_iv_pr:bc5f55e48ea3ac3b77f8cbfe4ca89d87",
             "retained": 78,
-            "url": "https://water.noaa.gov/resources/downloads/precip/stageIV/2026/10/17/nws_precip_1day_20261017_pr.tif",
+            "url": "https://water.noaa.gov/resources/downloads/precip/stageIV/2026/10/18/nws_precip_1day_20261018_pr.tif",
             "window": "1day",
             "zones": 78
           },
           {
-            "byte_sha256": "326eaf8f72b334427837c50cd3aedf33d8af84e0fcffb0ca17c81f0d70c88da3",
-            "data_date": "2026-10-17",
-            "manifestation_id": "HYDROMET:stage_iv_pr:326eaf8f72b334427837c50cd3aedf33",
+            "byte_sha256": "2fd9724d8b2e830499b74208ddbe78203d94a4461ce3d0ba84e35ab5d389d460",
+            "data_date": "2026-10-18",
+            "manifestation_id": "HYDROMET:stage_iv_pr:2fd9724d8b2e830499b74208ddbe7820",
             "retained": 78,
-            "url": "https://water.noaa.gov/resources/downloads/precip/stageIV/2026/10/17/nws_precip_last7days_20261017_pr.tif",
+            "url": "https://water.noaa.gov/resources/downloads/precip/stageIV/2026/10/18/nws_precip_last7days_20261018_pr.tif",
             "window": "last7days",
             "zones": 78
           },
           {
-            "byte_sha256": "4b5cd5937c1083e02e41e5ad086d00fe4df0720e96b6d3710560e9c0fb4e4176",
-            "data_date": "2026-10-17",
-            "manifestation_id": "HYDROMET:stage_iv_pr:4b5cd5937c1083e02e41e5ad086d00fe",
+            "byte_sha256": "b5c908842ee01bde0c4e10418bb8a252164d78f69b5d187202423c68be563617",
+            "data_date": "2026-10-18",
+            "manifestation_id": "HYDROMET:stage_iv_pr:b5c908842ee01bde0c4e10418bb8a252",
             "retained": 78,
-            "url": "https://water.noaa.gov/resources/downloads/precip/stageIV/2026/10/17/nws_precip_last30days_20261017_pr.tif",
+            "url": "https://water.noaa.gov/resources/downloads/precip/stageIV/2026/10/18/nws_precip_last30days_20261018_pr.tif",
             "window": "last30days",
             "zones": 78
           }
         ],
         "integrity": "PASS",
         "manifestations_added": 3,
-        "manifestations_pruned": 3,
+        "manifestations_pruned": 2,
         "new_revisions": 234,
         "records_added": 234,
         "relationships_added": 234,
-        "source_url": "https://water.noaa.gov/resources/downloads/precip/stageIV/2026/10/17/nws_precip_1day_20261017_pr.tif",
+        "source_url": "https://water.noaa.gov/resources/downloads/precip/stageIV/2026/10/18/nws_precip_1day_20261018_pr.tif",
         "windows_missing": []
       },
-      "last_success_utc": "2026-10-18T07:06:03.114901Z",
+      "last_success_utc": "2026-10-19T07:23:15.997824Z",
       "referenced_manifestation_ids": [],
       "source_id": "stage_iv_pr"
     }
