@@ -89,9 +89,14 @@ def ocr_pdf(source: Path, derived_root: Path, sid: str) -> dict[str, Any]:
         ],
         check=True,
     )
+    bbox_path = derived_root / f"salud_{sid}_ocr_bbox.html"
+    subprocess.run(
+        ["pdftotext", "-bbox-layout", str(ocr_pdf_path), str(bbox_path)],
+        check=True,
+    )
     info = pdfinfo(ocr_pdf_path)
     return {
-        "derived_kind": "OCR_TEXT_LAYER",
+        "derived_kind": "OCR_TEXT_LAYER_WITH_WORD_GEOMETRY",
         "source_record_id": sid,
         "source_byte_sha256": sha256_file(source),
         "ocr_pdf_file": ocr_pdf_path.name,
@@ -101,6 +106,9 @@ def ocr_pdf(source: Path, derived_root: Path, sid: str) -> dict[str, Any]:
         "ocr_text_file": sidecar_path.name,
         "ocr_text_sha256": sha256_file(sidecar_path),
         "ocr_text_bytes": sidecar_path.stat().st_size,
+        "ocr_bbox_file": bbox_path.name,
+        "ocr_bbox_sha256": sha256_file(bbox_path),
+        "ocr_bbox_bytes": bbox_path.stat().st_size,
         "ocr_language": "spa+eng",
         "ocr_rotation": "AUTO",
         "ocr_deskew": True,
