@@ -73,6 +73,9 @@ jobs:
           assert all(row["ocr_text_bytes"] > 0 for row in ocr.values()), receipt
           assert all(row["ocr_bbox_sha256"] for row in ocr.values()), receipt
           assert all(row["ocr_bbox_bytes"] > 0 for row in ocr.values()), receipt
+          assert all(row["ocr_geometry_sha256"] for row in ocr.values()), receipt
+          assert all(row["ocr_geometry_bytes"] > 0 for row in ocr.values()), receipt
+          assert all(row["ocr_geometry_words"] > 0 for row in ocr.values()), receipt
           assert receipt["row_denominator_state"] == (
               "OPEN_OCR_READY_ROW_RECONSTRUCTION_REQUIRED"
           ), receipt
