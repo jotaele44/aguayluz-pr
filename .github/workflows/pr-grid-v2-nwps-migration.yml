@@ -1,6 +1,8 @@
 name: PR grid V2 NWPS migration packet
 
 on:
+  push:
+    branches: ["feat/pr-grid-v2-nwps-migration-v1"]
   pull_request:
     paths:
       - "data/nwps_gauge_state.jsonl"
@@ -10,7 +12,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   freeze-nwps-packet:
@@ -70,3 +72,20 @@ jobs:
           name: aguayluz-nwps-pr-grid-v2-source-packet
           path: artifacts/pr-grid-v2-nwps/
           retention-days: 90
+
+      - name: Persist producer-owned migration packet
+        if: github.event_name == 'push'
+        run: |
+          mkdir -p federation/spatial/migrations/nwps_v1
+          cp artifacts/pr-grid-v2-nwps/binding_input.jsonl federation/spatial/migrations/nwps_v1/binding_input.jsonl
+          cp artifacts/pr-grid-v2-nwps/profile_records.jsonl federation/spatial/migrations/nwps_v1/profile_records.jsonl
+          cp artifacts/pr-grid-v2-nwps/producer_receipt.json federation/spatial/migrations/nwps_v1/producer_receipt.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add federation/spatial/migrations/nwps_v1
+          if git diff --cached --quiet; then
+            echo "PRODUCER_PACKET_ALREADY_FROZEN=PASS"
+            exit 0
+          fi
+          git commit -m "cert(spatial): freeze NWPS V2 producer packet"
+          git push origin HEAD:feat/pr-grid-v2-nwps-migration-v1
