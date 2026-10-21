@@ -10,7 +10,6 @@ from scripts.audit_salud_2025_pages import (
     validate_candidate,
 )
 
-
 PDF_SHA = "a" * 64
 PAGE_SHA = "b" * 64
 
