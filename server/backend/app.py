@@ -15,6 +15,7 @@ from server.backend import main as legacy
 from server.backend.cave_karst_api import router as cave_karst_router
 from server.backend.environmental_exposure_api import router as environmental_exposure_router
 from server.backend.hydromet_api import router as hydromet_router
+from server.backend.grid_v2_api import router as grid_v2_router
 from server.backend.monitoring_alert_operations import federation_alert_export, lifecycle_alerts
 from server.backend.monitoring_incident_ledger import (
     ALLOWED_EVENTS,
@@ -60,6 +61,7 @@ app.include_router(cave_karst_router)
 app.include_router(regulatory_router)
 app.include_router(environmental_exposure_router)
 app.include_router(hydromet_router)
+app.include_router(grid_v2_router)
 
 # Single source of truth: server.backend.main.READING_VECTOR_REGISTRY (see its definition
 # for the full reasoning). Referencing it here rather than keeping a second hand-maintained
