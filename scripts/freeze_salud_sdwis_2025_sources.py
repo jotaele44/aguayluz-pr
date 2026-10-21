@@ -4,7 +4,6 @@ from __future__ import annotations
 import argparse
 import binascii
 import csv
-from collections import Counter
 import hashlib
 import json
 import shutil
@@ -12,6 +11,7 @@ import struct
 import subprocess
 import urllib.request
 import zlib
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
