@@ -77,6 +77,9 @@ jobs:
               "salud": receipt["salud"],
               "pr_2025_arithmetic": receipt["epa"]["pr_2025_arithmetic"],
               "unresolved_reason_counts": reasons,
+              "unresolved_field_profile": receipt["epa"]["unresolved_field_profile"],
+              "invalid_begin_values": receipt["epa"]["invalid_begin_values"],
+              "invalid_end_values": receipt["epa"]["invalid_end_values"],
               "unresolved_evidence_sha256": receipt["epa"]["unresolved_evidence_sha256"],
               "zip_full_sha256_status": receipt["epa"]["zip_full_sha256_status"],
           }, indent=2, sort_keys=True))
