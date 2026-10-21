@@ -196,10 +196,15 @@ def _parse_date(value: str):
 def classify_pr_row(row: dict[str, str], year: int) -> tuple[str, str]:
     pwsid = (row.get("PWSID") or "").strip()
     violation_id = (row.get("VIOLATION_ID") or "").strip()
-    if not pwsid or not violation_id:
-        return "UNRESOLVED", "MISSING_PWSID_OR_VIOLATION_ID"
+    enforcement_id = (row.get("ENFORCEMENT_ID") or "").strip()
+    if not pwsid:
+        return "UNRESOLVED", "MISSING_PWSID"
     if not pwsid.upper().startswith("PR"):
         return "EXCLUDED", "NON_PUERTO_RICO_PWSID"
+    if not violation_id and enforcement_id:
+        return "EXCLUDED", "ENFORCEMENT_ONLY_NO_VIOLATION_ID"
+    if not violation_id:
+        return "UNRESOLVED", "MISSING_VIOLATION_ID"
     b = _parse_date(row.get("NON_COMPL_PER_BEGIN_DATE", ""))
     e = _parse_date(row.get("NON_COMPL_PER_END_DATE", ""))
     if b == "INVALID":
@@ -227,6 +232,8 @@ def stream_member_and_filter_pr(
     dict[str, int],
     dict[str, int],
     dict[str, int],
+    dict[str, int],
+    dict[str, int],
 ]:
     start = meta["data_start"]
     end = start + meta["compressed_size"] - 1
@@ -244,6 +251,9 @@ def stream_member_and_filter_pr(
     unresolved_field_profile: Counter[str] = Counter()
     invalid_begin_values: Counter[str] = Counter()
     invalid_end_values: Counter[str] = Counter()
+    invalid_end_statuses: Counter[str] = Counter()
+    invalid_end_begin_years: Counter[str] = Counter()
+    enforcement_only = 0
     source_rows = 0
     non_pr_rows = 0
     pr_excluded = 0
@@ -254,7 +264,7 @@ def stream_member_and_filter_pr(
     total_uncompressed = 0
 
     def consume_record(raw_record: bytes) -> None:
-        nonlocal header, source_rows, non_pr_rows, pr_excluded, pr_unresolved, retained
+        nonlocal header, source_rows, non_pr_rows, pr_excluded, pr_unresolved, retained, enforcement_only
         record = raw_record.rstrip(b"\r\n")
         if not record:
             return
@@ -308,11 +318,19 @@ def stream_member_and_filter_pr(
                 invalid_begin_values[(row.get("NON_COMPL_PER_BEGIN_DATE") or "").strip()] += 1
             if reason == "INVALID_END_DATE":
                 invalid_end_values[(row.get("NON_COMPL_PER_END_DATE") or "").strip()] += 1
+                invalid_end_statuses[(row.get("VIOLATION_STATUS") or "").strip()] += 1
+                begin_value = _parse_date(row.get("NON_COMPL_PER_BEGIN_DATE", ""))
+                if isinstance(begin_value, datetime):
+                    invalid_end_begin_years[str(begin_value.year)] += 1
+                else:
+                    invalid_end_begin_years[str(begin_value)] += 1
         if disposition == "RETAINED":
             retained += 1
             pr_rows.append(row)
         elif disposition == "EXCLUDED":
             pr_excluded += 1
+            if reason == "ENFORCEMENT_ONLY_NO_VIOLATION_ID":
+                enforcement_only += 1
         else:
             pr_unresolved += 1
             unresolved_reasons[reason] += 1
@@ -377,7 +395,9 @@ def stream_member_and_filter_pr(
         "retained": retained,
         "excluded": non_pr_rows + pr_excluded,
         "excluded_non_pr": non_pr_rows,
-        "excluded_pr_no_2025_overlap": pr_excluded,
+        "excluded_pr_total": pr_excluded,
+        "excluded_enforcement_only": enforcement_only,
+        "excluded_pr_other": pr_excluded - enforcement_only,
         "unresolved": pr_unresolved,
         "accounted": accounted,
         "delta": source_rows - accounted,
@@ -398,6 +418,8 @@ def stream_member_and_filter_pr(
         dict(sorted(unresolved_field_profile.items())),
         dict(sorted(invalid_begin_values.items())),
         dict(sorted(invalid_end_values.items())),
+        dict(sorted(invalid_end_statuses.items())),
+        dict(sorted(invalid_end_begin_years.items())),
     )
 
 
@@ -438,6 +460,8 @@ def main() -> int:
         unresolved_field_profile,
         invalid_begin_values,
         invalid_end_values,
+        invalid_end_statuses,
+        invalid_end_begin_years,
     ) = stream_member_and_filter_pr(EPA_ZIP, member_meta, root)
 
     pr_csv = root / "SDWA_VIOLATIONS_ENFORCEMENT_PR_2025.csv"
@@ -460,6 +484,8 @@ def main() -> int:
                 "field_profile": unresolved_field_profile,
                 "invalid_begin_values": invalid_begin_values,
                 "invalid_end_values": invalid_end_values,
+                "invalid_end_statuses": invalid_end_statuses,
+                "invalid_end_begin_years": invalid_end_begin_years,
                 "rows": unresolved,
             },
             indent=2,
@@ -494,6 +520,8 @@ def main() -> int:
             "unresolved_field_profile": unresolved_field_profile,
             "invalid_begin_values": invalid_begin_values,
             "invalid_end_values": invalid_end_values,
+            "invalid_end_statuses": invalid_end_statuses,
+            "invalid_end_begin_years": invalid_end_begin_years,
             "unresolved_evidence_file": unresolved_json.name,
             "unresolved_evidence_sha256": sha256_file(unresolved_json),
         },
@@ -521,6 +549,8 @@ def main() -> int:
                 "unresolved_field_profile": unresolved_field_profile,
                 "invalid_begin_values": invalid_begin_values,
                 "invalid_end_values": invalid_end_values,
+                "invalid_end_statuses": invalid_end_statuses,
+                "invalid_end_begin_years": invalid_end_begin_years,
                 "zip_full_sha256_status": "OPEN_NOT_DOWNLOADED",
             },
             sort_keys=True,
