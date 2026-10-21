@@ -58,10 +58,11 @@
       "classification": "internal",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Fail-closed federation contract utility for validating PR_GRID_GEOGRAPHIC_V2 consumer pins, stamping immutable grid identity, and generating canonical grid deep links. It is an internal runtime/governance primitive, not a standalone operator workflow; user-facing grid identity is surfaced through consuming Cell_Profile/API responses rather than a separate validator GUI.",
+      "rationale": "Fail-closed federation contract and migration utility for validating PR_GRID_GEOGRAPHIC_V2 consumer pins, stamping immutable grid identity, generating canonical grid deep links, and exporting NWPS gauge state into the bounded PR_GRID_V2 migration input. These are internal runtime/governance primitives rather than standalone operator workflows; user-facing hydromet/grid results remain surfaced through the existing Hydromet, Map, and consuming Cell_Profile/API surfaces.",
       "analysis": {
         "files": [
-          "federation/spatial/pr_grid_v2_runtime.py"
+          "federation/spatial/pr_grid_v2_runtime.py",
+          "scripts/export_nwps_grid_v2_source_records.py"
         ],
         "symbols": [
           "federation/spatial/pr_grid_v2_runtime.py:GridV2Pin",
@@ -73,12 +74,20 @@
           "federation/spatial/pr_grid_v2_runtime.py:validate_cell_id",
           "federation/spatial/pr_grid_v2_runtime.py:validate_level",
           "federation/spatial/pr_grid_v2_runtime.py:validate_pin_payload",
-          "federation/spatial/pr_grid_v2_runtime.py:validate_pin_set"
+          "federation/spatial/pr_grid_v2_runtime.py:validate_pin_set",
+          "scripts/export_nwps_grid_v2_source_records.py:ExportError",
+          "scripts/export_nwps_grid_v2_source_records.py:canonical_jsonl",
+          "scripts/export_nwps_grid_v2_source_records.py:export_rows",
+          "scripts/export_nwps_grid_v2_source_records.py:load_state",
+          "scripts/export_nwps_grid_v2_source_records.py:main",
+          "scripts/export_nwps_grid_v2_source_records.py:sha256_bytes",
+          "scripts/export_nwps_grid_v2_source_records.py:write_outputs"
         ]
       },
       "tests": {
         "contract": [
-          "tests/test_pr_grid_v2_runtime.py"
+          "tests/test_pr_grid_v2_runtime.py",
+          "tests/test_export_nwps_grid_v2_source_records.py"
         ]
       }
     },
