@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import binascii
 import csv
+from collections import Counter
 import hashlib
 import json
 import shutil
@@ -16,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 SALUD = {
+    "10746": "https://www.salud.pr.gov/CMS/DOWNLOAD/10746",
     "10747": "https://www.salud.pr.gov/CMS/DOWNLOAD/10747",
     "10748": "https://www.salud.pr.gov/CMS/DOWNLOAD/10748",
 }
@@ -217,7 +219,7 @@ def classify_pr_row(row: dict[str, str], year: int) -> tuple[str, str]:
 
 def stream_member_and_filter_pr(
     url: str, meta: dict[str, Any], root: Path
-) -> tuple[dict[str, Any], list[dict[str, str]], list[str]]:
+) -> tuple[dict[str, Any], list[dict[str, str]], list[str], dict[str, int]]:
     start = meta["data_start"]
     end = start + meta["compressed_size"] - 1
     compressed_hash = hashlib.sha256()
@@ -230,6 +232,7 @@ def stream_member_and_filter_pr(
     header: list[str] | None = None
     pr_rows: list[dict[str, str]] = []
     unresolved_raw: list[str] = []
+    unresolved_reasons: Counter[str] = Counter()
     source_rows = 0
     non_pr_rows = 0
     pr_excluded = 0
@@ -259,6 +262,7 @@ def stream_member_and_filter_pr(
         parts = record.split(b",", 2)
         if len(parts) < 3:
             pr_unresolved += 1
+            unresolved_reasons["MALFORMED_FIELD_PREFIX"] += 1
             unresolved_raw.append(f"ROW_{source_rows}:MALFORMED_FIELD_PREFIX")
             return
         pwsid_raw = parts[1].strip().strip(b'"').upper()
@@ -268,6 +272,7 @@ def stream_member_and_filter_pr(
         values = next(csv.reader([record.decode("utf-8")]))
         if len(values) != len(header):
             pr_unresolved += 1
+            unresolved_reasons[f"COLUMN_COUNT_{len(values)}"] += 1
             unresolved_raw.append(f"ROW_{source_rows}:COLUMN_COUNT_{len(values)}")
             return
         row = dict(zip(header, values, strict=True))
@@ -279,6 +284,7 @@ def stream_member_and_filter_pr(
             pr_excluded += 1
         else:
             pr_unresolved += 1
+            unresolved_reasons[reason] += 1
             unresolved_raw.append(
                 f"ROW_{source_rows}:{reason}:{row.get('PWSID')}:{row.get('VIOLATION_ID')}"
             )
@@ -353,7 +359,7 @@ def stream_member_and_filter_pr(
         "uncompressed_bytes_observed": total_uncompressed,
         "pr_2025_arithmetic": accounting,
     }
-    return stream_meta, pr_rows, unresolved_raw
+    return stream_meta, pr_rows, unresolved_raw, dict(sorted(unresolved_reasons.items()))
 
 
 def main() -> int:
@@ -385,7 +391,7 @@ def main() -> int:
 
     print("LOCATE EPA TARGET MEMBER", flush=True)
     member_meta = locate_member(EPA_ZIP, TARGET_MEMBER)
-    stream_meta, pr_rows, unresolved = stream_member_and_filter_pr(
+    stream_meta, pr_rows, unresolved, unresolved_reason_counts = stream_member_and_filter_pr(
         EPA_ZIP, member_meta, root
     )
 
@@ -397,6 +403,23 @@ def main() -> int:
         w = csv.DictWriter(f, fieldnames=fieldnames)
         w.writeheader()
         w.writerows(pr_rows)
+
+    unresolved_json = root / "SDWA_VIOLATIONS_ENFORCEMENT_PR_2025_UNRESOLVED.json"
+    unresolved_json.write_text(
+        json.dumps(
+            {
+                "source_member": TARGET_MEMBER,
+                "target_year": TARGET_YEAR,
+                "unresolved_count": len(unresolved),
+                "reason_counts": unresolved_reason_counts,
+                "rows": unresolved,
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
 
     receipt = {
         "schema_version": "aguayluz.salud_sdwis_2025_source_freeze/v3",
@@ -419,10 +442,13 @@ def main() -> int:
             "pr_2025_csv": pr_csv.name,
             "pr_2025_csv_sha256": sha256_file(pr_csv),
             "unresolved_rows": unresolved,
+            "unresolved_reason_counts": unresolved_reason_counts,
+            "unresolved_evidence_file": unresolved_json.name,
+            "unresolved_evidence_sha256": sha256_file(unresolved_json),
         },
         "source_universe_completeness_claimed": False,
         "notes": [
-            "Salud 10747 and 10748 are complete byte-frozen PDF manifestations.",
+            "Salud 10746, 10747 and 10748 are complete byte-frozen PDF manifestations.",
             "EPA target-member compressed and uncompressed identities are hashed during a single validated range stream.",
             "Every logical row in SDWA_VIOLATIONS_ENFORCEMENT.csv is counted in source arithmetic; only PR-prefixed PWSID rows are fully CSV-parsed.",
             "The national ZIP full-byte SHA remains OPEN; target-member byte identity and CRC are independently closed.",
@@ -440,6 +466,7 @@ def main() -> int:
                 "member_compressed_sha256": stream_meta["compressed_sha256"],
                 "member_uncompressed_sha256": stream_meta["uncompressed_sha256"],
                 "pr_2025_arithmetic": stream_meta["pr_2025_arithmetic"],
+                "unresolved_reason_counts": unresolved_reason_counts,
                 "zip_full_sha256_status": "OPEN_NOT_DOWNLOADED",
             },
             sort_keys=True,
