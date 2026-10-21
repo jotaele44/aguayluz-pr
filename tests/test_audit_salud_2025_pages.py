@@ -4,8 +4,8 @@ import struct
 
 import pytest
 from scripts.audit_salud_2025_pages import (
-    candidate_receipt,
     CANDIDATE_STATE,
+    candidate_receipt,
     png_dimensions,
     validate_candidate,
 )
