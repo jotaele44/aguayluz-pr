@@ -193,6 +193,14 @@ def _parse_date(value: str):
     return "INVALID"
 
 
+def _parse_end_date(value: str, violation_status: str):
+    text = (value or "").strip()
+    status = (violation_status or "").strip().casefold()
+    if text == "--->" and status in {"addressed", "unaddressed"}:
+        return None
+    return _parse_date(text)
+
+
 def classify_pr_row(row: dict[str, str], year: int) -> tuple[str, str]:
     pwsid = (row.get("PWSID") or "").strip()
     violation_id = (row.get("VIOLATION_ID") or "").strip()
@@ -206,7 +214,10 @@ def classify_pr_row(row: dict[str, str], year: int) -> tuple[str, str]:
     if not violation_id:
         return "UNRESOLVED", "MISSING_VIOLATION_ID"
     b = _parse_date(row.get("NON_COMPL_PER_BEGIN_DATE", ""))
-    e = _parse_date(row.get("NON_COMPL_PER_END_DATE", ""))
+    e = _parse_end_date(
+        row.get("NON_COMPL_PER_END_DATE", ""),
+        row.get("VIOLATION_STATUS", ""),
+    )
     if b == "INVALID":
         return "UNRESOLVED", "INVALID_BEGIN_DATE"
     if e == "INVALID":
@@ -234,6 +245,7 @@ def stream_member_and_filter_pr(
     dict[str, int],
     dict[str, int],
     dict[str, int],
+    dict[str, int],
 ]:
     start = meta["data_start"]
     end = start + meta["compressed_size"] - 1
@@ -253,6 +265,7 @@ def stream_member_and_filter_pr(
     invalid_end_values: Counter[str] = Counter()
     invalid_end_statuses: Counter[str] = Counter()
     invalid_end_begin_years: Counter[str] = Counter()
+    normalized_open_end_sentinels: Counter[str] = Counter()
     enforcement_only = 0
     pr_no_2025_overlap = 0
     source_rows = 0
@@ -299,6 +312,14 @@ def stream_member_and_filter_pr(
             unresolved_raw.append(f"ROW_{source_rows}:COLUMN_COUNT_{len(values)}")
             return
         row = dict(zip(header, values, strict=True))
+        if (
+            (row.get("NON_COMPL_PER_END_DATE") or "").strip() == "--->"
+            and (row.get("VIOLATION_STATUS") or "").strip().casefold()
+            in {"addressed", "unaddressed"}
+        ):
+            normalized_open_end_sentinels[
+                (row.get("VIOLATION_STATUS") or "").strip()
+            ] += 1
         disposition, reason = classify_pr_row(row, TARGET_YEAR)
         if disposition == "UNRESOLVED":
             pwsid = (row.get("PWSID") or "").strip()
@@ -425,6 +446,7 @@ def stream_member_and_filter_pr(
         dict(sorted(invalid_end_values.items())),
         dict(sorted(invalid_end_statuses.items())),
         dict(sorted(invalid_end_begin_years.items())),
+        dict(sorted(normalized_open_end_sentinels.items())),
     )
 
 
@@ -467,6 +489,7 @@ def main() -> int:
         invalid_end_values,
         invalid_end_statuses,
         invalid_end_begin_years,
+        normalized_open_end_sentinels,
     ) = stream_member_and_filter_pr(EPA_ZIP, member_meta, root)
 
     pr_csv = root / "SDWA_VIOLATIONS_ENFORCEMENT_PR_2025.csv"
@@ -491,6 +514,7 @@ def main() -> int:
                 "invalid_end_values": invalid_end_values,
                 "invalid_end_statuses": invalid_end_statuses,
                 "invalid_end_begin_years": invalid_end_begin_years,
+                "normalized_open_end_sentinels": normalized_open_end_sentinels,
                 "rows": unresolved,
             },
             indent=2,
@@ -527,6 +551,7 @@ def main() -> int:
             "invalid_end_values": invalid_end_values,
             "invalid_end_statuses": invalid_end_statuses,
             "invalid_end_begin_years": invalid_end_begin_years,
+            "normalized_open_end_sentinels": normalized_open_end_sentinels,
             "unresolved_evidence_file": unresolved_json.name,
             "unresolved_evidence_sha256": sha256_file(unresolved_json),
         },
@@ -536,6 +561,7 @@ def main() -> int:
             "EPA target-member compressed and uncompressed identities are hashed during a single validated range stream.",
             "Every logical row in SDWA_VIOLATIONS_ENFORCEMENT.csv is counted in source arithmetic; only PR-prefixed PWSID rows are fully CSV-parsed.",
             "The national ZIP full-byte SHA remains OPEN; target-member byte identity and CRC are independently closed.",
+            "The EPA export literal ---> is normalized as an open end only when VIOLATION_STATUS is Addressed or Unaddressed, consistent with EPA's definition that unresolved violations have a null noncompliance end date.",
             "No equality between Salud annual-report membership and the EPA PR-derived subset is asserted.",
         ],
     }
@@ -556,6 +582,7 @@ def main() -> int:
                 "invalid_end_values": invalid_end_values,
                 "invalid_end_statuses": invalid_end_statuses,
                 "invalid_end_begin_years": invalid_end_begin_years,
+                "normalized_open_end_sentinels": normalized_open_end_sentinels,
                 "zip_full_sha256_status": "OPEN_NOT_DOWNLOADED",
             },
             sort_keys=True,
