@@ -1,5 +1,4 @@
 import struct
-from pathlib import Path
 
 import pytest
 from scripts.audit_salud_2025_pages import (
