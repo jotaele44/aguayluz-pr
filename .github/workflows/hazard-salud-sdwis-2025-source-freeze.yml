@@ -82,6 +82,7 @@ jobs:
               "invalid_end_values": receipt["epa"]["invalid_end_values"],
               "invalid_end_statuses": receipt["epa"]["invalid_end_statuses"],
               "invalid_end_begin_years": receipt["epa"]["invalid_end_begin_years"],
+              "normalized_open_end_sentinels": receipt["epa"]["normalized_open_end_sentinels"],
               "unresolved_evidence_sha256": receipt["epa"]["unresolved_evidence_sha256"],
               "zip_full_sha256_status": receipt["epa"]["zip_full_sha256_status"],
           }, indent=2, sort_keys=True))
