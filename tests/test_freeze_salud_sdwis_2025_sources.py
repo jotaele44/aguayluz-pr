@@ -41,3 +41,10 @@ def test_non_pr_row_is_excluded_before_period_adjudication():
         ),
         2025,
     ) == ("EXCLUDED", "NON_PUERTO_RICO_PWSID")
+
+
+def test_enforcement_only_row_is_not_treated_as_unidentified_violation():
+    assert classify_pr_row(
+        _row(VIOLATION_ID="", ENFORCEMENT_ID="E-100"),
+        2025,
+    ) == ("EXCLUDED", "ENFORCEMENT_ONLY_NO_VIOLATION_ID")
