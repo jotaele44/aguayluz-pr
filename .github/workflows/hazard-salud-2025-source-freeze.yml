@@ -1,0 +1,98 @@
+name: Salud 2025 Source Freeze
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/freeze_salud_2025_publication.py"
+      - "scripts/ingest_salud_sdwis_water.py"
+      - ".github/workflows/hazard-salud-2025-source-freeze.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Install source-freeze runtime
+        run: python -m pip install "pydantic>=2" pypdf
+
+      - name: Freeze official Salud 2025 publication family
+        env:
+          PYTHONPATH: src:.
+        run: |
+          python scripts/freeze_salud_2025_publication.py             --output-root artifacts/salud_2025_source_freeze
+
+      - name: Bind frozen PDFs through existing ingestion contract
+        env:
+          PYTHONPATH: src:.
+        run: |
+          NOTICE=$(find artifacts/salud_2025_source_freeze/raw -name '10746-*.pdf' -print -quit)
+          REPORT=$(find artifacts/salud_2025_source_freeze/raw -name '10747-*.pdf' -print -quit)
+          ANNEX=$(find artifacts/salud_2025_source_freeze/raw -name '10748-*.pdf' -print -quit)
+          python scripts/ingest_salud_sdwis_water.py             --year 2025             --output-root artifacts/salud_2025_ingest             --salud-public-notice "$NOTICE"             --salud-report "$REPORT"             --salud-annex "$ANNEX"
+
+      - name: Validate exact byte closure
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+
+          frozen = json.loads(
+              Path("artifacts/salud_2025_source_freeze/source_manifest.json").read_text()
+          )
+          receipt = json.loads(
+              Path("artifacts/salud_2025_ingest/salud_sdwis_water_receipt.json").read_text()
+          )
+
+          assert frozen["source_count"] == 3, frozen
+          assert frozen["source_arithmetic"] == {
+              "source": 3,
+              "frozen": 3,
+              "excluded": 0,
+              "unresolved": 0,
+              "accounted": 3,
+              "delta": 0,
+              "state": "PASS",
+          }, frozen
+          assert receipt["salud_artifact_arithmetic"]["frozen"] == 3, receipt
+          assert receipt["salud_artifact_arithmetic"]["blocked"] == 0, receipt
+          assert receipt["salud_artifact_arithmetic"]["present_unfrozen"] == 0, receipt
+          assert receipt["sdwis_source_arithmetic"] is None, receipt
+          assert receipt["source_universe_completeness_claimed"] is False, receipt
+          assert receipt["certification_state"] == "OPEN", receipt
+
+          print(json.dumps({
+              "salud_source_arithmetic": frozen["source_arithmetic"],
+              "salud_artifacts": [
+                  {
+                      "source_record_id": row["source_record_id"],
+                      "byte_length": row["byte_length"],
+                      "byte_sha256": row["byte_sha256"],
+                      "page_count": row["page_count"],
+                      "text_chars": row["text_chars"],
+                      "text_sha256": row["text_sha256"],
+                  }
+                  for row in frozen["sources"]
+              ],
+              "certification_state": receipt["certification_state"],
+          }, indent=2, sort_keys=True))
+
+      - name: Upload immutable source-freeze evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: salud-2025-source-freeze
+          path: |
+            artifacts/salud_2025_source_freeze
+            artifacts/salud_2025_ingest
+          if-no-files-found: error
+          retention-days: 90
