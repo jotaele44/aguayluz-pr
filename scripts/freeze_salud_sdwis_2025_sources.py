@@ -254,6 +254,7 @@ def stream_member_and_filter_pr(
     invalid_end_statuses: Counter[str] = Counter()
     invalid_end_begin_years: Counter[str] = Counter()
     enforcement_only = 0
+    pr_no_2025_overlap = 0
     source_rows = 0
     non_pr_rows = 0
     pr_excluded = 0
@@ -264,7 +265,8 @@ def stream_member_and_filter_pr(
     total_uncompressed = 0
 
     def consume_record(raw_record: bytes) -> None:
-        nonlocal header, source_rows, non_pr_rows, pr_excluded, pr_unresolved, retained, enforcement_only
+        nonlocal header, source_rows, non_pr_rows, pr_excluded, pr_unresolved
+        nonlocal retained, enforcement_only, pr_no_2025_overlap
         record = raw_record.rstrip(b"\r\n")
         if not record:
             return
@@ -331,6 +333,8 @@ def stream_member_and_filter_pr(
             pr_excluded += 1
             if reason == "ENFORCEMENT_ONLY_NO_VIOLATION_ID":
                 enforcement_only += 1
+            elif reason == "NO_2025_OVERLAP":
+                pr_no_2025_overlap += 1
         else:
             pr_unresolved += 1
             unresolved_reasons[reason] += 1
@@ -397,7 +401,8 @@ def stream_member_and_filter_pr(
         "excluded_non_pr": non_pr_rows,
         "excluded_pr_total": pr_excluded,
         "excluded_enforcement_only": enforcement_only,
-        "excluded_pr_other": pr_excluded - enforcement_only,
+        "excluded_pr_no_2025_overlap": pr_no_2025_overlap,
+        "excluded_pr_other": pr_excluded - enforcement_only - pr_no_2025_overlap,
         "unresolved": pr_unresolved,
         "accounted": accounted,
         "delta": source_rows - accounted,
