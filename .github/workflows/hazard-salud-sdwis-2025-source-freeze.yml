@@ -80,6 +80,8 @@ jobs:
               "unresolved_field_profile": receipt["epa"]["unresolved_field_profile"],
               "invalid_begin_values": receipt["epa"]["invalid_begin_values"],
               "invalid_end_values": receipt["epa"]["invalid_end_values"],
+              "invalid_end_statuses": receipt["epa"]["invalid_end_statuses"],
+              "invalid_end_begin_years": receipt["epa"]["invalid_end_begin_years"],
               "unresolved_evidence_sha256": receipt["epa"]["unresolved_evidence_sha256"],
               "zip_full_sha256_status": receipt["epa"]["zip_full_sha256_status"],
           }, indent=2, sort_keys=True))
