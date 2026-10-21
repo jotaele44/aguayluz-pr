@@ -12,6 +12,7 @@ import json
 import shutil
 import subprocess
 import urllib.request
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -68,6 +69,51 @@ def pdfinfo(path: Path) -> dict[str, str]:
     return result
 
 
+def canonicalize_bbox(bbox_path: Path, geometry_path: Path) -> dict[str, Any]:
+    """Strip incidental XHTML/PDF metadata and freeze ordered OCR word geometry."""
+    root = ET.parse(bbox_path).getroot()
+    pages: list[dict[str, Any]] = []
+    for page_index, page in enumerate(
+        [node for node in root.iter() if node.tag.rsplit("}", 1)[-1] == "page"],
+        start=1,
+    ):
+        words = []
+        for word in page.iter():
+            if word.tag.rsplit("}", 1)[-1] != "word":
+                continue
+            words.append(
+                {
+                    "text": "".join(word.itertext()),
+                    "xMin": word.attrib.get("xMin"),
+                    "yMin": word.attrib.get("yMin"),
+                    "xMax": word.attrib.get("xMax"),
+                    "yMax": word.attrib.get("yMax"),
+                }
+            )
+        pages.append(
+            {
+                "page": page_index,
+                "width": page.attrib.get("width"),
+                "height": page.attrib.get("height"),
+                "words": words,
+            }
+        )
+    payload = json.dumps(
+        {"schema_version": "aguayluz.ocr_word_geometry/v1", "pages": pages},
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    geometry_path.write_bytes(payload)
+    return {
+        "ocr_geometry_file": geometry_path.name,
+        "ocr_geometry_sha256": hashlib.sha256(payload).hexdigest(),
+        "ocr_geometry_bytes": len(payload),
+        "ocr_geometry_pages": len(pages),
+        "ocr_geometry_words": sum(len(page["words"]) for page in pages),
+    }
+
+
 def ocr_pdf(source: Path, derived_root: Path, sid: str) -> dict[str, Any]:
     derived_root.mkdir(parents=True, exist_ok=True)
     ocr_pdf_path = derived_root / f"salud_{sid}_ocr.pdf"
@@ -94,6 +140,8 @@ def ocr_pdf(source: Path, derived_root: Path, sid: str) -> dict[str, Any]:
         ["pdftotext", "-bbox-layout", str(ocr_pdf_path), str(bbox_path)],
         check=True,
     )
+    geometry_path = derived_root / f"salud_{sid}_ocr_geometry.json"
+    geometry = canonicalize_bbox(bbox_path, geometry_path)
     info = pdfinfo(ocr_pdf_path)
     return {
         "derived_kind": "OCR_TEXT_LAYER_WITH_WORD_GEOMETRY",
@@ -109,6 +157,7 @@ def ocr_pdf(source: Path, derived_root: Path, sid: str) -> dict[str, Any]:
         "ocr_bbox_file": bbox_path.name,
         "ocr_bbox_sha256": sha256_file(bbox_path),
         "ocr_bbox_bytes": bbox_path.stat().st_size,
+        **geometry,
         "ocr_language": "spa+eng",
         "ocr_rotation": "AUTO",
         "ocr_deskew": True,
