@@ -1,0 +1,96 @@
+name: Salud 2025 OCR Source Gate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/freeze_salud_2025_ocr.py"
+      - "config/hazard_advisory_sources.v1.json"
+      - ".github/workflows/hazard-salud-2025-ocr.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: salud-2025-ocr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ocr:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Install OCR runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils ghostscript qpdf tesseract-ocr tesseract-ocr-spa
+          python -m pip install ocrmypdf
+
+      - name: Freeze notice and build OCR derivatives
+        run: |
+          python scripts/freeze_salud_2025_ocr.py             --output-root artifacts/salud_2025_ocr
+
+      - name: Validate source/OCR receipt
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+
+          receipt = json.loads(
+              Path("artifacts/salud_2025_ocr/ocr_source_receipt.json")
+              .read_text(encoding="utf-8")
+          )
+          source = receipt["source"]
+          assert source["source"] == 3, receipt
+          assert source["frozen"] == 3, receipt
+          assert source["unresolved"] == 0, receipt
+          assert source["delta"] == 0, receipt
+          assert source["state"] == "PASS", receipt
+
+          by_id = {
+              row["source_record_id"]: row for row in source["artifacts"]
+          }
+          assert by_id["10747"]["sha256"] == (
+              "748529762de1b6661b5484957a7662bd233a37aaf371482cdc14bbf5ac584772"
+          ), receipt
+          assert by_id["10748"]["sha256"] == (
+              "9886fbed47e9f8a3564167034bedc6bc0a0d653c6f89d81d69f8101ccc3f2603"
+          ), receipt
+          assert by_id["10746"]["source_identity_state"] == "NEWLY_FROZEN", receipt
+
+          ocr = {row["source_record_id"]: row for row in receipt["derived_ocr"]}
+          assert set(ocr) == {"10747", "10748"}, receipt
+          assert all(row["ocr_pdf_sha256"] for row in ocr.values()), receipt
+          assert all(row["ocr_text_sha256"] for row in ocr.values()), receipt
+          assert all(row["ocr_text_bytes"] > 0 for row in ocr.values()), receipt
+          assert all(row["ocr_bbox_sha256"] for row in ocr.values()), receipt
+          assert all(row["ocr_bbox_bytes"] > 0 for row in ocr.values()), receipt
+          assert all(row["ocr_geometry_sha256"] for row in ocr.values()), receipt
+          assert all(row["ocr_geometry_bytes"] > 0 for row in ocr.values()), receipt
+          assert all(row["ocr_geometry_words"] > 0 for row in ocr.values()), receipt
+          assert receipt["row_denominator_state"] == (
+              "OPEN_OCR_READY_ROW_RECONSTRUCTION_REQUIRED"
+          ), receipt
+          assert receipt["source_universe_completeness_claimed"] is False, receipt
+
+          print(json.dumps({
+              "source": source,
+              "derived_ocr": receipt["derived_ocr"],
+              "row_denominator_state": receipt["row_denominator_state"],
+          }, indent=2, sort_keys=True))
+
+      - name: Upload OCR/source evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: salud-2025-ocr-source
+          path: artifacts/salud_2025_ocr
+          if-no-files-found: error
+          retention-days: 90
