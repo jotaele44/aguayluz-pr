@@ -219,7 +219,15 @@ def classify_pr_row(row: dict[str, str], year: int) -> tuple[str, str]:
 
 def stream_member_and_filter_pr(
     url: str, meta: dict[str, Any], root: Path
-) -> tuple[dict[str, Any], list[dict[str, str]], list[str], dict[str, int]]:
+) -> tuple[
+    dict[str, Any],
+    list[dict[str, str]],
+    list[str],
+    dict[str, int],
+    dict[str, int],
+    dict[str, int],
+    dict[str, int],
+]:
     start = meta["data_start"]
     end = start + meta["compressed_size"] - 1
     compressed_hash = hashlib.sha256()
@@ -233,6 +241,9 @@ def stream_member_and_filter_pr(
     pr_rows: list[dict[str, str]] = []
     unresolved_raw: list[str] = []
     unresolved_reasons: Counter[str] = Counter()
+    unresolved_field_profile: Counter[str] = Counter()
+    invalid_begin_values: Counter[str] = Counter()
+    invalid_end_values: Counter[str] = Counter()
     source_rows = 0
     non_pr_rows = 0
     pr_excluded = 0
@@ -277,6 +288,26 @@ def stream_member_and_filter_pr(
             return
         row = dict(zip(header, values, strict=True))
         disposition, reason = classify_pr_row(row, TARGET_YEAR)
+        if disposition == "UNRESOLVED":
+            pwsid = (row.get("PWSID") or "").strip()
+            violation_id = (row.get("VIOLATION_ID") or "").strip()
+            enforcement_id = (row.get("ENFORCEMENT_ID") or "").strip()
+            if not pwsid:
+                unresolved_field_profile["MISSING_PWSID"] += 1
+            if not violation_id:
+                unresolved_field_profile["MISSING_VIOLATION_ID"] += 1
+                if enforcement_id:
+                    unresolved_field_profile[
+                        "MISSING_VIOLATION_ID_WITH_ENFORCEMENT_ID"
+                    ] += 1
+                else:
+                    unresolved_field_profile[
+                        "MISSING_VIOLATION_ID_WITHOUT_ENFORCEMENT_ID"
+                    ] += 1
+            if reason == "INVALID_BEGIN_DATE":
+                invalid_begin_values[(row.get("NON_COMPL_PER_BEGIN_DATE") or "").strip()] += 1
+            if reason == "INVALID_END_DATE":
+                invalid_end_values[(row.get("NON_COMPL_PER_END_DATE") or "").strip()] += 1
         if disposition == "RETAINED":
             retained += 1
             pr_rows.append(row)
@@ -359,7 +390,15 @@ def stream_member_and_filter_pr(
         "uncompressed_bytes_observed": total_uncompressed,
         "pr_2025_arithmetic": accounting,
     }
-    return stream_meta, pr_rows, unresolved_raw, dict(sorted(unresolved_reasons.items()))
+    return (
+        stream_meta,
+        pr_rows,
+        unresolved_raw,
+        dict(sorted(unresolved_reasons.items())),
+        dict(sorted(unresolved_field_profile.items())),
+        dict(sorted(invalid_begin_values.items())),
+        dict(sorted(invalid_end_values.items())),
+    )
 
 
 def main() -> int:
@@ -391,9 +430,15 @@ def main() -> int:
 
     print("LOCATE EPA TARGET MEMBER", flush=True)
     member_meta = locate_member(EPA_ZIP, TARGET_MEMBER)
-    stream_meta, pr_rows, unresolved, unresolved_reason_counts = stream_member_and_filter_pr(
-        EPA_ZIP, member_meta, root
-    )
+    (
+        stream_meta,
+        pr_rows,
+        unresolved,
+        unresolved_reason_counts,
+        unresolved_field_profile,
+        invalid_begin_values,
+        invalid_end_values,
+    ) = stream_member_and_filter_pr(EPA_ZIP, member_meta, root)
 
     pr_csv = root / "SDWA_VIOLATIONS_ENFORCEMENT_PR_2025.csv"
     if not pr_rows:
@@ -412,6 +457,9 @@ def main() -> int:
                 "target_year": TARGET_YEAR,
                 "unresolved_count": len(unresolved),
                 "reason_counts": unresolved_reason_counts,
+                "field_profile": unresolved_field_profile,
+                "invalid_begin_values": invalid_begin_values,
+                "invalid_end_values": invalid_end_values,
                 "rows": unresolved,
             },
             indent=2,
@@ -443,6 +491,9 @@ def main() -> int:
             "pr_2025_csv_sha256": sha256_file(pr_csv),
             "unresolved_rows": unresolved,
             "unresolved_reason_counts": unresolved_reason_counts,
+            "unresolved_field_profile": unresolved_field_profile,
+            "invalid_begin_values": invalid_begin_values,
+            "invalid_end_values": invalid_end_values,
             "unresolved_evidence_file": unresolved_json.name,
             "unresolved_evidence_sha256": sha256_file(unresolved_json),
         },
@@ -467,6 +518,9 @@ def main() -> int:
                 "member_uncompressed_sha256": stream_meta["uncompressed_sha256"],
                 "pr_2025_arithmetic": stream_meta["pr_2025_arithmetic"],
                 "unresolved_reason_counts": unresolved_reason_counts,
+                "unresolved_field_profile": unresolved_field_profile,
+                "invalid_begin_values": invalid_begin_values,
+                "invalid_end_values": invalid_end_values,
                 "zip_full_sha256_status": "OPEN_NOT_DOWNLOADED",
             },
             sort_keys=True,
