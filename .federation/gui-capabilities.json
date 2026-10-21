@@ -1555,7 +1555,8 @@
       "tests": {
         "contract": [
           "tests/test_hazard_adapter_sdwa_drinking_water.py",
-          "tests/test_ingest_salud_sdwis_water.py"
+          "tests/test_ingest_salud_sdwis_water.py",
+          "tests/test_freeze_salud_sdwis_2025_sources.py"
         ]
       }
     },
@@ -1564,7 +1565,7 @@
       "classification": "analysis",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Puerto Rico NOAA/NWS hydrometeorological observations (NWPS river/reservoir gauge flood status; Stage IV daily rainfall summarised per municipio over HRAP cells) frozen with byte SHA-256 provenance, source arithmetic and evidence-classed bindings to USGS_ assets (stable ID) and municipios (point-in-polygon + source alias; raster cell centres in polygon). The NWS Hydromet page exposes results, freshness, failures and a guarded refresh per source; the map shows gauges by flood category and a Stage IV rainfall municipio fill; gauge flood episodes and heavy-rain days promote into WEATHER_HAZARD alerts. Observations are hazard context, not confirmed impact.",
+      "rationale": "Puerto Rico NOAA/NWS hydrometeorological observations (NWPS river/reservoir gauge flood status; Stage IV daily rainfall summarised per municipio over HRAP cells) frozen with byte SHA-256 provenance, source arithmetic and evidence-classed bindings to USGS_ assets (stable ID) and municipios (point-in-polygon + source alias; raster cell centres in polygon). The NWS Hydromet page exposes results, freshness, failures and a guarded refresh per source; the map shows gauges by flood category and a Stage IV rainfall municipio fill; gauge flood episodes and heavy-rain days promote into WEATHER_HAZARD alerts. Observations are hazard context, not confirmed impact. The bounded PR Grid v2 NWPS source-record exporter is an internal provenance/export producer for this same hydromet plane; it has no independent user-facing action or terminal requirement.",
       "backend": {
         "files": [
           "server/backend/hydromet_api.py",
@@ -1657,7 +1658,8 @@
       "analysis": {
         "files": [
           "scripts/ingest_nwps_gauges.py",
-          "scripts/ingest_stage_iv_pr.py"
+          "scripts/ingest_stage_iv_pr.py",
+          "scripts/export_nwps_grid_v2_source_records.py"
         ],
         "symbols": [
           "scripts/ingest_nwps_gauges.py:BuildResult",
@@ -1675,7 +1677,14 @@
           "scripts/ingest_stage_iv_pr.py:grid_url",
           "scripts/ingest_stage_iv_pr.py:main",
           "scripts/ingest_stage_iv_pr.py:retention_policy",
-          "scripts/ingest_stage_iv_pr.py:summarise_grid"
+          "scripts/ingest_stage_iv_pr.py:summarise_grid",
+          "scripts/export_nwps_grid_v2_source_records.py:ExportError",
+          "scripts/export_nwps_grid_v2_source_records.py:canonical_jsonl",
+          "scripts/export_nwps_grid_v2_source_records.py:export_rows",
+          "scripts/export_nwps_grid_v2_source_records.py:load_state",
+          "scripts/export_nwps_grid_v2_source_records.py:main",
+          "scripts/export_nwps_grid_v2_source_records.py:sha256_bytes",
+          "scripts/export_nwps_grid_v2_source_records.py:write_outputs"
         ]
       },
       "frontend": {
