@@ -1,4 +1,6 @@
-from __future__ import annotations\n\nimport struct
+from __future__ import annotations
+
+import struct
 
 import pytest
 from scripts.audit_salud_2025_pages import (
