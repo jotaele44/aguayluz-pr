@@ -1,36 +1,31 @@
 #!/usr/bin/env python3
-"""Freeze Salud drinking-water artifacts and reconcile official EPA SDWIS violations.
+"""Freeze Salud artifacts and reconcile a complete official EPA SDWIS member.
 
-This script deliberately keeps two evidence planes separate:
-
-* Puerto Rico Department of Health annual-report artifacts are historical state
-  manifestations.  They are never synthesized when bytes are unavailable.
-* EPA SDWIS is a versioned federal reconciliation snapshot.  A later federal row can
-  revise status or enforcement metadata without rewriting a frozen Salud publication.
-
-The script can run before the large Salud PDFs are available.  In that case their exact
-official locators remain BLOCKED_ACQUISITION in the receipt and no Manifestation object
-is fabricated.  Once files are supplied, exact bytes are frozen and hashed.
-
-SDWIS input is the official SDWA_VIOLATIONS_ENFORCEMENT CSV (or a byte-identical
-extraction of that member from an official EPA archive).  The supplied file itself is
-the bounded denominator: every row is RETAINED, EXCLUDED, or UNRESOLVED.
+The EPA Violations and Enforcement table is streamed so the national denominator can
+be closed without loading the complete member into memory.  Source-row arithmetic and
+canonical violation-snapshot arithmetic are kept separate because one violation may
+have multiple enforcement association rows.
 """
 from __future__ import annotations
 
 import argparse
 import csv
-import io
 import json
 import shutil
 import sys
+from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
 from aguayluz import DATA_DIR
-from aguayluz.hazard_adapters.sdwa_drinking_water import canonical_event_id, normalize
+from aguayluz.hazard_adapters.sdwa_drinking_water import (
+    canonical_event_id,
+    collapse_violation_rows,
+    normalize,
+    violation_snapshot_key,
+)
 from aguayluz.hazard_plane import HazardRecord, Manifestation, current_records, source_arithmetic
 
 SALUD_ARTIFACTS = {
@@ -55,6 +50,14 @@ EPA_SCHEMA_URL = "https://echo.epa.gov/tools/data-downloads/sdwa-download-summar
 
 def _canonical_json_bytes(value: Any) -> bytes:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+
+
+def _sha256_file(path: Path) -> str:
+    digest = sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -122,7 +125,7 @@ def _row_value(row: dict[str, Any], key: str) -> str:
 
 
 def classify_sdwis_row(row: dict[str, Any], year: int) -> tuple[str, str]:
-    """Classify one supplied SDWIS row without assuming it belongs in Salud's report."""
+    """Classify one source row against the declared PR/calendar-year denominator."""
     pwsid = _row_value(row, "PWSID")
     violation_id = _row_value(row, "VIOLATION_ID")
     if not pwsid or not violation_id:
@@ -160,8 +163,7 @@ def _freeze_file(
     retrieved_at: datetime,
     raw_root: Path,
 ) -> tuple[Manifestation, dict[str, Any]]:
-    raw = path.read_bytes()
-    digest = sha256(raw).hexdigest()
+    digest = _sha256_file(path)
     manifestation_id = (
         f"{source_system.upper().replace(' ', '_')}:{source_record_id}:"
         f"{retrieved_at.strftime('%Y%m%dT%H%M%S%fZ')}:{digest[:20]}"
@@ -177,7 +179,7 @@ def _freeze_file(
     )
     raw_root.mkdir(parents=True, exist_ok=True)
     target = raw_root / f"{source_record_id}-{digest}{path.suffix.lower()}"
-    if target.exists() and target.read_bytes() != raw:
+    if target.exists() and _sha256_file(target) != digest:
         raise ValueError(f"raw snapshot collision at {target}")
     if not target.exists():
         shutil.copyfile(path, target)
@@ -186,7 +188,7 @@ def _freeze_file(
         "source_url": source_url,
         "status": "FROZEN",
         "byte_sha256": digest,
-        "byte_length": len(raw),
+        "byte_length": path.stat().st_size,
         "raw_file": target.name,
         "manifestation_id": manifestation_id,
     }
@@ -244,6 +246,31 @@ def _salud_artifact_receipt(
     return manifestations, artifacts, arithmetic
 
 
+def _sample_classification(
+    samples: list[dict[str, Any]],
+    *,
+    ordinal: int,
+    row: dict[str, Any],
+    disposition: str,
+    reason: str,
+    limit: int = 100,
+) -> None:
+    if len(samples) >= limit:
+        return
+    if disposition == "EXCLUDED" and len(samples) >= 20:
+        return
+    samples.append(
+        {
+            "source_line": ordinal,
+            "submission_year_quarter": _row_value(row, "SUBMISSIONYEARQUARTER") or None,
+            "pwsid": _row_value(row, "PWSID") or None,
+            "violation_id": _row_value(row, "VIOLATION_ID") or None,
+            "disposition": disposition,
+            "reason": reason,
+        }
+    )
+
+
 def _process_sdwis(
     path: Path,
     *,
@@ -252,23 +279,97 @@ def _process_sdwis(
     retrieved_at: datetime,
     raw_root: Path,
     records_path: Path,
-) -> tuple[Manifestation, list[HazardRecord], dict[str, Any], list[dict[str, Any]]]:
-    raw = path.read_bytes()
-    digest = sha256(raw).hexdigest()
-    text = raw.decode("utf-8-sig")
-    reader = csv.DictReader(io.StringIO(text))
-    if not reader.fieldnames:
-        raise ValueError("SDWIS CSV has no header")
-    normalized_fields = {field.strip().upper() for field in reader.fieldnames if field}
-    required = {"PWSID", "VIOLATION_ID", "NON_COMPL_PER_BEGIN_DATE", "NON_COMPL_PER_END_DATE"}
-    missing = sorted(required - normalized_fields)
-    if missing:
-        raise ValueError(f"SDWIS CSV missing required fields: {missing}")
+    parent_archive_sha256: str | None = None,
+    archive_member: str | None = None,
+) -> tuple[
+    Manifestation,
+    list[HazardRecord],
+    dict[str, Any],
+    dict[str, int],
+    list[dict[str, Any]],
+    dict[str, Any],
+]:
+    digest = _sha256_file(path)
+    source_count = 0
+    excluded = 0
+    unresolved = 0
+    retained_source_rows = 0
+    stage1_reasons: Counter[str] = Counter()
+    classification_samples: list[dict[str, Any]] = []
+    retained_groups: dict[tuple[str, str, str], list[dict[str, Any]]] = defaultdict(list)
 
-    source_rows = [dict(row) for row in reader]
-    schema_signature = sha256(
-        _canonical_json_bytes({"fieldnames": sorted(normalized_fields)})
-    ).hexdigest()
+    with path.open("r", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        if not reader.fieldnames:
+            raise ValueError("SDWIS CSV has no header")
+        normalized_fields = {field.strip().upper() for field in reader.fieldnames if field}
+        required = {
+            "SUBMISSIONYEARQUARTER",
+            "PWSID",
+            "VIOLATION_ID",
+            "NON_COMPL_PER_BEGIN_DATE",
+            "NON_COMPL_PER_END_DATE",
+        }
+        missing = sorted(required - normalized_fields)
+        if missing:
+            raise ValueError(f"SDWIS CSV missing required fields: {missing}")
+
+        schema_signature = sha256(
+            _canonical_json_bytes({"fieldnames": sorted(normalized_fields)})
+        ).hexdigest()
+
+        for ordinal, row in enumerate(reader, start=2):
+            source_count += 1
+            disposition, reason = classify_sdwis_row(row, year)
+            stage1_reasons[f"{disposition}:{reason}"] += 1
+            _sample_classification(
+                classification_samples,
+                ordinal=ordinal,
+                row=row,
+                disposition=disposition,
+                reason=reason,
+            )
+            if disposition == "EXCLUDED":
+                excluded += 1
+                continue
+            if disposition == "UNRESOLVED":
+                unresolved += 1
+                continue
+            retained_source_rows += 1
+            retained_groups[violation_snapshot_key(row)].append(row)
+
+    collapsed_snapshots: list[dict[str, Any]] = []
+    collapse_conflicts: list[dict[str, Any]] = []
+    for key in sorted(retained_groups):
+        source_rows = retained_groups[key]
+        try:
+            collapsed_snapshots.append(collapse_violation_rows(source_rows))
+        except ValueError as exc:
+            retained_source_rows -= len(source_rows)
+            unresolved += len(source_rows)
+            collapse_conflicts.append(
+                {
+                    "snapshot_key": list(key),
+                    "source_rows": len(source_rows),
+                    "reason": str(exc),
+                }
+            )
+
+    accounting = source_arithmetic(
+        source_count,
+        retained_source_rows,
+        excluded,
+        unresolved,
+    )
+    if accounting["state"] != "PASS":
+        raise ValueError(f"SDWIS source arithmetic failed: {accounting}")
+
+    retrieval_bits = [
+        f"reconciliation_year={year}",
+        "scope=complete_supplied_member",
+    ]
+    if archive_member:
+        retrieval_bits.append(f"archive_member={archive_member}")
     manifestation_id = (
         f"EPA_SDWIS_VIOLATIONS:{retrieved_at.strftime('%Y%m%dT%H%M%S%fZ')}:{digest[:20]}"
     )
@@ -276,66 +377,74 @@ def _process_sdwis(
         manifestation_id=manifestation_id,
         source_authority="US EPA",
         source_system="SDWA_VIOLATIONS_ENFORCEMENT.csv",
-        source_record_id="SDWA_VIOLATIONS_ENFORCEMENT.csv",
+        source_record_id=archive_member or path.name,
         source_url=source_url,
-        retrieval_query=f"reconciliation_year={year};scope=supplied_manifestation",
+        retrieval_query=";".join(retrieval_bits),
         retrieved_at_utc=retrieved_at,
         byte_sha256=digest,
         schema_signature=schema_signature,
-        record_count=len(source_rows),
+        record_count=source_count,
     )
     raw_root.mkdir(parents=True, exist_ok=True)
     target = raw_root / f"SDWA_VIOLATIONS_ENFORCEMENT-{digest}.csv"
-    if target.exists() and target.read_bytes() != raw:
+    if target.exists() and _sha256_file(target) != digest:
         raise ValueError(f"raw snapshot collision at {target}")
     if not target.exists():
-        target.write_bytes(raw)
+        shutil.copyfile(path, target)
 
     existing_current = _existing_current_by_event(records_path)
-    retained: list[HazardRecord] = []
-    classifications: list[dict[str, Any]] = []
-    excluded = 0
-    unresolved = 0
-    for ordinal, row in enumerate(source_rows, start=2):
-        disposition, reason = classify_sdwis_row(row, year)
-        classifications.append(
-            {
-                "source_line": ordinal,
-                "pwsid": _row_value(row, "PWSID") or None,
-                "violation_id": _row_value(row, "VIOLATION_ID") or None,
-                "disposition": disposition,
-                "reason": reason,
-            }
-        )
-        if disposition == "EXCLUDED":
-            excluded += 1
-            continue
-        if disposition == "UNRESOLVED":
-            unresolved += 1
-            continue
-        candidate = normalize(row, manifestation_id)
-        prior = existing_current.get(canonical_event_id(row))
+    created: list[HazardRecord] = []
+    material_duplicates_skipped = 0
+    for snapshot in sorted(
+        collapsed_snapshots,
+        key=lambda row: (
+            _row_value(row, "SUBMISSIONYEARQUARTER"),
+            canonical_event_id(row),
+        ),
+    ):
+        candidate = normalize(snapshot, manifestation_id)
+        prior = existing_current.get(candidate.canonical_event_id)
         if prior is not None:
             if prior.record_id == candidate.record_id:
+                material_duplicates_skipped += 1
                 continue
             candidate = normalize(
-                row,
+                snapshot,
                 manifestation_id,
                 supersedes_record_id=prior.record_id,
             )
-        retained.append(candidate)
+        created.append(candidate)
         existing_current[candidate.canonical_event_id] = candidate
 
-    retained_source = len(source_rows) - excluded - unresolved
-    accounting = source_arithmetic(
-        len(source_rows),
-        retained_source,
-        excluded,
-        unresolved,
+    snapshot_accounting = {
+        "retained_source_rows": retained_source_rows,
+        "normalized_violation_snapshots": len(collapsed_snapshots),
+        "source_row_to_snapshot_collapse_delta": retained_source_rows - len(collapsed_snapshots),
+        "material_duplicate_snapshots_skipped": material_duplicates_skipped,
+        "canonical_record_revisions_created": len(created),
+        "collapse_conflict_groups": len(collapse_conflicts),
+        "collapse_conflict_source_rows": sum(item["source_rows"] for item in collapse_conflicts),
+        "current_event_count_after_ingest": len(existing_current),
+    }
+    provenance = {
+        "member_sha256": digest,
+        "member_byte_length": path.stat().st_size,
+        "parent_archive_sha256": parent_archive_sha256,
+        "archive_member": archive_member,
+        "schema_signature": schema_signature,
+    }
+    return (
+        manifestation,
+        created,
+        accounting,
+        dict(sorted(stage1_reasons.items())),
+        classification_samples,
+        {
+            "snapshot_accounting": snapshot_accounting,
+            "collapse_conflicts": collapse_conflicts,
+            "provenance": provenance,
+        },
     )
-    if accounting["state"] != "PASS":
-        raise ValueError(f"SDWIS source arithmetic failed: {accounting}")
-    return manifestation, retained, accounting, classifications
 
 
 def run(
@@ -347,6 +456,8 @@ def run(
     salud_annex: Path | None = None,
     sdwis_violations: Path | None = None,
     sdwis_source_url: str | None = None,
+    sdwis_parent_archive_sha256: str | None = None,
+    sdwis_archive_member: str | None = None,
     require_zero_unresolved: bool = False,
 ) -> dict[str, Any]:
     retrieved_at = datetime.now(timezone.utc)
@@ -367,17 +478,28 @@ def run(
     )
     new_records: list[HazardRecord] = []
     sdwis_accounting = None
-    sdwis_classifications: list[dict[str, Any]] = []
+    sdwis_reason_counts: dict[str, int] = {}
+    sdwis_classification_samples: list[dict[str, Any]] = []
+    sdwis_details: dict[str, Any] | None = None
     if sdwis_violations is not None:
         if not sdwis_source_url or not sdwis_source_url.startswith("https://"):
             raise ValueError("--sdwis-source-url with an exact HTTPS source locator is required")
-        sdwis_manifestation, records, sdwis_accounting, sdwis_classifications = _process_sdwis(
+        (
+            sdwis_manifestation,
+            records,
+            sdwis_accounting,
+            sdwis_reason_counts,
+            sdwis_classification_samples,
+            sdwis_details,
+        ) = _process_sdwis(
             sdwis_violations,
             source_url=sdwis_source_url,
             year=year,
             retrieved_at=retrieved_at,
             raw_root=raw_root / "epa_sdwis",
             records_path=records_path,
+            parent_archive_sha256=sdwis_parent_archive_sha256,
+            archive_member=sdwis_archive_member,
         )
         manifestations.append(sdwis_manifestation)
         new_records.extend(records)
@@ -395,14 +517,20 @@ def run(
     )
 
     receipt = {
-        "schema_version": "aguayluz.salud_sdwis_water/v1",
+        "schema_version": "aguayluz.salud_sdwis_water/v2",
         "retrieved_at_utc": retrieved_at.isoformat(),
         "target_calendar_year": year,
         "salud_artifacts": salud_artifacts,
         "salud_artifact_arithmetic": salud_arithmetic,
         "sdwis_schema_url": EPA_SCHEMA_URL,
         "sdwis_source_arithmetic": sdwis_accounting,
-        "sdwis_classifications": sdwis_classifications,
+        "sdwis_classification_reason_counts": sdwis_reason_counts,
+        "sdwis_classifications": sdwis_classification_samples,
+        "sdwis_classification_samples_truncated": (
+            sdwis_accounting is not None
+            and sdwis_accounting["source"] > len(sdwis_classification_samples)
+        ),
+        "sdwis_details": sdwis_details,
         "new_record_revisions": len(new_records),
         "source_universe_completeness_claimed": False,
         "certification_state": (
@@ -415,6 +543,7 @@ def run(
         "guardrails": [
             "A later SDWIS snapshot does not overwrite a frozen Salud annual publication.",
             "Monitoring/reporting/public-notification violations do not establish contaminant exposure.",
+            "Multiple enforcement association rows are collapsed into one violation snapshot.",
             "The supplied SDWIS manifestation is a reconciliation denominator, not proof of Salud report membership.",
             "No Manifestation is created for a locator whose bytes were not frozen.",
         ],
@@ -430,6 +559,8 @@ def run(
             raise ValueError(
                 f"SDWIS denominator has {sdwis_accounting['unresolved']} unresolved row(s)"
             )
+        if sdwis_details and sdwis_details["snapshot_accounting"]["collapse_conflict_source_rows"]:
+            raise ValueError("SDWIS retained rows contain unresolved violation-level conflicts")
 
     receipt_path.write_text(
         json.dumps(receipt, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
@@ -449,6 +580,8 @@ def main() -> int:
     parser.add_argument("--salud-annex", type=Path)
     parser.add_argument("--sdwis-violations", type=Path)
     parser.add_argument("--sdwis-source-url")
+    parser.add_argument("--sdwis-parent-archive-sha256")
+    parser.add_argument("--sdwis-archive-member")
     parser.add_argument("--require-zero-unresolved", action="store_true")
     args = parser.parse_args()
     try:
@@ -460,6 +593,8 @@ def main() -> int:
             salud_annex=args.salud_annex,
             sdwis_violations=args.sdwis_violations,
             sdwis_source_url=args.sdwis_source_url,
+            sdwis_parent_archive_sha256=args.sdwis_parent_archive_sha256,
+            sdwis_archive_member=args.sdwis_archive_member,
             require_zero_unresolved=args.require_zero_unresolved,
         )
     except Exception as exc:  # noqa: BLE001

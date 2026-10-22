@@ -20,6 +20,13 @@ def _write_csv(path: Path, rows: list[dict[str, str]]) -> None:
         "VIOLATION_NAME",
         "IS_HEALTH_BASED_IND",
         "VIOLATION_STATUS",
+        "ENFORCEMENT_ID",
+        "ENFORCEMENT_DATE",
+        "ENFORCEMENT_ACTION_TYPE_CODE",
+        "ENF_ACTION_CATEGORY",
+        "ENF_ORIGINATOR_CODE",
+        "ENF_FIRST_REPORTED_DATE",
+        "ENF_LAST_REPORTED_DATE",
     ]
     with path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
@@ -185,3 +192,51 @@ def test_sdwis_source_url_is_required_for_traceability(tmp_path):
             output_root=tmp_path / "out",
             sdwis_violations=csv_path,
         )
+
+
+
+def test_multiple_enforcement_rows_create_one_canonical_violation_revision(tmp_path):
+    csv_path = tmp_path / "sdwis.csv"
+    _write_csv(
+        csv_path,
+        [
+            _base(
+                ENFORCEMENT_ID="E-1",
+                ENFORCEMENT_DATE="2025-04-01",
+                ENFORCEMENT_ACTION_TYPE_CODE="S06",
+                ENF_ACTION_CATEGORY="Informal",
+            ),
+            _base(
+                ENFORCEMENT_ID="E-2",
+                ENFORCEMENT_DATE="2025-05-01",
+                ENFORCEMENT_ACTION_TYPE_CODE="S15",
+                ENF_ACTION_CATEGORY="Formal",
+            ),
+        ],
+    )
+
+    receipt = run(
+        year=2025,
+        output_root=tmp_path / "out",
+        sdwis_violations=csv_path,
+        sdwis_source_url="https://example.invalid/SDWA_latest_downloads.zip",
+        sdwis_parent_archive_sha256="a" * 64,
+        sdwis_archive_member="SDWA_VIOLATIONS_ENFORCEMENT.csv",
+    )
+
+    assert receipt["sdwis_source_arithmetic"]["retained"] == 2
+    snapshot = receipt["sdwis_details"]["snapshot_accounting"]
+    assert snapshot["retained_source_rows"] == 2
+    assert snapshot["normalized_violation_snapshots"] == 1
+    assert snapshot["source_row_to_snapshot_collapse_delta"] == 1
+    assert snapshot["canonical_record_revisions_created"] == 1
+
+    rows = [
+        HazardRecord.model_validate_json(line)
+        for line in (tmp_path / "out" / "hazard_records.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+        if line.strip()
+    ]
+    assert len(rows) == 1
+    assert len(rows[0].raw_attributes["enforcement_actions"]) == 2
