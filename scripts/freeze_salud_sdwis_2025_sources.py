@@ -11,11 +11,13 @@ import struct
 import subprocess
 import urllib.request
 import zlib
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 SALUD = {
+    "10746": "https://www.salud.pr.gov/CMS/DOWNLOAD/10746",
     "10747": "https://www.salud.pr.gov/CMS/DOWNLOAD/10747",
     "10748": "https://www.salud.pr.gov/CMS/DOWNLOAD/10748",
 }
@@ -191,15 +193,31 @@ def _parse_date(value: str):
     return "INVALID"
 
 
+def _parse_end_date(value: str, violation_status: str):
+    text = (value or "").strip()
+    status = (violation_status or "").strip().casefold()
+    if text == "--->" and status in {"addressed", "unaddressed"}:
+        return None
+    return _parse_date(text)
+
+
 def classify_pr_row(row: dict[str, str], year: int) -> tuple[str, str]:
     pwsid = (row.get("PWSID") or "").strip()
     violation_id = (row.get("VIOLATION_ID") or "").strip()
-    if not pwsid or not violation_id:
-        return "UNRESOLVED", "MISSING_PWSID_OR_VIOLATION_ID"
+    enforcement_id = (row.get("ENFORCEMENT_ID") or "").strip()
+    if not pwsid:
+        return "UNRESOLVED", "MISSING_PWSID"
     if not pwsid.upper().startswith("PR"):
         return "EXCLUDED", "NON_PUERTO_RICO_PWSID"
+    if not violation_id and enforcement_id:
+        return "EXCLUDED", "ENFORCEMENT_ONLY_NO_VIOLATION_ID"
+    if not violation_id:
+        return "UNRESOLVED", "MISSING_VIOLATION_ID"
     b = _parse_date(row.get("NON_COMPL_PER_BEGIN_DATE", ""))
-    e = _parse_date(row.get("NON_COMPL_PER_END_DATE", ""))
+    e = _parse_end_date(
+        row.get("NON_COMPL_PER_END_DATE", ""),
+        row.get("VIOLATION_STATUS", ""),
+    )
     if b == "INVALID":
         return "UNRESOLVED", "INVALID_BEGIN_DATE"
     if e == "INVALID":
@@ -217,7 +235,18 @@ def classify_pr_row(row: dict[str, str], year: int) -> tuple[str, str]:
 
 def stream_member_and_filter_pr(
     url: str, meta: dict[str, Any], root: Path
-) -> tuple[dict[str, Any], list[dict[str, str]], list[str]]:
+) -> tuple[
+    dict[str, Any],
+    list[dict[str, str]],
+    list[str],
+    dict[str, int],
+    dict[str, int],
+    dict[str, int],
+    dict[str, int],
+    dict[str, int],
+    dict[str, int],
+    dict[str, int],
+]:
     start = meta["data_start"]
     end = start + meta["compressed_size"] - 1
     compressed_hash = hashlib.sha256()
@@ -230,6 +259,15 @@ def stream_member_and_filter_pr(
     header: list[str] | None = None
     pr_rows: list[dict[str, str]] = []
     unresolved_raw: list[str] = []
+    unresolved_reasons: Counter[str] = Counter()
+    unresolved_field_profile: Counter[str] = Counter()
+    invalid_begin_values: Counter[str] = Counter()
+    invalid_end_values: Counter[str] = Counter()
+    invalid_end_statuses: Counter[str] = Counter()
+    invalid_end_begin_years: Counter[str] = Counter()
+    normalized_open_end_sentinels: Counter[str] = Counter()
+    enforcement_only = 0
+    pr_no_2025_overlap = 0
     source_rows = 0
     non_pr_rows = 0
     pr_excluded = 0
@@ -240,7 +278,8 @@ def stream_member_and_filter_pr(
     total_uncompressed = 0
 
     def consume_record(raw_record: bytes) -> None:
-        nonlocal header, source_rows, non_pr_rows, pr_excluded, pr_unresolved, retained
+        nonlocal header, source_rows, non_pr_rows, pr_excluded, pr_unresolved
+        nonlocal retained, enforcement_only, pr_no_2025_overlap
         record = raw_record.rstrip(b"\r\n")
         if not record:
             return
@@ -259,6 +298,7 @@ def stream_member_and_filter_pr(
         parts = record.split(b",", 2)
         if len(parts) < 3:
             pr_unresolved += 1
+            unresolved_reasons["MALFORMED_FIELD_PREFIX"] += 1
             unresolved_raw.append(f"ROW_{source_rows}:MALFORMED_FIELD_PREFIX")
             return
         pwsid_raw = parts[1].strip().strip(b'"').upper()
@@ -268,17 +308,57 @@ def stream_member_and_filter_pr(
         values = next(csv.reader([record.decode("utf-8")]))
         if len(values) != len(header):
             pr_unresolved += 1
+            unresolved_reasons[f"COLUMN_COUNT_{len(values)}"] += 1
             unresolved_raw.append(f"ROW_{source_rows}:COLUMN_COUNT_{len(values)}")
             return
         row = dict(zip(header, values, strict=True))
+        if (
+            (row.get("NON_COMPL_PER_END_DATE") or "").strip() == "--->"
+            and (row.get("VIOLATION_STATUS") or "").strip().casefold()
+            in {"addressed", "unaddressed"}
+        ):
+            normalized_open_end_sentinels[
+                (row.get("VIOLATION_STATUS") or "").strip()
+            ] += 1
         disposition, reason = classify_pr_row(row, TARGET_YEAR)
+        if disposition == "UNRESOLVED":
+            pwsid = (row.get("PWSID") or "").strip()
+            violation_id = (row.get("VIOLATION_ID") or "").strip()
+            enforcement_id = (row.get("ENFORCEMENT_ID") or "").strip()
+            if not pwsid:
+                unresolved_field_profile["MISSING_PWSID"] += 1
+            if not violation_id:
+                unresolved_field_profile["MISSING_VIOLATION_ID"] += 1
+                if enforcement_id:
+                    unresolved_field_profile[
+                        "MISSING_VIOLATION_ID_WITH_ENFORCEMENT_ID"
+                    ] += 1
+                else:
+                    unresolved_field_profile[
+                        "MISSING_VIOLATION_ID_WITHOUT_ENFORCEMENT_ID"
+                    ] += 1
+            if reason == "INVALID_BEGIN_DATE":
+                invalid_begin_values[(row.get("NON_COMPL_PER_BEGIN_DATE") or "").strip()] += 1
+            if reason == "INVALID_END_DATE":
+                invalid_end_values[(row.get("NON_COMPL_PER_END_DATE") or "").strip()] += 1
+                invalid_end_statuses[(row.get("VIOLATION_STATUS") or "").strip()] += 1
+                begin_value = _parse_date(row.get("NON_COMPL_PER_BEGIN_DATE", ""))
+                if isinstance(begin_value, datetime):
+                    invalid_end_begin_years[str(begin_value.year)] += 1
+                else:
+                    invalid_end_begin_years[str(begin_value)] += 1
         if disposition == "RETAINED":
             retained += 1
             pr_rows.append(row)
         elif disposition == "EXCLUDED":
             pr_excluded += 1
+            if reason == "ENFORCEMENT_ONLY_NO_VIOLATION_ID":
+                enforcement_only += 1
+            elif reason == "NO_2025_OVERLAP":
+                pr_no_2025_overlap += 1
         else:
             pr_unresolved += 1
+            unresolved_reasons[reason] += 1
             unresolved_raw.append(
                 f"ROW_{source_rows}:{reason}:{row.get('PWSID')}:{row.get('VIOLATION_ID')}"
             )
@@ -340,7 +420,10 @@ def stream_member_and_filter_pr(
         "retained": retained,
         "excluded": non_pr_rows + pr_excluded,
         "excluded_non_pr": non_pr_rows,
-        "excluded_pr_no_2025_overlap": pr_excluded,
+        "excluded_pr_total": pr_excluded,
+        "excluded_enforcement_only": enforcement_only,
+        "excluded_pr_no_2025_overlap": pr_no_2025_overlap,
+        "excluded_pr_other": pr_excluded - enforcement_only - pr_no_2025_overlap,
         "unresolved": pr_unresolved,
         "accounted": accounted,
         "delta": source_rows - accounted,
@@ -353,7 +436,18 @@ def stream_member_and_filter_pr(
         "uncompressed_bytes_observed": total_uncompressed,
         "pr_2025_arithmetic": accounting,
     }
-    return stream_meta, pr_rows, unresolved_raw
+    return (
+        stream_meta,
+        pr_rows,
+        unresolved_raw,
+        dict(sorted(unresolved_reasons.items())),
+        dict(sorted(unresolved_field_profile.items())),
+        dict(sorted(invalid_begin_values.items())),
+        dict(sorted(invalid_end_values.items())),
+        dict(sorted(invalid_end_statuses.items())),
+        dict(sorted(invalid_end_begin_years.items())),
+        dict(sorted(normalized_open_end_sentinels.items())),
+    )
 
 
 def main() -> int:
@@ -385,9 +479,18 @@ def main() -> int:
 
     print("LOCATE EPA TARGET MEMBER", flush=True)
     member_meta = locate_member(EPA_ZIP, TARGET_MEMBER)
-    stream_meta, pr_rows, unresolved = stream_member_and_filter_pr(
-        EPA_ZIP, member_meta, root
-    )
+    (
+        stream_meta,
+        pr_rows,
+        unresolved,
+        unresolved_reason_counts,
+        unresolved_field_profile,
+        invalid_begin_values,
+        invalid_end_values,
+        invalid_end_statuses,
+        invalid_end_begin_years,
+        normalized_open_end_sentinels,
+    ) = stream_member_and_filter_pr(EPA_ZIP, member_meta, root)
 
     pr_csv = root / "SDWA_VIOLATIONS_ENFORCEMENT_PR_2025.csv"
     if not pr_rows:
@@ -397,6 +500,29 @@ def main() -> int:
         w = csv.DictWriter(f, fieldnames=fieldnames)
         w.writeheader()
         w.writerows(pr_rows)
+
+    unresolved_json = root / "SDWA_VIOLATIONS_ENFORCEMENT_PR_2025_UNRESOLVED.json"
+    unresolved_json.write_text(
+        json.dumps(
+            {
+                "source_member": TARGET_MEMBER,
+                "target_year": TARGET_YEAR,
+                "unresolved_count": len(unresolved),
+                "reason_counts": unresolved_reason_counts,
+                "field_profile": unresolved_field_profile,
+                "invalid_begin_values": invalid_begin_values,
+                "invalid_end_values": invalid_end_values,
+                "invalid_end_statuses": invalid_end_statuses,
+                "invalid_end_begin_years": invalid_end_begin_years,
+                "normalized_open_end_sentinels": normalized_open_end_sentinels,
+                "rows": unresolved,
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
 
     receipt = {
         "schema_version": "aguayluz.salud_sdwis_2025_source_freeze/v3",
@@ -419,13 +545,23 @@ def main() -> int:
             "pr_2025_csv": pr_csv.name,
             "pr_2025_csv_sha256": sha256_file(pr_csv),
             "unresolved_rows": unresolved,
+            "unresolved_reason_counts": unresolved_reason_counts,
+            "unresolved_field_profile": unresolved_field_profile,
+            "invalid_begin_values": invalid_begin_values,
+            "invalid_end_values": invalid_end_values,
+            "invalid_end_statuses": invalid_end_statuses,
+            "invalid_end_begin_years": invalid_end_begin_years,
+            "normalized_open_end_sentinels": normalized_open_end_sentinels,
+            "unresolved_evidence_file": unresolved_json.name,
+            "unresolved_evidence_sha256": sha256_file(unresolved_json),
         },
         "source_universe_completeness_claimed": False,
         "notes": [
-            "Salud 10747 and 10748 are complete byte-frozen PDF manifestations.",
+            "Salud 10746, 10747 and 10748 are complete byte-frozen PDF manifestations.",
             "EPA target-member compressed and uncompressed identities are hashed during a single validated range stream.",
             "Every logical row in SDWA_VIOLATIONS_ENFORCEMENT.csv is counted in source arithmetic; only PR-prefixed PWSID rows are fully CSV-parsed.",
             "The national ZIP full-byte SHA remains OPEN; target-member byte identity and CRC are independently closed.",
+            "The EPA export literal ---> is normalized as an open end only when VIOLATION_STATUS is Addressed or Unaddressed, consistent with EPA's definition that unresolved violations have a null noncompliance end date.",
             "No equality between Salud annual-report membership and the EPA PR-derived subset is asserted.",
         ],
     }
@@ -440,6 +576,13 @@ def main() -> int:
                 "member_compressed_sha256": stream_meta["compressed_sha256"],
                 "member_uncompressed_sha256": stream_meta["uncompressed_sha256"],
                 "pr_2025_arithmetic": stream_meta["pr_2025_arithmetic"],
+                "unresolved_reason_counts": unresolved_reason_counts,
+                "unresolved_field_profile": unresolved_field_profile,
+                "invalid_begin_values": invalid_begin_values,
+                "invalid_end_values": invalid_end_values,
+                "invalid_end_statuses": invalid_end_statuses,
+                "invalid_end_begin_years": invalid_end_begin_years,
+                "normalized_open_end_sentinels": normalized_open_end_sentinels,
                 "zip_full_sha256_status": "OPEN_NOT_DOWNLOADED",
             },
             sort_keys=True,

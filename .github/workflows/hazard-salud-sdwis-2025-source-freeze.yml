@@ -54,8 +54,8 @@ jobs:
               Path("artifacts/salud_sdwis_2025_source_freeze/source_freeze_receipt.json")
               .read_text(encoding="utf-8")
           )
-          assert receipt["salud"]["source"] == 2, receipt
-          assert receipt["salud"]["frozen"] == 2, receipt
+          assert receipt["salud"]["source"] == 3, receipt
+          assert receipt["salud"]["frozen"] == 3, receipt
           assert receipt["salud"]["delta"] == 0, receipt
           assert receipt["epa"]["zip_full_sha256_status"] == "OPEN_NOT_DOWNLOADED", receipt
           assert receipt["epa"]["target_member"]["member_name"].upper().endswith(
@@ -65,7 +65,27 @@ jobs:
           assert receipt["epa"]["uncompressed_sha256"], receipt
           assert receipt["epa"]["pr_2025_arithmetic"]["state"] == "PASS", receipt
           assert receipt["epa"]["pr_2025_arithmetic"]["delta"] == 0, receipt
-          print(json.dumps(receipt, indent=2, sort_keys=True))
+          unresolved = receipt["epa"]["pr_2025_arithmetic"]["unresolved"]
+          reasons = receipt["epa"]["unresolved_reason_counts"]
+          assert sum(reasons.values()) == unresolved, (unresolved, reasons)
+          assert receipt["epa"]["unresolved_evidence_sha256"], receipt
+          assert Path(
+              "artifacts/salud_sdwis_2025_source_freeze/"
+              + receipt["epa"]["unresolved_evidence_file"]
+          ).is_file(), receipt
+          print(json.dumps({
+              "salud": receipt["salud"],
+              "pr_2025_arithmetic": receipt["epa"]["pr_2025_arithmetic"],
+              "unresolved_reason_counts": reasons,
+              "unresolved_field_profile": receipt["epa"]["unresolved_field_profile"],
+              "invalid_begin_values": receipt["epa"]["invalid_begin_values"],
+              "invalid_end_values": receipt["epa"]["invalid_end_values"],
+              "invalid_end_statuses": receipt["epa"]["invalid_end_statuses"],
+              "invalid_end_begin_years": receipt["epa"]["invalid_end_begin_years"],
+              "normalized_open_end_sentinels": receipt["epa"]["normalized_open_end_sentinels"],
+              "unresolved_evidence_sha256": receipt["epa"]["unresolved_evidence_sha256"],
+              "zip_full_sha256_status": receipt["epa"]["zip_full_sha256_status"],
+          }, indent=2, sort_keys=True))
 
       - name: Upload frozen source evidence
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
