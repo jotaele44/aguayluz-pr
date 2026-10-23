@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from scripts.adjudicate_salud_sdwis_2025_residue import adjudicate, run
 
 
