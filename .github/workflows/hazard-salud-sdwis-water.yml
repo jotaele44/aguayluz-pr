@@ -8,10 +8,12 @@ on:
       - "scripts/adjudicate_salud_sdwis_2025_residue.py"
       - "scripts/validate_prdoh_10748_structural.py"
       - "scripts/validate_prdoh_10747_structural.py"
+      - "scripts/validate_prdoh_internal_reconciliation.py"
       - "data/certification/prdoh_10748_structural_v1.json"
       - "data/certification/prdoh_10748_qualification_v1.json"
       - "data/certification/prdoh_10747_structural_v1.json.gz.b64"
       - "data/certification/prdoh_10747_semantic_adjudication_v1.json"
+      - "data/certification/prdoh_internal_reconciliation_v1.json"
       - "src/aguayluz/hazard_adapters/sdwa_drinking_water.py"
       - "config/hazard_advisory_sources.v1.json"
       - ".federation/gui-capabilities.json"
@@ -20,6 +22,7 @@ on:
       - "tests/test_adjudicate_salud_sdwis_2025_residue.py"
       - "tests/test_prdoh_10748_structural.py"
       - "tests/test_prdoh_10747_structural.py"
+      - "tests/test_prdoh_internal_reconciliation.py"
       - ".github/workflows/hazard-salud-sdwis-water.yml"
   workflow_dispatch:
 
@@ -53,7 +56,8 @@ jobs:
             tests/test_ingest_salud_sdwis_water.py \
             tests/test_adjudicate_salud_sdwis_2025_residue.py \
             tests/test_prdoh_10748_structural.py \
-            tests/test_prdoh_10747_structural.py
+            tests/test_prdoh_10747_structural.py \
+            tests/test_prdoh_internal_reconciliation.py
 
       - name: Replay frozen PRDOH structural validators
         env:
@@ -63,6 +67,8 @@ jobs:
             data/certification/prdoh_10748_structural_v1.json
           python scripts/validate_prdoh_10747_structural.py \
             data/certification/prdoh_10747_structural_v1.json.gz.b64
+          python scripts/validate_prdoh_internal_reconciliation.py \
+            data/certification/prdoh_internal_reconciliation_v1.json
 
       - name: Verify blocked-source receipt without fabricating manifestations
         env:
