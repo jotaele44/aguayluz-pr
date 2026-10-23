@@ -4,48 +4,327 @@
   "source_sha256": "9886fbed47e9f8a3564167034bedc6bc0a0d653c6f89d81d69f8101ccc3f2603",
   "source_pages": 33,
   "page_ledger": [
-    {"page":1,"primary_region_class":"NARRATIVE","logical_table_rows":0,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":2,"primary_region_class":"VIOLATION_TABLE","logical_table_rows":46,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":3,"primary_region_class":"VIOLATION_TABLE","logical_table_rows":8,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":4,"primary_region_class":"NARRATIVE","logical_table_rows":0,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":5,"primary_region_class":"VIOLATION_TABLE","logical_table_rows":43,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":6,"primary_region_class":"VIOLATION_TABLE","logical_table_rows":14,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":7,"primary_region_class":"SYSTEM_TABLE","logical_table_rows":53,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":8,"primary_region_class":"SYSTEM_TABLE","logical_table_rows":53,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":9,"primary_region_class":"SYSTEM_TABLE","logical_table_rows":7,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":10,"primary_region_class":"SYSTEM_TABLE","logical_table_rows":4,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":11,"primary_region_class":"SYSTEM_TABLE","logical_table_rows":4,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":12,"primary_region_class":"VIOLATION_TABLE","logical_table_rows":18,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":13,"primary_region_class":"NARRATIVE","logical_table_rows":0,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":14,"primary_region_class":"NARRATIVE","logical_table_rows":0,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":15,"primary_region_class":"NARRATIVE","logical_table_rows":0,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":16,"primary_region_class":"NARRATIVE","logical_table_rows":0,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":17,"primary_region_class":"NARRATIVE","logical_table_rows":0,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":18,"primary_region_class":"NARRATIVE","logical_table_rows":0,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":19,"primary_region_class":"REFERENCE_TABLE","logical_table_rows":7,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":20,"primary_region_class":"REFERENCE_TABLE","logical_table_rows":12,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":21,"primary_region_class":"REFERENCE_TABLE","logical_table_rows":7,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":22,"primary_region_class":"REFERENCE_TABLE","logical_table_rows":10,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":23,"primary_region_class":"REFERENCE_TABLE","logical_table_rows":15,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":24,"primary_region_class":"REFERENCE_TABLE","logical_table_rows":16,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":25,"primary_region_class":"REFERENCE_TABLE","logical_table_rows":16,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":26,"primary_region_class":"REFERENCE_TABLE","logical_table_rows":6,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":27,"primary_region_class":"REFERENCE_TABLE","logical_table_rows":5,"continuation_fragments":1,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":28,"primary_region_class":"NARRATIVE","logical_table_rows":0,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":29,"primary_region_class":"NARRATIVE","logical_table_rows":0,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":30,"primary_region_class":"TREATMENT_TABLE","logical_table_rows":8,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":31,"primary_region_class":"TREATMENT_TABLE","logical_table_rows":8,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":32,"primary_region_class":"NONDATA_IMAGE","logical_table_rows":0,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"},
-    {"page":33,"primary_region_class":"NONDATA_IMAGE","logical_table_rows":0,"continuation_fragments":0,"review_state":"VISUALLY_ADJUDICATED"}
+    {
+      "page": 1,
+      "primary_region_class": "NARRATIVE",
+      "logical_table_rows": 0,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 2,
+      "primary_region_class": "VIOLATION_TABLE",
+      "logical_table_rows": 46,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 3,
+      "primary_region_class": "VIOLATION_TABLE",
+      "logical_table_rows": 8,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 4,
+      "primary_region_class": "NARRATIVE",
+      "logical_table_rows": 0,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 5,
+      "primary_region_class": "VIOLATION_TABLE",
+      "logical_table_rows": 43,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 6,
+      "primary_region_class": "VIOLATION_TABLE",
+      "logical_table_rows": 14,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 7,
+      "primary_region_class": "SYSTEM_TABLE",
+      "logical_table_rows": 53,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 8,
+      "primary_region_class": "SYSTEM_TABLE",
+      "logical_table_rows": 53,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 9,
+      "primary_region_class": "SYSTEM_TABLE",
+      "logical_table_rows": 7,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 10,
+      "primary_region_class": "SYSTEM_TABLE",
+      "logical_table_rows": 4,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 11,
+      "primary_region_class": "SYSTEM_TABLE",
+      "logical_table_rows": 4,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 12,
+      "primary_region_class": "VIOLATION_TABLE",
+      "logical_table_rows": 18,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 13,
+      "primary_region_class": "NARRATIVE",
+      "logical_table_rows": 0,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 14,
+      "primary_region_class": "NARRATIVE",
+      "logical_table_rows": 0,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 15,
+      "primary_region_class": "NARRATIVE",
+      "logical_table_rows": 0,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 16,
+      "primary_region_class": "NARRATIVE",
+      "logical_table_rows": 0,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 17,
+      "primary_region_class": "NARRATIVE",
+      "logical_table_rows": 0,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 18,
+      "primary_region_class": "NARRATIVE",
+      "logical_table_rows": 0,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 19,
+      "primary_region_class": "REFERENCE_TABLE",
+      "logical_table_rows": 7,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 20,
+      "primary_region_class": "REFERENCE_TABLE",
+      "logical_table_rows": 12,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 21,
+      "primary_region_class": "REFERENCE_TABLE",
+      "logical_table_rows": 7,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 22,
+      "primary_region_class": "REFERENCE_TABLE",
+      "logical_table_rows": 10,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 23,
+      "primary_region_class": "REFERENCE_TABLE",
+      "logical_table_rows": 15,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 24,
+      "primary_region_class": "REFERENCE_TABLE",
+      "logical_table_rows": 16,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 25,
+      "primary_region_class": "REFERENCE_TABLE",
+      "logical_table_rows": 16,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 26,
+      "primary_region_class": "REFERENCE_TABLE",
+      "logical_table_rows": 6,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 27,
+      "primary_region_class": "REFERENCE_TABLE",
+      "logical_table_rows": 5,
+      "continuation_fragments": 1,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 28,
+      "primary_region_class": "NARRATIVE",
+      "logical_table_rows": 0,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 29,
+      "primary_region_class": "NARRATIVE",
+      "logical_table_rows": 0,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 30,
+      "primary_region_class": "TREATMENT_TABLE",
+      "logical_table_rows": 8,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 31,
+      "primary_region_class": "TREATMENT_TABLE",
+      "logical_table_rows": 8,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 32,
+      "primary_region_class": "NONDATA_IMAGE",
+      "logical_table_rows": 0,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    },
+    {
+      "page": 33,
+      "primary_region_class": "NONDATA_IMAGE",
+      "logical_table_rows": 0,
+      "continuation_fragments": 0,
+      "review_state": "VISUALLY_ADJUDICATED"
+    }
   ],
-  "page_arithmetic":{"source_pages":33,"classified_pages":33,"unresolved_pages":0,"delta":0},
-  "row_arithmetic":{"visible_table_row_fragments":361,"identity_bearing_rows":250,"violation_enforcement_rows":129,"system_rows":121,"excluded_reference_rows":94,"excluded_treatment_rows":16,"excluded_continuation_fragments":1,"unresolved_row_fragments":0,"accounted":361,"delta":0},
-  "system_denominator":{"communal":113,"non_transient":4,"non_community_transient":4,"total":121,"unique_pwsids":121},
-  "identity_candidate_graph":{"violation_unique_pwsids":56,"system_unique_pwsids":121,"intersection":8,"violation_only":48,"system_only":113,"union":169,"symmetric_difference":161,"intersection_pwsids":["PR0242122","PR0401404","PR0439054","PR0439084","PR0458394","PR0468064","PR0530105","PR0563095"],"binding_rule":"stable normalized PWSID only; no name/count/proximity promotion"},
-  "reference_treatment_firewall":{"reference_rows_admitted_to_violation_denominator":0,"treatment_rows_admitted_to_violation_denominator":0,"continuation_fragments_admitted_as_new_rows":0,"state":"PASS"},
-  "raw_normalized_canonical":{"raw":"exact PDF bytes + page/table/row source coordinates","normalized":"PWSID syntax normalization only; source text preserved","canonical":"stable PWSID binding only","state":"PASS_FOR_IDENTITY_PLANE"},
-  "non_identity_transcription_state":"OCR-assisted transcription remains subordinate to rendered source; structural counts and stable-PWSID bindings do not depend on OCR confidence.",
-  "structural_state":"PASS",
-  "full_row_field_transcription_state":"OPEN",
-  "global_water_health_state":"OPEN"
+  "page_arithmetic": {
+    "source_pages": 33,
+    "classified_pages": 33,
+    "unresolved_pages": 0,
+    "delta": 0
+  },
+  "row_arithmetic": {
+    "visible_table_row_fragments": 361,
+    "identity_bearing_rows": 250,
+    "violation_enforcement_rows": 129,
+    "system_rows": 121,
+    "excluded_reference_rows": 94,
+    "excluded_treatment_rows": 16,
+    "excluded_continuation_fragments": 1,
+    "unresolved_row_fragments": 0,
+    "accounted": 361,
+    "delta": 0
+  },
+  "system_denominator": {
+    "communal": 113,
+    "non_transient": 4,
+    "non_community_transient": 4,
+    "total": 121,
+    "unique_pwsids": 121
+  },
+  "identity_candidate_graph": {
+    "violation_unique_pwsids": 56,
+    "system_unique_pwsids": 121,
+    "intersection": 8,
+    "violation_only": 48,
+    "system_only": 113,
+    "union": 169,
+    "symmetric_difference": 161,
+    "intersection_pwsids": [
+      "PR0242122",
+      "PR0401404",
+      "PR0439054",
+      "PR0439084",
+      "PR0458394",
+      "PR0468064",
+      "PR0530105",
+      "PR0563095"
+    ],
+    "binding_rule": "stable normalized PWSID only; no name/count/proximity promotion"
+  },
+  "reference_treatment_firewall": {
+    "reference_rows_admitted_to_violation_denominator": 0,
+    "treatment_rows_admitted_to_violation_denominator": 0,
+    "continuation_fragments_admitted_as_new_rows": 0,
+    "state": "PASS"
+  },
+  "raw_normalized_canonical": {
+    "raw": "exact PDF bytes + page/table/row source coordinates",
+    "normalized": "PWSID syntax normalization only; source text preserved",
+    "canonical": "stable PWSID binding only",
+    "state": "PASS_FOR_IDENTITY_PLANE"
+  },
+  "non_identity_transcription_state": "OCR-assisted transcription remains subordinate to rendered source; structural counts and stable-PWSID bindings do not depend on OCR confidence.",
+  "structural_state": "CERTIFIED",
+  "full_row_field_transcription_state": "PASS_SOURCE_BOUND_NONCANONICAL_TEXT",
+  "global_water_health_state": "OPEN",
+  "identity_row_ledger": {
+    "row_count": 250,
+    "violation_enforcement_rows": 129,
+    "system_rows": 121,
+    "decoded_json_sha256": "b493bcebffde8157e109996337cfcbf4b65df75f3ab3c2a906b4924cd567e0f4",
+    "decoded_json_size_bytes": 349403,
+    "deterministic_gzip_sha256": "66dcb475791740dcd6e8c357a84628cd587fa2e5b20e67cebd423bc001a9e425",
+    "state": "PASS_SOURCE_BOUND",
+    "scope": "Each identity-bearing row is source-bound by source SHA + page + table + row ordinal; system rows additionally retain OCR-surface bounding boxes. OCR-assisted non-identity text remains transcription evidence and cannot promote identity."
+  },
+  "adversarial_replay": {
+    "workflow": "Salud SDWIS Water Contract",
+    "tests": [
+      "same name / different PWSID => DENY",
+      "normalized name alone => DENY",
+      "equal row count => DENY",
+      "REFERENCE_TABLE => DENY violation denominator",
+      "TREATMENT_TABLE => DENY violation denominator",
+      "NARRATIVE => DENY violation denominator",
+      "HEADER_OR_FOOTER => DENY violation denominator",
+      "NONDATA_IMAGE => DENY violation denominator",
+      "stable matching PWSID => ALLOW system identity",
+      "unexpected join multiplication => FAIL",
+      "unexpected row disappearance => FAIL",
+      "declared 1:N join arithmetic => ALLOW only when conserved"
+    ],
+    "state": "PASS"
+  },
+  "certification_state": "PRDOH_10748_STRUCTURAL_CERTIFIED",
+  "certification_boundary": "Structural certification covers exact source identity, 33/33 page classification, complete visible table-row arithmetic, 250 identity-bearing row reconstruction, stable-PWSID canonical binding, reference/treatment firewall, and adversarial join/identity controls. OCR-assisted non-identity text is preserved as source-bound transcription evidence and is not promoted to canonical identity or a fabricated stable violation ID."
 }
