@@ -35,6 +35,42 @@ def load_ledger(path: Path) -> dict[str, Any]:
     return json.loads(payload)
 
 
+def load_semantic_adjudication(path: Path) -> dict[str, Any]:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def validate_semantic_adjudication(doc: dict[str, Any], adjudication: dict[str, Any]) -> None:
+    if adjudication["source_sha256"] != SOURCE_SHA:
+        raise ValueError("10747 semantic adjudication source SHA drift")
+    if adjudication["certification_state"] != "PASS":
+        raise ValueError("10747 semantic adjudication is not PASS")
+    items = {item["id"]: item for item in adjudication["adjudications"]}
+    item = items.get("10747-SEM-001")
+    if not item:
+        raise ValueError("10747 Level-2 semantic adjudication missing")
+    if (
+        item["page"] != 15
+        or item["frozen_table_id"] != "RTCR_NONPRASA_LEVEL2_IDENTITY"
+        or item["corrected_semantic_scope"] != "PRASA_IDENTITY_REFERENCE"
+        or item["row_count"] != 2
+        or item["raw_pws_tokens"] != ["2672", "4945"]
+        or item["state"] != "RESOLVED_SOURCE_STRUCTURE"
+        or item["terminal_handling"] != "SUPERSEDE_LABEL_ONLY_PRESERVE_FROZEN_LEDGER"
+    ):
+        raise ValueError("10747 Level-2 semantic adjudication drift")
+    table = next(
+        (x for x in doc["reference_tables"] if x["table_id"] == item["frozen_table_id"]),
+        None,
+    )
+    if table is None or len(table["rows"]) != item["row_count"]:
+        raise ValueError("frozen Level-2 identity rows missing or changed")
+    if [str(row[1]) for row in table["rows"]] != item["raw_pws_tokens"]:
+        raise ValueError("Level-2 PWS token drift")
+    effect = adjudication["arithmetic_effect"]
+    if any(effect[k] != 0 for k in effect):
+        raise ValueError("semantic label correction changed source arithmetic")
+
+
 def _metric(doc: dict[str, Any], table: str, row: str, metric: str) -> tuple[int, int]:
     hits = [
         item
@@ -165,9 +201,17 @@ def main() -> int:
         nargs="?",
         default=Path("data/certification/prdoh_10747_structural_v1.json.gz.b64"),
     )
+    parser.add_argument(
+        "--semantic-adjudication",
+        type=Path,
+        default=Path("data/certification/prdoh_10747_semantic_adjudication_v1.json"),
+    )
     args = parser.parse_args()
     doc = load_ledger(args.ledger)
     validate_ledger(doc)
+    validate_semantic_adjudication(
+        doc, load_semantic_adjudication(args.semantic_adjudication)
+    )
     print("PRDOH_10747_STRUCTURAL_VALIDATION=PASS")
     return 0
 
