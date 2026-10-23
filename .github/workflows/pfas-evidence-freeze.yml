@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
   freeze-ucmr5-pr:
@@ -16,27 +17,43 @@ jobs:
         with:
           ref: ${{ github.head_ref || github.ref_name }}
 
-      - name: Download exact EPA UCMR5 state archive
+      - name: Download current and historical EPA UCMR5 manifestations
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          mkdir -p artifacts/pfas_ucmr5/raw artifacts/pfas_ucmr5/derived
+          mkdir -p artifacts/pfas_ucmr5/raw artifacts/pfas_ucmr5/derived artifacts/pfas_ucmr5/historical
           url='https://www.epa.gov/system/files/other-files/2023-08/ucmr5-occurrence-data-by-state.zip'
-          expected_archive_sha='4845eb3abf34d61d7d239e26a815c69b21e39d249840243d266274b5b5d73aaa'
           curl --fail --location --proto '=https' --tlsv1.2 \
             --retry 3 --retry-all-errors \
             --output artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip \
             "$url"
           test -s artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip
-          file artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip
           unzip -t artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip
+
+          curl --fail --location \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            --output artifacts/pfas_ucmr5/historical/artifact-9904286245.zip \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/9904286245/zip"
+          unzip -q artifacts/pfas_ucmr5/historical/artifact-9904286245.zip \
+            -d artifacts/pfas_ucmr5/historical/artifact
+          historical='artifacts/pfas_ucmr5/historical/artifact/raw/ucmr5-occurrence-data-by-state.zip'
+          test -s "$historical"
+          test "$(sha256sum "$historical" | cut -d' ' -f1)" = \
+            '4845eb3abf34d61d7d239e26a815c69b21e39d249840243d266274b5b5d73aaa'
+
+          python scripts/adjudicate_zip_manifestations.py \
+            "$historical" \
+            artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip \
+            --output artifacts/pfas_ucmr5/archive_manifestation_adjudication.json \
+            --allow BYTE_IDENTICAL \
+            --allow PURE_RECOMPRESSION
+
           sha256sum artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip \
             > artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip.sha256
-          actual_archive_sha="$(cut -d' ' -f1 artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip.sha256)"
-          test "$actual_archive_sha" = "$expected_archive_sha" || {
-            echo "EPA UCMR5 archive manifestation drift: $actual_archive_sha" >&2
-            exit 1
-          }
           unzip -Z1 artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip \
             > artifacts/pfas_ucmr5/raw/archive-members.txt
 
