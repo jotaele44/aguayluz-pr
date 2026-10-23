@@ -132,6 +132,31 @@ def _field(row: dict[str, str], key: str) -> str:
     return ""
 
 
+def quarter_inventory(rows: list[dict[str, str]], quarter: str) -> dict[str, Any]:
+    selected = [r for r in rows if _field(r, "SUBMISSIONYEARQUARTER") == quarter]
+    ids = [_field(r, "PWSID").upper() for r in selected]
+    if len(ids) != len(set(ids)):
+        raise ValueError(f"{quarter} Puerto Rico inventory violates PWSID uniqueness")
+    active = [r for r in selected if _field(r, "PWS_ACTIVITY_CODE").upper() == "A"]
+    active_ids = sorted(_field(r, "PWSID").upper() for r in active)
+    active_type_counts: dict[str, int] = {}
+    activity_counts: dict[str, int] = {}
+    for row in selected:
+        activity = _field(row, "PWS_ACTIVITY_CODE").upper() or "EMPTY"
+        activity_counts[activity] = activity_counts.get(activity, 0) + 1
+    for row in active:
+        ptype = _field(row, "PWS_TYPE_CODE").upper() or "EMPTY"
+        active_type_counts[ptype] = active_type_counts.get(ptype, 0) + 1
+    return {
+        "quarter": quarter,
+        "rows": len(selected),
+        "active_count": len(active),
+        "active_pwsids": active_ids,
+        "activity_counts": dict(sorted(activity_counts.items())),
+        "active_type_counts": dict(sorted(active_type_counts.items())),
+    }
+
+
 def select_latest_pr(rows: list[dict[str, str]]) -> dict[str, Any]:
     if not rows:
         raise ValueError("no Puerto Rico PWS rows")
@@ -286,6 +311,11 @@ def main() -> int:
                 f"{before.get(key)!r} != {after.get(key)!r}"
             )
     selected = select_latest_pr(pr_rows)
+    quarter_counts = {
+        q: quarter_inventory(pr_rows, q)
+        for q in selected["all_pr_quarters"]
+    }
+    report_quarter = quarter_inventory(pr_rows, "2025Q3")
 
     latest_csv = root / "SDWA_PUB_WATER_SYSTEMS_PR_LATEST.csv"
     fieldnames = list(selected["latest_rows"][0].keys())
@@ -300,14 +330,25 @@ def main() -> int:
         w.writeheader()
         w.writerows(selected["active_rows"])
 
-    control = {
-        "source": "Puerto Rico Department of Health PWSS program page",
+    current_control = {
+        "source": "Puerto Rico Department of Health 2025 annual violations report",
+        "prdoh_as_of": "2025-09",
         "control_count": args.prdoh_control_count,
+        "epa_quarter": selected["latest_quarter"],
         "epa_active_count": selected["active_count"],
         "count_delta": selected["active_count"] - args.prdoh_control_count,
+        "state": "CROSS_PERIOD_CONTROL_NOT_ADJUDICATIVE",
+    }
+    report_period_control = {
+        "source": "Puerto Rico Department of Health 2025 annual violations report",
+        "prdoh_as_of": "2025-09",
+        "control_count": args.prdoh_control_count,
+        "epa_quarter": "2025Q3",
+        "epa_active_count": report_quarter["active_count"],
+        "count_delta": report_quarter["active_count"] - args.prdoh_control_count,
         "state": (
             "COUNT_EQUAL_NOT_IDENTITY"
-            if selected["active_count"] == args.prdoh_control_count
+            if report_quarter["active_count"] == args.prdoh_control_count
             else "COUNT_CONTRADICTION"
         ),
     }
@@ -327,11 +368,14 @@ def main() -> int:
         "type_counts": selected["type_counts"],
         "active_pwsids": selected["active_pwsids"],
         "active_pwsid_count": len(selected["active_pwsids"]),
+        "quarter_inventory": quarter_counts,
+        "report_period_2025q3": report_quarter,
         "latest_csv": latest_csv.name,
         "latest_csv_sha256": hashlib.sha256(latest_csv.read_bytes()).hexdigest(),
         "active_csv": active_csv.name,
         "active_csv_sha256": hashlib.sha256(active_csv.read_bytes()).hexdigest(),
-        "prdoh_463_count_control": control,
+        "prdoh_463_current_cross_period_control": current_control,
+        "prdoh_463_report_period_control": report_period_control,
         "identity_claim": "EPA_ACTIVE_PWSID_SET_CANDIDATE_UNIVERSE",
         "guardrails": [
             "Count equality does not prove PRDOH↔EPA membership identity.",
