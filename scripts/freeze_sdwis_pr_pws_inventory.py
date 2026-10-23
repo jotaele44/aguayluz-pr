@@ -393,7 +393,9 @@ def main() -> int:
         "inactive_count": receipt["inactive_count"],
         "activity_counts": receipt["activity_counts"],
         "type_counts": receipt["type_counts"],
-        "prdoh_463_count_control": control,
+        "report_period_2025q3": receipt["report_period_2025q3"],
+        "prdoh_463_current_cross_period_control": current_control,
+        "prdoh_463_report_period_control": report_period_control,
         "active_csv_sha256": receipt["active_csv_sha256"],
     }, indent=2, sort_keys=True))
     return 0
