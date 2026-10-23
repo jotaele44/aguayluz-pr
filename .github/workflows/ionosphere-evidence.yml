@@ -5,6 +5,8 @@ on:
       - 'scripts/capture_ionosphere_evidence.py'
       - 'tests/test_capture_ionosphere_evidence.py'
       - '.github/workflows/ionosphere-evidence.yml'
+      - 'scripts/audit_ionosphere_reference_coverage.py'
+      - 'data-sources/ionosphere/reference_coverage.json'
   workflow_dispatch:
 permissions:
   contents: read
@@ -27,3 +29,14 @@ jobs:
           path: artifacts/ionosphere-acquisition
           if-no-files-found: error
           retention-days: 30
+  reference-coverage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'shapely>=2.0,<3'
+      - name: Recompute complete reference topology evidence
+        run: python scripts/audit_ionosphere_reference_coverage.py --check

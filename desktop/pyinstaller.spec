@@ -28,6 +28,7 @@ CONSOLE = os.environ.get("PRII_CONSOLE") == "1"
 datas = [
     (str(REPO_ROOT / "dashboard" / "dist"), "dashboard/dist"),
     (str(REPO_ROOT / "data"), "data"),
+    (str(REPO_ROOT / "data-sources" / "ionosphere"), "data-sources/ionosphere"),
     (str(REPO_ROOT / "scripts"), "scripts"),
     (str(REPO_ROOT / "src"), "src"),
     (str(REPO_ROOT / "schemas"), "schemas"),

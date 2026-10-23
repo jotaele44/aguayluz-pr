@@ -15,7 +15,7 @@ def audit_status() -> dict:
         "source_url": SOURCE_URL, "data_url": DATA_URL,
         "tec": {"state": "BLOCKED", "reason": "HTTP 403 during source audit; live schema and Puerto Rico cells unverified",
                 "kind": "MODEL", "units": "TECU", "resolution_degrees": [2.5, 5.0]},
-        "roti": {"state": "UNRESOLVED", "reason": "Puerto Rico provider, coverage and calculation window unverified"},
+        "roti": {"state": "UNRESOLVED", "reason": "Dated DLR sample acquired privately (2026-10-23); interpretation and redistribution remain unresolved"},
         "acquisition_attempt": {"date": "2026-10-23", "http_status": 403, "is_live_health_check": False},
         "claims": {"municipality_measurements": False, "grid_damage": False,
                    "service_outage": False, "live_integration": False},

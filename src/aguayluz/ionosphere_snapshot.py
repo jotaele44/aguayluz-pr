@@ -5,12 +5,14 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import sys
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
 ARCHIVE = (
-    Path(__file__).resolve().parents[2] / "data-sources/ionosphere/glotec_20261023T163500Z.zip"
+    Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[2]))
+    / "data-sources/ionosphere/glotec_20261023T163500Z.zip"
 )
 ARCHIVE_SHA256 = "b089a7d7e540f2809dab6d6fb0901226f961980e3fe055e020fcdbc745ad64e8"
 SOURCE_SHA256 = "511f8418b3a5b8f1a5058ca6045970ad9b5dd62647eb6202a2f5cd5d6ce0393b"
@@ -110,7 +112,7 @@ def snapshot_context(path: Path = ARCHIVE, now: datetime | None = None) -> dict:
             )
     if nodes != EXPECTED_NODES or len(features) != len(EXPECTED_NODES):
         raise ValueError("grid positions incomplete or unexpected")
-    return {
+    result = {
         "state": "ARCHIVED_SNAPSHOT",
         "kind": "MODEL",
         "metric": "TEC",
@@ -132,3 +134,22 @@ def snapshot_context(path: Path = ARCHIVE, now: datetime | None = None) -> dict:
         "impact": "UNKNOWN",
         "operational_use_allowed": False,
     }
+
+    from aguayluz.ionosphere_transport import load_frozen_transport
+
+    transport = load_frozen_transport(result)
+    # The displayed records come from the persisted producer export. The raw
+    # capture above independently verifies them; it is not a parallel display source.
+    producer_records = transport.pop("records")
+    result["rows"] = [
+        {
+            "source_feature_index": record["payload"]["source_manifest"]["row_index"],
+            "longitude": record["spatial"]["lon"],
+            "latitude": record["spatial"]["lat"],
+            "raw_feature": record["payload"]["raw_feature"],
+            "producer_envelope": record,
+        }
+        for record in producer_records
+    ]
+    result["producer_transport"] = transport
+    return result
