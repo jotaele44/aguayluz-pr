@@ -22,17 +22,22 @@ class QuarantineTests(unittest.TestCase):
 
     def test_reject_promotion(self):
         hold, root = self.make_fixture(publishable=True)
-        with hold, self.assertRaises(ValueError): verify(root,"spiderweb-pr")
+        with hold, self.assertRaises(ValueError):
+            verify(root, "spiderweb-pr")
 
     def test_reject_tampering(self):
         hold, root = self.make_fixture(corrupt=True)
-        with hold, self.assertRaises(ValueError): verify(root,"spiderweb-pr")
+        with hold, self.assertRaises(ValueError):
+            verify(root, "spiderweb-pr")
 
     def test_reject_publication_gate(self):
         hold, root = self.make_fixture()
         with hold:
-            m=json.loads((root/"manifest.json").read_text());m["publication_gate"]="ALLOW"
+            m=json.loads((root/"manifest.json").read_text())
+            m["publication_gate"] = "ALLOW"
             (root/"manifest.json").write_text(json.dumps(m))
-            with self.assertRaises(ValueError): verify(root,"spiderweb-pr")
+            with self.assertRaises(ValueError):
+                verify(root, "spiderweb-pr")
 
-if __name__=="__main__": unittest.main()
+if __name__ == "__main__":
+    unittest.main()
