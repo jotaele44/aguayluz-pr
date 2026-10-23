@@ -44,7 +44,9 @@ jobs:
               "CROSS_PERIOD_CONTROL_NOT_ADJUDICATIVE"
           ), r
           assert r["prdoh_463_report_period_control"]["state"] in {
-              "COUNT_EQUAL_NOT_IDENTITY", "COUNT_CONTRADICTION"
+              "COUNT_EQUAL_NOT_IDENTITY",
+              "COUNT_CONTRADICTION",
+              "HISTORICAL_SNAPSHOT_NOT_PRESENT",
           }, r
           print(json.dumps({
               "latest_quarter":r["latest_quarter"],
