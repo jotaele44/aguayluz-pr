@@ -59,3 +59,16 @@ def test_quarter_inventory_uses_same_period_stable_ids():
     assert out["active_count"] == 2
     assert out["active_pwsids"] == ["PR0000001", "PR0000002"]
     assert out["active_type_counts"] == {"CWS": 1, "NTNCWS": 1}
+
+
+def test_quarter_inventory_absence_is_not_zero():
+    out = quarter_inventory([_row("2026Q3", "PR0000001")], "2025Q3")
+    assert out == {
+        "quarter": "2025Q3",
+        "present_in_current_member": False,
+        "rows": None,
+        "active_count": None,
+        "active_pwsids": [],
+        "activity_counts": {},
+        "active_type_counts": {},
+    }
