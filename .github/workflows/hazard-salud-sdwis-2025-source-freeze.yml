@@ -23,7 +23,7 @@ concurrency:
 jobs:
   freeze:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
@@ -54,10 +54,12 @@ jobs:
               Path("artifacts/salud_sdwis_2025_source_freeze/source_freeze_receipt.json")
               .read_text(encoding="utf-8")
           )
-          assert receipt["salud"]["source"] == 2, receipt
-          assert receipt["salud"]["frozen"] == 2, receipt
+          assert receipt["salud"]["source"] == 3, receipt
+          assert receipt["salud"]["frozen"] == 3, receipt
           assert receipt["salud"]["delta"] == 0, receipt
-          assert receipt["epa"]["zip_full_sha256_status"] == "OPEN_NOT_DOWNLOADED", receipt
+          assert receipt["epa"]["zip_full_sha256_status"] == "PASS", receipt
+          assert receipt["epa"]["zip_full_sha256"], receipt
+          assert receipt["epa"]["zip_full_bytes_observed"] == receipt["epa"]["zip_identity"]["content_length"], receipt
           assert receipt["epa"]["target_member"]["member_name"].upper().endswith(
               "SDWA_VIOLATIONS_ENFORCEMENT.CSV"
           ), receipt
@@ -65,7 +67,23 @@ jobs:
           assert receipt["epa"]["uncompressed_sha256"], receipt
           assert receipt["epa"]["pr_2025_arithmetic"]["state"] == "PASS", receipt
           assert receipt["epa"]["pr_2025_arithmetic"]["delta"] == 0, receipt
-          print(json.dumps(receipt, indent=2, sort_keys=True))
+          assert receipt["epa"]["unresolved_row_count"] == receipt["epa"]["pr_2025_arithmetic"]["unresolved"], receipt
+          unresolved = Path(
+              "artifacts/salud_sdwis_2025_source_freeze/"
+              + receipt["epa"]["unresolved_rows_file"]
+          )
+          assert unresolved.is_file(), receipt
+          assert receipt["epa"]["unresolved_rows_file_sha256"], receipt
+          assert sum(receipt["epa"]["unresolved_reason_counts"].values()) == receipt["epa"]["unresolved_row_count"], receipt
+          print(json.dumps({
+              "salud": receipt["salud"],
+              "epa_zip_full_sha256": receipt["epa"]["zip_full_sha256"],
+              "epa_zip_full_bytes_observed": receipt["epa"]["zip_full_bytes_observed"],
+              "target_member": receipt["epa"]["target_member"],
+              "pr_2025_arithmetic": receipt["epa"]["pr_2025_arithmetic"],
+              "unresolved_reason_counts": receipt["epa"]["unresolved_reason_counts"],
+              "unresolved_rows_file_sha256": receipt["epa"]["unresolved_rows_file_sha256"],
+          }, indent=2, sort_keys=True))
 
       - name: Upload frozen source evidence
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
