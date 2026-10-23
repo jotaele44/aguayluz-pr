@@ -6,12 +6,19 @@ on:
     paths:
       - "scripts/ingest_salud_sdwis_water.py"
       - "scripts/adjudicate_salud_sdwis_2025_residue.py"
+      - "scripts/validate_prdoh_10748_structural.py"
+      - "scripts/validate_prdoh_10747_structural.py"
+      - "data/certification/prdoh_10748_structural_v1.json"
+      - "data/certification/prdoh_10748_qualification_v1.json"
+      - "data/certification/prdoh_10747_structural_v1.json.gz.b64"
       - "src/aguayluz/hazard_adapters/sdwa_drinking_water.py"
       - "config/hazard_advisory_sources.v1.json"
       - ".federation/gui-capabilities.json"
       - "tests/test_hazard_adapter_sdwa_drinking_water.py"
       - "tests/test_ingest_salud_sdwis_water.py"
       - "tests/test_adjudicate_salud_sdwis_2025_residue.py"
+      - "tests/test_prdoh_10748_structural.py"
+      - "tests/test_prdoh_10747_structural.py"
       - ".github/workflows/hazard-salud-sdwis-water.yml"
   workflow_dispatch:
 
@@ -40,13 +47,29 @@ jobs:
         env:
           PYTHONPATH: src:.
         run: |
-          pytest -q             tests/test_hazard_adapter_sdwa_drinking_water.py             tests/test_ingest_salud_sdwis_water.py             tests/test_adjudicate_salud_sdwis_2025_residue.py
+          pytest -q \
+            tests/test_hazard_adapter_sdwa_drinking_water.py \
+            tests/test_ingest_salud_sdwis_water.py \
+            tests/test_adjudicate_salud_sdwis_2025_residue.py \
+            tests/test_prdoh_10748_structural.py \
+            tests/test_prdoh_10747_structural.py
+
+      - name: Replay frozen PRDOH structural validators
+        env:
+          PYTHONPATH: src:.
+        run: |
+          python scripts/validate_prdoh_10748_structural.py \
+            data/certification/prdoh_10748_structural_v1.json
+          python scripts/validate_prdoh_10747_structural.py \
+            data/certification/prdoh_10747_structural_v1.json.gz.b64
 
       - name: Verify blocked-source receipt without fabricating manifestations
         env:
           PYTHONPATH: src:.
         run: |
-          python scripts/ingest_salud_sdwis_water.py             --year 2025             --output-root artifacts/salud_sdwis_contract
+          python scripts/ingest_salud_sdwis_water.py \
+            --year 2025 \
+            --output-root artifacts/salud_sdwis_contract
 
       - name: Validate receipt guardrails
         shell: python
