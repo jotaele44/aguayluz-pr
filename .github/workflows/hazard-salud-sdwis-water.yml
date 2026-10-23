@@ -5,11 +5,13 @@ on:
     branches: [main]
     paths:
       - "scripts/ingest_salud_sdwis_water.py"
+      - "scripts/adjudicate_salud_sdwis_2025_residue.py"
       - "src/aguayluz/hazard_adapters/sdwa_drinking_water.py"
       - "config/hazard_advisory_sources.v1.json"
       - ".federation/gui-capabilities.json"
       - "tests/test_hazard_adapter_sdwa_drinking_water.py"
       - "tests/test_ingest_salud_sdwis_water.py"
+      - "tests/test_adjudicate_salud_sdwis_2025_residue.py"
       - ".github/workflows/hazard-salud-sdwis-water.yml"
   workflow_dispatch:
 
