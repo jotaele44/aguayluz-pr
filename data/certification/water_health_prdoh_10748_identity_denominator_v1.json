@@ -1,0 +1,148 @@
+{
+  "schema_version": "aguayluz.water_health.prdoh_10748_identity_denominator/v1",
+  "source": {
+    "authority": "Puerto Rico Department of Health",
+    "document_id": "10748",
+    "role": "ANEJOS_APENDICES_2025",
+    "pdf_sha256": "9886fbed47e9f8a3564167034bedc6bc0a0d653c6f89d81d69f8101ccc3f2603",
+    "pdf_bytes": 23689313,
+    "pages": 33,
+    "predecessor_artifact_id": 12470315205,
+    "predecessor_artifact_digest": "sha256:c3d7627ddc28e1a018bf8cba106b71ee94841e49c6d4f747c4d8c9cd92785595"
+  },
+  "page_classes": {
+    "1": {
+      "class": "COVER_ANEJO_1",
+      "data_rows": 0
+    },
+    "2": {
+      "class": "IDENTITY_BEARING_VIOLATION_TABLE",
+      "data_rows": 46,
+      "state": "PASS_VISUALLY_VERIFIED"
+    },
+    "3": {
+      "class": "IDENTITY_BEARING_VIOLATION_TABLE",
+      "data_rows": 8,
+      "state": "PASS_VISUALLY_VERIFIED"
+    },
+    "4": {
+      "class": "COVER_ANEJO_2",
+      "data_rows": 0
+    },
+    "5": {
+      "class": "IDENTITY_BEARING_VIOLATION_TABLE",
+      "data_rows": 43,
+      "state": "PASS_VISUALLY_VERIFIED"
+    },
+    "6": {
+      "class": "IDENTITY_BEARING_VIOLATION_TABLE",
+      "data_rows": 14,
+      "state": "PASS_VISUALLY_VERIFIED"
+    },
+    "7": {
+      "class": "SYSTEM_INVENTORY_COMMUNAL",
+      "data_rows": 53,
+      "state": "PASS_VISUALLY_VERIFIED"
+    },
+    "8": {
+      "class": "SYSTEM_INVENTORY_COMMUNAL",
+      "data_rows": 53,
+      "state": "PASS_VISUALLY_VERIFIED"
+    },
+    "9": {
+      "class": "SYSTEM_INVENTORY_COMMUNAL",
+      "data_rows": 7,
+      "state": "PASS_VISUALLY_VERIFIED"
+    },
+    "10": {
+      "class": "SYSTEM_INVENTORY_NON_TRANSIENT",
+      "data_rows": 4,
+      "state": "PASS_VISUALLY_VERIFIED"
+    },
+    "11": {
+      "class": "SYSTEM_INVENTORY_TRANSIENT",
+      "data_rows": 4,
+      "state": "PASS_VISUALLY_VERIFIED"
+    },
+    "12": {
+      "class": "IDENTITY_BEARING_VIOLATION_TABLE_LEAD_COPPER",
+      "data_rows": 18,
+      "state": "PASS_VISUALLY_VERIFIED"
+    },
+    "13": {
+      "class": "COVER_APPENDIX",
+      "data_rows": 0
+    },
+    "14-18": {
+      "class": "APPENDIX_NARRATIVE_REFERENCE",
+      "row_denominator_state": "OPEN_NOT_TERMINALLY_COUNTED"
+    },
+    "19-27": {
+      "class": "APPENDIX_REFERENCE_TABLES",
+      "row_denominator_state": "OPEN_NOT_TERMINALLY_COUNTED"
+    },
+    "28-29": {
+      "class": "APPENDIX_NARRATIVE_REFERENCE",
+      "row_denominator_state": "OPEN_NOT_TERMINALLY_COUNTED"
+    },
+    "30-31": {
+      "class": "APPENDIX_TREATMENT_REFERENCE_TABLES",
+      "row_denominator_state": "OPEN_NOT_TERMINALLY_COUNTED"
+    },
+    "32-33": {
+      "class": "APPENDIX_DIAGRAM_REFERENCE",
+      "row_denominator_state": "OPEN_NOT_TERMINALLY_COUNTED"
+    }
+  },
+  "identity_bearing_violation_denominator": {
+    "page_rows": {
+      "2": 46,
+      "3": 8,
+      "5": 43,
+      "6": 14,
+      "12": 18
+    },
+    "source_rows": 129,
+    "accounted_rows": 129,
+    "delta": 0,
+    "state": "PASS"
+  },
+  "anexo_2_system_inventory_denominator": {
+    "communal": 113,
+    "non_transient": 4,
+    "transient": 4,
+    "source_rows": 121,
+    "distinct_pwsids": 121,
+    "delta": 0,
+    "state": "PASS"
+  },
+  "rendered_evidence": {
+    "note": "Rendered images are derivative evidence; source PDF bytes remain canonical.",
+    "core_pages": {
+      "2": "sha256:68581233b7c71a2f5e0ad468f6a0a42bddf9df039eac69e81bed3235e7394128",
+      "3": "sha256:1b976f0c2fd3160e63589fcc7fbe61bee5a9e12fefa1a9db135922b98019907e",
+      "5": "sha256:979a3e9038b3df2de295882f3db127b4cc62e48df57ac906875a5414634932ec",
+      "6": "sha256:c8c64440fc77064d33bce938192084754710b6a194521a8da9844890f8909419",
+      "12": "sha256:f2b3193b181c1f22da4c90d302b7ffde86cc3cd943e9143a5bd7bfa3f2305a7c"
+    },
+    "system_pages": {
+      "7": "sha256:624628e5a4cc9d68aa3ad21ff9aa1bdc74f6a1fa3a70e2c7eb634d58b0fdfea0",
+      "8": "sha256:303c253a5d5c45a36a7764d1f03cfd740332a385e9ed05fa7c75644343922919",
+      "9": "sha256:73dc6d4c60db73b2135a463a0b96150a7370803ec85c3265a45423751c2a9d84",
+      "10": "sha256:7f52836f0cfeb0ab1245f703e6fb20c32a8bb0e20074405e872ede3e35185ee2",
+      "11": "sha256:df955eaba29de468d8e5cef743435fad6d18ce436845ad342adb81809627f7a6"
+    }
+  },
+  "certification_state": "PARTIAL_PASS_IDENTITY_DENOMINATORS_FULL_ANNEX_OPEN",
+  "unresolved_material": [
+    "APPENDIX_REFERENCE_ROW_DENOMINATOR_PAGES_14_33",
+    "ROW_LEVEL_RAW_TRANSCRIPTION_AND_PWSID_VIOLATION_CROSSWALK",
+    "FULL_10748_SOURCE_RETAINED_EXCLUDED_UNRESOLVED_ARITHMETIC"
+  ],
+  "guardrails": [
+    "OCR is discovery only; row counts above were independently verified against rendered source pages.",
+    "Appendix reference rows are not violation identities.",
+    "121 systems are the Anejo 2 inventory in this document, not the complete Puerto Rico PWS universe.",
+    "129 identity-bearing rows are a bounded report denominator, not yet a canonical SDWIS identity crosswalk."
+  ]
+}
