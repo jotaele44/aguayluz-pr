@@ -18,6 +18,7 @@ const NAV = [
   { to: '/water-disruption', icon: Droplets, label: 'Water Validation' },
   { to: '/monitoring', icon: Activity, label: 'Monitoring' },
   { to: '/hydromet', icon: CloudRain, label: 'NWS Hydromet' },
+  ...(import.meta.env.VITE_IONOSPHERE_PREVIEW === '1' ? [{ to: '/ionosphere', icon: Activity, label: 'Space weather / Clima espacial' }] : []),
   { to: '/cave-karst', icon: Mountain, label: 'Cave & Karst' },
   { to: '/regulatory', icon: Landmark, label: 'Regulatory', end: true },
   { to: '/regulatory/review', icon: ClipboardCheck, label: 'Regulatory Review' },

@@ -1223,7 +1223,7 @@
       "classification": "analysis",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Read-only, fail-closed environmental source→pathway→receptor graph. It preserves existing utility/regulatory identities, exposes provenance and causal state, and prohibits proximity/name-only evidence from becoming causal attribution.",
+      "rationale": "Read-only, fail-closed environmental source\u2192pathway\u2192receptor graph. It preserves existing utility/regulatory identities, exposes provenance and causal state, and prohibits proximity/name-only evidence from becoming causal attribution.",
       "backend": {
         "files": [
           "server/backend/environmental_exposure_api.py",
@@ -1769,6 +1769,55 @@
         "e2e": [
           "dashboard/tests/nws-hydromet.spec.mjs",
           "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "ionosphere-preview",
+      "classification": "analysis",
+      "status": "staged",
+      "requires_terminal": false,
+      "feature_flag": "AGUAYLUZ_IONOSPHERE_PREVIEW=1 + VITE_IONOSPHERE_PREVIEW=1",
+      "tracking": "docs/IONOSPHERE_RC0.md",
+      "expires_on": "2026-11-23",
+      "backend": {
+        "files": [
+          "server/backend/ionosphere_api.py",
+          "src/aguayluz/ionosphere.py"
+        ],
+        "endpoints": [
+          "GET /ionosphere/status"
+        ],
+        "symbols": [
+          "server/backend/ionosphere_api.py:ionosphere_status",
+          "src/aguayluz/ionosphere.py:audit_status",
+          "src/aguayluz/ionosphere.py:validate_record",
+          "src/aguayluz/ionosphere.py:validate_batch"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/ionosphere"
+        ],
+        "e2e_routes": [
+          "/ionosphere"
+        ],
+        "components": [
+          "dashboard/src/pages/IonospherePage.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_ionosphere.py"
+        ],
+        "unit": [
+          "dashboard/src/pages/IonospherePage.test.jsx"
+        ],
+        "e2e": [
+          "dashboard/tests/ionosphere.spec.mjs"
         ]
       }
     }
