@@ -1,0 +1,120 @@
+name: Salud 2025 Page Evidence
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/audit_salud_2025_pages.py"
+      - "tests/test_audit_salud_2025_pages.py"
+      - ".federation/gui-capabilities.json"
+      - ".github/workflows/hazard-salud-2025-page-evidence.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: salud-2025-page-evidence-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  page-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Install bounded runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+          python -m pip install pytest
+
+      - name: Run page-evidence contract tests
+        env:
+          PYTHONPATH: src:.
+        run: pytest -q tests/test_audit_salud_2025_pages.py
+
+      - name: Freeze official Salud page evidence
+        env:
+          PYTHONPATH: src:.
+        run: |
+          python scripts/audit_salud_2025_pages.py             --output-root artifacts/salud_2025_page_evidence             --download-official             --dpi 120
+
+      - name: Validate page denominator and fail-closed row state
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+
+          root = Path("artifacts/salud_2025_page_evidence")
+          receipt = json.loads(
+              (root / "salud_2025_page_evidence_receipt.json").read_text(encoding="utf-8")
+          )
+          assert receipt["page_arithmetic"] == {
+              "source": 73,
+              "retained": 73,
+              "excluded": 0,
+              "unresolved": 0,
+              "accounted": 73,
+              "delta": 0,
+              "state": "PASS",
+          }, receipt
+          assert receipt["candidate_accounting"] == {
+              "candidate_source": 0,
+              "candidate_unverified": 0,
+              "candidate_verified": 0,
+              "candidate_rejected": 0,
+              "accounted": 0,
+              "delta": 0,
+              "state": "PASS",
+          }, receipt
+          assert receipt["row_denominator_state"] == "OPEN_NOT_ENUMERATED", receipt
+          assert receipt["canonical_records_emitted"] == 0, receipt
+          assert receipt["source_universe_completeness_claimed"] is False, receipt
+
+          by_id = {row["source_record_id"]: row for row in receipt["sources"]}
+          assert by_id["10747"]["source_pdf_sha256"] == (
+              "748529762de1b6661b5484957a7662bd233a37aaf371482cdc14bbf5ac584772"
+          )
+          assert by_id["10747"]["observed_pages"] == 40
+          assert by_id["10747"]["text_layer_state"] == (
+              "RENDER_REQUIRED_TEXT_LAYER_UNTRUSTED"
+          )
+          assert by_id["10748"]["source_pdf_sha256"] == (
+              "9886fbed47e9f8a3564167034bedc6bc0a0d653c6f89d81d69f8101ccc3f2603"
+          )
+          assert by_id["10748"]["observed_pages"] == 33
+          assert by_id["10748"]["text_layer_state"] == "RENDER_REQUIRED_IMAGE_ONLY"
+
+          page_lines = [
+              line
+              for line in (root / "salud_2025_page_manifest.jsonl")
+              .read_text(encoding="utf-8")
+              .splitlines()
+              if line.strip()
+          ]
+          assert len(page_lines) == 73
+          assert not (
+              root / "salud_2025_row_candidates.jsonl"
+          ).read_text(encoding="utf-8").strip()
+          print(json.dumps({
+              "page_arithmetic": receipt["page_arithmetic"],
+              "row_denominator_state": receipt["row_denominator_state"],
+              "canonical_records_emitted": receipt["canonical_records_emitted"],
+              "page_manifest_sha256": receipt["page_manifest_sha256"],
+          }, indent=2, sort_keys=True))
+
+      - name: Upload immutable page evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: salud-2025-page-evidence
+          path: artifacts/salud_2025_page_evidence
+          if-no-files-found: error
+          retention-days: 90
