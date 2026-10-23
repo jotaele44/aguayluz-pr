@@ -29,9 +29,13 @@ def verify(folder: Path, lane: str) -> dict:
         row = json.loads(line)
         if not REQUIRED.issubset(row):
             raise ValueError("Missing required fields at line %s" % lineno)
-        if (row["canonical_entity_id"] is not None or row["geometry"] is not None or
-            row["publishable"] is not False or row["foia_submitted"] is not False or
-            row["classification"] != "CANDIDATE_NOT_IDENTITY"):
+        if (
+            row["canonical_entity_id"] is not None
+            or row["geometry"] is not None
+            or row["publishable"] is not False
+            or row["foia_submitted"] is not False
+            or row["classification"] != "CANDIDATE_NOT_IDENTITY"
+        ):
             raise ValueError("Unsafe attempted promotion at line %s" % lineno)
         if not isinstance(row["asset_id"], str) or not isinstance(row["asset_sha256"], str):
             raise ValueError("Invalid provenance")
