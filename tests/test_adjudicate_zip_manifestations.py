@@ -1,5 +1,4 @@
 import importlib.util
-import json
 import zipfile
 from pathlib import Path
 
