@@ -1783,7 +1783,8 @@
       "backend": {
         "files": [
           "server/backend/ionosphere_api.py",
-          "src/aguayluz/ionosphere.py"
+          "src/aguayluz/ionosphere.py",
+          "src/aguayluz/ionosphere_snapshot.py"
         ],
         "endpoints": [
           "GET /ionosphere/status"
@@ -1792,7 +1793,8 @@
           "server/backend/ionosphere_api.py:ionosphere_status",
           "src/aguayluz/ionosphere.py:audit_status",
           "src/aguayluz/ionosphere.py:validate_record",
-          "src/aguayluz/ionosphere.py:validate_batch"
+          "src/aguayluz/ionosphere.py:validate_batch",
+          "src/aguayluz/ionosphere_snapshot.py:snapshot_context"
         ]
       },
       "frontend": {
@@ -1811,7 +1813,8 @@
       },
       "tests": {
         "backend": [
-          "tests/test_ionosphere.py"
+          "tests/test_ionosphere.py",
+          "tests/test_ionosphere_snapshot.py"
         ],
         "unit": [
           "dashboard/src/pages/IonospherePage.test.jsx"
