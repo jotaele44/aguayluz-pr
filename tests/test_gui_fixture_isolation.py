@@ -4,7 +4,6 @@ Each case runs against disposable external data homes, never operator outputs.
 """
 from __future__ import annotations
 
-import json
 import os
 import subprocess
 import sys
