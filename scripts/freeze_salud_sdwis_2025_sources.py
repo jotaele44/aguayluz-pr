@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 SALUD = {
+    "10746": "https://www.salud.pr.gov/CMS/DOWNLOAD/10746",
     "10747": "https://www.salud.pr.gov/CMS/DOWNLOAD/10747",
     "10748": "https://www.salud.pr.gov/CMS/DOWNLOAD/10748",
 }
@@ -88,6 +89,41 @@ def archive_identity(url: str) -> dict[str, Any]:
             "last_modified": r.headers.get("Last-Modified"),
             "accept_ranges": r.headers.get("Accept-Ranges"),
         }
+
+
+def stream_full_sha256(url: str, expected: dict[str, Any]) -> dict[str, Any]:
+    h = hashlib.sha256()
+    observed = 0
+    with request(url) as r:
+        final_url = r.geturl()
+        if final_url != expected["final_url"]:
+            raise RuntimeError(
+                f"EPA archive final URL drift: expected={expected['final_url']} actual={final_url}"
+            )
+        while True:
+            chunk = r.read(8 * 1024 * 1024)
+            if not chunk:
+                break
+            h.update(chunk)
+            observed += len(chunk)
+    if observed != expected["content_length"]:
+        raise RuntimeError(
+            f"EPA archive byte-count drift: expected={expected['content_length']} "
+            f"actual={observed}"
+        )
+    after = archive_identity(url)
+    for key in ("final_url", "content_length", "etag", "last_modified"):
+        if after.get(key) != expected.get(key):
+            raise RuntimeError(
+                f"EPA archive identity changed during full hash for {key}: "
+                f"before={expected.get(key)!r} after={after.get(key)!r}"
+            )
+    return {
+        "sha256": h.hexdigest(),
+        "bytes_observed": observed,
+        "identity_after": after,
+        "state": "PASS",
+    }
 
 
 def get_range(url: str, start: int, end: int) -> bytes:
@@ -217,7 +253,7 @@ def classify_pr_row(row: dict[str, str], year: int) -> tuple[str, str]:
 
 def stream_member_and_filter_pr(
     url: str, meta: dict[str, Any], root: Path
-) -> tuple[dict[str, Any], list[dict[str, str]], list[str]]:
+) -> tuple[dict[str, Any], list[dict[str, str]], list[dict[str, Any]]]:
     start = meta["data_start"]
     end = start + meta["compressed_size"] - 1
     compressed_hash = hashlib.sha256()
@@ -229,7 +265,7 @@ def stream_member_and_filter_pr(
 
     header: list[str] | None = None
     pr_rows: list[dict[str, str]] = []
-    unresolved_raw: list[str] = []
+    unresolved_raw: list[dict[str, Any]] = []
     source_rows = 0
     non_pr_rows = 0
     pr_excluded = 0
@@ -259,7 +295,14 @@ def stream_member_and_filter_pr(
         parts = record.split(b",", 2)
         if len(parts) < 3:
             pr_unresolved += 1
-            unresolved_raw.append(f"ROW_{source_rows}:MALFORMED_FIELD_PREFIX")
+            unresolved_raw.append(
+                {
+                    "source_line": source_rows + 1,
+                    "reason": "MALFORMED_FIELD_PREFIX",
+                    "source_row_sha256": hashlib.sha256(record).hexdigest(),
+                    "source_row_text": record.decode("utf-8", errors="replace"),
+                }
+            )
             return
         pwsid_raw = parts[1].strip().strip(b'"').upper()
         if not pwsid_raw.startswith(b"PR"):
@@ -268,7 +311,17 @@ def stream_member_and_filter_pr(
         values = next(csv.reader([record.decode("utf-8")]))
         if len(values) != len(header):
             pr_unresolved += 1
-            unresolved_raw.append(f"ROW_{source_rows}:COLUMN_COUNT_{len(values)}")
+            unresolved_raw.append(
+                {
+                    "source_line": source_rows + 1,
+                    "reason": f"COLUMN_COUNT_{len(values)}",
+                    "source_row_sha256": hashlib.sha256(record).hexdigest(),
+                    "source_row": {
+                        "_raw_values": values,
+                        "_expected_header": header,
+                    },
+                }
+            )
             return
         row = dict(zip(header, values, strict=True))
         disposition, reason = classify_pr_row(row, TARGET_YEAR)
@@ -280,7 +333,14 @@ def stream_member_and_filter_pr(
         else:
             pr_unresolved += 1
             unresolved_raw.append(
-                f"ROW_{source_rows}:{reason}:{row.get('PWSID')}:{row.get('VIOLATION_ID')}"
+                {
+                    "source_line": source_rows + 1,
+                    "reason": reason,
+                    "source_row_sha256": hashlib.sha256(record).hexdigest(),
+                    "pwsid": row.get("PWSID") or None,
+                    "violation_id": row.get("VIOLATION_ID") or None,
+                    "source_row": row,
+                }
             )
 
     print(
@@ -346,12 +406,18 @@ def stream_member_and_filter_pr(
         "delta": source_rows - accounted,
     }
     accounting["state"] = "PASS" if accounting["delta"] == 0 else "FAIL"
+    reason_counts: dict[str, int] = {}
+    for item in unresolved_raw:
+        reason = str(item["reason"])
+        reason_counts[reason] = reason_counts.get(reason, 0) + 1
+
     stream_meta = {
         "compressed_sha256": compressed_hash.hexdigest(),
         "uncompressed_sha256": uncompressed_hash.hexdigest(),
         "uncompressed_crc32": crc & 0xFFFFFFFF,
         "uncompressed_bytes_observed": total_uncompressed,
         "pr_2025_arithmetic": accounting,
+        "unresolved_reason_counts": dict(sorted(reason_counts.items())),
     }
     return stream_meta, pr_rows, unresolved_raw
 
@@ -389,6 +455,9 @@ def main() -> int:
         EPA_ZIP, member_meta, root
     )
 
+    print("HASH FULL EPA ARCHIVE", flush=True)
+    full_zip = stream_full_sha256(EPA_ZIP, member_meta["archive"])
+
     pr_csv = root / "SDWA_VIOLATIONS_ENFORCEMENT_PR_2025.csv"
     if not pr_rows:
         raise RuntimeError("bounded PR 2025 result set is empty")
@@ -398,8 +467,13 @@ def main() -> int:
         w.writeheader()
         w.writerows(pr_rows)
 
+    unresolved_path = root / "SDWA_VIOLATIONS_ENFORCEMENT_PR_2025_UNRESOLVED.jsonl"
+    with unresolved_path.open("w", encoding="utf-8") as f:
+        for item in unresolved:
+            f.write(json.dumps(item, ensure_ascii=False, sort_keys=True) + "\n")
+
     receipt = {
-        "schema_version": "aguayluz.salud_sdwis_2025_source_freeze/v3",
+        "schema_version": "aguayluz.salud_sdwis_2025_source_freeze/v4",
         "retrieved_at_utc": retrieved,
         "salud": {
             "source": len(SALUD),
@@ -410,22 +484,28 @@ def main() -> int:
         "epa": {
             "source_url": EPA_ZIP,
             "zip_identity": member_meta["archive"],
-            "zip_full_sha256": None,
-            "zip_full_sha256_status": "OPEN_NOT_DOWNLOADED",
+            "zip_full_sha256": full_zip["sha256"],
+            "zip_full_sha256_status": "PASS",
+            "zip_full_bytes_observed": full_zip["bytes_observed"],
+            "zip_identity_after_full_hash": full_zip["identity_after"],
             "target_member": {
                 k: v for k, v in member_meta.items() if k not in {"archive", "data_start"}
             },
             **stream_meta,
             "pr_2025_csv": pr_csv.name,
             "pr_2025_csv_sha256": sha256_file(pr_csv),
-            "unresolved_rows": unresolved,
+            "unresolved_rows_file": unresolved_path.name,
+            "unresolved_rows_file_sha256": sha256_file(unresolved_path),
+            "unresolved_row_count": len(unresolved),
+            "unresolved_reason_counts": stream_meta["unresolved_reason_counts"],
         },
         "source_universe_completeness_claimed": False,
         "notes": [
-            "Salud 10747 and 10748 are complete byte-frozen PDF manifestations.",
+            "Salud 10746, 10747 and 10748 are complete byte-frozen PDF manifestations.",
             "EPA target-member compressed and uncompressed identities are hashed during a single validated range stream.",
+            "The complete national ZIP is independently streamed and SHA-256 hashed with pre/post HTTP identity-drift checks.",
             "Every logical row in SDWA_VIOLATIONS_ENFORCEMENT.csv is counted in source arithmetic; only PR-prefixed PWSID rows are fully CSV-parsed.",
-            "The national ZIP full-byte SHA remains OPEN; target-member byte identity and CRC are independently closed.",
+            "Every unresolved Puerto Rico row is retained verbatim with source line, source-row hash and classification reason for independent adjudication.",
             "No equality between Salud annual-report membership and the EPA PR-derived subset is asserted.",
         ],
     }
@@ -440,7 +520,9 @@ def main() -> int:
                 "member_compressed_sha256": stream_meta["compressed_sha256"],
                 "member_uncompressed_sha256": stream_meta["uncompressed_sha256"],
                 "pr_2025_arithmetic": stream_meta["pr_2025_arithmetic"],
-                "zip_full_sha256_status": "OPEN_NOT_DOWNLOADED",
+                "zip_full_sha256": full_zip["sha256"],
+                "zip_full_sha256_status": "PASS",
+                "unresolved_reason_counts": stream_meta["unresolved_reason_counts"],
             },
             sort_keys=True,
         ),
