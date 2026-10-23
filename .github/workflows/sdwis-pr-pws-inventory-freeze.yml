@@ -40,8 +40,11 @@ jobs:
           assert r["stream"]["row_conservation_delta"] == 0, r
           assert r["active_pwsid_count"] == r["active_count"], r
           assert len(set(r["active_pwsids"])) == r["active_count"], r
-          assert r["prdoh_463_count_control"]["state"] in {
-              "COUNT_EQUAL_NOT_IDENTITY","COUNT_CONTRADICTION"
+          assert r["prdoh_463_current_cross_period_control"]["state"] == (
+              "CROSS_PERIOD_CONTROL_NOT_ADJUDICATIVE"
+          ), r
+          assert r["prdoh_463_report_period_control"]["state"] in {
+              "COUNT_EQUAL_NOT_IDENTITY", "COUNT_CONTRADICTION"
           }, r
           print(json.dumps({
               "latest_quarter":r["latest_quarter"],
@@ -50,7 +53,9 @@ jobs:
               "inactive_count":r["inactive_count"],
               "activity_counts":r["activity_counts"],
               "type_counts":r["type_counts"],
-              "control":r["prdoh_463_count_control"],
+              "current_cross_period_control":r["prdoh_463_current_cross_period_control"],
+              "report_period_control":r["prdoh_463_report_period_control"],
+              "report_period_2025q3":r["report_period_2025q3"],
               "active_csv_sha256":r["active_csv_sha256"],
           },indent=2,sort_keys=True))
       - name: Upload evidence
