@@ -1820,6 +1820,29 @@
           "dashboard/tests/ionosphere.spec.mjs"
         ]
       }
+    },
+    {
+      "id": "ionosphere-ci-acquisition-evidence",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Development-only CI evidence capture experiment. It freezes fixed NOAA public endpoint responses into isolated build artifacts and inventories schema without ingestion, scheduling, user-facing production operations, or geographic certification. It is not a production acquisition capability.",
+      "analysis": {
+        "files": [
+          "scripts/capture_ionosphere_evidence.py"
+        ],
+        "symbols": [
+          "scripts/capture_ionosphere_evidence.py:freeze",
+          "scripts/capture_ionosphere_evidence.py:request_bytes",
+          "scripts/capture_ionosphere_evidence.py:inspect_capture",
+          "scripts/capture_ionosphere_evidence.py:capture"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_capture_ionosphere_evidence.py"
+        ]
+      }
     }
   ],
   "exceptions": []
