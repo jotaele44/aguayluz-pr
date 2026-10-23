@@ -1544,7 +1544,8 @@
         "files": [
           "scripts/ingest_salud_sdwis_water.py",
           "scripts/freeze_salud_sdwis_2025_sources.py",
-          "scripts/adjudicate_salud_sdwis_2025_residue.py"
+          "scripts/adjudicate_salud_sdwis_2025_residue.py",
+          "scripts/freeze_sdwis_pr_pws_inventory.py"
         ],
         "symbols": [
           "scripts/ingest_salud_sdwis_water.py:classify_sdwis_row",
@@ -1564,14 +1565,21 @@
           "scripts/adjudicate_salud_sdwis_2025_residue.py:sha256_file",
           "scripts/adjudicate_salud_sdwis_2025_residue.py:adjudicate",
           "scripts/adjudicate_salud_sdwis_2025_residue.py:run",
-          "scripts/adjudicate_salud_sdwis_2025_residue.py:main"
+          "scripts/adjudicate_salud_sdwis_2025_residue.py:main",
+          "scripts/freeze_sdwis_pr_pws_inventory.py:archive_identity",
+          "scripts/freeze_sdwis_pr_pws_inventory.py:get_range",
+          "scripts/freeze_sdwis_pr_pws_inventory.py:locate_member",
+          "scripts/freeze_sdwis_pr_pws_inventory.py:select_latest_pr",
+          "scripts/freeze_sdwis_pr_pws_inventory.py:stream_member",
+          "scripts/freeze_sdwis_pr_pws_inventory.py:main"
         ]
       },
       "tests": {
         "contract": [
           "tests/test_hazard_adapter_sdwa_drinking_water.py",
           "tests/test_ingest_salud_sdwis_water.py",
-          "tests/test_adjudicate_salud_sdwis_2025_residue.py"
+          "tests/test_adjudicate_salud_sdwis_2025_residue.py",
+          "tests/test_freeze_sdwis_pr_pws_inventory.py"
         ]
       }
     },
