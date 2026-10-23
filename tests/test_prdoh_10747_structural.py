@@ -13,11 +13,40 @@ SPEC.loader.exec_module(MODULE)
 
 load_ledger = MODULE.load_ledger
 validate_ledger = MODULE.validate_ledger
+validate_semantic_adjudication = MODULE.validate_semantic_adjudication
+load_semantic_adjudication = MODULE.load_semantic_adjudication
 LEDGER = REPO / "data" / "certification" / "prdoh_10747_structural_v1.json.gz.b64"
+SEMANTICS = REPO / "data" / "certification" / "prdoh_10747_semantic_adjudication_v1.json"
 
 
 def test_frozen_10747_ledger_passes():
-    validate_ledger(load_ledger(LEDGER))
+    doc = load_ledger(LEDGER)
+    validate_ledger(doc)
+    validate_semantic_adjudication(doc, load_semantic_adjudication(SEMANTICS))
+
+
+def test_level2_identity_scope_is_prasa_not_nonprasa():
+    doc = load_ledger(LEDGER)
+    adjudication = load_semantic_adjudication(SEMANTICS)
+    item = adjudication["adjudications"][0]
+    assert item["corrected_semantic_scope"] == "PRASA_IDENTITY_REFERENCE"
+    validate_semantic_adjudication(doc, adjudication)
+
+
+def test_level2_semantic_reclassification_cannot_change_arithmetic():
+    doc = load_ledger(LEDGER)
+    adjudication = load_semantic_adjudication(SEMANTICS)
+    adjudication["arithmetic_effect"]["source_rows_added"] = 1
+    with pytest.raises(ValueError):
+        validate_semantic_adjudication(doc, adjudication)
+
+
+def test_level2_pws_tokens_cannot_drift():
+    doc = load_ledger(LEDGER)
+    adjudication = load_semantic_adjudication(SEMANTICS)
+    adjudication["adjudications"][0]["raw_pws_tokens"] = ["2672", "9999"]
+    with pytest.raises(ValueError):
+        validate_semantic_adjudication(doc, adjudication)
 
 
 def test_source_sha_drift_fails_closed():
