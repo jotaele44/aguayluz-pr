@@ -1547,7 +1547,8 @@
           "scripts/adjudicate_salud_sdwis_2025_residue.py",
           "scripts/freeze_sdwis_pr_pws_inventory.py",
           "scripts/validate_prdoh_10748_structural.py",
-          "scripts/validate_prdoh_10747_structural.py"
+          "scripts/validate_prdoh_10747_structural.py",
+          "scripts/validate_prdoh_internal_reconciliation.py"
         ],
         "symbols": [
           "scripts/ingest_salud_sdwis_water.py:classify_sdwis_row",
@@ -1585,7 +1586,12 @@
           "scripts/validate_prdoh_10747_structural.py:validate_ledger",
           "scripts/validate_prdoh_10747_structural.py:main",
           "scripts/validate_prdoh_10747_structural.py:load_semantic_adjudication",
-          "scripts/validate_prdoh_10747_structural.py:validate_semantic_adjudication"
+          "scripts/validate_prdoh_10747_structural.py:validate_semantic_adjudication",
+          "scripts/validate_prdoh_internal_reconciliation.py:load_json",
+          "scripts/validate_prdoh_internal_reconciliation.py:bind_prdoh_pws_token",
+          "scripts/validate_prdoh_internal_reconciliation.py:validate_receipt",
+          "scripts/validate_prdoh_internal_reconciliation.py:validate_bound_sources",
+          "scripts/validate_prdoh_internal_reconciliation.py:main"
         ]
       },
       "tests": {
@@ -1595,7 +1601,8 @@
           "tests/test_adjudicate_salud_sdwis_2025_residue.py",
           "tests/test_freeze_sdwis_pr_pws_inventory.py",
           "tests/test_prdoh_10748_structural.py",
-          "tests/test_prdoh_10747_structural.py"
+          "tests/test_prdoh_10747_structural.py",
+          "tests/test_prdoh_internal_reconciliation.py"
         ]
       }
     },
