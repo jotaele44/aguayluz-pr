@@ -1,8 +1,16 @@
+import importlib.util
 import json
 from pathlib import Path
 
 import pytest
-from scripts.adjudicate_salud_sdwis_2025_residue import adjudicate, run
+
+_SCRIPT = Path(__file__).resolve().parent.parent / "scripts" / "adjudicate_salud_sdwis_2025_residue.py"
+_SPEC = importlib.util.spec_from_file_location("adjudicate_salud_sdwis_2025_residue", _SCRIPT)
+assert _SPEC is not None and _SPEC.loader is not None
+_MODULE = importlib.util.module_from_spec(_SPEC)
+_SPEC.loader.exec_module(_MODULE)
+adjudicate = _MODULE.adjudicate
+run = _MODULE.run
 
 
 def _item(reason: str, **row):
