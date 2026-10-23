@@ -1,0 +1,60 @@
+name: SDWIS Puerto Rico PWS Inventory Freeze
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/freeze_sdwis_pr_pws_inventory.py"
+      - "tests/test_freeze_sdwis_pr_pws_inventory.py"
+      - ".github/workflows/sdwis-pr-pws-inventory-freeze.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+      - name: Contract tests
+        run: python -m pytest -q tests/test_freeze_sdwis_pr_pws_inventory.py
+      - name: Freeze current PWS inventory
+        run: |
+          python scripts/freeze_sdwis_pr_pws_inventory.py \
+            --output-root artifacts/sdwis_pr_pws_inventory \
+            --prdoh-control-count 463
+      - name: Validate receipt
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+          p=Path("artifacts/sdwis_pr_pws_inventory/sdwis_pr_pws_inventory_receipt.json")
+          r=json.loads(p.read_text())
+          assert r["stream"]["row_conservation_delta"] == 0, r
+          assert r["active_pwsid_count"] == r["active_count"], r
+          assert len(set(r["active_pwsids"])) == r["active_count"], r
+          assert r["prdoh_463_count_control"]["state"] in {
+              "COUNT_EQUAL_NOT_IDENTITY","COUNT_CONTRADICTION"
+          }, r
+          print(json.dumps({
+              "latest_quarter":r["latest_quarter"],
+              "latest_row_count":r["latest_row_count"],
+              "active_count":r["active_count"],
+              "inactive_count":r["inactive_count"],
+              "activity_counts":r["activity_counts"],
+              "type_counts":r["type_counts"],
+              "control":r["prdoh_463_count_control"],
+              "active_csv_sha256":r["active_csv_sha256"],
+          },indent=2,sort_keys=True))
+      - name: Upload evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: sdwis-pr-pws-inventory
+          path: artifacts/sdwis_pr_pws_inventory
+          if-no-files-found: error
+          retention-days: 90
