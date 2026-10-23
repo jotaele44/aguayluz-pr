@@ -85,8 +85,8 @@ def main() -> int:
         print("seed_demo: AGUAYLUZ_DATA_HOME is required for isolated GUI parity", file=sys.stderr)
         return 2
     if REVIEW_QUEUE.exists():
-        print(f"seed_demo: {REVIEW_QUEUE} already present — leaving it alone")
-        return 0
+        print(f"seed_demo: existing review queue blocks isolated seeding: {REVIEW_QUEUE}", file=sys.stderr)
+        return 2
     if SEED_MARKER.exists():
         print(f"seed_demo: stale ownership marker {SEED_MARKER} — refusing to seed", file=sys.stderr)
         return 2
