@@ -134,6 +134,16 @@ def _field(row: dict[str, str], key: str) -> str:
 
 def quarter_inventory(rows: list[dict[str, str]], quarter: str) -> dict[str, Any]:
     selected = [r for r in rows if _field(r, "SUBMISSIONYEARQUARTER") == quarter]
+    if not selected:
+        return {
+            "quarter": quarter,
+            "present_in_current_member": False,
+            "rows": None,
+            "active_count": None,
+            "active_pwsids": [],
+            "activity_counts": {},
+            "active_type_counts": {},
+        }
     ids = [_field(r, "PWSID").upper() for r in selected]
     if len(ids) != len(set(ids)):
         raise ValueError(f"{quarter} Puerto Rico inventory violates PWSID uniqueness")
@@ -149,6 +159,7 @@ def quarter_inventory(rows: list[dict[str, str]], quarter: str) -> dict[str, Any
         active_type_counts[ptype] = active_type_counts.get(ptype, 0) + 1
     return {
         "quarter": quarter,
+        "present_in_current_member": True,
         "rows": len(selected),
         "active_count": len(active),
         "active_pwsids": active_ids,
@@ -339,19 +350,30 @@ def main() -> int:
         "count_delta": selected["active_count"] - args.prdoh_control_count,
         "state": "CROSS_PERIOD_CONTROL_NOT_ADJUDICATIVE",
     }
-    report_period_control = {
-        "source": "Puerto Rico Department of Health 2025 annual violations report",
-        "prdoh_as_of": "2025-09",
-        "control_count": args.prdoh_control_count,
-        "epa_quarter": "2025Q3",
-        "epa_active_count": report_quarter["active_count"],
-        "count_delta": report_quarter["active_count"] - args.prdoh_control_count,
-        "state": (
-            "COUNT_EQUAL_NOT_IDENTITY"
-            if report_quarter["active_count"] == args.prdoh_control_count
-            else "COUNT_CONTRADICTION"
-        ),
-    }
+    if report_quarter["present_in_current_member"]:
+        report_period_control = {
+            "source": "Puerto Rico Department of Health 2025 annual violations report",
+            "prdoh_as_of": "2025-09",
+            "control_count": args.prdoh_control_count,
+            "epa_quarter": "2025Q3",
+            "epa_active_count": report_quarter["active_count"],
+            "count_delta": report_quarter["active_count"] - args.prdoh_control_count,
+            "state": (
+                "COUNT_EQUAL_NOT_IDENTITY"
+                if report_quarter["active_count"] == args.prdoh_control_count
+                else "COUNT_CONTRADICTION"
+            ),
+        }
+    else:
+        report_period_control = {
+            "source": "Puerto Rico Department of Health 2025 annual violations report",
+            "prdoh_as_of": "2025-09",
+            "control_count": args.prdoh_control_count,
+            "epa_quarter": "2025Q3",
+            "epa_active_count": None,
+            "count_delta": None,
+            "state": "HISTORICAL_SNAPSHOT_NOT_PRESENT",
+        }
     receipt = {
         "schema_version": "aguayluz.water_health.sdwis_pr_pws_inventory/v1",
         "retrieved_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -382,6 +404,7 @@ def main() -> int:
             "PWSID is the stable SDWIS system identifier.",
             "The mutable quarterly EPA source is frozen with member and archive manifestation metadata.",
             "Inactive and non-active rows are preserved in the latest-quarter source output.",
+            "Absence of a historical quarter from the current EPA member is source-scope absence, not a zero-result inventory.",
         ],
     }
     path = root / "sdwis_pr_pws_inventory_receipt.json"
