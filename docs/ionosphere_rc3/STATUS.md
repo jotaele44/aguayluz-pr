@@ -107,7 +107,13 @@ Local: producer/legacy 13 tests PASS; consumer/source-scope regression suite 28 
 and 25 parameter subtests PASS; ruff, reference topology and parity gates PASS.
 The independent EPA source verifier also re-derived both national PR subsets with
 1,191,356 / 1,191,331 source rows and no PR ID/State contradictions.
-Exact new consumer HEAD requires CI; inherited RC2 results are not RC3 certification.
+All 17 observed consumer workflows on 24ba3a2d7a1aef2ac9b1136893b4d462afba98d1 passed.
+The Python 3.12 job ran 1,452 tests plus 25 subtests successfully, but checked out
+GitHub synthetic merge 916c8288399f1ff0ab57fdb56770aeda19694cfd. Those results
+are merge-candidate evidence, not exact branch-head execution. A dedicated read-only
+workflow now pins the candidate SHA, asserts HEAD and tree identity, repeats the
+full Python matrix and default/enabled browser checks, and tests the immutable
+producer commit separately. Its result must be observed before exact acceptance.
 
 ION-01 PASS. ION-02/08 bounded software acceptance pending new consumer CI.
 ION-03 exact TEC snapshot acquisition PASS. ION-04 frozen reference-envelope
@@ -115,4 +121,4 @@ coverage PASS only within its defined scope. ION-05 acquisition PASS, interpreta
 and redistribution UNRESOLVED. ION-06/07 persisted frozen transport passes locally
 and producer CI; final consumer CI pending. ION-09/10 complete release, operational
 refresh, deployment and reusable-skill promotion remain BLOCKED.
-Plan score 96/100; hardening strategy 98/100 (design judgments, not completion scores).
+No numerical completion score substitutes for a closed release gate.

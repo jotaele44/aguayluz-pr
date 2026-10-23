@@ -15,7 +15,7 @@ Do not enable preview in production. Live acquisition HTTP 403 is a blocker, nev
 On failure preserve logs and baseline, keep flags disabled; do not regenerate parity baseline.
 Rollback: unset AGUAYLUZ_IONOSPHERE_PREVIEW and VITE_IONOSPHERE_PREVIEW; rebuild dashboard.
 No measurements or database rows are written by RC0. Snapshot restore: NOT_APPLICABLE.
-Frozen TEC capture: PASS; PR boundary coverage, ROTI, PITIRRE persistence and release certification: NOT PASSED.
+Frozen TEC capture, bounded reference coverage and frozen PITIRRE transport: PASS. ROTI interpretation, full release certification and deployment: NOT PASSED.
 
 RC1 scope/evidence: docs/IONOSPHERE_RC1.md; RC0 immutable hashes apply only at the RC0 commit.
 Capture regressions: PYTHONPATH=src python -m pytest tests/test_ionosphere.py tests/test_capture_ionosphere_evidence.py tests/test_ionosphere_snapshot.py tests/test_gui_parity.py -q
@@ -34,3 +34,5 @@ ROTI capture is acquired privately; matrix/CRS/zero semantics and redistribution
 Simulated bundle-path resource check passes; this does not certify installation or every physical device.
 
 PowerShell frozen EPA check (place checkpoint in TEMP): python scripts/verify_frozen_pfas_pr_scope.py "$env:TEMP\PFAS_PASS_39968848835.zip" "$env:TEMP\pfas_scope_receipt.json"
+
+Exact candidate acceptance: .github/workflows/ionosphere-exact-candidate.yml pins and attests HEAD; PR merge-CI success alone is insufficient.
