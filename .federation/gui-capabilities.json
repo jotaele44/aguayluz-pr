@@ -1777,21 +1777,27 @@
       "classification": "internal",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Fail-closed provenance utility for classifying mutable ZIP source manifestations by outer bytes, member PATH + UNCOMPRESSED_SIZE + SHA256, and payload multiset identity. It is CI/source-governance infrastructure rather than an operator workflow; downstream user-facing evidence remains on the existing Environmental Exposure and source-provenance surfaces.",
+      "rationale": "Fail-closed provenance utility for classifying mutable ZIP source manifestations by outer bytes, member PATH + UNCOMPRESSED_SIZE + SHA256, payload multiset identity, and scoped derived-row/PWS identity when an upstream national payload changes. It is CI/source-governance infrastructure rather than an operator workflow; downstream user-facing evidence remains on the existing Environmental Exposure and source-provenance surfaces.",
       "analysis": {
         "files": [
-          "scripts/adjudicate_zip_manifestations.py"
+          "scripts/adjudicate_zip_manifestations.py",
+          "scripts/adjudicate_ucmr5_pr_subset.py"
         ],
         "symbols": [
           "scripts/adjudicate_zip_manifestations.py:sha256_file",
           "scripts/adjudicate_zip_manifestations.py:member_manifest",
           "scripts/adjudicate_zip_manifestations.py:classify",
-          "scripts/adjudicate_zip_manifestations.py:main"
+          "scripts/adjudicate_zip_manifestations.py:main",
+          "scripts/adjudicate_ucmr5_pr_subset.py:sha256_file",
+          "scripts/adjudicate_ucmr5_pr_subset.py:read_tsv",
+          "scripts/adjudicate_ucmr5_pr_subset.py:adjudicate",
+          "scripts/adjudicate_ucmr5_pr_subset.py:main"
         ]
       },
       "tests": {
         "contract": [
-          "tests/test_adjudicate_zip_manifestations.py"
+          "tests/test_adjudicate_zip_manifestations.py",
+          "tests/test_adjudicate_ucmr5_pr_subset.py"
         ]
       }
     }
