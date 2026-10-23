@@ -38,7 +38,7 @@ jobs:
         env:
           PYTHONPATH: src:.
         run: |
-          pytest -q             tests/test_hazard_adapter_sdwa_drinking_water.py             tests/test_ingest_salud_sdwis_water.py
+          pytest -q             tests/test_hazard_adapter_sdwa_drinking_water.py             tests/test_ingest_salud_sdwis_water.py             tests/test_adjudicate_salud_sdwis_2025_residue.py
 
       - name: Verify blocked-source receipt without fabricating manifestations
         env:
