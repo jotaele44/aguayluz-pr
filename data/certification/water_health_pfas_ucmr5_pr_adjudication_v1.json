@@ -1,0 +1,67 @@
+{
+  "schema_version": "aguayluz.water_health.pfas_ucmr5_pr_manifestation_adjudication/v1",
+  "scope": "Puerto Rico UCMR5 occurrence evidence plane",
+  "workflow": {
+    "run_id": 39900910209,
+    "head_sha": "6ca7fed8db457c8bff2b8e967b9f0d27fe339f44",
+    "artifact_id": 12478214964,
+    "artifact_digest": "sha256:62603e586910968c1b1d6fd1e698222752ac38610364d2a6e1f60e159cee6e44"
+  },
+  "historical": {
+    "artifact_id": 9904286245,
+    "archive_sha256": "4845eb3abf34d61d7d239e26a815c69b21e39d249840243d266274b5b5d73aaa",
+    "pr_member_sha256": "4d72703e4fece5d5fb7b243c1bcd5a72e65c09bf79efbbc05b548c9fb19e7391",
+    "pr_derived_tsv_sha256": "ac40d8d67f7343832e0b11d78c892e3a6cdd44fe4d0b0892407347d4400b80c5",
+    "pr_rows": 21771,
+    "pr_pwsids": 99
+  },
+  "current": {
+    "archive_sha256": "007ee5f6a19dd8f1dac682ded23bcd3de72c8c5f49487dbf181334091bd35d96",
+    "pr_member_sha256": "3255b3cc6041b110f507a531f67c3368364e3bdbd79304ae544c967d9526ffe4",
+    "pr_derived_tsv_sha256": "c92a6bcd47c935f5aabb9592488aff39fe2aaa0f692708f527471d47e8b8c217",
+    "pr_rows": 21771,
+    "pr_pwsids": 99
+  },
+  "archive_identity": {
+    "classification": "DISTINCT_PAYLOADS",
+    "member_count_old": 6,
+    "member_count_new": 6,
+    "member_path_identity": false,
+    "payload_multiset_identity": false,
+    "changed_members": [
+      "UCMR5_All_MA_WY.txt",
+      "UCMR5_All_Tribes_AK_LA.txt",
+      "UCMR5_DataSummary_Jul2026_508.pdf"
+    ],
+    "unchanged_members": [
+      "InstructionsforAccessingUCMRResults_Jan2025_508.pdf",
+      "UCMR5_AddtlDataElem.txt",
+      "UCMR5_ZIPCodes.txt"
+    ]
+  },
+  "pr_scope_identity": {
+    "classification": "LOGICALLY_IDENTICAL_ROW_MULTISET",
+    "row_multiset": {
+      "intersection": 21771,
+      "old_only": 0,
+      "new_only": 0,
+      "union": 21771,
+      "symmetric_difference": 0
+    },
+    "pwsid_set": {
+      "intersection": 99,
+      "old_only": [],
+      "new_only": [],
+      "union": 99,
+      "symmetric_difference": 0
+    }
+  },
+  "state": "PASS_PR_SCOPE_NATIONAL_MANIFESTATION_DISTINCT",
+  "certification_boundary": "This receipt certifies Puerto Rico subset logical identity across the EPA republish. It does not assert national archive byte or logical identity.",
+  "guardrails": [
+    "Different outer hashes remain distinct BYTE manifestations.",
+    "The changed UCMR5_All_MA_WY.txt member remains a distinct BYTE manifestation.",
+    "Puerto Rico equivalence is based on identical exact whole-row multiset and PWSID set, not count equality.",
+    "UCMR occurrence measurements are not compliance determinations."
+  ]
+}
