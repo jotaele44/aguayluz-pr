@@ -19,6 +19,9 @@ the I/O):
 * hydromet  — :func:`aguayluz.alert_promotion.hydromet.hydromet_alerts` (WEATHER_HAZARD;
   NWPS river/reservoir gauge flood episodes and Stage IV heavy-rain days from the NWS
   hydromet plane)
+* outdoor   — :func:`aguayluz.alert_promotion.outdoor.outdoor_alerts` (WEATHER_HAZARD;
+  NWS Surf Zone Forecast rip current risk High and NWS marine-zone alerts for Puerto Rico
+  waters, from the outdoor-conditions records on the hydromet plane)
 * drought   — :func:`aguayluz.alert_promotion.drought.drought_alerts` /
   :func:`aguayluz.alert_promotion.drought.precipitation_shortfall_alerts` (WEATHER_HAZARD;
   USDM classification-band + NCEI percent-of-normal precipitation, kept as two
@@ -26,7 +29,8 @@ the I/O):
 
 Each promoter stamps a distinct ``alert_id`` marker (``_sdwis_`` / ``_resvlow_`` /
 ``_seismic_`` / ``_weather_`` / ``_osha_`` / ``_neonpub_`` / ``_drought_`` /
-``_precipshort_`` / ``_nwpsflood_`` / ``_qpeheavy_``) so the idempotent merge in
+``_precipshort_`` / ``_nwpsflood_`` / ``_qpeheavy_`` / ``_ripcurrent_`` / ``_marine_``) so
+the idempotent merge in
 the CLI can replace only its own previously-generated rows while preserving seeds and
 manual entries.
 
@@ -53,6 +57,7 @@ from .hydromet import HEAVY_RAIN_MARKER, NWPS_FLOOD_MARKER, HydrometInputs, hydr
 from .neon import NEON_MARKER, neon_alerts
 from .nhc import NHC_MARKER, nhc_alerts
 from .osha import OSHA_MARKER, osha_alerts
+from .outdoor import MARINE_MARKER, RIP_CURRENT_MARKER, outdoor_alerts
 from .seismic import SEISMIC_MARKER, seismic_alerts
 from .weather import WEATHER_MARKER, weather_alerts
 
@@ -61,6 +66,7 @@ GENERATED_MARKERS: tuple[str, ...] = (
     "_sdwis_", "_resvlow_", "_gwlow_", "_coasthi_",
     SEISMIC_MARKER, WEATHER_MARKER, OSHA_MARKER, NEON_MARKER, NHC_MARKER,
     DROUGHT_MARKER, PRECIP_MARKER, NWPS_FLOOD_MARKER, HEAVY_RAIN_MARKER,
+    RIP_CURRENT_MARKER, MARINE_MARKER,
 )
 
 #: Operational-severity floor (0-5 scale) at or above which an alert is life-safety
@@ -107,7 +113,8 @@ def build_all_alerts(
 
     ``hydromet`` carries the NWS hydromet plane (``data/hydromet_records.jsonl`` —
     NWPS gauge and Stage IV rainfall records — + ``data/nwps_gauge_state.jsonl``);
-    omitting it yields no hydromet alerts.
+    omitting it yields no hydromet alerts. The same records carry the outdoor-condition
+    sources' NWS Surf Zone Forecast and marine-zone alerts, which promote too.
     """
     index = build_asset_index(assets or [])
     alerts: list[AlertEvent] = []
@@ -124,6 +131,7 @@ def build_all_alerts(
     alerts.extend(drought_alerts(readings or [], geo, index, assets))
     alerts.extend(precipitation_shortfall_alerts(readings or [], geo, index, assets))
     alerts.extend(hydromet_alerts(hydromet, geo, index))
+    alerts.extend(outdoor_alerts(hydromet, geo, index))
     return alerts
 
 
@@ -147,6 +155,9 @@ __all__ = [
     "hydromet_alerts",
     "NWPS_FLOOD_MARKER",
     "HEAVY_RAIN_MARKER",
+    "outdoor_alerts",
+    "RIP_CURRENT_MARKER",
+    "MARINE_MARKER",
     "load_geo",
     "AssetIndex",
     "build_asset_index",

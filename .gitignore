@@ -290,6 +290,17 @@ exports/federation/
 !data/hydromet_manifestations.jsonl
 !data/hydromet_receipts.json
 !data/nwps_gauge_state.jsonl
+# Outdoor-conditions layer (aguayluz.outdoor), committed for the same reason: the hub's
+# export command runs against a checkout, so the composed per-municipio file (and the
+# per-source state it is composed from) must be in the tree, not only in the refresh job.
+!data/outdoor_surf_state.jsonl
+!data/outdoor_buoy_state.jsonl
+!data/outdoor_uv_state.jsonl
+!data/outdoor_heat_state.jsonl
+!data/outdoor_aqi_state.jsonl
+!data/outdoor_conditions.jsonl
+# Frozen reference bindings (scripts/freeze_outdoor_reference.py, El Yunque access assets).
+!data/reference/
 # Census-derived PR geodata: centroids (normalization/spatial joins) + boundary polygons (map layer)
 !data/geo/
 !data/geo/pr_municipios.json

@@ -1580,7 +1580,7 @@
       "classification": "analysis",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Puerto Rico NOAA/NWS hydrometeorological observations (NWPS river/reservoir gauge flood status; Stage IV daily rainfall summarised per municipio over HRAP cells) frozen with byte SHA-256 provenance, source arithmetic and evidence-classed bindings to USGS_ assets (stable ID) and municipios (point-in-polygon + source alias; raster cell centres in polygon). The NWS Hydromet page exposes results, freshness, failures and a guarded refresh per source; the map shows gauges by flood category and a Stage IV rainfall municipio fill; gauge flood episodes and heavy-rain days promote into WEATHER_HAZARD alerts. Observations are hazard context, not confirmed impact.",
+      "rationale": "Puerto Rico NOAA/NWS hydrometeorological observations (NWPS river/reservoir gauge flood status; Stage IV daily rainfall summarised per municipio over HRAP cells) frozen with byte SHA-256 provenance, source arithmetic and evidence-classed bindings to USGS_ assets (stable ID) and municipios (point-in-polygon + source alias; raster cell centres in polygon). The NWS Hydromet page exposes results, freshness, failures and a guarded refresh per source; the map shows gauges by flood category and a Stage IV rainfall municipio fill; gauge flood episodes and heavy-rain days promote into WEATHER_HAZARD alerts. Observations are hazard context, not confirmed impact. The outdoor-condition sources (NWS Surf Zone Forecast, NWS marine-zone alerts for PR waters, NDBC/CARICOOS buoys, EPA UV index per municipio, NWS gridded heat index per municipio, and the key-gated AirNow AQI) are registry entries on the same plane: the NWS Hydromet page lists each with its freshness, arithmetic, failure and a guarded refresh, and rip current risk High and PR marine alerts promote into WEATHER_HAZARD alerts (src/aguayluz/alert_promotion/outdoor.py).",
       "backend": {
         "files": [
           "server/backend/hydromet_api.py",
@@ -1591,7 +1591,14 @@
           "src/aguayluz/hazard_adapters/nwps_gauges.py",
           "src/aguayluz/hazard_adapters/stage_iv_qpe.py",
           "src/aguayluz/alert_promotion/hydromet.py",
-          "src/aguayluz/hazard_plane.py"
+          "src/aguayluz/hazard_plane.py",
+          "src/aguayluz/alert_promotion/outdoor.py",
+          "src/aguayluz/hazard_adapters/airnow.py",
+          "src/aguayluz/hazard_adapters/epa_uv.py",
+          "src/aguayluz/hazard_adapters/ndbc_buoys.py",
+          "src/aguayluz/hazard_adapters/nws_heat.py",
+          "src/aguayluz/hazard_adapters/nws_marine.py",
+          "src/aguayluz/hazard_adapters/nws_surf_zone.py"
         ],
         "endpoints": [
           "GET /hydromet/gauges",
@@ -1618,6 +1625,20 @@
           "src/aguayluz/alert_promotion/hydromet.py:hydromet_alerts",
           "src/aguayluz/alert_promotion/hydromet.py:river_flood_alert",
           "src/aguayluz/alert_promotion/hydromet.py:river_flood_alerts",
+          "src/aguayluz/alert_promotion/outdoor.py:marine_alert",
+          "src/aguayluz/alert_promotion/outdoor.py:marine_alerts",
+          "src/aguayluz/alert_promotion/outdoor.py:outdoor_alerts",
+          "src/aguayluz/alert_promotion/outdoor.py:rip_current_alert",
+          "src/aguayluz/alert_promotion/outdoor.py:rip_current_alerts",
+          "src/aguayluz/hazard_adapters/airnow.py:category",
+          "src/aguayluz/hazard_adapters/airnow.py:classify",
+          "src/aguayluz/hazard_adapters/airnow.py:observed_at",
+          "src/aguayluz/hazard_adapters/epa_uv.py:parse_daily",
+          "src/aguayluz/hazard_adapters/epa_uv.py:parse_date",
+          "src/aguayluz/hazard_adapters/epa_uv.py:uv_category",
+          "src/aguayluz/hazard_adapters/ndbc_buoys.py:normalize_row",
+          "src/aguayluz/hazard_adapters/ndbc_buoys.py:observed_at",
+          "src/aguayluz/hazard_adapters/ndbc_buoys.py:parse_latest_obs",
           "src/aguayluz/hazard_adapters/nwps_gauges.py:canonical_event_id",
           "src/aguayluz/hazard_adapters/nwps_gauges.py:clean_number",
           "src/aguayluz/hazard_adapters/nwps_gauges.py:compact_detail",
@@ -1629,6 +1650,33 @@
           "src/aguayluz/hazard_adapters/nwps_gauges.py:observed_category",
           "src/aguayluz/hazard_adapters/nwps_gauges.py:parse_time",
           "src/aguayluz/hazard_adapters/nwps_gauges.py:stable_record_id",
+          "src/aguayluz/hazard_adapters/nws_heat.py:c_to_f",
+          "src/aguayluz/hazard_adapters/nws_heat.py:heat_band",
+          "src/aguayluz/hazard_adapters/nws_heat.py:parse_interval",
+          "src/aguayluz/hazard_adapters/nws_heat.py:summarize",
+          "src/aguayluz/hazard_adapters/nws_heat.py:window_max",
+          "src/aguayluz/hazard_adapters/nws_marine.py:canonical_event_id",
+          "src/aguayluz/hazard_adapters/nws_marine.py:classify",
+          "src/aguayluz/hazard_adapters/nws_marine.py:close_record",
+          "src/aguayluz/hazard_adapters/nws_marine.py:event_key",
+          "src/aguayluz/hazard_adapters/nws_marine.py:material_digest",
+          "src/aguayluz/hazard_adapters/nws_marine.py:material_state",
+          "src/aguayluz/hazard_adapters/nws_marine.py:normalize",
+          "src/aguayluz/hazard_adapters/nws_marine.py:parse_time",
+          "src/aguayluz/hazard_adapters/nws_marine.py:stable_record_id",
+          "src/aguayluz/hazard_adapters/nws_marine.py:ugc_zones",
+          "src/aguayluz/hazard_adapters/nws_marine.py:vtec",
+          "src/aguayluz/hazard_adapters/nws_surf_zone.py:Period",
+          "src/aguayluz/hazard_adapters/nws_surf_zone.py:Segment",
+          "src/aguayluz/hazard_adapters/nws_surf_zone.py:canonical_event_id",
+          "src/aguayluz/hazard_adapters/nws_surf_zone.py:material_digest",
+          "src/aguayluz/hazard_adapters/nws_surf_zone.py:material_state",
+          "src/aguayluz/hazard_adapters/nws_surf_zone.py:normalize",
+          "src/aguayluz/hazard_adapters/nws_surf_zone.py:parse_product",
+          "src/aguayluz/hazard_adapters/nws_surf_zone.py:parse_ugc",
+          "src/aguayluz/hazard_adapters/nws_surf_zone.py:period_dates",
+          "src/aguayluz/hazard_adapters/nws_surf_zone.py:stable_record_id",
+          "src/aguayluz/hazard_adapters/nws_surf_zone.py:surf_height_ft",
           "src/aguayluz/hazard_adapters/stage_iv_qpe.py:canonical_event_id",
           "src/aguayluz/hazard_adapters/stage_iv_qpe.py:heavy_rain_severity",
           "src/aguayluz/hazard_adapters/stage_iv_qpe.py:normalize",
@@ -1673,9 +1721,25 @@
       "analysis": {
         "files": [
           "scripts/ingest_nwps_gauges.py",
-          "scripts/ingest_stage_iv_pr.py"
+          "scripts/ingest_stage_iv_pr.py",
+          "scripts/ingest_airnow.py",
+          "scripts/ingest_epa_uv.py",
+          "scripts/ingest_ndbc_buoys.py",
+          "scripts/ingest_nws_gridpoint_heat.py",
+          "scripts/ingest_nws_marine_alerts.py",
+          "scripts/ingest_nws_surf_zone.py"
         ],
         "symbols": [
+          "scripts/ingest_airnow.py:acquire",
+          "scripts/ingest_airnow.py:build",
+          "scripts/ingest_airnow.py:main",
+          "scripts/ingest_airnow.py:preflight",
+          "scripts/ingest_epa_uv.py:acquire",
+          "scripts/ingest_epa_uv.py:build",
+          "scripts/ingest_epa_uv.py:main",
+          "scripts/ingest_ndbc_buoys.py:acquire",
+          "scripts/ingest_ndbc_buoys.py:build",
+          "scripts/ingest_ndbc_buoys.py:main",
           "scripts/ingest_nwps_gauges.py:BuildResult",
           "scripts/ingest_nwps_gauges.py:DetailResult",
           "scripts/ingest_nwps_gauges.py:build_run",
@@ -1684,6 +1748,15 @@
           "scripts/ingest_nwps_gauges.py:main",
           "scripts/ingest_nwps_gauges.py:needs_detail",
           "scripts/ingest_nwps_gauges.py:schema_signature",
+          "scripts/ingest_nws_gridpoint_heat.py:acquire",
+          "scripts/ingest_nws_gridpoint_heat.py:build",
+          "scripts/ingest_nws_gridpoint_heat.py:main",
+          "scripts/ingest_nws_marine_alerts.py:acquire",
+          "scripts/ingest_nws_marine_alerts.py:build",
+          "scripts/ingest_nws_marine_alerts.py:main",
+          "scripts/ingest_nws_surf_zone.py:acquire",
+          "scripts/ingest_nws_surf_zone.py:build",
+          "scripts/ingest_nws_surf_zone.py:main",
           "scripts/ingest_stage_iv_pr.py:BuildResult",
           "scripts/ingest_stage_iv_pr.py:GridFile",
           "scripts/ingest_stage_iv_pr.py:build_run",
@@ -1728,7 +1801,10 @@
           "tests/test_ingest_stage_iv_pr.py",
           "tests/test_alert_promotion_hydromet.py",
           "tests/test_refresh_plans.py",
-          "tests/test_gui_parity.py"
+          "tests/test_gui_parity.py",
+          "tests/test_hazard_adapters_outdoor.py",
+          "tests/test_ingest_outdoor_sources.py",
+          "tests/test_alert_promotion_outdoor.py"
         ],
         "unit": [
           "dashboard/src/pages/HydrometPage.test.jsx",
@@ -1769,6 +1845,65 @@
         "e2e": [
           "dashboard/tests/nws-hydromet.spec.mjs",
           "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "outdoor-conditions-layer",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Producer-side composition of the outdoor-conditions layer: aguayluz.outdoor.compose folds the outdoor-condition sources and existing hazard context (NWPS flood stage, Stage IV rainfall, NWS land alerts, NHC, USGS quakes, DRNA beach advisories, El Yunque closures) into one row per municipio (data/outdoor_conditions.jsonl), run by scripts/refresh.py in every cadence and exported to the PRII hub as outdoor_condition entities by scripts/federation_export.py. Its human-facing surface is the hub's AguaYLuz 'Outdoor Conditions' tab (thehub-pr), the supported product surface under ADR 0001; this repository's dashboard is diagnostic only and shows the underlying sources on the NWS Hydromet page. src/aguayluz/outdoor/runner.py is the shared ingest harness those sources run through. scripts/freeze_outdoor_reference.py is a maintainer tool, rerun only when NWS re-zones or Census publishes a new ZCTA relationship file; it rebuilds the committed data/reference/outdoor_reference.v1.json and is never on a user path.",
+      "backend": {
+        "files": [
+          "src/aguayluz/outdoor/__init__.py",
+          "src/aguayluz/outdoor/compose.py",
+          "src/aguayluz/outdoor/runner.py"
+        ],
+        "symbols": [
+          "src/aguayluz/outdoor/__init__.py:conditions_path",
+          "src/aguayluz/outdoor/__init__.py:load_municipios",
+          "src/aguayluz/outdoor/__init__.py:load_reference",
+          "src/aguayluz/outdoor/__init__.py:municipio_key",
+          "src/aguayluz/outdoor/__init__.py:state_path",
+          "src/aguayluz/outdoor/compose.py:Inputs",
+          "src/aguayluz/outdoor/compose.py:compose",
+          "src/aguayluz/outdoor/compose.py:drivers",
+          "src/aguayluz/outdoor/compose.py:haversine_km",
+          "src/aguayluz/outdoor/compose.py:load_inputs",
+          "src/aguayluz/outdoor/compose.py:summarize",
+          "src/aguayluz/outdoor/runner.py:AcquisitionError",
+          "src/aguayluz/outdoor/runner.py:Built",
+          "src/aguayluz/outdoor/runner.py:Response",
+          "src/aguayluz/outdoor/runner.py:RunContext",
+          "src/aguayluz/outdoor/runner.py:base_parser",
+          "src/aguayluz/outdoor/runner.py:iso",
+          "src/aguayluz/outdoor/runner.py:parse_iso",
+          "src/aguayluz/outdoor/runner.py:run_ingest"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/build_outdoor_conditions.py",
+          "scripts/freeze_outdoor_reference.py"
+        ],
+        "symbols": [
+          "scripts/build_outdoor_conditions.py:main",
+          "scripts/freeze_outdoor_reference.py:access_assets",
+          "scripts/freeze_outdoor_reference.py:forecast_zones",
+          "scripts/freeze_outdoor_reference.py:gridpoints",
+          "scripts/freeze_outdoor_reference.py:main",
+          "scripts/freeze_outdoor_reference.py:marine_zones",
+          "scripts/freeze_outdoor_reference.py:uv_zips"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_outdoor_compose.py",
+          "tests/test_ingest_outdoor_sources.py",
+          "tests/test_refresh_plans.py",
+          "tests/test_federation_export.py",
+          "tests/test_schemas.py"
         ]
       }
     }
