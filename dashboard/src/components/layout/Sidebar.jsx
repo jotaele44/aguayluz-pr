@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, Map, Database, Zap, Activity, ClipboardList, ClipboardCheck,
   BarChart3, ScrollText, ShieldAlert, SlidersHorizontal, Droplets, Mountain, Landmark,
-  ChevronLeft, ChevronRight, X, CloudRain,
+  ChevronLeft, ChevronRight, X, CloudRain, Sun,
 } from 'lucide-react'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { useIsMobile } from '@/hooks/use-mobile'
@@ -18,6 +18,7 @@ const NAV = [
   { to: '/water-disruption', icon: Droplets, label: 'Water Validation' },
   { to: '/monitoring', icon: Activity, label: 'Monitoring' },
   { to: '/hydromet', icon: CloudRain, label: 'NWS Hydromet' },
+  { to: '/drought', icon: Sun, label: 'Drought Operations' },
   { to: '/cave-karst', icon: Mountain, label: 'Cave & Karst' },
   { to: '/regulatory', icon: Landmark, label: 'Regulatory', end: true },
   { to: '/regulatory/review', icon: ClipboardCheck, label: 'Regulatory Review' },

@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 
 from server.backend import main as legacy
 from server.backend.cave_karst_api import router as cave_karst_router
+from server.backend.drought_ops_api import router as drought_ops_router
 from server.backend.environmental_exposure_api import router as environmental_exposure_router
 from server.backend.hydromet_api import router as hydromet_router
 from server.backend.monitoring_alert_operations import federation_alert_export, lifecycle_alerts
@@ -60,6 +61,7 @@ app.include_router(cave_karst_router)
 app.include_router(regulatory_router)
 app.include_router(environmental_exposure_router)
 app.include_router(hydromet_router)
+app.include_router(drought_ops_router)
 
 # Single source of truth: server.backend.main.READING_VECTOR_REGISTRY (see its definition
 # for the full reasoning). Referencing it here rather than keeping a second hand-maintained
