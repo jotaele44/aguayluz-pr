@@ -4,32 +4,6 @@
   "validation_entrypoint": "validation_gates",
   "checks": [
     {
-      "id": "epa_waters_api_key_presence",
-      "diagnosability_class": "presence-only",
-      "category": "credential",
-      "severity_if_absent": "blocking",
-      "description": "EPA WATERS Services REST API key -- primary_source for this producer's water/wastewater asset and NHDPlus enrichment ingest.",
-      "check": {
-        "type": "env_var_presence",
-        "env_var": "EPA_WATERS_API_KEY"
-      },
-      "manifest_cross_check": "federation.json:source_truth.runtime_required_keys[0]",
-      "operator_action": "Obtain a key and set EPA_WATERS_API_KEY. Presence is verified here; validity is not -- an invalid key still shows as present."
-    },
-    {
-      "id": "neon_api_token_presence",
-      "diagnosability_class": "presence-only",
-      "category": "credential",
-      "severity_if_absent": "advisory",
-      "description": "NSF NEON API token, required only for scripts/ingest_neon_products.py (readings). NEON metadata (sites, products, availableMonths) needs no credential.",
-      "check": {
-        "type": "env_var_presence",
-        "env_var": "NEON_API_TOKEN"
-      },
-      "manifest_cross_check": "federation.json:source_truth.runtime_required_keys[1]",
-      "operator_action": "ingest_neon_products.py prints a skip notice and exits 0 when this is absent -- that is expected, not an error. An INVALID token also 403s exactly like a missing one; this check cannot tell the two apart, only that a value is set."
-    },
-    {
       "id": "miluma_waf_gated",
       "diagnosability_class": "not-automatable",
       "category": "waf-blocked",
