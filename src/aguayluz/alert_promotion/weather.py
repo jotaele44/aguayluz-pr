@@ -20,6 +20,7 @@ Pure functions only (no I/O, no wall-clock). Real T1 NWS data in, real alert out
 from __future__ import annotations
 
 import re
+from datetime import datetime, timezone
 from typing import Any
 
 from ..alerts import AlertEvent
@@ -87,6 +88,8 @@ def weather_alert(
     event: dict[str, Any],
     geo: dict[str, dict[str, Any]],
     index: AssetIndex | None = None,
+    *,
+    now: datetime | None = None,
 ) -> AlertEvent | None:
     """Project one NWS hazard service-event into a WEATHER_HAZARD AlertEvent."""
     index = index or AssetIndex()
@@ -97,6 +100,14 @@ def weather_alert(
     event_name = m.group(1).strip()
     if not event_name:
         return None
+    status = "closed" if " lifecycle=closed" in status_text else "active"
+    if event.get("end_time"):
+        try:
+            end = datetime.fromisoformat(str(event["end_time"]).replace("Z", "+00:00"))
+            if end.tzinfo is None or end <= (now or datetime.now(timezone.utc)):
+                status = "closed"
+        except ValueError:
+            status = "closed"
 
     sev_token = _SEVERITY_RE.search(status_text)
     severity = _apply_nws_severity(_base_severity(event_name), sev_token.group(1) if sev_token else None)
@@ -117,10 +128,10 @@ def weather_alert(
     uniq = event.get("event_id") or event.get("source_ref") or event_name
 
     return AlertEvent(
-        alert_id=f"AYL_ALR_{date}{WEATHER_MARKER}{_slug(uniq)}",
+        alert_id=f"AYL_ALR_{date}{WEATHER_MARKER}{_slug(uniq, limit=200)}",
         module_id="WEATHER_HAZARD",
         event_type="hazard",
-        status="active",
+        status=status,
         source_title=f"{event_name} — {areas[0]}",
         source_ref=event.get("source_ref") or "NWS",
         source_hash=event.get("source_hash"),
