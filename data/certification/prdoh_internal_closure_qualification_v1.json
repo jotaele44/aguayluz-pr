@@ -1,0 +1,54 @@
+{
+  "schema_version": "aguayluz.water_health.prdoh_internal_closure_qualification/v1",
+  "scope": "PRDOH 2025 drinking-water source family 10746 + 10747 + 10748",
+  "qualifying_pr": 366,
+  "qualifying_base_sha": "7d8b6bdb121670578977ac761529c1a6d4627c00",
+  "qualifying_head_sha": "b668e8877c208dacbc2fcb1ba73972f0e7f407ff",
+  "source_receipts": {
+    "10746": {
+      "sha256": "3488ca04e0ad90106caaa568059ee574fa099c3854bf11a3930db372391ff1bd",
+      "state": "FROZEN"
+    },
+    "10747": {
+      "sha256": "748529762de1b6661b5484957a7662bd233a37aaf371482cdc14bbf5ac584772",
+      "qualification_path": "data/certification/prdoh_10747_qualification_v1.json",
+      "state": "PRDOH_10747_STRUCTURAL_CERTIFIED"
+    },
+    "10748": {
+      "sha256": "9886fbed47e9f8a3564167034bedc6bc0a0d653c6f89d81d69f8101ccc3f2603",
+      "qualification_path": "data/certification/prdoh_10748_qualification_v1.json",
+      "state": "PRDOH_10748_STRUCTURAL_CERTIFIED"
+    }
+  },
+  "reconciliation_path": "data/certification/prdoh_internal_reconciliation_v1.json",
+  "source_page_arithmetic": {
+    "source_pages": 74,
+    "classified_or_frozen_pages": 74,
+    "unresolved_pages": 0,
+    "delta": 0
+  },
+  "source_table_fragment_arithmetic": {
+    "source_table_fragments": 585,
+    "accounted": 585,
+    "delta": 0
+  },
+  "material_residue": {
+    "fail": 0,
+    "open": 0,
+    "blocked": 0,
+    "unresolved": 0
+  },
+  "preserved_terminal_states": {
+    "source_internal_contradictions": 2,
+    "explained_reporting_scope_differences": 1,
+    "explained_nonadditive_source_representations": 1
+  },
+  "workflow_denominator": 16,
+  "workflow_state": "ALL_PASS_AT_QUALIFYING_HEAD",
+  "qualification_state": "PASS_EXACT_HEAD",
+  "certification_state": "PRDOH_INTERNAL_CLOSED",
+  "downstream_authority": {
+    "prdoh_to_sdwis_identity_revision_reconciliation": "UNLOCKED",
+    "rule": "PRDOH closure authorizes candidate generation and reconciliation against SDWIS but does not itself assert any PRDOH↔SDWIS identity, revision, equivalence, or completeness."
+  }
+}

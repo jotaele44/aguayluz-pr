@@ -1,0 +1,87 @@
+{
+  "schema_version": "aguayluz.water_health.prdoh_sdwis_reconciliation_epoch/v1",
+  "epoch_id": "WATER_HEALTH_PRDOH_SDWIS_RECONCILIATION_V1",
+  "authority_gate": {
+    "prdoh_internal_closure_path": "data/certification/prdoh_internal_closure_qualification_v1.json",
+    "prdoh_state": "PRDOH_INTERNAL_CLOSED",
+    "downstream_state": "UNLOCKED"
+  },
+  "frozen_sources": {
+    "prdoh_10747": {
+      "sha256": "748529762de1b6661b5484957a7662bd233a37aaf371482cdc14bbf5ac584772",
+      "state": "PRDOH_10747_STRUCTURAL_CERTIFIED"
+    },
+    "prdoh_10748": {
+      "sha256": "9886fbed47e9f8a3564167034bedc6bc0a0d653c6f89d81d69f8101ccc3f2603",
+      "state": "PRDOH_10748_STRUCTURAL_CERTIFIED"
+    },
+    "sdwis_national_snapshot": {
+      "zip_sha256": "4d92d5f46b423742d5fd608257dc63ef666a832d9211199c28434cd8f41dccb0",
+      "member_compressed_sha256": "c36c19cfe9c3fac2e219ac31d122ba7215bd8e523fc480283d269ecd70707662",
+      "member_uncompressed_sha256": "74f6f7b45ec37c5a6e7660da97e77558d500f95a1ed97147066bc3698a27ad5b",
+      "derived_pr_2025_csv_sha256": "22b465f6f3824ce84f1b329d4a590d7de5963cf793e3534fb6e54d394359d3d2"
+    }
+  },
+  "bounded_denominators": {
+    "prdoh_10748_identity_bearing_violation_rows": 129,
+    "prdoh_10748_anejo2_system_rows": 121,
+    "prdoh_10748_anejo2_distinct_pwsids": 121,
+    "sdwis_retained_rows": 3023,
+    "sdwis_excluded_rows": 15546420,
+    "sdwis_unresolved_rows": 1168,
+    "sdwis_source_rows": 15550611,
+    "sdwis_row_conservation_delta": 0
+  },
+  "reconciliation_planes": [
+    "SYSTEM",
+    "VIOLATION",
+    "SYSTEM_X_VIOLATION",
+    "REVISION",
+    "REPORTING_PERIOD"
+  ],
+  "required_cardinalities": [
+    "1:1",
+    "1:N",
+    "N:1",
+    "N:N",
+    "0:1",
+    "UNRESOLVED"
+  ],
+  "evidence_precedence": [
+    "STABLE_ID",
+    "AUTHORITATIVE_BINDING",
+    "CORROBORATED_COMPOSITE",
+    "REVISION_CONTINUITY",
+    "SPATIAL_TEMPORAL_CORROBORATION",
+    "HEURISTIC_DISCOVERY_ONLY"
+  ],
+  "terminal_states": [
+    "RESOLVED_RETAINED",
+    "RESOLVED_EXCLUDED",
+    "SUPERSEDED",
+    "CONTRADICTORY",
+    "UNRESOLVED"
+  ],
+  "hard_guardrails": [
+    "Do not coerce PRDOH four-digit PRASA PWS tokens into SDWIS seven-digit PWSIDs without authoritative mapping evidence.",
+    "Do not bind systems from normalized names alone.",
+    "Do not bind from equal row counts, proximity, or nearest-match ranking.",
+    "Reject stable-ID contradictions.",
+    "Preserve 1:N, N:1, and N:N revision relationships rather than forcing 1:1.",
+    "Do not coerce SDWIS literal '--->' to NULL without authoritative semantics.",
+    "Do not substitute ENFORCEMENT_ID for VIOLATION_ID.",
+    "Do not start the 463-control closure until candidate identity/revision sets are explicitly enumerated."
+  ],
+  "candidate_graph_state": "OPEN_EMPTY_BY_DESIGN",
+  "identity_claims_asserted": 0,
+  "revision_claims_asserted": 0,
+  "unresolved_material": [
+    "PRDOH_TO_SDWIS_SYSTEM_CANDIDATE_ENUMERATION",
+    "PRDOH_TO_SDWIS_VIOLATION_CANDIDATE_ENUMERATION",
+    "SDWIS_1168_SENTINEL_ZERO_RESIDUE_ADJUDICATION",
+    "SYSTEM_AND_VIOLATION_REVISION_GRAPH",
+    "SET_ALGEBRA_AT_SYSTEM_VIOLATION_REVISION_PERIOD_PLANES"
+  ],
+  "certification_state": "OPEN",
+  "next_gate": "ENUMERATE_COMPLETE_CANDIDATE_SETS_WITH_EXPLICIT_FALSIFIERS"
+}

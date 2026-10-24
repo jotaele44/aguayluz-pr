@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
   freeze-ucmr5-pr:
@@ -16,27 +17,41 @@ jobs:
         with:
           ref: ${{ github.head_ref || github.ref_name }}
 
-      - name: Download exact EPA UCMR5 state archive
+      - name: Download current and historical EPA UCMR5 manifestations
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          mkdir -p artifacts/pfas_ucmr5/raw artifacts/pfas_ucmr5/derived
+          mkdir -p artifacts/pfas_ucmr5/raw artifacts/pfas_ucmr5/derived artifacts/pfas_ucmr5/historical
           url='https://www.epa.gov/system/files/other-files/2023-08/ucmr5-occurrence-data-by-state.zip'
-          expected_archive_sha='4845eb3abf34d61d7d239e26a815c69b21e39d249840243d266274b5b5d73aaa'
           curl --fail --location --proto '=https' --tlsv1.2 \
             --retry 3 --retry-all-errors \
             --output artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip \
             "$url"
           test -s artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip
-          file artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip
           unzip -t artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip
+
+          curl --fail --location \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            --output artifacts/pfas_ucmr5/historical/artifact-9904286245.zip \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/9904286245/zip"
+          unzip -q artifacts/pfas_ucmr5/historical/artifact-9904286245.zip \
+            -d artifacts/pfas_ucmr5/historical/artifact
+          historical='artifacts/pfas_ucmr5/historical/artifact/raw/ucmr5-occurrence-data-by-state.zip'
+          test -s "$historical"
+          test "$(sha256sum "$historical" | cut -d' ' -f1)" = \
+            '4845eb3abf34d61d7d239e26a815c69b21e39d249840243d266274b5b5d73aaa'
+
+          python scripts/adjudicate_zip_manifestations.py \
+            "$historical" \
+            artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip \
+            --output artifacts/pfas_ucmr5/archive_manifestation_adjudication.json
+
           sha256sum artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip \
             > artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip.sha256
-          actual_archive_sha="$(cut -d' ' -f1 artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip.sha256)"
-          test "$actual_archive_sha" = "$expected_archive_sha" || {
-            echo "EPA UCMR5 archive manifestation drift: $actual_archive_sha" >&2
-            exit 1
-          }
           unzip -Z1 artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip \
             > artifacts/pfas_ucmr5/raw/archive-members.txt
 
@@ -55,8 +70,8 @@ jobs:
           archive = root / 'raw' / 'ucmr5-occurrence-data-by-state.zip'
           derived = root / 'derived'
           url = 'https://www.epa.gov/system/files/other-files/2023-08/ucmr5-occurrence-data-by-state.zip'
-          expected_member_sha = '4d72703e4fece5d5fb7b243c1bcd5a72e65c09bf79efbbc05b548c9fb19e7391'
-          expected_derived_sha = 'ac40d8d67f7343832e0b11d78c892e3a6cdd44fe4d0b0892407347d4400b80c5'
+          historical_member_sha = '4d72703e4fece5d5fb7b243c1bcd5a72e65c09bf79efbbc05b548c9fb19e7391'
+          historical_derived_sha = 'ac40d8d67f7343832e0b11d78c892e3a6cdd44fe4d0b0892407347d4400b80c5'
 
           def sha256_bytes(payload: bytes) -> str:
               return hashlib.sha256(payload).hexdigest()
@@ -74,8 +89,6 @@ jobs:
               payload = zf.read(member)
 
           member_sha = sha256_bytes(payload)
-          if member_sha != expected_member_sha:
-              raise SystemExit(f'UCMR5 M-W member manifestation drift: {member_sha}')
 
           selected_encoding = None
           for encoding in ('utf-8-sig', 'cp1252'):
@@ -97,8 +110,6 @@ jobs:
               raise SystemExit(f'PWSID field not found in {headers}')
 
           rows = [row for row in reader if str(row.get(pws_field) or '').upper().startswith('PR')]
-          if len(rows) != 21771:
-              raise SystemExit(f'Puerto Rico row-count drift: {len(rows)} != 21771')
 
           out_tsv = derived / 'ucmr5_pr.tsv'
           with out_tsv.open('w', encoding='utf-8', newline='') as handle:
@@ -107,14 +118,10 @@ jobs:
               writer.writerows(rows)
 
           derived_sha = sha256_bytes(out_tsv.read_bytes())
-          if derived_sha != expected_derived_sha:
-              raise SystemExit(f'Puerto Rico derived TSV drift: {derived_sha}')
 
           contaminant_field = next((h for h in headers if h.lower() == 'contaminant'), None)
           sign_field = next((h for h in headers if h.lower() == 'analyticalresultssign'), None)
           pws_ids = sorted({str(row[pws_field]) for row in rows})
-          if len(pws_ids) != 99:
-              raise SystemExit(f'Puerto Rico PWS cardinality drift: {len(pws_ids)} != 99')
           contaminants = Counter(str(row.get(contaminant_field) or '') for row in rows) if contaminant_field else Counter()
           signs = Counter(str(row.get(sign_field) or '') for row in rows) if sign_field else Counter()
 
@@ -128,6 +135,8 @@ jobs:
               'selected_member': member,
               'selected_member_encoding': selected_encoding,
               'selected_member_sha256': member_sha,
+              'historical_selected_member_sha256': historical_member_sha,
+              'selected_member_matches_historical': member_sha == historical_member_sha,
               'selected_member_size_bytes': len(payload),
               'headers': headers,
               'header_count': len(headers),
@@ -137,6 +146,8 @@ jobs:
               'contaminant_counts': dict(sorted(contaminants.items())),
               'analytical_result_sign_counts': dict(sorted(signs.items())),
               'derived_tsv_sha256': derived_sha,
+              'historical_derived_tsv_sha256': historical_derived_sha,
+              'derived_tsv_matches_historical': derived_sha == historical_derived_sha,
               'selection_rule': 'PWSID starts with PR',
               'semantic_guard': 'UCMR occurrence results are not compliance determinations.',
           }
@@ -152,7 +163,17 @@ jobs:
               'derived_tsv_sha256': manifest['derived_tsv_sha256'],
           }, indent=2, sort_keys=True))
 
+      - name: Adjudicate Puerto Rico subset
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/adjudicate_ucmr5_pr_subset.py \
+            artifacts/pfas_ucmr5/historical/artifact/derived/ucmr5_pr.tsv \
+            artifacts/pfas_ucmr5/derived/ucmr5_pr.tsv \
+            --output artifacts/pfas_ucmr5/pr_subset_adjudication.json
+
       - name: Upload frozen EPA evidence bundle
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: pfas-ucmr5-pr-evidence
@@ -160,14 +181,40 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
+      - name: Enforce Puerto Rico scope policy
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+
+          archive = json.loads(Path('artifacts/pfas_ucmr5/archive_manifestation_adjudication.json').read_text())
+          subset = json.loads(Path('artifacts/pfas_ucmr5/pr_subset_adjudication.json').read_text())
+          archive_state = archive['classification']
+          subset_state = subset['classification']
+          if archive_state in {'BYTE_IDENTICAL', 'PURE_RECOMPRESSION'}:
+              state = 'PASS_ARCHIVE_EQUIVALENT'
+          elif archive_state == 'DISTINCT_PAYLOADS' and subset_state in {
+              'BYTE_IDENTICAL', 'LOGICALLY_IDENTICAL_ROW_MULTISET'
+          }:
+              state = 'PASS_PR_SCOPE_NATIONAL_MANIFESTATION_DISTINCT'
+          else:
+              raise SystemExit(
+                  f'PFAS manifestation remains OPEN: archive={archive_state} subset={subset_state}'
+              )
+          print(json.dumps({
+              'state': state,
+              'archive_classification': archive_state,
+              'pr_subset_classification': subset_state,
+              'pr_row_multiset': subset.get('row_multiset'),
+              'pr_pwsid_set': subset.get('pwsid_set'),
+          }, indent=2, sort_keys=True))
+
       - name: Materialize complete Puerto Rico denominator on source branch
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         shell: bash
         run: |
           set -euo pipefail
           cp artifacts/pfas_ucmr5/derived/ucmr5_pr.tsv data/pfas_ucmr5_pr.tsv
-          actual="$(sha256sum data/pfas_ucmr5_pr.tsv | cut -d' ' -f1)"
-          test "$actual" = 'ac40d8d67f7343832e0b11d78c892e3a6cdd44fe4d0b0892407347d4400b80c5'
           git add -f data/pfas_ucmr5_pr.tsv
           if git diff --cached --quiet; then
             echo 'Canonical UCMR5 Puerto Rico denominator already materialized.'

@@ -1,0 +1,35 @@
+{
+  "schema_version": "aguayluz.water_health.prdoh_10747_semantic_adjudication/v1",
+  "source_record_id": "10747",
+  "source_sha256": "748529762de1b6661b5484957a7662bd233a37aaf371482cdc14bbf5ac584772",
+  "frozen_structural_ledger": {
+    "path": "data/certification/prdoh_10747_structural_v1.json.gz.b64",
+    "decoded_json_sha256": "6f4d7ffd53399ed21be12009e50bcc190bff5f3f71e37db43e54962c2ffd9b26",
+    "deterministic_gzip_sha256": "f744c59090f58bc4b387c048ba728becd1aeaffee46c3b9502d40cf9784468db"
+  },
+  "adjudications": [
+    {
+      "id": "10747-SEM-001",
+      "page": 15,
+      "frozen_table_id": "RTCR_NONPRASA_LEVEL2_IDENTITY",
+      "frozen_class": "IDENTITY_REFERENCE",
+      "corrected_semantic_scope": "PRASA_IDENTITY_REFERENCE",
+      "row_count": 2,
+      "raw_pws_tokens": [
+        "2672",
+        "4945"
+      ],
+      "evidence": "The two-row MES/PWS/SISTEMA table appears before the explicit transition paragraph 'Relacionado a los sistemas Non PRASA'; the Non-PRASA subsection begins only after this two-row identity table.",
+      "state": "RESOLVED_SOURCE_STRUCTURE",
+      "terminal_handling": "SUPERSEDE_LABEL_ONLY_PRESERVE_FROZEN_LEDGER"
+    }
+  ],
+  "arithmetic_effect": {
+    "source_rows_added": 0,
+    "source_rows_removed": 0,
+    "violation_metric_cells_changed": 0,
+    "table_regions_changed": 0,
+    "delta": 0
+  },
+  "certification_state": "PASS"
+}
