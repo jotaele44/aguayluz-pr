@@ -48,8 +48,9 @@ corpus is real public data, with some sources external or point-in-time.
   `data/neon_availability.jsonl` (`scripts/ingest_neon.py`, keyless). Publication
   changes promote to alerts and activate the `TELECOM_SCADA` module. Stream
   discharge / surface-water chemistry readings
-  (`scripts/ingest_neon_products.py`) need `NEON_API_TOKEN` — NEON's `/api/v0/data`
-  endpoint returns 403 anonymously, so that step skips and exits 0 without one.
+  (`scripts/ingest_neon_products.py`) need a NEON token, which this repo does not
+  configure — NEON's `/api/v0/data` endpoint returns 403 anonymously, so that step skips
+  and exits 0.
   See [`docs/NEON_INTEGRATION.md`](docs/NEON_INTEGRATION.md).
 - USGS discrete water-quality samples for the Laguna Cartagena basin
   (`scripts/ingest_usgs_samples.py`, keyless) — 120 results across the lake, its outflow
