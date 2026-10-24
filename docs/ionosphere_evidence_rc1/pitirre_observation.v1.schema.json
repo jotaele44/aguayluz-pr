@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pitirre-pr.local/schemas/pitirre_observation.v1.schema.json",
+  "title": "PITIRRE Lossless Observation Envelope v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "observation_id",
+    "domain",
+    "subdomain",
+    "network_type",
+    "event_time_raw",
+    "source_ref",
+    "spatial",
+    "evidence",
+    "payload",
+    "adapter"
+  ],
+  "properties": {
+    "schema_version": {"const": "pitirre-observation-v0.1"},
+    "observation_id": {"type": "string", "minLength": 1},
+    "domain": {"enum": ["AIR", "LAND", "WATER", "SPACE"]},
+    "subdomain": {"type": ["string", "null"]},
+    "network_type": {"type": ["string", "null"]},
+    "event_time_raw": {"type": "string", "minLength": 1},
+    "source_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "source_type_raw",
+        "source_record_id",
+        "lineage_id"
+      ],
+      "properties": {
+        "source_id": {"type": "string", "minLength": 1},
+        "source_type_raw": {},
+        "source_record_id": {},
+        "lineage_id": {}
+      }
+    },
+    "spatial": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "lat", "lon", "geometry_status_raw"],
+      "properties": {
+        "mode": {"enum": ["SOURCE_POINT", "GEOMETRY_REF", "NONE"]},
+        "lat": {"type": ["number", "null"], "minimum": -90, "maximum": 90},
+        "lon": {"type": ["number", "null"], "minimum": -180, "maximum": 180},
+        "geometry_status_raw": {}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_tier_raw",
+        "confidence_raw",
+        "synthetic",
+        "operational_use_allowed"
+      ],
+      "properties": {
+        "evidence_tier_raw": {},
+        "confidence_raw": {},
+        "synthetic": {"type": ["boolean", "null"]},
+        "operational_use_allowed": {"type": ["boolean", "null"]}
+      }
+    },
+    "payload": {
+      "type": "object",
+      "description": "Complete source-domain row preserved without field deletion or normalization."
+    },
+    "adapter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["adapter_version", "legacy_contract"],
+      "properties": {
+        "adapter_version": {"const": "pitirre-observation-adapter-v0.1"},
+        "legacy_contract": {
+          "enum": ["airspace_observation", "maritime_baseline", "spacetrack_normalized_gp"]
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"network_type": {"const": "ROAD"}},
+        "required": ["network_type"]
+      },
+      "then": {
+        "properties": {
+          "domain": {"const": "LAND"},
+          "subdomain": {"const": "TRANSPORT"}
+        }
+      }
+    }
+  ]
+}
