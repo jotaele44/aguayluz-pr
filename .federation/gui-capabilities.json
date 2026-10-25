@@ -1528,7 +1528,7 @@
       "classification": "internal",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Offline-first Puerto Rico Department of Health annual drinking-water artifact freeze and EPA SDWIS reconciliation feeding the existing Environmental Exposure hazard plane. Source-freeze, immutable-residue adjudication, SDWIS inventory, and PRDOH 10747/10748 structural validators are CI/provenance infrastructure rather than operator features. User consumption remains on the existing Environmental Exposure hazard surface; source-internal contradictions are preserved rather than repaired.",
+      "rationale": "Offline-first Puerto Rico Department of Health annual drinking-water artifact freeze and EPA SDWIS reconciliation feeding the existing Environmental Exposure hazard plane. Source-freeze, PRDOH structural/internal closure, SDWIS sentinel adjudication, and PRDOH↔SDWIS candidate/revision/set-algebra validators are CI/provenance infrastructure rather than operator features. Canonical identity remains stable-ID-only; shorthand and OCR-assisted composites remain discovery-only.",
       "backend": {
         "files": [
           "src/aguayluz/hazard_adapters/sdwa_drinking_water.py"
@@ -1548,7 +1548,8 @@
           "scripts/freeze_sdwis_pr_pws_inventory.py",
           "scripts/validate_prdoh_10748_structural.py",
           "scripts/validate_prdoh_10747_structural.py",
-          "scripts/validate_prdoh_internal_reconciliation.py"
+          "scripts/validate_prdoh_internal_reconciliation.py",
+          "scripts/validate_prdoh_sdwis_reconciliation.py"
         ],
         "symbols": [
           "scripts/ingest_salud_sdwis_water.py:classify_sdwis_row",
@@ -1591,7 +1592,20 @@
           "scripts/validate_prdoh_internal_reconciliation.py:bind_prdoh_pws_token",
           "scripts/validate_prdoh_internal_reconciliation.py:validate_receipt",
           "scripts/validate_prdoh_internal_reconciliation.py:validate_bound_sources",
-          "scripts/validate_prdoh_internal_reconciliation.py:main"
+          "scripts/validate_prdoh_internal_reconciliation.py:main",
+          "scripts/validate_prdoh_sdwis_reconciliation.py:load_frozen_graph",
+          "scripts/validate_prdoh_sdwis_reconciliation.py:bind_system",
+          "scripts/validate_prdoh_sdwis_reconciliation.py:bind_violation",
+          "scripts/validate_prdoh_sdwis_reconciliation.py:composite_disposition",
+          "scripts/validate_prdoh_sdwis_reconciliation.py:arrow_disposition",
+          "scripts/validate_prdoh_sdwis_reconciliation.py:enforce_join_conservation",
+          "scripts/validate_prdoh_sdwis_reconciliation.py:validate_sentinel",
+          "scripts/validate_prdoh_sdwis_reconciliation.py:validate_system_graph",
+          "scripts/validate_prdoh_sdwis_reconciliation.py:validate_violation_graph",
+          "scripts/validate_prdoh_sdwis_reconciliation.py:validate_revision_graph",
+          "scripts/validate_prdoh_sdwis_reconciliation.py:validate_five_plane",
+          "scripts/validate_prdoh_sdwis_reconciliation.py:validate_candidate",
+          "scripts/validate_prdoh_sdwis_reconciliation.py:main"
         ]
       },
       "tests": {
@@ -1602,7 +1616,8 @@
           "tests/test_freeze_sdwis_pr_pws_inventory.py",
           "tests/test_prdoh_10748_structural.py",
           "tests/test_prdoh_10747_structural.py",
-          "tests/test_prdoh_internal_reconciliation.py"
+          "tests/test_prdoh_internal_reconciliation.py",
+          "tests/test_prdoh_sdwis_reconciliation.py"
         ]
       }
     },
@@ -1834,4 +1849,4 @@
     }
   ],
   "exceptions": []
-}
+}\n
