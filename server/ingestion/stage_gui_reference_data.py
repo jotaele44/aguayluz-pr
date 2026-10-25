@@ -197,7 +197,11 @@ def main() -> int:
 
             for record, payload in sources:
                 destination = data_dir / Path(str(record["path"])).name
-                if destination.exists() and destination.read_bytes() != payload:
+                if destination.exists() and (
+                    destination.is_symlink()
+                    or not destination.is_file()
+                    or destination.read_bytes() != payload
+                ):
                     raise ValueError(f"existing staged file conflicts; refusing overwrite: {destination.name}")
 
             # Preflight above is complete before any copy. Create only absent files.
@@ -212,6 +216,8 @@ def main() -> int:
                     except FileExistsError:
                         if destination.is_symlink() or destination.read_bytes() != payload:
                             raise ValueError(f"concurrent staged-file conflict: {destination.name}")
+                if destination.is_symlink() or not destination.is_file():
+                    raise ValueError(f"staged destination is not a regular file: {destination.name}")
                 staged = destination.read_bytes()
                 if _sha256(staged) != record["staged_sha256"] or staged != payload:
                     raise ValueError(f"staged byte parity failed: {destination.name}")
