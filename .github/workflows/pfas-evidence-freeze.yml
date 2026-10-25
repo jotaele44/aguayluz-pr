@@ -33,12 +33,60 @@ jobs:
           sha256sum artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip \
             > artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip.sha256
           actual_archive_sha="$(cut -d' ' -f1 artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip.sha256)"
-          test "$actual_archive_sha" = "$expected_archive_sha" || {
-            echo "EPA UCMR5 archive manifestation drift: $actual_archive_sha" >&2
-            exit 1
-          }
           unzip -Z1 artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip \
             > artifacts/pfas_ucmr5/raw/archive-members.txt
+          if test "$actual_archive_sha" != "$expected_archive_sha"; then
+            echo "EPA UCMR5 archive manifestation drift: $actual_archive_sha" >&2
+            EXPECTED_ARCHIVE_SHA="$expected_archive_sha" ACTUAL_ARCHIVE_SHA="$actual_archive_sha" python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import zipfile
+
+          raw = pathlib.Path("artifacts/pfas_ucmr5/raw")
+          archive = raw / "ucmr5-occurrence-data-by-state.zip"
+          members = []
+          with zipfile.ZipFile(archive) as zf:
+              for info in zf.infolist():
+                  digest = hashlib.sha256()
+                  with zf.open(info) as member:
+                      while True:
+                          chunk = member.read(1024 * 1024)
+                          if not chunk:
+                              break
+                          digest.update(chunk)
+                  members.append({
+                      "path": info.filename,
+                      "compressed_size": info.compress_size,
+                      "uncompressed_size": info.file_size,
+                      "crc32": f"{info.CRC:08x}",
+                      "sha256": digest.hexdigest(),
+                  })
+
+          report = {
+              "schema_version": "aguayluz.pfas.archive-drift/v1",
+              "classification": "UNRESOLVED_MEMBER_COMPARISON_REQUIRED",
+              "expected_archive_sha256": os.environ["EXPECTED_ARCHIVE_SHA"],
+              "actual_archive_sha256": os.environ["ACTUAL_ARCHIVE_SHA"],
+              "archive_size_bytes": archive.stat().st_size,
+              "member_count": len(members),
+              "members": members,
+          }
+          (raw / "archive-payload-manifest.json").write_text(
+              json.dumps(report, indent=2, sort_keys=True) + "\\n",
+              encoding="utf-8",
+          )
+          print(json.dumps({
+              "classification": report["classification"],
+              "expected_archive_sha256": report["expected_archive_sha256"],
+              "actual_archive_sha256": report["actual_archive_sha256"],
+              "member_count": len(members),
+              "member_manifest": str(raw / "archive-payload-manifest.json"),
+          }, indent=2, sort_keys=True))
+          PY
+            exit 1
+          fi
 
       - name: Extract Puerto Rico denominator and provenance
         shell: python
@@ -153,6 +201,7 @@ jobs:
           }, indent=2, sort_keys=True))
 
       - name: Upload frozen EPA evidence bundle
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: pfas-ucmr5-pr-evidence
