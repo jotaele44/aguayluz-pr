@@ -14,7 +14,7 @@ import sys
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator
+from collections.abc import Iterator
 
 if os.name == "nt":
     import msvcrt
@@ -213,9 +213,9 @@ def main() -> int:
                             handle.write(payload)
                             handle.flush()
                             os.fsync(handle.fileno())
-                    except FileExistsError:
+                    except FileExistsError as exc:
                         if destination.is_symlink() or destination.read_bytes() != payload:
-                            raise ValueError(f"concurrent staged-file conflict: {destination.name}")
+                            raise ValueError(f"concurrent staged-file conflict: {destination.name}") from exc
                 if destination.is_symlink() or not destination.is_file():
                     raise ValueError(f"staged destination is not a regular file: {destination.name}")
                 staged = destination.read_bytes()
@@ -228,9 +228,9 @@ def main() -> int:
                         handle.write(receipt_bytes)
                         handle.flush()
                         os.fsync(handle.fileno())
-                except FileExistsError:
+                except FileExistsError as exc:
                     if receipt_path.is_symlink() or receipt_path.read_bytes() != receipt_bytes:
-                        raise ValueError("concurrent staging receipt conflict")
+                        raise ValueError("concurrent staging receipt conflict") from exc
             if receipt_path.is_symlink() or receipt_path.read_bytes() != receipt_bytes:
                 raise ValueError("staging receipt failed final byte verification")
 
