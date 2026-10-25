@@ -1,0 +1,119 @@
+{
+  "schema_version": "aguayluz.water_health.control_463_epoch/v2",
+  "supersedes": "data/certification/water_health_463_control_epoch_v1.json",
+  "supersession_reason": "The frozen 2025 PRDOH annual report establishes the 463 control as of September 2025; current 2026 web-page counts are later context and cannot define the report-period identity universe.",
+  "epoch_id": "WATER_HEALTH_463_CONTROL_V2",
+  "upstream_gate": {
+    "qualification_path": "data/certification/prdoh_sdwis_reconciliation_qualification_v1.json",
+    "state": "WATER_HEALTH_PRDOH_SDWIS_RECONCILIATION_CERTIFIED"
+  },
+  "authoritative_report_period_control": {
+    "authority": "Puerto Rico Department of Health, Sección de Agua Potable",
+    "source_record_id": "10747",
+    "source_sha256": "748529762de1b6661b5484957a7662bd233a37aaf371482cdc14bbf5ac584772",
+    "source_freeze_artifact_id": 12607297394,
+    "source_freeze_artifact_digest": "sha256:9c984fc1c5c96e1d18f251deb00e9446e7f9d589a448e7fd78538cab931b2b98",
+    "report_period": "2025",
+    "inventory_as_of": "2025-09",
+    "source_visible_statement": "A septiembre de 2025, la Sección de Agua Potable regulaba 463 sistemas de agua públicos, con una población estimada de 3.3M de habitantes, según registrado en nuestro inventario.",
+    "total_systems": 463,
+    "prasa_systems": 160,
+    "non_prasa_systems": 303,
+    "non_prasa_regulatory_types": {
+      "community_cws": 241,
+      "non_transient_non_community_ntncws": 54,
+      "transient_non_community_tncws": 8,
+      "non_community_total": 62,
+      "arithmetic_delta": 0
+    },
+    "treatment_status_across_non_prasa": {
+      "with_treatment": 241,
+      "without_treatment": 62,
+      "total": 303,
+      "arithmetic_delta": 0
+    },
+    "arithmetic": {
+      "prasa_plus_non_prasa": 463,
+      "non_prasa_type_sum": 303,
+      "delta": 0
+    },
+    "state": "AUTHORITATIVE_COUNT_AND_CLASS_BREAKDOWN_PASS"
+  },
+  "later_current_web_context": {
+    "authority": "Puerto Rico Department of Health program page",
+    "page_revision_date": "2026-10-08",
+    "total_systems": 463,
+    "prasa_systems": 160,
+    "non_prasa_systems": 303,
+    "wording": "241 community systems and 62 private systems",
+    "state": "LATER_CONTEXT_NOT_REPORT_PERIOD_MEMBERSHIP_AUTHORITY",
+    "note": "The 2025 report provides the more precise regulatory type split: 241 CWS + 54 NTNCWS + 8 TNCWS = 303. The current page's 62 'private' wording is retained as a distinct later manifestation rather than rewritten into the 2025 type table."
+  },
+  "epa_historical_comparator": {
+    "required_snapshot": "2025Q3",
+    "live_latest_member_contains_2025Q3": false,
+    "live_latest_member_state": "HISTORICAL_SNAPSHOT_NOT_PRESENT",
+    "historical_quarter_manifestation_state": "NOT_ACQUIRED",
+    "rule": "Do not reconstruct 2025Q3 membership from 2026Q3 rows using FIRST_REPORTED_DATE, PWS_DEACTIVATION_DATE, names, prefixes, or count arithmetic."
+  },
+  "epa_2026q3_context": {
+    "active_systems": 464,
+    "latest_rows": 1003,
+    "active_csv_sha256": "bc45ce15fca9f42a1d4ef7743fdfa23209944b149fdc808faccd4b95f549c1fb",
+    "workflow_artifact_id": 12525837409,
+    "workflow_artifact_digest": "sha256:ad460a7178c48801ec3741bbea848df2803fbddc30a01d095bde24b2be01ecba",
+    "count_delta_vs_2025_prdoh_control": 1,
+    "state": "CROSS_PERIOD_CONTEXT_NOT_ADJUDICATIVE"
+  },
+  "diagnostic_only": {
+    "epa_2026q3_active_prefix_counts": {
+      "PR000_prefix": 163,
+      "other_PR_prefix": 301
+    },
+    "epa_2026q3_PR000_owner_type_counts": {
+      "L": 161,
+      "P": 2
+    },
+    "noncanonical_findings": [
+      "PR000 prefix does not reproduce the PRDOH PRASA denominator of 160.",
+      "OWNER_TYPE_CODE does not reproduce the PRDOH PRASA/Non-PRASA partition.",
+      "PRASA-associated phone metadata does not reproduce 160 and also appears on Non-PR000 systems.",
+      "Current 2026 lifecycle dates cannot reconstruct a missing 2025Q3 quarterly snapshot without assuming activation semantics not established by the source."
+    ],
+    "canonical_bindings_asserted": 0
+  },
+  "acquisition_state": {
+    "prdoh_public_program_page": "PASS_COUNT_ONLY_NO_MEMBER_ROSTER",
+    "prdoh_2025_annual_report": "PASS_COUNT_AND_CLASS_BREAKDOWN_NO_FULL_MEMBER_ROSTER",
+    "prdoh_2025_annex": "PASS_VIOLATOR_AND_SYSTEM_SUBSETS_ONLY_NO_FULL_463_ROSTER",
+    "puerto_rico_open_data_search": "NO_AUTHORITATIVE_MEMBER_ROSTER_FOUND",
+    "epa_live_latest_download": "PASS_2026Q3_ONLY",
+    "epa_live_download_directory": "NO_NAMED_2025Q3_ARCHIVE_EXPOSED",
+    "epa_historical_2025q3_snapshot": "OPEN_NOT_ACQUIRED"
+  },
+  "membership_control": {
+    "source_members_required": 463,
+    "source_members_enumerated": 0,
+    "reconciled": 0,
+    "explained_difference": 0,
+    "unresolved": 463,
+    "delta": 0,
+    "state": "BLOCKED_AUTHORITATIVE_2025_09_MEMBER_ROSTER_OR_EQUIVALENT_CROSSWALK_NOT_ACQUIRED"
+  },
+  "hard_guardrails": [
+    "The 463 certification universe is September 2025.",
+    "Do not use the October 2026 PRDOH page as a member-level substitute for the September 2025 inventory.",
+    "Do not select 463 of EPA 2026Q3's 464 active systems by deletion.",
+    "Do not infer PRASA from PWSID prefix, owner code, phone, name, geography, or count equality.",
+    "Do not reconstruct EPA 2025Q3 membership from current lifecycle fields unless EPA supplies an authoritative historical snapshot or documented reconstruction contract.",
+    "Certification requires 463/463 member enumeration from PRDOH authority or an equivalent authoritative September-2025 crosswalk."
+  ],
+  "required_next_evidence": [
+    "PRDOH September-2025 463-member inventory with PWSID or another stable system identifier, or an authoritative crosswalk sufficient to enumerate it",
+    "or EPA SDWIS 2025Q3 PWS quarterly snapshot plus PRDOH authority evidence sufficient to classify 160 PRASA and 303 Non-PRASA member-by-member",
+    "per-member type/class evidence reproducing 241 CWS + 54 NTNCWS + 8 TNCWS",
+    "accepted/rejected/falsifier ledger for all 463 PRDOH members against the historical EPA comparator"
+  ],
+  "control_state": "OPEN_BLOCKED_MEMBERSHIP_ENUMERATION",
+  "certification_state": "OPEN"
+}
