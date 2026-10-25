@@ -12,7 +12,7 @@ SPEC.loader.exec_module(M)
 
 
 def test_frozen_reconciliation_passes():
-    assert M.main() == 0
+    assert M.main([]) == 0
 
 
 def test_f01_same_name_different_id_denied():
