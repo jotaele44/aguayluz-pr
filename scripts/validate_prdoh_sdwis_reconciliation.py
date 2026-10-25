@@ -211,7 +211,7 @@ def validate_five_plane(doc: dict[str, Any]) -> None:
     if sys["intersection"] + sys["sdwis_only"] != 305:
         raise ValueError("SYSTEM SDWIS conservation failure")
     sxv = doc["planes"]["SYSTEM_X_VIOLATION"]
-    if sum(sxv["terminal_states"].values()) != sxv["prdoh_rows"] != 129:
+    if sum(sxv["terminal_states"].values()) != sxv["prdoh_rows"] or sxv["prdoh_rows"] != 129:
         raise ValueError("SYSTEM_X_VIOLATION arithmetic failure")
     vio = doc["planes"]["VIOLATION"]
     if vio["intersection_by_shared_stable_violation_id"] != 0:
@@ -229,9 +229,9 @@ def validate_candidate(doc: dict[str, Any]) -> None:
         raise ValueError("SDWIS unresolved residue remains")
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.parse_args()
+    parser.parse_args(argv)
     system = load_frozen_graph(SYSTEM_GRAPH, "system")
     violation = load_frozen_graph(VIOLATION_GRAPH, "violation")
     revision = load_frozen_graph(REVISION_GRAPH, "revision")
