@@ -12,9 +12,9 @@ import os
 import subprocess
 import sys
 import tempfile
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from collections.abc import Iterator
 
 if os.name == "nt":
     import msvcrt
