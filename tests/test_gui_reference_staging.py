@@ -68,7 +68,11 @@ class GuiReferenceStagingTests(unittest.TestCase):
             self.assertEqual(entry["source_sha256"], digest)
             self.assertEqual(entry["staged_sha256"], digest)
             self.assertEqual(entry["bytes"], len(source.read_bytes()))
-            self.assertTrue(entry["git_blob_sha"])
+            expected_blob = subprocess.check_output(
+                ["git", "-C", str(ROOT), "rev-parse", f"HEAD:{entry['path']}"],
+                text=True,
+            ).strip()
+            self.assertEqual(entry["git_blob_sha"], expected_blob)
 
     def test_repeated_staging_is_idempotent(self):
         first = self.run_stage()
