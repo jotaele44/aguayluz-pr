@@ -1,7 +1,10 @@
 from fastapi.testclient import TestClient
 from server.backend import main as legacy
 from server.backend.app import app
-from server.backend.food_resilience_api import load_food_resilience_contract
+from server.backend.food_resilience_api import (
+    _latest_metric,
+    load_food_resilience_contract,
+)
 
 client = TestClient(app)
 
@@ -88,3 +91,27 @@ def test_phase1_contract_metrics_match_canonical_registry():
         assert row["kind"] == kind
         assert row["metric"] == metric
         assert metric in legacy.READING_VECTOR_REGISTRY[kind]["metrics"]
+
+
+def test_multisite_snapshot_withholds_arbitrary_station_value(tmp_path, monkeypatch):
+    path = tmp_path / "readings.jsonl"
+    path.write_text(
+        "\n".join(
+            [
+                '{"metric":"streamflow","site_no":"A","observed_date":"2026-10-25","value":10,"unit":"ft3/s","source_ref":"a"}',
+                '{"metric":"streamflow","site_no":"B","observed_date":"2026-10-25","value":20,"unit":"ft3/s","source_ref":"b"}',
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setitem(legacy.READINGS_FILES, "food_test_multisite", path)
+
+    signal = _latest_metric("food_test_multisite", "streamflow", 3)
+
+    assert signal["available"] is True
+    assert signal["spatial_scope"] == "MULTI_SITE_SNAPSHOT"
+    assert signal["record_count"] == 2
+    assert signal["site_count"] == 2
+    assert signal["value"] is None
+    assert signal["source_ref"] is None
