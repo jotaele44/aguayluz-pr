@@ -15,6 +15,9 @@ def test_food_state_is_phase1_and_higher_phase_metrics_are_locked():
     state = response.json()
     assert state['vector_id'] == 'FOOD_SYSTEM_RESILIENCE'
     assert state['activation_phase'] == 1
+    assert state['overall_state'] == 'UNKNOWN'
+    assert state['phase1_warning_state'] in {'UNKNOWN', 'NORMAL', 'WATCH', 'ELEVATED', 'SEVERE', 'CRITICAL'}
+    assert 'not a certified food-resilience score' in state['state_semantics']
     assert state['metrics']['dynamic_coverage']['value'] is None
     assert state['metrics']['dynamic_coverage']['availability_state'] == 'MODEL_UNAVAILABLE'
     assert state['metrics']['robust_coverage_p50']['value'] is None
