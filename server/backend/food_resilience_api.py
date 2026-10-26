@@ -66,9 +66,19 @@ def _freshness(observed: Any, max_age_days: int) -> str:
     return "STALE"
 
 
-def _latest_metric(kind: str, metric: str, max_age_days: int) -> dict[str, Any]:
+def _latest_metric(
+    kind: str,
+    metric: str,
+    max_age_days: int,
+    parameter_code: str | None = None,
+) -> dict[str, Any]:
     path = legacy.READINGS_FILES.get(kind)
-    rows = [r for r in _read_jsonl(path) if r.get("metric") == metric]
+    rows = [
+        r
+        for r in _read_jsonl(path)
+        if r.get("metric") == metric
+        and (parameter_code is None or r.get("parameter_code") == parameter_code)
+    ]
     if not rows:
         return {
             "available": False,
@@ -212,11 +222,15 @@ def phase1_signals() -> list[dict[str, Any]]:
         "FOOD.P1.DROUGHT_CLASS": _drought_signal(),
         "FOOD.P1.RAINFALL_30D": {
             "signal_id": "FOOD.P1.RAINFALL_30D", "node_id": "WEATHER",
-            **_latest_metric("precipitation", "precipitation_pct_normal_30d", 40), "evidence_state": "FACT"
+            **_latest_metric(
+                "precipitation", "precipitation_pct_normal", 40, parameter_code="30d"
+            ), "evidence_state": "FACT"
         },
         "FOOD.P1.RAINFALL_90D": {
             "signal_id": "FOOD.P1.RAINFALL_90D", "node_id": "WEATHER",
-            **_latest_metric("precipitation", "precipitation_pct_normal_90d", 100), "evidence_state": "FACT"
+            **_latest_metric(
+                "precipitation", "precipitation_pct_normal", 100, parameter_code="90d"
+            ), "evidence_state": "FACT"
         },
         "FOOD.P1.STREAMFLOW": {
             "signal_id": "FOOD.P1.STREAMFLOW", "node_id": "SURFACE_WATER",
