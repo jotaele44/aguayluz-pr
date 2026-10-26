@@ -29,6 +29,18 @@ const VIEW = {
       availability_state: 'AVAILABLE',
     },
     {
+      signal_id: 'FOOD.P1.RAINFALL_30D',
+      node_id: 'WEATHER',
+      state: 'UNKNOWN',
+      freshness: 'FRESH',
+      observed_date: '2026-08-25',
+      value: null,
+      unit: null,
+      site_count: 3,
+      spatial_scope: 'MULTI_SITE_SNAPSHOT',
+      availability_state: 'AVAILABLE',
+    },
+    {
       signal_id: 'FOOD.P1.PORT_STATUS',
       node_id: 'PORTS',
       state: 'UNKNOWN',
@@ -89,6 +101,7 @@ describe('FoodResiliencePage', () => {
     expect(await screen.findByRole('heading', { name: 'Food System Resilience' })).toBeInTheDocument()
     expect(screen.getByText('Phase 1 — observable warning indicators')).toBeInTheDocument()
     expect(screen.getByText('FOOD.P1.DROUGHT_CLASS')).toBeInTheDocument()
+    expect(screen.getByText('3 sites · value withheld')).toBeInTheDocument()
     expect(screen.getByText('Phase 2 — Vector A baseline ledger')).toBeInTheDocument()
     expect(screen.getByText('7602')).toBeInTheDocument()
     expect(screen.getByText(/Phase 3 · MODEL_UNAVAILABLE/)).toBeInTheDocument()
