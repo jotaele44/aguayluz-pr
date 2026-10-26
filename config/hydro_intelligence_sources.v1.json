@@ -1,0 +1,97 @@
+{
+  "schema_version": "aguayluz.hydro-intelligence.source-registry/v1",
+  "authority": "aguayluz-pr",
+  "promotion_policy": "PASS_ONLY",
+  "data_planes": [
+    "RAW",
+    "NORMALIZED",
+    "CANONICAL"
+  ],
+  "source_families": [
+    {
+      "source_id": "eia_860m",
+      "authority": "US EIA",
+      "index_url": "https://www.eia.gov/electricity/data/eia860m/",
+      "artifact_type": "xlsx",
+      "discovery_interval_hours": 24,
+      "periodicity": "monthly",
+      "identity_granularity": "plant+generator",
+      "ingest_role": "inventory_capacity_status",
+      "source_priority": "T1",
+      "raw_byte_required": true,
+      "certification": "BLOCKED_UNTIL_PARSED"
+    },
+    {
+      "source_id": "eia_923",
+      "authority": "US EIA",
+      "index_url": "https://www.eia.gov/electricity/data/eia923/",
+      "artifact_type": "zip",
+      "discovery_interval_hours": 24,
+      "periodicity": "monthly",
+      "identity_granularity": "plant+prime_mover_as_published",
+      "ingest_role": "actual_generation_mwh",
+      "source_priority": "T1",
+      "raw_byte_required": true,
+      "certification": "BLOCKED_UNTIL_PARSED"
+    },
+    {
+      "source_id": "luma_bps_daily",
+      "authority": "LUMA Energy",
+      "index_url": "https://lumapr.com/monitoreo-de-bps/",
+      "artifact_type": "pdf",
+      "discovery_interval_hours": 24,
+      "periodicity": "daily",
+      "identity_granularity": "operational_unit",
+      "ingest_role": "availability_outage_status",
+      "source_priority": "T1",
+      "raw_byte_required": true,
+      "certification": "BLOCKED_UNTIL_RENDERED_CELL_REPLAY",
+      "date_fields": [
+        "cms_slug_date",
+        "cms_title_date",
+        "pdf_filename_date",
+        "internal_report_date",
+        "observation_date"
+      ]
+    },
+    {
+      "source_id": "prepa_hydroco",
+      "authority": "PREPA / HydroCo",
+      "index_url": "https://energia.pr.gov/",
+      "artifact_type": "regulatory_filing_or_native_workpaper",
+      "discovery_interval_hours": 24,
+      "periodicity": "event",
+      "identity_granularity": "as_published",
+      "ingest_role": "measured_aggregate_generation_failure_rehabilitation",
+      "source_priority": "T1",
+      "raw_byte_required": true,
+      "certification": "BLOCKED_UNTIL_BOUND"
+    },
+    {
+      "source_id": "pr_gis_water",
+      "authority": "PRITS / DRNA",
+      "index_url": "https://gis.pr.gov/descargaGeodatos/Infraestructuras/Pages/Agua.aspx",
+      "artifact_type": "vector_or_gis_container",
+      "discovery_interval_hours": 168,
+      "periodicity": "revision",
+      "identity_granularity": "geometry_feature",
+      "ingest_role": "hydraulic_assets_geometry",
+      "source_priority": "T1",
+      "raw_byte_required": true,
+      "certification": "BLOCKED_UNTIL_NATIVE_GEOMETRY_CRS_VALIDATED"
+    }
+  ],
+  "global_invariants": [
+    "SOURCE_EXISTENCE_NE_ACQUIRED",
+    "RELEASE_DATE_NE_OBSERVATION_DATE",
+    "NO_NAME_ONLY_BINDING",
+    "NO_PROJECTED_MWH_AS_MEASURED",
+    "NO_OOS_MW_AS_RECOVERABLE",
+    "NO_CENTROID_AS_LINE",
+    "CONTENT_HASH_IDEMPOTENCY",
+    "NO_SILENT_NULL",
+    "NO_MN_MULTIPLICATION",
+    "ZERO_MATERIAL_RESIDUE_FOR_CERTIFIED_SCOPE"
+  ],
+  "implementation_state": "CONTRACT_ONLY_NOT_RUNTIME"
+}
