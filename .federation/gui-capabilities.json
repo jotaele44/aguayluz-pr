@@ -1836,6 +1836,33 @@
           "dashboard/tests/food-resilience.spec.mjs"
         ]
       }
+    },
+    {
+      "id": "miluma-live-outage-evidence-producer",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Scheduled 15-minute evidence producer shared by the outage surfaces and FOOD_SYSTEM_RESILIENCE. It fetches exact MiLUMA town bytes, binds retrieval/source hashes, and materializes a runtime-only outage JSONL plus a derived-output receipt. Source failure, incomplete response coverage, staleness, or receipt/hash mismatch cannot become a zero-outage observation. Operators consume the existing Outages GUI and the read-only Food Resilience projection; no terminal interaction is part of the user path.",
+      "analysis": {
+        "files": [
+          "scripts/fetch_luma_live.py",
+          "scripts/ingest_aee.py"
+        ],
+        "symbols": [
+          "scripts/fetch_luma_live.py:main",
+          "scripts/fetch_luma_live.py:municipio_keys",
+          "scripts/ingest_aee.py:build_events",
+          "scripts/ingest_aee.py:main",
+          "scripts/ingest_aee.py:unaccent_upper"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_ingest_aee.py",
+          "tests/test_refresh_plans.py",
+          "tests/test_food_resilience_api.py"
+        ]
+      }
     }
   ],
   "exceptions": []
