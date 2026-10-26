@@ -188,11 +188,11 @@ def phase1_signals() -> list[dict[str, Any]]:
         "FOOD.P1.DROUGHT_CLASS": _drought_signal(),
         "FOOD.P1.RAINFALL_30D": {
             "signal_id": "FOOD.P1.RAINFALL_30D", "node_id": "WEATHER",
-            **_latest_metric("precipitation", "precipitation_30d", 40), "evidence_state": "FACT"
+            **_latest_metric("precipitation", "precipitation_pct_normal_30d", 40), "evidence_state": "FACT"
         },
         "FOOD.P1.RAINFALL_90D": {
             "signal_id": "FOOD.P1.RAINFALL_90D", "node_id": "WEATHER",
-            **_latest_metric("precipitation", "precipitation_90d", 100), "evidence_state": "FACT"
+            **_latest_metric("precipitation", "precipitation_pct_normal_90d", 100), "evidence_state": "FACT"
         },
         "FOOD.P1.STREAMFLOW": {
             "signal_id": "FOOD.P1.STREAMFLOW", "node_id": "SURFACE_WATER",
@@ -200,7 +200,7 @@ def phase1_signals() -> list[dict[str, Any]]:
         },
         "FOOD.P1.GROUNDWATER": {
             "signal_id": "FOOD.P1.GROUNDWATER", "node_id": "GROUNDWATER",
-            **_latest_metric("groundwater", "groundwater_depth", 10), "evidence_state": "FACT"
+            **_latest_metric("groundwater", "groundwater_level", 10), "evidence_state": "FACT"
         },
         "FOOD.P1.RESERVOIRS": {
             "signal_id": "FOOD.P1.RESERVOIRS", "node_id": "RESERVOIRS",
