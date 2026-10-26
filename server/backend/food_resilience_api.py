@@ -270,7 +270,7 @@ def canonical_food_resilience_state() -> dict[str, Any]:
     completeness = round(len(usable) / len(signals), 3) if signals else 0.0
     water_states = [s["state"] for s in signals if s["node_id"] in {"DROUGHT", "SURFACE_WATER", "GROUNDWATER", "RESERVOIRS"} and s.get("state") in STATE_ORDER]
     ag_water = max(water_states, key=STATE_ORDER.get) if water_states else "UNKNOWN"
-    overall = _overall_state(signals)
+    warning_state = _overall_state(signals)
     confidence = "MODERATE" if completeness >= 0.5 else "LOW"
     now = datetime.now(timezone.utc).isoformat()
     unavailable_metric = {
@@ -287,7 +287,9 @@ def canonical_food_resilience_state() -> dict[str, Any]:
         "vector_id": contract["vector_id"],
         "as_of": now,
         "activation_phase": 1,
-        "overall_state": overall,
+        "overall_state": "UNKNOWN",
+        "phase1_warning_state": warning_state,
+        "state_semantics": "Phase 1 warning envelope; not a certified food-resilience score.",
         "trend": "UNKNOWN",
         "components": {
             "AG_WATER": ag_water,
@@ -332,6 +334,8 @@ def food_resilience_view() -> dict[str, Any]:
         "summary": {
             "title": "Food System Resilience",
             "state": state["overall_state"],
+            "warning_state": state["phase1_warning_state"],
+            "state_semantics": state["state_semantics"],
             "trend": state["trend"],
             "phase": "PHASE_1_OBSERVABLE",
             "confidence": state["confidence"],
