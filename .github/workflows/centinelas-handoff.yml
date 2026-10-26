@@ -27,16 +27,3 @@ jobs:
           git add data/centinelas_handoffs data/service_events.jsonl data/access_conditions.jsonl 2>/dev/null || true
           git diff --cached --quiet || git commit -m "data: ingest Centinelas handoff [skip ci]"
           git push
-      - name: Acknowledge
-        env:
-          TOKEN: ${{ secrets.FEDERATION_DISPATCH_TOKEN }}
-          KEY: ${{ github.event.client_payload.idempotency_key }}
-          ITEM: ${{ github.event.client_payload.item_id }}
-          DUPLICATE: ${{ steps.ingest.outputs.duplicate }}
-        run: |
-          test -n "$TOKEN"
-          body=$(jq -nc --arg item "$ITEM" --arg key "$KEY" --argjson duplicate "$DUPLICATE" \
-            '{event_type:"centinelas-handoff-ack",client_payload:{item_id:$item,target:"aguayluz-pr",idempotency_key:$key,status:"acknowledged",duplicate:$duplicate}}')
-          curl -sSf -X POST -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/jotaele44/centinelas-pr/dispatches \
-            -d "$body"
