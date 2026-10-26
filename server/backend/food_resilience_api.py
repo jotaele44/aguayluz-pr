@@ -6,8 +6,9 @@ coefficients or state back to this module.
 """
 from __future__ import annotations
 
+import hashlib
 import json
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -64,6 +65,29 @@ def _freshness(observed: Any, max_age_days: int) -> str:
     if age <= max_age_days * 2:
         return "AGING"
     return "STALE"
+
+
+def _parse_timestamp(value: Any) -> datetime | None:
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    try:
+        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _hour_freshness(value: Any, max_age_hours: int = 1) -> str:
+    observed = _parse_timestamp(value)
+    if observed is None:
+        return "UNKNOWN"
+    age = datetime.now(timezone.utc) - observed
+    if age < timedelta(0):
+        return "UNKNOWN"
+    return "FRESH" if age <= timedelta(hours=max_age_hours) else "STALE"
 
 
 def _latest_metric(
@@ -171,6 +195,130 @@ def _drought_signal() -> dict[str, Any]:
     }
 
 
+
+def _grid_outage_signal() -> dict[str, Any]:
+    receipt_path = legacy.DATA / "luma_live_receipt.json"
+    events_path = legacy.DATA / "luma_live_incidents.jsonl"
+    base = {
+        "signal_id": "FOOD.P1.GRID_OUTAGE",
+        "node_id": "POWER",
+        "available": False,
+        "state": "UNKNOWN",
+        "freshness": "UNKNOWN",
+        "observed_date": None,
+        "value": None,
+        "unit": "reported_outage_zone_events",
+        "source_ref": None,
+        "record_count": 0,
+        "municipality_count": 0,
+        "spatial_scope": "NO_VERIFIED_LIVE_RECEIPT",
+        "evidence_state": "UNKNOWN",
+        "observation_evidence_state": "UNKNOWN",
+        "availability_state": "RECEIPT_MISSING",
+        "state_semantics": (
+            "MiLUMA town/zone warning only; never a certified grid-health or "
+            "food-resilience state."
+        ),
+    }
+    if not receipt_path.is_file():
+        return base
+
+    try:
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {**base, "availability_state": "PROVENANCE_MISMATCH"}
+    if not isinstance(receipt, dict):
+        return {**base, "availability_state": "PROVENANCE_MISMATCH"}
+
+    observed = receipt.get("retrieval_utc")
+    freshness = _hour_freshness(observed, 1)
+    source_ref = receipt.get("source_ref")
+    common = {
+        **base,
+        "freshness": freshness,
+        "observed_date": observed,
+        "source_ref": source_ref,
+        "requested_municipio_count": receipt.get("request_key_count"),
+        "response_municipio_count": receipt.get("response_key_count"),
+        "resolved_response_municipio_count": receipt.get("resolved_response_key_count"),
+        "spatial_scope": "MUNICIPIO_TOWN_ZONE_FEED",
+    }
+
+    required = (
+        receipt.get("schema_version") == "aguayluz.luma-live-receipt/v1"
+        and receipt.get("status") == "PASS"
+        and isinstance(receipt.get("output_sha256"), str)
+        and isinstance(receipt.get("output_byte_count"), int)
+        and isinstance(receipt.get("event_count"), int)
+        and isinstance(source_ref, str)
+        and source_ref
+        and isinstance(receipt.get("source_byte_sha256"), str)
+        and len(receipt["source_byte_sha256"]) == 64
+    )
+    if not required or not events_path.is_file():
+        return {**common, "availability_state": "PROVENANCE_MISMATCH"}
+
+    event_bytes = events_path.read_bytes()
+    if (
+        hashlib.sha256(event_bytes).hexdigest() != receipt["output_sha256"]
+        or len(event_bytes) != receipt["output_byte_count"]
+    ):
+        return {**common, "availability_state": "PROVENANCE_MISMATCH"}
+
+    events = _read_jsonl(events_path)
+    if len(events) != receipt["event_count"]:
+        return {**common, "availability_state": "PROVENANCE_MISMATCH"}
+    if any(
+        event.get("event_type") != "outage"
+        or event.get("start_time") != observed
+        or event.get("source_ref") != source_ref
+        for event in events
+    ):
+        return {**common, "availability_state": "PROVENANCE_MISMATCH"}
+
+    event_count = len(events)
+    municipality_count = len(
+        {str(event.get("municipality")) for event in events if event.get("municipality")}
+    )
+    complete_scope = (
+        receipt.get("request_key_count") == 78
+        and receipt.get("response_key_count") == 78
+        and receipt.get("resolved_response_key_count") == 78
+        and receipt.get("unresolved_response_keys") == []
+    )
+
+    if freshness != "FRESH":
+        return {
+            **common,
+            "record_count": event_count,
+            "municipality_count": municipality_count,
+            "availability_state": "STALE" if freshness == "STALE" else "UNRESOLVED",
+        }
+
+    if event_count > 0:
+        state = "WATCH"
+        availability_state = "AVAILABLE" if complete_scope else "AVAILABLE_PARTIAL_COVERAGE"
+    elif complete_scope:
+        state = "NORMAL"
+        availability_state = "AVAILABLE"
+    else:
+        state = "UNKNOWN"
+        availability_state = "PARTIAL_COVERAGE"
+
+    return {
+        **common,
+        "available": True,
+        "state": state,
+        "value": event_count,
+        "record_count": event_count,
+        "municipality_count": municipality_count,
+        "availability_state": availability_state,
+        "evidence_state": "COMPUTED",
+        "observation_evidence_state": "FACT",
+        "coverage_complete": complete_scope,
+    }
+
+
 def _nhc_signal() -> dict[str, Any]:
     rows = _read_jsonl(legacy.DATA / "service_events.jsonl")
     candidates = [
@@ -245,6 +393,7 @@ def phase1_signals() -> list[dict[str, Any]]:
             **_latest_metric("reservoir", "reservoir_elevation", 3), "evidence_state": "FACT"
         },
         "FOOD.P1.TROPICAL_CYCLONE": _nhc_signal(),
+        "FOOD.P1.GRID_OUTAGE": _grid_outage_signal(),
     }
     output: list[dict[str, Any]] = []
     for registry in contract["phase1_signals"]:
@@ -254,7 +403,7 @@ def phase1_signals() -> list[dict[str, Any]]:
             if item.get("freshness") == "STALE":
                 item["state"] = "UNKNOWN"
                 item["availability_state"] = "STALE"
-            else:
+            elif not item.get("availability_state"):
                 item["availability_state"] = "AVAILABLE" if item.get("available") else "SOURCE_MISSING"
         else:
             item = {
