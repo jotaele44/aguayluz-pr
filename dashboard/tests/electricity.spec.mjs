@@ -50,7 +50,7 @@ test('electricity keyboard localization, evidence export and mobile layout', asy
 test('electricity acquisition denies unauthenticated writes through the GUI', async ({ page }) => {
   await page.goto('/electricity')
   await page.getByRole('button', { name: 'Source acquisition' }).click()
-  await page.getByLabel('Official EIA workbook URL').fill('https://www.eia.gov/electricity/data/eia860m/xls/test.xlsx')
+  await page.getByLabel('Official EIA workbook URL').fill('https://www.eia.gov/electricity/data/eia860m/archive/xls/march_generator2026.xlsx')
   await page.getByRole('button', { name: 'Acquire original workbook' }).click()
   await expect(page.getByText(/ELECTRICITY_HTTP_(503|401)/)).toBeVisible()
   await expect(page.getByRole('button', { name: 'Acquire original workbook' })).toBeEnabled()
