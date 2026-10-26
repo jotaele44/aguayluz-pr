@@ -258,6 +258,24 @@ def test_workbook_capture_and_echoed_secret_refusal(tmp_path, monkeypatch):
     assert all(s['sha256'] != hashlib.sha256(b'synthetic-credential-not-real').hexdigest() for s in client.store.snapshot()['sources'])
 
 
+@pytest.mark.parametrize('path', ['eia860m/archive/xls/march_generator2026.xlsx', 'eia923/archive/xls/f923_2023.zip'])
+def test_official_archived_workbook_paths_preserve_original_bytes(tmp_path, path):
+    raw = workbook()
+    client = api_client(tmp_path, lambda _: httpx.Response(200, content=raw))
+    url = 'https://www.eia.gov/electricity/data/' + path
+    digest = client.acquire_workbook(url)
+    assert client.store.read_raw(digest) == raw
+    assert client.store.snapshot()['sources'][0]['source_url'] == url
+    assert client.store.snapshot()['sources'][0]['schema_signature'].endswith('AUDIT_ONLY')
+
+
+@pytest.mark.parametrize('suffix', ['../xls/a.xlsx', 'archive/../xls/a.xlsx', 'archive/xls/a.xlsx?api_key=not-real', 'archive/xls/a.xlsx#fragment', 'archive/xls/nested/a.xlsx'])
+def test_archived_workbook_path_negatives_do_not_reach_network(tmp_path, suffix):
+    url = 'https://www.eia.gov/electricity/data/eia860m/' + suffix
+    with pytest.raises(AcquisitionError, match='OFFICIAL_URL_REQUIRED'):
+        api_client(tmp_path, lambda _: pytest.fail('invalid archive URL reached network')).acquire_workbook(url)
+
+
 def test_canonical_application_auth_import_tamper_and_contract(tmp_path, monkeypatch):
     from server.backend import electricity_api
     from server.backend.app import app

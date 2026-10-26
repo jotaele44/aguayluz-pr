@@ -26,7 +26,7 @@ class AcquisitionError(RuntimeError):
 def validate_workbook_url(url: str) -> None:
     try:
         parsed = urlsplit(url)
-        valid = parsed.scheme == "https" and parsed.hostname == "www.eia.gov" and parsed.port in (None, 443) and not (parsed.username or parsed.password or parsed.query or parsed.fragment) and re.fullmatch(r"/electricity/data/(eia860m|eia923)/(xls|xlsx)/[A-Za-z0-9_.-]+\.(xlsx|zip)", parsed.path)
+        valid = parsed.scheme == "https" and parsed.hostname == "www.eia.gov" and parsed.port in (None, 443) and not (parsed.username or parsed.password or parsed.query or parsed.fragment) and re.fullmatch(r"/electricity/data/(eia860m|eia923)/(?:archive/)?(xls|xlsx)/[A-Za-z0-9_.-]+\.(xlsx|zip)", parsed.path)
     except ValueError:
         valid = False
     if not valid:
