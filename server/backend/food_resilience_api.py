@@ -21,6 +21,7 @@ router = APIRouter(prefix="/food-resilience", tags=["food-resilience"])
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CONTRACT_PATH = REPO_ROOT / "config" / "food_resilience.json"
 STATE_ORDER = {"NORMAL": 0, "WATCH": 1, "ELEVATED": 2, "SEVERE": 3, "CRITICAL": 4}
+LUMA_TOWNS_URL = "https://api.miluma.lumapr.com/miluma-outage-api/outage/municipality/towns"
 
 
 def load_food_resilience_contract() -> dict[str, Any]:
@@ -250,8 +251,8 @@ def _grid_outage_signal() -> dict[str, Any]:
         and isinstance(receipt.get("output_sha256"), str)
         and isinstance(receipt.get("output_byte_count"), int)
         and isinstance(receipt.get("event_count"), int)
-        and isinstance(source_ref, str)
-        and source_ref
+        and source_ref == LUMA_TOWNS_URL
+        and receipt.get("granularity") == "zone"
         and isinstance(receipt.get("source_byte_sha256"), str)
         and len(receipt["source_byte_sha256"]) == 64
     )
