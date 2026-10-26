@@ -1,0 +1,822 @@
+{
+  "schema_version": "aguayluz.electricity-requirements/v1",
+  "certification": "NOT_CERTIFIED",
+  "allowed_statuses": [
+    "IMPLEMENTED_AND_VERIFIED",
+    "IMPLEMENTED_UNVERIFIED",
+    "PARTIALLY_IMPLEMENTED",
+    "BLOCKED_EXTERNAL_DEPENDENCY",
+    "NOT_STARTED",
+    "NOT_APPLICABLE_WITH_JUSTIFICATION"
+  ],
+  "requirements": [
+    {
+      "id": "BASELINE.1",
+      "requirement": "Preserve existing checkout, branches and source manifests",
+      "status": "IMPLEMENTED_AND_VERIFIED",
+      "evidence": [
+        "docs/electricity/baseline.v1.json",
+        "docs/electricity/ADR-0001-native-evidence-workspace.md"
+      ],
+      "remaining_gate": "No release certification implied"
+    },
+    {
+      "id": "BASELINE.2",
+      "requirement": "Audit producer/THEHUB ownership and PR #361",
+      "status": "IMPLEMENTED_AND_VERIFIED",
+      "evidence": [
+        "docs/electricity/baseline.v1.json",
+        "docs/electricity/ADR-0001-native-evidence-workspace.md"
+      ],
+      "remaining_gate": "No release certification implied"
+    },
+    {
+      "id": "P0.1",
+      "requirement": "Review and integrate supplied scaffold",
+      "status": "BLOCKED_EXTERNAL_DEPENDENCY",
+      "evidence": [],
+      "remaining_gate": "Named ZIP is absent; independently authored code is not supplied-scaffold review"
+    },
+    {
+      "id": "A.1",
+      "requirement": "Secure EIA API v2 client and PR monthly facilities/territory acquisition",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "tests/test_electricity.py"
+      ],
+      "remaining_gate": "Bounded client and byte-stream downloads implemented; live EIA access is proxy-denied, credential input received but authentication unverified; original schemas, full EIA-923 parsing, resumable checkpoints and scheduled updates remain open"
+    },
+    {
+      "id": "A.2",
+      "requirement": "Official EIA-860M and EIA-923 acquisition",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "tests/test_electricity.py"
+      ],
+      "remaining_gate": "Bounded client and byte-stream downloads implemented; live EIA access is proxy-denied, credential input received but authentication unverified; original schemas, full EIA-923 parsing, resumable checkpoints and scheduled updates remain open"
+    },
+    {
+      "id": "A.3",
+      "requirement": "Metadata discovery and endpoint-specific validation",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "tests/test_electricity.py"
+      ],
+      "remaining_gate": "Bounded client and byte-stream downloads implemented; live EIA access is proxy-denied, credential input received but authentication unverified; original schemas, full EIA-923 parsing, resumable checkpoints and scheduled updates remain open"
+    },
+    {
+      "id": "A.4",
+      "requirement": "Polling, streaming and batch interfaces",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "tests/test_electricity.py"
+      ],
+      "remaining_gate": "Bounded client and byte-stream downloads implemented; live EIA access is proxy-denied, credential input received but authentication unverified; original schemas, full EIA-923 parsing, resumable checkpoints and scheduled updates remain open"
+    },
+    {
+      "id": "A.5",
+      "requirement": "Retry, pagination, checkpointing and incremental updates",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "tests/test_electricity.py"
+      ],
+      "remaining_gate": "Bounded client and byte-stream downloads implemented; live EIA access is proxy-denied, credential input received but authentication unverified; original schemas, full EIA-923 parsing, resumable checkpoints and scheduled updates remain open"
+    },
+    {
+      "id": "A.6",
+      "requirement": "Immutable SHA-256 raw storage and UTC provenance",
+      "status": "IMPLEMENTED_AND_VERIFIED",
+      "evidence": [
+        "tests/test_electricity.py",
+        "tests/test_electricity_capture_recovery.py"
+      ],
+      "remaining_gate": "Synthetic interrupted-write and concurrent retry controls verified. No independent official-source or production durability certification implied."
+    },
+    {
+      "id": "A.7",
+      "requirement": "Credential isolation and redacted client errors/logs",
+      "status": "IMPLEMENTED_AND_VERIFIED",
+      "evidence": [
+        "tests/test_electricity.py"
+      ],
+      "remaining_gate": "Verified with synthetic inputs only; offline origin never becomes verified"
+    },
+    {
+      "id": "A.8",
+      "requirement": "Offline capture and explicit origin uncertainty",
+      "status": "IMPLEMENTED_AND_VERIFIED",
+      "evidence": [
+        "tests/test_electricity.py"
+      ],
+      "remaining_gate": "Verified with synthetic inputs only; offline origin never becomes verified"
+    },
+    {
+      "id": "A.9",
+      "requirement": "Source publication dates, licenses and authority",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "tests/test_electricity.py"
+      ],
+      "remaining_gate": "Fields retained; original publication dates/licenses unresolved until source acquisition"
+    },
+    {
+      "id": "A.10",
+      "requirement": "PREB, PREPA, LUMA, Genera and HydroCo adapters",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "federation.json"
+      ],
+      "remaining_gate": "Existing adapters preserved and related workspaces linked; electricity-specific semantic integration and missing provider permissions remain open"
+    },
+    {
+      "id": "A.11",
+      "requirement": "USGS, NOAA, FEMA, EPA and PR adapters",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "federation.json"
+      ],
+      "remaining_gate": "Existing adapters preserved and related workspaces linked; electricity-specific semantic integration and missing provider permissions remain open"
+    },
+    {
+      "id": "A.12",
+      "requirement": "Revision, supersession and contradiction tracking",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "tests/test_electricity.py"
+      ],
+      "remaining_gate": "Immutable manifestations and overlap contradiction reporting implemented; explicit supersession/adjudication workflow not implemented"
+    },
+    {
+      "id": "B.1",
+      "requirement": "Plants, generators, substations, transmission and distribution schemas",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "tests/test_electricity.py",
+        "schemas/electricity_projection.v1.schema.json"
+      ],
+      "remaining_gate": "Generator/source/measurement contracts and bounded reconciliation implemented; broader registry, verified crosswalks, seasonal capacity, confidence policy and negative-evidence adjudication remain open"
+    },
+    {
+      "id": "B.2",
+      "requirement": "Dams, reservoirs, hydroelectric units and waterworks schemas",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "tests/test_electricity.py",
+        "schemas/electricity_projection.v1.schema.json"
+      ],
+      "remaining_gate": "Generator/source/measurement contracts and bounded reconciliation implemented; broader registry, verified crosswalks, seasonal capacity, confidence policy and negative-evidence adjudication remain open"
+    },
+    {
+      "id": "B.3",
+      "requirement": "Owners, operators, regulators and aliases",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "tests/test_electricity.py",
+        "schemas/electricity_projection.v1.schema.json"
+      ],
+      "remaining_gate": "Generator/source/measurement contracts and bounded reconciliation implemented; broader registry, verified crosswalks, seasonal capacity, confidence policy and negative-evidence adjudication remain open"
+    },
+    {
+      "id": "B.4",
+      "requirement": "Measurements, time series, claims, events and relationships",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "tests/test_electricity.py",
+        "schemas/electricity_projection.v1.schema.json"
+      ],
+      "remaining_gate": "Generator/source/measurement contracts and bounded reconciliation implemented; broader registry, verified crosswalks, seasonal capacity, confidence policy and negative-evidence adjudication remain open"
+    },
+    {
+      "id": "B.5",
+      "requirement": "Verified identifier crosswalks and effective identities",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "tests/test_electricity.py",
+        "schemas/electricity_projection.v1.schema.json"
+      ],
+      "remaining_gate": "Generator/source/measurement contracts and bounded reconciliation implemented; broader registry, verified crosswalks, seasonal capacity, confidence policy and negative-evidence adjudication remain open"
+    },
+    {
+      "id": "B.6",
+      "requirement": "Capacity definitions, units, UTC and Puerto Rico presentation",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "tests/test_electricity.py",
+        "schemas/electricity_projection.v1.schema.json"
+      ],
+      "remaining_gate": "Generator/source/measurement contracts and bounded reconciliation implemented; broader registry, verified crosswalks, seasonal capacity, confidence policy and negative-evidence adjudication remain open"
+    },
+    {
+      "id": "B.7",
+      "requirement": "Provenance, uncertainty, confidence and authority",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "tests/test_electricity.py",
+        "schemas/electricity_projection.v1.schema.json"
+      ],
+      "remaining_gate": "Generator/source/measurement contracts and bounded reconciliation implemented; broader registry, verified crosswalks, seasonal capacity, confidence policy and negative-evidence adjudication remain open"
+    },
+    {
+      "id": "B.8",
+      "requirement": "Contradiction and negative-evidence ledgers",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "tests/test_electricity.py",
+        "schemas/electricity_projection.v1.schema.json",
+        "tests/test_electricity_reviews.py",
+        "dashboard/tests/electricity-review.spec.mjs"
+      ],
+      "remaining_gate": "Generator/source/measurement contracts and bounded reconciliation implemented; broader registry, verified crosswalks, seasonal capacity, confidence policy and negative-evidence adjudication remain open"
+    },
+    {
+      "id": "B.9",
+      "requirement": "Manual adjudication, reversible decisions and audit trails",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "src/aguayluz/electricity/review.py",
+        "tests/test_electricity_reviews.py",
+        "dashboard/tests/electricity-review.spec.mjs",
+        "docs/electricity/ADR-0002-candidate-review-ledger.md"
+      ],
+      "remaining_gate": "Reversible candidate recommendations and exact-claim/revision audit history implemented. Individual reviewer identity, reviewed canonical adjudication policy and independent source/scientific acceptance remain open; no canonical evidence is changed."
+    },
+    {
+      "id": "B.10",
+      "requirement": "Canonical promotion gates",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "tests/test_electricity.py"
+      ],
+      "remaining_gate": "All promotion is blocked and no promotion route exists; promotion workflow intentionally not enabled"
+    },
+    {
+      "id": "B.11",
+      "requirement": "Never infer identity or connectivity from names/coordinates/adjacency",
+      "status": "IMPLEMENTED_AND_VERIFIED",
+      "evidence": [
+        "tests/test_electricity.py"
+      ],
+      "remaining_gate": "New electricity plane uses literal namespaced source IDs and never imports legacy proximity edges"
+    },
+    {
+      "id": "C.1",
+      "requirement": "Observed state engine with latency and quality",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "tests/test_electricity.py"
+      ],
+      "remaining_gate": "Separate source-bound interval/quality models and deterministic replay exist; authoritative telemetry feed and operational adapters unavailable"
+    },
+    {
+      "id": "C.2",
+      "requirement": "Near-real-time ingestion and historical replay",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "tests/test_electricity.py"
+      ],
+      "remaining_gate": "Separate source-bound interval/quality models and deterministic replay exist; authoritative telemetry feed and operational adapters unavailable"
+    },
+    {
+      "id": "C.3",
+      "requirement": "Historical reconstructed state with residuals and assumptions",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "remaining_gate": "Derived-state validation exists but no scientific reconstruction or forecast model is implemented"
+    },
+    {
+      "id": "C.4",
+      "requirement": "Forecast engines and backtesting/versioning",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "remaining_gate": "Derived-state validation exists but no scientific reconstruction or forecast model is implemented"
+    },
+    {
+      "id": "C.5",
+      "requirement": "No fabricated telemetry or mislabeled live data",
+      "status": "IMPLEMENTED_AND_VERIFIED",
+      "evidence": [
+        "tests/test_electricity.py",
+        "dashboard/src/pages/ElectricityPage.test.jsx",
+        "dashboard/tests/electricity.spec.mjs"
+      ],
+      "remaining_gate": "Projection and GUI explicitly report missing authoritative feed; no operational measurements are seeded"
+    },
+    {
+      "id": "D.1",
+      "requirement": "Quarantine RC8\u2013RC14 originals",
+      "status": "BLOCKED_EXTERNAL_DEPENDENCY",
+      "evidence": [],
+      "remaining_gate": "RC8\u2013RC14 and supplied workbook absent; official source access denied. Existing hydro/weather data are preserved but cannot establish these missing claims."
+    },
+    {
+      "id": "D.2",
+      "requirement": "EIA plant/generator reconciliation against original workbook",
+      "status": "BLOCKED_EXTERNAL_DEPENDENCY",
+      "evidence": [],
+      "remaining_gate": "RC8\u2013RC14 and supplied workbook absent; official source access denied. Existing hydro/weather data are preserved but cannot establish these missing claims."
+    },
+    {
+      "id": "D.3",
+      "requirement": "Historical hydro names and generating units",
+      "status": "BLOCKED_EXTERNAL_DEPENDENCY",
+      "evidence": [],
+      "remaining_gate": "RC8\u2013RC14 and supplied workbook absent; official source access denied. Existing hydro/weather data are preserved but cannot establish these missing claims."
+    },
+    {
+      "id": "D.4",
+      "requirement": "Installed/nameplate/seasonal capacity reconciliation",
+      "status": "BLOCKED_EXTERNAL_DEPENDENCY",
+      "evidence": [],
+      "remaining_gate": "RC8\u2013RC14 and supplied workbook absent; official source access denied. Existing hydro/weather data are preserved but cannot establish these missing claims."
+    },
+    {
+      "id": "D.5",
+      "requirement": "Status and commissioning history",
+      "status": "BLOCKED_EXTERNAL_DEPENDENCY",
+      "evidence": [],
+      "remaining_gate": "RC8\u2013RC14 and supplied workbook absent; official source access denied. Existing hydro/weather data are preserved but cannot establish these missing claims."
+    },
+    {
+      "id": "D.6",
+      "requirement": "Dam/reservoir/hydropower relationships",
+      "status": "BLOCKED_EXTERNAL_DEPENDENCY",
+      "evidence": [],
+      "remaining_gate": "RC8\u2013RC14 and supplied workbook absent; official source access denied. Existing hydro/weather data are preserved but cannot establish these missing claims."
+    },
+    {
+      "id": "D.7",
+      "requirement": "Levels/storage/inflow/outflow dependencies",
+      "status": "BLOCKED_EXTERNAL_DEPENDENCY",
+      "evidence": [],
+      "remaining_gate": "RC8\u2013RC14 and supplied workbook absent; official source access denied. Existing hydro/weather data are preserved but cannot establish these missing claims."
+    },
+    {
+      "id": "D.8",
+      "requirement": "Rehabilitation/dredging/sedimentation records",
+      "status": "BLOCKED_EXTERNAL_DEPENDENCY",
+      "evidence": [],
+      "remaining_gate": "RC8\u2013RC14 and supplied workbook absent; official source access denied. Existing hydro/weather data are preserved but cannot establish these missing claims."
+    },
+    {
+      "id": "D.9",
+      "requirement": "Hydroelectric output and capacity factors",
+      "status": "BLOCKED_EXTERNAL_DEPENDENCY",
+      "evidence": [],
+      "remaining_gate": "RC8\u2013RC14 and supplied workbook absent; official source access denied. Existing hydro/weather data are preserved but cannot establish these missing claims."
+    },
+    {
+      "id": "D.10",
+      "requirement": "Watersheds/rainfall and original-source verification",
+      "status": "BLOCKED_EXTERNAL_DEPENDENCY",
+      "evidence": [],
+      "remaining_gate": "RC8\u2013RC14 and supplied workbook absent; official source access denied. Existing hydro/weather data are preserved but cannot establish these missing claims."
+    },
+    {
+      "id": "GUI.01",
+      "requirement": "Electricity overview and KPIs",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "dashboard/src/pages/ElectricityPage.jsx",
+        "dashboard/src/pages/ElectricityPage.test.jsx",
+        "dashboard/tests/electricity.spec.mjs"
+      ],
+      "remaining_gate": "Native source-evidence workspace or related existing route available; full requested operational workspace scope remains incomplete"
+    },
+    {
+      "id": "GUI.02",
+      "requirement": "Hourly Grid Monitor",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "dashboard/src/pages/ElectricityPage.jsx",
+        "dashboard/src/pages/ElectricityPage.test.jsx",
+        "dashboard/tests/electricity.spec.mjs"
+      ],
+      "remaining_gate": "Native source-evidence workspace or related existing route available; full requested operational workspace scope remains incomplete"
+    },
+    {
+      "id": "GUI.03",
+      "requirement": "Generation and fuel mix",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "dashboard/src/pages/ElectricityPage.jsx",
+        "dashboard/src/pages/ElectricityPage.test.jsx",
+        "dashboard/tests/electricity.spec.mjs"
+      ],
+      "remaining_gate": "Native source-evidence workspace or related existing route available; full requested operational workspace scope remains incomplete"
+    },
+    {
+      "id": "GUI.04",
+      "requirement": "Electricity Data Browser",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "dashboard/src/pages/ElectricityPage.jsx",
+        "dashboard/src/pages/ElectricityPage.test.jsx",
+        "dashboard/tests/electricity.spec.mjs"
+      ],
+      "remaining_gate": "Native source-evidence workspace or related existing route available; full requested operational workspace scope remains incomplete"
+    },
+    {
+      "id": "GUI.05",
+      "requirement": "Plant and generator registry",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "dashboard/src/pages/ElectricityPage.jsx",
+        "dashboard/src/pages/ElectricityPage.test.jsx",
+        "dashboard/tests/electricity.spec.mjs"
+      ],
+      "remaining_gate": "Native source-evidence workspace or related existing route available; full requested operational workspace scope remains incomplete"
+    },
+    {
+      "id": "GUI.06",
+      "requirement": "Hydroelectric and reservoir intelligence",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "dashboard/src/pages/ElectricityPage.jsx",
+        "dashboard/src/pages/ElectricityPage.test.jsx",
+        "dashboard/tests/electricity.spec.mjs"
+      ],
+      "remaining_gate": "Native source-evidence workspace or related existing route available; full requested operational workspace scope remains incomplete"
+    },
+    {
+      "id": "GUI.07",
+      "requirement": "Islandwide infrastructure GIS",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "dashboard/src/pages/ElectricityPage.jsx",
+        "dashboard/src/pages/ElectricityPage.test.jsx",
+        "dashboard/tests/electricity.spec.mjs"
+      ],
+      "remaining_gate": "Native source-evidence workspace or related existing route available; full requested operational workspace scope remains incomplete"
+    },
+    {
+      "id": "GUI.08",
+      "requirement": "Outage and reliability",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "dashboard/src/pages/ElectricityPage.jsx",
+        "dashboard/src/pages/ElectricityPage.test.jsx",
+        "dashboard/tests/electricity.spec.mjs"
+      ],
+      "remaining_gate": "Native source-evidence workspace or related existing route available; full requested operational workspace scope remains incomplete"
+    },
+    {
+      "id": "GUI.09",
+      "requirement": "Weather and resilience",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "dashboard/src/pages/ElectricityPage.jsx",
+        "dashboard/src/pages/ElectricityPage.test.jsx",
+        "dashboard/tests/electricity.spec.mjs"
+      ],
+      "remaining_gate": "Native source-evidence workspace or related existing route available; full requested operational workspace scope remains incomplete"
+    },
+    {
+      "id": "GUI.12",
+      "requirement": "PREB regulatory tracking",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "dashboard/src/pages/ElectricityPage.jsx",
+        "dashboard/src/pages/ElectricityPage.test.jsx",
+        "dashboard/tests/electricity.spec.mjs"
+      ],
+      "remaining_gate": "Native source-evidence workspace or related existing route available; full requested operational workspace scope remains incomplete"
+    },
+    {
+      "id": "GUI.14",
+      "requirement": "Custom dashboard builder",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "dashboard/src/pages/ElectricityPage.jsx",
+        "dashboard/src/pages/ElectricityPage.test.jsx",
+        "dashboard/tests/electricity.spec.mjs"
+      ],
+      "remaining_gate": "Native source-evidence workspace or related existing route available; full requested operational workspace scope remains incomplete"
+    },
+    {
+      "id": "GUI.16",
+      "requirement": "Historical replay and comparison",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "dashboard/src/pages/ElectricityPage.jsx",
+        "dashboard/src/pages/ElectricityPage.test.jsx",
+        "dashboard/tests/electricity.spec.mjs"
+      ],
+      "remaining_gate": "Native source-evidence workspace or related existing route available; full requested operational workspace scope remains incomplete"
+    },
+    {
+      "id": "GUI.17",
+      "requirement": "Evidence and contradiction inspector",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "dashboard/src/pages/ElectricityPage.jsx",
+        "dashboard/src/pages/ElectricityPage.test.jsx",
+        "dashboard/tests/electricity.spec.mjs",
+        "tests/test_electricity_reviews.py",
+        "dashboard/tests/electricity-review.spec.mjs"
+      ],
+      "remaining_gate": "Native source-evidence workspace or related existing route available; full requested operational workspace scope remains incomplete"
+    },
+    {
+      "id": "GUI.18",
+      "requirement": "Reporting and export",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "dashboard/src/pages/ElectricityPage.jsx",
+        "dashboard/src/pages/ElectricityPage.test.jsx",
+        "dashboard/tests/electricity.spec.mjs"
+      ],
+      "remaining_gate": "Native source-evidence workspace or related existing route available; full requested operational workspace scope remains incomplete"
+    },
+    {
+      "id": "GUI.19",
+      "requirement": "Source health and acquisition",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "dashboard/src/pages/ElectricityPage.jsx",
+        "dashboard/src/pages/ElectricityPage.test.jsx",
+        "dashboard/tests/electricity.spec.mjs"
+      ],
+      "remaining_gate": "Native source-evidence workspace or related existing route available; full requested operational workspace scope remains incomplete"
+    },
+    {
+      "id": "GUI.20",
+      "requirement": "Administration and preferences",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "dashboard/src/pages/ElectricityPage.jsx",
+        "dashboard/src/pages/ElectricityPage.test.jsx",
+        "dashboard/tests/electricity.spec.mjs"
+      ],
+      "remaining_gate": "Native source-evidence workspace or related existing route available; full requested operational workspace scope remains incomplete"
+    },
+    {
+      "id": "GUI.10",
+      "requirement": "Demand, generation and renewable forecasts",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "remaining_gate": "No scientific dataset/model or full workflow implemented; coverage disclosure is not implementation"
+    },
+    {
+      "id": "GUI.11",
+      "requirement": "Energy economics and tariffs",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "remaining_gate": "No scientific dataset/model or full workflow implemented; coverage disclosure is not implementation"
+    },
+    {
+      "id": "GUI.13",
+      "requirement": "Capital projects and funding intelligence",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "remaining_gate": "No scientific dataset/model or full workflow implemented; coverage disclosure is not implementation"
+    },
+    {
+      "id": "GUI.15",
+      "requirement": "Electricity alerts and notifications",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "remaining_gate": "No scientific dataset/model or full workflow implemented; coverage disclosure is not implementation"
+    },
+    {
+      "id": "GUI.21",
+      "requirement": "Interactive charts/tables, filters and date controls",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "dashboard/src/pages/ElectricityPage.test.jsx",
+        "dashboard/tests/electricity.spec.mjs"
+      ],
+      "remaining_gate": "Bounded chart/table controls, language/class preferences and automated accessibility checks exist; full map/time-comparison/layout and physical-device parity remain open"
+    },
+    {
+      "id": "GUI.22",
+      "requirement": "English/Spanish, responsive and keyboard accessible workspace",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "dashboard/src/pages/ElectricityPage.test.jsx",
+        "dashboard/tests/electricity.spec.mjs"
+      ],
+      "remaining_gate": "Bounded chart/table controls, language/class preferences and automated accessibility checks exist; full map/time-comparison/layout and physical-device parity remain open"
+    },
+    {
+      "id": "GUI.23",
+      "requirement": "Saved layouts and presentation preferences",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "dashboard/src/pages/ElectricityPage.test.jsx",
+        "dashboard/tests/electricity.spec.mjs"
+      ],
+      "remaining_gate": "Bounded chart/table controls, language/class preferences and automated accessibility checks exist; full map/time-comparison/layout and physical-device parity remain open"
+    },
+    {
+      "id": "F.1",
+      "requirement": "Preserve existing producer exports",
+      "status": "IMPLEMENTED_AND_VERIFIED",
+      "evidence": [
+        "tests/test_federation_contract_compat.py",
+        "tests/test_federation_evidence_state.py"
+      ],
+      "remaining_gate": "Legacy streams and producer manifest unchanged"
+    },
+    {
+      "id": "F.2",
+      "requirement": "Versioned read-only native projection and schema",
+      "status": "IMPLEMENTED_AND_VERIFIED",
+      "evidence": [
+        "tests/test_electricity.py",
+        "schemas/electricity_projection.v1.schema.json"
+      ],
+      "remaining_gate": "Local API/schema/revision invariants tested"
+    },
+    {
+      "id": "F.3",
+      "requirement": "THEHUB and Spiderweb consumer acceptance",
+      "status": "BLOCKED_EXTERNAL_DEPENDENCY",
+      "evidence": [],
+      "remaining_gate": "Actual consumer ingestion/acceptance is not integrated; local schema validation is insufficient"
+    },
+    {
+      "id": "F.4",
+      "requirement": "GUI cannot become scientific source truth",
+      "status": "IMPLEMENTED_AND_VERIFIED",
+      "evidence": [
+        "tests/test_electricity.py",
+        "dashboard/src/pages/ElectricityPage.test.jsx"
+      ],
+      "remaining_gate": "Preferences remain client-only; scientific writes go through authenticated acquisition and source validation"
+    },
+    {
+      "id": "G.1",
+      "requirement": "Credential isolation, fail-closed write auth and input validation",
+      "status": "IMPLEMENTED_AND_VERIFIED",
+      "evidence": [
+        "tests/test_electricity.py"
+      ],
+      "remaining_gate": "Applies to new electricity routes, not a repository-wide authentication remediation"
+    },
+    {
+      "id": "G.2",
+      "requirement": "Audit logs, source health and redacted errors",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "tests/test_electricity.py",
+        "docs/electricity/OPERATIONS.md",
+        "tests/test_electricity_reviews.py",
+        "dashboard/tests/electricity-review.spec.mjs"
+      ],
+      "remaining_gate": "Attempt ledger, single-process acquisition lock and local recovery rehearsal implemented; distributed quotas, full RBAC, sensitive-data agreements and operational backups remain open"
+    },
+    {
+      "id": "G.3",
+      "requirement": "Rate limits and least-privilege infrastructure access",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "tests/test_electricity.py",
+        "docs/electricity/OPERATIONS.md"
+      ],
+      "remaining_gate": "Attempt ledger, single-process acquisition lock and local recovery rehearsal implemented; distributed quotas, full RBAC, sensitive-data agreements and operational backups remain open"
+    },
+    {
+      "id": "G.4",
+      "requirement": "Backups and recovery runbooks",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "tests/test_electricity.py",
+        "docs/electricity/OPERATIONS.md"
+      ],
+      "remaining_gate": "Attempt ledger, single-process acquisition lock and local recovery rehearsal implemented; distributed quotas, full RBAC, sensitive-data agreements and operational backups remain open"
+    },
+    {
+      "id": "TEST.1",
+      "requirement": "Existing Python/frontend regression and coverage",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "tests/test_electricity.py",
+        "docs/electricity/OPERATIONS.md"
+      ],
+      "remaining_gate": "Bounded automated checks only; full requested scientific/operational/native-device denominator is not verified"
+    },
+    {
+      "id": "TEST.2",
+      "requirement": "Unit/integration/API/schema/invariant/identity negatives",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "tests/test_electricity.py",
+        "docs/electricity/OPERATIONS.md"
+      ],
+      "remaining_gate": "Bounded automated checks only; full requested scientific/operational/native-device denominator is not verified"
+    },
+    {
+      "id": "TEST.3",
+      "requirement": "Temporal reconciliation, source integrity and replay",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "tests/test_electricity.py",
+        "docs/electricity/OPERATIONS.md"
+      ],
+      "remaining_gate": "Bounded automated checks only; full requested scientific/operational/native-device denominator is not verified"
+    },
+    {
+      "id": "TEST.4",
+      "requirement": "Missing/delayed/contradictory sources and API failures",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "tests/test_electricity.py",
+        "docs/electricity/OPERATIONS.md"
+      ],
+      "remaining_gate": "Bounded automated checks only; full requested scientific/operational/native-device denominator is not verified"
+    },
+    {
+      "id": "TEST.5",
+      "requirement": "GUI functional, accessibility and bilingual checks",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "tests/test_electricity.py",
+        "docs/electricity/OPERATIONS.md"
+      ],
+      "remaining_gate": "Bounded automated checks only; full requested scientific/operational/native-device denominator is not verified"
+    },
+    {
+      "id": "TEST.6",
+      "requirement": "Desktop/mobile visual and performance/load checks",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "tests/test_electricity.py",
+        "docs/electricity/OPERATIONS.md"
+      ],
+      "remaining_gate": "Bounded automated checks only; full requested scientific/operational/native-device denominator is not verified"
+    },
+    {
+      "id": "TEST.7",
+      "requirement": "Federation compatibility and offline recovery",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "tests/test_electricity.py",
+        "docs/electricity/OPERATIONS.md"
+      ],
+      "remaining_gate": "Bounded automated checks only; full requested scientific/operational/native-device denominator is not verified"
+    },
+    {
+      "id": "TEST.8",
+      "requirement": "Security and dependency acceptance",
+      "status": "BLOCKED_EXTERNAL_DEPENDENCY",
+      "evidence": [],
+      "remaining_gate": "Inherited npm and Python environment advisories exist; exact manifest-bound remediation and acceptance required"
+    },
+    {
+      "id": "TEST.9",
+      "requirement": "Independent exact-commit validation",
+      "status": "BLOCKED_EXTERNAL_DEPENDENCY",
+      "evidence": [],
+      "remaining_gate": "Clean-checkout automated replay is feasible but cannot replace independent scientific/source/consumer review"
+    },
+    {
+      "id": "DELIVERY.1",
+      "requirement": "Development branch, commits and draft PR",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [],
+      "remaining_gate": "Bounded tranche artifacts are produced. Exact candidate qualification report supplies SHA, test results and PR state; full-product deliverables, independent review and production-equivalent rehearsal remain open."
+    },
+    {
+      "id": "DELIVERY.2",
+      "requirement": "ADRs, schemas, traceability and gap ledger",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [],
+      "remaining_gate": "Bounded tranche artifacts are produced. Exact candidate qualification report supplies SHA, test results and PR state; full-product deliverables, independent review and production-equivalent rehearsal remain open."
+    },
+    {
+      "id": "DELIVERY.3",
+      "requirement": "Acquisition/data-quality manifests and test evidence",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [],
+      "remaining_gate": "Bounded tranche artifacts are produced. Exact candidate qualification report supplies SHA, test results and PR state; full-product deliverables, independent review and production-equivalent rehearsal remain open."
+    },
+    {
+      "id": "DELIVERY.4",
+      "requirement": "Rollback and exact-hash release manifest",
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [],
+      "remaining_gate": "Bounded tranche artifacts are produced. Exact candidate qualification report supplies SHA, test results and PR state; full-product deliverables, independent review and production-equivalent rehearsal remain open."
+    },
+    {
+      "id": "RELEASE.1",
+      "requirement": "Full release certification",
+      "status": "BLOCKED_EXTERNAL_DEPENDENCY",
+      "evidence": [],
+      "remaining_gate": "Full scope, sources, consumer acceptance, security and independent review gates are open; NOT_CERTIFIED"
+    },
+    {
+      "id": "RELEASE.2",
+      "requirement": "Production deployment",
+      "status": "NOT_APPLICABLE_WITH_JUSTIFICATION",
+      "evidence": [],
+      "remaining_gate": "Not authorized for this development tranche; deployment requires explicit authorization and promotion requires verified full PASS"
+    },
+    {
+      "id": "RELEASE.3",
+      "requirement": "Reusable skill/agent promotion",
+      "status": "NOT_APPLICABLE_WITH_JUSTIFICATION",
+      "evidence": [],
+      "remaining_gate": "Not authorized for this development tranche; deployment requires explicit authorization and promotion requires verified full PASS"
+    }
+  ]
+}
