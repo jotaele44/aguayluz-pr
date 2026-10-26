@@ -19,6 +19,17 @@ function Tone({ state }) {
   )
 }
 
+function signalScopeLabel(signal) {
+  if (signal.spatial_scope === 'SINGLE_SITE_OBSERVATION') {
+    return `single site · ${signal.site_no || 'unknown'}`
+  }
+  if (signal.spatial_scope === 'MULTI_SITE_SNAPSHOT') {
+    return `${signal.site_count || 0} sites · value withheld`
+  }
+  if (signal.spatial_scope) return signal.spatial_scope.toLowerCase().replaceAll('_', ' ')
+  return '—'
+}
+
 function MetricLock({ title, phase, trackingIssue }) {
   return (
     <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
@@ -137,6 +148,7 @@ export default function FoodResiliencePage() {
                 <th className="px-4 py-3">State</th>
                 <th className="px-4 py-3">Freshness</th>
                 <th className="px-4 py-3">Observed</th>
+                <th className="px-4 py-3">Scope</th>
                 <th className="px-4 py-3">Value</th>
                 <th className="px-4 py-3">Availability</th>
               </tr>
@@ -149,6 +161,7 @@ export default function FoodResiliencePage() {
                   <td className="px-4 py-3"><Tone state={signal.state} /></td>
                   <td className="px-4 py-3 text-slate-400">{signal.freshness || 'UNKNOWN'}</td>
                   <td className="px-4 py-3 text-slate-400">{signal.observed_date || '—'}</td>
+                  <td className="px-4 py-3 text-xs text-slate-400">{signalScopeLabel(signal)}</td>
                   <td className="px-4 py-3">{signal.value == null ? '—' : `${signal.value}${signal.unit ? ` ${signal.unit}` : ''}`}</td>
                   <td className="px-4 py-3 text-xs text-slate-400">{signal.availability_state}</td>
                 </tr>
