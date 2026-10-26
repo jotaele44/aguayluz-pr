@@ -104,6 +104,21 @@ Older candidates can ignore the separate review ledger without deleting it.
 A Git checkout cannot restore these rows. The bounded restore test is not a
 production-equivalent recovery-time or durability certification.
 
+## Independent automated execution
+
+`electricity-exact-head.yml` adds isolated GitHub runners that explicitly check
+out `github.event.pull_request.head.sha` and assert the actual checkout SHA.
+Python 3.10/3.12 execute the full regression and unchanged coverage gate; the
+native job executes lint, unit tests, build and the complete GUI parity command
+with pinned Playwright Chromium. Existing merge-commit workflows remain intact.
+The new jobs receive read-only repository permission, persist no Git credential,
+and receive no EIA or operator secret. Test-fixture operator roles are synthetic.
+
+Runner artifacts identify the actual tested commit. A workflow being present or
+queued is IMPLEMENTED_UNVERIFIED until its required jobs actually pass. A passed
+independent runner remains automated evidence; it does not replace independent
+scientific/source/security/consumer review or certify the full release.
+
 One-line a-Shell-compatible local check, with dependencies already installed:
 
 `python3 -m pytest -q tests/test_electricity_reviews.py tests/test_electricity.py tests/test_electricity_capture_recovery.py tests/test_schemas.py`
