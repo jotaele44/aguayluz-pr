@@ -519,10 +519,11 @@
     {
       "signal_id": "FOOD.P1.GRID_OUTAGE",
       "node_id": "POWER",
-      "metric": null,
-      "kind": null,
-      "state": "OPEN",
-      "source": "operational power source not frozen in this vector"
+      "metric": "reported_outage_zone_events",
+      "kind": "miluma_live",
+      "state": "WIRED",
+      "source": "MiLUMA municipality/town outage feed via existing 15-minute receipt-bound aguayluz ingest",
+      "scope_guard": "78 requested municipios; zero is NORMAL only when response resolves 78/78 and output receipt verifies"
     },
     {
       "signal_id": "FOOD.P1.PORT_STATUS",
@@ -530,7 +531,8 @@
       "metric": null,
       "kind": null,
       "state": "OPEN",
-      "source": "operational port source not frozen in this vector"
+      "source": "USCG Sector San Juan port conditions are authoritative but no frozen machine-readable live adapter is available",
+      "automation_state": "AUTHORITATIVE_MANUAL_ONLY"
     },
     {
       "signal_id": "FOOD.P1.ROAD_DISRUPTION",
@@ -538,15 +540,17 @@
       "metric": null,
       "kind": null,
       "state": "OPEN",
-      "source": "operational road source not frozen in this vector"
+      "source": "DTOP project notices exist, but no authoritative frozen islandwide live closure feed is integrated",
+      "automation_state": "NO_AUTHORITATIVE_LIVE_ADAPTER"
     },
     {
       "signal_id": "FOOD.P1.FOOD_IMPORT_FLOW",
       "node_id": "FOOD_IMPORTS",
       "metric": null,
       "kind": null,
-      "state": "SOURCE_AVAILABLE_DATA_LAGGED",
-      "source": "Census FT895 annual/current publication substrate"
+      "state": "SOURCE_AVAILABLE_IDENTITY_BLOCKED",
+      "source": "U.S. Census Puerto Rico trade files (Schedule B quantity/value substrate); food commodity identity crosswalk unresolved",
+      "identity_state": "UNRESOLVED"
     },
     {
       "signal_id": "FOOD.P1.FEED_IMPORT_FLOW",
@@ -554,7 +558,8 @@
       "metric": null,
       "kind": null,
       "state": "OPEN",
-      "source": "commodity crosswalk not yet closed"
+      "source": "U.S. Census Puerto Rico trade substrate available; feed commodity identity crosswalk unresolved",
+      "identity_state": "UNRESOLVED"
     },
     {
       "signal_id": "FOOD.P1.COLD_CHAIN",
@@ -562,7 +567,8 @@
       "metric": null,
       "kind": null,
       "state": "UNRESOLVED",
-      "source": "no complete public islandwide operational feed frozen"
+      "source": "No complete authoritative islandwide operational cold-chain feed frozen",
+      "automation_state": "UNRESOLVED"
     }
   ],
   "phase2_baseline": {
