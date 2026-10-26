@@ -210,6 +210,8 @@ STEP_AEE_INGEST = (
         "/tmp/luma_snapshot_manifest.json",
         "--out",
         "data/luma_live_incidents.jsonl",
+        "--receipt-out",
+        "data/luma_live_receipt.json",
     ],
     True,
 )
