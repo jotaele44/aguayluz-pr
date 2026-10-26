@@ -92,7 +92,7 @@ export default function FoodResiliencePage() {
           </div>
           <h1 className="mt-2 text-3xl font-bold text-slate-100">Food System Resilience</h1>
           <p className="mt-2 max-w-3xl text-sm text-slate-400">
-            Cross-sector warning and baseline evidence for Puerto Rico food-system resilience. Scientific state is computed upstream and projected read-only into this interface.
+            Cross-sector warning and baseline evidence for Puerto Rico food-system resilience. Phase 1 warning state is not a certified resilience score; scientific state is computed upstream and projected read-only into this interface.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -113,14 +113,14 @@ export default function FoodResiliencePage() {
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-          <p className="text-xs uppercase tracking-wider text-slate-500">Overall state</p>
+          <p className="text-xs uppercase tracking-wider text-slate-500">Certified resilience state</p>
           <div className="mt-3"><Tone state={summary.state} /></div>
-          <p className="mt-3 text-xs text-slate-500">Trend: {summary.trend || 'UNKNOWN'}</p>
+          <p className="mt-3 text-xs text-slate-500">Unavailable until scientific promotion gates pass</p>
         </div>
         <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-          <p className="text-xs uppercase tracking-wider text-slate-500">Activation</p>
-          <p className="mt-2 text-lg font-semibold text-slate-100">Phase 1</p>
-          <p className="mt-1 text-xs text-slate-500">Observable warning indicators</p>
+          <p className="text-xs uppercase tracking-wider text-slate-500">Phase 1 warning state</p>
+          <div className="mt-3"><Tone state={summary.warning_state} /></div>
+          <p className="mt-3 text-xs text-slate-500">Observable hazard/condition envelope only</p>
         </div>
         <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
           <p className="text-xs uppercase tracking-wider text-slate-500">Evidence completeness</p>
