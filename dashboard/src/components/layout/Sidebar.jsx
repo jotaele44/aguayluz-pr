@@ -17,6 +17,7 @@ const NAV = [
   { to: '/outages', icon: Zap, label: 'Outages' },
   { to: '/water-disruption', icon: Droplets, label: 'Water Validation' },
   { to: '/monitoring', icon: Activity, label: 'Monitoring' },
+  { to: '/electricity', icon: Activity, label: 'Electricity Intelligence' },
   { to: '/hydromet', icon: CloudRain, label: 'NWS Hydromet' },
   { to: '/cave-karst', icon: Mountain, label: 'Cave & Karst' },
   { to: '/regulatory', icon: Landmark, label: 'Regulatory', end: true },
