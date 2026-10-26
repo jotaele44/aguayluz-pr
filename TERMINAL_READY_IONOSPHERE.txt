@@ -1,0 +1,38 @@
+IONOSPHERE RC3 — NOT A PRODUCTION RELEASE
+Run from repository root. Requires Python >=3.10, installed FastAPI/httpx, Node and dashboard npm ci.
+Platform: macOS/Linux/a-Shell with Python and dependencies; commands each use one line.
+Contract + API smoke: PYTHONPATH=src python -m unittest discover -s tests -p test_ionosphere.py -v
+Windows PowerShell smoke: $env:PYTHONPATH='src'; python -m unittest discover -s tests -p test_ionosphere.py -v
+Parity inventory: python scripts/check_gui_parity.py
+UI unit: npm --prefix dashboard test -- --run src/pages/IonospherePage.test.jsx
+Default full GUI gate: npm --prefix dashboard run test:gui-parity
+Enabled preview test (macOS/Linux): VITE_IONOSPHERE_PREVIEW=1 AGUAYLUZ_IONOSPHERE_PREVIEW=1 npm --prefix dashboard exec -- playwright test -c dashboard/gui-parity.playwright.config.mjs dashboard/tests/ionosphere.spec.mjs
+Enabled preview test (PowerShell): $env:VITE_IONOSPHERE_PREVIEW='1'; $env:AGUAYLUZ_IONOSPHERE_PREVIEW='1'; npm --prefix dashboard exec -- playwright test -c dashboard/gui-parity.playwright.config.mjs dashboard/tests/ionosphere.spec.mjs
+Build: npm --prefix dashboard run build
+Integrity (macOS/Linux): shasum -a 256 -c docs/ionosphere_rc3/SHA256.txt
+Integrity (PowerShell): Get-FileHash src/aguayluz/ionosphere.py -Algorithm SHA256
+Do not enable preview in production. Live acquisition HTTP 403 is a blocker, never zero records.
+On failure preserve logs and baseline, keep flags disabled; do not regenerate parity baseline.
+Rollback: unset AGUAYLUZ_IONOSPHERE_PREVIEW and VITE_IONOSPHERE_PREVIEW; rebuild dashboard.
+No measurements or database rows are written by RC0. Snapshot restore: NOT_APPLICABLE.
+Frozen TEC capture, bounded reference coverage and frozen PITIRRE transport: PASS. ROTI interpretation, full release certification and deployment: NOT PASSED.
+
+RC1 scope/evidence: docs/IONOSPHERE_RC1.md; RC0 immutable hashes apply only at the RC0 commit.
+Capture regressions: PYTHONPATH=src python -m pytest tests/test_ionosphere.py tests/test_capture_ionosphere_evidence.py tests/test_ionosphere_snapshot.py tests/test_gui_parity.py -q
+Development capture only: python scripts/capture_ionosphere_evidence.py artifacts/ionosphere-acquisition
+Capture exit 1 is a source/schema failure, never a zero-observation success. Output is not production data.
+
+RC2 scope: docs/IONOSPHERE_RC2.md. Reuse committed archive; do not redownload for reproduction.
+
+RC3 cross-repository scope and source adjudication: docs/ionosphere_rc3/STATUS.md
+Transport regressions: PYTHONPATH=src python -m pytest tests/test_ionosphere_transport.py tests/test_frozen_pfas_pr_scope.py -q
+Reference topology (analysis dependency): python -m pip install shapely
+Recompute reference evidence: python scripts/audit_ionosphere_reference_coverage.py --check
+Frozen EPA scope check (original passing artifact): python scripts/verify_frozen_pfas_pr_scope.py /tmp/PFAS_PASS_39968848835.zip /tmp/pfas_scope_receipt.json
+EPA gate uses a fixed artifact, not a live freshness check. Canonical PR TSV is not replaced.
+ROTI capture is acquired privately; matrix/CRS/zero semantics and redistribution remain OPEN.
+Simulated bundle-path resource check passes; this does not certify installation or every physical device.
+
+PowerShell frozen EPA check (place checkpoint in TEMP): python scripts/verify_frozen_pfas_pr_scope.py "$env:TEMP\PFAS_PASS_39968848835.zip" "$env:TEMP\pfas_scope_receipt.json"
+
+Exact candidate acceptance: .github/workflows/ionosphere-exact-candidate.yml pins and attests HEAD; PR merge-CI success alone is insufficient.

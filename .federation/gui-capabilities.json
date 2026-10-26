@@ -1223,7 +1223,7 @@
       "classification": "analysis",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Read-only, fail-closed environmental source→pathway→receptor graph. It preserves existing utility/regulatory identities, exposes provenance and causal state, and prohibits proximity/name-only evidence from becoming causal attribution.",
+      "rationale": "Read-only, fail-closed environmental source\u2192pathway\u2192receptor graph. It preserves existing utility/regulatory identities, exposes provenance and causal state, and prohibits proximity/name-only evidence from becoming causal attribution.",
       "backend": {
         "files": [
           "server/backend/environmental_exposure_api.py",
@@ -1769,6 +1769,113 @@
         "e2e": [
           "dashboard/tests/nws-hydromet.spec.mjs",
           "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "ionosphere-preview",
+      "classification": "analysis",
+      "status": "staged",
+      "requires_terminal": false,
+      "feature_flag": "AGUAYLUZ_IONOSPHERE_PREVIEW=1 + VITE_IONOSPHERE_PREVIEW=1",
+      "tracking": "docs/IONOSPHERE_RC0.md",
+      "expires_on": "2026-11-23",
+      "backend": {
+        "files": [
+          "server/backend/ionosphere_api.py",
+          "src/aguayluz/ionosphere.py",
+          "src/aguayluz/ionosphere_snapshot.py",
+          "src/aguayluz/ionosphere_transport.py"
+        ],
+        "endpoints": [
+          "GET /ionosphere/status"
+        ],
+        "symbols": [
+          "server/backend/ionosphere_api.py:ionosphere_status",
+          "src/aguayluz/ionosphere.py:audit_status",
+          "src/aguayluz/ionosphere.py:validate_record",
+          "src/aguayluz/ionosphere.py:validate_batch",
+          "src/aguayluz/ionosphere_snapshot.py:snapshot_context",
+          "src/aguayluz/ionosphere_transport.py:consume_glotec_package",
+          "src/aguayluz/ionosphere_transport.py:load_frozen_transport",
+          "src/aguayluz/ionosphere_transport.py:load_reference_coverage"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/ionosphere"
+        ],
+        "e2e_routes": [
+          "/ionosphere"
+        ],
+        "components": [
+          "dashboard/src/pages/IonospherePage.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_ionosphere.py",
+          "tests/test_ionosphere_snapshot.py",
+          "tests/test_ionosphere_transport.py"
+        ],
+        "unit": [
+          "dashboard/src/pages/IonospherePage.test.jsx"
+        ],
+        "e2e": [
+          "dashboard/tests/ionosphere.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "ionosphere-ci-acquisition-evidence",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Development-only CI evidence capture experiment. It freezes fixed NOAA public endpoint responses into isolated build artifacts and inventories schema without ingestion, scheduling, user-facing production operations, or geographic certification. It is not a production acquisition capability.",
+      "analysis": {
+        "files": [
+          "scripts/capture_ionosphere_evidence.py",
+          "scripts/audit_ionosphere_reference_coverage.py"
+        ],
+        "symbols": [
+          "scripts/capture_ionosphere_evidence.py:freeze",
+          "scripts/capture_ionosphere_evidence.py:request_bytes",
+          "scripts/capture_ionosphere_evidence.py:inspect_capture",
+          "scripts/capture_ionosphere_evidence.py:capture",
+          "scripts/audit_ionosphere_reference_coverage.py:classify",
+          "scripts/audit_ionosphere_reference_coverage.py:audit"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_capture_ionosphere_evidence.py"
+        ]
+      }
+    },
+    {
+      "id": "frozen-pfas-pr-scope-ci-adjudication",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "CI-only evidence gate over a fixed passing artifact, distinguishing national archive payload changes from the exact PR row multiset. It neither acquires a mutable EPA source nor mutates operational/canonical rows. Existing Exposure Graph workflows display the retained PR data; no standalone operator control is introduced.",
+      "analysis": {
+        "files": [
+          "scripts/verify_frozen_pfas_pr_scope.py"
+        ],
+        "symbols": [
+          "scripts/verify_frozen_pfas_pr_scope.py:zip_manifest",
+          "scripts/verify_frozen_pfas_pr_scope.py:compare_archives",
+          "scripts/verify_frozen_pfas_pr_scope.py:table",
+          "scripts/verify_frozen_pfas_pr_scope.py:verify_bundle",
+          "scripts/verify_frozen_pfas_pr_scope.py:select_pr_source"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_frozen_pfas_pr_scope.py"
         ]
       }
     }
