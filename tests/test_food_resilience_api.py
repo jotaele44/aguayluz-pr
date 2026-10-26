@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 
+from server.backend import main as legacy
 from server.backend.app import app
 
 
@@ -57,3 +58,16 @@ def test_food_resilience_api_is_read_only():
     assert client.post('/food-resilience/state').status_code == 405
     assert client.post('/food-resilience/baseline').status_code == 405
     assert client.post('/food-resilience/scenarios').status_code == 405
+
+
+def test_phase1_metric_bindings_exist_in_canonical_registry():
+    expected = {
+        "precipitation": {"precipitation_pct_normal_30d", "precipitation_pct_normal_90d"},
+        "reservoir": {"streamflow", "reservoir_elevation"},
+        "groundwater": {"groundwater_level"},
+        "drought": {"drought_category"},
+    }
+    for kind, metrics in expected.items():
+        assert kind in legacy.READING_VECTOR_REGISTRY
+        configured = set(legacy.READING_VECTOR_REGISTRY[kind]["metrics"])
+        assert metrics <= configured
