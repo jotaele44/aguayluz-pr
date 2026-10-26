@@ -339,3 +339,102 @@ def test_live_receipt_failure_removes_stale_output_and_sidecar(tmp_path, monkeyp
         ingest_aee.main()
     assert not out.exists()
     assert not receipt_out.exists()
+
+
+def test_live_receipt_rejects_noncanonical_source(tmp_path, monkeypatch):
+    src = tmp_path / "towns.json"
+    meta = tmp_path / "manifest.json"
+    out = tmp_path / "luma_live_incidents.jsonl"
+    receipt_out = tmp_path / "luma_live_receipt.json"
+    raw = json.dumps(SAMPLE, separators=(",", ":")).encode("utf-8")
+    src.write_bytes(raw)
+    meta.write_text(
+        json.dumps(
+            {
+                "towns": {
+                    "status": "PASS",
+                    "url": "https://example.invalid/outages",
+                    "retrieval_utc": "2026-09-19T12:34:56Z",
+                    "response_sha256": hashlib.sha256(raw).hexdigest(),
+                    "response_bytes": len(raw),
+                    "request_key_count": 78,
+                    "request_body_sha256": "4" * 64,
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "ingest_aee.py",
+            "--src",
+            str(src),
+            "--snapshot-meta",
+            str(meta),
+            "--geo",
+            str(REPO_ROOT / "data/geo/pr_municipios.json"),
+            "--out",
+            str(out),
+            "--receipt-out",
+            str(receipt_out),
+        ],
+    )
+
+    with pytest.raises(ValueError, match="canonical towns endpoint"):
+        ingest_aee.main()
+    assert not out.exists()
+    assert not receipt_out.exists()
+
+
+def test_live_receipt_rejects_municipio_aggregation(tmp_path, monkeypatch):
+    src = tmp_path / "towns.json"
+    meta = tmp_path / "manifest.json"
+    out = tmp_path / "luma_live_incidents.jsonl"
+    receipt_out = tmp_path / "luma_live_receipt.json"
+    raw = json.dumps(SAMPLE, separators=(",", ":")).encode("utf-8")
+    src.write_bytes(raw)
+    meta.write_text(
+        json.dumps(
+            {
+                "towns": {
+                    "status": "PASS",
+                    "url": (
+                        "https://api.miluma.lumapr.com/"
+                        "miluma-outage-api/outage/municipality/towns"
+                    ),
+                    "retrieval_utc": "2026-09-19T12:34:56Z",
+                    "response_sha256": hashlib.sha256(raw).hexdigest(),
+                    "response_bytes": len(raw),
+                    "request_key_count": 78,
+                    "request_body_sha256": "5" * 64,
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "ingest_aee.py",
+            "--src",
+            str(src),
+            "--snapshot-meta",
+            str(meta),
+            "--geo",
+            str(REPO_ROOT / "data/geo/pr_municipios.json"),
+            "--out",
+            str(out),
+            "--receipt-out",
+            str(receipt_out),
+            "--granularity",
+            "municipio",
+        ],
+    )
+
+    with pytest.raises(ValueError, match="requires zone granularity"):
+        ingest_aee.main()
+    assert not out.exists()
+    assert not receipt_out.exists()
