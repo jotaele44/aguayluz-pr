@@ -45,6 +45,7 @@ DEFAULT_SOURCE_REF = (
     "https://github.com/SuperSonicHub1/luma-energy-outages/blob/"
     "e864255cb64712a98260ced8868e40aaa65415d8/outages_by_town.json"
 )
+LUMA_TOWNS_URL = "https://api.miluma.lumapr.com/miluma-outage-api/outage/municipality/towns"
 
 
 def unaccent_upper(name: str) -> str:
@@ -206,6 +207,12 @@ def main() -> int:
     out.write_bytes(output_bytes)
 
     if receipt_out is not None:
+        if source_ref != LUMA_TOWNS_URL:
+            out.unlink(missing_ok=True)
+            raise ValueError("live MiLUMA receipt source_ref is not the canonical towns endpoint")
+        if args.granularity != "zone":
+            out.unlink(missing_ok=True)
+            raise ValueError("live MiLUMA receipt requires zone granularity")
         expected_request_key_count = len(geo)
         if request_key_count != expected_request_key_count:
             out.unlink(missing_ok=True)
