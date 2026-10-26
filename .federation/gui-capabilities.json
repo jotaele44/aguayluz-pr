@@ -30,7 +30,8 @@
       "dashboard/src/lib/api.js",
       "dashboard/src/lib/cave-karst-api.js",
       "dashboard/src/lib/environmental-exposure-api.js",
-      "dashboard/src/lib/hydromet-api.js"
+      "dashboard/src/lib/hydromet-api.js",
+      "dashboard/src/lib/electricity-api.js"
     ],
     "route_files": [
       "dashboard/src/App.jsx"
@@ -1223,7 +1224,7 @@
       "classification": "analysis",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Read-only, fail-closed environmental source→pathway→receptor graph. It preserves existing utility/regulatory identities, exposes provenance and causal state, and prohibits proximity/name-only evidence from becoming causal attribution.",
+      "rationale": "Read-only, fail-closed environmental source\u2192pathway\u2192receptor graph. It preserves existing utility/regulatory identities, exposes provenance and causal state, and prohibits proximity/name-only evidence from becoming causal attribution.",
       "backend": {
         "files": [
           "server/backend/environmental_exposure_api.py",
@@ -1769,6 +1770,82 @@
         "e2e": [
           "dashboard/tests/nws-hydromet.spec.mjs",
           "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "electricity-evidence-workspace-v1",
+      "classification": "user",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Native Puerto Rico AUDIT_ONLY electricity evidence workspace. Source receipts, generator claims and separate epistemic states are read-only projections. Explicitly guarded official workbook acquisition and source-schema imports are exposed in the GUI. Unavailable operational data never become zero or live telemetry. This bounded capability does not certify the complete Electricity Intelligence product.",
+      "backend": {
+        "files": [
+          "server/backend/electricity_api.py",
+          "src/aguayluz/electricity/__init__.py",
+          "src/aguayluz/electricity/evidence.py",
+          "src/aguayluz/electricity/store.py",
+          "src/aguayluz/electricity/eia.py",
+          "src/aguayluz/electricity/workbook.py",
+          "src/aguayluz/electricity/projection.py"
+        ],
+        "endpoints": [
+          "GET /electricity/v1/projection",
+          "POST /electricity/v1/acquire",
+          "POST /electricity/v1/import/860m",
+          "POST /electricity/v1/import/workbook"
+        ],
+        "symbols": [
+          "server/backend/electricity_api.py:AcquisitionRequest",
+          "server/backend/electricity_api.py:ImportRequest",
+          "server/backend/electricity_api.py:acquire",
+          "server/backend/electricity_api.py:import_860m",
+          "server/backend/electricity_api.py:projection",
+          "src/aguayluz/electricity/eia.py:AcquisitionError",
+          "src/aguayluz/electricity/eia.py:EIAClient",
+          "src/aguayluz/electricity/evidence.py:EvidenceClass",
+          "src/aguayluz/electricity/evidence.py:GeneratorClaim",
+          "src/aguayluz/electricity/evidence.py:Measurement",
+          "src/aguayluz/electricity/evidence.py:SourceReceipt",
+          "src/aguayluz/electricity/evidence.py:StrictModel",
+          "src/aguayluz/electricity/evidence.py:reconcile_claims",
+          "src/aguayluz/electricity/projection.py:electricity_projection",
+          "src/aguayluz/electricity/store.py:EvidenceStore",
+          "src/aguayluz/electricity/workbook.py:parse_860m",
+          "server/backend/electricity_api.py:import_workbook",
+          "src/aguayluz/electricity/eia.py:validate_workbook_url"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/electricity"
+        ],
+        "e2e_routes": [
+          "/electricity"
+        ],
+        "components": [
+          "dashboard/src/pages/ElectricityPage.jsx",
+          "dashboard/src/lib/electricity-api.js",
+          "dashboard/src/components/layout/Sidebar.jsx",
+          "dashboard/src/contexts/SidebarContext.jsx",
+          "dashboard/src/components/layout/DashboardLayout.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_electricity.py"
+        ],
+        "contract": [
+          "tests/test_electricity.py"
+        ],
+        "unit": [
+          "dashboard/src/pages/ElectricityPage.test.jsx"
+        ],
+        "e2e": [
+          "dashboard/tests/electricity.spec.mjs"
         ]
       }
     }

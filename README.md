@@ -102,6 +102,21 @@ python scripts/validate_repo.py              # validation gates G01-G08
 python3 scripts/federation_export.py --mode test   # export_canonical
 ```
 
+## Native electricity evidence workspace
+
+The diagnostic app includes a discoverable **Electricity Intelligence** workspace
+at `/electricity`, served by `server.backend.app:app`. It exposes separate
+observed/reconstructed/forecast/source-candidate views, source receipts, generator
+claims, contradiction inspection, guarded EIA workbook acquisition and offline
+capture, and English/Spanish controls. Missing source data remain unavailable.
+
+This is an **AUDIT ONLY, NOT CERTIFIED** development tranche. No authoritative
+live grid feed, production forecast engine, RC8–RC14 canonical integration or
+new Federation-consumer acceptance is claimed. Existing exports and THEHUB's
+product role remain intact. See the [architecture](docs/electricity/ADR-0001-native-evidence-workspace.md),
+[requirement ledger](docs/electricity/requirements.v1.json) and
+[validation/recovery runbook](docs/electricity/OPERATIONS.md).
+
 ## Desktop app
 
 Double-click launchers at the repo root start the local desktop app (first run

@@ -1,0 +1,38 @@
+{
+  "schema_version": "aguayluz.electricity-acquisition/v1",
+  "recorded_at": "2026-10-26T07:44:42.665335+00:00",
+  "official_bytes_acquired": 0,
+  "canonical_records_promoted": 0,
+  "sources": [
+    {
+      "id": "EIA_API_V2",
+      "state": "BLOCKED",
+      "blockers": [
+        "EIA_API_KEY not configured",
+        "api.eia.gov not allowed by current network policy"
+      ],
+      "validation": "SYNTHETIC_CONTRACT_TESTS_ONLY"
+    },
+    {
+      "id": "EIA_860M_ORIGINAL",
+      "state": "BLOCKED",
+      "url": "https://www.eia.gov/electricity/data/eia860m/",
+      "failure": "CONNECT proxy HTTP 403; no original bytes acquired"
+    },
+    {
+      "id": "EIA_923_ORIGINAL",
+      "state": "UNVERIFIED",
+      "failure": "Original source/schema not acquired"
+    },
+    {
+      "id": "HYDRO_RC8_RC14",
+      "state": "AUDIT_ONLY",
+      "failure": "Packages not present"
+    },
+    {
+      "id": "P0_SCAFFOLD",
+      "state": "BLOCKED",
+      "failure": "Named ZIP not present"
+    }
+  ]
+}
