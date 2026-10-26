@@ -6,6 +6,7 @@ import json
 import os
 import re
 import sqlite3
+import tempfile
 from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
@@ -56,15 +57,29 @@ class EvidenceStore:
             raise ValueError("evidence directory symlinks refused")
         blob_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
         target = blob_dir / digest
+        # Never expose a partial write under the immutable content address. A
+        # hard link publishes the complete file atomically without replacing an
+        # existing blob; concurrent captures can then verify the winner's bytes.
+        descriptor, staging_name = tempfile.mkstemp(prefix=".capture-", dir=blob_dir)
+        staging = Path(staging_name)
         try:
-            descriptor = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o600)
-        except FileExistsError:
-            self.read_raw(digest)
-        else:
             with os.fdopen(descriptor, "wb") as handle:
-                handle.write(raw)
+                if handle.write(raw) != len(raw):
+                    raise OSError("incomplete evidence write")
                 handle.flush()
                 os.fsync(handle.fileno())
+            try:
+                os.link(staging, target)
+            except FileExistsError:
+                self.read_raw(digest)
+            if os.name != "nt":
+                directory = os.open(blob_dir, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+                try:
+                    os.fsync(directory)
+                finally:
+                    os.close(directory)
+        finally:
+            staging.unlink(missing_ok=True)
         payload = receipt.model_dump_json()
         receipt_id = hashlib.sha256(payload.encode()).hexdigest()
         with closing(self._connect()) as db, db:

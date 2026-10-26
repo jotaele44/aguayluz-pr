@@ -42,6 +42,7 @@ test('electricity keyboard localization, evidence export and mobile layout', asy
   await page.getByRole('button', { name: 'Guardar vista' }).click()
   await page.reload()
   await expect(page.getByRole('heading', { name: 'Inteligencia Eléctrica' })).toBeVisible()
+  await expect(page.getByText(/NOT_CERTIFIED · revision/)).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   await page.screenshot({ path: testInfo.outputPath('electricity-mobile-es.png'), fullPage: true })
 })
@@ -53,4 +54,21 @@ test('electricity acquisition denies unauthenticated writes through the GUI', as
   await page.getByRole('button', { name: 'Acquire original workbook' }).click()
   await expect(page.getByText(/ELECTRICITY_HTTP_(503|401)/)).toBeVisible()
   await expect(page.getByRole('button', { name: 'Acquire original workbook' })).toBeEnabled()
+})
+
+test('electricity source integrity failure disables export and recovers through retry', async ({ page }) => {
+  // Inject an API integrity failure, then retry the actual producer. No source
+  // measurements or successful projection responses are fabricated by this test.
+  let fail = true
+  await page.route('**/electricity/v1/projection', route => fail
+    ? route.fulfill({ status: 503, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ detail: 'ELECTRICITY_EVIDENCE_INTEGRITY_FAILED' }) })
+    : route.continue())
+  await page.goto('/electricity')
+  await expect(page.getByRole('alert')).toContainText('Electricity evidence is unavailable')
+  await expect(page.getByRole('button', { name: 'Export evidence JSON' })).toBeDisabled()
+  await expect(page.getByText(/NOT_CERTIFIED · revision/)).toHaveCount(0)
+  fail = false
+  await page.getByRole('button', { name: 'Retry' }).click()
+  await expect(page.getByText(/NOT_CERTIFIED · revision/)).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Export evidence JSON' })).toBeEnabled()
 })

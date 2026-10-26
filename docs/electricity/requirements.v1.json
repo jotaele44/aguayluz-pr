@@ -87,9 +87,10 @@
       "requirement": "Immutable SHA-256 raw storage and UTC provenance",
       "status": "IMPLEMENTED_AND_VERIFIED",
       "evidence": [
-        "tests/test_electricity.py"
+        "tests/test_electricity.py",
+        "tests/test_electricity_capture_recovery.py"
       ],
-      "remaining_gate": "Verified with synthetic inputs only; offline origin never becomes verified"
+      "remaining_gate": "Synthetic interrupted-write and concurrent retry controls verified. No independent official-source or production durability certification implied."
     },
     {
       "id": "A.7",
