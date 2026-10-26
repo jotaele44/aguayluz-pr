@@ -67,7 +67,7 @@ def test_food_resilience_api_is_read_only():
 
 def test_phase1_metric_bindings_exist_in_canonical_registry():
     expected = {
-        "precipitation": {"precipitation_pct_normal_30d", "precipitation_pct_normal_90d"},
+        "precipitation": {"precipitation_pct_normal"},
         "reservoir": {"streamflow", "reservoir_elevation"},
         "groundwater": {"groundwater_level"},
         "drought": {"drought_category"},
@@ -82,17 +82,18 @@ def test_phase1_contract_metrics_match_canonical_registry():
     contract = load_food_resilience_contract()
     by_signal = {row["signal_id"]: row for row in contract["phase1_signals"]}
     expected = {
-        "FOOD.P1.RAINFALL_30D": ("precipitation", "precipitation_pct_normal_30d"),
-        "FOOD.P1.RAINFALL_90D": ("precipitation", "precipitation_pct_normal_90d"),
-        "FOOD.P1.STREAMFLOW": ("reservoir", "streamflow"),
-        "FOOD.P1.GROUNDWATER": ("groundwater", "groundwater_level"),
-        "FOOD.P1.RESERVOIRS": ("reservoir", "reservoir_elevation"),
-        "FOOD.P1.DROUGHT_CLASS": ("drought", "drought_category"),
+        "FOOD.P1.RAINFALL_30D": ("precipitation", "precipitation_pct_normal", "30d"),
+        "FOOD.P1.RAINFALL_90D": ("precipitation", "precipitation_pct_normal", "90d"),
+        "FOOD.P1.STREAMFLOW": ("reservoir", "streamflow", None),
+        "FOOD.P1.GROUNDWATER": ("groundwater", "groundwater_level", None),
+        "FOOD.P1.RESERVOIRS": ("reservoir", "reservoir_elevation", None),
+        "FOOD.P1.DROUGHT_CLASS": ("drought", "drought_category", None),
     }
-    for signal_id, (kind, metric) in expected.items():
+    for signal_id, (kind, metric, parameter_code) in expected.items():
         row = by_signal[signal_id]
         assert row["kind"] == kind
         assert row["metric"] == metric
+        assert row.get("parameter_code") == parameter_code
         assert metric in legacy.READING_VECTOR_REGISTRY[kind]["metrics"]
 
 
