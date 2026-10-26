@@ -109,6 +109,10 @@ at `/electricity`, served by `server.backend.app:app`. It exposes separate
 observed/reconstructed/forecast/source-candidate views, source receipts, generator
 claims, contradiction inspection, guarded EIA workbook acquisition and offline
 capture, and English/Spanish controls. Missing source data remain unavailable.
+The Evidence inspector also records reversible candidate recommendations with
+exact-claim hashes and immutable history. Recommendations preserve every source
+claim and contradiction; the shared operator role is disclosed. See the
+[review contract and limits](docs/electricity/ADR-0002-candidate-review-ledger.md).
 
 This is an **AUDIT ONLY, NOT CERTIFIED** development tranche. No authoritative
 live grid feed, production forecast engine, RC8–RC14 canonical integration or

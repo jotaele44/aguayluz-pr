@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import ElectricityPage from './ElectricityPage'
 import { getElectricityProjection, acquireElectricityWorkbook, importElectricityWorkbook } from '@/lib/electricity-api'
 
-vi.mock('@/lib/electricity-api', () => ({ getElectricityProjection: vi.fn(), acquireElectricityWorkbook: vi.fn(), importElectricityWorkbook: vi.fn(), uploadElectricityWorkbook: vi.fn() }))
+vi.mock('@/lib/electricity-api', () => ({ getElectricityProjection: vi.fn(), acquireElectricityWorkbook: vi.fn(), importElectricityWorkbook: vi.fn(), uploadElectricityWorkbook: vi.fn(), getElectricityReviews: vi.fn(), appendElectricityReview: vi.fn() }))
 
 const empty = () => ({
   revision: 'a'.repeat(64), certification: 'NOT_CERTIFIED', generator_claims: [], sources: [], contradictions: [], gaps: ['EIA_LIVE_SCHEMA_UNVERIFIED'],

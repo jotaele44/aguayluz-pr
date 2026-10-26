@@ -17,6 +17,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 from aguayluz.electricity.eia import AcquisitionError, EIAClient, validate_workbook_url
 from aguayluz.electricity.evidence import SourceReceipt
 from aguayluz.electricity.projection import electricity_projection
+from aguayluz.electricity.review import ReviewError, ReviewLedger, ReviewRequest
 from aguayluz.electricity.store import EvidenceStore
 from aguayluz.electricity.workbook import parse_860m
 from server.backend import main as legacy
@@ -55,6 +56,26 @@ def projection() -> dict:
         return electricity_projection(_store())
     except (OSError, ValueError, sqlite3.DatabaseError) as exc:
         raise HTTPException(503, detail="ELECTRICITY_EVIDENCE_INTEGRITY_FAILED") from exc
+
+
+@router.get("/electricity/v1/reviews")
+def reviews() -> dict:
+    try:
+        store = _store()
+        return ReviewLedger(store.root).snapshot(electricity_projection(store))
+    except (OSError, ValueError, sqlite3.DatabaseError) as exc:
+        raise HTTPException(503, detail="ELECTRICITY_REVIEW_INTEGRITY_FAILED") from exc
+
+
+@router.post("/electricity/v1/reviews", dependencies=[Depends(_require_operator)])
+def append_review(body: ReviewRequest) -> dict:
+    try:
+        store = _store()
+        return ReviewLedger(store.root).append(electricity_projection(store), body)
+    except ReviewError as exc:
+        raise HTTPException(409, detail=str(exc)) from None
+    except (OSError, ValueError, sqlite3.DatabaseError) as exc:
+        raise HTTPException(503, detail="ELECTRICITY_REVIEW_INTEGRITY_FAILED") from exc
 
 
 @router.post("/electricity/v1/acquire", dependencies=[Depends(_require_operator)])

@@ -60,3 +60,13 @@ Run Python validation and browser parity sequentially; the existing browser harn
 Missing EIA bytes, absent telemetry, missing RC8–RC14 and blocked verification gates never certify electricity readiness.
 Native route: /electricity. Canonical ASGI entrypoint: server.backend.app:app.
 No production deployment, merge, certification or skill/agent promotion is authorized by this artifact.
+
+REVERSIBLE ELECTRICITY CANDIDATE REVIEWS — AUDIT ONLY
+Native Electricity > Evidence inspector exposes exact-claim recommendations, reversal, history and export.
+These recommendations preserve scientific claims and contradictions; canonical promotion stays BLOCKED.
+Shared operator authentication identifies a role, not an individual reviewer.
+Contract and limits: docs/electricity/ADR-0002-candidate-review-ledger.md
+Bounded a-Shell-compatible check (dependencies preinstalled; physical iOS execution unverified):
+python3 -m pytest -q tests/test_electricity_reviews.py tests/test_electricity.py tests/test_electricity_capture_recovery.py tests/test_schemas.py
+Isolated synthetic browser workflow: npm --prefix dashboard run test:electricity-review
+Back up both ledger.sqlite3 and reviews.sqlite3 with verified raw blobs after quiescing writers.

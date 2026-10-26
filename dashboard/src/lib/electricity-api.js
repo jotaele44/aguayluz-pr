@@ -14,6 +14,8 @@ async function request(path, body) {
 }
 
 export const getElectricityProjection = () => request('projection')
+export const getElectricityReviews = () => request('reviews')
+export const appendElectricityReview = (body) => request('reviews', body)
 export const acquireElectricityWorkbook = (url) => request('acquire', { url })
 export const importElectricityWorkbook = (body) => request('import/860m', body)
 

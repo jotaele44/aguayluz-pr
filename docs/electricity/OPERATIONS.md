@@ -56,7 +56,10 @@ Do not bypass WAFs, proxy restrictions or source access agreements.
 The new runtime state is `<AGUAYLUZ_DATA_HOME>/data/electricity/`, or
 `data/electricity/` without a custom data home. It is ignored by Git. It contains
 `ledger.sqlite3` and SHA-256-named `raw/` blobs. Source captures never overwrite
-existing blobs. A Git checkout is not a data backup.
+existing blobs. Candidate recommendations also use `reviews.sqlite3`; back up
+and restore that ledger with its source database after quiescing writers. A Git
+checkout is not a data backup. See `ADR-0002-candidate-review-ledger.md` for the
+review role, immutable-history and recovery boundaries.
 
 1. Stop acquisitions/imports and quiesce writers. Record the candidate commit and
    projection revision, raw blob hashes and receipt count.

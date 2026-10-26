@@ -1849,6 +1849,66 @@
           "dashboard/tests/electricity.spec.mjs"
         ]
       }
+    },
+    {
+      "id": "electricity-candidate-review-v1",
+      "classification": "user",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Exact-claim AUDIT_ONLY recommendations, immutable reversal history, role disclosure, conflict refresh and export are exposed in the native electricity evidence inspector. A separate versioned ledger preserves all scientific evidence, contradictions, projection v1 and canonical promotion refusal. Shared operator-key authentication does not establish individual reviewer identity.",
+      "backend": {
+        "files": [
+          "server/backend/electricity_api.py",
+          "src/aguayluz/electricity/review.py"
+        ],
+        "endpoints": [
+          "GET /electricity/v1/reviews",
+          "POST /electricity/v1/reviews"
+        ],
+        "symbols": [
+          "server/backend/electricity_api.py:reviews",
+          "server/backend/electricity_api.py:append_review",
+          "src/aguayluz/electricity/review.py:ReviewError",
+          "src/aguayluz/electricity/review.py:ReviewRequest",
+          "src/aguayluz/electricity/review.py:ReviewEvent",
+          "src/aguayluz/electricity/review.py:StoredReviewEvent",
+          "src/aguayluz/electricity/review.py:ReviewedClaim",
+          "src/aguayluz/electricity/review.py:ReviewProjection",
+          "src/aguayluz/electricity/review.py:claim_identifier",
+          "src/aguayluz/electricity/review.py:ReviewLedger"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/electricity"
+        ],
+        "e2e_routes": [
+          "/electricity"
+        ],
+        "components": [
+          "dashboard/src/pages/ElectricityPage.jsx",
+          "dashboard/src/components/electricity/ElectricityReviews.jsx",
+          "dashboard/src/lib/electricity-api.js"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx",
+          "dashboard/src/pages/ElectricityPage.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_electricity_reviews.py"
+        ],
+        "contract": [
+          "tests/test_electricity_reviews.py"
+        ],
+        "unit": [
+          "dashboard/src/components/electricity/ElectricityReviews.test.jsx"
+        ],
+        "e2e": [
+          "dashboard/tests/electricity-review.spec.mjs"
+        ]
+      }
     }
   ],
   "exceptions": []

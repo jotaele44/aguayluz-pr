@@ -44,7 +44,7 @@
       "evidence": [
         "tests/test_electricity.py"
       ],
-      "remaining_gate": "Bounded client and byte-stream downloads implemented; live EIA access is proxy-denied, key not configured; original schemas, full EIA-923 parsing, resumable checkpoints and scheduled updates remain open"
+      "remaining_gate": "Bounded client and byte-stream downloads implemented; live EIA access is proxy-denied, credential input received but authentication unverified; original schemas, full EIA-923 parsing, resumable checkpoints and scheduled updates remain open"
     },
     {
       "id": "A.2",
@@ -53,7 +53,7 @@
       "evidence": [
         "tests/test_electricity.py"
       ],
-      "remaining_gate": "Bounded client and byte-stream downloads implemented; live EIA access is proxy-denied, key not configured; original schemas, full EIA-923 parsing, resumable checkpoints and scheduled updates remain open"
+      "remaining_gate": "Bounded client and byte-stream downloads implemented; live EIA access is proxy-denied, credential input received but authentication unverified; original schemas, full EIA-923 parsing, resumable checkpoints and scheduled updates remain open"
     },
     {
       "id": "A.3",
@@ -62,7 +62,7 @@
       "evidence": [
         "tests/test_electricity.py"
       ],
-      "remaining_gate": "Bounded client and byte-stream downloads implemented; live EIA access is proxy-denied, key not configured; original schemas, full EIA-923 parsing, resumable checkpoints and scheduled updates remain open"
+      "remaining_gate": "Bounded client and byte-stream downloads implemented; live EIA access is proxy-denied, credential input received but authentication unverified; original schemas, full EIA-923 parsing, resumable checkpoints and scheduled updates remain open"
     },
     {
       "id": "A.4",
@@ -71,7 +71,7 @@
       "evidence": [
         "tests/test_electricity.py"
       ],
-      "remaining_gate": "Bounded client and byte-stream downloads implemented; live EIA access is proxy-denied, key not configured; original schemas, full EIA-923 parsing, resumable checkpoints and scheduled updates remain open"
+      "remaining_gate": "Bounded client and byte-stream downloads implemented; live EIA access is proxy-denied, credential input received but authentication unverified; original schemas, full EIA-923 parsing, resumable checkpoints and scheduled updates remain open"
     },
     {
       "id": "A.5",
@@ -80,7 +80,7 @@
       "evidence": [
         "tests/test_electricity.py"
       ],
-      "remaining_gate": "Bounded client and byte-stream downloads implemented; live EIA access is proxy-denied, key not configured; original schemas, full EIA-923 parsing, resumable checkpoints and scheduled updates remain open"
+      "remaining_gate": "Bounded client and byte-stream downloads implemented; live EIA access is proxy-denied, credential input received but authentication unverified; original schemas, full EIA-923 parsing, resumable checkpoints and scheduled updates remain open"
     },
     {
       "id": "A.6",
@@ -222,16 +222,23 @@
       "status": "PARTIALLY_IMPLEMENTED",
       "evidence": [
         "tests/test_electricity.py",
-        "schemas/electricity_projection.v1.schema.json"
+        "schemas/electricity_projection.v1.schema.json",
+        "tests/test_electricity_reviews.py",
+        "dashboard/tests/electricity-review.spec.mjs"
       ],
       "remaining_gate": "Generator/source/measurement contracts and bounded reconciliation implemented; broader registry, verified crosswalks, seasonal capacity, confidence policy and negative-evidence adjudication remain open"
     },
     {
       "id": "B.9",
       "requirement": "Manual adjudication, reversible decisions and audit trails",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "remaining_gate": "Requires reviewed adjudication policy and secure operator workflow"
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "src/aguayluz/electricity/review.py",
+        "tests/test_electricity_reviews.py",
+        "dashboard/tests/electricity-review.spec.mjs",
+        "docs/electricity/ADR-0002-candidate-review-ledger.md"
+      ],
+      "remaining_gate": "Reversible candidate recommendations and exact-claim/revision audit history implemented. Individual reviewer identity, reviewed canonical adjudication policy and independent source/scientific acceptance remain open; no canonical evidence is changed."
     },
     {
       "id": "B.10",
@@ -503,7 +510,9 @@
       "evidence": [
         "dashboard/src/pages/ElectricityPage.jsx",
         "dashboard/src/pages/ElectricityPage.test.jsx",
-        "dashboard/tests/electricity.spec.mjs"
+        "dashboard/tests/electricity.spec.mjs",
+        "tests/test_electricity_reviews.py",
+        "dashboard/tests/electricity-review.spec.mjs"
       ],
       "remaining_gate": "Native source-evidence workspace or related existing route available; full requested operational workspace scope remains incomplete"
     },
@@ -650,7 +659,9 @@
       "status": "PARTIALLY_IMPLEMENTED",
       "evidence": [
         "tests/test_electricity.py",
-        "docs/electricity/OPERATIONS.md"
+        "docs/electricity/OPERATIONS.md",
+        "tests/test_electricity_reviews.py",
+        "dashboard/tests/electricity-review.spec.mjs"
       ],
       "remaining_gate": "Attempt ledger, single-process acquisition lock and local recovery rehearsal implemented; distributed quotas, full RBAC, sensitive-data agreements and operational backups remain open"
     },
