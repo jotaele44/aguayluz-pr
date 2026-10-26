@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 from server.backend import main as legacy
 from server.backend.app import app
+from server.backend.food_resilience_api import load_food_resilience_contract
 
 client = TestClient(app)
 
@@ -69,3 +70,21 @@ def test_phase1_metric_bindings_exist_in_canonical_registry():
         assert kind in legacy.READING_VECTOR_REGISTRY
         configured = set(legacy.READING_VECTOR_REGISTRY[kind]["metrics"])
         assert metrics <= configured
+
+
+def test_phase1_contract_metrics_match_canonical_registry():
+    contract = load_food_resilience_contract()
+    by_signal = {row["signal_id"]: row for row in contract["phase1_signals"]}
+    expected = {
+        "FOOD.P1.RAINFALL_30D": ("precipitation", "precipitation_pct_normal_30d"),
+        "FOOD.P1.RAINFALL_90D": ("precipitation", "precipitation_pct_normal_90d"),
+        "FOOD.P1.STREAMFLOW": ("reservoir", "streamflow"),
+        "FOOD.P1.GROUNDWATER": ("groundwater", "groundwater_level"),
+        "FOOD.P1.RESERVOIRS": ("reservoir", "reservoir_elevation"),
+        "FOOD.P1.DROUGHT_CLASS": ("drought", "drought_category"),
+    }
+    for signal_id, (kind, metric) in expected.items():
+        row = by_signal[signal_id]
+        assert row["kind"] == kind
+        assert row["metric"] == metric
+        assert metric in legacy.READING_VECTOR_REGISTRY[kind]["metrics"]
