@@ -16,9 +16,9 @@
   "spatial_generation": "federation-spatial-index/1",
   "spatial_note": "Compatible with federation spatial binding v0.2. While Spiderweb's transform is PROVISIONAL, this repository forbids exact Cell_ID ground claims and preserves full content-addressed uncertainty Cell_Set membership; identity remains CANDIDATE_NOT_IDENTITY.",
   "local_review": {
-    "date": "2026-10-11",
-    "change": "NWS hydromet plane: Stage IV Puerto Rico daily rainfall per municipio (source_truth.real_data_sources.stage_iv_pr) with WEATHER_HAZARD heavy-rain alerts, on top of NWPS river/reservoir gauge flood status",
-    "result": "All declared federation and spatial contracts remain compatible; new rows reach the Hub only through the existing alerts stream (new generated markers _nwpsflood_ and _qpeheavy_ mirrored in federation_export), and no canonical export schema changes"
+    "date": "2026-10-26",
+    "change": "FOOD_SYSTEM_RESILIENCE Phase 1 source expansion: receipt-verified MiLUMA municipality/town outage warning, derived-output receipt, and explicit unresolved-source classifications",
+    "result": "COMPATIBLE: no canonical federation export schema or spatial contract changes. MiLUMA live events continue through the existing service-event/export path; the new runtime receipt is internal provenance, and FOOD consumes it read-only without adding or changing federation contract identifiers."
   },
   "spatial_binding_v0_2": {
     "authority_commit": "bb8463c8d8cf4b54486674ee9b665ce3d2502e8b",
