@@ -469,18 +469,20 @@
     {
       "signal_id": "FOOD.P1.RAINFALL_30D",
       "node_id": "WEATHER",
-      "metric": "precipitation_pct_normal_30d",
+      "metric": "precipitation_pct_normal",
       "kind": "precipitation",
       "state": "WIRED",
-      "source": "existing aguayluz monitoring"
+      "source": "existing aguayluz monitoring",
+      "parameter_code": "30d"
     },
     {
       "signal_id": "FOOD.P1.RAINFALL_90D",
       "node_id": "WEATHER",
-      "metric": "precipitation_pct_normal_90d",
+      "metric": "precipitation_pct_normal",
       "kind": "precipitation",
       "state": "WIRED",
-      "source": "existing aguayluz monitoring"
+      "source": "existing aguayluz monitoring",
+      "parameter_code": "90d"
     },
     {
       "signal_id": "FOOD.P1.STREAMFLOW",
