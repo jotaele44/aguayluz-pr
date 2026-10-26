@@ -261,3 +261,21 @@ def test_grid_outage_signal_rejects_tampered_output(tmp_path, monkeypatch):
     assert signal["state"] == "UNKNOWN"
     assert signal["available"] is False
     assert signal["availability_state"] == "PROVENANCE_MISMATCH"
+
+
+def test_grid_outage_signal_rejects_wrong_granularity(tmp_path, monkeypatch):
+    _write_grid_fixture(
+        tmp_path,
+        events=[{"event_id": "AYL_EVT_20261026_San_Juan_a"}],
+    )
+    receipt_path = tmp_path / "luma_live_receipt.json"
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    receipt["granularity"] = "municipio"
+    receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+    monkeypatch.setattr(legacy, "DATA", tmp_path)
+
+    signal = _grid_outage_signal()
+
+    assert signal["state"] == "UNKNOWN"
+    assert signal["available"] is False
+    assert signal["availability_state"] == "PROVENANCE_MISMATCH"
