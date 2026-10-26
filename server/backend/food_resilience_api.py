@@ -78,18 +78,38 @@ def _latest_metric(kind: str, metric: str, max_age_days: int) -> dict[str, Any]:
             "value": None,
             "unit": None,
             "source_ref": None,
+            "site_no": None,
+            "record_count": 0,
+            "site_count": 0,
+            "spatial_scope": "NO_OBSERVATION",
         }
-    rows.sort(key=lambda r: str(r.get("observed_date") or ""))
-    latest = rows[-1]
+
+    latest_day = max(str(r.get("observed_date") or "") for r in rows)
+    current = [r for r in rows if str(r.get("observed_date") or "") == latest_day]
+    site_ids = sorted({
+        str(r.get("site_no"))
+        for r in current
+        if r.get("site_no") not in (None, "")
+    })
+
+    # A cross-site monitoring vector is evidence of availability/freshness, not an
+    # islandwide scalar. Only expose a raw value when exactly one source record is
+    # in the latest snapshot; otherwise retain the snapshot count and withhold an
+    # arbitrary station value from the canonical sector signal.
+    single = len(current) == 1
+    observation = current[0] if single else None
     return {
         "available": True,
         "state": "UNKNOWN",
-        "freshness": _freshness(latest.get("observed_date"), max_age_days),
-        "observed_date": latest.get("observed_date"),
-        "value": latest.get("value"),
-        "unit": latest.get("unit"),
-        "source_ref": latest.get("source_ref"),
-        "site_no": latest.get("site_no"),
+        "freshness": _freshness(latest_day, max_age_days),
+        "observed_date": latest_day or None,
+        "value": observation.get("value") if observation else None,
+        "unit": observation.get("unit") if observation else None,
+        "source_ref": observation.get("source_ref") if observation else None,
+        "site_no": observation.get("site_no") if observation else None,
+        "record_count": len(current),
+        "site_count": len(site_ids),
+        "spatial_scope": "SINGLE_SITE_OBSERVATION" if single else "MULTI_SITE_SNAPSHOT",
     }
 
 
@@ -136,6 +156,8 @@ def _drought_signal() -> dict[str, Any]:
         "evidence_state": "COMPUTED",
         "source_ref": current[0].get("source_ref") if current else None,
         "record_count": len(current),
+        "site_count": len({str(r.get("site_no")) for r in current if r.get("site_no") not in (None, "")}),
+        "spatial_scope": "MUNICIPAL_WORST_CASE",
     }
 
 
@@ -179,6 +201,8 @@ def _nhc_signal() -> dict[str, Any]:
         "unit": "event_count",
         "evidence_state": "COMPUTED",
         "source_ref": current[0].get("source_ref") if current else None,
+        "record_count": len(current),
+        "spatial_scope": "EVENT_SET",
     }
 
 
