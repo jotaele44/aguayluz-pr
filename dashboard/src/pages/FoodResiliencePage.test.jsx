@@ -10,7 +10,9 @@ vi.mock('@/lib/food-resilience-api', () => ({
 
 const VIEW = {
   summary: {
-    state: 'WATCH',
+    state: 'UNKNOWN',
+    warning_state: 'WATCH',
+    state_semantics: 'Phase 1 warning envelope; not a certified food-resilience score.',
     trend: 'UNKNOWN',
     phase: 'PHASE_1_OBSERVABLE',
     confidence: 'LOW',
@@ -100,6 +102,8 @@ describe('FoodResiliencePage', () => {
     renderPage()
     expect(await screen.findByRole('heading', { name: 'Food System Resilience' })).toBeInTheDocument()
     expect(screen.getByText('Phase 1 — observable warning indicators')).toBeInTheDocument()
+    expect(screen.getByText('Certified resilience state')).toBeInTheDocument()
+    expect(screen.getByText('Phase 1 warning state')).toBeInTheDocument()
     expect(screen.getByText('FOOD.P1.DROUGHT_CLASS')).toBeInTheDocument()
     expect(screen.getByText('3 sites · value withheld')).toBeInTheDocument()
     expect(screen.getByText('Phase 2 — Vector A baseline ledger')).toBeInTheDocument()
