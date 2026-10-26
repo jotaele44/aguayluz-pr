@@ -1,7 +1,12 @@
+import hashlib
+import json
+from datetime import datetime, timezone
+
 from fastapi.testclient import TestClient
 from server.backend import main as legacy
 from server.backend.app import app
 from server.backend.food_resilience_api import (
+    _grid_outage_signal,
     _latest_metric,
     load_food_resilience_contract,
 )
@@ -119,3 +124,140 @@ def test_multisite_snapshot_withholds_arbitrary_station_value(tmp_path, monkeypa
     assert signal["site_count"] == 2
     assert signal["value"] is None
     assert signal["source_ref"] is None
+
+
+def _write_grid_fixture(
+    tmp_path,
+    *,
+    events,
+    response_key_count=78,
+    resolved_response_key_count=78,
+    unresolved_response_keys=None,
+):
+    source_ref = (
+        "https://api.miluma.lumapr.com/"
+        "miluma-outage-api/outage/municipality/towns"
+    )
+    observed = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    normalized = []
+    for event in events:
+        normalized.append(
+            {
+                "event_id": event["event_id"],
+                "event_type": "outage",
+                "affected_area": event.get("affected_area", "San Juan / TEST"),
+                "municipality": event.get("municipality", "San Juan"),
+                "zone": event.get("zone", "TEST"),
+                "start_time": observed,
+                "source_ref": source_ref,
+                "evidence_tier": "T2",
+                "confidence": 80,
+                "review_status": "needs_review",
+            }
+        )
+    event_bytes = "".join(
+        json.dumps(row, ensure_ascii=False) + "\n" for row in normalized
+    ).encode("utf-8")
+    event_path = tmp_path / "luma_live_incidents.jsonl"
+    event_path.write_bytes(event_bytes)
+    receipt = {
+        "schema_version": "aguayluz.luma-live-receipt/v1",
+        "status": "PASS",
+        "source_ref": source_ref,
+        "retrieval_utc": observed,
+        "source_byte_sha256": "a" * 64,
+        "source_byte_count": 123,
+        "request_key_count": 78,
+        "request_body_sha256": "b" * 64,
+        "response_key_count": response_key_count,
+        "resolved_response_key_count": resolved_response_key_count,
+        "unresolved_response_keys": unresolved_response_keys or [],
+        "event_count": len(normalized),
+        "municipality_event_count": len(
+            {row["municipality"] for row in normalized if row.get("municipality")}
+        ),
+        "granularity": "zone",
+        "output_sha256": hashlib.sha256(event_bytes).hexdigest(),
+        "output_byte_count": len(event_bytes),
+    }
+    (tmp_path / "luma_live_receipt.json").write_text(
+        json.dumps(receipt),
+        encoding="utf-8",
+    )
+    return receipt
+
+
+def test_grid_outage_signal_raises_watch_from_verified_fresh_events(
+    tmp_path, monkeypatch
+):
+    _write_grid_fixture(
+        tmp_path,
+        events=[
+            {"event_id": "AYL_EVT_20261026_San_Juan_a"},
+            {
+                "event_id": "AYL_EVT_20261026_Caguas_b",
+                "affected_area": "Caguas / TEST",
+                "municipality": "Caguas",
+            },
+        ],
+    )
+    monkeypatch.setattr(legacy, "DATA", tmp_path)
+
+    signal = _grid_outage_signal()
+
+    assert signal["state"] == "WATCH"
+    assert signal["availability_state"] == "AVAILABLE"
+    assert signal["value"] == 2
+    assert signal["municipality_count"] == 2
+    assert signal["coverage_complete"] is True
+    assert signal["observation_evidence_state"] == "FACT"
+    assert signal["evidence_state"] == "COMPUTED"
+
+
+def test_grid_outage_signal_allows_zero_only_with_complete_78_municipio_response(
+    tmp_path, monkeypatch
+):
+    _write_grid_fixture(tmp_path, events=[])
+    monkeypatch.setattr(legacy, "DATA", tmp_path)
+
+    signal = _grid_outage_signal()
+
+    assert signal["state"] == "NORMAL"
+    assert signal["value"] == 0
+    assert signal["coverage_complete"] is True
+    assert signal["state_semantics"].startswith("MiLUMA town/zone warning only")
+
+
+def test_grid_outage_signal_zero_partial_response_stays_unknown(tmp_path, monkeypatch):
+    _write_grid_fixture(
+        tmp_path,
+        events=[],
+        response_key_count=77,
+        resolved_response_key_count=77,
+    )
+    monkeypatch.setattr(legacy, "DATA", tmp_path)
+
+    signal = _grid_outage_signal()
+
+    assert signal["state"] == "UNKNOWN"
+    assert signal["availability_state"] == "PARTIAL_COVERAGE"
+    assert signal["value"] == 0
+    assert signal["coverage_complete"] is False
+
+
+def test_grid_outage_signal_rejects_tampered_output(tmp_path, monkeypatch):
+    _write_grid_fixture(
+        tmp_path,
+        events=[{"event_id": "AYL_EVT_20261026_San_Juan_a"}],
+    )
+    (tmp_path / "luma_live_incidents.jsonl").write_text(
+        '{"tampered":true}\n',
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(legacy, "DATA", tmp_path)
+
+    signal = _grid_outage_signal()
+
+    assert signal["state"] == "UNKNOWN"
+    assert signal["available"] is False
+    assert signal["availability_state"] == "PROVENANCE_MISMATCH"
