@@ -1,0 +1,91 @@
+{
+  "schema_version": "aguayluz.food-resilience/v0.1",
+  "vector_id": "FOOD_SYSTEM_RESILIENCE",
+  "tracking_issue": "https://github.com/jotaele44/aguayluz-pr/issues/194",
+  "phase_lock_review_date": "2027-02-28",
+  "invariant": "scientific_model -> canonical_state -> deterministic_gui_projection",
+  "forbidden_direction": "gui -> scientific_truth",
+  "activation_phases": [
+    {"phase": 1, "id": "PHASE_1_OBSERVABLE", "state": "ACTIVE"},
+    {"phase": 2, "id": "PHASE_2_BASELINE", "state": "PROVISIONAL"},
+    {"phase": 3, "id": "PHASE_3_DYNAMIC", "state": "LOCKED"},
+    {"phase": 4, "id": "PHASE_4_ROBUST", "state": "LOCKED"}
+  ],
+  "nodes": [
+    "CLIMATE", "WEATHER", "DROUGHT", "HURRICANE", "FLOOD", "STORM_SURGE", "LANDSLIDE",
+    "SURFACE_WATER", "GROUNDWATER", "RESERVOIRS", "IRRIGATION", "POTABLE_WATER", "WASTEWATER",
+    "GRID_GENERATION", "GRID_TRANSMISSION", "GRID_DISTRIBUTION", "POWER", "FUEL_IMPORTS", "FUEL_DISTRIBUTION",
+    "PORTS", "ROADS", "TELECOM", "AG_INPUTS", "CROPS", "LIVESTOCK", "FEED", "FISHERIES", "AQUACULTURE",
+    "AGRICULTURE", "PROCESSING", "COLD_CHAIN", "STORAGE", "DISTRIBUTION", "FOOD_LOCAL", "FOOD_IMPORTS",
+    "FOOD_AVAILABILITY", "FOOD_ACCESS", "POPULATION_DEMAND", "HEALTH", "EMERGENCY_RESPONSE",
+    "FOOD_SYSTEM_RESILIENCE", "SYSTEM_RESILIENCE"
+  ],
+  "edges": [
+    ["DROUGHT","SURFACE_WATER","HAZARD",-1], ["DROUGHT","GROUNDWATER","HAZARD",-1], ["DROUGHT","RESERVOIRS","HAZARD",-1],
+    ["SURFACE_WATER","RESERVOIRS","SUPPLY",1], ["GROUNDWATER","IRRIGATION","WATER",1], ["RESERVOIRS","IRRIGATION","WATER",1],
+    ["POWER","IRRIGATION","ENERGY",1], ["PORTS","FUEL_IMPORTS","SUPPLY",1], ["FUEL_IMPORTS","FUEL_DISTRIBUTION","SUPPLY",1],
+    ["FUEL_DISTRIBUTION","GRID_GENERATION","INPUT",1], ["GRID_GENERATION","GRID_TRANSMISSION","FUNCTIONAL",1],
+    ["GRID_TRANSMISSION","GRID_DISTRIBUTION","FUNCTIONAL",1], ["GRID_DISTRIBUTION","POWER","FUNCTIONAL",1],
+    ["HURRICANE","POWER","HAZARD",-1], ["HURRICANE","ROADS","HAZARD",-1], ["HURRICANE","PORTS","HAZARD",-1],
+    ["FLOOD","ROADS","HAZARD",-1], ["LANDSLIDE","ROADS","HAZARD",-1], ["STORM_SURGE","PORTS","HAZARD",-1],
+    ["PORTS","AG_INPUTS","SUPPLY",1], ["PORTS","FOOD_IMPORTS","SUPPLY",1], ["PORTS","FEED","SUPPLY",1],
+    ["AG_INPUTS","CROPS","INPUT",1], ["AG_INPUTS","LIVESTOCK","INPUT",1], ["IRRIGATION","CROPS","WATER",1],
+    ["IRRIGATION","LIVESTOCK","WATER",1], ["FEED","LIVESTOCK","FEED",1], ["POWER","AQUACULTURE","ENERGY",1],
+    ["HURRICANE","CROPS","HAZARD",-1], ["FLOOD","CROPS","HAZARD",-1], ["DROUGHT","CROPS","HAZARD",-1],
+    ["CROPS","FOOD_LOCAL","SUPPLY",1], ["LIVESTOCK","FOOD_LOCAL","SUPPLY",1], ["FISHERIES","FOOD_LOCAL","SUPPLY",1],
+    ["AQUACULTURE","FOOD_LOCAL","SUPPLY",1], ["FOOD_LOCAL","PROCESSING","SUPPLY",1], ["FOOD_IMPORTS","PROCESSING","SUPPLY",1],
+    ["POWER","PROCESSING","ENERGY",1], ["POWER","COLD_CHAIN","ENERGY",1], ["PROCESSING","COLD_CHAIN","SUPPLY",1],
+    ["PROCESSING","STORAGE","SUPPLY",1], ["COLD_CHAIN","STORAGE","FUNCTIONAL",1], ["STORAGE","DISTRIBUTION","SUPPLY",1],
+    ["ROADS","DISTRIBUTION","ACCESS",1], ["POWER","DISTRIBUTION","ENERGY",1], ["DISTRIBUTION","FOOD_AVAILABILITY","SUPPLY",1],
+    ["FOOD_IMPORTS","FOOD_AVAILABILITY","SUPPLY",1], ["FOOD_LOCAL","FOOD_AVAILABILITY","SUPPLY",1],
+    ["POPULATION_DEMAND","FOOD_AVAILABILITY","DEMAND",-1], ["FOOD_AVAILABILITY","FOOD_ACCESS","SUPPLY",1],
+    ["ROADS","FOOD_ACCESS","ACCESS",1], ["FOOD_AVAILABILITY","FOOD_SYSTEM_RESILIENCE","SUPPLY",1],
+    ["FOOD_ACCESS","FOOD_SYSTEM_RESILIENCE","ACCESS",1], ["IRRIGATION","FOOD_SYSTEM_RESILIENCE","WATER",1],
+    ["POWER","FOOD_SYSTEM_RESILIENCE","ENERGY",1], ["PORTS","FOOD_SYSTEM_RESILIENCE","SUPPLY",1],
+    ["ROADS","FOOD_SYSTEM_RESILIENCE","ACCESS",1], ["FEED","FOOD_SYSTEM_RESILIENCE","FEED",1],
+    ["PROCESSING","FOOD_SYSTEM_RESILIENCE","CAPACITY",1], ["COLD_CHAIN","FOOD_SYSTEM_RESILIENCE","CAPACITY",1],
+    ["STORAGE","FOOD_SYSTEM_RESILIENCE","CAPACITY",1], ["FISHERIES","FOOD_SYSTEM_RESILIENCE","BIOLOGICAL",1],
+    ["FOOD_SYSTEM_RESILIENCE","HEALTH","SOCIAL",1], ["FOOD_SYSTEM_RESILIENCE","SYSTEM_RESILIENCE","SYSTEM",1]
+  ],
+  "phase1_signals": [
+    {"signal_id":"FOOD.P1.DROUGHT_CLASS","node_id":"DROUGHT","metric":"drought_category","kind":"drought","state":"WIRED","source":"USDM via existing aguayluz ingest"},
+    {"signal_id":"FOOD.P1.RAINFALL_30D","node_id":"WEATHER","metric":"precipitation_30d","kind":"precipitation","state":"WIRED","source":"existing aguayluz monitoring"},
+    {"signal_id":"FOOD.P1.RAINFALL_90D","node_id":"WEATHER","metric":"precipitation_90d","kind":"precipitation","state":"WIRED","source":"existing aguayluz monitoring"},
+    {"signal_id":"FOOD.P1.STREAMFLOW","node_id":"SURFACE_WATER","metric":"streamflow","kind":"reservoir","state":"WIRED","source":"USGS via existing aguayluz ingest"},
+    {"signal_id":"FOOD.P1.GROUNDWATER","node_id":"GROUNDWATER","metric":"groundwater_depth","kind":"groundwater","state":"WIRED","source":"USGS via existing aguayluz ingest"},
+    {"signal_id":"FOOD.P1.RESERVOIRS","node_id":"RESERVOIRS","metric":"reservoir_elevation","kind":"reservoir","state":"WIRED","source":"USGS via existing aguayluz ingest"},
+    {"signal_id":"FOOD.P1.TROPICAL_CYCLONE","node_id":"HURRICANE","metric":"service_event","kind":"nhc","state":"WIRED","source":"NHC via existing aguayluz ingest"},
+    {"signal_id":"FOOD.P1.GRID_OUTAGE","node_id":"POWER","metric":null,"kind":null,"state":"OPEN","source":"operational power source not frozen in this vector"},
+    {"signal_id":"FOOD.P1.PORT_STATUS","node_id":"PORTS","metric":null,"kind":null,"state":"OPEN","source":"operational port source not frozen in this vector"},
+    {"signal_id":"FOOD.P1.ROAD_DISRUPTION","node_id":"ROADS","metric":null,"kind":null,"state":"OPEN","source":"operational road source not frozen in this vector"},
+    {"signal_id":"FOOD.P1.FOOD_IMPORT_FLOW","node_id":"FOOD_IMPORTS","metric":null,"kind":null,"state":"SOURCE_AVAILABLE_DATA_LAGGED","source":"Census FT895 annual/current publication substrate"},
+    {"signal_id":"FOOD.P1.FEED_IMPORT_FLOW","node_id":"FEED","metric":null,"kind":null,"state":"OPEN","source":"commodity crosswalk not yet closed"},
+    {"signal_id":"FOOD.P1.COLD_CHAIN","node_id":"COLD_CHAIN","metric":null,"kind":null,"state":"UNRESOLVED","source":"no complete public islandwide operational feed frozen"}
+  ],
+  "phase2_baseline": {
+    "state": "PROVISIONAL",
+    "current_operational_baseline": false,
+    "records": [
+      {"metric_id":"A.NASS2022.FARM_COUNT","reference_period":"2022","value":7602,"unit":"count","evidence_state":"FACT","role":"STRUCTURAL_BASELINE","source":"USDA NASS 2022 Puerto Rico Census of Agriculture"},
+      {"metric_id":"A.NASS2022.LAND_IN_FARMS","reference_period":"2022","value":494481,"unit":"cuerda","evidence_state":"FACT","role":"STRUCTURAL_BASELINE","source":"USDA NASS 2022 Puerto Rico Census of Agriculture"},
+      {"metric_id":"A.NASS2022.LAND_SHARE","reference_period":"2022","value":21.9,"unit":"percent","evidence_state":"FACT","role":"STRUCTURAL_BASELINE","source":"USDA NASS 2022 Puerto Rico Census of Agriculture"},
+      {"metric_id":"A.NASS2022.AVG_FARM_SIZE","reference_period":"2022","value":65.0,"unit":"cuerda","evidence_state":"FACT","role":"STRUCTURAL_BASELINE","source":"USDA NASS 2022 Puerto Rico Census of Agriculture"},
+      {"metric_id":"A.BEZARES.FSR_TOTAL","reference_period":"FY2017-FY2019","value":19.0,"unit":"percent","evidence_state":"FACT","role":"HISTORICAL_VALIDATION","source":"Bezares et al. 2025"}
+    ],
+    "current_ledger_sources": [
+      {"source_id":"CENSUS_FT895_2025","reference_period":"2025","state":"AVAILABLE_NOT_RECONCILED","scope":"U.S.-Puerto Rico merchandise quantity/value flows"},
+      {"source_id":"NASS_PR_2022","reference_period":"2022","state":"FROZEN_STRUCTURAL","scope":"agriculture structure and published commodity aggregates"}
+    ]
+  },
+  "phase3_adapter": {
+    "state":"LOCKED",
+    "required_families":["SUITABILITY_STATE","YIELD_RAINFED","YIELD_IRRIGATED","IRRIGATION_REQUIREMENT","EDIBLE_FRACTION","NUTRIENT_DENSITY","CROP_CALENDAR","HAZARD_DAMAGE_RESPONSE"],
+    "promotion_gates":["land_universe_closes","asu_lineage_retained","yield_hindcast_passes","seasonal_water_closes","nutrition_units_close","uncertainty_defined"]
+  },
+  "phase4_adapter": {
+    "state":"LOCKED",
+    "primary_objective":"maximize minimum nutritional coverage",
+    "required_constraints":["land","rotation","seasonal_water","nutrition","diet_realism","feed","fishery_cap","processing","storage","network_flow","external_input_caps","hazards","geographic_redundancy"],
+    "certification_guard":"EXECUTED != FEASIBLE != OPTIMAL != VALIDATED != CERTIFIED"
+  }
+}
