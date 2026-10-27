@@ -1915,7 +1915,7 @@
       "classification": "user",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Bounded monthly EIA jobs expose durable discovery/page checkpoints, version conflicts, fenced lease recovery, cancellation, retry, source health and audit export in the native GUI. Explicit source coverage/schema gates precede rows. No live or canonical measurements are admitted; external sources remain unverified.",
+      "rationale": "Bounded monthly EIA jobs expose durable discovery/page checkpoints, version conflicts, fenced lease recovery, cancellation, retry, source health and audit export in the native GUI. Explicit source coverage/schema gates precede rows. No live or canonical measurements are admitted; external sources remain unverified. Acquisition outcomes also invalidate the parent scientific projection so source receipts and review revisions stay current.",
       "backend": {
         "files": [
           "src/aguayluz/electricity/jobs.py",
@@ -1966,7 +1966,8 @@
           "tests/test_electricity_jobs.py"
         ],
         "unit": [
-          "dashboard/src/components/electricity/ElectricityJobs.test.jsx"
+          "dashboard/src/components/electricity/ElectricityJobs.test.jsx",
+          "dashboard/src/pages/ElectricityPage.test.jsx"
         ],
         "e2e": [
           "dashboard/tests/electricity-jobs.spec.mjs"

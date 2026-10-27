@@ -46,6 +46,7 @@ test('native acquisition resumes pages after real adapter failure, exports and r
   expect(JSON.stringify(exported)).not.toContain('synthetic-browser-source-key')
   const projection = await (await request.get('http://127.0.0.1:8000/electricity/v1/projection')).json()
   expect(Object.values(projection.states).every(s => s.measurements.length === 0)).toBe(true)
+  await expect(page.getByRole('table', { name: 'Source receipts', exact: true }).getByRole('row')).toHaveCount(projection.sources.length + 1)
   await page.reload()
   await page.getByRole('button', { name: 'Source acquisition', exact: true }).click()
   await expect(page.getByRole('region', { name: created.job_id, exact: true })).toContainText('Complete (AUDIT ONLY)')
