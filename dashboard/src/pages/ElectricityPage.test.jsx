@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { axe } from 'vitest-axe'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import ElectricityPage from './ElectricityPage'
-import { getElectricityProjection, acquireElectricityWorkbook, importElectricityWorkbook } from '@/lib/electricity-api'
+import { getElectricityProjection, acquireElectricityWorkbook, importElectricityWorkbook, getElectricityJobs, stepElectricityJob } from '@/lib/electricity-api'
 
 vi.mock('@/lib/electricity-api', () => ({ getElectricityProjection: vi.fn(), acquireElectricityWorkbook: vi.fn(), importElectricityWorkbook: vi.fn(), uploadElectricityWorkbook: vi.fn(), getElectricityReviews: vi.fn(), appendElectricityReview: vi.fn(), getElectricityJobs: vi.fn().mockResolvedValue({ jobs: [], total: 0, next_offset: null }), createElectricityJob: vi.fn(), stepElectricityJob: vi.fn(), cancelElectricityJob: vi.fn() }))
 
@@ -17,7 +17,21 @@ function mount() {
 }
 
 describe('native electricity evidence workspace', () => {
-  beforeEach(() => { vi.clearAllMocks(); localStorage.clear(); getElectricityProjection.mockResolvedValue(empty()) })
+  beforeEach(() => { vi.clearAllMocks(); localStorage.clear(); getElectricityProjection.mockResolvedValue(empty()); getElectricityJobs.mockResolvedValue({ jobs: [], total: 0, next_offset: null }) })
+
+  it('refreshes native source evidence immediately after a durable acquisition step', async () => {
+    const captured = { ...empty(), revision: 'c'.repeat(64), sources: [{ authority: 'SYNTHETIC CAPTURE', retrieved_at: '2026-10-01T00:00:00Z', source_url: 'https://www.eia.gov/', sha256: 'b'.repeat(64) }] }
+    getElectricityProjection.mockResolvedValueOnce(empty()).mockResolvedValue(captured)
+    getElectricityJobs.mockResolvedValue({ jobs: [{ job_id: 'd'.repeat(32), version: 1, status: 'QUEUED', phase: 'METADATA', spec: { endpoint: 'facility-fuel', data_column: 'generation', start: '2026-01', end: '2026-03' }, rows: 0, total: null, error: null, can_step: true, can_cancel: true, receipt_sha256: [], history: [] }], total: 1, next_offset: null })
+    stepElectricityJob.mockResolvedValue({ job_id: 'd'.repeat(32), status: 'QUEUED' })
+    mount()
+    await screen.findByText(/NOT_CERTIFIED/)
+    fireEvent.click(screen.getByRole('button', { name: 'Source acquisition', exact: true }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Run next step / retry', exact: true }))
+    expect(await screen.findByText('SYNTHETIC CAPTURE')).toBeVisible()
+    expect(screen.getByText(`NOT_CERTIFIED · revision ${'c'.repeat(64)}`)).toBeVisible()
+    expect(screen.getByRole('note')).toHaveTextContent(/No authoritative live grid feed/)
+  })
 
   it('discloses source limits and unavailable states without fabricated telemetry', async () => {
     mount()

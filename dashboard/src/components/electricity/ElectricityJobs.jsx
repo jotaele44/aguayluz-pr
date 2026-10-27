@@ -1,5 +1,5 @@
 import { useId, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { cancelElectricityJob, createElectricityJob, getElectricityJobs, stepElectricityJob } from '@/lib/electricity-api'
 
 const copy = {
@@ -28,6 +28,7 @@ const style = 'border border-slate-600 rounded bg-slate-950 p-2 max-w-full focus
 const newId = () => crypto.randomUUID().replaceAll('-', '')
 
 export default function ElectricityJobs({ locale }) {
+  const queryClient = useQueryClient()
   const id = useId()
   const t = copy[locale]
   const [offset, setOffset] = useState(0)
@@ -48,7 +49,11 @@ export default function ElectricityJobs({ locale }) {
     } catch (error) {
       setNotice(error.message === 'ELECTRICITY_HTTP_409' ? t.conflict : `${t.failed}: ${error.message}`)
       await query.refetch()
-    } finally { setPending(v => ({ ...v, [key]: false })) }
+    } finally {
+      // Even a failed/fenced step may have preserved new raw evidence.
+      await queryClient.invalidateQueries({ queryKey: ['electricity', 'v1'] })
+      setPending(v => ({ ...v, [key]: false }))
+    }
   }
   function download(job) {
     const href = URL.createObjectURL(new Blob([JSON.stringify(job, null, 2)], { type: 'application/json' }))
