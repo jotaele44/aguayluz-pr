@@ -77,7 +77,7 @@ def test_summary_is_read_only_and_fail_closed(client):
     assert body["pfas"]["occurrence"]["total_rows"] == 21771
     assert body["pfas"]["occurrence"]["public_water_system_ids"] == 99
     assert body["pfas"]["provenance"]["archive_sha256"] == (
-        "4845eb3abf34d61d7d239e26a815c69b21e39d249840243d266274b5b5d73aaa"
+        "007ee5f6a19dd8f1dac682ded23bcd3de72c8c5f49487dbf181334091bd35d96"
     )
     assert "PWS_FACILITY_SAMPLE_POINT_GEOMETRY_BINDING_OPEN" in (
         body["pfas"]["unresolved_material"]
