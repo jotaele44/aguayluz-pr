@@ -94,3 +94,24 @@ def test_energized_by_relationship_from_dep_edges():
     from federation_export import _fid  # noqa: PLC0415
     assert energized[0]["source_entity_id"] == _fid("ent", "asset", "PMP1")
     assert energized[0]["target_entity_id"] == _fid("ent", "asset", "PWR1")
+
+
+def test_outdoor_conditions_become_entities_located_in_their_municipio():
+    from test_federation_evidence_state import _outdoor_row
+
+    streams = build_streams([], [], "2026-10-18T16:00:00Z",
+                            outdoor=[_outdoor_row(), _outdoor_row("72113", "Ponce"), {"geoid": None}])
+    outdoor = {e["attributes"]["municipality"]: e for e in streams["entities"]
+               if e["entity_type"] == "outdoor_condition"}
+    assert set(outdoor) == {"San Juan", "Ponce"}  # a row without a GEOID is skipped
+    sj = outdoor["San Juan"]
+    assert sj["external_ids"] == {"census_geoid": "72127", "aguayluz_condition_id": "AYL_OUTDOOR_72127"}
+    assert sj["attributes"]["level"] == sj["attributes"]["status"] == "CAUTION"
+    # components travel whole, so the hub sees why a value is missing, not a blank
+    assert sj["attributes"]["components"]["air_quality"]["state"] == "NOT_CONFIGURED"
+    assert sj["location"] == {"lat": 18.39, "lon": -66.06, "municipality": "San Juan"}
+    located = [r for r in streams["relationships"]
+               if r["source_entity_id"] == sj["entity_id"] and r["relationship_type"] == "located_in"]
+    assert len(located) == 1
+    target = next(e for e in streams["entities"] if e["entity_id"] == located[0]["target_entity_id"])
+    assert target["entity_type"] == "municipality" and target["name"] == "San Juan"

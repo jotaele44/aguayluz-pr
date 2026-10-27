@@ -235,3 +235,31 @@ def test_stage_iv_runs_daily_and_up_optionally_before_alerts():
         scripts = [_script_of(s) for s in refresh.PLANS[cadence]]
         assert "scripts/ingest_stage_iv_pr.py" in scripts, f"{cadence}: Stage IV missing"
         assert scripts.index("scripts/ingest_stage_iv_pr.py") < scripts.index("scripts/build_alerts.py")
+
+
+OUTDOOR_FAST = {
+    "scripts/ingest_nws_surf_zone.py",
+    "scripts/ingest_nws_marine_alerts.py",
+    "scripts/ingest_ndbc_buoys.py",
+    "scripts/ingest_airnow.py",
+}
+OUTDOOR_DAILY = OUTDOOR_FAST | {"scripts/ingest_epa_uv.py", "scripts/ingest_nws_gridpoint_heat.py"}
+
+
+@pytest.mark.parametrize("cadence", sorted(refresh.PLANS))
+def test_outdoor_sources_are_scheduled_and_composed_after_every_ingest(cadence):
+    scripts = [_script_of(s) for s in refresh.PLANS[cadence]]
+    wanted = OUTDOOR_FAST if cadence == "fast" else OUTDOOR_DAILY
+    assert wanted <= set(scripts), cadence
+    if cadence == "fast":  # the daily forecasts are 78 requests each
+        assert not (OUTDOOR_DAILY - OUTDOOR_FAST) & set(scripts)
+    compose = scripts.index("scripts/build_outdoor_conditions.py")
+    assert all(scripts.index(s) < compose for s in wanted)
+    assert compose < scripts.index("scripts/build_water_power_crosswalk.py")
+
+
+def test_outdoor_steps_are_optional():
+    for step in (refresh.STEP_SURF_ZONE, refresh.STEP_MARINE_ALERTS, refresh.STEP_BUOYS,
+                 refresh.STEP_AIRNOW, refresh.STEP_EPA_UV, refresh.STEP_NWS_HEAT,
+                 refresh.STEP_OUTDOOR_COMPOSE):
+        assert step[2] is True, f"{_script_of(step)} must be optional"

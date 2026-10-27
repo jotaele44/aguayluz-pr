@@ -1,6 +1,6 @@
 {
   "schema_version": "aguayluz.hydromet-sources/v1",
-  "scope": "Puerto Rico hydrometeorological observations and outlooks published by NOAA/NWS, frozen with byte SHA-256 provenance and bound to municipios and utility assets by recorded evidence class. Observations and outlooks are hazard context, not confirmed impact or causation.",
+  "scope": "Puerto Rico hydrometeorological and outdoor-exposure observations and outlooks published by NOAA/NWS (and, for UV index and air quality, by EPA), frozen with byte SHA-256 provenance and bound to municipios and utility assets by recorded evidence class. Observations and outlooks are hazard context, not confirmed impact, causation or safety advice.",
   "legacy_catalog": {
     "url": "https://www.weather.gov/gis/IDP-GISRestMetadata",
     "note": "Legacy IDP-GIS metadata (ISO 19115, stamped 2020-03-12) pointing at idpgis.ncep.noaa.gov, which NWS shut down on 2023-06-30 (SCN 23-01). Live CloudGIS services are on mapservices.weather.noaa.gov. Only the Puerto Rico-relevant entries are wired here, each from its authoritative endpoint; see docs/NWS_HYDROMET_INTEGRATION.md for what was not wired and why."
@@ -60,6 +60,165 @@
       "known_limits": "Post-event analysis published after the 12Z day closes, so it supports turbidity, inflow and landslide follow-up rather than warning. PRISM normals cover land cells only.",
       "raw_snapshot_policy": "Raw GeoTIFF bytes under data/hydromet_snapshots/stage_iv_pr/ (gitignored); byte SHA-256 committed in data/hydromet_manifestations.jsonl; the dated NWPS download URL is the immutable reference.",
       "license": "U.S. Government work (public domain)"
+    },
+    {
+      "source_id": "nws_surf_zone",
+      "label": "NWS Surf Zone Forecast (rip current risk, surf height)",
+      "authority": "NOAA/NWS Weather Forecast Office San Juan",
+      "family": "HYDROMETEOROLOGY",
+      "hazard_type": "RIP_CURRENT_RISK",
+      "layer": "outdoor_conditions",
+      "endpoints": {
+        "listing": "https://api.weather.gov/products/types/SRF/locations/SJU",
+        "product": "https://api.weather.gov/products/{id}"
+      },
+      "cadence_seconds": 900,
+      "max_age_seconds": 64800,
+      "retention_days": 7,
+      "refresh_script": "scripts/ingest_nws_surf_zone.py",
+      "binding_semantics": "Each product segment names its beaches (\"Including the beaches of ...\"); those municipios are bound by the product's own text (AUTHORITATIVE_BINDING, srf.including_beaches). Island segments with no beach line (Culebra, Vieques) bind by zone name (srf.zone_name). A coastal municipio the product never names is NOT_COVERED, never inferred from a neighbour. USVI segments are excluded and counted.",
+      "update_semantics": "The newest TJSJ SRF in the listing is fetched every run (WFO San Juan issues about two a day). A record revision per zone-day only when the rip current risk or surf height changes; zone-days older than retention_days are pruned whole. The current forecast per zone lives in data/outdoor_surf_state.jsonl.",
+      "known_limits": "Rip current risk is forecast for the two detailed periods only; extended days carry surf height alone. The product covers the beaches it names, not every coastal municipio.",
+      "raw_snapshot_policy": "Raw response bytes under data/hydromet_snapshots/nws_surf_zone/ (gitignored); byte SHA-256 committed in data/hydromet_manifestations.jsonl.",
+      "license": "U.S. Government work (public domain)"
+    },
+    {
+      "source_id": "nws_marine_alerts",
+      "label": "NWS marine-zone alerts (Puerto Rico waters)",
+      "authority": "NOAA/NWS Weather Forecast Office San Juan",
+      "family": "HYDROMETEOROLOGY",
+      "hazard_type": "MARINE_HAZARD_ADVISORY",
+      "layer": "outdoor_conditions",
+      "endpoints": {
+        "alerts": "https://api.weather.gov/alerts/active?area=AM"
+      },
+      "cadence_seconds": 900,
+      "max_age_seconds": 7200,
+      "refresh_script": "scripts/ingest_nws_marine_alerts.py",
+      "binding_semantics": "An alert is retained when it names a San Juan marine zone (AMZ7xx, frozen in data/reference/outdoor_reference.v1.json from api.weather.gov/zones). Zone -> coastal municipios: municipio polygons within 2 km of the zone polygon, computed once from the frozen zone geometry (PROXIMITY, marine_zone_within_2km); offshore zones bind to no municipio.",
+      "update_semantics": "The active-alert set is fetched every run. One record per NWS alert id; an alert that leaves the active set is closed by a TERMINATED revision, and closed alerts older than retention_days are pruned.",
+      "known_limits": "Land-zone products (High Surf Advisory, Rip Current Statement, Coastal Flood) already arrive through scripts/ingest_nws_alerts.py (area=PR) and are not duplicated here.",
+      "retention_days": 14,
+      "raw_snapshot_policy": "Raw response bytes under data/hydromet_snapshots/nws_marine_alerts/ (gitignored); byte SHA-256 committed in data/hydromet_manifestations.jsonl.",
+      "license": "U.S. Government work (public domain)"
+    },
+    {
+      "source_id": "ndbc_buoys",
+      "label": "NDBC/CARICOOS buoys (waves, wind, water temperature)",
+      "authority": "NOAA National Data Buoy Center (CARICOOS-operated buoys)",
+      "family": "HYDROMETEOROLOGY",
+      "hazard_type": "SEA_STATE_OBSERVATION",
+      "layer": "outdoor_conditions",
+      "endpoints": {
+        "latest_obs": "https://www.ndbc.noaa.gov/data/latest_obs/latest_obs.txt"
+      },
+      "stations": [
+        "41053",
+        "41056",
+        "41115",
+        "41121",
+        "42085"
+      ],
+      "cadence_seconds": 900,
+      "max_age_seconds": 7200,
+      "observation_stale_after_seconds": 10800,
+      "refresh_script": "scripts/ingest_ndbc_buoys.py",
+      "binding_semantics": "A buoy is an offshore point and binds to no municipio. The outdoor composer attaches the nearest buoy to each coastal municipio within 40 km of its internal point and records the distance (PROXIMITY, labelled 'nearest buoy').",
+      "update_semantics": "One latest-observation file for every NDBC station per run, filtered to the listed Puerto Rico stations; the current observation per buoy is rewritten into data/outdoor_buoy_state.jsonl. State only, no records.",
+      "known_limits": "Five stations. NDBC publishes 'MM' for a sensor that reported nothing; that is carried as null, never as calm. 41115 and 41121 are wave-only (CDIP) buoys.",
+      "raw_snapshot_policy": "Raw response bytes under data/hydromet_snapshots/ndbc_buoys/ (gitignored); byte SHA-256 committed in data/hydromet_manifestations.jsonl.",
+      "license": "U.S. Government work (public domain)"
+    },
+    {
+      "source_id": "epa_uv",
+      "label": "EPA UV index forecast (one ZIP per municipio)",
+      "authority": "U.S. EPA (UV index forecast computed by NOAA/NWS Climate Prediction Center)",
+      "family": "HYDROMETEOROLOGY",
+      "hazard_type": "UV_INDEX_FORECAST",
+      "layer": "outdoor_conditions",
+      "endpoints": {
+        "daily": "https://data.epa.gov/efservice/getEnvirofactsUVDAILY/ZIP/{zip}/JSON"
+      },
+      "cadence_seconds": 86400,
+      "max_age_seconds": 172800,
+      "refresh_script": "scripts/ingest_epa_uv.py",
+      "binding_semantics": "Each municipio is queried by the ZCTA with the largest land area inside it (U.S. Census 2020 ZCTA-county relationship file, frozen in data/reference/outdoor_reference.v1.json). The forecast is bound to that municipio when EPA's CITY for the ZIP names it (AUTHORITATIVE_BINDING); otherwise the row stays UNRESOLVED.",
+      "update_semantics": "One request per municipio per run; the current daily maximum per municipio is rewritten into data/outdoor_uv_state.jsonl. State only, no records.",
+      "known_limits": "A daily maximum index for one ZIP stands for the municipio. EPA's UV_ALERT flag is relative to climatology and is carried, not promoted.",
+      "raw_snapshot_policy": "Raw response bytes under data/hydromet_snapshots/epa_uv/ (gitignored); byte SHA-256 committed in data/hydromet_manifestations.jsonl.",
+      "license": "U.S. Government work (public domain)"
+    },
+    {
+      "source_id": "nws_gridpoint_heat",
+      "label": "NWS gridded heat index (municipio internal points)",
+      "authority": "NOAA/NWS Weather Forecast Office San Juan (National Digital Forecast Database grid)",
+      "family": "HYDROMETEOROLOGY",
+      "hazard_type": "HEAT_INDEX_FORECAST",
+      "layer": "outdoor_conditions",
+      "endpoints": {
+        "grid": "https://api.weather.gov/gridpoints/{grid_id}/{x},{y}"
+      },
+      "cadence_seconds": 86400,
+      "max_age_seconds": 172800,
+      "refresh_script": "scripts/ingest_nws_gridpoint_heat.py",
+      "binding_semantics": "The grid cell holding each municipio's Census internal point (gridpoint frozen from api.weather.gov/points in data/reference/outdoor_reference.v1.json); geometry REPRESENTATIVE_POINT, evidence POINT_IN_POLYGON.",
+      "update_semantics": "One forecastGridData request per municipio per run; the maximum heat index and wet-bulb globe temperature over the next 24 and 48 hours are rewritten into data/outdoor_heat_state.jsonl, banded on the NWS heat-index chart. State only, no records.",
+      "known_limits": "One 2.5 km cell stands for the municipio. The bands are the national heat-index chart, not WFO San Juan's advisory criteria: official Heat Advisories arrive through scripts/ingest_nws_alerts.py and are what the alert layer acts on.",
+      "raw_snapshot_policy": "Raw response bytes under data/hydromet_snapshots/nws_gridpoint_heat/ (gitignored); byte SHA-256 committed in data/hydromet_manifestations.jsonl.",
+      "license": "U.S. Government work (public domain)"
+    },
+    {
+      "source_id": "airnow",
+      "label": "AirNow current air quality (AQI)",
+      "authority": "U.S. EPA AirNow (with Puerto Rico Department of Natural and Environmental Resources monitors)",
+      "family": "HYDROMETEOROLOGY",
+      "hazard_type": "AIR_QUALITY_INDEX",
+      "layer": "outdoor_conditions",
+      "endpoints": {
+        "current": "https://www.airnowapi.org/aq/observation/latLong/current/"
+      },
+      "requires_secret": "AIRNOW_API_KEY",
+      "query_points": [
+        {
+          "label": "San Juan metro",
+          "lat": 18.43,
+          "lon": -66.06
+        },
+        {
+          "label": "Ponce",
+          "lat": 18.01,
+          "lon": -66.61
+        },
+        {
+          "label": "Mayagüez",
+          "lat": 18.2,
+          "lon": -67.14
+        },
+        {
+          "label": "Arecibo",
+          "lat": 18.47,
+          "lon": -66.72
+        },
+        {
+          "label": "Humacao",
+          "lat": 18.15,
+          "lon": -65.83
+        },
+        {
+          "label": "Guayama",
+          "lat": 17.98,
+          "lon": -66.11
+        }
+      ],
+      "distance_miles": 50,
+      "cadence_seconds": 3600,
+      "max_age_seconds": 10800,
+      "refresh_script": "scripts/ingest_airnow.py",
+      "binding_semantics": "AirNow returns a reporting area and its coordinates per pollutant. The composer attaches the nearest reporting area to each municipio within 40 km of its internal point (PROXIMITY, labelled with the area name and distance).",
+      "update_semantics": "One request per query point per run, de-duplicated by reporting area and pollutant; the current AQI rows are rewritten into data/outdoor_aqi_state.jsonl. State only, no records. Without AIRNOW_API_KEY the ingest skips and writes no receipt, so the source reads NEVER.",
+      "known_limits": "AirNow data are preliminary and unvalidated (not for regulatory use). Needs the AIRNOW_API_KEY repository secret; built and tested against a fixture constructed from AirNow's documented response until that key exists.",
+      "raw_snapshot_policy": "Raw response bytes under data/hydromet_snapshots/airnow/ (gitignored); byte SHA-256 committed in data/hydromet_manifestations.jsonl. The API key is never written to a manifestation, receipt or log.",
+      "license": "AirNow data courtesy of the U.S. EPA AirNow program; preliminary data, attribution required"
     }
   ]
 }
