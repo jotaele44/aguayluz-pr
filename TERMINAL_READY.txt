@@ -70,3 +70,11 @@ Bounded a-Shell-compatible check (dependencies preinstalled; physical iOS execut
 python3 -m pytest -q tests/test_electricity_reviews.py tests/test_electricity.py tests/test_electricity_capture_recovery.py tests/test_schemas.py
 Isolated synthetic browser workflow: npm --prefix dashboard run test:electricity-review
 Back up both ledger.sqlite3 and reviews.sqlite3 with verified raw blobs after quiescing writers.
+
+DURABLE MONTHLY ACQUISITION — AUDIT ONLY
+Electricity > Source acquisition exposes metadata/PR discovery, page checkpoints, safe retry/cancel and history export.
+Job completion never promotes measurements or establishes live telemetry.
+Back up acquisition.sqlite3 with every other present electricity ledger and verified raw bytes.
+python3 -m pytest -q tests/test_electricity_jobs.py tests/test_electricity_reviews.py tests/test_electricity.py tests/test_electricity_capture_recovery.py tests/test_schemas.py
+Isolated synthetic browser workflow: npm --prefix dashboard run test:electricity-jobs
+Contract, restart and remaining scheduler gaps: docs/electricity/ADR-0003-durable-monthly-acquisition.md

@@ -113,6 +113,10 @@ The Evidence inspector also records reversible candidate recommendations with
 exact-claim hashes and immutable history. Recommendations preserve every source
 claim and contradiction; the shared operator role is disclosed. See the
 [review contract and limits](docs/electricity/ADR-0002-candidate-review-ledger.md).
+Source acquisition also exposes durable monthly PR research jobs with metadata
+and coverage discovery, recoverable page checkpoints, cancellation, retry and
+audit export. Complete jobs remain AUDIT ONLY and do not create measurements.
+See the [acquisition contract](docs/electricity/ADR-0003-durable-monthly-acquisition.md).
 
 This is an **AUDIT ONLY, NOT CERTIFIED** development tranche. No authoritative
 live grid feed, production forecast engine, RC8–RC14 canonical integration or

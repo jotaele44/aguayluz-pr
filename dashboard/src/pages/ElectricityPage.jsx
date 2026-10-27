@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { acquireElectricityWorkbook, getElectricityProjection, importElectricityWorkbook, uploadElectricityWorkbook } from '@/lib/electricity-api'
 import ElectricityReviews from '@/components/electricity/ElectricityReviews'
+import ElectricityJobs from '@/components/electricity/ElectricityJobs'
 
 const copy = {
   en: {
@@ -146,6 +147,7 @@ export default function ElectricityPage() {
       {tab === 'registry' && <section><h2>{t.registry}</h2>{!data.generator_claims.length ? <p>{t.unavailable}</p> : <div className="overflow-x-auto"><table aria-label={t.registry}><thead><tr>{['EIA plant ID', 'Generator ID', t.name, t.capacity, t.status, t.raw].map(h => <th className="p-2 text-left" key={h}>{h}</th>)}</tr></thead><tbody>{data.generator_claims.map((c, i) => <tr key={i}><td>{c.plant_id}</td><td>{c.generator_id}</td><td>{c.name}</td><td>{c.nameplate_mw}</td><td>{c.status} · {c.review_state}</td><td className="break-all">{c.receipt_sha256}</td></tr>)}</tbody></table></div>}</section>}
       {tab === 'evidence' && <section className="space-y-3"><h2>{t.missing}</h2><ul>{data.gaps.map(gap => <li key={gap}>{gap}</li>)}</ul><h2>{t.contradictions}</h2><pre className="overflow-auto">{JSON.stringify(data.contradictions, null, 2)}</pre><ElectricityReviews key={data.revision} locale={locale} sourceRevision={data.revision} /></section>}
       {tab === 'sources' && <section className="space-y-5">
+        <ElectricityJobs locale={locale} />
         <p>{t.sourceNote}</p>
         <form className="flex flex-wrap items-end gap-3" onSubmit={e => perform(e, () => acquireElectricityWorkbook(url))}>
           <label className="flex-1 min-w-0">{t.url}<input className={`${inputStyle} block w-full`} type="url" required value={url} onChange={e => setUrl(e.target.value)} /></label>

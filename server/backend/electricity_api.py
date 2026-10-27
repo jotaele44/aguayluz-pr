@@ -11,11 +11,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from xml.etree.ElementTree import ParseError
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
+from fastapi import Path as PathParameter
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
 from aguayluz.electricity.eia import AcquisitionError, EIAClient, validate_workbook_url
 from aguayluz.electricity.evidence import SourceReceipt
+from aguayluz.electricity.jobs import AcquisitionJobs, JobCommand, JobConflict, MonthlyJobRequest
 from aguayluz.electricity.projection import electricity_projection
 from aguayluz.electricity.review import ReviewError, ReviewLedger, ReviewRequest
 from aguayluz.electricity.store import EvidenceStore
@@ -48,6 +50,44 @@ class ImportRequest(BaseModel):
     sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     sheet_path: str = Field(pattern=r"^xl/worksheets/sheet[1-9][0-9]*\.xml$")
     effective_at: AwareDatetime
+
+
+def _job_operation(operation):
+    try:
+        return operation(AcquisitionJobs(_store()))
+    except JobConflict as exc:
+        raise HTTPException(409, detail=str(exc)) from None
+    except KeyError:
+        raise HTTPException(404, detail="EIA_JOB_NOT_FOUND") from None
+    except (OSError, ValueError, sqlite3.DatabaseError) as exc:
+        raise HTTPException(503, detail="EIA_JOB_INTEGRITY_OR_STORAGE_FAILED") from exc
+
+
+@router.get("/electricity/v1/acquisition-jobs")
+def acquisition_jobs(offset: int = Query(default=0, ge=0), limit: int = Query(default=50, ge=1, le=100)) -> dict:
+    return {"schema_version": "aguayluz.electricity-acquisition-jobs/v1", "producer": "aguayluz-pr",
+            "jurisdiction": "PR", "certification": "NOT_CERTIFIED",
+            **_job_operation(lambda jobs: jobs.list(offset=offset, limit=limit))}
+
+
+@router.get("/electricity/v1/acquisition-jobs/{identifier}")
+def acquisition_job(identifier: str = PathParameter(pattern=r"^[0-9a-f]{32}$")) -> dict:
+    return _job_operation(lambda jobs: jobs.get(identifier))
+
+
+@router.post("/electricity/v1/acquisition-jobs", dependencies=[Depends(_require_operator)])
+def create_acquisition_job(body: MonthlyJobRequest) -> dict:
+    return _job_operation(lambda jobs: jobs.create(body))
+
+
+@router.post("/electricity/v1/acquisition-jobs/{identifier}/step", dependencies=[Depends(_require_operator)])
+def step_acquisition_job(body: JobCommand, identifier: str = PathParameter(pattern=r"^[0-9a-f]{32}$")) -> dict:
+    return _job_operation(lambda jobs: jobs.step(identifier, body.expected_version))
+
+
+@router.post("/electricity/v1/acquisition-jobs/{identifier}/cancel", dependencies=[Depends(_require_operator)])
+def cancel_acquisition_job(body: JobCommand, identifier: str = PathParameter(pattern=r"^[0-9a-f]{32}$")) -> dict:
+    return _job_operation(lambda jobs: jobs.cancel(identifier, body.expected_version))
 
 
 @router.get("/electricity/v1/projection")

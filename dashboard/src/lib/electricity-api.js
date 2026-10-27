@@ -16,6 +16,10 @@ async function request(path, body) {
 export const getElectricityProjection = () => request('projection')
 export const getElectricityReviews = () => request('reviews')
 export const appendElectricityReview = (body) => request('reviews', body)
+export const getElectricityJobs = (offset = 0) => request(`acquisition-jobs?offset=${offset}&limit=20`)
+export const createElectricityJob = (body) => request('acquisition-jobs', body)
+export const stepElectricityJob = (id, expected_version) => request(`acquisition-jobs/${id}/step`, { expected_version })
+export const cancelElectricityJob = (id, expected_version) => request(`acquisition-jobs/${id}/cancel`, { expected_version })
 export const acquireElectricityWorkbook = (url) => request('acquire', { url })
 export const importElectricityWorkbook = (body) => request('import/860m', body)
 

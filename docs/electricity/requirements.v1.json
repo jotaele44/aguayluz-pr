@@ -42,7 +42,10 @@
       "requirement": "Secure EIA API v2 client and PR monthly facilities/territory acquisition",
       "status": "PARTIALLY_IMPLEMENTED",
       "evidence": [
-        "tests/test_electricity.py"
+        "tests/test_electricity.py",
+        "tests/test_electricity_jobs.py",
+        "dashboard/tests/electricity-jobs.spec.mjs",
+        "docs/electricity/ADR-0003-durable-monthly-acquisition.md"
       ],
       "remaining_gate": "Bounded client and byte-stream downloads implemented; live EIA access is proxy-denied, credential input received but authentication unverified; original schemas, full EIA-923 parsing, resumable checkpoints and scheduled updates remain open"
     },
@@ -60,7 +63,10 @@
       "requirement": "Metadata discovery and endpoint-specific validation",
       "status": "PARTIALLY_IMPLEMENTED",
       "evidence": [
-        "tests/test_electricity.py"
+        "tests/test_electricity.py",
+        "tests/test_electricity_jobs.py",
+        "dashboard/tests/electricity-jobs.spec.mjs",
+        "docs/electricity/ADR-0003-durable-monthly-acquisition.md"
       ],
       "remaining_gate": "Bounded client and byte-stream downloads implemented; live EIA access is proxy-denied, credential input received but authentication unverified; original schemas, full EIA-923 parsing, resumable checkpoints and scheduled updates remain open"
     },
@@ -69,18 +75,24 @@
       "requirement": "Polling, streaming and batch interfaces",
       "status": "PARTIALLY_IMPLEMENTED",
       "evidence": [
-        "tests/test_electricity.py"
+        "tests/test_electricity.py",
+        "tests/test_electricity_jobs.py",
+        "dashboard/tests/electricity-jobs.spec.mjs",
+        "docs/electricity/ADR-0003-durable-monthly-acquisition.md"
       ],
-      "remaining_gate": "Bounded client and byte-stream downloads implemented; live EIA access is proxy-denied, credential input received but authentication unverified; original schemas, full EIA-923 parsing, resumable checkpoints and scheduled updates remain open"
+      "remaining_gate": "Native bounded monthly job workflow with durable polling of status and manual page steps implemented. Background scheduling, streaming source subscriptions and actual provider integration remain open."
     },
     {
       "id": "A.5",
       "requirement": "Retry, pagination, checkpointing and incremental updates",
       "status": "PARTIALLY_IMPLEMENTED",
       "evidence": [
-        "tests/test_electricity.py"
+        "tests/test_electricity.py",
+        "tests/test_electricity_jobs.py",
+        "dashboard/tests/electricity-jobs.spec.mjs",
+        "docs/electricity/ADR-0003-durable-monthly-acquisition.md"
       ],
-      "remaining_gate": "Bounded client and byte-stream downloads implemented; live EIA access is proxy-denied, credential input received but authentication unverified; original schemas, full EIA-923 parsing, resumable checkpoints and scheduled updates remain open"
+      "remaining_gate": "Bounded metadata/facet/page checkpoints, fenced leases, cancellation and restart replay implemented and tested with synthetic inputs. Real-source consistency, scheduled incremental refresh and independent source acceptance remain open."
     },
     {
       "id": "A.6",
@@ -534,7 +546,10 @@
       "evidence": [
         "dashboard/src/pages/ElectricityPage.jsx",
         "dashboard/src/pages/ElectricityPage.test.jsx",
-        "dashboard/tests/electricity.spec.mjs"
+        "dashboard/tests/electricity.spec.mjs",
+        "tests/test_electricity_jobs.py",
+        "dashboard/tests/electricity-jobs.spec.mjs",
+        "docs/electricity/ADR-0003-durable-monthly-acquisition.md"
       ],
       "remaining_gate": "Native source-evidence workspace or related existing route available; full requested operational workspace scope remains incomplete"
     },
@@ -661,7 +676,10 @@
         "tests/test_electricity.py",
         "docs/electricity/OPERATIONS.md",
         "tests/test_electricity_reviews.py",
-        "dashboard/tests/electricity-review.spec.mjs"
+        "dashboard/tests/electricity-review.spec.mjs",
+        "tests/test_electricity_jobs.py",
+        "dashboard/tests/electricity-jobs.spec.mjs",
+        "docs/electricity/ADR-0003-durable-monthly-acquisition.md"
       ],
       "remaining_gate": "Attempt ledger, single-process acquisition lock and local recovery rehearsal implemented; distributed quotas, full RBAC, sensitive-data agreements and operational backups remain open"
     },
@@ -681,7 +699,10 @@
       "status": "PARTIALLY_IMPLEMENTED",
       "evidence": [
         "tests/test_electricity.py",
-        "docs/electricity/OPERATIONS.md"
+        "docs/electricity/OPERATIONS.md",
+        "tests/test_electricity_jobs.py",
+        "dashboard/tests/electricity-jobs.spec.mjs",
+        "docs/electricity/ADR-0003-durable-monthly-acquisition.md"
       ],
       "remaining_gate": "Attempt ledger, single-process acquisition lock and local recovery rehearsal implemented; distributed quotas, full RBAC, sensitive-data agreements and operational backups remain open"
     },
@@ -711,7 +732,10 @@
       "status": "PARTIALLY_IMPLEMENTED",
       "evidence": [
         "tests/test_electricity.py",
-        "docs/electricity/OPERATIONS.md"
+        "docs/electricity/OPERATIONS.md",
+        "tests/test_electricity_jobs.py",
+        "dashboard/tests/electricity-jobs.spec.mjs",
+        "docs/electricity/ADR-0003-durable-monthly-acquisition.md"
       ],
       "remaining_gate": "Bounded automated checks only; full requested scientific/operational/native-device denominator is not verified"
     },
@@ -721,7 +745,10 @@
       "status": "PARTIALLY_IMPLEMENTED",
       "evidence": [
         "tests/test_electricity.py",
-        "docs/electricity/OPERATIONS.md"
+        "docs/electricity/OPERATIONS.md",
+        "tests/test_electricity_jobs.py",
+        "dashboard/tests/electricity-jobs.spec.mjs",
+        "docs/electricity/ADR-0003-durable-monthly-acquisition.md"
       ],
       "remaining_gate": "Bounded automated checks only; full requested scientific/operational/native-device denominator is not verified"
     },
@@ -751,7 +778,10 @@
       "status": "PARTIALLY_IMPLEMENTED",
       "evidence": [
         "tests/test_electricity.py",
-        "docs/electricity/OPERATIONS.md"
+        "docs/electricity/OPERATIONS.md",
+        "tests/test_electricity_jobs.py",
+        "dashboard/tests/electricity-jobs.spec.mjs",
+        "docs/electricity/ADR-0003-durable-monthly-acquisition.md"
       ],
       "remaining_gate": "Bounded automated checks only; full requested scientific/operational/native-device denominator is not verified"
     },

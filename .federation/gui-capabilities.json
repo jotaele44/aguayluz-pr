@@ -1909,6 +1909,69 @@
           "dashboard/tests/electricity-review.spec.mjs"
         ]
       }
+    },
+    {
+      "id": "electricity-monthly-acquisition-jobs-v1",
+      "classification": "user",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Bounded monthly EIA jobs expose durable discovery/page checkpoints, version conflicts, fenced lease recovery, cancellation, retry, source health and audit export in the native GUI. Explicit source coverage/schema gates precede rows. No live or canonical measurements are admitted; external sources remain unverified.",
+      "backend": {
+        "files": [
+          "src/aguayluz/electricity/jobs.py",
+          "server/backend/electricity_api.py"
+        ],
+        "endpoints": [
+          "GET /electricity/v1/acquisition-jobs",
+          "GET /electricity/v1/acquisition-jobs/{identifier}",
+          "POST /electricity/v1/acquisition-jobs",
+          "POST /electricity/v1/acquisition-jobs/{identifier}/step",
+          "POST /electricity/v1/acquisition-jobs/{identifier}/cancel"
+        ],
+        "symbols": [
+          "src/aguayluz/electricity/jobs.py:JobConflict",
+          "src/aguayluz/electricity/jobs.py:MonthlyJobRequest",
+          "src/aguayluz/electricity/jobs.py:JobCommand",
+          "src/aguayluz/electricity/jobs.py:AcquisitionJob",
+          "src/aguayluz/electricity/jobs.py:AcquisitionJobs",
+          "server/backend/electricity_api.py:acquisition_jobs",
+          "server/backend/electricity_api.py:acquisition_job",
+          "server/backend/electricity_api.py:create_acquisition_job",
+          "server/backend/electricity_api.py:step_acquisition_job",
+          "server/backend/electricity_api.py:cancel_acquisition_job"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/electricity"
+        ],
+        "e2e_routes": [
+          "/electricity"
+        ],
+        "components": [
+          "dashboard/src/pages/ElectricityPage.jsx",
+          "dashboard/src/components/electricity/ElectricityJobs.jsx",
+          "dashboard/src/lib/electricity-api.js"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx",
+          "dashboard/src/pages/ElectricityPage.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_electricity_jobs.py"
+        ],
+        "contract": [
+          "tests/test_electricity_jobs.py"
+        ],
+        "unit": [
+          "dashboard/src/components/electricity/ElectricityJobs.test.jsx"
+        ],
+        "e2e": [
+          "dashboard/tests/electricity-jobs.spec.mjs"
+        ]
+      }
     }
   ],
   "exceptions": []

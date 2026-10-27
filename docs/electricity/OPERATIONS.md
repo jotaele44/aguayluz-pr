@@ -60,6 +60,10 @@ existing blobs. Candidate recommendations also use `reviews.sqlite3`; back up
 and restore that ledger with its source database after quiescing writers. A Git
 checkout is not a data backup. See `ADR-0002-candidate-review-ledger.md` for the
 review role, immutable-history and recovery boundaries.
+When monthly acquisition jobs are present, also preserve `acquisition.sqlite3`.
+Restore all present ledgers and verified raw bytes together after quiescing
+writers. Job recovery/cancellation semantics and remaining scheduling gaps are
+documented in `ADR-0003-durable-monthly-acquisition.md`.
 
 1. Stop acquisitions/imports and quiesce writers. Record the candidate commit and
    projection revision, raw blob hashes and receipt count.
