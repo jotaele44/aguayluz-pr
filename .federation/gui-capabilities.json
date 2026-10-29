@@ -1771,6 +1771,32 @@
           "dashboard/tests/gui-parity.spec.mjs"
         ]
       }
+    },
+    {
+      "id": "hydro-intelligence-raw-acquisition-v1",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Internal pre-production source discovery and raw-byte evidence acquisition; no user-facing API or canonical promotion. Tracking HYDRO-RELEASE-A, expiry 2026-12-31. CI, independent review and GUI parity required before user workflow enablement.",
+      "analysis": {
+        "files": [
+          "src/aguayluz/hydro_intelligence/acquisition.py",
+          "src/aguayluz/hydro_intelligence/discovery.py"
+        ],
+        "symbols": [
+          "src/aguayluz/hydro_intelligence/acquisition.py:ArtifactReceipt",
+          "src/aguayluz/hydro_intelligence/acquisition.py:validate_url",
+          "src/aguayluz/hydro_intelligence/acquisition.py:persist_bytes",
+          "src/aguayluz/hydro_intelligence/acquisition.py:fetch_artifact",
+          "src/aguayluz/hydro_intelligence/acquisition.py:acquire"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_hydro_intelligence_acquisition.py",
+          "tests/test_hydro_intelligence_discovery.py"
+        ]
+      }
     }
   ],
   "exceptions": []
