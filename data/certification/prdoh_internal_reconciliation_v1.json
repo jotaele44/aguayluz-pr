@@ -1,0 +1,476 @@
+{
+  "schema_version": "aguayluz.water_health.prdoh_internal_reconciliation/v1",
+  "scope": "PRDOH 2025 drinking-water report family 10746 + 10747 + 10748; no SDWIS identity/revision adjudication",
+  "sources": {
+    "10746": {
+      "sha256": "3488ca04e0ad90106caaa568059ee574fa099c3854bf11a3930db372391ff1bd",
+      "pages": 1,
+      "role": "NOTICE"
+    },
+    "10747": {
+      "sha256": "748529762de1b6661b5484957a7662bd233a37aaf371482cdc14bbf5ac584772",
+      "pages": 40,
+      "role": "ANNUAL_REPORT"
+    },
+    "10748": {
+      "sha256": "9886fbed47e9f8a3564167034bedc6bc0a0d653c6f89d81d69f8101ccc3f2603",
+      "pages": 33,
+      "role": "ANNEXES"
+    }
+  },
+  "source_page_arithmetic": {
+    "source_pages": 74,
+    "classified_or_frozen_pages": 74,
+    "unresolved_pages": 0,
+    "delta": 0
+  },
+  "table_fragment_arithmetic": {
+    "10747": {
+      "data_rows": 221,
+      "explicit_total_rows": 2,
+      "continuation_fragments": 1,
+      "total_fragments": 224
+    },
+    "10748": {
+      "identity_bearing_rows": 250,
+      "reference_rows": 94,
+      "treatment_rows": 16,
+      "continuation_fragments": 1,
+      "total_fragments": 361
+    },
+    "combined": {
+      "source_table_fragments": 585,
+      "identity_bearing_rows": 267,
+      "violation_summary_or_detail_rows": 190,
+      "non_violation_reference_or_treatment_rows": 124,
+      "explicit_total_rows": 2,
+      "continuation_fragments": 2,
+      "accounted": 585,
+      "delta": 0
+    },
+    "functional_partition_notes": {
+      "identity_bearing_rows": "10748 250 + 10747 17 system/PWS identity-reference rows",
+      "violation_summary_or_detail_rows": "10747 21 annual-summary + 166 detailed + 3 RTCR MR-by-type rows",
+      "non_violation_reference_or_treatment_rows": "10747 14 non-identity reference rows + 10748 94 reference + 16 treatment rows"
+    }
+  },
+  "prasa_pws_token_identity": {
+    "rule": "Bind only exact source-visible PRDOH PWS/PWSID token equality inside the same four-digit PRASA namespace. Do not bind by system name, suffix inference against seven-digit Non-PRASA IDs, counts, or proximity.",
+    "source_evidence": [
+      "10747 pages 14-15 use column label PWS for PRASA RTCR identity rows.",
+      "10747 Table 24 uses column label PWSID for exemption identity rows.",
+      "10748 Anejo 1 uses four-digit PWSID for PRASA violation rows.",
+      "10748 Anejo 2 uses seven-digit PWSID for Non-PRASA systems and is a different displayed namespace."
+    ],
+    "10747_identity_rows": 17,
+    "10747_unique_tokens": 13,
+    "10748_anejo1_prasa_rows": 54,
+    "10748_anejo1_unique_tokens": 27,
+    "intersection_tokens": [
+      "2762",
+      "4915",
+      "4945",
+      "5557"
+    ],
+    "intersection": 4,
+    "10747_only_tokens": [
+      "2672",
+      "3042",
+      "3122",
+      "3212",
+      "3872",
+      "4494",
+      "4534",
+      "4614",
+      "5166"
+    ],
+    "10747_only": 9,
+    "10748_only": 23,
+    "union": 36,
+    "symmetric_difference": 32,
+    "unresolved_identity_tokens": 0,
+    "state": "PASS"
+  },
+  "exact_reconciliation_checks": [
+    {
+      "id": "PRASA-GWR-MR",
+      "report": {
+        "violations": 4,
+        "systems": 2
+      },
+      "annex": {
+        "violations": 4,
+        "systems": 2
+      },
+      "state": "PASS"
+    },
+    {
+      "id": "PRASA-TURBIDITY-43-TT",
+      "report": {
+        "violations": 6,
+        "systems": 3
+      },
+      "annex": {
+        "violations": 6,
+        "systems": 3
+      },
+      "state": "PASS"
+    },
+    {
+      "id": "PRASA-TURBIDITY-44-TT",
+      "report": {
+        "violations": 2,
+        "systems": 2
+      },
+      "annex": {
+        "violations": 2,
+        "systems": 2
+      },
+      "state": "PASS"
+    },
+    {
+      "id": "PRASA-CHLORINE-EQUIPMENT-MR",
+      "report": {
+        "violations": 12,
+        "systems": 9
+      },
+      "annex": {
+        "violations": 12,
+        "systems": 9
+      },
+      "state": "PASS"
+    },
+    {
+      "id": "PRASA-CHLORINE-SAMPLING-MR",
+      "report": {
+        "violations": 2,
+        "systems": 2
+      },
+      "annex": {
+        "violations": 2,
+        "systems": 2
+      },
+      "state": "PASS"
+    },
+    {
+      "id": "PRASA-LT2-TT",
+      "report": {
+        "violations": 3,
+        "systems": 3
+      },
+      "annex": {
+        "violations": 3,
+        "systems": 3
+      },
+      "state": "PASS"
+    },
+    {
+      "id": "PRASA-SOC-MR",
+      "report": {
+        "violations": 1,
+        "systems": 1
+      },
+      "annex": {
+        "violations": 1,
+        "systems": 1
+      },
+      "state": "PASS"
+    },
+    {
+      "id": "PRASA-TTHM-MCL",
+      "report": {
+        "violations": 12,
+        "systems": 6
+      },
+      "annex": {
+        "violations": 12,
+        "systems": 6
+      },
+      "state": "PASS"
+    },
+    {
+      "id": "PRASA-HAA5-MCL",
+      "report": {
+        "violations": 11,
+        "systems": 4
+      },
+      "annex": {
+        "violations": 11,
+        "systems": 4
+      },
+      "state": "PASS"
+    },
+    {
+      "id": "NONPRASA-NITRATE-MR",
+      "report": {
+        "violations": 10,
+        "systems": 10
+      },
+      "annex": {
+        "violations": 10,
+        "systems": 10
+      },
+      "state": "PASS"
+    },
+    {
+      "id": "NONPRASA-NITRITE-MR",
+      "report": {
+        "violations": 5,
+        "systems": 5
+      },
+      "annex": {
+        "violations": 5,
+        "systems": 5
+      },
+      "state": "PASS"
+    },
+    {
+      "id": "NONPRASA-IOC-SHARED-MR",
+      "report": {
+        "violations": 2,
+        "systems": 2
+      },
+      "annex": {
+        "violations": 2,
+        "systems": 2
+      },
+      "state": "PASS_NONADDITIVE_ANALYTE_REPRESENTATION"
+    },
+    {
+      "id": "NONPRASA-VOC-MR",
+      "report": {
+        "violations": 3,
+        "systems": 3
+      },
+      "annex": {
+        "violations": 3,
+        "systems": 3
+      },
+      "state": "PASS_NONADDITIVE_ANALYTE_REPRESENTATION"
+    },
+    {
+      "id": "NONPRASA-SOC-MR",
+      "report": {
+        "violations": 2,
+        "systems": 2
+      },
+      "annex": {
+        "violations": 2,
+        "systems": 2
+      },
+      "state": "PASS_NONADDITIVE_ANALYTE_REPRESENTATION"
+    },
+    {
+      "id": "NONPRASA-TTHM-MR",
+      "report": {
+        "violations": 8,
+        "systems": 7
+      },
+      "annex": {
+        "violations": 8,
+        "systems": 7
+      },
+      "state": "PASS"
+    },
+    {
+      "id": "NONPRASA-HAA5-MCL-DETAIL",
+      "report": {
+        "violations": 5,
+        "systems": 2
+      },
+      "annex": {
+        "violations": 5,
+        "systems": 2
+      },
+      "state": "PASS"
+    },
+    {
+      "id": "NONPRASA-HAA5-MR",
+      "report": {
+        "violations": 8,
+        "systems": 7
+      },
+      "annex": {
+        "violations": 8,
+        "systems": 7
+      },
+      "state": "PASS"
+    },
+    {
+      "id": "NONPRASA-RTCR-MCL",
+      "report": {
+        "violations": 2,
+        "systems": 2
+      },
+      "annex": {
+        "violations": 2,
+        "systems": 2
+      },
+      "state": "PASS"
+    },
+    {
+      "id": "NONPRASA-RTCR-TT",
+      "report": {
+        "violations": 5,
+        "systems": 4
+      },
+      "annex": {
+        "violations": 5,
+        "systems": 4
+      },
+      "state": "PASS"
+    },
+    {
+      "id": "NONPRASA-RTCR-MR-COMMUNITY",
+      "report": {
+        "violations": 1231,
+        "systems": 113
+      },
+      "annex": {
+        "violations": 1231,
+        "systems": 113
+      },
+      "state": "PASS"
+    },
+    {
+      "id": "NONPRASA-RTCR-MR-NTNC",
+      "report": {
+        "violations": 20,
+        "systems": 4
+      },
+      "annex": {
+        "violations": 20,
+        "systems": 4
+      },
+      "state": "PASS"
+    },
+    {
+      "id": "NONPRASA-RTCR-MR-TNC",
+      "report": {
+        "violations": 17,
+        "systems": 4
+      },
+      "annex": {
+        "violations": 17,
+        "systems": 4
+      },
+      "state": "PASS"
+    },
+    {
+      "id": "NONPRASA-RTCR-MR-TOTAL",
+      "report": {
+        "violations": 1268,
+        "systems": 121
+      },
+      "annex": {
+        "violations": 1268,
+        "systems": 121
+      },
+      "state": "PASS"
+    },
+    {
+      "id": "NONPRASA-LCR-52-MR",
+      "report": {
+        "violations": 17,
+        "systems": 13
+      },
+      "annex": {
+        "violations": 17,
+        "systems": 13
+      },
+      "state": "PASS"
+    },
+    {
+      "id": "NONPRASA-LCR-57-TT",
+      "report": {
+        "violations": 1,
+        "systems": 1
+      },
+      "annex": {
+        "violations": 1,
+        "systems": 1
+      },
+      "state": "PASS"
+    },
+    {
+      "id": "NONPRASA-PUBLIC-NOTICE",
+      "report": {
+        "violations": 7,
+        "systems": 6
+      },
+      "annex": {
+        "violations": 7,
+        "systems": 6
+      },
+      "state": "PASS"
+    }
+  ],
+  "source_scope_adjudications": [
+    {
+      "id": "PRDOH-SCOPE-001",
+      "subject": "PRASA turbidity monitoring/reporting code 36",
+      "report_value": {
+        "violations": 0,
+        "systems": 0
+      },
+      "annex_rows": 1,
+      "evidence": "10747 Table 7 footnote states that for report purposes only the significant noncompliance where zero samples were taken for the entire month is counted. 10748 retains a broader source row for turbidity sampling failure.",
+      "state": "EXPLAINED_REPORTING_SCOPE_DIFFERENCE",
+      "terminal_handling": "PRESERVE_BOTH_NO_FORCED_EQUIVALENCE"
+    }
+  ],
+  "terminal_source_contradictions": [
+    {
+      "id": "10747-CONTR-001",
+      "subject": "Non-PRASA RTCR annual summary versus detail/annex",
+      "annual_summary": {
+        "mcl_tt_violations": 2,
+        "systems": 2
+      },
+      "detailed_and_annex": {
+        "mcl": {
+          "violations": 2,
+          "systems": 2
+        },
+        "tt": {
+          "violations": 5,
+          "systems": 4
+        }
+      },
+      "state": "SOURCE_INTERNAL_CONTRADICTION",
+      "terminal_handling": "PRESERVE_NO_REPAIR"
+    },
+    {
+      "id": "10747-CONTR-002",
+      "subject": "Non-PRASA HAA5 annual summary versus detail/annex",
+      "annual_summary": {
+        "violations": 4,
+        "systems": 2
+      },
+      "detailed_and_annex": {
+        "violations": 5,
+        "systems": 2
+      },
+      "state": "SOURCE_INTERNAL_CONTRADICTION",
+      "terminal_handling": "PRESERVE_NO_REPAIR"
+    }
+  ],
+  "nonadditive_representation": {
+    "id": "10747-NONADDITIVE-001",
+    "state": "EXPLAINED_SOURCE_REPRESENTATION",
+    "rule": "IOC/SOC/VOC analyte rows may repeat one monitoring/reporting event across multiple analyte rows and must not be arithmetically summed into new event counts."
+  },
+  "source_reconstruction_notes": [
+    "10748 Anejo 2 community TOTAL MR values were visually summed from the exact rendered source; OCR omitted the leading '1' from row 106, whose source-visible value is 12. Community total is therefore 1,231, not 1,221.",
+    "10748 LCR continuation contains 17 code-52 MR rows across 13 unique PWSIDs and one code-57 TT row.",
+    "10748 public-notice rows contain 7 violations across 6 systems; Bo. Real appears twice."
+  ],
+  "unresolved_material": [],
+  "fail_count": 0,
+  "open_count": 0,
+  "blocked_count": 0,
+  "unresolved_count": 0,
+  "reconciliation_state": "PASS",
+  "prdoh_closure_state": "CANDIDATE_PENDING_EXACT_HEAD_10747_QUALIFICATION",
+  "downstream_gate": "PRDOH↔SDWIS identity/revision reconciliation remains prohibited until this candidate is exact-head qualified."
+}

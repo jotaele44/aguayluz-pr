@@ -1,0 +1,73 @@
+{
+  "material_residue": {
+    "blocked": 0,
+    "fail": 0,
+    "open": 0,
+    "unresolved": 0
+  },
+  "planes": {
+    "REPORTING_PERIOD": {
+      "delta": 0,
+      "manifestation_snapshot": "SDWIS 2026Q3 carrying violation periods overlapping 2025",
+      "prdoh_violation_rows": 129,
+      "sdwis_closed_target_rows": 4191,
+      "sdwis_future_begin_rows_excluded": 4,
+      "sdwis_open_ended_rows_reclassified_retained": 1168,
+      "sdwis_original_retained_rows": 3023,
+      "target_year": 2025,
+      "unresolved_period_rows": 0
+    },
+    "REVISION": {
+      "delta": 0,
+      "system_edges": 169,
+      "system_states": {
+        "PRDOH_ONLY": 2,
+        "PRDOH_SHORTHAND_ONLY": 27,
+        "RESOLVED_RETAINED": 140
+      },
+      "unresolved": 0,
+      "violation_edges": 129,
+      "violation_states": {
+        "NO_BIND_PRASA_SHORTHAND": 54,
+        "NO_BIND_REVIEW_TIE": 11,
+        "NO_BIND_UNIQUE_COMPOSITE_DISCOVERY_ONLY": 22,
+        "PRDOH_ONLY_NO_BIND": 42
+      }
+    },
+    "SYSTEM": {
+      "delta": 0,
+      "identity_rule": "Exact authority-grade 9-character PWSID only; PRASA 4-digit shorthand remains a distinct source representation and is not coerced.",
+      "intersection": 138,
+      "prdoh_only": 31,
+      "sdwis_only": 167,
+      "symmetric_difference": 198,
+      "union": 336
+    },
+    "SYSTEM_X_VIOLATION": {
+      "accounted": 129,
+      "canonical_bindings": 0,
+      "delta": 0,
+      "prdoh_rows": 129,
+      "terminal_states": {
+        "NO_BIND_PRASA_SHORTHAND": 54,
+        "NO_BIND_REVIEW_TIE": 11,
+        "NO_BIND_UNIQUE_COMPOSITE_DISCOVERY_ONLY": 22,
+        "PRDOH_ONLY_NO_BIND": 42
+      },
+      "unresolved": 0
+    },
+    "VIOLATION": {
+      "delta": 0,
+      "identity_rule": "PRDOH 10748 does not expose SDWIS VIOLATION_ID; no stable violation identity intersection is asserted.",
+      "intersection_by_shared_stable_violation_id": 0,
+      "prdoh_only": 129,
+      "prdoh_source_rows": 129,
+      "sdwis_only": 4191,
+      "sdwis_stable_violation_rows": 4191,
+      "symmetric_difference": 4320,
+      "union_representations": 4320
+    }
+  },
+  "schema_version": "aguayluz.water_health.prdoh_sdwis_five_plane_set_algebra/v1",
+  "state": "FIVE_PLANE_SET_ALGEBRA_PASS"
+}

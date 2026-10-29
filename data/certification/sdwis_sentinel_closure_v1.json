@@ -1,0 +1,86 @@
+{
+  "schema_version": "aguayluz.water_health.sdwis_sentinel_closure/v1",
+  "source_snapshot": {
+    "national_zip_sha256": "4d92d5f46b423742d5fd608257dc63ef666a832d9211199c28434cd8f41dccb0",
+    "violations_member_uncompressed_sha256": "74f6f7b45ec37c5a6e7660da97e77558d500f95a1ed97147066bc3698a27ad5b",
+    "predecessor_unresolved_jsonl_sha256": "d6b92f75c530b05fb37836a128a132b4a5e24e58047206c99fa0bf05ce0451e8",
+    "predecessor_row_level_adjudication_sha256": "5d1304d4ef05f1291202b99908cf20de6d76a811c733c4450c2b785d149e0570",
+    "exact_head_source_freeze_artifact_id": 12526146675,
+    "exact_head_source_freeze_artifact_digest": "sha256:ccac7a5a1b2364237ce9e5c25a1e8129250cbf456474557fbce6565b2da37678"
+  },
+  "input": {
+    "unresolved_rows": 1168,
+    "unique_pwsid_violation_keys": 868,
+    "key_multiplicity": {
+      "1": 589,
+      "2": 260,
+      "3": 17,
+      "4": 2
+    },
+    "unique_pwsids": 269,
+    "end_token_counts": {
+      "--->": 1168
+    },
+    "calculated_rtc_present_rows": 0,
+    "violation_status_counts": {
+      "Unaddressed": 1016,
+      "Addressed": 152
+    },
+    "enforcement_category_counts": {
+      "": 419,
+      "Formal": 113,
+      "Informal": 635,
+      "Resolving": 1
+    }
+  },
+  "authoritative_semantics": [
+    {
+      "authority": "EPA ECHO SDWA Data Download Summary",
+      "finding": "For unresolved violations, NON_COMPL_PER_END_DATE is null."
+    },
+    {
+      "authority": "EPA SDWIS Federal Reporting Services Data Dictionary",
+      "finding": "Open violations are violations without compliance period end dates."
+    },
+    {
+      "authority": "EPA ECHO Detailed Facility Report Data Dictionary",
+      "finding": "A right arrow with no closing date denotes a violation that remains active in the program data system."
+    }
+  ],
+  "adjudication_rule": {
+    "terminal_state": "RESOLVED_RETAINED",
+    "violation_state": "OPEN_ENDED_ACTIVE",
+    "predicate": "NON_COMPL_PER_END_DATE == '--->' AND CALCULATED_RTC_DATE is blank AND NON_COMPL_PER_BEGIN_DATE <= 2025-12-31",
+    "reason": "EPA_OPEN_ENDED_VIOLATION_ARROW_NO_END_DATE_OVERLAPS_2025",
+    "note": "RESOLVED_RETAINED means the adjudication is terminally resolved; it does not mean the underlying violation is resolved."
+  },
+  "retained_from_sentinel": 1168,
+  "remaining_unresolved_rows": 0,
+  "contradiction_flags": [
+    {
+      "pwsid": "PR0002762",
+      "violation_id": "7615631",
+      "begin_date": "10/02/2015",
+      "end_token": "--->",
+      "calculated_rtc_date": "",
+      "violation_status": "Addressed",
+      "enforcement_category": "Resolving",
+      "state": "PRESERVED_CONTRADICTION_DOES_NOT_OVERRIDE_OPEN_END_DATE"
+    }
+  ],
+  "revised_source_arithmetic": {
+    "source": 15550611,
+    "retained": 4191,
+    "excluded": 15546420,
+    "unresolved": 0,
+    "accounted": 15550611,
+    "delta": 0
+  },
+  "full_row_manifest": {
+    "row_count": 1168,
+    "decoded_json_sha256": "07fe0274755e3bac10f25d290467074fab3c3693d9c586efbf3d6eb9a9363a11",
+    "deterministic_gzip_sha256": "0eb9931a5571b8f6dfd213631685aae27c167feba27e6e012850849f4ae56859",
+    "state": "HASH_FROZEN"
+  },
+  "state": "SDWIS_SENTINEL_CLOSURE_PASS"
+}
