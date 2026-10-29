@@ -1777,10 +1777,11 @@
       "classification": "internal",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Internal byte-exact evidence capture primitive. No user-facing workflow or canonical promotion exists yet. Release A GUI API and navigation remain explicitly blocked pending end-to-end parity qualification; tracking HYDRO-RELEASE-A, expiry 2026-12-31.",
+      "rationale": "Internal pre-production source discovery and raw-byte evidence acquisition; no user-facing API or canonical promotion. Tracking HYDRO-RELEASE-A, expiry 2026-12-31. CI, independent review and GUI parity required before user workflow enablement.",
       "analysis": {
         "files": [
-          "src/aguayluz/hydro_intelligence/acquisition.py"
+          "src/aguayluz/hydro_intelligence/acquisition.py",
+          "src/aguayluz/hydro_intelligence/discovery.py"
         ],
         "symbols": [
           "src/aguayluz/hydro_intelligence/acquisition.py:ArtifactReceipt",
@@ -1792,7 +1793,8 @@
       },
       "tests": {
         "contract": [
-          "tests/test_hydro_intelligence_acquisition.py"
+          "tests/test_hydro_intelligence_acquisition.py",
+          "tests/test_hydro_intelligence_discovery.py"
         ]
       }
     }
