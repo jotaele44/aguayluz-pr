@@ -54,3 +54,23 @@ def test_receipt_remains_raw_not_certified(tmp_path):
     assert receipt.state == "RAW_FROZEN_NOT_PARSED"
     item = next(tmp_path.rglob("*.receipt.json"))
     assert json.loads(item.read_text())["state"] == "RAW_FROZEN_NOT_PARSED"
+
+
+def test_redirect_rejected_before_following(monkeypatch):
+    from aguayluz.hydro_intelligence.acquisition import RejectRedirects
+    with pytest.raises(ValueError, match="Redirect"):
+        RejectRedirects().redirect_request(None, None, 302, "Found", {}, "https://evil.example")
+
+
+def test_no_clobber_when_concurrent_writer_wins(tmp_path, monkeypatch):
+    import os
+    from aguayluz.hydro_intelligence import acquisition
+    original_link = os.link
+
+    def raced_link(source, target):
+        target.write_bytes(b"tampered")
+        raise FileExistsError()
+
+    monkeypatch.setattr(acquisition.os, "link", raced_link)
+    with pytest.raises(ValueError, match="Concurrent artifact"):
+        persist_bytes(tmp_path, "eia_923", "https://www.eia.gov/test.zip", b"valid")
