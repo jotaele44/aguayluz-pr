@@ -122,6 +122,7 @@ def test_live_receipt_binds_timestamp_and_cannot_overwrite_historical(tmp_path, 
     src = tmp_path / "towns.json"
     meta = tmp_path / "manifest.json"
     out = tmp_path / "luma_live_incidents.jsonl"
+    receipt_out = tmp_path / "luma_live_receipt.json"
     raw = json.dumps(SAMPLE, separators=(",", ":")).encode("utf-8")
     src.write_bytes(raw)
     digest = hashlib.sha256(raw).hexdigest()
@@ -134,6 +135,8 @@ def test_live_receipt_binds_timestamp_and_cannot_overwrite_historical(tmp_path, 
                     "retrieval_utc": "2026-09-19T12:34:56Z",
                     "response_sha256": digest,
                     "response_bytes": len(raw),
+                    "request_key_count": 78,
+                    "request_body_sha256": "1" * 64,
                 }
             }
         ),
@@ -152,6 +155,8 @@ def test_live_receipt_binds_timestamp_and_cannot_overwrite_historical(tmp_path, 
             str(REPO_ROOT / "data/geo/pr_municipios.json"),
             "--out",
             str(out),
+            "--receipt-out",
+            str(receipt_out),
         ],
     )
     assert ingest_aee.main() == 0
@@ -162,6 +167,12 @@ def test_live_receipt_binds_timestamp_and_cannot_overwrite_historical(tmp_path, 
         urlsplit(r["source_ref"]).hostname == "api.miluma.lumapr.com"
         for r in rows
     )
+    receipt = json.loads(receipt_out.read_text(encoding="utf-8"))
+    assert receipt["status"] == "PASS"
+    assert receipt["request_key_count"] == 78
+    assert receipt["event_count"] == len(rows)
+    assert receipt["output_sha256"] == hashlib.sha256(out.read_bytes()).hexdigest()
+    assert receipt["source_byte_sha256"] == digest
 
     monkeypatch.setattr(
         sys,
@@ -219,3 +230,211 @@ def test_live_receipt_rejects_byte_hash_mismatch(tmp_path, monkeypatch):
     with pytest.raises(ValueError, match="hash mismatch"):
         ingest_aee.main()
     assert not out.exists()
+
+
+def test_live_receipt_complete_zero_snapshot_is_explicit(tmp_path, monkeypatch):
+    src = tmp_path / "towns.json"
+    meta = tmp_path / "manifest.json"
+    out = tmp_path / "luma_live_incidents.jsonl"
+    receipt_out = tmp_path / "luma_live_receipt.json"
+    geo_path = REPO_ROOT / "data/geo/pr_municipios.json"
+    keys = municipio_keys(geo_path)
+    payload = {key: [] for key in keys}
+    raw = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+    src.write_bytes(raw)
+    meta.write_text(
+        json.dumps(
+            {
+                "towns": {
+                    "status": "PASS",
+                    "url": (
+                        "https://api.miluma.lumapr.com/"
+                        "miluma-outage-api/outage/municipality/towns"
+                    ),
+                    "retrieval_utc": "2026-09-19T12:34:56Z",
+                    "response_sha256": hashlib.sha256(raw).hexdigest(),
+                    "response_bytes": len(raw),
+                    "request_key_count": 78,
+                    "request_body_sha256": "2" * 64,
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "ingest_aee.py",
+            "--src",
+            str(src),
+            "--snapshot-meta",
+            str(meta),
+            "--geo",
+            str(geo_path),
+            "--out",
+            str(out),
+            "--receipt-out",
+            str(receipt_out),
+        ],
+    )
+
+    assert ingest_aee.main() == 0
+    assert out.read_bytes() == b""
+    receipt = json.loads(receipt_out.read_text(encoding="utf-8"))
+    assert receipt["request_key_count"] == 78
+    assert receipt["response_key_count"] == 78
+    assert receipt["resolved_response_key_count"] == 78
+    assert receipt["unresolved_response_keys"] == []
+    assert receipt["event_count"] == 0
+    assert receipt["output_sha256"] == hashlib.sha256(b"").hexdigest()
+
+
+def test_live_receipt_failure_removes_stale_output_and_sidecar(tmp_path, monkeypatch):
+    src = tmp_path / "towns.json"
+    meta = tmp_path / "manifest.json"
+    out = tmp_path / "luma_live_incidents.jsonl"
+    receipt_out = tmp_path / "luma_live_receipt.json"
+    src.write_text(json.dumps(SAMPLE), encoding="utf-8")
+    out.write_text("stale\n", encoding="utf-8")
+    receipt_out.write_text('{"status":"STALE"}\n', encoding="utf-8")
+    meta.write_text(
+        json.dumps(
+            {
+                "towns": {
+                    "status": "PASS",
+                    "url": (
+                        "https://api.miluma.lumapr.com/"
+                        "miluma-outage-api/outage/municipality/towns"
+                    ),
+                    "retrieval_utc": "2026-09-19T12:34:56Z",
+                    "response_sha256": "0" * 64,
+                    "response_bytes": len(src.read_bytes()),
+                    "request_key_count": 78,
+                    "request_body_sha256": "3" * 64,
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "ingest_aee.py",
+            "--src",
+            str(src),
+            "--snapshot-meta",
+            str(meta),
+            "--geo",
+            str(REPO_ROOT / "data/geo/pr_municipios.json"),
+            "--out",
+            str(out),
+            "--receipt-out",
+            str(receipt_out),
+        ],
+    )
+
+    with pytest.raises(ValueError, match="hash mismatch"):
+        ingest_aee.main()
+    assert not out.exists()
+    assert not receipt_out.exists()
+
+
+def test_live_receipt_rejects_noncanonical_source(tmp_path, monkeypatch):
+    src = tmp_path / "towns.json"
+    meta = tmp_path / "manifest.json"
+    out = tmp_path / "luma_live_incidents.jsonl"
+    receipt_out = tmp_path / "luma_live_receipt.json"
+    raw = json.dumps(SAMPLE, separators=(",", ":")).encode("utf-8")
+    src.write_bytes(raw)
+    meta.write_text(
+        json.dumps(
+            {
+                "towns": {
+                    "status": "PASS",
+                    "url": "https://example.invalid/outages",
+                    "retrieval_utc": "2026-09-19T12:34:56Z",
+                    "response_sha256": hashlib.sha256(raw).hexdigest(),
+                    "response_bytes": len(raw),
+                    "request_key_count": 78,
+                    "request_body_sha256": "4" * 64,
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "ingest_aee.py",
+            "--src",
+            str(src),
+            "--snapshot-meta",
+            str(meta),
+            "--geo",
+            str(REPO_ROOT / "data/geo/pr_municipios.json"),
+            "--out",
+            str(out),
+            "--receipt-out",
+            str(receipt_out),
+        ],
+    )
+
+    with pytest.raises(ValueError, match="canonical towns endpoint"):
+        ingest_aee.main()
+    assert not out.exists()
+    assert not receipt_out.exists()
+
+
+def test_live_receipt_rejects_municipio_aggregation(tmp_path, monkeypatch):
+    src = tmp_path / "towns.json"
+    meta = tmp_path / "manifest.json"
+    out = tmp_path / "luma_live_incidents.jsonl"
+    receipt_out = tmp_path / "luma_live_receipt.json"
+    raw = json.dumps(SAMPLE, separators=(",", ":")).encode("utf-8")
+    src.write_bytes(raw)
+    meta.write_text(
+        json.dumps(
+            {
+                "towns": {
+                    "status": "PASS",
+                    "url": (
+                        "https://api.miluma.lumapr.com/"
+                        "miluma-outage-api/outage/municipality/towns"
+                    ),
+                    "retrieval_utc": "2026-09-19T12:34:56Z",
+                    "response_sha256": hashlib.sha256(raw).hexdigest(),
+                    "response_bytes": len(raw),
+                    "request_key_count": 78,
+                    "request_body_sha256": "5" * 64,
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "ingest_aee.py",
+            "--src",
+            str(src),
+            "--snapshot-meta",
+            str(meta),
+            "--geo",
+            str(REPO_ROOT / "data/geo/pr_municipios.json"),
+            "--out",
+            str(out),
+            "--receipt-out",
+            str(receipt_out),
+            "--granularity",
+            "municipio",
+        ],
+    )
+
+    with pytest.raises(ValueError, match="requires zone granularity"):
+        ingest_aee.main()
+    assert not out.exists()
+    assert not receipt_out.exists()

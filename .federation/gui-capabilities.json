@@ -30,7 +30,8 @@
       "dashboard/src/lib/api.js",
       "dashboard/src/lib/cave-karst-api.js",
       "dashboard/src/lib/environmental-exposure-api.js",
-      "dashboard/src/lib/hydromet-api.js"
+      "dashboard/src/lib/hydromet-api.js",
+      "dashboard/src/lib/food-resilience-api.js"
     ],
     "route_files": [
       "dashboard/src/App.jsx"
@@ -1769,6 +1770,97 @@
         "e2e": [
           "dashboard/tests/nws-hydromet.spec.mjs",
           "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "food-system-resilience-monitor",
+      "classification": "analysis",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Read-only, fail-closed FOOD_SYSTEM_RESILIENCE monitoring. Scientific evidence is normalized in the backend into canonical state, then projected deterministically into the GUI. Missing/stale evidence stays UNKNOWN or unavailable, and Phase 3/4 outputs remain MODEL_UNAVAILABLE until their scientific promotion gates pass. The GUI exposes no scientific-state mutation path.",
+      "backend": {
+        "files": [
+          "server/backend/food_resilience_api.py",
+          "server/backend/app.py"
+        ],
+        "endpoints": [
+          "GET /state",
+          "GET /view",
+          "GET /dependencies",
+          "GET /phase1/signals",
+          "GET /baseline",
+          "GET /scenarios"
+        ],
+        "symbols": [
+          "server/backend/food_resilience_api.py:load_food_resilience_contract",
+          "server/backend/food_resilience_api.py:phase1_signals",
+          "server/backend/food_resilience_api.py:canonical_food_resilience_state",
+          "server/backend/food_resilience_api.py:food_resilience_view",
+          "server/backend/food_resilience_api.py:food_resilience_state",
+          "server/backend/food_resilience_api.py:food_resilience_gui_view",
+          "server/backend/food_resilience_api.py:food_resilience_dependencies",
+          "server/backend/food_resilience_api.py:food_resilience_phase1_signals",
+          "server/backend/food_resilience_api.py:food_resilience_baseline",
+          "server/backend/food_resilience_api.py:food_resilience_scenarios"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/food-resilience"
+        ],
+        "e2e_routes": [
+          "/food-resilience"
+        ],
+        "components": [
+          "dashboard/src/lib/food-resilience-api.js",
+          "dashboard/src/pages/FoodResiliencePage.jsx",
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_food_resilience_api.py"
+        ],
+        "contract": [
+          "tests/test_gui_parity.py"
+        ],
+        "unit": [
+          "dashboard/src/pages/FoodResiliencePage.test.jsx"
+        ],
+        "e2e": [
+          "dashboard/tests/gui-parity.spec.mjs",
+          "dashboard/tests/food-resilience.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "miluma-live-outage-evidence-producer",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Scheduled 15-minute evidence producer shared by the outage surfaces and FOOD_SYSTEM_RESILIENCE. It fetches exact MiLUMA town bytes, binds retrieval/source hashes, and materializes a runtime-only outage JSONL plus a derived-output receipt. Source failure, incomplete response coverage, staleness, or receipt/hash mismatch cannot become a zero-outage observation. Operators consume the existing Outages GUI and the read-only Food Resilience projection; no terminal interaction is part of the user path.",
+      "analysis": {
+        "files": [
+          "scripts/fetch_luma_live.py",
+          "scripts/ingest_aee.py"
+        ],
+        "symbols": [
+          "scripts/fetch_luma_live.py:main",
+          "scripts/fetch_luma_live.py:municipio_keys",
+          "scripts/ingest_aee.py:build_events",
+          "scripts/ingest_aee.py:main",
+          "scripts/ingest_aee.py:unaccent_upper"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_ingest_aee.py",
+          "tests/test_refresh_plans.py",
+          "tests/test_food_resilience_api.py"
         ]
       }
     }

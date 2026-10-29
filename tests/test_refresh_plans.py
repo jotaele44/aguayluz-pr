@@ -186,6 +186,7 @@ def test_miluma_refresh_uses_one_receipt_for_both_ingests():
     assert status_argv[status_argv.index("--snapshot-meta") + 1] == manifest
     assert town_argv[town_argv.index("--snapshot-meta") + 1] == manifest
     assert town_argv[town_argv.index("--out") + 1] == "data/luma_live_incidents.jsonl"
+    assert town_argv[town_argv.index("--receipt-out") + 1] == "data/luma_live_receipt.json"
 
 
 

@@ -45,6 +45,7 @@ DEFAULT_SOURCE_REF = (
     "https://github.com/SuperSonicHub1/luma-energy-outages/blob/"
     "e864255cb64712a98260ced8868e40aaa65415d8/outages_by_town.json"
 )
+LUMA_TOWNS_URL = "https://api.miluma.lumapr.com/miluma-outage-api/outage/municipality/towns"
 
 
 def unaccent_upper(name: str) -> str:
@@ -141,10 +142,16 @@ def main() -> int:
     ap.add_argument("--granularity", default="zone", choices=["zone", "municipio"],
                     help="one event per outage zone (default) or one aggregated event per municipio")
     ap.add_argument("--out", default="data/aee_incidents.jsonl")
+    ap.add_argument(
+        "--receipt-out",
+        default=None,
+        help="optional receipt binding the live JSONL output to the validated MiLUMA source bytes",
+    )
     args = ap.parse_args()
 
     src = Path(args.src)
     out = Path(args.out)
+    receipt_out = Path(args.receipt_out) if args.receipt_out else None
     snapshot_ts = args.snapshot_ts
     source_ref = args.source_ref or DEFAULT_SOURCE_REF
     if args.snapshot_meta:
@@ -153,6 +160,8 @@ def main() -> int:
                 "live MiLUMA ingest may not overwrite historical data/aee_incidents.jsonl"
             )
         out.unlink(missing_ok=True)
+        if receipt_out is not None:
+            receipt_out.unlink(missing_ok=True)
         meta = json.loads(Path(args.snapshot_meta).read_text(encoding="utf-8"))
         entry = meta.get("towns")
         if not isinstance(entry, dict) or entry.get("status") != "PASS":
@@ -161,6 +170,8 @@ def main() -> int:
         meta_ref = entry.get("url")
         meta_hash = entry.get("response_sha256")
         meta_bytes = entry.get("response_bytes")
+        request_key_count = entry.get("request_key_count")
+        request_body_sha256 = entry.get("request_body_sha256")
         if not all(isinstance(v, str) and v for v in (meta_ts, meta_ref, meta_hash)):
             raise ValueError(
                 "snapshot manifest towns entry lacks retrieval_utc/url/response_sha256"
@@ -179,14 +190,70 @@ def main() -> int:
         source_ref = meta_ref
     elif not snapshot_ts:
         raise ValueError("--snapshot-ts is required unless --snapshot-meta is supplied")
+    elif receipt_out is not None:
+        raise ValueError("--receipt-out requires --snapshot-meta")
 
     doc = json.loads(src.read_text(encoding="utf-8"))
+    if not isinstance(doc, dict):
+        raise ValueError("MiLUMA town payload must be a JSON object")
     geo = load_geo(Path(args.geo))
     rows = build_events(doc, snapshot_ts, geo, source_ref, args.granularity)
 
     unresolved = sorted({r["affected_area"].split(" / ")[0] for r in rows if r["municipality"] is None})
+    output_bytes = "".join(
+        json.dumps(r, ensure_ascii=False) + "\n" for r in rows
+    ).encode("utf-8")
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8")
+    out.write_bytes(output_bytes)
+
+    if receipt_out is not None:
+        if source_ref != LUMA_TOWNS_URL:
+            out.unlink(missing_ok=True)
+            raise ValueError("live MiLUMA receipt source_ref is not the canonical towns endpoint")
+        if args.granularity != "zone":
+            out.unlink(missing_ok=True)
+            raise ValueError("live MiLUMA receipt requires zone granularity")
+        expected_request_key_count = len(geo)
+        if request_key_count != expected_request_key_count:
+            out.unlink(missing_ok=True)
+            raise ValueError(
+                "live MiLUMA receipt denominator mismatch: "
+                f"manifest={request_key_count} canonical={expected_request_key_count}"
+            )
+        if not isinstance(request_body_sha256, str) or len(request_body_sha256) != 64:
+            out.unlink(missing_ok=True)
+            raise ValueError("live MiLUMA receipt lacks request_body_sha256")
+
+        response_keys = list(doc)
+        resolved_keys = [key for key in response_keys if unaccent_upper(key) in geo]
+        receipt = {
+            "schema_version": "aguayluz.luma-live-receipt/v1",
+            "status": "PASS",
+            "source_ref": source_ref,
+            "retrieval_utc": snapshot_ts,
+            "source_byte_sha256": meta_hash,
+            "source_byte_count": meta_bytes,
+            "request_key_count": request_key_count,
+            "request_body_sha256": request_body_sha256,
+            "response_key_count": len(response_keys),
+            "resolved_response_key_count": len(resolved_keys),
+            "unresolved_response_keys": sorted(
+                key for key in response_keys if unaccent_upper(key) not in geo
+            ),
+            "event_count": len(rows),
+            "municipality_event_count": len(
+                {r["municipality"] for r in rows if r.get("municipality")}
+            ),
+            "granularity": args.granularity,
+            "output_sha256": hashlib.sha256(output_bytes).hexdigest(),
+            "output_byte_count": len(output_bytes),
+        }
+        receipt_out.parent.mkdir(parents=True, exist_ok=True)
+        receipt_out.write_text(
+            json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+
     print(f"wrote {len(rows)} outage events -> {out}")
     if unresolved:
         print(f"WARNING: {len(unresolved)} municipio name(s) did not resolve to a canonical centroid: {unresolved}")
