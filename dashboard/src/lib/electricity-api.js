@@ -34,3 +34,6 @@ export async function uploadElectricityWorkbook(file, sourceUrl) {
   if (!response.ok) throw new Error(`ELECTRICITY_HTTP_${response.status}`)
   return response.json()
 }
+
+export const getElectricityRegistry = (params) => request(`registry?${new URLSearchParams(params)}`)
+export const getElectricityRegistryHistory = (id, params) => request(`registry/${id}?${new URLSearchParams(params)}`)

@@ -46,7 +46,7 @@ def synthetic_job_client(store):
     return lambda _: EIAClient(store, client=httpx.Client(transport=httpx.MockTransport(respond)), sleep=lambda _: None)
 
 
-def main():
+def main(*, registry=False):
     with tempfile.TemporaryDirectory(prefix="aguayluz-review-browser-") as directory:
         os.environ["AGUAYLUZ_DATA_HOME"] = directory
         os.environ["API_SECRET_KEY"] = "synthetic-browser-review-role"
@@ -63,6 +63,14 @@ def main():
                      valid_from=timestamp, name="SYNTHETIC BROWSER FIXTURE", status="OP",
                      nameplate_mw=1, receipt_sha256=digest)
         store.add_claims([GeneratorClaim(**claim), GeneratorClaim(**(claim | {"nameplate_mw": 2}))])
+        if registry:
+            # Additional candidates exist only in the dedicated registry fixture.
+            extra = [GeneratorClaim(**(claim | {"generator_id": f"{i:02}"})) for i in range(2, 22)]
+            extra += [GeneratorClaim(**(claim | change)) for change in (
+                {"generator_id": "1"}, {"source_system": "EIA-860"}, {"source_system": "EIA-923"},
+                {"plant_id": "2"}, {"valid_from": datetime(2025, 1, 1, tzinfo=timezone.utc),
+                                     "valid_to": timestamp, "nameplate_mw": 9})]
+            store.add_claims(extra)
         # Synthetic credentials/transports are confined to this disposable test
         # process; the shipped application has no mock-provider switch.
         from aguayluz.electricity import jobs

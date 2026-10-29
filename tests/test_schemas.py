@@ -249,8 +249,9 @@ def test_every_schema_loads_and_validates_itself(schemas_dir):
     # contract (candidate) adds one more. Electricity projection v1 adds one
     # read-only AUDIT_ONLY contract; candidate reviews add a separate contract
     # without changing projection v1. Acquisition jobs add a third electricity
-    # contract. Root schema count is an explicit gate.
-    assert len(schemas) == 43, f"expected 43 schemas, found {len(schemas)}"
+    # contract; the temporal registry adds one list/history union contract.
+    # Root schema count is an explicit gate.
+    assert len(schemas) == 44, f"expected 44 schemas, found {len(schemas)}"
     for p in schemas:
         s = json.loads(p.read_text(encoding="utf-8"))
         Draft202012Validator.check_schema(s)

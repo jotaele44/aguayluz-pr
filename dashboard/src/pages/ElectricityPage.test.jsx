@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import ElectricityPage from './ElectricityPage'
 import { getElectricityProjection, acquireElectricityWorkbook, importElectricityWorkbook, getElectricityJobs, stepElectricityJob } from '@/lib/electricity-api'
 
-vi.mock('@/lib/electricity-api', () => ({ getElectricityProjection: vi.fn(), acquireElectricityWorkbook: vi.fn(), importElectricityWorkbook: vi.fn(), uploadElectricityWorkbook: vi.fn(), getElectricityReviews: vi.fn(), appendElectricityReview: vi.fn(), getElectricityJobs: vi.fn().mockResolvedValue({ jobs: [], total: 0, next_offset: null }), createElectricityJob: vi.fn(), stepElectricityJob: vi.fn(), cancelElectricityJob: vi.fn() }))
+vi.mock('@/lib/electricity-api', () => ({ getElectricityProjection: vi.fn(), acquireElectricityWorkbook: vi.fn(), importElectricityWorkbook: vi.fn(), uploadElectricityWorkbook: vi.fn(), getElectricityRegistry: vi.fn(), getElectricityRegistryHistory: vi.fn(), getElectricityReviews: vi.fn(), appendElectricityReview: vi.fn(), getElectricityJobs: vi.fn().mockResolvedValue({ jobs: [], total: 0, next_offset: null }), createElectricityJob: vi.fn(), stepElectricityJob: vi.fn(), cancelElectricityJob: vi.fn() }))
 
 const empty = () => ({
   revision: 'a'.repeat(64), certification: 'NOT_CERTIFIED', generator_claims: [], sources: [], contradictions: [], gaps: ['EIA_LIVE_SCHEMA_UNVERIFIED'],

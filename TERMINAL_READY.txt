@@ -59,6 +59,12 @@ Full regression: python3 -m pytest -q --cov
 Run Python validation and browser parity sequentially; the existing browser harness seeds runtime fixtures.
 Missing EIA bytes, absent telemetry, missing RC8–RC14 and blocked verification gates never certify electricity readiness.
 Native route: /electricity. Canonical ASGI entrypoint: server.backend.app:app.
+TEMPORAL SOURCE REGISTRY — AUDIT ONLY
+Native Electricity > Plant & generator registry provides literal identities, UTC filters, history and bounded source exports.
+One-line a-Shell-compatible bounded validation (dependencies preinstalled):
+python3 -m pytest -q tests/test_electricity_registry.py tests/test_electricity.py tests/test_schemas.py
+Expected source failures: unavailable is not zero; corrupt hashes close reads; stale history/page revisions require refresh; no canonical promotion.
+Read-only registry deactivation uses its preserved parent commit; retain every runtime ledger and raw blob. Git rollback is not a database backup.
 No production deployment, merge, certification or skill/agent promotion is authorized by this artifact.
 
 REVERSIBLE ELECTRICITY CANDIDATE REVIEWS — AUDIT ONLY

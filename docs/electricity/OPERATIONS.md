@@ -86,6 +86,27 @@ production-equivalent restore and operational backup availability remain OPEN.
 
 ## Qualification artifacts
 
+### Temporal registry
+
+Electricity > Plant & generator registry exposes plant references and generator
+source identities. Filters are literal and case sensitive; an effective instant
+uses UTC and half-open source intervals. History retains every original assertion,
+including assertions outside that instant. Source systems remain separate and
+no capacity aggregation, operational status or crosswalk is inferred. All entries
+are SOURCE_CANDIDATE / AUDIT_ONLY. The new read-only API is `/electricity/v1/registry`
+and `/electricity/v1/registry/{entity_id}`. List continuation and every history
+request require the exact scientific `revision`; a stale revision returns 409.
+Unknown/repeated query parameters return 422. Missing or corrupted raw evidence
+returns a redacted 503, not empty results. Exports contain the current page only.
+
+The registry has no tables or scientific writes. Deactivate it by using the
+preserved parent commit and retain all runtime data. For a restore rehearsal,
+quiesce writers, back up the source database and raw bytes as above, then compare
+registry source revision, structured entity IDs and every claim-history page in
+the restored directory. `tests/test_electricity_registry.py` exercises this while
+preserving later live appends. Source review, actual consumer acceptance and
+production/device recovery remain open.
+
 The baseline manifest and requirement ledger are committed with the code. Test
 logs, browser captures, dependency audits, clean-checkout revalidation and the
 release manifest live in the delivery evidence directory, bound to the exact

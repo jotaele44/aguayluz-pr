@@ -1,0 +1,115 @@
+import fs from 'node:fs/promises'
+import { expect, test } from '@playwright/test'
+
+const api = 'http://127.0.0.1:8000/electricity/v1/'
+async function open(page) {
+  await page.goto('/')
+  const toggle = page.getByRole('button', { name: 'Toggle navigation', exact: true })
+  if (page.viewportSize().width < 768) await toggle.click()
+  await page.getByRole('link', { name: 'Electricity Intelligence', exact: true }).click()
+  await page.getByRole('button', { name: 'Plant & generator registry', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Temporal source registry' })).toBeVisible()
+  await expect(page.getByRole('status', { name: 'Matching source identities' })).toContainText('25')
+}
+async function exported(page, name) {
+  const event = page.waitForEvent('download')
+  await page.getByRole('button', { name, exact: true }).click()
+  return JSON.parse(await fs.readFile(await (await event).path(), 'utf8'))
+}
+
+test('native registry accounts for every literal identity and preserves exact source history', async ({ page, request }, testInfo) => {
+  const errors = []
+  page.on('pageerror', e => errors.push(e.message))
+  await open(page)
+  const first = await exported(page, 'Export this registry page')
+  expect(first.entities).toHaveLength(20)
+  expect(first.certification).toBe('NOT_CERTIFIED')
+  await page.getByRole('button', { name: 'Next identities', exact: true }).click()
+  await expect(page.getByRole('table', { name: 'Temporal source registry' }).getByRole('row')).toHaveCount(6)
+  const second = await exported(page, 'Export this registry page')
+  expect(new Set([...first.entities, ...second.entities].map(e => e.entity_id)).size).toBe(25)
+  expect(first.source_revision).toBe(second.source_revision)
+  await page.getByRole('button', { name: 'Previous identities', exact: true }).click()
+  await page.getByRole('button', { name: 'Inspect history: EIA-860M 1 / 01', exact: true }).click()
+  await expect(page.getByRole('table', { name: 'Source assertion history' }).getByRole('row')).toHaveCount(4)
+  const history = await exported(page, 'Export this history page')
+  const actual = await (await request.get(api + `registry/${history.entity.entity_id}?revision=${history.source_revision}`)).json()
+  expect(history).toEqual(actual)
+  expect(history.entity.conflicting_pair_count).toBe(1)
+  expect(history.claims.filter(c => c.conflicting_claim_ids.length)).toHaveLength(2)
+  await page.getByText('Source disclosures for this history page', { exact: true }).click()
+  await expect(page.getByText('SYNTHETIC BROWSER FIXTURE', { exact: true }).last()).toBeVisible()
+  const projection = await (await request.get(api + 'projection')).json()
+  expect(projection.revision).toBe(history.source_revision)
+  expect(Object.values(projection.states).every(s => !s.measurements.length)).toBe(true)
+  await page.screenshot({ path: testInfo.outputPath('registry-history-desktop.png'), fullPage: true })
+  expect(errors).toEqual([])
+})
+
+test('source assertion instants honor boundaries and keep unavailable distinct from zero', async ({ page }) => {
+  await open(page)
+  await page.getByLabel('Effective instant (UTC)', { exact: true }).fill('2025-01-01T00:00')
+  await page.getByRole('button', { name: 'Apply registry filters', exact: true }).click()
+  await expect(page.getByRole('status', { name: 'Matching source identities' })).toHaveText('Matching source identities: 1')
+  await page.getByRole('button', { name: 'Inspect history: EIA-860M 1 / 01', exact: true }).click()
+  const historical = await exported(page, 'Export this history page')
+  expect(historical.claims.map(c => c.selected_at)).toEqual([true, false, false])
+  expect(historical.entity.conflicting_pair_count).toBe(0)
+  await page.getByLabel('Effective instant (UTC)', { exact: true }).fill('2024-12-31T23:59:59')
+  await page.getByRole('button', { name: 'Apply registry filters', exact: true }).click()
+  await expect(page.getByText(/no source assertions match/)).toBeVisible()
+  await expect(page.getByRole('button', { name: /Inspect history:/ })).toHaveCount(0)
+  await page.getByRole('button', { name: 'Clear registry filters', exact: true }).click()
+  await expect(page.getByRole('status', { name: 'Matching source identities' })).toContainText('25')
+})
+
+test('plant references retain complete paginated generator histories without inferred crosswalks', async ({ page }) => {
+  await open(page)
+  await page.getByLabel('Entity type', { exact: true }).selectOption('plant')
+  await page.getByLabel('Source system', { exact: true }).selectOption('EIA-860M')
+  await page.getByLabel('Exact plant ID', { exact: true }).fill('1')
+  await page.getByRole('button', { name: 'Apply registry filters', exact: true }).click()
+  await page.getByRole('button', { name: 'Inspect history: EIA-860M 1', exact: true }).click()
+  const first = await exported(page, 'Export this history page')
+  expect(first.total).toBe(24)
+  expect(first.entity.identity_basis).toBe('GENERATOR_SOURCE_PLANT_ID_REFERENCE')
+  expect(first.claims).toHaveLength(20)
+  await page.getByRole('button', { name: 'Next history page', exact: true }).click()
+  await expect(page.getByRole('table', { name: 'Source assertion history' }).getByRole('row')).toHaveCount(5)
+  const second = await exported(page, 'Export this history page')
+  expect(new Set([...first.claims, ...second.claims].map(c => c.claim_id)).size).toBe(24)
+  expect(first.entity.generator_ids).toContain('01')
+  expect(first.entity.generator_ids).toContain('1')
+})
+
+test('registry fails closed on integrity and stale-revision responses then retries the real API', async ({ page }) => {
+  let status = 503
+  await page.route('**/electricity/v1/registry?*', route => status
+    ? route.fulfill({ status, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ detail: 'ELECTRICITY_REGISTRY_INTEGRITY_FAILED' }) })
+    : route.continue())
+  await page.goto('/electricity')
+  await page.getByRole('button', { name: 'Plant & generator registry', exact: true }).click()
+  await expect(page.getByRole('alert')).toContainText('Registry evidence is unavailable')
+  await expect(page.getByRole('button', { name: 'Export this registry page', exact: true })).toHaveCount(0)
+  status = 409
+  await page.getByRole('button', { name: 'Refresh registry evidence', exact: true }).click()
+  await expect(page.getByRole('alert')).toContainText('revision changed')
+  status = 0
+  await page.getByRole('button', { name: 'Refresh registry evidence', exact: true }).click()
+  await expect(page.getByRole('status', { name: 'Matching source identities' })).toContainText('25')
+})
+
+test('registry is keyboard reachable and bilingual on a narrow viewport', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await open(page)
+  await page.getByLabel('Language').selectOption('es')
+  await expect(page.getByRole('heading', { name: 'Registro temporal de fuentes' })).toBeVisible()
+  await page.getByLabel('ID exacto de planta', { exact: true }).fill('1')
+  const apply = page.getByRole('button', { name: 'Aplicar filtros del registro', exact: true })
+  await apply.focus(); await page.keyboard.press('Enter')
+  await page.getByRole('button', { name: 'Inspeccionar historial: EIA-860M 1 / 01', exact: true }).click()
+  await expect(page.getByRole('table', { name: 'Historial de afirmaciones de la fuente' })).toBeVisible()
+  await page.getByText('Información de fuentes en esta página de historial', { exact: true }).click()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  await page.screenshot({ path: testInfo.outputPath('registry-history-mobile-es.png'), fullPage: true })
+})

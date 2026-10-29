@@ -1973,6 +1973,66 @@
           "dashboard/tests/electricity-jobs.spec.mjs"
         ]
       }
+    },
+    {
+      "id": "electricity-temporal-source-registry-v1",
+      "classification": "user",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Read-only literal source plant references and generator identities, half-open source assertion filtering, pinned deterministic list/history pages, source disclosures and bounded exports are reachable in the native bilingual registry. No names/proximity crosswalks, canonical assets, operating state or capacity aggregation are inferred. Existing scientific and review/acquisition ledgers stay unchanged.",
+      "backend": {
+        "files": [
+          "src/aguayluz/electricity/registry.py",
+          "server/backend/electricity_api.py"
+        ],
+        "endpoints": [
+          "GET /electricity/v1/registry",
+          "GET /electricity/v1/registry/{identifier}"
+        ],
+        "symbols": [
+          "src/aguayluz/electricity/registry.py:RegistryConflict",
+          "src/aguayluz/electricity/registry.py:RegistryQuery",
+          "src/aguayluz/electricity/registry.py:RegistryEntity",
+          "src/aguayluz/electricity/registry.py:RegistryClaim",
+          "src/aguayluz/electricity/registry.py:RegistryPage",
+          "src/aguayluz/electricity/registry.py:RegistryHistory",
+          "src/aguayluz/electricity/registry.py:source_entity_id",
+          "src/aguayluz/electricity/registry.py:SourceRegistry",
+          "server/backend/electricity_api.py:registry",
+          "server/backend/electricity_api.py:registry_history"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/electricity"
+        ],
+        "e2e_routes": [
+          "/electricity"
+        ],
+        "components": [
+          "dashboard/src/pages/ElectricityPage.jsx",
+          "dashboard/src/components/electricity/ElectricityRegistry.jsx",
+          "dashboard/src/lib/electricity-api.js"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx",
+          "dashboard/src/pages/ElectricityPage.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_electricity_registry.py"
+        ],
+        "contract": [
+          "tests/test_electricity_registry.py"
+        ],
+        "unit": [
+          "dashboard/src/components/electricity/ElectricityRegistry.test.jsx"
+        ],
+        "e2e": [
+          "dashboard/tests/electricity-registry.spec.mjs"
+        ]
+      }
     }
   ],
   "exceptions": []

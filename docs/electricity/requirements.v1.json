@@ -47,7 +47,7 @@
         "dashboard/tests/electricity-jobs.spec.mjs",
         "docs/electricity/ADR-0003-durable-monthly-acquisition.md"
       ],
-      "remaining_gate": "Bounded client and byte-stream downloads implemented; live EIA access is proxy-denied, credential input received but authentication unverified; original schemas, full EIA-923 parsing, resumable checkpoints and scheduled updates remain open"
+      "remaining_gate": "Bounded client, discovery/schema gates, byte-stream capture and durable manual page checkpoints implemented. Live EIA access remains policy-blocked; credential input received but authentication unverified. Original schema/source acceptance, full EIA-923 parsing and automatic scheduled refresh remain open."
     },
     {
       "id": "A.2",
@@ -56,7 +56,7 @@
       "evidence": [
         "tests/test_electricity.py"
       ],
-      "remaining_gate": "Bounded client and byte-stream downloads implemented; live EIA access is proxy-denied, credential input received but authentication unverified; original schemas, full EIA-923 parsing, resumable checkpoints and scheduled updates remain open"
+      "remaining_gate": "Bounded client, discovery/schema gates, byte-stream capture and durable manual page checkpoints implemented. Live EIA access remains policy-blocked; credential input received but authentication unverified. Original schema/source acceptance, full EIA-923 parsing and automatic scheduled refresh remain open."
     },
     {
       "id": "A.3",
@@ -68,7 +68,7 @@
         "dashboard/tests/electricity-jobs.spec.mjs",
         "docs/electricity/ADR-0003-durable-monthly-acquisition.md"
       ],
-      "remaining_gate": "Bounded client and byte-stream downloads implemented; live EIA access is proxy-denied, credential input received but authentication unverified; original schemas, full EIA-923 parsing, resumable checkpoints and scheduled updates remain open"
+      "remaining_gate": "Bounded client, discovery/schema gates, byte-stream capture and durable manual page checkpoints implemented. Live EIA access remains policy-blocked; credential input received but authentication unverified. Original schema/source acceptance, full EIA-923 parsing and automatic scheduled refresh remain open."
     },
     {
       "id": "A.4",
@@ -127,7 +127,13 @@
       "requirement": "Source publication dates, licenses and authority",
       "status": "PARTIALLY_IMPLEMENTED",
       "evidence": [
-        "tests/test_electricity.py"
+        "tests/test_electricity.py",
+        "src/aguayluz/electricity/registry.py",
+        "schemas/electricity_registry.v1.schema.json",
+        "tests/test_electricity_registry.py",
+        "dashboard/src/components/electricity/ElectricityRegistry.test.jsx",
+        "dashboard/tests/electricity-registry.spec.mjs",
+        "docs/electricity/ADR-0004-temporal-source-registry.md"
       ],
       "remaining_gate": "Fields retained; original publication dates/licenses unresolved until source acquisition"
     },
@@ -154,7 +160,13 @@
       "requirement": "Revision, supersession and contradiction tracking",
       "status": "PARTIALLY_IMPLEMENTED",
       "evidence": [
-        "tests/test_electricity.py"
+        "tests/test_electricity.py",
+        "src/aguayluz/electricity/registry.py",
+        "schemas/electricity_registry.v1.schema.json",
+        "tests/test_electricity_registry.py",
+        "dashboard/src/components/electricity/ElectricityRegistry.test.jsx",
+        "dashboard/tests/electricity-registry.spec.mjs",
+        "docs/electricity/ADR-0004-temporal-source-registry.md"
       ],
       "remaining_gate": "Immutable manifestations and overlap contradiction reporting implemented; explicit supersession/adjudication workflow not implemented"
     },
@@ -164,9 +176,15 @@
       "status": "PARTIALLY_IMPLEMENTED",
       "evidence": [
         "tests/test_electricity.py",
-        "schemas/electricity_projection.v1.schema.json"
+        "schemas/electricity_projection.v1.schema.json",
+        "src/aguayluz/electricity/registry.py",
+        "schemas/electricity_registry.v1.schema.json",
+        "tests/test_electricity_registry.py",
+        "dashboard/src/components/electricity/ElectricityRegistry.test.jsx",
+        "dashboard/tests/electricity-registry.spec.mjs",
+        "docs/electricity/ADR-0004-temporal-source-registry.md"
       ],
-      "remaining_gate": "Generator/source/measurement contracts and bounded reconciliation implemented; broader registry, verified crosswalks, seasonal capacity, confidence policy and negative-evidence adjudication remain open"
+      "remaining_gate": "Literal source plant references and generator registry/history contract implemented. Independently verified canonical plant records, broader substations/transmission/distribution/owner schemas and scientific acceptance remain open."
     },
     {
       "id": "B.2",
@@ -194,7 +212,13 @@
       "status": "PARTIALLY_IMPLEMENTED",
       "evidence": [
         "tests/test_electricity.py",
-        "schemas/electricity_projection.v1.schema.json"
+        "schemas/electricity_projection.v1.schema.json",
+        "src/aguayluz/electricity/registry.py",
+        "schemas/electricity_registry.v1.schema.json",
+        "tests/test_electricity_registry.py",
+        "dashboard/src/components/electricity/ElectricityRegistry.test.jsx",
+        "dashboard/tests/electricity-registry.spec.mjs",
+        "docs/electricity/ADR-0004-temporal-source-registry.md"
       ],
       "remaining_gate": "Generator/source/measurement contracts and bounded reconciliation implemented; broader registry, verified crosswalks, seasonal capacity, confidence policy and negative-evidence adjudication remain open"
     },
@@ -204,9 +228,15 @@
       "status": "PARTIALLY_IMPLEMENTED",
       "evidence": [
         "tests/test_electricity.py",
-        "schemas/electricity_projection.v1.schema.json"
+        "schemas/electricity_projection.v1.schema.json",
+        "src/aguayluz/electricity/registry.py",
+        "schemas/electricity_registry.v1.schema.json",
+        "tests/test_electricity_registry.py",
+        "dashboard/src/components/electricity/ElectricityRegistry.test.jsx",
+        "dashboard/tests/electricity-registry.spec.mjs",
+        "docs/electricity/ADR-0004-temporal-source-registry.md"
       ],
-      "remaining_gate": "Generator/source/measurement contracts and bounded reconciliation implemented; broader registry, verified crosswalks, seasonal capacity, confidence policy and negative-evidence adjudication remain open"
+      "remaining_gate": "Source-specific structured identities, half-open temporal assertions and pinned deterministic registry/history pages implemented. Verified cross-source identifiers, effective-dated canonical identities and independent original-source reconciliation remain open."
     },
     {
       "id": "B.6",
@@ -214,7 +244,13 @@
       "status": "PARTIALLY_IMPLEMENTED",
       "evidence": [
         "tests/test_electricity.py",
-        "schemas/electricity_projection.v1.schema.json"
+        "schemas/electricity_projection.v1.schema.json",
+        "src/aguayluz/electricity/registry.py",
+        "schemas/electricity_registry.v1.schema.json",
+        "tests/test_electricity_registry.py",
+        "dashboard/src/components/electricity/ElectricityRegistry.test.jsx",
+        "dashboard/tests/electricity-registry.spec.mjs",
+        "docs/electricity/ADR-0004-temporal-source-registry.md"
       ],
       "remaining_gate": "Generator/source/measurement contracts and bounded reconciliation implemented; broader registry, verified crosswalks, seasonal capacity, confidence policy and negative-evidence adjudication remain open"
     },
@@ -224,7 +260,13 @@
       "status": "PARTIALLY_IMPLEMENTED",
       "evidence": [
         "tests/test_electricity.py",
-        "schemas/electricity_projection.v1.schema.json"
+        "schemas/electricity_projection.v1.schema.json",
+        "src/aguayluz/electricity/registry.py",
+        "schemas/electricity_registry.v1.schema.json",
+        "tests/test_electricity_registry.py",
+        "dashboard/src/components/electricity/ElectricityRegistry.test.jsx",
+        "dashboard/tests/electricity-registry.spec.mjs",
+        "docs/electricity/ADR-0004-temporal-source-registry.md"
       ],
       "remaining_gate": "Generator/source/measurement contracts and bounded reconciliation implemented; broader registry, verified crosswalks, seasonal capacity, confidence policy and negative-evidence adjudication remain open"
     },
@@ -236,7 +278,13 @@
         "tests/test_electricity.py",
         "schemas/electricity_projection.v1.schema.json",
         "tests/test_electricity_reviews.py",
-        "dashboard/tests/electricity-review.spec.mjs"
+        "dashboard/tests/electricity-review.spec.mjs",
+        "src/aguayluz/electricity/registry.py",
+        "schemas/electricity_registry.v1.schema.json",
+        "tests/test_electricity_registry.py",
+        "dashboard/src/components/electricity/ElectricityRegistry.test.jsx",
+        "dashboard/tests/electricity-registry.spec.mjs",
+        "docs/electricity/ADR-0004-temporal-source-registry.md"
       ],
       "remaining_gate": "Generator/source/measurement contracts and bounded reconciliation implemented; broader registry, verified crosswalks, seasonal capacity, confidence policy and negative-evidence adjudication remain open"
     },
@@ -266,7 +314,13 @@
       "requirement": "Never infer identity or connectivity from names/coordinates/adjacency",
       "status": "IMPLEMENTED_AND_VERIFIED",
       "evidence": [
-        "tests/test_electricity.py"
+        "tests/test_electricity.py",
+        "src/aguayluz/electricity/registry.py",
+        "schemas/electricity_registry.v1.schema.json",
+        "tests/test_electricity_registry.py",
+        "dashboard/src/components/electricity/ElectricityRegistry.test.jsx",
+        "dashboard/tests/electricity-registry.spec.mjs",
+        "docs/electricity/ADR-0004-temporal-source-registry.md"
       ],
       "remaining_gate": "New electricity plane uses literal namespaced source IDs and never imports legacy proximity edges"
     },
@@ -524,7 +578,13 @@
         "dashboard/src/pages/ElectricityPage.test.jsx",
         "dashboard/tests/electricity.spec.mjs",
         "tests/test_electricity_reviews.py",
-        "dashboard/tests/electricity-review.spec.mjs"
+        "dashboard/tests/electricity-review.spec.mjs",
+        "src/aguayluz/electricity/registry.py",
+        "schemas/electricity_registry.v1.schema.json",
+        "tests/test_electricity_registry.py",
+        "dashboard/src/components/electricity/ElectricityRegistry.test.jsx",
+        "dashboard/tests/electricity-registry.spec.mjs",
+        "docs/electricity/ADR-0004-temporal-source-registry.md"
       ],
       "remaining_gate": "Native source-evidence workspace or related existing route available; full requested operational workspace scope remains incomplete"
     },
@@ -535,7 +595,13 @@
       "evidence": [
         "dashboard/src/pages/ElectricityPage.jsx",
         "dashboard/src/pages/ElectricityPage.test.jsx",
-        "dashboard/tests/electricity.spec.mjs"
+        "dashboard/tests/electricity.spec.mjs",
+        "src/aguayluz/electricity/registry.py",
+        "schemas/electricity_registry.v1.schema.json",
+        "tests/test_electricity_registry.py",
+        "dashboard/src/components/electricity/ElectricityRegistry.test.jsx",
+        "dashboard/tests/electricity-registry.spec.mjs",
+        "docs/electricity/ADR-0004-temporal-source-registry.md"
       ],
       "remaining_gate": "Native source-evidence workspace or related existing route available; full requested operational workspace scope remains incomplete"
     },
@@ -598,7 +664,13 @@
       "status": "PARTIALLY_IMPLEMENTED",
       "evidence": [
         "dashboard/src/pages/ElectricityPage.test.jsx",
-        "dashboard/tests/electricity.spec.mjs"
+        "dashboard/tests/electricity.spec.mjs",
+        "src/aguayluz/electricity/registry.py",
+        "schemas/electricity_registry.v1.schema.json",
+        "tests/test_electricity_registry.py",
+        "dashboard/src/components/electricity/ElectricityRegistry.test.jsx",
+        "dashboard/tests/electricity-registry.spec.mjs",
+        "docs/electricity/ADR-0004-temporal-source-registry.md"
       ],
       "remaining_gate": "Bounded chart/table controls, language/class preferences and automated accessibility checks exist; full map/time-comparison/layout and physical-device parity remain open"
     },
@@ -608,7 +680,13 @@
       "status": "PARTIALLY_IMPLEMENTED",
       "evidence": [
         "dashboard/src/pages/ElectricityPage.test.jsx",
-        "dashboard/tests/electricity.spec.mjs"
+        "dashboard/tests/electricity.spec.mjs",
+        "src/aguayluz/electricity/registry.py",
+        "schemas/electricity_registry.v1.schema.json",
+        "tests/test_electricity_registry.py",
+        "dashboard/src/components/electricity/ElectricityRegistry.test.jsx",
+        "dashboard/tests/electricity-registry.spec.mjs",
+        "docs/electricity/ADR-0004-temporal-source-registry.md"
       ],
       "remaining_gate": "Bounded chart/table controls, language/class preferences and automated accessibility checks exist; full map/time-comparison/layout and physical-device parity remain open"
     },
@@ -638,7 +716,13 @@
       "status": "IMPLEMENTED_AND_VERIFIED",
       "evidence": [
         "tests/test_electricity.py",
-        "schemas/electricity_projection.v1.schema.json"
+        "schemas/electricity_projection.v1.schema.json",
+        "src/aguayluz/electricity/registry.py",
+        "schemas/electricity_registry.v1.schema.json",
+        "tests/test_electricity_registry.py",
+        "dashboard/src/components/electricity/ElectricityRegistry.test.jsx",
+        "dashboard/tests/electricity-registry.spec.mjs",
+        "docs/electricity/ADR-0004-temporal-source-registry.md"
       ],
       "remaining_gate": "Local API/schema/revision invariants tested"
     },
@@ -655,7 +739,13 @@
       "status": "IMPLEMENTED_AND_VERIFIED",
       "evidence": [
         "tests/test_electricity.py",
-        "dashboard/src/pages/ElectricityPage.test.jsx"
+        "dashboard/src/pages/ElectricityPage.test.jsx",
+        "src/aguayluz/electricity/registry.py",
+        "schemas/electricity_registry.v1.schema.json",
+        "tests/test_electricity_registry.py",
+        "dashboard/src/components/electricity/ElectricityRegistry.test.jsx",
+        "dashboard/tests/electricity-registry.spec.mjs",
+        "docs/electricity/ADR-0004-temporal-source-registry.md"
       ],
       "remaining_gate": "Preferences remain client-only; scientific writes go through authenticated acquisition and source validation"
     },
@@ -722,7 +812,13 @@
       "status": "PARTIALLY_IMPLEMENTED",
       "evidence": [
         "tests/test_electricity.py",
-        "docs/electricity/OPERATIONS.md"
+        "docs/electricity/OPERATIONS.md",
+        "src/aguayluz/electricity/registry.py",
+        "schemas/electricity_registry.v1.schema.json",
+        "tests/test_electricity_registry.py",
+        "dashboard/src/components/electricity/ElectricityRegistry.test.jsx",
+        "dashboard/tests/electricity-registry.spec.mjs",
+        "docs/electricity/ADR-0004-temporal-source-registry.md"
       ],
       "remaining_gate": "Bounded automated checks only; full requested scientific/operational/native-device denominator is not verified"
     },
@@ -735,7 +831,13 @@
         "docs/electricity/OPERATIONS.md",
         "tests/test_electricity_jobs.py",
         "dashboard/tests/electricity-jobs.spec.mjs",
-        "docs/electricity/ADR-0003-durable-monthly-acquisition.md"
+        "docs/electricity/ADR-0003-durable-monthly-acquisition.md",
+        "src/aguayluz/electricity/registry.py",
+        "schemas/electricity_registry.v1.schema.json",
+        "tests/test_electricity_registry.py",
+        "dashboard/src/components/electricity/ElectricityRegistry.test.jsx",
+        "dashboard/tests/electricity-registry.spec.mjs",
+        "docs/electricity/ADR-0004-temporal-source-registry.md"
       ],
       "remaining_gate": "Bounded automated checks only; full requested scientific/operational/native-device denominator is not verified"
     },
@@ -748,7 +850,13 @@
         "docs/electricity/OPERATIONS.md",
         "tests/test_electricity_jobs.py",
         "dashboard/tests/electricity-jobs.spec.mjs",
-        "docs/electricity/ADR-0003-durable-monthly-acquisition.md"
+        "docs/electricity/ADR-0003-durable-monthly-acquisition.md",
+        "src/aguayluz/electricity/registry.py",
+        "schemas/electricity_registry.v1.schema.json",
+        "tests/test_electricity_registry.py",
+        "dashboard/src/components/electricity/ElectricityRegistry.test.jsx",
+        "dashboard/tests/electricity-registry.spec.mjs",
+        "docs/electricity/ADR-0004-temporal-source-registry.md"
       ],
       "remaining_gate": "Bounded automated checks only; full requested scientific/operational/native-device denominator is not verified"
     },
@@ -758,7 +866,13 @@
       "status": "PARTIALLY_IMPLEMENTED",
       "evidence": [
         "tests/test_electricity.py",
-        "docs/electricity/OPERATIONS.md"
+        "docs/electricity/OPERATIONS.md",
+        "src/aguayluz/electricity/registry.py",
+        "schemas/electricity_registry.v1.schema.json",
+        "tests/test_electricity_registry.py",
+        "dashboard/src/components/electricity/ElectricityRegistry.test.jsx",
+        "dashboard/tests/electricity-registry.spec.mjs",
+        "docs/electricity/ADR-0004-temporal-source-registry.md"
       ],
       "remaining_gate": "Bounded automated checks only; full requested scientific/operational/native-device denominator is not verified"
     },
@@ -768,7 +882,13 @@
       "status": "PARTIALLY_IMPLEMENTED",
       "evidence": [
         "tests/test_electricity.py",
-        "docs/electricity/OPERATIONS.md"
+        "docs/electricity/OPERATIONS.md",
+        "src/aguayluz/electricity/registry.py",
+        "schemas/electricity_registry.v1.schema.json",
+        "tests/test_electricity_registry.py",
+        "dashboard/src/components/electricity/ElectricityRegistry.test.jsx",
+        "dashboard/tests/electricity-registry.spec.mjs",
+        "docs/electricity/ADR-0004-temporal-source-registry.md"
       ],
       "remaining_gate": "Bounded automated checks only; full requested scientific/operational/native-device denominator is not verified"
     },
@@ -781,7 +901,13 @@
         "docs/electricity/OPERATIONS.md",
         "tests/test_electricity_jobs.py",
         "dashboard/tests/electricity-jobs.spec.mjs",
-        "docs/electricity/ADR-0003-durable-monthly-acquisition.md"
+        "docs/electricity/ADR-0003-durable-monthly-acquisition.md",
+        "src/aguayluz/electricity/registry.py",
+        "schemas/electricity_registry.v1.schema.json",
+        "tests/test_electricity_registry.py",
+        "dashboard/src/components/electricity/ElectricityRegistry.test.jsx",
+        "dashboard/tests/electricity-registry.spec.mjs",
+        "docs/electricity/ADR-0004-temporal-source-registry.md"
       ],
       "remaining_gate": "Bounded automated checks only; full requested scientific/operational/native-device denominator is not verified"
     },
@@ -790,7 +916,7 @@
       "requirement": "Security and dependency acceptance",
       "status": "BLOCKED_EXTERNAL_DEPENDENCY",
       "evidence": [],
-      "remaining_gate": "Inherited npm and Python environment advisories exist; exact manifest-bound remediation and acceptance required"
+      "remaining_gate": "Prior toolchain maintenance reduced the finite npm audit to zero. Full manifest-bound Python/security acceptance and independent security review remain open; a clean npm audit is not full acceptance."
     },
     {
       "id": "TEST.9",

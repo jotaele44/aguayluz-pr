@@ -13,12 +13,13 @@ from xml.etree.ElementTree import ParseError
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from fastapi import Path as PathParameter
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, ValidationError
 
 from aguayluz.electricity.eia import AcquisitionError, EIAClient, validate_workbook_url
 from aguayluz.electricity.evidence import SourceReceipt
 from aguayluz.electricity.jobs import AcquisitionJobs, JobCommand, JobConflict, MonthlyJobRequest
 from aguayluz.electricity.projection import electricity_projection
+from aguayluz.electricity.registry import RegistryConflict, RegistryQuery, SourceRegistry
 from aguayluz.electricity.review import ReviewError, ReviewLedger, ReviewRequest
 from aguayluz.electricity.store import EvidenceStore
 from aguayluz.electricity.workbook import parse_860m
@@ -38,6 +39,43 @@ def _require_operator(request: Request) -> None:
         raise HTTPException(503, detail="ELECTRICITY_WRITES_DISABLED")
     if not secrets.compare_digest(request.headers.get("authorization", "").encode(), f"Bearer {key}".encode()):
         raise HTTPException(401, detail="OPERATOR_AUTH_REQUIRED")
+
+
+def _registry_query(request: Request, *, detail: bool = False) -> RegistryQuery:
+    pairs = list(request.query_params.multi_items())
+    allowed = {"at", "offset", "limit", "revision"} if detail else set(RegistryQuery.model_fields)
+    if len({key for key, _ in pairs}) != len(pairs) or any(key not in allowed for key, _ in pairs):
+        raise HTTPException(422, detail="ELECTRICITY_REGISTRY_QUERY_INVALID")
+    try:
+        query = RegistryQuery.model_validate(dict(pairs))
+    except ValidationError:
+        raise HTTPException(422, detail="ELECTRICITY_REGISTRY_QUERY_INVALID") from None
+    if detail and query.revision is None:
+        raise HTTPException(422, detail="ELECTRICITY_REGISTRY_REVISION_REQUIRED")
+    return query
+
+
+def _registry_operation(operation, revision):
+    try:
+        return operation(SourceRegistry(_store(), revision))
+    except RegistryConflict as exc:
+        raise HTTPException(409, detail=str(exc)) from None
+    except KeyError:
+        raise HTTPException(404, detail="ELECTRICITY_REGISTRY_ENTITY_NOT_FOUND") from None
+    except (OSError, ValueError, sqlite3.DatabaseError) as exc:
+        raise HTTPException(503, detail="ELECTRICITY_REGISTRY_INTEGRITY_FAILED") from exc
+
+
+@router.get("/electricity/v1/registry")
+def registry(request: Request) -> dict:
+    query = _registry_query(request)
+    return _registry_operation(lambda view: view.page(query), query.revision)
+
+
+@router.get("/electricity/v1/registry/{identifier}")
+def registry_history(request: Request, identifier: str = PathParameter(pattern=r"^[0-9a-f]{64}$")) -> dict:
+    query = _registry_query(request, detail=True)
+    return _registry_operation(lambda view: view.history(identifier, query), query.revision)
 
 
 class AcquisitionRequest(BaseModel):

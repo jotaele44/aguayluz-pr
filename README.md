@@ -117,6 +117,11 @@ Source acquisition also exposes durable monthly PR research jobs with metadata
 and coverage discovery, recoverable page checkpoints, cancellation, retry and
 audit export. Complete jobs remain AUDIT ONLY and do not create measurements.
 See the [acquisition contract](docs/electricity/ADR-0003-durable-monthly-acquisition.md).
+The native plant/generator registry provides literal source identities, temporal
+filters, paginated assertion history, overlapping contradictions, source
+disclosures and revision-bound exports. Plant references are derived from source
+generator plant IDs; they are not independently verified plant records or
+cross-source identity matches. See the [registry contract](docs/electricity/ADR-0004-temporal-source-registry.md).
 
 This is an **AUDIT ONLY, NOT CERTIFIED** development tranche. No authoritative
 live grid feed, production forecast engine, RC8–RC14 canonical integration or
