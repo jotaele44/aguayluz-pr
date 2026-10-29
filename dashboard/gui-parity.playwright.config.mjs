@@ -1,4 +1,6 @@
 import fs from "node:fs";
+import os from "node:os";
+import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig, devices } from "@playwright/test";
@@ -18,10 +20,20 @@ const frontendRoot = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = findRepositoryRoot(frontendRoot);
 const frontendUrl = "http://127.0.0.1:5173";
 const backendUrl = "http://127.0.0.1:8000";
+const stageScript = path.join(repositoryRoot, "server", "ingestion", "stage_gui_reference_data.py");
 const seedScript = path.join(repositoryRoot, "server", "ingestion", "seed_demo.py");
-const backendCommand = fs.existsSync(seedScript)
-  ? "python server/ingestion/seed_demo.py && python -m uvicorn server.backend.app:app --host 127.0.0.1 --port 8000"
-  : "python -m uvicorn server.backend.app:app --host 127.0.0.1 --port 8000";
+// Allocate a dedicated per-run workspace; never stage into the operator's data or outputs.
+const parityWorkspace = fs.mkdtempSync(path.join(os.tmpdir(), "aguayluz-gui-parity-"));
+process.env.AGUAYLUZ_DATA_HOME = parityWorkspace;
+process.env.AGUAYLUZ_GUI_PARITY_RUN_ID = randomUUID();
+if (!fs.existsSync(stageScript) || !fs.existsSync(seedScript)) {
+  throw new Error("GUI parity requires canonical reference staging and fixture seeding scripts");
+}
+const backendCommand = [
+  "python server/ingestion/stage_gui_reference_data.py",
+  "python server/ingestion/seed_demo.py",
+  "python -m uvicorn server.backend.app:app --host 127.0.0.1 --port 8000",
+].join(" && ");
 
 export default defineConfig({
   testDir: "./tests",
