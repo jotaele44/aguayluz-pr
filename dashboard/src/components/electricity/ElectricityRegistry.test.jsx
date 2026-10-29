@@ -81,6 +81,7 @@ describe('temporal source registry', () => {
     fireEvent.click(await screen.findByRole('button', { name: inspect }))
     const region = await screen.findByRole('region', { name: locale === 'en' ? 'Source assertion history' : 'Historial de afirmaciones de la fuente' })
     await within(region).findByRole('table')
+    expect(within(region).getByRole('region')).toHaveAttribute('tabindex', '0')
     expect((await axe(container)).violations).toEqual([])
   })
 })
