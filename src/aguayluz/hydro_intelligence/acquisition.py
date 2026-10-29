@@ -13,7 +13,13 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
-from urllib.request import Request, urlopen
+from urllib.error import HTTPError
+from urllib.request import HTTPRedirectHandler, Request, build_opener
+
+
+class RejectRedirects(HTTPRedirectHandler):
+    def redirect_request(self, request, fp, code, msg, headers, newurl):
+        raise ValueError("Redirect requires explicit source review")
 
 MAX_BYTES = 100 * 1024 * 1024
 
@@ -65,7 +71,11 @@ def persist_bytes(root: Path, source_id: str, url: str, data: bytes,
                 output.write(data)
                 output.flush()
                 os.fsync(output.fileno())
-            os.replace(tmp, target)
+            try:
+                os.link(tmp, target)  # atomic no-clobber; concurrent writers cannot replace frozen bytes
+            except FileExistsError:
+                if target.read_bytes() != data:
+                    raise ValueError("Concurrent artifact differs from expected bytes")
         finally:
             if os.path.exists(tmp):
                 os.unlink(tmp)
@@ -82,7 +92,7 @@ def fetch_artifact(url: str, *, allowed_hosts: set[str], timeout: float = 30,
     validate_url(url, allowed_hosts)
     request = Request(url, headers={"User-Agent": "AguaYLuz-HydroEvidence/1.0"})
     # No automatic promotion; caller must validate source format and schema.
-    with urlopen(request, timeout=timeout) as response:
+    with build_opener(RejectRedirects()).open(request, timeout=timeout) as response:
         validate_url(response.geturl(), allowed_hosts)
         length = response.headers.get("Content-Length")
         if length and int(length) > max_bytes:
