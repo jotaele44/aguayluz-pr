@@ -30,7 +30,8 @@
       "dashboard/src/lib/api.js",
       "dashboard/src/lib/cave-karst-api.js",
       "dashboard/src/lib/environmental-exposure-api.js",
-      "dashboard/src/lib/hydromet-api.js"
+      "dashboard/src/lib/hydromet-api.js",
+      "dashboard/src/lib/electricity-api.js"
     ],
     "route_files": [
       "dashboard/src/App.jsx"
@@ -1223,7 +1224,7 @@
       "classification": "analysis",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Read-only, fail-closed environmental source→pathway→receptor graph. It preserves existing utility/regulatory identities, exposes provenance and causal state, and prohibits proximity/name-only evidence from becoming causal attribution.",
+      "rationale": "Read-only, fail-closed environmental source\u2192pathway\u2192receptor graph. It preserves existing utility/regulatory identities, exposes provenance and causal state, and prohibits proximity/name-only evidence from becoming causal attribution.",
       "backend": {
         "files": [
           "server/backend/environmental_exposure_api.py",
@@ -1769,6 +1770,267 @@
         "e2e": [
           "dashboard/tests/nws-hydromet.spec.mjs",
           "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "electricity-evidence-workspace-v1",
+      "classification": "user",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Native Puerto Rico AUDIT_ONLY electricity evidence workspace. Source receipts, generator claims and separate epistemic states are read-only projections. Explicitly guarded official workbook acquisition and source-schema imports are exposed in the GUI. Unavailable operational data never become zero or live telemetry. This bounded capability does not certify the complete Electricity Intelligence product. Official current and archive workbook paths share the same guarded acquisition workflow; historical URL support does not certify supplied research files.",
+      "backend": {
+        "files": [
+          "server/backend/electricity_api.py",
+          "src/aguayluz/electricity/__init__.py",
+          "src/aguayluz/electricity/evidence.py",
+          "src/aguayluz/electricity/store.py",
+          "src/aguayluz/electricity/eia.py",
+          "src/aguayluz/electricity/workbook.py",
+          "src/aguayluz/electricity/projection.py"
+        ],
+        "endpoints": [
+          "GET /electricity/v1/projection",
+          "POST /electricity/v1/acquire",
+          "POST /electricity/v1/import/860m",
+          "POST /electricity/v1/import/workbook"
+        ],
+        "symbols": [
+          "server/backend/electricity_api.py:AcquisitionRequest",
+          "server/backend/electricity_api.py:ImportRequest",
+          "server/backend/electricity_api.py:acquire",
+          "server/backend/electricity_api.py:import_860m",
+          "server/backend/electricity_api.py:projection",
+          "src/aguayluz/electricity/eia.py:AcquisitionError",
+          "src/aguayluz/electricity/eia.py:EIAClient",
+          "src/aguayluz/electricity/evidence.py:EvidenceClass",
+          "src/aguayluz/electricity/evidence.py:GeneratorClaim",
+          "src/aguayluz/electricity/evidence.py:Measurement",
+          "src/aguayluz/electricity/evidence.py:SourceReceipt",
+          "src/aguayluz/electricity/evidence.py:StrictModel",
+          "src/aguayluz/electricity/evidence.py:reconcile_claims",
+          "src/aguayluz/electricity/projection.py:electricity_projection",
+          "src/aguayluz/electricity/store.py:EvidenceStore",
+          "src/aguayluz/electricity/workbook.py:parse_860m",
+          "server/backend/electricity_api.py:import_workbook",
+          "src/aguayluz/electricity/eia.py:validate_workbook_url"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/electricity"
+        ],
+        "e2e_routes": [
+          "/electricity"
+        ],
+        "components": [
+          "dashboard/src/pages/ElectricityPage.jsx",
+          "dashboard/src/lib/electricity-api.js",
+          "dashboard/src/components/layout/Sidebar.jsx",
+          "dashboard/src/contexts/SidebarContext.jsx",
+          "dashboard/src/components/layout/DashboardLayout.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_electricity.py"
+        ],
+        "contract": [
+          "tests/test_electricity.py",
+          "tests/test_electricity_capture_recovery.py"
+        ],
+        "unit": [
+          "dashboard/src/pages/ElectricityPage.test.jsx"
+        ],
+        "e2e": [
+          "dashboard/tests/electricity.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "electricity-candidate-review-v1",
+      "classification": "user",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Exact-claim AUDIT_ONLY recommendations, immutable reversal history, role disclosure, conflict refresh and export are exposed in the native electricity evidence inspector. A separate versioned ledger preserves all scientific evidence, contradictions, projection v1 and canonical promotion refusal. Shared operator-key authentication does not establish individual reviewer identity.",
+      "backend": {
+        "files": [
+          "server/backend/electricity_api.py",
+          "src/aguayluz/electricity/review.py"
+        ],
+        "endpoints": [
+          "GET /electricity/v1/reviews",
+          "POST /electricity/v1/reviews"
+        ],
+        "symbols": [
+          "server/backend/electricity_api.py:reviews",
+          "server/backend/electricity_api.py:append_review",
+          "src/aguayluz/electricity/review.py:ReviewError",
+          "src/aguayluz/electricity/review.py:ReviewRequest",
+          "src/aguayluz/electricity/review.py:ReviewEvent",
+          "src/aguayluz/electricity/review.py:StoredReviewEvent",
+          "src/aguayluz/electricity/review.py:ReviewedClaim",
+          "src/aguayluz/electricity/review.py:ReviewProjection",
+          "src/aguayluz/electricity/review.py:claim_identifier",
+          "src/aguayluz/electricity/review.py:ReviewLedger"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/electricity"
+        ],
+        "e2e_routes": [
+          "/electricity"
+        ],
+        "components": [
+          "dashboard/src/pages/ElectricityPage.jsx",
+          "dashboard/src/components/electricity/ElectricityReviews.jsx",
+          "dashboard/src/lib/electricity-api.js"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx",
+          "dashboard/src/pages/ElectricityPage.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_electricity_reviews.py"
+        ],
+        "contract": [
+          "tests/test_electricity_reviews.py"
+        ],
+        "unit": [
+          "dashboard/src/components/electricity/ElectricityReviews.test.jsx"
+        ],
+        "e2e": [
+          "dashboard/tests/electricity-review.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "electricity-monthly-acquisition-jobs-v1",
+      "classification": "user",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Bounded monthly EIA jobs expose durable discovery/page checkpoints, version conflicts, fenced lease recovery, cancellation, retry, source health and audit export in the native GUI. Explicit source coverage/schema gates precede rows. No live or canonical measurements are admitted; external sources remain unverified. Acquisition outcomes also invalidate the parent scientific projection so source receipts and review revisions stay current.",
+      "backend": {
+        "files": [
+          "src/aguayluz/electricity/jobs.py",
+          "server/backend/electricity_api.py"
+        ],
+        "endpoints": [
+          "GET /electricity/v1/acquisition-jobs",
+          "GET /electricity/v1/acquisition-jobs/{identifier}",
+          "POST /electricity/v1/acquisition-jobs",
+          "POST /electricity/v1/acquisition-jobs/{identifier}/step",
+          "POST /electricity/v1/acquisition-jobs/{identifier}/cancel"
+        ],
+        "symbols": [
+          "src/aguayluz/electricity/jobs.py:JobConflict",
+          "src/aguayluz/electricity/jobs.py:MonthlyJobRequest",
+          "src/aguayluz/electricity/jobs.py:JobCommand",
+          "src/aguayluz/electricity/jobs.py:AcquisitionJob",
+          "src/aguayluz/electricity/jobs.py:AcquisitionJobs",
+          "server/backend/electricity_api.py:acquisition_jobs",
+          "server/backend/electricity_api.py:acquisition_job",
+          "server/backend/electricity_api.py:create_acquisition_job",
+          "server/backend/electricity_api.py:step_acquisition_job",
+          "server/backend/electricity_api.py:cancel_acquisition_job"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/electricity"
+        ],
+        "e2e_routes": [
+          "/electricity"
+        ],
+        "components": [
+          "dashboard/src/pages/ElectricityPage.jsx",
+          "dashboard/src/components/electricity/ElectricityJobs.jsx",
+          "dashboard/src/lib/electricity-api.js"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx",
+          "dashboard/src/pages/ElectricityPage.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_electricity_jobs.py"
+        ],
+        "contract": [
+          "tests/test_electricity_jobs.py"
+        ],
+        "unit": [
+          "dashboard/src/components/electricity/ElectricityJobs.test.jsx",
+          "dashboard/src/pages/ElectricityPage.test.jsx"
+        ],
+        "e2e": [
+          "dashboard/tests/electricity-jobs.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "electricity-temporal-source-registry-v1",
+      "classification": "user",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Read-only literal source plant references and generator identities, half-open source assertion filtering, pinned deterministic list/history pages, source disclosures and bounded exports are reachable in the native bilingual registry. No names/proximity crosswalks, canonical assets, operating state or capacity aggregation are inferred. Existing scientific and review/acquisition ledgers stay unchanged.",
+      "backend": {
+        "files": [
+          "src/aguayluz/electricity/registry.py",
+          "server/backend/electricity_api.py"
+        ],
+        "endpoints": [
+          "GET /electricity/v1/registry",
+          "GET /electricity/v1/registry/{identifier}"
+        ],
+        "symbols": [
+          "src/aguayluz/electricity/registry.py:RegistryConflict",
+          "src/aguayluz/electricity/registry.py:RegistryQuery",
+          "src/aguayluz/electricity/registry.py:RegistryEntity",
+          "src/aguayluz/electricity/registry.py:RegistryClaim",
+          "src/aguayluz/electricity/registry.py:RegistryPage",
+          "src/aguayluz/electricity/registry.py:RegistryHistory",
+          "src/aguayluz/electricity/registry.py:source_entity_id",
+          "src/aguayluz/electricity/registry.py:SourceRegistry",
+          "server/backend/electricity_api.py:registry",
+          "server/backend/electricity_api.py:registry_history"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/electricity"
+        ],
+        "e2e_routes": [
+          "/electricity"
+        ],
+        "components": [
+          "dashboard/src/pages/ElectricityPage.jsx",
+          "dashboard/src/components/electricity/ElectricityRegistry.jsx",
+          "dashboard/src/lib/electricity-api.js"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx",
+          "dashboard/src/pages/ElectricityPage.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_electricity_registry.py"
+        ],
+        "contract": [
+          "tests/test_electricity_registry.py"
+        ],
+        "unit": [
+          "dashboard/src/components/electricity/ElectricityRegistry.test.jsx"
+        ],
+        "e2e": [
+          "dashboard/tests/electricity-registry.spec.mjs"
         ]
       }
     }

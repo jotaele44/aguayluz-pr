@@ -1,0 +1,126 @@
+name: Electricity exact commit validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/electricity-exact-head.yml'
+      - '.federation/gui-capabilities.json'
+      - 'src/aguayluz/electricity/**'
+      - 'server/backend/electricity_api.py'
+      - 'schemas/electricity_*.schema.json'
+      - 'tests/test_electricity*'
+      - 'tests/fixtures/electricity_review_server.py'
+      - 'dashboard/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: electricity-exact-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  ELECTRICITY_EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+  EIA_API_KEY: ''
+  API_SECRET_KEY: ''
+
+jobs:
+  python-exact:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.12']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Assert exact immutable candidate
+        run: test "$(git rev-parse HEAD)" = "$ELECTRICITY_EXPECTED_HEAD"
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install isolated dependencies
+        run: |
+          test ! -e "$GITHUB_WORKSPACE/../thehub-pr"
+          python -m pip install uv
+          uv pip install --system -e '.[dev]' -r server/backend/requirements.txt
+      - run: ruff check .
+      - name: Full regression with the unchanged coverage floor
+        shell: bash
+        run: |
+          set -o pipefail
+          pytest -q --cov --cov-report=term --cov-report=xml | tee electricity-exact-python.log
+      - name: Repository and GUI capability contracts
+        run: |
+          python scripts/validate_repo.py
+          python scripts/check_gui_parity.py
+      - name: Record actual tested candidate
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, os, subprocess
+          from pathlib import Path
+          actual = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          assert actual == os.environ['ELECTRICITY_EXPECTED_HEAD']
+          Path('electricity-exact-head.json').write_text(json.dumps({
+              'tested_commit': actual, 'python': '${{ matrix.python-version }}',
+              'scope': 'automated regression; source/scientific/consumer review remain separate',
+              'full_release_certification': 'NOT_CERTIFIED',
+          }, indent=2) + '\n')
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: electricity-exact-python-${{ matrix.python-version }}
+          path: |
+            electricity-exact-head.json
+            electricity-exact-python.log
+            coverage.xml
+          if-no-files-found: error
+
+  native-exact:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: dashboard
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Assert exact immutable candidate
+        run: test "$(git rev-parse HEAD)" = "$ELECTRICITY_EXPECTED_HEAD"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.12'
+      - name: Install backend runtime
+        working-directory: .
+        run: python -m pip install -r server/backend/requirements.txt
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:gui-parity
+      - name: Record actual tested candidate
+        if: always()
+        run: git rev-parse HEAD > electricity-exact-native-head.txt
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: electricity-exact-native
+          path: |
+            dashboard/electricity-exact-native-head.txt
+            dashboard/playwright-report/gui-parity
+            dashboard/test-results
+          if-no-files-found: error

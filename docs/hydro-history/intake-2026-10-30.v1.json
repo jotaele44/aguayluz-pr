@@ -1,0 +1,215 @@
+{
+  "schema_version": "aguayluz.hydro-upload-intake/v1",
+  "recorded_at": "2026-10-30T15:00:38.661521+00:00",
+  "credential": {
+    "received": true,
+    "format_check": "PASS",
+    "value_recorded": false,
+    "value_hashed": false,
+    "transmitted": false,
+    "authentication": "UNVERIFIED",
+    "runtime_persisted": false,
+    "production_rotation_required": true
+  },
+  "credential_exclusion_scan": "PASS for retained source bytes, decompressed payloads and generated manifest",
+  "archives": [
+    {
+      "uploaded_name": "10-eia_bulk_TOTAL.zip",
+      "bytes": 3198922,
+      "sha256": "87c046aac1dbc54d3da4eafd8cace7a6ce6562f36c4eb1235c49dc94ce7e9dd9",
+      "zip_valid": true,
+      "origin": "USER_UPLOAD_NOT_INDEPENDENTLY_ACQUIRED",
+      "review_state": "AUDIT_ONLY",
+      "canonical_promotion": "BLOCKED",
+      "members": [
+        {
+          "path": "TOTAL.txt",
+          "bytes": 11562739,
+          "sha256": "ae463fca679ac8bd53dd2ca5d6342d30846a963b3bcbe190fa438f31937541ed",
+          "crc_read": "PASS"
+        }
+      ],
+      "disposition": "DUPLICATE_PREVIOUS_RESEARCH_ARCHIVE",
+      "previous_audit": {
+        "archive": "1-eia_bulk_TOTAL.zip",
+        "series_records": 2086,
+        "coverage_conclusion": "NO_EXPLICIT_PR_METADATA_SERIES_IN_THIS_FROZEN_ARCHIVE",
+        "scientific_promotion": "NONE"
+      }
+    },
+    {
+      "uploaded_name": "11-eia_bulk_NG.zip",
+      "bytes": 4553037,
+      "sha256": "42f278b530f853b29b6f137412be1da18607c818be947e8220c215e9043b59c8",
+      "zip_valid": true,
+      "origin": "USER_UPLOAD_NOT_INDEPENDENTLY_ACQUIRED",
+      "review_state": "AUDIT_ONLY",
+      "canonical_promotion": "BLOCKED",
+      "members": [
+        {
+          "path": "NG.txt",
+          "bytes": 24544567,
+          "sha256": "b1973121a7ea065cf2b25ef2a954b917a624b90cac3dac33aa1381c5f00a6d5b",
+          "crc_read": "PASS"
+        }
+      ],
+      "disposition": "DUPLICATE_PREVIOUS_RESEARCH_ARCHIVE",
+      "previous_audit": {
+        "archive": "6-eia_bulk_NG.zip",
+        "series_records": 16021,
+        "coverage_conclusion": "NO_EXPLICIT_PR_METADATA_SERIES_IN_THIS_FROZEN_ARCHIVE",
+        "scientific_promotion": "NONE"
+      }
+    },
+    {
+      "uploaded_name": "2-eia861_2024.zip",
+      "bytes": 66912,
+      "sha256": "aae1c7cb907b18d22f7989b04ed64af505b7b79ecf1bf89b07c605296b8927f3",
+      "zip_valid": false,
+      "origin": "USER_UPLOAD_NOT_INDEPENDENTLY_ACQUIRED",
+      "review_state": "AUDIT_ONLY",
+      "canonical_promotion": "BLOCKED",
+      "disposition": "HTML_NOT_ARCHIVE",
+      "html_title": "Electricity - U.S. Energy Information Administration (EIA)",
+      "reason": "File extension does not match bytes; no workbook extraction or import attempted"
+    },
+    {
+      "uploaded_name": "3-eia_bulk_PET_IMPORTS.zip",
+      "bytes": 5491468,
+      "sha256": "5ac2140398e803149af81d090c02ac9eae6a557bff3c43db5e43711694a28d37",
+      "zip_valid": true,
+      "origin": "USER_UPLOAD_NOT_INDEPENDENTLY_ACQUIRED",
+      "review_state": "AUDIT_ONLY",
+      "canonical_promotion": "BLOCKED",
+      "members": [
+        {
+          "path": "PET_IMPORTS.txt",
+          "bytes": 43940151,
+          "sha256": "92f9c4cce4e240c75be3402658f106dad53bfeea41dd567f643c44a61591d3ac",
+          "crc_read": "PASS"
+        }
+      ],
+      "disposition": "DUPLICATE_PREVIOUS_RESEARCH_ARCHIVE",
+      "previous_audit": {
+        "archive": "4-eia_bulk_PET_IMPORTS.zip",
+        "series_records": 46064,
+        "coverage_conclusion": "NO_EXPLICIT_PR_METADATA_SERIES_IN_THIS_FROZEN_ARCHIVE",
+        "scientific_promotion": "NONE"
+      }
+    },
+    {
+      "uploaded_name": "4-eia_bulk_SEDS.zip",
+      "bytes": 9465481,
+      "sha256": "79f28c3c7fea96058aa317e1ee066dd15fb6f2ebdc4dfb0b567167cf113d5a81",
+      "zip_valid": true,
+      "origin": "USER_UPLOAD_NOT_INDEPENDENTLY_ACQUIRED",
+      "review_state": "AUDIT_ONLY",
+      "canonical_promotion": "BLOCKED",
+      "members": [
+        {
+          "path": "SEDS.txt",
+          "bytes": 63216066,
+          "sha256": "2afb25bbce43439c43e58eed93c880b9269bd2deefd0bf0921cbef316b15b31a",
+          "crc_read": "PASS"
+        }
+      ],
+      "disposition": "DUPLICATE_PREVIOUS_RESEARCH_ARCHIVE",
+      "previous_audit": {
+        "archive": "2-eia_bulk_SEDS.zip",
+        "series_records": 48046,
+        "coverage_conclusion": "NO_EXPLICIT_PR_METADATA_SERIES_IN_THIS_FROZEN_ARCHIVE",
+        "scientific_promotion": "NONE"
+      }
+    },
+    {
+      "uploaded_name": "5-eia923_2024.zip",
+      "bytes": 66912,
+      "sha256": "aae1c7cb907b18d22f7989b04ed64af505b7b79ecf1bf89b07c605296b8927f3",
+      "zip_valid": false,
+      "origin": "USER_UPLOAD_NOT_INDEPENDENTLY_ACQUIRED",
+      "review_state": "AUDIT_ONLY",
+      "canonical_promotion": "BLOCKED",
+      "disposition": "HTML_NOT_ARCHIVE",
+      "html_title": "Electricity - U.S. Energy Information Administration (EIA)",
+      "reason": "File extension does not match bytes; no workbook extraction or import attempted"
+    },
+    {
+      "uploaded_name": "6-eia_bulk_EMISS.zip",
+      "bytes": 1084625,
+      "sha256": "869c4281031e58ea353b573396b61e3ba10b123b7c07fc74ba2a8d06aa1e9eeb",
+      "zip_valid": true,
+      "origin": "USER_UPLOAD_NOT_INDEPENDENTLY_ACQUIRED",
+      "review_state": "AUDIT_ONLY",
+      "canonical_promotion": "BLOCKED",
+      "members": [
+        {
+          "path": "EMISS.txt",
+          "bytes": 6789609,
+          "sha256": "4c0d3975e7b98ab8bf9b1558079b41f9b6b01305d1166cede3d3ce4bb6e22678",
+          "crc_read": "PASS"
+        }
+      ],
+      "disposition": "DUPLICATE_PREVIOUS_RESEARCH_ARCHIVE",
+      "previous_audit": {
+        "archive": "5-eia_bulk_EMISS.zip",
+        "series_records": 4920,
+        "coverage_conclusion": "NO_EXPLICIT_PR_METADATA_SERIES_IN_THIS_FROZEN_ARCHIVE",
+        "scientific_promotion": "NONE"
+      }
+    },
+    {
+      "uploaded_name": "7-eia_bulk_STEO.zip",
+      "bytes": 5550661,
+      "sha256": "ffe3ca03ae28be5f22262847ec7da90a22021d0e88e12ac0d293c5baf65c38aa",
+      "zip_valid": true,
+      "origin": "USER_UPLOAD_NOT_INDEPENDENTLY_ACQUIRED",
+      "review_state": "AUDIT_ONLY",
+      "canonical_promotion": "BLOCKED",
+      "members": [
+        {
+          "path": "STEO.txt",
+          "bytes": 17983654,
+          "sha256": "94ddcf1eb378a7e67522531042f2a5535c09e4c42909b30ba420c5ec84c5250b",
+          "crc_read": "PASS"
+        }
+      ],
+      "disposition": "DUPLICATE_PREVIOUS_RESEARCH_ARCHIVE",
+      "previous_audit": {
+        "archive": "3-eia_bulk_STEO.zip",
+        "series_records": 4420,
+        "coverage_conclusion": "NO_EXPLICIT_PR_METADATA_SERIES_IN_THIS_FROZEN_ARCHIVE",
+        "scientific_promotion": "NONE"
+      }
+    },
+    {
+      "uploaded_name": "8-eia860_annual_2023.zip",
+      "bytes": 66912,
+      "sha256": "aae1c7cb907b18d22f7989b04ed64af505b7b79ecf1bf89b07c605296b8927f3",
+      "zip_valid": false,
+      "origin": "USER_UPLOAD_NOT_INDEPENDENTLY_ACQUIRED",
+      "review_state": "AUDIT_ONLY",
+      "canonical_promotion": "BLOCKED",
+      "disposition": "HTML_NOT_ARCHIVE",
+      "html_title": "Electricity - U.S. Energy Information Administration (EIA)",
+      "reason": "File extension does not match bytes; no workbook extraction or import attempted"
+    },
+    {
+      "uploaded_name": "9-eia861_2023.zip",
+      "bytes": 66912,
+      "sha256": "aae1c7cb907b18d22f7989b04ed64af505b7b79ecf1bf89b07c605296b8927f3",
+      "zip_valid": false,
+      "origin": "USER_UPLOAD_NOT_INDEPENDENTLY_ACQUIRED",
+      "review_state": "AUDIT_ONLY",
+      "canonical_promotion": "BLOCKED",
+      "disposition": "HTML_NOT_ARCHIVE",
+      "html_title": "Electricity - U.S. Energy Information Administration (EIA)",
+      "reason": "File extension does not match bytes; no workbook extraction or import attempted"
+    }
+  ],
+  "source_result": "NO_NEW_VERIFIED_PLANT_MONTH_WORKBOOK",
+  "calendar_range": "2016-01/2025-12",
+  "verified_plant_months": 0,
+  "expected_plant_population": null,
+  "coverage_fraction": null,
+  "certification": "NOT_CERTIFIED"
+}
