@@ -22,7 +22,8 @@ jobs:
           set -euo pipefail
           mkdir -p artifacts/pfas_ucmr5/raw artifacts/pfas_ucmr5/derived
           url='https://www.epa.gov/system/files/other-files/2023-08/ucmr5-occurrence-data-by-state.zip'
-          expected_archive_sha='4845eb3abf34d61d7d239e26a815c69b21e39d249840243d266274b5b5d73aaa'
+          # EPA republished the archive on 2026-10-16 (Sept manifestation 4845eb3a...).
+          expected_archive_sha='007ee5f6a19dd8f1dac682ded23bcd3de72c8c5f49487dbf181334091bd35d96'
           curl --fail --location --proto '=https' --tlsv1.2 \
             --retry 3 --retry-all-errors \
             --output artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip \
@@ -55,8 +56,12 @@ jobs:
           archive = root / 'raw' / 'ucmr5-occurrence-data-by-state.zip'
           derived = root / 'derived'
           url = 'https://www.epa.gov/system/files/other-files/2023-08/ucmr5-occurrence-data-by-state.zip'
-          expected_member_sha = '4d72703e4fece5d5fb7b243c1bcd5a72e65c09bf79efbbc05b548c9fb19e7391'
-          expected_derived_sha = 'ac40d8d67f7343832e0b11d78c892e3a6cdd44fe4d0b0892407347d4400b80c5'
+          expected_member_sha = '3255b3cc6041b110f507a531f67c3368364e3bdbd79304ae544c967d9526ffe4'
+          # The committed Puerto Rico denominator. EPA's 2026-10-16 republication lists
+          # the same rows in a different order, so the check below compares row
+          # multisets against this file rather than the derived TSV's bytes.
+          canonical_tsv = pathlib.Path('data/pfas_ucmr5_pr.tsv')
+          canonical_sha = 'ac40d8d67f7343832e0b11d78c892e3a6cdd44fe4d0b0892407347d4400b80c5'
 
           def sha256_bytes(payload: bytes) -> str:
               return hashlib.sha256(payload).hexdigest()
@@ -107,8 +112,16 @@ jobs:
               writer.writerows(rows)
 
           derived_sha = sha256_bytes(out_tsv.read_bytes())
-          if derived_sha != expected_derived_sha:
-              raise SystemExit(f'Puerto Rico derived TSV drift: {derived_sha}')
+          if sha256_bytes(canonical_tsv.read_bytes()) != canonical_sha:
+              raise SystemExit('canonical Puerto Rico denominator data/pfas_ucmr5_pr.tsv changed')
+          canonical = csv.DictReader(
+              canonical_tsv.read_text(encoding='utf-8').splitlines(), delimiter='\t'
+          )
+          if canonical.fieldnames != headers:
+              raise SystemExit(f'Puerto Rico header drift: {headers} != {canonical.fieldnames}')
+          row_key = lambda row: tuple(str(row.get(h) or '') for h in headers)
+          if Counter(map(row_key, rows)) != Counter(map(row_key, canonical)):
+              raise SystemExit('Puerto Rico denominator drift: rows differ from data/pfas_ucmr5_pr.tsv')
 
           contaminant_field = next((h for h in headers if h.lower() == 'contaminant'), None)
           sign_field = next((h for h in headers if h.lower() == 'analyticalresultssign'), None)
@@ -165,9 +178,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cp artifacts/pfas_ucmr5/derived/ucmr5_pr.tsv data/pfas_ucmr5_pr.tsv
-          actual="$(sha256sum data/pfas_ucmr5_pr.tsv | cut -d' ' -f1)"
-          test "$actual" = 'ac40d8d67f7343832e0b11d78c892e3a6cdd44fe4d0b0892407347d4400b80c5'
+          # The previous step proved the source rows equal the committed denominator,
+          # so its byte order is kept; this only stages it if it was never committed.
           git add -f data/pfas_ucmr5_pr.tsv
           if git diff --cached --quiet; then
             echo 'Canonical UCMR5 Puerto Rico denominator already materialized.'
