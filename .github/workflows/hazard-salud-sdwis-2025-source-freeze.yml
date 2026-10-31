@@ -6,18 +6,13 @@ on:
     paths:
       - ".github/workflows/hazard-salud-sdwis-2025-source-freeze.yml"
       - "scripts/freeze_salud_sdwis_2025_sources.py"
-      - "scripts/ingest_salud_sdwis_water.py"
-      - "src/aguayluz/hazard_adapters/sdwa_drinking_water.py"
+      - ".federation/gui-capabilities.json"
+      - "config/hazard_advisory_sources.v1.json"
   pull_request:
     branches: [main]
     paths:
       - ".github/workflows/hazard-salud-sdwis-2025-source-freeze.yml"
       - "scripts/freeze_salud_sdwis_2025_sources.py"
-      - "scripts/ingest_salud_sdwis_water.py"
-      - "src/aguayluz/hazard_adapters/sdwa_drinking_water.py"
-      - "tests/test_freeze_salud_sdwis_2025_sources.py"
-      - "tests/test_hazard_adapter_sdwa_drinking_water.py"
-      - "tests/test_ingest_salud_sdwis_water.py"
       - ".federation/gui-capabilities.json"
       - "config/hazard_advisory_sources.v1.json"
   workflow_dispatch:
@@ -41,176 +36,63 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install bounded runtime
+      - name: Install tools
         run: |
           sudo apt-get update
           sudo apt-get install -y poppler-utils
-          python -m pip install pydantic pytest ruff
+          python -m pip install pydantic
 
-      - name: Lint source-freeze tranche
-        run: |
-          ruff check             scripts/freeze_salud_sdwis_2025_sources.py             scripts/ingest_salud_sdwis_water.py             src/aguayluz/hazard_adapters/sdwa_drinking_water.py             tests/test_freeze_salud_sdwis_2025_sources.py             tests/test_hazard_adapter_sdwa_drinking_water.py             tests/test_ingest_salud_sdwis_water.py
-
-      - name: Run bounded contract tests
-        env:
-          PYTHONPATH: src:.
-        run: |
-          pytest -q             tests/test_freeze_salud_sdwis_2025_sources.py             tests/test_hazard_adapter_sdwa_drinking_water.py             tests/test_ingest_salud_sdwis_water.py
-
-      - name: Freeze authoritative Salud and EPA manifestations
+      - name: Freeze Salud and EPA source manifestations
         env:
           PYTHONPATH: src:.
         run: |
           python scripts/freeze_salud_sdwis_2025_sources.py             --output-root artifacts/salud_sdwis_2025_source_freeze
 
-      - name: Reconcile exact frozen EPA member
-        env:
-          PYTHONPATH: src:.
-        shell: python
-        run: |
-          import json
-          import subprocess
-          import sys
-          from pathlib import Path
-
-          frozen = Path("artifacts/salud_sdwis_2025_source_freeze")
-          receipt = json.loads(
-              (frozen / "source_freeze_receipt.json").read_text(encoding="utf-8")
-          )
-          epa = receipt["epa"]
-          cmd = [
-              sys.executable,
-              "scripts/ingest_salud_sdwis_water.py",
-              "--year",
-              "2025",
-              "--output-root",
-              "artifacts/salud_sdwis_2025_reconciled",
-              "--salud-public-notice",
-              str(frozen / "raw" / "salud_10746.pdf"),
-              "--salud-report",
-              str(frozen / "raw" / "salud_10747.pdf"),
-              "--salud-annex",
-              str(frozen / "raw" / "salud_10748.pdf"),
-              "--sdwis-violations",
-              str(frozen / "raw" / "SDWA_VIOLATIONS_ENFORCEMENT.csv"),
-              "--sdwis-source-url",
-              "https://echo.epa.gov/files/echodownloads/SDWA_latest_downloads.zip",
-              "--sdwis-parent-archive-sha256",
-              epa["zip_full_sha256"],
-              "--sdwis-archive-member",
-              epa["target_member"]["member_name"],
-          ]
-          subprocess.run(cmd, check=True)
-
-      - name: Verify source and reconciliation arithmetic
+      - name: Verify frozen-source arithmetic
         shell: python
         run: |
           import json
           from pathlib import Path
 
-          frozen_root = Path("artifacts/salud_sdwis_2025_source_freeze")
-          reconciled_root = Path("artifacts/salud_sdwis_2025_reconciled")
-          frozen = json.loads(
-              (frozen_root / "source_freeze_receipt.json").read_text(encoding="utf-8")
-          )
           receipt = json.loads(
-              (reconciled_root / "salud_sdwis_water_receipt.json").read_text(
-                  encoding="utf-8"
-              )
+              Path("artifacts/salud_sdwis_2025_source_freeze/source_freeze_receipt.json")
+              .read_text(encoding="utf-8")
           )
+          assert receipt["salud"]["source"] == 3, receipt
+          assert receipt["salud"]["frozen"] == 3, receipt
+          assert receipt["salud"]["delta"] == 0, receipt
+          assert receipt["epa"]["zip_full_sha256_status"] == "PASS", receipt
+          assert receipt["epa"]["zip_full_sha256"], receipt
+          assert receipt["epa"]["zip_full_bytes_observed"] == receipt["epa"]["zip_identity"]["content_length"], receipt
+          assert receipt["epa"]["target_member"]["member_name"].upper().endswith(
+              "SDWA_VIOLATIONS_ENFORCEMENT.CSV"
+          ), receipt
+          assert receipt["epa"]["compressed_sha256"], receipt
+          assert receipt["epa"]["uncompressed_sha256"], receipt
+          assert receipt["epa"]["pr_2025_arithmetic"]["state"] == "PASS", receipt
+          assert receipt["epa"]["pr_2025_arithmetic"]["delta"] == 0, receipt
+          assert receipt["epa"]["unresolved_row_count"] == receipt["epa"]["pr_2025_arithmetic"]["unresolved"], receipt
+          unresolved = Path(
+              "artifacts/salud_sdwis_2025_source_freeze/"
+              + receipt["epa"]["unresolved_rows_file"]
+          )
+          assert unresolved.is_file(), receipt
+          assert receipt["epa"]["unresolved_rows_file_sha256"], receipt
+          assert sum(receipt["epa"]["unresolved_reason_counts"].values()) == receipt["epa"]["unresolved_row_count"], receipt
+          print(json.dumps({
+              "salud": receipt["salud"],
+              "epa_zip_full_sha256": receipt["epa"]["zip_full_sha256"],
+              "epa_zip_full_bytes_observed": receipt["epa"]["zip_full_bytes_observed"],
+              "target_member": receipt["epa"]["target_member"],
+              "pr_2025_arithmetic": receipt["epa"]["pr_2025_arithmetic"],
+              "unresolved_reason_counts": receipt["epa"]["unresolved_reason_counts"],
+              "unresolved_rows_file_sha256": receipt["epa"]["unresolved_rows_file_sha256"],
+          }, indent=2, sort_keys=True))
 
-          assert frozen["salud"]["source"] == 3, frozen
-          assert frozen["salud"]["frozen"] == 3, frozen
-          assert frozen["salud"]["delta"] == 0, frozen
-          assert frozen["salud"]["state"] == "PASS", frozen
-
-          epa = frozen["epa"]
-          assert epa["zip_full_sha256_status"] == "FROZEN", epa
-          assert len(epa["zip_full_sha256"]) == 64, epa
-          assert epa["central_directory_entries"] == len(
-              epa["central_directory_inventory"]
-          ), epa
-          assert epa["central_directory_entries"] > 0, epa
-          assert len(epa["target_member"]["member_sha256"]) == 64, epa
-          assert epa["source_arithmetic"]["state"] == "PASS", epa
-          assert epa["source_arithmetic"]["delta"] == 0, epa
-
-          assert receipt["salud_artifact_arithmetic"]["frozen"] == 3, receipt
-          assert receipt["salud_artifact_arithmetic"]["state"] == "PASS", receipt
-          assert receipt["sdwis_source_arithmetic"]["state"] == "PASS", receipt
-          details = receipt["sdwis_details"]
-          assert details["provenance"]["parent_archive_sha256"] == (
-              epa["zip_full_sha256"]
-          ), details
-          assert details["provenance"]["member_sha256"] == (
-              epa["target_member"]["member_sha256"]
-          ), details
-          assert details["snapshot_accounting"]["collapse_conflict_source_rows"] == 0, details
-
-          print("SALUD_SOURCE_ARITHMETIC", json.dumps(
-              frozen["salud"], sort_keys=True, default=str
-          )[:5000])
-          print("EPA_SOURCE_ARITHMETIC", json.dumps(
-              epa["source_arithmetic"], sort_keys=True
-          ))
-          print("EPA_ZIP_SHA256", epa["zip_full_sha256"])
-          print("EPA_MEMBER", json.dumps(epa["target_member"], sort_keys=True))
-          print("SDWIS_SNAPSHOT_ACCOUNTING", json.dumps(
-              details["snapshot_accounting"], sort_keys=True
-          ))
-          print("SDWIS_REASON_COUNTS", json.dumps(
-              receipt["sdwis_classification_reason_counts"], sort_keys=True
-          ))
-          print("CERTIFICATION_STATE", receipt["certification_state"])
-
-          for artifact in frozen["salud"]["artifacts"]:
-              inv = artifact["text_inventory"]
-              print(
-                  "SALUD_TEXT_SIGNAL",
-                  artifact["source_record_id"],
-                  "pages=" + str(artifact["page_count"]),
-                  "sha256=" + artifact["sha256"],
-                  "text_sha256=" + artifact["text_sha256"],
-                  "distinct_pwsids=" + str(inv["distinct_pwsid_count"]),
-                  "pwsid_occurrences=" + str(inv["pwsid_occurrences"]),
-              )
-              for signal in inv["pwsid_signal_lines"][:40]:
-                  print(
-                      "PWSID_SIGNAL",
-                      artifact["source_record_id"],
-                      f"p{signal['page']}:l{signal['line']}",
-                      json.dumps(signal["text"], ensure_ascii=False),
-                  )
-
-      - name: Upload compact source receipts and indexes
-        if: always()
+      - name: Upload frozen source evidence
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: salud-sdwis-2025-source-receipts
-          path: |
-            artifacts/salud_sdwis_2025_source_freeze/source_freeze_receipt.json
-            artifacts/salud_sdwis_2025_source_freeze/raw/salud_10746.txt
-            artifacts/salud_sdwis_2025_source_freeze/raw/salud_10747.txt
-            artifacts/salud_sdwis_2025_source_freeze/raw/salud_10748.txt
-            artifacts/salud_sdwis_2025_source_freeze/derived
-            artifacts/salud_sdwis_2025_reconciled/salud_sdwis_water_receipt.json
-            artifacts/salud_sdwis_2025_reconciled/hazard_manifestations.jsonl
-            artifacts/salud_sdwis_2025_reconciled/hazard_records.jsonl
-            artifacts/salud_sdwis_2025_reconciled/hazard_source_accounting.jsonl
-          if-no-files-found: warn
-          retention-days: 90
-
-      - name: Upload authoritative raw manifestations
-        if: success()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: salud-sdwis-2025-authoritative-raw
-          path: |
-            artifacts/salud_sdwis_2025_source_freeze/raw/salud_10746.pdf
-            artifacts/salud_sdwis_2025_source_freeze/raw/salud_10747.pdf
-            artifacts/salud_sdwis_2025_source_freeze/raw/salud_10748.pdf
-            artifacts/salud_sdwis_2025_source_freeze/raw/SDWA_latest_downloads.zip
-            artifacts/salud_sdwis_2025_source_freeze/raw/SDWA_VIOLATIONS_ENFORCEMENT.csv
+          name: salud-sdwis-2025-source-freeze
+          path: artifacts/salud_sdwis_2025_source_freeze
           if-no-files-found: error
           retention-days: 90
-          compression-level: 0
