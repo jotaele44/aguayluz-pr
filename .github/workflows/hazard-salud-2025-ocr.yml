@@ -64,7 +64,13 @@ jobs:
           assert by_id["10748"]["sha256"] == (
               "9886fbed47e9f8a3564167034bedc6bc0a0d653c6f89d81d69f8101ccc3f2603"
           ), receipt
-          assert by_id["10746"]["source_identity_state"] == "NEWLY_FROZEN", receipt
+          assert by_id["10746"]["sha256"] == (
+              "3488ca04e0ad90106caaa568059ee574fa099c3854bf11a3930db372391ff1bd"
+          ), receipt
+          assert all(
+              row["source_identity_state"] == "MATCHES_PRIOR_FROZEN_MANIFESTATION"
+              for row in by_id.values()
+          ), receipt
 
           ocr = {row["source_record_id"]: row for row in receipt["derived_ocr"]}
           assert set(ocr) == {"10747", "10748"}, receipt

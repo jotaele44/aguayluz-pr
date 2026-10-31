@@ -23,6 +23,8 @@ SOURCES = {
     "10748": "https://www.salud.pr.gov/CMS/DOWNLOAD/10748",
 }
 EXPECTED_SOURCE_SHA256 = {
+    # 10746 was frozen on main by the source-freeze harness (#363).
+    "10746": "3488ca04e0ad90106caaa568059ee574fa099c3854bf11a3930db372391ff1bd",
     "10747": "748529762de1b6661b5484957a7662bd233a37aaf371482cdc14bbf5ac584772",
     "10748": "9886fbed47e9f8a3564167034bedc6bc0a0d653c6f89d81d69f8101ccc3f2603",
 }
