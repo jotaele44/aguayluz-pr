@@ -50,3 +50,57 @@ PROFILE TEMPLATE AUTHORITY
 TheHub commit: 0663bfa77740dceff3eb70855f2164112ce47c44
 pr_grid_v2_profiles.py Git blob: c4e174b4626083ef3e1866274e87e8aaea9f81a2
 test_pr_grid_v2_profiles.py Git blob: 3f74d64046ef19b4b8f4718b3a50d5eed902877c
+
+GRID V2 SOURCE-COORDINATE CANDIDATE EXPORT
+
+Purpose:
+Produce a producer-owned, source-bounded candidate ledger for Spiderweb binding.
+This step DOES NOT transform coordinates and DOES NOT assign Cell_IDs.
+
+Source ledger:
+data/usgs_monitoring_locations.jsonl
+
+Candidate output:
+data/federation/pr_grid_v2_source_coordinate_candidates.jsonl
+
+Receipt:
+data/federation/pr_grid_v2_source_coordinate_candidates.receipt.json
+
+Run:
+python scripts/export_pr_grid_v2_source_coordinate_candidates.py
+
+Focused certification:
+python -m pytest -q tests/test_grid_v2_source_coordinate_candidates.py tests/test_grid_v2_candidate_refresh_plan.py
+
+Eligibility:
+- location_id present
+- source-published numeric lon/lat present
+- Puerto Rico source envelope satisfied
+- evidence_tier == T1
+- source_ref present
+
+Emitted binding-candidate semantics:
+Repository = aguayluz-pr
+Source_CRS = EPSG:4326
+Coordinate_Evidence_State = VERIFIED_SOURCE_COORDINATE
+Uncertainty_Class = EXACT
+Spatial_Role = MONITORING_LOCATION
+Candidate_State = SOURCE_COORDINATE_ELIGIBLE_NOT_BOUND
+Cell_ID = null
+Geometry_Authority = spiderweb-pr
+
+FAIL-CLOSED / RETENTION RULE
+If data/usgs_monitoring_locations.jsonl is unavailable, the exporter exits non-zero
+and does not overwrite the last good candidate or receipt. The refresh step is
+optional so an upstream USGS outage does not erase the previous verified snapshot.
+Duplicate Record_ID values fail closed. Conflicting coordinates fail closed.
+
+SCHEDULE
+The candidate exporter runs immediately after STEP_USGS_METADATA on daily, weekly,
+and all refresh plans. It is intentionally absent from fast cadence.
+
+AUTHORITY BOUNDARY
+A candidate row is not a V2 binding and does not establish a Cell_ID. Spiderweb
+must consume the frozen candidate bytes, verify the candidate receipt, transform
+EPSG:4326 to EPSG:6566, and emit the authoritative binding receipt before any
+Cell_Profile uses the record.
