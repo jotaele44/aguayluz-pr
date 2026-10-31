@@ -120,12 +120,19 @@
       },
       "binding_semantics": "state annual-report rows bind to PWSID/VIOLATION_ID only when those identifiers are present or independently reconciled; names alone are aliases",
       "source_freeze_evidence": {
-        "workflow_run_id": 38110772028,
-        "certified_head": "e99f33eeb4c536596b191174b8084bb0437b8efd",
-        "retrieved_at_utc": "2026-10-16T21:56:03.894484+00:00",
-        "artifact_id": 12076953998,
-        "artifact_digest": "sha256:e40212452091fce1ec2c80cb1cd5c352a500775ced14bf464a3858a473e19bb9",
+        "workflow_run_id": 39878546906,
+        "certified_head": "43d643ca5bb0f0a60a5ebf02272daa955d2d2645",
+        "retrieved_at_utc": "2026-10-23T00:31:19.048846+00:00",
+        "artifact_id": 12468774053,
+        "artifact_digest": "sha256:76a6469868c1b8a6e22b9d6901149bf9b46a55226084423d5fc246a95d13768c",
         "frozen_artifacts": {
+          "10746": {
+            "bytes": 331326,
+            "pages": 1,
+            "sha256": "3488ca04e0ad90106caaa568059ee574fa099c3854bf11a3930db372391ff1bd",
+            "extracted_text_bytes": 1,
+            "extracted_text_sha256": "ef6cbd2161eaea7943ce8693b9824d23d1793ffb1c0fca05b600d3899b44c977"
+          },
           "10747": {
             "bytes": 16080577,
             "pages": 40,
@@ -141,9 +148,12 @@
             "extracted_text_sha256": "405f2530037ff38a87dd78abe3f8ca1b88a5fcc1720cdcaf8f80ec319b15265d"
           }
         },
-        "unfrozen_artifacts": [
-          "10746"
-        ]
+        "unfrozen_artifacts": [],
+        "historical_pass": {
+          "workflow_run_id": 38110772028,
+          "certified_head": "e99f33eeb4c536596b191174b8084bb0437b8efd",
+          "artifact_digest": "sha256:e40212452091fce1ec2c80cb1cd5c352a500775ced14bf464a3858a473e19bb9"
+        }
       },
       "ocr_source_evidence": {
         "workflow_run_id": 39688378458,
@@ -186,7 +196,7 @@
       "hazard_family": "WATER_HEALTH",
       "access": "SDWA quarterly downloads / SDWIS Federal Reporting Services; federal reconciliation plane",
       "url": "https://echo.epa.gov/tools/data-downloads/sdwa-download-summary",
-      "status": "BOUND_2025_RECONCILIATION_MEMBER_PASS_WITH_UNRESOLVED_ROWS",
+      "status": "BOUND_2025_RECONCILIATION_MEMBER_AND_ARCHIVE_BYTES_PASS_WITH_UNRESOLVED_ROWS",
       "update_semantics": "quarterly SDWIS snapshots may revise violation, enforcement and return-to-compliance fields",
       "binding_semantics": "PWSID is system identity; PWSID + FACILITY_ID is facility identity; VIOLATION_ID is violation identity within versioned federal snapshots",
       "bounded_scope": {
@@ -196,7 +206,7 @@
         "archive_content_length": 558010511,
         "archive_last_modified": "Wed, 14 Oct 2026 01:15:30 GMT",
         "archive_central_directory_entries": 11,
-        "archive_full_sha256_status": "OPEN_NOT_DOWNLOADED",
+        "archive_full_sha256_status": "PASS",
         "member_compressed_bytes": 380855927,
         "member_uncompressed_bytes": 4146921341,
         "member_compressed_sha256": "c36c19cfe9c3fac2e219ac31d122ba7215bd8e523fc480283d269ecd70707662",
@@ -211,25 +221,35 @@
         "arithmetic_delta": 0,
         "arithmetic_state": "PASS",
         "derived_pr_2025_csv_sha256": "22b465f6f3824ce84f1b329d4a590d7de5963cf793e3534fb6e54d394359d3d2",
-        "source_universe_completeness_claimed": false
+        "source_universe_completeness_claimed": false,
+        "archive_full_sha256": "4d92d5f46b423742d5fd608257dc63ef666a832d9211199c28434cd8f41dccb0",
+        "archive_full_bytes_observed": 558010511,
+        "unresolved_rows_file_sha256": "d6b92f75c530b05fb37836a128a132b4a5e24e58047206c99fa0bf05ce0451e8",
+        "unresolved_reason_counts": {
+          "INVALID_END_DATE": 1172,
+          "MISSING_PWSID_OR_VIOLATION_ID": 14170
+        }
       },
       "source_freeze_evidence": {
-        "workflow_run_id": 38110772028,
-        "certified_head": "e99f33eeb4c536596b191174b8084bb0437b8efd",
-        "retrieved_at_utc": "2026-10-16T21:56:03.894484+00:00",
-        "artifact_id": 12076953998,
-        "artifact_digest": "sha256:e40212452091fce1ec2c80cb1cd5c352a500775ced14bf464a3858a473e19bb9",
-        "historical_pass": {
-          "workflow_run_id": 37322980249,
-          "certified_head": "39282d7a241aa18ed9066087a3534b815286b97c",
-          "artifact_digest": "sha256:c487192ef1a6b98bd6ec6bff2a563f3b2b50de3e38969448e8cdb4bb713b6e64",
-          "retained_pr_2025_rows": 2905,
-          "unresolved_rows": 15346
+        "workflow_run_id": 39878546906,
+        "certified_head": "43d643ca5bb0f0a60a5ebf02272daa955d2d2645",
+        "retrieved_at_utc": "2026-10-23T00:31:19.048846+00:00",
+        "artifact_id": 12468774053,
+        "artifact_digest": "sha256:76a6469868c1b8a6e22b9d6901149bf9b46a55226084423d5fc246a95d13768c",
+        "current_pass": {
+          "full_archive_sha256": "4d92d5f46b423742d5fd608257dc63ef666a832d9211199c28434cd8f41dccb0",
+          "member_compressed_sha256": "c36c19cfe9c3fac2e219ac31d122ba7215bd8e523fc480283d269ecd70707662",
+          "member_uncompressed_sha256": "74f6f7b45ec37c5a6e7660da97e77558d500f95a1ed97147066bc3698a27ad5b",
+          "retained_pr_2025_rows": 3023,
+          "unresolved_rows": 15342,
+          "unresolved_rows_file_sha256": "d6b92f75c530b05fb37836a128a132b4a5e24e58047206c99fa0bf05ce0451e8"
         },
-        "intermediate_archive_outage": {
-          "observed_date": "2026-10-08",
-          "state": "SUPERSEDED_SOURCE_PUBLICATION_DEFECT",
-          "disposition": "PRESERVE_AS_HISTORICAL_FAILURE_DO_NOT_TREAT_AS_ZERO_RESULT"
+        "historical_pass": {
+          "workflow_run_id": 38110772028,
+          "certified_head": "e99f33eeb4c536596b191174b8084bb0437b8efd",
+          "artifact_digest": "sha256:e40212452091fce1ec2c80cb1cd5c352a500775ced14bf464a3858a473e19bb9",
+          "retained_pr_2025_rows": 3023,
+          "unresolved_rows": 15342
         }
       }
     }
@@ -245,9 +265,8 @@
     "PRDOH_2025_ANNUAL_VIOLATIONS_REPORT_10747_ROW_DENOMINATOR",
     "PRDOH_2025_ANNEXES_10748_ROW_DENOMINATOR",
     "EPA_SDWIS_PUERTO_RICO_2025_UNRESOLVED_ROW_ADJUDICATION_15342",
-    "EPA_SDWA_CURRENT_NATIONAL_ZIP_FULL_SHA256",
     "PRDOH_2025_OCR_TABLE_ROW_RECONSTRUCTION"
   ],
-  "registry_reconciled_at": "2026-10-21",
+  "registry_reconciled_at": "2026-10-22",
   "completeness_claim": false
 }
