@@ -1,0 +1,40 @@
+{
+  "schema_version": "spiderweb.jp-flood-byte-certification/v1",
+  "certification_state": "PASS",
+  "generated_at": "2026-09-21T20:40:29.720756+00:00",
+  "producer_main_sha": "d6326c04e8ecc585b4068f8252a903246498dbb3",
+  "aguayluz_consumer_main_sha": "324b7057cc8466db061443e1e008bf3f39bb83b3",
+  "audit_pr": 384,
+  "audit_run_id": 35652370778,
+  "audit_artifact_id": 10663081655,
+  "audit_artifact_sha256": "105f78655e14bbb89aa06fe7728ff82949bdc6a054381274084c7be17b14537a",
+  "full_byte_ledger_sha256": "a1cb4ec78f8190f0ec99cb5f4ed0250a99d3bc1ba53b1c6da42c0a3294afad87",
+  "full_manifest_sha256": "8e035c71d6752cd182bdb9e76077f210785d409553d2c98a96d30cf8be7354f6",
+  "sha256sums_sha256": "118fa90880747177cf0349db19ad21bcc8432110b1032dc4d3e5d420cb7fb305",
+  "counts": {
+    "municipality_denominator": 78,
+    "series_listed": 77,
+    "available": 76,
+    "listed_but_missing": 1,
+    "not_listed": 1,
+    "operational_document_count": 78,
+    "byte_verified_count": 78,
+    "failure_count": 0,
+    "total_bytes": 914381842
+  },
+  "gates": {
+    "municipality_denominator": 78,
+    "series_listed": 77,
+    "available": 76,
+    "listed_but_missing": 1,
+    "not_listed": 1,
+    "operational_document_count": 78,
+    "byte_verified_count": 78,
+    "failure_count": 0
+  },
+  "notes": [
+    "Quebradillas remains LISTED_BUT_MISSING in the canonical source series and uses the exact frozen HMP byte manifestation as authoritative_fallback_not_equivalent.",
+    "Florida remains NOT_LISTED in the canonical source series and uses an authoritative HMP fallback.",
+    "Raw PDFs were acquired and hashed during the audit run but are not committed to Git; the permanent ledger freezes filename, byte size, SHA256, source state, and document class for all 78 municipalities."
+  ]
+}

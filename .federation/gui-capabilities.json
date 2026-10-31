@@ -29,7 +29,8 @@
     "frontend_api_roots": [
       "dashboard/src/lib/api.js",
       "dashboard/src/lib/cave-karst-api.js",
-      "dashboard/src/lib/environmental-exposure-api.js"
+      "dashboard/src/lib/environmental-exposure-api.js",
+      "dashboard/src/lib/hydromet-api.js"
     ],
     "route_files": [
       "dashboard/src/App.jsx"
@@ -53,6 +54,44 @@
   },
   "capabilities": [
     {
+      "id": "pr-grid-v2-runtime-contract",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Fail-closed federation contract and migration utility for validating PR_GRID_GEOGRAPHIC_V2 consumer pins, stamping immutable grid identity, generating canonical grid deep links, and exporting NWPS gauge state into the bounded PR_GRID_V2 migration input. These are internal runtime/governance primitives rather than standalone operator workflows; user-facing hydromet/grid results remain surfaced through the existing Hydromet, Map, and consuming Cell_Profile/API surfaces.",
+      "analysis": {
+        "files": [
+          "federation/spatial/pr_grid_v2_runtime.py",
+          "scripts/export_nwps_grid_v2_source_records.py"
+        ],
+        "symbols": [
+          "federation/spatial/pr_grid_v2_runtime.py:GridV2Pin",
+          "federation/spatial/pr_grid_v2_runtime.py:GridV2PinError",
+          "federation/spatial/pr_grid_v2_runtime.py:attach_grid_identity",
+          "federation/spatial/pr_grid_v2_runtime.py:build_grid_deep_link",
+          "federation/spatial/pr_grid_v2_runtime.py:grid_identity",
+          "federation/spatial/pr_grid_v2_runtime.py:load_pin",
+          "federation/spatial/pr_grid_v2_runtime.py:validate_cell_id",
+          "federation/spatial/pr_grid_v2_runtime.py:validate_level",
+          "federation/spatial/pr_grid_v2_runtime.py:validate_pin_payload",
+          "federation/spatial/pr_grid_v2_runtime.py:validate_pin_set",
+          "scripts/export_nwps_grid_v2_source_records.py:ExportError",
+          "scripts/export_nwps_grid_v2_source_records.py:canonical_jsonl",
+          "scripts/export_nwps_grid_v2_source_records.py:export_rows",
+          "scripts/export_nwps_grid_v2_source_records.py:load_state",
+          "scripts/export_nwps_grid_v2_source_records.py:main",
+          "scripts/export_nwps_grid_v2_source_records.py:sha256_bytes",
+          "scripts/export_nwps_grid_v2_source_records.py:write_outputs"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_pr_grid_v2_runtime.py",
+          "tests/test_export_nwps_grid_v2_source_records.py"
+        ]
+      }
+    },
+    {
       "id": "infrastructure-assets-and-map",
       "classification": "analysis",
       "status": "active",
@@ -72,7 +111,8 @@
           "GET /municipios.geojson",
           "GET /barrios.geojson",
           "GET /municipios/event_density",
-          "GET /municipios/{name}/summary"
+          "GET /municipios/{name}/summary",
+          "GET /municipios/{name}/flood-document/file"
         ],
         "symbols": [
           "server/backend/app.py:municipio_summary",
@@ -84,7 +124,8 @@
           "src/aguayluz/spatial_analysis.py:impacted_assets",
           "src/aguayluz/spatial_analysis.py:raster_layer_contract",
           "src/aguayluz/spatial_analysis.py:trace_downstream",
-          "src/aguayluz/spatial_analysis.py:trace_upstream"
+          "src/aguayluz/spatial_analysis.py:trace_upstream",
+          "server/backend/app.py:municipio_flood_document_file"
         ]
       },
       "frontend": {
@@ -111,7 +152,8 @@
           "dashboard/src/components/AssetMap.jsx",
           "dashboard/src/components/SpatialToolsPanel.jsx",
           "dashboard/src/components/AssetsTable.jsx",
-          "dashboard/src/components/AssetDetail.jsx"
+          "dashboard/src/components/AssetDetail.jsx",
+          "dashboard/src/components/ProgramTimeline.jsx"
         ],
         "discoverability": [
           "dashboard/src/components/layout/Sidebar.jsx",
@@ -124,7 +166,8 @@
           "tests/test_pr_geo_boundaries.py",
           "tests/test_backend_municipio_summary_api.py",
           "tests/test_federation_spatial_core.py",
-          "tests/test_spatial_analysis.py"
+          "tests/test_spatial_analysis.py",
+          "tests/test_ingest_jp_flood_documents.py"
         ],
         "contract": [
           "tests/test_navigation.py",
@@ -138,6 +181,23 @@
         ],
         "e2e": [
           "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/ingest_jp_flood_documents.py",
+          "scripts/check_jp_flood_consumer_v3.py"
+        ],
+        "symbols": [
+          "scripts/ingest_jp_flood_documents.py:build_lookup",
+          "scripts/ingest_jp_flood_documents.py:main",
+          "scripts/ingest_jp_flood_documents.py:validate_manifest",
+          "scripts/ingest_jp_flood_documents.py:validate_producer_contract",
+          "scripts/ingest_jp_flood_documents.py:validate_byte_certification",
+          "scripts/check_jp_flood_consumer_v3.py:run",
+          "scripts/check_jp_flood_consumer_v3.py:main",
+          "scripts/check_jp_flood_consumer_v3.py:GateError",
+          "scripts/check_jp_flood_consumer_v3.py:sha256"
         ]
       }
     },
@@ -605,6 +665,27 @@
       }
     },
     {
+      "id": "http-retry-helper",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Shared HTTP retry/backoff helper (429/5xx + transport-error retry, honors Retry-After) extracted from src/aguayluz/neon/client.py for reuse by keyless ingest producers. It exposes no endpoint, route or control of its own -- it is only ever called by scripts/ingest_usgs_quakes.py, scripts/ingest_nws_alerts.py, scripts/ingest_nhc_storms.py, scripts/ingest_noaa_tides.py, and src/aguayluz/usgs_water_api.py:iter_ogc_pages, all scheduled producers under scripts/refresh.py. Its effect (fewer spurious ingest-step failures during hazard events, when traffic to these same government APIs spikes) reaches operators through the GUI surfaces those producers already populate -- service events on the events/map views and alerts derived from them -- not through a new surface.",
+      "backend": {
+        "files": [
+          "src/aguayluz/http_retry.py"
+        ],
+        "symbols": [
+          "src/aguayluz/http_retry.py:request_with_retry",
+          "src/aguayluz/http_retry.py:get_with_retry"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_http_retry.py"
+        ]
+      }
+    },
+    {
       "id": "neon-publication-ingest",
       "classification": "internal",
       "status": "active",
@@ -922,6 +1003,7 @@
           "scripts/ingest_usgs_water_quality.py:fetch_text",
           "scripts/ingest_usgs_water_quality.py:fetch_statewide",
           "scripts/ingest_usgs_water_quality.py:main",
+          "scripts/ingest_usgs_rtfi.py:state_id_from_count",
           "scripts/ingest_usgs_rtfi.py:parse",
           "scripts/ingest_usgs_rtfi.py:main",
           "scripts/ingest_usgs_nims.py:site_ids_from_assets",
@@ -1147,14 +1229,22 @@
           "server/backend/environmental_exposure_api.py",
           "server/backend/app.py",
           "src/aguayluz/environmental_exposure.py",
-          "src/aguayluz/environmental_exposure_db.py"
+          "src/aguayluz/environmental_exposure_db.py",
+          "server/backend/hazard_advisory_api.py",
+          "src/aguayluz/hazard_plane.py",
+          "src/aguayluz/hazard_plane_db.py"
         ],
         "endpoints": [
           "GET /environmental-exposure/summary",
           "GET /environmental-exposure/entities",
           "GET /environmental-exposure/entities/{entity_id}",
           "GET /environmental-exposure/relationships",
-          "GET /environmental-exposure/integrity"
+          "GET /environmental-exposure/integrity",
+          "GET /hazards/summary",
+          "GET /hazards/events",
+          "GET /hazards/relationships",
+          "GET /hazards/sources",
+          "GET /hazards/integrity"
         ],
         "symbols": [
           "server/backend/environmental_exposure_api.py:environmental_exposure_summary",
@@ -1170,7 +1260,31 @@
           "src/aguayluz/environmental_exposure_db.py:load",
           "src/aguayluz/environmental_exposure_db.py:merge",
           "src/aguayluz/environmental_exposure_db.py:write",
-          "src/aguayluz/environmental_exposure_db.py:graph_integrity"
+          "src/aguayluz/environmental_exposure_db.py:graph_integrity",
+          "server/backend/hazard_advisory_api.py:hazard_summary",
+          "server/backend/hazard_advisory_api.py:hazard_events",
+          "server/backend/hazard_advisory_api.py:hazard_relationships",
+          "server/backend/hazard_advisory_api.py:hazard_sources",
+          "server/backend/hazard_advisory_api.py:hazard_integrity",
+          "src/aguayluz/hazard_plane.py:HazardFamily",
+          "src/aguayluz/hazard_plane.py:RecordKind",
+          "src/aguayluz/hazard_plane.py:RecordStatus",
+          "src/aguayluz/hazard_plane.py:CaseClass",
+          "src/aguayluz/hazard_plane.py:EntityKind",
+          "src/aguayluz/hazard_plane.py:EvidenceClass",
+          "src/aguayluz/hazard_plane.py:RelationshipType",
+          "src/aguayluz/hazard_plane.py:Manifestation",
+          "src/aguayluz/hazard_plane.py:HazardRecord",
+          "src/aguayluz/hazard_plane.py:HazardRelationship",
+          "src/aguayluz/hazard_plane.py:canonical_json_sha256",
+          "src/aguayluz/hazard_plane.py:current_records",
+          "src/aguayluz/hazard_plane.py:validate_identity_uniqueness",
+          "src/aguayluz/hazard_plane.py:source_arithmetic",
+          "src/aguayluz/hazard_plane.py:integrity_report",
+          "src/aguayluz/hazard_plane_db.py:load_records",
+          "src/aguayluz/hazard_plane_db.py:load_relationships",
+          "src/aguayluz/hazard_plane_db.py:load_manifestations",
+          "src/aguayluz/hazard_plane_db.py:graph_integrity"
         ]
       },
       "frontend": {
@@ -1191,14 +1305,17 @@
       },
       "tests": {
         "backend": [
-          "tests/test_environmental_exposure_api.py"
+          "tests/test_environmental_exposure_api.py",
+          "tests/test_hazard_advisory_api.py"
         ],
         "contract": [
           "tests/test_environmental_exposure.py",
-          "tests/test_gui_parity.py"
+          "tests/test_gui_parity.py",
+          "tests/test_hazard_plane.py"
         ],
         "e2e": [
-          "dashboard/tests/gui-parity.spec.mjs"
+          "dashboard/tests/gui-parity.spec.mjs",
+          "dashboard/tests/hazard-advisory.spec.mjs"
         ]
       }
     },
@@ -1327,6 +1444,331 @@
           "tests/test_ingest_hifld_power.py",
           "tests/test_ingest_osm_power.py",
           "tests/test_local_hydro_assets.py"
+        ]
+      }
+    },
+    {
+      "id": "fda-food-hazard-ingest",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Bounded keyless FDA enforcement ingestion and normalization feeding the existing Environmental Exposure hazard plane. It is a producer/provenance workflow rather than a separate user control surface; normal users consume materialized results through /environmental-exposure. The source adapter preserves raw FDA rows and Puerto Rico relevance states, while the CLI freezes source manifestations and closes source arithmetic.",
+      "backend": {
+        "files": [
+          "src/aguayluz/hazard_adapters/__init__.py",
+          "src/aguayluz/hazard_adapters/fda_food.py"
+        ],
+        "symbols": [
+          "src/aguayluz/hazard_adapters/fda_food.py:classify_pr_relevance",
+          "src/aguayluz/hazard_adapters/fda_food.py:row_digest",
+          "src/aguayluz/hazard_adapters/fda_food.py:canonical_event_id",
+          "src/aguayluz/hazard_adapters/fda_food.py:stable_record_id",
+          "src/aguayluz/hazard_adapters/fda_food.py:normalize"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/ingest_fda_food_recalls.py"
+        ],
+        "symbols": [
+          "scripts/ingest_fda_food_recalls.py:fetch_pages",
+          "scripts/ingest_fda_food_recalls.py:load_offline",
+          "scripts/ingest_fda_food_recalls.py:classify_row",
+          "scripts/ingest_fda_food_recalls.py:process_pages",
+          "scripts/ingest_fda_food_recalls.py:main"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_hazard_adapter_fda_food.py",
+          "tests/test_ingest_fda_food_recalls.py"
+        ]
+      }
+    },
+    {
+      "id": "drna-beach-hazard-ingest",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Keyless provenance-frozen DRNA beach-monitoring ingestion feeds the existing Environmental Exposure hazard plane. It is an internal producer workflow, not a second user control surface. Station and municipality text remain source evidence until independently bound.",
+      "backend": {
+        "files": [
+          "src/aguayluz/hazard_adapters/drna_beach.py"
+        ],
+        "symbols": [
+          "src/aguayluz/hazard_adapters/drna_beach.py:row_digest",
+          "src/aguayluz/hazard_adapters/drna_beach.py:canonical_event_id",
+          "src/aguayluz/hazard_adapters/drna_beach.py:stable_record_id",
+          "src/aguayluz/hazard_adapters/drna_beach.py:normalize"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/ingest_drna_beach_monitoring.py"
+        ],
+        "symbols": [
+          "scripts/ingest_drna_beach_monitoring.py:parse_notice",
+          "scripts/ingest_drna_beach_monitoring.py:crawl_archive",
+          "scripts/ingest_drna_beach_monitoring.py:run",
+          "scripts/ingest_drna_beach_monitoring.py:main",
+          "scripts/ingest_drna_beach_monitoring.py:FrozenPage",
+          "scripts/ingest_drna_beach_monitoring.py:OutputPaths",
+          "scripts/ingest_drna_beach_monitoring.py:PageParser"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_hazard_adapter_drna_beach.py",
+          "tests/test_ingest_drna_beach_monitoring.py"
+        ]
+      }
+    },
+    {
+      "id": "salud-sdwis-water-ingest",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Offline-first Puerto Rico Department of Health annual drinking-water artifact freeze and EPA SDWIS reconciliation feeding the existing Environmental Exposure hazard plane. The source-freeze and downstream immutable-residue adjudication scripts are CI/provenance infrastructure, not an operator feature: it freezes official Salud bytes and a bounded EPA violations-member manifestation, while user consumption remains on the existing Environmental Exposure hazard surface. No duplicate route or terminal workflow is required.",
+      "backend": {
+        "files": [
+          "src/aguayluz/hazard_adapters/sdwa_drinking_water.py"
+        ],
+        "symbols": [
+          "src/aguayluz/hazard_adapters/sdwa_drinking_water.py:row_digest",
+          "src/aguayluz/hazard_adapters/sdwa_drinking_water.py:canonical_event_id",
+          "src/aguayluz/hazard_adapters/sdwa_drinking_water.py:stable_record_id",
+          "src/aguayluz/hazard_adapters/sdwa_drinking_water.py:normalize"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/ingest_salud_sdwis_water.py",
+          "scripts/freeze_salud_sdwis_2025_sources.py",
+          "scripts/adjudicate_salud_sdwis_2025_residue.py"
+        ],
+        "symbols": [
+          "scripts/ingest_salud_sdwis_water.py:classify_sdwis_row",
+          "scripts/ingest_salud_sdwis_water.py:run",
+          "scripts/ingest_salud_sdwis_water.py:main",
+          "scripts/freeze_salud_sdwis_2025_sources.py:sha256_file",
+          "scripts/freeze_salud_sdwis_2025_sources.py:request",
+          "scripts/freeze_salud_sdwis_2025_sources.py:download",
+          "scripts/freeze_salud_sdwis_2025_sources.py:pdf_meta",
+          "scripts/freeze_salud_sdwis_2025_sources.py:archive_identity",
+          "scripts/freeze_salud_sdwis_2025_sources.py:stream_full_sha256",
+          "scripts/freeze_salud_sdwis_2025_sources.py:get_range",
+          "scripts/freeze_salud_sdwis_2025_sources.py:locate_member",
+          "scripts/freeze_salud_sdwis_2025_sources.py:classify_pr_row",
+          "scripts/freeze_salud_sdwis_2025_sources.py:stream_member_and_filter_pr",
+          "scripts/freeze_salud_sdwis_2025_sources.py:main",
+          "scripts/adjudicate_salud_sdwis_2025_residue.py:sha256_file",
+          "scripts/adjudicate_salud_sdwis_2025_residue.py:adjudicate",
+          "scripts/adjudicate_salud_sdwis_2025_residue.py:run",
+          "scripts/adjudicate_salud_sdwis_2025_residue.py:main"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_hazard_adapter_sdwa_drinking_water.py",
+          "tests/test_ingest_salud_sdwis_water.py",
+          "tests/test_adjudicate_salud_sdwis_2025_residue.py"
+        ]
+      }
+    },
+    {
+      "id": "nws-hydromet-plane",
+      "classification": "analysis",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Puerto Rico NOAA/NWS hydrometeorological observations (NWPS river/reservoir gauge flood status; Stage IV daily rainfall summarised per municipio over HRAP cells) frozen with byte SHA-256 provenance, source arithmetic and evidence-classed bindings to USGS_ assets (stable ID) and municipios (point-in-polygon + source alias; raster cell centres in polygon). The NWS Hydromet page exposes results, freshness, failures and a guarded refresh per source; the map shows gauges by flood category and a Stage IV rainfall municipio fill; gauge flood episodes and heavy-rain days promote into WEATHER_HAZARD alerts. Observations are hazard context, not confirmed impact.",
+      "backend": {
+        "files": [
+          "server/backend/hydromet_api.py",
+          "server/backend/app.py",
+          "src/aguayluz/hydromet/__init__.py",
+          "src/aguayluz/hydromet/store.py",
+          "src/aguayluz/hydromet/spatial.py",
+          "src/aguayluz/hazard_adapters/nwps_gauges.py",
+          "src/aguayluz/hazard_adapters/stage_iv_qpe.py",
+          "src/aguayluz/alert_promotion/hydromet.py",
+          "src/aguayluz/hazard_plane.py"
+        ],
+        "endpoints": [
+          "GET /hydromet/gauges",
+          "GET /hydromet/gauges.geojson",
+          "GET /hydromet/rainfall",
+          "GET /hydromet/refresh/status",
+          "GET /hydromet/sources",
+          "GET /hydromet/summary",
+          "POST /hydromet/refresh/{source_id}"
+        ],
+        "symbols": [
+          "server/backend/hydromet_api.py:hydromet_gauges",
+          "server/backend/hydromet_api.py:hydromet_gauges_geojson",
+          "server/backend/hydromet_api.py:hydromet_rainfall",
+          "server/backend/hydromet_api.py:hydromet_refresh",
+          "server/backend/hydromet_api.py:hydromet_refresh_status",
+          "server/backend/hydromet_api.py:hydromet_sources",
+          "server/backend/hydromet_api.py:hydromet_summary",
+          "src/aguayluz/alert_promotion/hydromet.py:FloodEpisode",
+          "src/aguayluz/alert_promotion/hydromet.py:HydrometInputs",
+          "src/aguayluz/alert_promotion/hydromet.py:flood_episodes",
+          "src/aguayluz/alert_promotion/hydromet.py:heavy_rain_alert",
+          "src/aguayluz/alert_promotion/hydromet.py:heavy_rain_alerts",
+          "src/aguayluz/alert_promotion/hydromet.py:hydromet_alerts",
+          "src/aguayluz/alert_promotion/hydromet.py:river_flood_alert",
+          "src/aguayluz/alert_promotion/hydromet.py:river_flood_alerts",
+          "src/aguayluz/hazard_adapters/nwps_gauges.py:canonical_event_id",
+          "src/aguayluz/hazard_adapters/nwps_gauges.py:clean_number",
+          "src/aguayluz/hazard_adapters/nwps_gauges.py:compact_detail",
+          "src/aguayluz/hazard_adapters/nwps_gauges.py:flood_thresholds",
+          "src/aguayluz/hazard_adapters/nwps_gauges.py:in_service",
+          "src/aguayluz/hazard_adapters/nwps_gauges.py:material_digest",
+          "src/aguayluz/hazard_adapters/nwps_gauges.py:material_state",
+          "src/aguayluz/hazard_adapters/nwps_gauges.py:normalize",
+          "src/aguayluz/hazard_adapters/nwps_gauges.py:observed_category",
+          "src/aguayluz/hazard_adapters/nwps_gauges.py:parse_time",
+          "src/aguayluz/hazard_adapters/nwps_gauges.py:stable_record_id",
+          "src/aguayluz/hazard_adapters/stage_iv_qpe.py:canonical_event_id",
+          "src/aguayluz/hazard_adapters/stage_iv_qpe.py:heavy_rain_severity",
+          "src/aguayluz/hazard_adapters/stage_iv_qpe.py:normalize",
+          "src/aguayluz/hazard_adapters/stage_iv_qpe.py:parse_data_time",
+          "src/aguayluz/hazard_adapters/stage_iv_qpe.py:stable_record_id",
+          "src/aguayluz/hazard_adapters/stage_iv_qpe.py:values_digest",
+          "src/aguayluz/hazard_adapters/stage_iv_qpe.py:window_bounds",
+          "src/aguayluz/hazard_adapters/stage_iv_qpe.py:zone_values",
+          "src/aguayluz/hazard_plane.py:SpatialState",
+          "src/aguayluz/hydromet/spatial.py:CellSelection",
+          "src/aguayluz/hydromet/spatial.py:Municipio",
+          "src/aguayluz/hydromet/spatial.py:MunicipioIndex",
+          "src/aguayluz/hydromet/spatial.py:PointBinding",
+          "src/aguayluz/hydromet/spatial.py:municipio_key",
+          "src/aguayluz/hydromet/spatial.py:raster_cells_by_municipio",
+          "src/aguayluz/hydromet/store.py:HydrometPaths",
+          "src/aguayluz/hydromet/store.py:SourceRun",
+          "src/aguayluz/hydromet/store.py:append_accounting",
+          "src/aguayluz/hydromet/store.py:apply_source_run",
+          "src/aguayluz/hydromet/store.py:current_by_event",
+          "src/aguayluz/hydromet/store.py:freeze_bytes",
+          "src/aguayluz/hydromet/store.py:freshness",
+          "src/aguayluz/hydromet/store.py:hydromet_paths",
+          "src/aguayluz/hydromet/store.py:integrity",
+          "src/aguayluz/hydromet/store.py:load_gauge_state",
+          "src/aguayluz/hydromet/store.py:load_manifestations",
+          "src/aguayluz/hydromet/store.py:load_receipts",
+          "src/aguayluz/hydromet/store.py:load_records",
+          "src/aguayluz/hydromet/store.py:load_relationships",
+          "src/aguayluz/hydromet/store.py:load_source_registry",
+          "src/aguayluz/hydromet/store.py:manifestation_id",
+          "src/aguayluz/hydromet/store.py:read_json",
+          "src/aguayluz/hydromet/store.py:read_jsonl",
+          "src/aguayluz/hydromet/store.py:record_receipt",
+          "src/aguayluz/hydromet/store.py:registry_source",
+          "src/aguayluz/hydromet/store.py:relationship_id",
+          "src/aguayluz/hydromet/store.py:revision_chains",
+          "src/aguayluz/hydromet/store.py:write_json",
+          "src/aguayluz/hydromet/store.py:write_jsonl"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/ingest_nwps_gauges.py",
+          "scripts/ingest_stage_iv_pr.py"
+        ],
+        "symbols": [
+          "scripts/ingest_nwps_gauges.py:BuildResult",
+          "scripts/ingest_nwps_gauges.py:DetailResult",
+          "scripts/ingest_nwps_gauges.py:build_run",
+          "scripts/ingest_nwps_gauges.py:classify",
+          "scripts/ingest_nwps_gauges.py:load_usgs_asset_ids",
+          "scripts/ingest_nwps_gauges.py:main",
+          "scripts/ingest_nwps_gauges.py:needs_detail",
+          "scripts/ingest_nwps_gauges.py:schema_signature",
+          "scripts/ingest_stage_iv_pr.py:BuildResult",
+          "scripts/ingest_stage_iv_pr.py:GridFile",
+          "scripts/ingest_stage_iv_pr.py:build_run",
+          "scripts/ingest_stage_iv_pr.py:file_name",
+          "scripts/ingest_stage_iv_pr.py:grid_url",
+          "scripts/ingest_stage_iv_pr.py:main",
+          "scripts/ingest_stage_iv_pr.py:retention_policy",
+          "scripts/ingest_stage_iv_pr.py:summarise_grid"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/hydromet",
+          "/map"
+        ],
+        "e2e_routes": [
+          "/hydromet",
+          "/map"
+        ],
+        "components": [
+          "dashboard/src/pages/HydrometPage.jsx",
+          "dashboard/src/lib/hydromet-api.js",
+          "dashboard/src/lib/hydromet-hooks.js",
+          "dashboard/src/components/layout/Sidebar.jsx",
+          "dashboard/src/pages/MapPage.jsx",
+          "dashboard/src/components/AssetMap.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_hydromet_api.py"
+        ],
+        "contract": [
+          "tests/test_hydromet_store.py",
+          "tests/test_hydromet_spatial.py",
+          "tests/test_hazard_adapter_nwps_gauges.py",
+          "tests/test_ingest_nwps_gauges.py",
+          "tests/test_hazard_adapter_stage_iv_qpe.py",
+          "tests/test_ingest_stage_iv_pr.py",
+          "tests/test_alert_promotion_hydromet.py",
+          "tests/test_refresh_plans.py",
+          "tests/test_gui_parity.py"
+        ],
+        "unit": [
+          "dashboard/src/pages/HydrometPage.test.jsx",
+          "dashboard/src/lib/hydromet-api.test.js"
+        ],
+        "e2e": [
+          "dashboard/tests/nws-hydromet.spec.mjs",
+          "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "nws-cloudgis-map-overlays",
+      "classification": "client_only",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Display-only NWS radar and watch/warning/advisory overlays on the Map page, loaded by the browser directly from NOAA/NWS CloudGIS (mapservices.weather.noaa.gov). Off by default; the page states they are not stored or validated, shows per-overlay request time and failures, and re-requests tiles every 5 minutes while shown. No backend binding: warnings AguaYLuz ingests arrive through scripts/ingest_nws_alerts.py.",
+      "frontend": {
+        "routes": [
+          "/map"
+        ],
+        "e2e_routes": [
+          "/map"
+        ],
+        "components": [
+          "dashboard/src/components/NwsOverlayToggles.jsx",
+          "dashboard/src/lib/nws-cloudgis-overlays.js",
+          "dashboard/src/components/AssetMap.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "unit": [
+          "dashboard/src/components/NwsOverlayToggles.test.jsx"
+        ],
+        "e2e": [
+          "dashboard/tests/nws-hydromet.spec.mjs",
+          "dashboard/tests/gui-parity.spec.mjs"
         ]
       }
     }

@@ -21,6 +21,20 @@ from aguayluz.usgs_water_api import (  # noqa: E402
     write_jsonl,
 )
 
+STATE_ABBREVIATION = "PR"
+
+
+def state_id_from_count(document: Any, abbreviation: str = STATE_ABBREVIATION) -> int:
+    if not isinstance(document, dict):
+        raise ValueError("RTFI state lookup must return an object")
+    observed = str(document.get("state_abbreviation") or "").upper()
+    if observed != abbreviation.upper():
+        raise ValueError(f"RTFI state lookup mismatch: expected {abbreviation}, observed {observed or 'EMPTY'}")
+    state_id = document.get("state_id")
+    if isinstance(state_id, bool) or not isinstance(state_id, int) or state_id < 1:
+        raise ValueError("RTFI state lookup returned an invalid state_id")
+    return state_id
+
 
 def _records(document: Any) -> list[dict]:
     if isinstance(document, list):
@@ -34,7 +48,11 @@ def _records(document: Any) -> list[dict]:
     return []
 
 
-def parse(document: Any) -> tuple[list[dict], list[dict]]:
+def parse(
+    document: Any,
+    *,
+    source_ref: str = f"{RTFI_ROOT}/referencepoints/state/PR",
+) -> tuple[list[dict], list[dict]]:
     locations: list[dict] = []
     edges: list[dict] = []
     for raw in _records(document):
@@ -54,23 +72,45 @@ def parse(document: Any) -> tuple[list[dict], list[dict]]:
             or props.get("nwis_site")
             or ""
         ).replace("USGS-", "")
+        rp_elevation = props.get("rp_elevation")
+        if rp_elevation is None:
+            rp_elevation = props.get("elevation")
         location = {
             "flood_impact_id": f"USGS_RTFI_{reference_id}",
             "reference_point_id": reference_id,
-            "name": props.get("name") or props.get("description"),
+            "name": (
+                props.get("rp_name")
+                or props.get("site_name")
+                or props.get("name")
+                or props.get("description")
+            ),
+            "site_name": props.get("site_name"),
+            "description": props.get("description"),
             "impact_type": props.get("type") or props.get("referencePointType"),
-            "elevation": props.get("elevation"),
-            "elevation_unit": props.get("elevationUnit") or props.get("elevation_unit"),
+            "elevation": rp_elevation,
+            "elevation_unit": (
+                props.get("unit")
+                or props.get("elevationUnit")
+                or props.get("elevation_unit")
+            ),
+            "gage_height": props.get("gage_height"),
+            "is_flooding": props.get("is_flooding"),
+            "plot_param": props.get("plot_param"),
+            "plot_series_id": props.get("plot_series_id"),
+            "state_id": props.get("state_id"),
+            "county_id": props.get("county_id"),
             "status": props.get("status") or ("active" if props.get("active", True) else "inactive"),
             "nwis_site_no": nwis or None,
             "nws_id": props.get("nws_id") or props.get("nwsId"),
             "provisional": True,
-            "source_ref": f"{RTFI_ROOT}/referencepoints/state/PR",
+            "source_ref": source_ref,
             "evidence_tier": "T1",
         }
         coordinates = geometry.get("coordinates") if geometry.get("type") == "Point" else None
         if isinstance(coordinates, list) and len(coordinates) >= 2:
             location["lon"], location["lat"] = coordinates[0], coordinates[1]
+        elif isinstance(props.get("longitude"), (int, float)) and isinstance(props.get("latitude"), (int, float)):
+            location["lon"], location["lat"] = props["longitude"], props["latitude"]
         locations.append(location)
         if nwis:
             edges.append(
@@ -107,20 +147,28 @@ def main() -> int:
             document = json.loads(args.src.read_text(encoding="utf-8"))
         else:
             with httpx.Client(timeout=180, follow_redirects=True) as client:
-                response = client.get(
-                    f"{RTFI_ROOT}/referencepoints/state/PR", headers=api_headers()
-                )
+                lookup_url = f"{RTFI_ROOT}/referencepoints/count/state/{STATE_ABBREVIATION}"
+                lookup = client.get(lookup_url, headers=api_headers())
+                lookup.raise_for_status()
+                state_id = state_id_from_count(lookup.json())
+                source_url = f"{RTFI_ROOT}/referencepoints/state/{state_id}"
+                response = client.get(source_url, headers=api_headers())
                 response.raise_for_status()
                 document = response.json()
     except Exception as exc:  # noqa: BLE001
         print(f"RTFI fetch failed: {exc}", file=sys.stderr)
         return 1
-    locations, edges = parse(document)
+    source_url = (
+        f"{RTFI_ROOT}/referencepoints/state/{state_id}"
+        if live
+        else str(args.src)
+    )
+    locations, edges = parse(document, source_ref=source_url)
     write_jsonl(args.locations_out, locations)
     write_jsonl(args.edges_out, edges)
     receipt = source_receipt(
         category="real_time_flood_impacts",
-        source_url=f"{RTFI_ROOT}/referencepoints/state/PR",
+        source_url=source_url,
         rows_written=len(locations) + len(edges),
         skipped={"reference_points_without_authoritative_nwis_edge": len(locations) - len(edges)},
         live=live,

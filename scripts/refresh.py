@@ -25,6 +25,18 @@ STEP_NHC = (
     ["scripts/ingest_nhc_storms.py"],
     True,
 )
+# NWS NWPS river/reservoir gauges → NWS hydromet plane. Optional: an NWPS outage writes
+# a FAIL receipt (shown on the dashboard's NWS Hydromet page) and the run continues.
+STEP_NWPS_GAUGES = (
+    "NWS NWPS river gauges → hydromet plane",
+    ["scripts/ingest_nwps_gauges.py"],
+    True,
+)
+STEP_STAGE_IV = (
+    "NWS Stage IV PR rainfall → hydromet plane",
+    ["scripts/ingest_stage_iv_pr.py"],
+    True,
+)
 STEP_USGS_QUAKES = (
     "USGS earthquakes → service_events",
     ["scripts/ingest_usgs_quakes.py"],
@@ -147,6 +159,11 @@ STEP_SDWIS = (
     ["scripts/ingest_sdwis_violations.py"],
     False,
 )
+STEP_DRNA_BEACH = (
+    "DRNA beach monitoring → canonical hazard plane",
+    ["scripts/ingest_drna_beach_monitoring.py", "--year", "2026"],
+    True,
+)
 STEP_ECHO = ("EPA ECHO CWA enforcement → service_events", ["scripts/ingest_echo.py"], True)
 STEP_FEMA = ("FEMA disaster declarations → service_events", ["scripts/ingest_fema.py"], True)
 STEP_OSHA = (
@@ -233,16 +250,28 @@ PLANS: dict[str, list[tuple]] = {
     "fast": [
         STEP_NWS,
         STEP_NHC,
+        STEP_NWPS_GAUGES,
         STEP_USGS_QUAKES,
         STEP_USGS_CONTINUOUS,
         STEP_USGS_RTFI,
         STEP_NOAA_TIDES,
+        # LUMA live outages are the single most volatile source in the corpus —
+        # power restoration status changes on a minutes timescale, not hours —
+        # so it belongs in the 15-minute cadence, not only the manual --all
+        # dispatch. All four steps are optional=True (WAF blocks are routine),
+        # so a failure here warns and continues rather than failing the run.
+        STEP_AEE_FETCH,
+        STEP_LUMA_STATUS_INGEST,
+        STEP_LUMA_STATUS_CHANGES,
+        STEP_AEE_INGEST,
         STEP_USGS_COVERAGE_GATE,
         *_DERIVE,
     ],
     "daily": [
         STEP_NWS,
         STEP_NHC,
+        STEP_NWPS_GAUGES,
+        STEP_STAGE_IV,
         STEP_USGS_QUAKES,
         STEP_USGS_LEVELS,
         STEP_USGS_GW,
@@ -260,6 +289,8 @@ PLANS: dict[str, list[tuple]] = {
     "weekly": [
         STEP_NWS,
         STEP_NHC,
+        STEP_NWPS_GAUGES,
+        STEP_STAGE_IV,
         STEP_USGS_QUAKES,
         STEP_USGS_ASSETS,
         STEP_USGS_LEVELS,
@@ -284,6 +315,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_PRECIP_NCEI,
         STEP_SOIL_ENRICH,
         STEP_SDWIS,
+        STEP_DRNA_BEACH,
         STEP_ECHO,
         STEP_FEMA,
         STEP_OSHA,
@@ -294,6 +326,8 @@ PLANS: dict[str, list[tuple]] = {
     "all": [
         STEP_NWS,
         STEP_NHC,
+        STEP_NWPS_GAUGES,
+        STEP_STAGE_IV,
         STEP_USGS_QUAKES,
         STEP_USGS_ASSETS,
         STEP_USGS_LEVELS,
@@ -318,6 +352,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_PRECIP_NCEI,
         STEP_SOIL_ENRICH,
         STEP_SDWIS,
+        STEP_DRNA_BEACH,
         STEP_ECHO,
         STEP_FEMA,
         STEP_OSHA,

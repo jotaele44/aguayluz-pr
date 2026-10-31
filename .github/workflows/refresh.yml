@@ -25,6 +25,12 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    # No explicit limit previously meant GitHub's 360-minute default, and
+    # `cancel-in-progress: false` above means a single hung run can back up
+    # the 15-minute fast-cadence queue for hours. 45 min comfortably covers
+    # the heaviest `--all` cadence (~50 sources, each with its own 60-180s
+    # per-request timeout) while bounding the worst case far below 360.
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -47,7 +53,7 @@ jobs:
           uv pip install --system -e ".[dev]"
           test ! -e "$GITHUB_WORKSPACE/../thehub-pr"
 
-      - name: Fast refresh (near-real-time hazard feeds — NWS + quakes)
+      - name: Fast refresh (near-real-time hazard feeds — NWS + quakes + LUMA outages)
         if: >
           (github.event_name == 'schedule' && github.event.schedule == '*/15 * * * *') ||
           (github.event_name == 'workflow_dispatch' && github.event.inputs.cadence == 'fast')
@@ -103,12 +109,19 @@ jobs:
       # the current snapshot or duplicate a completed promotion.
       - name: Promote refreshed snapshot to Floot
         if: steps.commit.outputs.changed == 'true'
+        env:
+          AGUAYLUZ_SYNC_TOKEN: ${{ secrets.AGUAYLUZ_SYNC_TOKEN }}
         run: |
+          if [ -z "${AGUAYLUZ_SYNC_TOKEN:-}" ]; then
+            echo "::error::AGUAYLUZ_SYNC_TOKEN repository secret is not configured."
+            exit 1
+          fi
           SYNC_COMMIT="$(git rev-parse HEAD)"
           curl --fail-with-body --show-error --silent \
             --retry 3 --retry-all-errors --retry-delay 2 \
             -X POST \
             -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $AGUAYLUZ_SYNC_TOKEN" \
             https://aguayluz-pr.floot.app/_api/sync/github \
             --data "{\"commitSha\":\"${SYNC_COMMIT}\",\"trigger\":\"github_action\"}"
 
@@ -118,10 +131,14 @@ jobs:
       # so forks and unprivileged runs stay quiet. This is the event-driven
       # federation hop that closes the "Hub is not triggered by aguayluz" gap.
       - name: Notify Hub of new export (repository_dispatch)
-        if: steps.commit.outputs.changed == 'true' && env.FEDERATION_DISPATCH_TOKEN != ''
+        if: ${{ always() && steps.commit.outputs.changed == 'true' }}
         env:
           FEDERATION_DISPATCH_TOKEN: ${{ secrets.FEDERATION_DISPATCH_TOKEN }}
         run: |
+          if [ -z "${FEDERATION_DISPATCH_TOKEN:-}" ]; then
+            echo "FEDERATION_DISPATCH_TOKEN is not configured; Hub dispatch is BLOCKED but does not erase the producer commit."
+            exit 0
+          fi
           curl -sSf -X POST \
             -H "Authorization: Bearer $FEDERATION_DISPATCH_TOKEN" \
             -H "Accept: application/vnd.github+json" \

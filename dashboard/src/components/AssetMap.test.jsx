@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('maplibre-gl', () => ({ default: {} }))
+vi.mock('maplibre-gl', () => ({ setWorkerUrl: vi.fn() }))
 
 import { eventFeatureCollection } from './AssetMap'
 

@@ -189,6 +189,22 @@ def test_water_quality_nondetect_is_preserved_not_zero():
     assert skipped["nondetect"] == 1
 
 
+def test_rtfi_state_lookup_requires_authoritative_integer_id():
+    module = load_script("ingest_usgs_rtfi.py")
+    assert module.state_id_from_count(
+        {
+            "state_id": 72,
+            "state_name": "Puerto Rico",
+            "state_abbreviation": "PR",
+            "reference_point_count": 0,
+        }
+    ) == 72
+    with pytest.raises(ValueError):
+        module.state_id_from_count({"state_id": "PR", "state_abbreviation": "PR"})
+    with pytest.raises(ValueError):
+        module.state_id_from_count({"state_id": 72, "state_abbreviation": "TX"})
+
+
 def test_rtfi_only_creates_declared_nwis_edges():
     module = load_script("ingest_usgs_rtfi.py")
     document = [
@@ -200,6 +216,47 @@ def test_rtfi_only_creates_declared_nwis_edges():
     assert len(edges) == 1
     assert edges[0]["authoritative_association"] is True
     assert edges[0]["from_id"] == "USGS_50059000"
+
+
+def test_rtfi_preserves_current_api_coordinates_and_flood_fields():
+    module = load_script("ingest_usgs_rtfi.py")
+    document = [
+        {
+            "id": 7,
+            "site_name": "USGS Example Gage",
+            "rp_name": "Bridge deck",
+            "description": "Surveyed bridge reference point",
+            "state_id": 72,
+            "county_id": 1,
+            "latitude": 18.1234,
+            "longitude": -66.4321,
+            "nwis_id": "USGS-50059000",
+            "nws_id": "EXMPL",
+            "rp_elevation": 12.5,
+            "unit": "ft",
+            "gage_height": 10.25,
+            "is_flooding": False,
+            "active": True,
+            "plot_param": "00065",
+            "plot_series_id": "series-1",
+        }
+    ]
+    locations, _ = module.parse(
+        document,
+        source_ref="https://api.waterdata.usgs.gov/rtfi-api/referencepoints/state/72",
+    )
+    row = locations[0]
+    assert row["name"] == "Bridge deck"
+    assert row["site_name"] == "USGS Example Gage"
+    assert row["lat"] == 18.1234
+    assert row["lon"] == -66.4321
+    assert row["elevation"] == 12.5
+    assert row["elevation_unit"] == "ft"
+    assert row["gage_height"] == 10.25
+    assert row["is_flooding"] is False
+    assert row["plot_param"] == "00065"
+    assert row["plot_series_id"] == "series-1"
+    assert row["source_ref"].endswith("/state/72")
 
 
 def test_nims_image_listing_performs_no_visual_inference():

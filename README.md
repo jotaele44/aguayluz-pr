@@ -71,6 +71,19 @@ corpus is real public data, with some sources external or point-in-time.
   `WEATHER_HAZARD` primary source in `config/alert_modules.yaml`; its value over the NWS
   feed is lead time — NWS publishes a watch ~48 h out, NHC publishes position and
   intensity from genesis.
+- NWS **NWPS river and reservoir gauges** (`scripts/ingest_nwps_gauges.py`, keyless) — observed
+  stage and NWS flood category for the 118 Puerto Rico gauges, with action/minor/moderate/major
+  thresholds, bound by `usgsId` to the existing `USGS_*` assets. Flood episodes become
+  `WEATHER_HAZARD` alerts; the dashboard's **NWS Hydromet** page shows freshness, provenance
+  and a refresh control. This is the PR-relevant part of the legacy NWS IDP-GIS catalog; see
+  [`docs/NWS_HYDROMET_INTEGRATION.md`](docs/NWS_HYDROMET_INTEGRATION.md) for what else on that
+  catalog was and was not wired.
+- NWS **Stage IV Puerto Rico rainfall** (`scripts/ingest_stage_iv_pr.py`, keyless) — the daily
+  1-, 7- and 30-day radar + gauge rainfall grids NWPS publishes for Puerto Rico, summarised per
+  municipio over the HRAP cells inside each Census polygon (with PRISM normal and percent of
+  normal). Heavy-rain days (municipio mean ≥ 3 in, or any cell ≥ 6 in) become sub-critical
+  `WEATHER_HAZARD` follow-up alerts; the **NWS Hydromet** page lists rainfall by municipio and the
+  map has a **Rainfall** municipio fill.
 - Operational alert events (`docs/ALERT_SYSTEM.md`) and the 78-municipio /
   901-barrio geo layer under `data/geo/` (U.S. Census cartographic boundaries).
 
@@ -107,3 +120,37 @@ installs dependencies, later runs work offline):
 `manifest.json` validated against the vendored hub schema
 `schemas/federation_export_manifest.schema.json`
 (`tests/test_federation_contract_compat.py`).
+
+Every exported row also carries an additive `evidence_state` declaration.
+It conforms to thehub-pr's candidate epistemic-state contract, vendored
+byte-identically at `schemas/federation_epistemic_state.v1.schema.json`.
+
+Each row declares its epistemic class:
+
+- **CURATED:** records, sources and attribute-derived edges.
+- **COMPUTED:** promoter-generated alerts, plant-code duplicates and
+  nearest-feed `energized_by` edges. The `energized_by` edges also carry
+  `match_basis: spatial_proximity`.
+
+A geometry precision is declared only where the pipeline records how the
+point was made:
+
+| Point | Precision |
+|---|---|
+| Monitoring-location coordinates published by the source | OBSERVED_POINT |
+| Polygon or line features | REPRESENTATIVE_POINT |
+| Municipio centroids | REPRESENTATIVE_POINT |
+| Approximate alert points | REPRESENTATIVE_POINT |
+
+Every other coordinate is left undeclared (the Hub shows it as UNKNOWN).
+Tests: `tests/test_federation_evidence_state.py`.
+
+<!-- PROJECT-OPERATING-CONTRACT:START -->
+## Current development and certification contract
+
+AguaYLuz is developed as the Puerto Rico utility-infrastructure producer: water, wastewater, power, outages, recovery, hydroelectric, environmental, and spatial/temporal utility evidence. Current development must recompute live source/runtime state rather than treating historical monitoring receipts as current health.
+
+**Operating rules:** preserve raw/normalized/canonical values separately; prefer stable IDs and authoritative bindings over name/proximity heuristics; freeze material source manifestations and SHA-256; close source/retained/excluded arithmetic, schema/null/FK/cardinality gates, GIS validity, temporal validity, contradiction handling, and federation-export lineage. Historical PASS evidence is preserved after downstream failure but does not certify a later runtime manifestation.
+
+**Release discipline:** credential-free feature/data work comes first unless a feature intrinsically requires authentication. Desktop and iPhone are first-class manifestations. PASS means a bounded gate passed; repository certification requires frozen scope/inputs, explicit inclusion/exclusion, validated identifiers, arithmetic closure, positive/negative regression evidence, current rendered QA, and zero material unresolved residue inside the claim.
+<!-- PROJECT-OPERATING-CONTRACT:END -->

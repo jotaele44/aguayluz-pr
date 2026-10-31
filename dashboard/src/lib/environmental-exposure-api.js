@@ -39,3 +39,19 @@ export const getEnvironmentalExposureIntegrity = () => getJSON(
   '/environmental-exposure/integrity',
   null,
 )
+
+export const getHazardSummary = () => getJSON('/hazards/summary', null)
+
+export const getHazardEvents = (filters = {}) => getJSON(
+  `/hazards/events${qs(filters)}`,
+  { total: 0, items: [] },
+)
+
+export const getHazardRelationships = (filters = {}) => getJSON(
+  `/hazards/relationships${qs(filters)}`,
+  { total: 0, items: [] },
+)
+
+export const getHazardSources = () => getJSON('/hazards/sources', null)
+
+export const getHazardIntegrity = () => getJSON('/hazards/integrity', null)
