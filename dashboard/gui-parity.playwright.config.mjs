@@ -28,7 +28,7 @@ export default defineConfig({
   // Removes the seeded review-queue fixture, and only ever a fixture — the
   // teardown refuses to delete anything that seed_demo.py did not create.
   globalTeardown: path.join(repositoryRoot, "server", "ingestion", "playwright.teardown.mjs"),
-  testMatch: ["gui-parity.spec.mjs", "hazard-advisory.spec.mjs", "nws-hydromet.spec.mjs"],
+  testMatch: ["gui-parity.spec.mjs", "hazard-advisory.spec.mjs", "nws-hydromet.spec.mjs", "electricity.spec.mjs"],
   fullyParallel: false,
   retries: process.env.CI ? 1 : 0,
   workers: 1,
@@ -44,7 +44,12 @@ export default defineConfig({
   projects: [
     {
       name: "chromium-gui-parity",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+          ? { launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH } }
+          : {}),
+      },
     },
   ],
   webServer: [

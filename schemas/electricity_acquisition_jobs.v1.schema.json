@@ -1,0 +1,325 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aguayluz-pr.local/schemas/electricity_acquisition_jobs.v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "producer",
+    "jurisdiction",
+    "certification",
+    "jobs",
+    "total",
+    "next_offset"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "aguayluz.electricity-acquisition-jobs/v1"
+    },
+    "producer": {
+      "const": "aguayluz-pr"
+    },
+    "jurisdiction": {
+      "const": "PR"
+    },
+    "certification": {
+      "const": "NOT_CERTIFIED"
+    },
+    "jobs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Job"
+      }
+    },
+    "total": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "next_offset": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    }
+  },
+  "$defs": {
+    "MonthlyJobRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "request_id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "title": "Request Id",
+          "type": "string"
+        },
+        "endpoint": {
+          "enum": [
+            "facility-fuel",
+            "retail-sales"
+          ],
+          "title": "Endpoint",
+          "type": "string"
+        },
+        "data_column": {
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$",
+          "title": "Data Column",
+          "type": "string"
+        },
+        "state_facet": {
+          "enum": [
+            "state",
+            "stateid",
+            "plantState"
+          ],
+          "title": "State Facet",
+          "type": "string"
+        },
+        "start": {
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
+          "title": "Start",
+          "type": "string"
+        },
+        "end": {
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
+          "title": "End",
+          "type": "string"
+        },
+        "page_size": {
+          "default": 1000,
+          "maximum": 5000,
+          "minimum": 1,
+          "title": "Page Size",
+          "type": "integer"
+        },
+        "max_pages": {
+          "default": 100,
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Max Pages",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "request_id",
+        "endpoint",
+        "data_column",
+        "state_facet",
+        "start",
+        "end"
+      ],
+      "title": "MonthlyJobRequest",
+      "type": "object"
+    },
+    "Job": {
+      "additionalProperties": false,
+      "properties": {
+        "spec": {
+          "$ref": "#/$defs/MonthlyJobRequest"
+        },
+        "version": {
+          "minimum": 1,
+          "title": "Version",
+          "type": "integer"
+        },
+        "status": {
+          "enum": [
+            "QUEUED",
+            "RUNNING",
+            "FAILED",
+            "CANCELLED",
+            "COMPLETE"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "phase": {
+          "default": "METADATA",
+          "enum": [
+            "METADATA",
+            "FACET",
+            "PAGES"
+          ],
+          "title": "Phase",
+          "type": "string"
+        },
+        "receipt_sha256": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Receipt Sha256",
+          "type": "array"
+        },
+        "rows": {
+          "default": 0,
+          "maximum": 1000000,
+          "minimum": 0,
+          "title": "Rows",
+          "type": "integer"
+        },
+        "total": {
+          "anyOf": [
+            {
+              "maximum": 1000000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Total"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "pattern": "^EIA_[A-Z0-9_]{1,80}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "updated_at": {
+          "format": "date-time",
+          "title": "Updated At",
+          "type": "string"
+        },
+        "job_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "review_state": {
+          "const": "AUDIT_ONLY"
+        },
+        "canonical_promotion": {
+          "const": "BLOCKED"
+        },
+        "can_step": {
+          "type": "boolean"
+        },
+        "can_cancel": {
+          "type": "boolean"
+        },
+        "lease_expires_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "history": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "version",
+              "status",
+              "phase",
+              "rows",
+              "error",
+              "updated_at",
+              "event_sha256"
+            ],
+            "properties": {
+              "version": {
+                "minimum": 1,
+                "title": "Version",
+                "type": "integer"
+              },
+              "status": {
+                "enum": [
+                  "QUEUED",
+                  "RUNNING",
+                  "FAILED",
+                  "CANCELLED",
+                  "COMPLETE"
+                ],
+                "title": "Status",
+                "type": "string"
+              },
+              "phase": {
+                "default": "METADATA",
+                "enum": [
+                  "METADATA",
+                  "FACET",
+                  "PAGES"
+                ],
+                "title": "Phase",
+                "type": "string"
+              },
+              "rows": {
+                "default": 0,
+                "maximum": 1000000,
+                "minimum": 0,
+                "title": "Rows",
+                "type": "integer"
+              },
+              "error": {
+                "anyOf": [
+                  {
+                    "pattern": "^EIA_[A-Z0-9_]{1,80}$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Error"
+              },
+              "updated_at": {
+                "format": "date-time",
+                "title": "Updated At",
+                "type": "string"
+              },
+              "event_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          }
+        }
+      },
+      "required": [
+        "spec",
+        "version",
+        "status",
+        "created_at",
+        "updated_at",
+        "job_id",
+        "review_state",
+        "canonical_promotion",
+        "can_step",
+        "can_cancel",
+        "lease_expires_at"
+      ],
+      "title": "AcquisitionJob",
+      "type": "object"
+    },
+    "JobCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "expected_version": {
+          "minimum": 1,
+          "title": "Expected Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "expected_version"
+      ],
+      "title": "JobCommand",
+      "type": "object"
+    }
+  }
+}
