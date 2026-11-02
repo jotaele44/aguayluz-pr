@@ -1,8 +1,6 @@
 """Coverage-matrix validation and frontend-readiness scoring."""
 from __future__ import annotations
 
-from collections import Counter
-
 from .catalog import DOMAIN_REGISTRY, SOURCE_FAMILIES, SOURCE_REQUIREMENTS
 from .models import CoverageState, CoverageSummary
 
@@ -41,8 +39,8 @@ def coverage_report() -> CoverageSummary:
 
     required = [row for row in SOURCE_REQUIREMENTS if row.required]
     classified = [row for row in SOURCE_REQUIREMENTS if row.state in CLASSIFIED_STATES]
-    required_counts = Counter(row.domain_id for row in required)
-    domains_without_required = tuple(sorted(domain_ids - set(required_counts)))
+    required_domains = {row.domain_id for row in required}
+    domains_without_required = tuple(sorted(domain_ids - required_domains))
 
     unclassified = sum(
         1
