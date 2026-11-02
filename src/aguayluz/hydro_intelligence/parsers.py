@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import csv
 import io
-import json
 import re
 import zipfile
 from dataclasses import dataclass
@@ -30,7 +29,7 @@ class SourceRow:
 
 
 def _header_index(header: list[str], required: dict[str, tuple[str, ...]]) -> dict[str, int]:
-    normalized = [re.sub(r"\\s+", " ", value.strip().casefold()) for value in header]
+    normalized = [re.sub(r"\s+", " ", value.strip().casefold()) for value in header]
     if len(normalized) != len(set(normalized)):
         raise ValueError("Duplicate normalized source column")
     mapping: dict[str, int] = {}
@@ -69,9 +68,9 @@ def parse_eia_facility_fuel_csv(raw: bytes) -> list[SourceRow]:
         period = values[cols["period"]].strip()
         mover = values[cols["prime_mover"]].strip()
         value = values[cols["generation"]].strip()
-        if not plant or not re.fullmatch(r"\\d+", plant):
+        if not plant or not re.fullmatch(r"\d+", plant):
             raise ValueError(f"Line {line}: invalid native plant ID")
-        if not re.fullmatch(r"\\d{4}-\\d{2}", period):
+        if not re.fullmatch(r"\d{4}-\d{2}", period):
             raise ValueError(f"Line {line}: invalid period")
         if not mover or not value:
             state = "UNRESOLVED_MISSING_SOURCE_VALUE"
@@ -104,7 +103,7 @@ def inspect_eia_923_zip(raw: bytes) -> list[dict[str, Any]]:
         paths = set()
         result = []
         for info in infos:
-            path = PurePosixPath(info.filename.replace("\\\\", "/"))
+            path = PurePosixPath(info.filename.replace("\\", "/"))
             if path.is_absolute() or ".." in path.parts or not path.parts:
                 raise ValueError("Unsafe archive member path")
             if info.filename.casefold() in paths:
@@ -153,7 +152,7 @@ def inspect_luma_pdf(raw: bytes, *, cms_slug_date: str | None = None,
     if not raw.startswith(b"%PDF-") or len(raw) < 8:
         raise ValueError("Invalid PDF signature")
     observed = [date for date in (cms_slug_date, pdf_filename_date, internal_report_date) if date]
-    if any(not re.fullmatch(r"\\d{4}-\\d{2}-\\d{2}", date) for date in observed):
+    if any(not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date) for date in observed):
         raise ValueError("Invalid published date metadata")
     if not internal_report_date:
         state = "INTERNAL_DATE_UNVERIFIED"
