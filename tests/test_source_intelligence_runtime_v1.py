@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import io
 import json
+import zipfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from xml.sax.saxutils import escape
-import io
-import zipfile
 
 import pytest
 
