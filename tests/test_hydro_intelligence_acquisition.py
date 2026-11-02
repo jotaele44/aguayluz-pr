@@ -117,3 +117,69 @@ def test_conflicting_existing_receipt_rejected(tmp_path):
     record.write_text(json.dumps(payload))
     with pytest.raises(ValueError, match="conflicts"):
         persist_bytes(tmp_path, "eia_923", "https://www.eia.gov/data.zip", b"bytes")
+
+
+def test_https_uses_vetted_dns_ip_and_source_hostname(monkeypatch):
+    from aguayluz.hydro_intelligence import acquisition
+    requested = []
+
+    class Response:
+        status = 200
+
+        def getheader(self, name, default=None):
+            return "application/pdf" if name == "Content-Type" else None
+
+        def read(self, limit):
+            return b"%PDF-1.7\\n"
+
+    class Connection:
+        def __init__(self, host, address, timeout):
+            requested.append(("connect", host, address))
+
+        def request(self, method, path, headers):
+            requested.append(("request", method, path, headers["Host"]))
+
+        def getresponse(self):
+            return Response()
+
+        def close(self):
+            requested.append(("close",))
+
+    monkeypatch.setattr(acquisition, "reject_nonpublic_dns", lambda host: ("8.8.8.8",))
+    monkeypatch.setattr(acquisition, "_PinnedHTTPSConnection", Connection)
+    data, content_type = acquisition.fetch_artifact(
+        "https://www.eia.gov/sample.pdf",
+        allowed_hosts={"www.eia.gov"},
+    )
+    assert data == b"%PDF-1.7\\n"
+    assert content_type == "application/pdf"
+    assert ("connect", "www.eia.gov", "8.8.8.8") in requested
+    assert ("request", "GET", "/sample.pdf", "www.eia.gov") in requested
+    assert ("close",) in requested
+
+
+def test_https_redirect_status_is_refused(monkeypatch):
+    from aguayluz.hydro_intelligence import acquisition
+
+    class RedirectResponse:
+        status = 302
+
+    class Connection:
+        def __init__(self, *args):
+            pass
+
+        def request(self, *args, **kwargs):
+            pass
+
+        def getresponse(self):
+            return RedirectResponse()
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(acquisition, "reject_nonpublic_dns", lambda host: ("8.8.8.8",))
+    monkeypatch.setattr(acquisition, "_PinnedHTTPSConnection", Connection)
+    with pytest.raises(ValueError, match="Unexpected source HTTP status"):
+        acquisition.fetch_artifact(
+            "https://www.eia.gov/redirect", allowed_hosts={"www.eia.gov"}
+        )
