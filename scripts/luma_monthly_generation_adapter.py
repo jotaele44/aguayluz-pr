@@ -776,7 +776,7 @@ def acquire_manifestation(
                     synthesized_landing_url=synthesized,
                     landing_url=landing.final_url or landing_candidate,
                     pdf_url=pdf_url,
-                    publication_date=None,
+                    publication_date=publication_date,
                     retrieval_utc=pdf_fetch.retrieval_utc,
                     source_state=STATUS_SOURCE_UNAVAILABLE,
                     http_status=pdf_fetch.http_status,
@@ -1004,28 +1004,64 @@ def acquire_manifestation(
     return rows
 
 
+def _discovery_anchor(row: dict[str, Any]) -> tuple[str, str]:
+    period = str(row.get("period") or "")
+    anchor = (
+        row.get("indexed_href")
+        or row.get("synthesized_landing_url")
+        or row.get("landing_url")
+        or ""
+    )
+    return period, str(anchor)
+
+
 def reconcile_manifest_rows(rows: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
-    # Whole-row selection by manifestation_key; latest retrieval replaces only the same
-    # exact logical manifestation candidate, while distinct SHA/URL variants are retained.
-    selected: dict[str, dict[str, Any]] = {}
+    """Build the current manifestation view without erasing acquisition history.
+
+    Acquisition attempts belong in attempts.jsonl. The current manifest keeps every
+    distinct PASS payload for a discovery anchor (to preserve corrected/revised bytes).
+    If an anchor has no successful payload, only its latest unresolved/failure row is
+    retained. This prevents a superseded 403 from poisoning a later successful state.
+    """
+    groups: dict[tuple[str, str], list[dict[str, Any]]] = {}
     for row in rows:
+        groups.setdefault(_discovery_anchor(row), []).append(dict(row))
+
+    current: list[dict[str, Any]] = []
+    for _anchor, group in sorted(groups.items()):
+        passed = [r for r in group if r.get("source_state") == STATUS_PASS and r.get("sha256")]
+        if passed:
+            by_payload: dict[tuple[str, str], dict[str, Any]] = {}
+            for row in passed:
+                key = (str(row.get("pdf_url") or ""), str(row.get("sha256") or ""))
+                existing = by_payload.get(key)
+                if existing is None or str(row.get("retrieval_utc") or "") >= str(
+                    existing.get("retrieval_utc") or ""
+                ):
+                    by_payload[key] = row
+            current.extend(by_payload.values())
+        else:
+            latest = max(group, key=lambda r: str(r.get("retrieval_utc") or ""))
+            current.append(latest)
+
+    # manifestation_key must remain unique in the current view.
+    selected: dict[str, dict[str, Any]] = {}
+    for row in current:
         key = str(row.get("manifestation_key") or "")
         if not key:
             raise AdapterError("manifest row missing manifestation_key")
-        current = selected.get(key)
-        if current is None:
-            selected[key] = dict(row)
-            continue
-        cur_ts = str(current.get("retrieval_utc") or "")
-        new_ts = str(row.get("retrieval_utc") or "")
-        if new_ts >= cur_ts:
-            selected[key] = dict(row)
+        existing = selected.get(key)
+        if existing is None or str(row.get("retrieval_utc") or "") >= str(
+            existing.get("retrieval_utc") or ""
+        ):
+            selected[key] = row
     return [
         selected[k]
         for k in sorted(
             selected,
             key=lambda k: (
                 str(selected[k].get("period")),
+                str(selected[k].get("indexed_href") or ""),
                 str(selected[k].get("pdf_url") or ""),
                 str(selected[k].get("sha256") or ""),
                 k,
@@ -1287,6 +1323,7 @@ def deterministic_archive(root: Path, archive_path: Path) -> dict[str, Any]:
         root / "contradictions.jsonl",
         root / "page_index.jsonl",
         root / "index_entries.jsonl",
+        root / "attempts.jsonl",
         root / "denominator.json",
         root / "replay.json",
     ]
@@ -1427,6 +1464,21 @@ def run_acquisition(args: argparse.Namespace) -> int:
             ):
                 new_rows.append(asdict(row))
 
+    prior_attempts = read_jsonl(root / "attempts.jsonl")
+    attempt_key = lambda r: (
+        str(r.get("manifestation_key") or ""),
+        str(r.get("retrieval_utc") or ""),
+        str(r.get("source_state") or ""),
+        str(r.get("sha256") or ""),
+    )
+    attempts = {attempt_key(r): r for r in prior_attempts}
+    for row in new_rows:
+        attempts[attempt_key(row)] = row
+    write_jsonl(
+        root / "attempts.jsonl",
+        [attempts[k] for k in sorted(attempts)],
+    )
+
     manifest_rows = reconcile_manifest_rows([*prior_rows, *new_rows])
     write_jsonl(root / "manifest.jsonl", manifest_rows)
     manifest_csv(root / "manifest.csv", manifest_rows)
@@ -1457,6 +1509,16 @@ def run_acquisition(args: argparse.Namespace) -> int:
     write_json(root / "replay.json", replay)
 
     archive = deterministic_archive(root, root / "archive.zip")
+    required_index_anchors = {(e.period, e.href) for e in entries}
+    passed_index_anchors = {
+        (str(r.get("period")), str(r.get("indexed_href")))
+        for r in manifest_rows
+        if r.get("source_state") == STATUS_PASS and r.get("indexed_href")
+    }
+    missing_index_manifestations = sorted(required_index_anchors - passed_index_anchors)
+    manifestation_denominator_gate = (
+        "PASS" if not missing_index_manifestations else "FAIL_CLOSED"
+    )
     receipt = {
         "schema_version": SCHEMA_VERSION,
         "mode": args.mode,
@@ -1464,7 +1526,13 @@ def run_acquisition(args: argparse.Namespace) -> int:
         "index_denominator": denom,
         "selected_periods": [str(p) for p in selected],
         "manifest_row_count": len(manifest_rows),
+        "attempt_row_count": len(attempts),
         "pass_source_rows": sum(r.get("source_state") == STATUS_PASS for r in manifest_rows),
+        "manifestation_denominator_gate": manifestation_denominator_gate,
+        "missing_index_manifestations": [
+            {"period": period, "indexed_href": href}
+            for period, href in missing_index_manifestations
+        ],
         "classification_counts": {
             cls: sum(r.get("hydro_classification") == cls for r in manifest_rows)
             for cls in sorted(CLASSIFICATIONS)
@@ -1477,12 +1545,8 @@ def run_acquisition(args: argparse.Namespace) -> int:
         "source_family_certification_state": (
             "PASS_BOUNDED"
             if denom.get("gate") == "PASS"
+            and manifestation_denominator_gate == "PASS"
             and replay.get("overall") == "PASS"
-            and all(
-                r.get("source_state") == STATUS_PASS
-                for r in manifest_rows
-                if r.get("period") in {str(p) for p in expected}
-            )
             else "WITHHELD"
         ),
     }
@@ -1496,7 +1560,9 @@ def run_acquisition(args: argparse.Namespace) -> int:
                 "expected_periods": len(expected),
                 "selected_periods": len(selected),
                 "manifest_rows": len(manifest_rows),
+                "attempt_rows": len(attempts),
                 "pass_source_rows": receipt["pass_source_rows"],
+                "manifestation_denominator_gate": manifestation_denominator_gate,
                 "replay": replay.get("overall"),
                 "archive_sha256": archive["sha256"],
                 "source_family_certification_state": receipt[
