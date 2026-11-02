@@ -167,7 +167,7 @@ def luma_discovery():
             if "8/28/2026" in blob or "8/30/2026" in blob:
                 result["links"].append({"url":u,"label":norm(label)})
         # Search raw HTML/JS references for machine-readable endpoints.
-        refs=sorted(set(re.findall(r'https?://[^"\\'<>\\s]+|/[A-Za-z0-9_./?=&%-]+',txt)))
+        refs=sorted(set(re.findall(r"https?://[^\\\"'<>\\s]+|/[A-Za-z0-9_./?=&%-]+", txt)))
         for ref in refs:
             low=ref.lower()
             if any(x in low for x in [".csv",".xlsx",".xls",".json","api/","wp-json","export","download"]):
