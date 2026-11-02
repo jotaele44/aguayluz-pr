@@ -4,7 +4,7 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field
 
 from .catalog import SOURCE_FAMILIES
-from .noaa_digital_coast import NOAA_DIGITAL_COAST_PRODUCTS, NOAA_DIGITAL_COAST_ROUTES
+from .route_registry import ACQUISITION_ROUTES, SOURCE_PRODUCTS
 from .routes import RouteRole
 
 
@@ -21,8 +21,8 @@ class RouteGovernanceSummary(BaseModel):
 
 
 def route_governance_summary() -> RouteGovernanceSummary:
-    products = NOAA_DIGITAL_COAST_PRODUCTS
-    routes = NOAA_DIGITAL_COAST_ROUTES
+    products = SOURCE_PRODUCTS
+    routes = ACQUISITION_ROUTES
 
     governed_families = {product.source_family_id for product in products}
     all_families = {source.source_family_id for source in SOURCE_FAMILIES}
