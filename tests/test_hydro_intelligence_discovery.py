@@ -1,9 +1,12 @@
 """Deterministic offline tests: discovery, retries, quarantine, receipt immutability."""
 import json
+
 import pytest
 
 from aguayluz.hydro_intelligence.discovery import (
-    acquire_with_retry, discover_links, freeze_result_log,
+    acquire_with_retry,
+    discover_links,
+    freeze_result_log,
 )
 
 
