@@ -6,16 +6,18 @@ Sources are constrained to HTTPS and configured hostnames.
 from __future__ import annotations
 
 import hashlib
+import http.client
 import ipaddress
 import json
 import os
 import socket
+import ssl
 import tempfile
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
-from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
+from urllib.request import HTTPRedirectHandler
 
 
 class RejectRedirects(HTTPRedirectHandler):
@@ -46,14 +48,15 @@ def validate_url(url: str, allowed_hosts: set[str]) -> None:
         raise ValueError("Nonstandard source port is not permitted")
 
 
-def reject_nonpublic_dns(host: str) -> None:
-    """Reject non-global DNS answers; deployment still requires TLS IP pinning."""
+def reject_nonpublic_dns(host: str) -> tuple[str, ...]:
+    """Return vetted DNS addresses and reject any non-global answer."""
     try:
         answers = socket.getaddrinfo(host, 443, type=socket.SOCK_STREAM)
     except socket.gaierror as exc:
         raise ValueError("DNS resolution failed") from exc
     if not answers:
         raise ValueError("DNS resolution returned no addresses")
+    addresses = []
     for answer in answers:
         address = answer[4][0].split("%", 1)[0]
         try:
@@ -62,6 +65,25 @@ def reject_nonpublic_dns(host: str) -> None:
             raise ValueError("DNS returned invalid IP") from exc
         if not valid:
             raise ValueError("DNS returned non-global IP")
+        if address not in addresses:
+            addresses.append(address)
+    return tuple(addresses)
+
+
+class _PinnedHTTPSConnection(http.client.HTTPSConnection):
+    """Connect only to the vetted address; verify TLS against the source host."""
+
+    def __init__(self, host: str, address: str, timeout: float):
+        super().__init__(host, port=443, timeout=timeout, context=ssl.create_default_context())
+        self._pinned_address = address
+
+    def connect(self) -> None:
+        plain = socket.create_connection((self._pinned_address, self.port), self.timeout)
+        try:
+            self.sock = self._context.wrap_socket(plain, server_hostname=self.host)
+        except Exception:
+            plain.close()
+            raise
 
 
 def persist_bytes(root: Path, source_id: str, url: str, data: bytes,
@@ -126,24 +148,35 @@ def persist_bytes(root: Path, source_id: str, url: str, data: bytes,
 
 def fetch_artifact(url: str, *, allowed_hosts: set[str], timeout: float = 30,
                    max_bytes: int = MAX_BYTES) -> tuple[bytes, str]:
+    """Fetch over pinned-IP HTTPS without HTTP proxies or automatic redirects."""
     validate_url(url, allowed_hosts)
-    reject_nonpublic_dns(urlparse(url).hostname)
-    request = Request(url, headers={"User-Agent": "AguaYLuz-HydroEvidence/1.0"})
-    # No automatic promotion; caller must validate source format and schema.
-    with build_opener(ProxyHandler({}), RejectRedirects()).open(request, timeout=timeout) as response:
-        validate_url(response.geturl(), allowed_hosts)
-        length = response.headers.get("Content-Length")
-        if length and int(length) > max_bytes:
+    parsed = urlparse(url)
+    addresses = reject_nonpublic_dns(parsed.hostname)
+    path = parsed.path or "/"
+    if parsed.query:
+        path += "?" + parsed.query
+    conn = _PinnedHTTPSConnection(parsed.hostname, addresses[0], timeout)
+    try:
+        conn.request("GET", path, headers={"Host": parsed.hostname,
+                     "User-Agent": "AguaYLuz-HydroEvidence/1.0",
+                     "Accept-Encoding": "identity"})
+        response = conn.getresponse()
+        if response.status != 200:
+            raise ValueError(f"Unexpected source HTTP status: {response.status}")
+        content_length = response.getheader("Content-Length")
+        if content_length is not None and int(content_length) > max_bytes:
             raise ValueError("Source payload exceeds size limit")
         data = response.read(max_bytes + 1)
         if not data or len(data) > max_bytes:
             raise ValueError("Source response empty or oversized")
-        suffix = urlparse(url).path.lower()
+        suffix = parsed.path.lower()
         if suffix.endswith((".xlsx", ".zip")) and not data.startswith(b"PK"):
             raise ValueError("Expected ZIP/OOXML bytes, received another format")
         if suffix.endswith(".pdf") and not data.startswith(b"%PDF-"):
             raise ValueError("Expected PDF bytes, received another format")
-        return data, response.headers.get("Content-Type", "application/octet-stream")
+        return data, response.getheader("Content-Type", "application/octet-stream")
+    finally:
+        conn.close()
 
 
 def acquire(root: Path, source_id: str, url: str, *,
