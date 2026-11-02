@@ -1,0 +1,43 @@
+name: hydro-operational-acquisition-20261102
+
+on:
+  push:
+    branches:
+      - ops/hydro-acquisition-20261102
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install parsing dependencies
+        run: python -m pip install --disable-pip-version-check openpyxl pypdf
+      - name: Acquire, freeze, parse, and replay invariants
+        env:
+          HYDRO_ACQ_OUT: hydro-acquisition-out
+        run: python scripts/ops_hydro_acquire_20261102.py | tee hydro-acquisition-console.json
+      - name: Add workflow metadata
+        if: always()
+        run: |
+          mkdir -p hydro-acquisition-out
+          printf '%s\n' "${{ github.sha }}" > hydro-acquisition-out/workflow_commit_sha.txt
+          printf '%s\n' "${{ github.run_id }}" > hydro-acquisition-out/workflow_run_id.txt
+          printf '%s\n' "${{ github.run_attempt }}" > hydro-acquisition-out/workflow_run_attempt.txt
+      - name: Upload immutable acquisition bundle
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hydro-operational-acquisition-20261102
+          path: |
+            hydro-acquisition-out/
+            hydro-acquisition-console.json
+          if-no-files-found: error
+          retention-days: 30
