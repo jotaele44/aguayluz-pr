@@ -7,6 +7,17 @@ from .catalog import SOURCE_FAMILIES
 from .route_registry import ACQUISITION_ROUTES, SOURCE_PRODUCTS
 from .routes import ProductIdentityState, ProductPayloadState, RouteRole
 
+# A governed discovery surface proves that the source family is represented in the
+# control plane. It does not prove that every payload-bearing product exposed by that
+# family has been discovered. Keep payload-product denominator exhaustion explicit and
+# fail-closed. These two EIA families are bounded to the registered public products.
+PAYLOAD_PRODUCT_DENOMINATOR_EXHAUSTED_FAMILY_IDS = frozenset(
+    {
+        "EIA_860M",
+        "EIA_923",
+    }
+)
+
 
 class RouteGovernanceSummary(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
@@ -24,6 +35,11 @@ class RouteGovernanceSummary(BaseModel):
     products_without_resolved_payload_ids: tuple[str, ...]
     products_with_invalid_canonical_payload_count: int = Field(ge=0)
 
+    payload_product_denominator_exhausted_family_ids: tuple[str, ...]
+    open_payload_product_denominator_family_ids: tuple[str, ...]
+    payload_product_denominator_complete: bool
+
+    zero_redundant_fetches_within_registered_products: bool
     zero_redundant_fetches_certifiable: bool
 
 
@@ -73,11 +89,23 @@ def route_governance_summary() -> RouteGovernanceSummary:
         elif canonical:
             invalid_canonical_count += 1
 
-    zero_redundant = (
+    exhausted_families = tuple(
+        sorted(all_families & PAYLOAD_PRODUCT_DENOMINATOR_EXHAUSTED_FAMILY_IDS)
+    )
+    open_denominators = tuple(
+        sorted(all_families - PAYLOAD_PRODUCT_DENOMINATOR_EXHAUSTED_FAMILY_IDS)
+    )
+    denominator_complete = not open_denominators
+
+    registered_products_clean = (
         coverage_complete
         and not identity_blockers
         and not payload_blockers
         and invalid_canonical_count == 0
+    )
+    zero_redundant_certifiable = (
+        registered_products_clean
+        and denominator_complete
     )
 
     return RouteGovernanceSummary(
@@ -92,5 +120,9 @@ def route_governance_summary() -> RouteGovernanceSummary:
         products_with_canonical_payload=canonical_count,
         products_without_resolved_payload_ids=payload_blockers,
         products_with_invalid_canonical_payload_count=invalid_canonical_count,
-        zero_redundant_fetches_certifiable=zero_redundant,
+        payload_product_denominator_exhausted_family_ids=exhausted_families,
+        open_payload_product_denominator_family_ids=open_denominators,
+        payload_product_denominator_complete=denominator_complete,
+        zero_redundant_fetches_within_registered_products=registered_products_clean,
+        zero_redundant_fetches_certifiable=zero_redundant_certifiable,
     )
