@@ -15,6 +15,7 @@ from aguayluz.source_intelligence.noaa_digital_coast import (
     NOAA_DIGITAL_COAST_PRODUCTS,
     NOAA_DIGITAL_COAST_ROUTES,
 )
+from aguayluz.source_intelligence.route_coverage import route_governance_summary
 from aguayluz.source_intelligence.routes import (
     ArchiveMemberDigest,
     FetchAction,
@@ -200,3 +201,11 @@ def test_archive_identity_same_payloads_different_paths() -> None:
         "2" * 64,
         right,
     ) == PayloadIdentityClass.SAME_PAYLOADS_DIFFERENT_PATHS
+
+
+def test_route_governance_stays_fail_closed_until_all_families_are_mapped() -> None:
+    summary = route_governance_summary()
+    assert summary.governed_source_families >= 1
+    assert summary.products_with_single_canonical_payload == summary.total_products
+    assert summary.ungoverned_source_family_ids
+    assert summary.zero_redundant_fetches_certifiable is False
