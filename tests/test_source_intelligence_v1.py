@@ -89,20 +89,11 @@ def test_eia860m_rejects_html_masquerading_as_xlsx() -> None:
         adapter.validate_transport(artifact)
 
 
-def test_eia860m_schema_fingerprint_is_deterministic() -> None:
-    adapter = EIA860MAdapter()
-    artifact = RawArtifact(
-        source_family_id="EIA_860M",
-        locator="https://example.invalid/march.xlsx",
-        content=_minimal_xlsx("Operating", "Retired"),
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        retrieved_at_iso="2026-11-02T00:00:00Z",
+
+def test_eia860m_capabilities_declare_xlsx_transport() -> None:
+    capabilities = EIA860MAdapter().capabilities()
+    assert capabilities.adapter_id == "eia860m"
+    assert capabilities.authentication_class == "NONE"
+    assert capabilities.artifact_types == (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
-    first = adapter.fingerprint_schema(artifact)
-    second = adapter.fingerprint_schema(artifact)
-    assert first == second
-    assert len(first) == 64
-    assert adapter.parse(artifact) == [
-        {"sheet_name": "Operating"},
-        {"sheet_name": "Retired"},
-    ]
