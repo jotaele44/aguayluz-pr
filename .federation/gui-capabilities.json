@@ -1821,14 +1821,15 @@
       "classification": "analysis",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Read-only inventory of registered hydro sources; zero source artifacts or operational values are asserted before actual ingestion. No write or refresh controls until qualified producer exists.",
+      "rationale": "Read-only inventory of registered hydro sources; zero source artifacts or operational values are asserted before actual ingestion. No write or refresh controls until qualified producer exists. The GUI parity AST scanner reports router-relative GET /sources; the deployed router prefix resolves it to GET /hydro-intelligence/sources. Both identities are declared without assuming two distinct operational APIs.",
       "backend": {
         "files": [
           "server/backend/hydro_intelligence_api.py",
           "server/backend/main.py"
         ],
         "endpoints": [
-          "GET /hydro-intelligence/sources"
+          "GET /hydro-intelligence/sources",
+          "GET /sources"
         ],
         "symbols": [
           "server/backend/hydro_intelligence_api.py:hydro_sources",
