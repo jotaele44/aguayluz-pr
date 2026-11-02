@@ -99,6 +99,11 @@ def fetch_artifact(url: str, *, allowed_hosts: set[str], timeout: float = 30,
         data = response.read(max_bytes + 1)
         if not data or len(data) > max_bytes:
             raise ValueError("Source response empty or oversized")
+        suffix = urlparse(url).path.lower()
+        if suffix.endswith((".xlsx", ".zip")) and not data.startswith(b"PK"):
+            raise ValueError("Expected ZIP/OOXML bytes, received another format")
+        if suffix.endswith(".pdf") and not data.startswith(b"%PDF-"):
+            raise ValueError("Expected PDF bytes, received another format")
         return data, response.headers.get("Content-Type", "application/octet-stream")
 
 
