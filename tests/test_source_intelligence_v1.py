@@ -427,3 +427,33 @@ def test_backend_readiness_authorizes_frontend_with_frozen_v1_contract() -> None
     assert readiness.score == 100
     assert readiness.unresolved == ()
     assert readiness.frontend_authorized is True
+
+
+def test_api_contract_requires_exact_head_authorization(monkeypatch) -> None:
+    import json
+
+    from server.backend.source_intelligence_api import (
+        AUTHORIZED_SHA_ENV,
+        source_intelligence_summary,
+    )
+
+    build_sha = "a" * 40
+    monkeypatch.setenv("AGUAYLUZ_BUILD_SHA", build_sha)
+    monkeypatch.delenv(AUTHORIZED_SHA_ENV, raising=False)
+
+    candidate = json.loads(source_intelligence_summary().body)
+    assert candidate["api_contract_state"] == "FROZEN_V1_CANDIDATE"
+    assert candidate["backend_readiness"]["score"] == 95
+    assert candidate["frontend_authorized"] is False
+
+    monkeypatch.setenv(AUTHORIZED_SHA_ENV, "b" * 40)
+    mismatch = json.loads(source_intelligence_summary().body)
+    assert mismatch["api_contract_state"] == "FROZEN_V1_CANDIDATE"
+    assert mismatch["frontend_authorized"] is False
+
+    monkeypatch.setenv(AUTHORIZED_SHA_ENV, build_sha)
+    certified = json.loads(source_intelligence_summary().body)
+    assert certified["api_contract_state"] == "FROZEN_V1_CERTIFIED"
+    assert certified["backend_readiness"]["score"] == 100
+    assert certified["backend_readiness"]["unresolved"] == []
+    assert certified["frontend_authorized"] is True
