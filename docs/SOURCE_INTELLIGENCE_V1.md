@@ -14,7 +14,7 @@ The control plane keeps four gates separate:
 3. runtime monitoring health;
 4. domain certification.
 
-Structural frontend readiness is not source-universe certification.
+Coverage Matrix structural readiness is not frontend authorization and is not source-universe certification.
 
 ## V1 denominator
 
@@ -81,3 +81,7 @@ Read-only control-plane endpoints:
 
 Sources without a unified runtime receipt expose null runtime health instead of
 a fabricated healthy state.
+
+## Current authorization state
+
+The V1 Coverage Matrix may reach structural readiness before the backend does. The API therefore reports frontend_authorized=false until the reference adapter has a production row parser, unified runtime receipts exist, and backend qualification passes. This prevents a static denominator from being mistaken for a production-ready backend.
