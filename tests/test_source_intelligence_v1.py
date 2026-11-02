@@ -29,6 +29,7 @@ from aguayluz.source_intelligence.noaa_digital_coast import (
     NOAA_DIGITAL_COAST_PRODUCTS,
     NOAA_DIGITAL_COAST_ROUTES,
 )
+from aguayluz.source_intelligence.readiness import current_backend_readiness
 from aguayluz.source_intelligence.route_coverage import route_governance_summary
 from aguayluz.source_intelligence.routes import (
     ArchiveMemberDigest,
@@ -381,3 +382,20 @@ def test_eia860m_sheet_selector_binds_pr_specific_tabs() -> None:
     }
     assert _find_sheet(sheets, "operating", jurisdiction="pr")[0] == "Operating_PR"
     assert _find_sheet(sheets, "retired", jurisdiction="pr")[0] == "Retired_PR"
+
+
+def test_backend_readiness_consumes_certified_eia_receipt() -> None:
+    readiness = current_backend_readiness(
+        coverage_matrix_ready=True,
+        api_contract_frozen=False,
+    )
+    assert readiness.score == 95
+    assert readiness.states["reference_transport"] == "PASS"
+    assert readiness.states["reference_parser"] == "PASS"
+    assert readiness.states["identity_invariants"] == "PASS"
+    assert readiness.states["known_good_replay"] == "PASS"
+    assert readiness.states["real_jan_feb_source_bytes"] == "PASS"
+    assert readiness.states["immutable_manifestation_runtime"] == "PASS"
+    assert readiness.states["runtime_health_receipts"] == "PASS"
+    assert readiness.unresolved == ("api_contract_frozen",)
+    assert readiness.frontend_authorized is False
