@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from aguayluz.hydro_intelligence.acquisition import persist_bytes, validate_url, fetch_artifact
+from aguayluz.hydro_intelligence.acquisition import persist_bytes, validate_url
 
 
 def test_byte_exact_idempotency(tmp_path):
@@ -63,9 +63,7 @@ def test_redirect_rejected_before_following(monkeypatch):
 
 
 def test_no_clobber_when_concurrent_writer_wins(tmp_path, monkeypatch):
-    import os
     from aguayluz.hydro_intelligence import acquisition
-    original_link = os.link
 
     def raced_link(source, target):
         target.write_bytes(b"tampered")
