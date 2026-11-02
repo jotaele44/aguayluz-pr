@@ -41,6 +41,8 @@ unreachable behind a feature flag and include a tracking reference and expiry.
 - `scripts/check_gui_parity.py` — shared static detector and contract validator.
 - `tests/test_gui_parity.py` — regression tests for the detector.
 - The frontend `tests/gui-parity.spec.mjs` — manifest-driven browser reachability.
+- The frontend `tests/mobile-navigation.spec.mjs` — the same manifest routes reached
+  through the mobile navigation drawer at phone width.
 - `.github/workflows/gui-capability-parity.yml` — PR gate and nightly audit.
 
 ## Signals
