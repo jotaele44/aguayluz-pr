@@ -42,21 +42,18 @@ from __future__ import annotations
 import argparse
 import csv
 import hashlib
-import io
 import json
-import os
 import re
 import shutil
 import subprocess
 import sys
-import tempfile
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
 from dataclasses import asdict, dataclass, field
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Iterable, Iterator, Sequence
