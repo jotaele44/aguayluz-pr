@@ -1,0 +1,48 @@
+name: hydro-g002-facppac-20261102
+
+on:
+  push:
+    branches:
+      - ops/hydro-g002-facppac-20261102
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile
+        run: python -m py_compile scripts/ops_hydro_g002_facppac_20261102.py
+      - name: Acquire and scan FAC-PPAC
+        shell: bash
+        env:
+          G002_OUT: g002-facppac
+        run: |
+          set -euo pipefail
+          python scripts/ops_hydro_g002_facppac_20261102.py | tee g002-console.json
+          test -s g002-facppac/derived/g002_facppac_report.json
+          test -s g002-console.json
+      - name: Metadata
+        if: always()
+        run: |
+          mkdir -p g002-facppac
+          printf '%s\n' "${{ github.sha }}" > g002-facppac/workflow_commit_sha.txt
+          printf '%s\n' "${{ github.run_id }}" > g002-facppac/workflow_run_id.txt
+          printf '%s\n' "${{ github.run_attempt }}" > g002-facppac/workflow_run_attempt.txt
+      - name: Upload
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hydro-g002-facppac-20261102
+          path: |
+            g002-facppac/
+            g002-console.json
+          if-no-files-found: error
+          retention-days: 30
