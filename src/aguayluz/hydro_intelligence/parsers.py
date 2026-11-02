@@ -164,3 +164,62 @@ def inspect_luma_pdf(raw: bytes, *, cms_slug_date: str | None = None,
             "pdf_filename_date": pdf_filename_date,
             "internal_report_date": internal_report_date,
             "state": state, "unit_status": None, "available_mw": None}
+
+def parse_eia_860m_generator_rows(raw: bytes, *, sheet_name: str,
+                                  header_row: int) -> list[SourceRow]:
+    """Parse a reviewed generator sheet; caller supplies exact header row.
+
+    The source sheet/row and RAW values remain intact; no name-based crosswalk.
+    An unrecognized schema fails rather than inferring a column position.
+    """
+    if header_row < 1:
+        raise ValueError("header_row must be positive")
+    try:
+        import openpyxl
+    except ImportError as exc:
+        raise RuntimeError("XLSX parser dependency unavailable") from exc
+    workbook = openpyxl.load_workbook(io.BytesIO(raw), read_only=True, data_only=True)
+    try:
+        if sheet_name not in workbook.sheetnames:
+            raise ValueError("Named authoritative sheet absent")
+        sheet = workbook[sheet_name]
+        iterator = sheet.iter_rows(values_only=True)
+        header = None
+        for index, values in enumerate(iterator, 1):
+            if index == header_row:
+                header = [str(v).strip() if v is not None else "" for v in values]
+                break
+        if header is None:
+            raise ValueError("Header row outside sheet")
+        mapping = _header_index(header, {
+            "plant": ("plant code", "plant id", "plant code (eia)"),
+            "generator": ("generator id", "generator id (eia)", "generator code"),
+            "state": ("state",),
+        })
+        rows = []
+        for source_line, values in enumerate(iterator, header_row + 1):
+            if all(value is None or str(value).strip() == "" for value in values):
+                continue
+            if len(values) > len(header) and any(
+                value is not None and str(value).strip() for value in values[len(header):]
+            ):
+                raise ValueError("Extra populated columns beyond header")
+            cells = list(values[:len(header)])
+            cells.extend([None] * (len(header) - len(cells)))
+            state = str(cells[mapping["state"]] or "").strip().upper()
+            if state != "PR":
+                continue
+            plant = str(cells[mapping["plant"]] or "").strip()
+            generator = str(cells[mapping["generator"]] or "").strip()
+            if not plant or not generator:
+                raise ValueError(f"Missing source-native ID on row {source_line}")
+            raw_row = {h: "" if v is None else str(v) for h, v in zip(header, cells)}
+            rows.append(SourceRow(
+                source="EIA_860M", row_number=source_line,
+                raw=raw_row,
+                observation={"plant_code_raw": plant, "generator_id_raw": generator,
+                             "sheet_name": sheet_name},
+            ))
+        return rows
+    finally:
+        workbook.close()
