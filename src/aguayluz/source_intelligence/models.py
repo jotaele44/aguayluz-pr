@@ -135,4 +135,4 @@ class CoverageSummary(BaseModel):
     unknown_primary_source_families: int = Field(ge=0)
     domains_without_required_source: tuple[str, ...] = ()
     structural_readiness_score: float = Field(ge=0, le=100)
-    frontend_ready: bool
+    coverage_matrix_ready: bool
