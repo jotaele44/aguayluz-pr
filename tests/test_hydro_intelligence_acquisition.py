@@ -72,3 +72,48 @@ def test_no_clobber_when_concurrent_writer_wins(tmp_path, monkeypatch):
     monkeypatch.setattr(acquisition.os, "link", raced_link)
     with pytest.raises(ValueError, match="Concurrent artifact"):
         persist_bytes(tmp_path, "eia_923", "https://www.eia.gov/test.zip", b"valid")
+
+
+def test_nonpublic_dns_answers_rejected(monkeypatch):
+    from aguayluz.hydro_intelligence import acquisition
+
+    monkeypatch.setattr(
+        acquisition.socket, "getaddrinfo",
+        lambda *args, **kwargs: [(2, 1, 6, "", ("127.0.0.1", 443))],
+    )
+    with pytest.raises(ValueError, match="non-global"):
+        acquisition.reject_nonpublic_dns("www.eia.gov")
+
+
+def test_mixed_public_private_dns_fails_closed(monkeypatch):
+    from aguayluz.hydro_intelligence import acquisition
+
+    monkeypatch.setattr(
+        acquisition.socket, "getaddrinfo",
+        lambda *args, **kwargs: [
+            (2, 1, 6, "", ("8.8.8.8", 443)),
+            (2, 1, 6, "", ("10.0.0.1", 443)),
+        ],
+    )
+    with pytest.raises(ValueError, match="non-global"):
+        acquisition.reject_nonpublic_dns("www.eia.gov")
+
+
+def test_symlinked_raw_directory_rejected(tmp_path):
+    source = tmp_path / "outside"
+    source.mkdir()
+    root = tmp_path / "vault"
+    root.mkdir()
+    (root / "eia_923").symlink_to(source, target_is_directory=True)
+    with pytest.raises(ValueError, match="Symlinked"):
+        persist_bytes(root, "eia_923", "https://www.eia.gov/data.zip", b"bytes")
+
+
+def test_conflicting_existing_receipt_rejected(tmp_path):
+    receipt = persist_bytes(tmp_path, "eia_923", "https://www.eia.gov/data.zip", b"bytes")
+    record = tmp_path / "eia_923" / receipt.sha256[:2] / (receipt.sha256 + ".receipt.json")
+    payload = json.loads(record.read_text())
+    payload["byte_count"] = 999
+    record.write_text(json.dumps(payload))
+    with pytest.raises(ValueError, match="conflicts"):
+        persist_bytes(tmp_path, "eia_923", "https://www.eia.gov/data.zip", b"bytes")
