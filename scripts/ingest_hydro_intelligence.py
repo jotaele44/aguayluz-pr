@@ -13,14 +13,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
 
-from aguayluz.hydro_intelligence.acquisition import fetch_artifact
+REPO = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO / "src"))
+
+from aguayluz.hydro_intelligence.acquisition import fetch_artifact  # noqa: E402
 from aguayluz.hydro_intelligence.discovery import (
     acquire_with_retry,
+    classify_failure,
     discover_links,
     freeze_result_log,
-)
+)  # noqa: E402
 
-REPO = Path(__file__).resolve().parents[1]
 REGISTRY = REPO / "config" / "hydro_intelligence_sources.v1.json"
 SUFFIX = {"xlsx": (".xlsx",), "zip": (".zip",), "pdf": (".pdf",)}
 
@@ -53,22 +56,30 @@ def main(argv: list[str] | None = None) -> int:
         )
         output = [result]
     else:
-        raw, _media = fetch_artifact(source["index_url"], allowed_hosts=allowed_hosts)
+        try:
+            raw, _media = fetch_artifact(source["index_url"], allowed_hosts=allowed_hosts)
+        except Exception as error:
+            output = [{"state": "QUARANTINED_NOT_PROMOTED",
+                       "source_id": args.source_id,
+                       "failure_class": classify_failure(error),
+                       "exception_type": type(error).__name__}]
+            raw = None
         kind = source["artifact_type"]
         if kind not in SUFFIX:
             raise ValueError("Discovery-only adapter required for this source type")
-        candidates = discover_links(
-            args.source_id, source["index_url"], raw,
-            allowed_hosts, SUFFIX[kind],
-        )
-        output = [{
+        if raw is not None:
+            candidates = discover_links(
+                args.source_id, source["index_url"], raw,
+                allowed_hosts, SUFFIX[kind],
+            )
+            output = [{
             "state": "DISCOVERY_ONLY",
             "index_sha256": hashlib.sha256(raw).hexdigest(),
             "index_url": source["index_url"],
             "candidate_count": len(candidates),
             "candidates": [candidate.artifact_url for candidate in candidates],
             "completeness": "NOT_CLAIMED",
-        }]
+            }]
     receipt_path = args.data_root / "runs" / f"{args.source_id}-{stamp}.json"
     receipt_hash = freeze_result_log(receipt_path, output)
     print(json.dumps({"receipt_path": str(receipt_path), "sha256": receipt_hash,
