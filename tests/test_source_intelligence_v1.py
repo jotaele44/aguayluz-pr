@@ -11,6 +11,19 @@ from aguayluz.source_intelligence.adapters.base import RawArtifact
 from aguayluz.source_intelligence.adapters.eia860m import EIA860MAdapter, canonical_month_url
 from aguayluz.source_intelligence.health import evaluate_health
 from aguayluz.source_intelligence.models import HealthState
+from aguayluz.source_intelligence.noaa_digital_coast import (
+    NOAA_DIGITAL_COAST_PRODUCTS,
+    NOAA_DIGITAL_COAST_ROUTES,
+)
+from aguayluz.source_intelligence.routes import (
+    ArchiveMemberDigest,
+    FetchAction,
+    FetchPurpose,
+    PayloadIdentityClass,
+    classify_archive_identity,
+    fetch_decision,
+    resolve_route,
+)
 
 
 def _minimal_xlsx(*sheet_names: str) -> bytes:
@@ -97,3 +110,93 @@ def test_eia860m_capabilities_declare_xlsx_transport() -> None:
     assert capabilities.artifact_types == (
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
+
+
+def _member(path: str, size: int, digest: str) -> ArchiveMemberDigest:
+    return ArchiveMemberDigest(path=path, uncompressed_size=size, sha256=digest)
+
+
+def test_noaa_digital_coast_route_registry_is_single_path() -> None:
+    product = NOAA_DIGITAL_COAST_PRODUCTS[0]
+    payload_routes = [
+        route
+        for route in NOAA_DIGITAL_COAST_ROUTES
+        if route.product_id == product.product_id
+        and route.role.value == "CANONICAL_PAYLOAD"
+    ]
+    assert len(payload_routes) == 1
+    assert payload_routes[0].route_id == product.canonical_payload_route_id
+
+
+def test_full_payload_resolution_prefers_bulk_https() -> None:
+    route = resolve_route(
+        "NOAA_DC_LIDAR_8630",
+        FetchPurpose.FULL_PAYLOAD,
+        products=NOAA_DIGITAL_COAST_PRODUCTS,
+        routes=NOAA_DIGITAL_COAST_ROUTES,
+    )
+    assert route.route_id == "NOAA_DC_8630_BULK_HTTPS"
+    assert route.may_publish_canonical is True
+
+
+def test_dav_is_subset_not_competing_canonical_source() -> None:
+    route = resolve_route(
+        "NOAA_DC_LIDAR_8630",
+        FetchPurpose.SUBSET,
+        products=NOAA_DIGITAL_COAST_PRODUCTS,
+        routes=NOAA_DIGITAL_COAST_ROUTES,
+    )
+    assert route.route_id == "NOAA_DC_8630_DAV"
+    assert route.may_publish_canonical is False
+
+
+def test_existing_canonical_payload_prevents_redundant_fetch() -> None:
+    decision = fetch_decision(
+        "NOAA_DC_LIDAR_8630",
+        FetchPurpose.FULL_PAYLOAD,
+        products=NOAA_DIGITAL_COAST_PRODUCTS,
+        routes=NOAA_DIGITAL_COAST_ROUTES,
+        existing_representation_route_ids={"NOAA_DC_8630_BULK_HTTPS"},
+    )
+    assert decision.action == FetchAction.SKIP_USE_EXISTING
+
+
+def test_fallback_payload_is_used_only_when_canonical_is_unavailable() -> None:
+    with pytest.raises(ValueError):
+        resolve_route(
+            "NOAA_DC_LIDAR_8630",
+            FetchPurpose.FULL_PAYLOAD,
+            products=NOAA_DIGITAL_COAST_PRODUCTS,
+            routes=NOAA_DIGITAL_COAST_ROUTES,
+            unavailable_route_ids={"NOAA_DC_8630_BULK_HTTPS"},
+        )
+
+
+def test_archive_identity_pure_recompression() -> None:
+    members = (
+        _member("a.laz", 100, "a" * 64),
+        _member("b.laz", 200, "b" * 64),
+    )
+    assert classify_archive_identity(
+        "1" * 64,
+        members,
+        "2" * 64,
+        members,
+    ) == PayloadIdentityClass.PURE_RECOMPRESSION
+
+
+def test_archive_identity_same_payloads_different_paths() -> None:
+    left = (
+        _member("left/a.laz", 100, "a" * 64),
+        _member("left/b.laz", 200, "b" * 64),
+    )
+    right = (
+        _member("right/x.laz", 200, "b" * 64),
+        _member("right/y.laz", 100, "a" * 64),
+    )
+    assert classify_archive_identity(
+        "1" * 64,
+        left,
+        "2" * 64,
+        right,
+    ) == PayloadIdentityClass.SAME_PAYLOADS_DIFFERENT_PATHS
