@@ -92,7 +92,7 @@ class AcquisitionRouteDefinition(BaseModel):
     may_publish_canonical: bool = False
 
     @model_validator(mode="after")
-    def canonical_payload_constraints(self) -> "AcquisitionRouteDefinition":
+    def canonical_payload_constraints(self) -> AcquisitionRouteDefinition:
         if self.role == RouteRole.CANONICAL_PAYLOAD:
             if self.representation != RepresentationType.FULL_PAYLOAD:
                 raise ValueError("canonical payload route must be FULL_PAYLOAD")
