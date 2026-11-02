@@ -9,6 +9,7 @@ from aguayluz.hydro_intelligence.parsers import (
     inspect_eia_923_zip,
     inspect_luma_pdf,
     parse_eia_facility_fuel_csv,
+    parse_eia_860m_generator_rows,
 )
 
 
@@ -80,3 +81,33 @@ def test_luma_bad_pdf_and_date_rejected():
 def test_eia_workbook_requires_xlsx():
     with pytest.raises(ValueError):
         inspect_eia_860m_xlsx(b"bad")
+
+def test_eia_860m_generator_id_preserved_when_schema_explicit():
+    openpyxl = pytest.importorskip("openpyxl")
+    book = openpyxl.Workbook()
+    sheet = book.active
+    sheet.title = "Operating"
+    sheet.append(["Preamble", None, None, None])
+    sheet.append(["State", "Plant Code", "Generator ID", "Nameplate Capacity (MW)"])
+    sheet.append(["PR", 61225, "01", 9.0])
+    sheet.append(["NY", 101, "02", 4.0])
+    blob = io.BytesIO()
+    book.save(blob)
+    rows = parse_eia_860m_generator_rows(blob.getvalue(), sheet_name="Operating", header_row=2)
+    assert len(rows) == 1
+    assert rows[0].row_number == 3
+    assert rows[0].observation["plant_code_raw"] == "61225"
+    assert rows[0].observation["generator_id_raw"] == "01"
+    assert rows[0].state == "CANDIDATE_NOT_IDENTITY"
+
+
+def test_eia_860m_rejects_unreviewed_sheet_or_header():
+    openpyxl = pytest.importorskip("openpyxl")
+    book = openpyxl.Workbook()
+    book.active.append(["State", "Plant Code"])
+    blob = io.BytesIO()
+    book.save(blob)
+    with pytest.raises(ValueError):
+        parse_eia_860m_generator_rows(blob.getvalue(), sheet_name="Missing", header_row=1)
+    with pytest.raises(ValueError):
+        parse_eia_860m_generator_rows(blob.getvalue(), sheet_name="Sheet", header_row=1)
