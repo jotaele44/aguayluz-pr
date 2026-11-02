@@ -172,10 +172,16 @@ def _component(state: str, source_ids: Iterable[str], **fields: Any) -> dict[str
 
 def _carry(previous: dict[str, Any] | None, name: str, source_ids: list[str],
            fallback: str = "NOT_INGESTED") -> dict[str, Any]:
-    """The previous composition's component, marked carried forward, if it had data."""
+    """The previous composition's component, carried forward as STALE, if it had data.
+
+    The values are kept so a reader can still see the last known condition, but the state
+    becomes STALE: nothing re-checked them against this composition's clock, so a carried
+    component never counts as current data or as a summary driver.
+    """
     prior = ((previous or {}).get("components") or {}).get(name)
     if prior and prior.get("state") in DATA_STATES:
-        return {**prior, "carried_forward": True,
+        return {**prior, "state": "STALE", "carried_forward": True,
+                "carried_state": prior.get("carried_state") or prior.get("state"),
                 "carried_from": prior.get("carried_from") or (previous or {}).get("composed_at")}
     return _component(fallback, source_ids)
 

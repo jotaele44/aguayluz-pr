@@ -125,8 +125,24 @@ def test_absent_input_carries_the_previous_component_forward_marked():
     later = compose(make(receipts=receipts("nws_surf_zone"),
                          previous={r["geoid"]: r for r in previous}), NOW + timedelta(minutes=15))
     rip = by_name(later)["San Juan"]["components"]["rip_current"]
-    assert rip["state"] == "REPORTED" and rip["carried_forward"] is True
+    assert rip["state"] == "STALE" and rip["carried_forward"] is True
+    assert rip["carried_state"] == "REPORTED"
     assert rip["carried_from"] == "2026-10-18T16:00:00Z"
+    assert rip["today"]["rip_current_risk"]  # last known values are kept for the reader
+
+
+def test_carried_component_is_never_a_driver():
+    high = surf_zone(["San Juan"])
+    for period in high["periods"]:
+        period["rip_current_risk"] = "HIGH"
+    previous = compose(make(surf=[high], receipts=receipts("nws_surf_zone")), NOW)
+    assert any(d["component"] == "rip_current" for d in by_name(previous)["San Juan"]["summary"]["drivers"])
+    later = compose(make(receipts=receipts("nws_surf_zone"),
+                         previous={r["geoid"]: r for r in previous}), NOW + timedelta(days=1))
+    row = by_name(later)["San Juan"]
+    assert row["components"]["rip_current"]["state"] == "STALE"
+    assert not any(d["component"] == "rip_current" for d in row["summary"]["drivers"])
+    assert "rip_current" in row["summary"]["stale_components"]
     assert_valid(later)
 
 

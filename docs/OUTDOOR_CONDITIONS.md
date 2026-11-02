@@ -98,7 +98,9 @@ Each component has a `state`:
 
 When an input file is absent from a run (the DRNA and El Yunque inputs come from other
 jobs), the previous composition's component is carried forward, marked
-`carried_forward` with `carried_from`. A UV or heat request that fails for one municipio
+`carried_forward` with `carried_from`. A carried component keeps its last known values but
+its state becomes `STALE` (the original state is kept in `carried_state`), so it never
+counts as current data or as a summary driver. A UV or heat request that fails for one municipio
 likewise keeps its previous value, marked at the source.
 
 The row's `summary.level` is `ELEVATED`, `CAUTION`, `NO_DRIVER_REPORTED` or
