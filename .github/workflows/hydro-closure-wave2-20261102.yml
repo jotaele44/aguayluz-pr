@@ -1,0 +1,43 @@
+name: hydro-closure-wave2-20261102
+
+on:
+  push:
+    branches:
+      - ops/hydro-acquisition-20261102
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install PDF text dependency
+        run: python -m pip install --disable-pip-version-check pypdf
+      - name: Bounded primary-source closure search
+        env:
+          HYDRO_CLOSURE_OUT: hydro-closure-wave2
+        run: python scripts/ops_hydro_closure_wave2_20261102.py | tee hydro-closure-wave2-console.json
+      - name: Add workflow metadata
+        if: always()
+        run: |
+          mkdir -p hydro-closure-wave2
+          printf '%s\n' "${{ github.sha }}" > hydro-closure-wave2/workflow_commit_sha.txt
+          printf '%s\n' "${{ github.run_id }}" > hydro-closure-wave2/workflow_run_id.txt
+          printf '%s\n' "${{ github.run_attempt }}" > hydro-closure-wave2/workflow_run_attempt.txt
+      - name: Upload closure evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hydro-closure-wave2-20261102
+          path: |
+            hydro-closure-wave2/
+            hydro-closure-wave2-console.json
+          if-no-files-found: error
+          retention-days: 30
