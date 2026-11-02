@@ -67,6 +67,11 @@ class MonitoringMode(str, Enum):
     IMMUTABLE_ARCHIVE = "IMMUTABLE_ARCHIVE"
 
 
+class SourceAttemptState(str, Enum):
+    PASS = "PASS"
+    FAIL = "FAIL"
+
+
 class DomainDefinition(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -136,3 +141,19 @@ class CoverageSummary(BaseModel):
     domains_without_required_source: tuple[str, ...] = ()
     structural_readiness_score: float = Field(ge=0, le=100)
     coverage_matrix_ready: bool
+
+
+class SourceRuntimeReceipt(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    source_family_id: str = Field(pattern=r"^[A-Z0-9_]+$")
+    last_attempt: datetime
+    last_status: SourceAttemptState
+    last_error: str | None = None
+    last_success: datetime | None = None
+    current_manifestation_id: str | None = None
+    previous_manifestation_id: str | None = None
+    current_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    schema_fingerprint: str | None = None
+    record_count: int | None = Field(default=None, ge=0)
+    adapter_version: str | None = None
