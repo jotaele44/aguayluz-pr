@@ -298,3 +298,19 @@ def test_luma_outage_surfaces_are_distinct_products_not_fallback_aliases() -> No
     )
     assert towns.product_id != regions.product_id
     assert towns.route_id != regions.route_id
+
+
+def test_usgs_geospatial_routes_resolve_canonically() -> None:
+    expected = {
+        "USGS_3DEP_TNMACCESS_PRODUCTS": "USGS_3DEP_TNMACCESS_PRODUCTS_API",
+        "USGS_3DHP_FEATURE_SERVICE": "USGS_3DHP_FEATURESERVER",
+    }
+    for product_id, route_id in expected.items():
+        route = resolve_route(
+            product_id,
+            FetchPurpose.FULL_PAYLOAD,
+            products=SOURCE_PRODUCTS,
+            routes=ACQUISITION_ROUTES,
+        )
+        assert route.route_id == route_id
+        assert route.may_publish_canonical is True
