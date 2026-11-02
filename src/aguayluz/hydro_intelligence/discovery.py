@@ -6,14 +6,12 @@ from __future__ import annotations
 
 import hashlib
 import json
-import random
 import time
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
+from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
-from urllib.request import Request
-from html.parser import HTMLParser
 
 from .acquisition import fetch_artifact, persist_bytes, validate_url
 
