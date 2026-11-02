@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import re
 from collections import defaultdict
 from pathlib import Path
 
@@ -22,8 +23,11 @@ from aguayluz.source_intelligence.runtime import load_health_receipts
 
 router = APIRouter(prefix="/source-intelligence", tags=["source-intelligence"])
 
-API_CONTRACT_STATE = "FROZEN_V1"
 API_SCHEMA_VERSION = "aguayluz.source-intelligence/v1"
+API_CONTRACT_CANDIDATE_STATE = "FROZEN_V1_CANDIDATE"
+API_CONTRACT_CERTIFIED_STATE = "FROZEN_V1_CERTIFIED"
+AUTHORIZED_SHA_ENV = "AGUAYLUZ_SOURCE_INTELLIGENCE_V1_AUTHORIZED_SHA"
+BUILD_SHA_ENVS = ("AGUAYLUZ_BUILD_SHA", "VERCEL_GIT_COMMIT_SHA", "GITHUB_SHA")
 
 SCOPE_STATEMENT = (
     "Bounded V1 source-family denominator for AguaYLuz domains. "
@@ -34,6 +38,32 @@ REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 _workspace = os.getenv("AGUAYLUZ_DATA_HOME", "").strip()
 DATA_ROOT = Path(_workspace) / "data" if _workspace else REPO_ROOT / "data"
 RUNTIME_ROOT = DATA_ROOT / "source_intelligence"
+
+
+def _valid_commit_sha(value: str) -> bool:
+    return bool(re.fullmatch(r"[0-9a-fA-F]{40}", value))
+
+
+def _current_build_sha() -> str | None:
+    for env_name in BUILD_SHA_ENVS:
+        value = os.getenv(env_name, "").strip()
+        if value and _valid_commit_sha(value):
+            return value.lower()
+    return None
+
+
+def _contract_authorization() -> tuple[str, bool, str | None, str | None]:
+    build_sha = _current_build_sha()
+    authorized_sha = os.getenv(AUTHORIZED_SHA_ENV, "").strip().lower()
+    if not _valid_commit_sha(authorized_sha):
+        authorized_sha = None
+    certified = bool(build_sha and authorized_sha and build_sha == authorized_sha)
+    return (
+        API_CONTRACT_CERTIFIED_STATE if certified else API_CONTRACT_CANDIDATE_STATE,
+        certified,
+        authorized_sha,
+        build_sha,
+    )
 
 
 def _requirement_index() -> dict[str, list[dict[str, object]]]:
@@ -62,15 +92,18 @@ def _latest_health(source_family_id: str) -> dict[str, object] | None:
 def source_intelligence_summary() -> JSONResponse:
     coverage = coverage_report()
     route_governance = route_governance_summary()
+    contract_state, contract_certified, authorized_sha, build_sha = _contract_authorization()
     readiness = current_backend_readiness(
         coverage_matrix_ready=coverage.coverage_matrix_ready,
-        api_contract_frozen=API_CONTRACT_STATE == "FROZEN_V1",
+        api_contract_frozen=contract_certified,
     )
     domain_certification_complete = False
     return JSONResponse(
         {
             "schema_version": API_SCHEMA_VERSION,
-            "api_contract_state": API_CONTRACT_STATE,
+            "api_contract_state": contract_state,
+            "api_contract_authorized_sha": authorized_sha,
+            "build_sha": build_sha,
             "scope": SCOPE_STATEMENT,
             "coverage": coverage.model_dump(mode="json"),
             "coverage_matrix_ready": coverage.coverage_matrix_ready,
