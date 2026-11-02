@@ -14,6 +14,8 @@ from pydantic import BaseModel, Field
 from server.backend import main as legacy
 from server.backend.cave_karst_api import router as cave_karst_router
 from server.backend.environmental_exposure_api import router as environmental_exposure_router
+from server.backend.gis_wiring import core_router as gis_core_router
+from server.backend.gis_wiring import domain_router as gis_domain_router
 from server.backend.hydromet_api import router as hydromet_router
 from server.backend.monitoring_alert_operations import federation_alert_export, lifecycle_alerts
 from server.backend.monitoring_incident_ledger import (
@@ -60,6 +62,10 @@ app.include_router(cave_karst_router)
 app.include_router(regulatory_router)
 app.include_router(environmental_exposure_router)
 app.include_router(hydromet_router)
+# GIS viewer API: catalog/identify/search/query/export plus trace, scenario,
+# history, documents and per-layer GeoJSON (docs/GIS_VIEWER_API.md).
+app.include_router(gis_core_router)
+app.include_router(gis_domain_router)
 
 # Single source of truth: server.backend.main.READING_VECTOR_REGISTRY (see its definition
 # for the full reasoning). Referencing it here rather than keeping a second hand-maintained

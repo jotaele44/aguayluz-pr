@@ -1,0 +1,128 @@
+# GIS viewer layer catalog for aguayluz-pr (gis-layer-catalog/1.0).
+#
+# Built into GET /gis/catalog by src/aguayluz/gis_catalog.py and validated against
+# schemas/gis_layer_catalog_v1.schema.json (mirrored byte-for-byte from
+# spiderweb-pr, the spatial contract authority). Field names are the properties the
+# backing features actually carry; the loaders live in server/backend/gis_wiring.py,
+# which also serves every layer at GET /gis/layers/{layer_id}.geojson.
+#
+# Rules carried over from spiderweb-pr:
+# - min_zoom / max_zoom stay null until thresholds are measured against rendered output.
+# - exportable is true only for PUBLIC layers.
+# - classification is null with a stated reason when the data cannot support it.
+version: gis_layer_catalog_v0_1
+
+defaults:
+  query_modes: [point, radius, bbox, polygon]
+  access_default: PUBLIC
+  status: active
+
+layers:
+  - layer_id: power_assets
+    title: Power assets
+    category: Power
+    group: utility_assets
+    source: {kind: geojson, url: /gis/layers/power_assets.geojson}
+    geometry_types: [Point]
+    default_visible: true
+    identify_fields: [asset_name, asset_subtype, operator, status, municipality, confidence, evidence_tier, review_status, asset_id, source_ref]
+    search_fields: [asset_name, asset_id, municipality]
+    classification: {field: asset_subtype, method: categorical}
+    classification_blocked_reason: >-
+      Capacity / output symbology is not possible: data/utility_assets.jsonl carries no
+      capacity, rated-output or load fields. Classified by asset_subtype instead.
+    network_ref: asset_dependencies
+    documents_ref: source_ref
+  - layer_id: water_assets
+    title: Water assets
+    category: Water
+    group: utility_assets
+    source: {kind: geojson, url: /gis/layers/water_assets.geojson}
+    geometry_types: [Point]
+    default_visible: true
+    identify_fields: [asset_name, asset_subtype, operator, status, municipality, confidence, evidence_tier, review_status, soil_hydrologic_group, soil_drainage_class, asset_id, source_ref]
+    search_fields: [asset_name, asset_id, municipality]
+    classification: {field: asset_subtype, method: categorical}
+    network_ref: asset_dependencies
+    documents_ref: source_ref
+  - layer_id: wastewater_assets
+    title: Wastewater assets
+    category: Wastewater
+    group: utility_assets
+    source: {kind: geojson, url: /gis/layers/wastewater_assets.geojson}
+    geometry_types: [Point]
+    default_visible: true
+    identify_fields: [asset_name, asset_subtype, operator, status, municipality, confidence, evidence_tier, review_status, asset_id, source_ref]
+    search_fields: [asset_name, asset_id, municipality]
+    classification: {field: asset_subtype, method: categorical}
+    network_ref: asset_dependencies
+    documents_ref: source_ref
+  - layer_id: asset_dependencies
+    title: Asset dependencies
+    category: Network
+    group: dependencies
+    source: {kind: geojson, url: /gis/layers/asset_dependencies.geojson}
+    geometry_types: [LineString]
+    default_visible: false
+    identify_fields: [edge_id, dependency_type, confidence, evidence_required, from_name, to_name, notes]
+    search_fields: [edge_id]
+    classification: {field: dependency_type, method: categorical}
+    precision_field: evidence_required
+  - layer_id: alerts
+    title: Alerts
+    category: Alerts & outages
+    group: alerts
+    source: {kind: geojson, url: /alerts.geojson}
+    geometry_types: [Point]
+    default_visible: false
+    identify_fields: [alert_id, event_type, severity, status, is_critical, asset_name, municipalities, sectors_impacted, start_at, end_at, coord_confidence, source_title]
+    search_fields: [alert_id, asset_name, event_type]
+    temporal_field: start_at
+    classification: {field: severity, method: categorical}
+    precision_field: coord_confidence
+  - layer_id: river_gauges
+    title: River gauges (NWPS)
+    category: Hydromet
+    group: hydromet
+    source: {kind: geojson, url: /hydromet/gauges.geojson}
+    geometry_types: [Point]
+    default_visible: false
+    identify_fields: [name, lid, flood_category, flooding, stage, stage_unit, valid_time, observation_stale, municipio, asset_id]
+    search_fields: [name, lid, municipio]
+    temporal_field: valid_time
+    classification: {field: flood_category, method: categorical}
+  - layer_id: cave_karst
+    title: Cave & karst assets
+    category: Hazards
+    group: cave_karst
+    status: blocked
+    blocked_reason: >-
+      Coordinates are redacted unless location_disclosure is public_exact
+      (server/backend/cave_karst_api.py); every current record is public_generalized,
+      so no geometry is published to the map.
+    source: {kind: none, url: null}
+    geometry_types: []
+    default_visible: false
+    identify_fields: []
+    search_fields: []
+    query_modes: []
+    precision_field: location_disclosure
+  - layer_id: municipios
+    title: Municipios
+    category: Boundaries
+    group: boundaries
+    source: {kind: geojson, url: /municipios.geojson}
+    geometry_types: [Polygon, MultiPolygon]
+    default_visible: true
+    identify_fields: [name, geoid]
+    search_fields: [name, geoid]
+    documents_ref: jp_flood_documents
+  - layer_id: barrios
+    title: Barrios
+    category: Boundaries
+    group: boundaries
+    source: {kind: geojson, url: /barrios.geojson}
+    geometry_types: [Polygon, MultiPolygon]
+    default_visible: false
+    identify_fields: [name, municipio, geoid]
+    search_fields: [name, geoid]

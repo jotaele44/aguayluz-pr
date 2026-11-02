@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/spiderweb-pr/schemas/gis_layer_catalog_v1.schema.json",
+  "title": "PRII GIS layer catalog v1",
+  "description": "Producer-facing GIS layer manifest served at GET /gis/catalog. One entry per map layer, carrying what a viewer needs to toggle, identify, search, query and export it. Authored in spiderweb-pr (spatial contract authority) and mirrored byte-for-byte into the other PRII producers. In spiderweb this document is derived from configs/layer_catalog.yaml (folder tree), configs/spatial_layer_bindings.yaml (rendering binding) and configs/gis_layer_interaction.yaml (interaction metadata); it never replaces them.",
+  "type": "object",
+  "required": ["contract_version", "producer_repo", "generated_from", "layers"],
+  "additionalProperties": false,
+  "properties": {
+    "contract_version": {"const": "gis-layer-catalog/1.0"},
+    "producer_repo": {"$ref": "#/$defs/producer_repo"},
+    "generated_from": {
+      "description": "Repo-relative paths of the registries this catalog was derived from.",
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "layers": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/layer"}
+    }
+  },
+  "$defs": {
+    "producer_repo": {
+      "enum": ["spiderweb-pr", "moneysweep-pr", "aguayluz-pr", "skywatcher-pr", "ovnis-pr"]
+    },
+    "query_mode": {
+      "description": "Same geometry vocabulary as schemas/location_query.schema.json.",
+      "enum": ["point", "radius", "bbox", "polygon"]
+    },
+    "geometry_type": {
+      "enum": ["Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon", "Raster"]
+    },
+    "zoom": {"type": ["number", "null"], "minimum": 0, "maximum": 24},
+    "classification": {
+      "description": "Attribute-driven thematic classification (symbology input, not a style).",
+      "type": "object",
+      "required": ["field", "method"],
+      "additionalProperties": false,
+      "properties": {
+        "field": {"type": "string", "minLength": 1},
+        "method": {"enum": ["categorical", "quantile", "equal_interval"]},
+        "breaks": {"type": ["array", "null"], "items": {"type": "number"}},
+        "classes": {"type": ["array", "null"], "items": {"type": "string"}}
+      }
+    },
+    "layer": {
+      "type": "object",
+      "required": [
+        "layer_id",
+        "title",
+        "category",
+        "status",
+        "source",
+        "geometry_types",
+        "default_visible",
+        "identify_fields",
+        "search_fields",
+        "query_modes",
+        "exportable"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "layer_id": {"type": "string", "pattern": "^[a-z0-9_]+$"},
+        "title": {"type": "string", "minLength": 1},
+        "category": {"type": "string", "minLength": 1},
+        "group": {"type": ["string", "null"]},
+        "visibility_class": {"type": ["string", "null"]},
+        "access_default": {"enum": ["PUBLIC", "RESTRICTED", "OBSERVE_ONLY", null]},
+        "status": {
+          "description": "Registry status copied from the producer's own layer registry; not a runtime health signal.",
+          "enum": ["active", "deferred", "blocked"]
+        },
+        "blocked_reason": {"type": ["string", "null"]},
+        "source": {
+          "type": "object",
+          "required": ["kind", "url"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {"enum": ["geojson", "vector_tiles", "raster_dem", "none"]},
+            "url": {"type": ["string", "null"]},
+            "source_layer": {"type": ["string", "null"]}
+          }
+        },
+        "geometry_types": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/geometry_type"},
+          "uniqueItems": true
+        },
+        "min_zoom": {"$ref": "#/$defs/zoom"},
+        "max_zoom": {"$ref": "#/$defs/zoom"},
+        "default_visible": {"type": "boolean"},
+        "identify_fields": {"description": "Properties to show on identify, in order. Empty means show every property.", "type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "search_fields": {"description": "Properties matched by GET /gis/search. Empty means the layer is not searchable.", "type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "query_modes": {"type": "array", "items": {"$ref": "#/$defs/query_mode"}, "uniqueItems": true},
+        "temporal_field": {"type": ["string", "null"]},
+        "classification": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/classification"}]
+        },
+        "classification_blocked_reason": {"type": ["string", "null"]},
+        "precision_field": {
+          "description": "Property naming the coordinate method/confidence. Features below exact precision must not be drawn as precise points past precision_max_zoom.",
+          "type": ["string", "null"]
+        },
+        "precision_max_zoom": {"$ref": "#/$defs/zoom"},
+        "documents_ref": {"type": ["string", "null"]},
+        "network_ref": {"type": ["string", "null"]},
+        "exportable": {
+          "description": "True only for layers whose access_default is PUBLIC. RESTRICTED and OBSERVE_ONLY layers may be viewed, identified and queried, but GET /gis/export refuses them.",
+          "type": "boolean"
+        },
+        "federation_layer_id": {"type": ["string", "null"]},
+        "data_available": {
+          "description": "Request-time flag: whether the layer's backing artifact exists on this deployment.",
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}
