@@ -16,6 +16,7 @@ import tempfile
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.error import HTTPError
 from urllib.parse import urlparse
 from urllib.request import HTTPRedirectHandler
 
@@ -161,8 +162,10 @@ def fetch_artifact(url: str, *, allowed_hosts: set[str], timeout: float = 30,
                      "User-Agent": "AguaYLuz-HydroEvidence/1.0",
                      "Accept-Encoding": "identity"})
         response = conn.getresponse()
-        if response.status != 200:
+        if 300 <= response.status < 400:
             raise ValueError(f"Unexpected source HTTP status: {response.status}")
+        if response.status != 200:
+            raise HTTPError(url, response.status, "Source HTTP failure", None, None)
         content_length = response.getheader("Content-Length")
         if content_length is not None and int(content_length) > max_bytes:
             raise ValueError("Source payload exceeds size limit")
