@@ -8,8 +8,8 @@ from fastapi.responses import JSONResponse
 
 from aguayluz.source_intelligence import (
     DOMAIN_REGISTRY,
-    NOAA_DIGITAL_COAST_PRODUCTS,
-    NOAA_DIGITAL_COAST_ROUTES,
+    ACQUISITION_ROUTES,
+    SOURCE_PRODUCTS,
     SOURCE_FAMILIES,
     SOURCE_REQUIREMENTS,
     coverage_report,
@@ -127,8 +127,8 @@ def source_intelligence_products() -> JSONResponse:
     return JSONResponse(
         {
             "schema_version": "aguayluz.source-intelligence.products/v1",
-            "total": len(NOAA_DIGITAL_COAST_PRODUCTS),
-            "items": [row.model_dump(mode="json") for row in NOAA_DIGITAL_COAST_PRODUCTS],
+            "total": len(SOURCE_PRODUCTS),
+            "items": [row.model_dump(mode="json") for row in SOURCE_PRODUCTS],
         }
     )
 
@@ -138,8 +138,8 @@ def source_intelligence_routes() -> JSONResponse:
     return JSONResponse(
         {
             "schema_version": "aguayluz.source-intelligence.routes/v1",
-            "total": len(NOAA_DIGITAL_COAST_ROUTES),
-            "items": [row.model_dump(mode="json") for row in NOAA_DIGITAL_COAST_ROUTES],
+            "total": len(ACQUISITION_ROUTES),
+            "items": [row.model_dump(mode="json") for row in ACQUISITION_ROUTES],
         }
     )
 
