@@ -18,7 +18,11 @@ from aguayluz.source_intelligence.acquisition import (
     canonical_payload_already_frozen,
     persist_canonical_acquisition,
 )
-from aguayluz.source_intelligence.adapters.eia860m import EIA860MAdapter, canonical_month_url
+from aguayluz.source_intelligence.adapters.eia860m import (
+    EIA860MAdapter,
+    _find_sheet,
+    canonical_month_url,
+)
 from aguayluz.source_intelligence.health import evaluate_health
 from aguayluz.source_intelligence.models import HealthState
 from aguayluz.source_intelligence.noaa_digital_coast import (
@@ -366,3 +370,14 @@ def test_canonical_ingestion_rejects_noncanonical_route(tmp_path) -> None:
             product_id="NOAA_DC_LIDAR_8630",
             route_id="NOAA_DC_8630_DAV",
         )
+
+
+def test_eia860m_sheet_selector_binds_pr_specific_tabs() -> None:
+    sheets = {
+        "Operating": "xl/worksheets/sheet1.xml",
+        "Operating_PR": "xl/worksheets/sheet2.xml",
+        "Retired": "xl/worksheets/sheet3.xml",
+        "Retired_PR": "xl/worksheets/sheet4.xml",
+    }
+    assert _find_sheet(sheets, "operating", jurisdiction="pr")[0] == "Operating_PR"
+    assert _find_sheet(sheets, "retired", jurisdiction="pr")[0] == "Retired_PR"
