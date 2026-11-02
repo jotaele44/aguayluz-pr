@@ -28,11 +28,11 @@ _VERIFIED_ROUTE_FAMILIES = {
 
 
 def _product_id(source_family_id: str) -> str:
-    return f"{source_family_id}_PRIMARY_PRODUCT"
+    return f"{source_family_id}_RESIDUAL_PRODUCT"
 
 
 def _route_id(source_family_id: str) -> str:
-    return f"{source_family_id}_DISCOVERY"
+    return f"{source_family_id}_RESIDUAL_DISCOVERY"
 
 
 _UNRESOLVED_SOURCES = tuple(
