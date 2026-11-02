@@ -175,13 +175,16 @@ def test_reconcile_keeps_distinct_payloads_and_replaces_same_manifestation_key_b
         "period": "2026-01",
         "manifestation_key": "same",
         "retrieval_utc": "2026-01-01T00:00:00Z",
+        "indexed_href": "https://example.test/landing-a/",
         "pdf_url": "https://example.test/a.pdf",
         "sha256": "aaa",
+        "source_state": "PASS",
     }
     newer = {**base, "retrieval_utc": "2026-01-02T00:00:00Z", "notes": ["new"]}
     other = {
         **base,
         "manifestation_key": "other",
+        "indexed_href": "https://example.test/landing-b/",
         "pdf_url": "https://example.test/b.pdf",
         "sha256": "bbb",
     }
@@ -355,3 +358,28 @@ def test_negative_page_completeness_is_not_equivalent_to_certification():
     fields = adapter.ManifestRow.__dataclass_fields__
     assert "negative_page_complete_ready" in fields
     assert "negative_certification_eligible" in fields
+
+
+def test_current_manifest_drops_superseded_failure_after_success():
+    failed = {
+        "period": "2026-04",
+        "manifestation_key": "fail",
+        "retrieval_utc": "2026-07-01T00:00:00Z",
+        "indexed_href": "https://example.test/april/",
+        "synthesized_landing_url": "https://example.test/april/",
+        "source_state": "SOURCE_UNAVAILABLE",
+        "sha256": None,
+    }
+    passed = {
+        "period": "2026-04",
+        "manifestation_key": "pass",
+        "retrieval_utc": "2026-07-02T00:00:00Z",
+        "indexed_href": "https://example.test/april/",
+        "synthesized_landing_url": "https://example.test/april/",
+        "source_state": "PASS",
+        "pdf_url": "https://example.test/april.pdf",
+        "sha256": "a" * 64,
+    }
+    current = adapter.reconcile_manifest_rows([failed, passed])
+    assert current == [passed]
+    # The caller preserves both rows separately in attempts.jsonl.
