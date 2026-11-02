@@ -1771,6 +1771,67 @@
           "dashboard/tests/gui-parity.spec.mjs"
         ]
       }
+    },
+    {
+      "id": "source-intelligence-v1-control-plane",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Backend governance/control-plane primitives for the bounded Source Intelligence V1 denominator, source health semantics, and reference-adapter qualification. Frontend authorization is explicitly fail-closed until backend/reference-adapter gates pass, so creating a user-facing GUI in this PR would violate the staged implementation boundary. These candidates are internal platform machinery and are intentionally mapped here rather than added to the legacy baseline.",
+      "candidate_ids": [
+        "backend_endpoint:server/backend/source_intelligence_api.py:GET /coverage",
+        "backend_endpoint:server/backend/source_intelligence_api.py:GET /domains",
+        "backend_endpoint:server/backend/source_intelligence_api.py:GET /sources",
+        "backend_endpoint:server/backend/source_intelligence_api.py:GET /summary",
+        "python_module:server/backend/source_intelligence_api.py",
+        "python_module:src/aguayluz/source_intelligence/__init__.py",
+        "python_module:src/aguayluz/source_intelligence/adapters/__init__.py",
+        "python_module:src/aguayluz/source_intelligence/adapters/base.py",
+        "python_module:src/aguayluz/source_intelligence/adapters/eia860m.py",
+        "python_module:src/aguayluz/source_intelligence/catalog.py",
+        "python_module:src/aguayluz/source_intelligence/coverage.py",
+        "python_module:src/aguayluz/source_intelligence/health.py",
+        "python_module:src/aguayluz/source_intelligence/models.py",
+        "python_symbol:server/backend/source_intelligence_api.py:source_intelligence_coverage",
+        "python_symbol:server/backend/source_intelligence_api.py:source_intelligence_domains",
+        "python_symbol:server/backend/source_intelligence_api.py:source_intelligence_sources",
+        "python_symbol:server/backend/source_intelligence_api.py:source_intelligence_summary",
+        "python_symbol:src/aguayluz/source_intelligence/adapters/base.py:AdapterCapabilities",
+        "python_symbol:src/aguayluz/source_intelligence/adapters/base.py:RawArtifact",
+        "python_symbol:src/aguayluz/source_intelligence/adapters/base.py:SourceAdapter",
+        "python_symbol:src/aguayluz/source_intelligence/adapters/eia860m.py:EIA860MAdapter",
+        "python_symbol:src/aguayluz/source_intelligence/adapters/eia860m.py:canonical_month_url",
+        "python_symbol:src/aguayluz/source_intelligence/coverage.py:coverage_report",
+        "python_symbol:src/aguayluz/source_intelligence/health.py:evaluate_health",
+        "python_symbol:src/aguayluz/source_intelligence/models.py:CoverageRole",
+        "python_symbol:src/aguayluz/source_intelligence/models.py:CoverageState",
+        "python_symbol:src/aguayluz/source_intelligence/models.py:CoverageSummary",
+        "python_symbol:src/aguayluz/source_intelligence/models.py:DomainDefinition",
+        "python_symbol:src/aguayluz/source_intelligence/models.py:DomainSourceRequirement",
+        "python_symbol:src/aguayluz/source_intelligence/models.py:HealthState",
+        "python_symbol:src/aguayluz/source_intelligence/models.py:MonitoringMode",
+        "python_symbol:src/aguayluz/source_intelligence/models.py:SourceFamilyDefinition",
+        "python_symbol:src/aguayluz/source_intelligence/models.py:SourceHealth"
+      ],
+      "backend": {
+        "files": [
+          "server/backend/source_intelligence_api.py"
+        ],
+        "endpoints": [
+          "GET /summary",
+          "GET /domains",
+          "GET /sources",
+          "GET /coverage"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_source_intelligence_v1.py"
+        ],
+        "contract": [
+          "tests/test_gui_parity.py"
+        ]
+      }
     }
   ],
   "exceptions": []
