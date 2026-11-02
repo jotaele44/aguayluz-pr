@@ -1892,7 +1892,17 @@
         "python_symbol:src/aguayluz/source_intelligence/store.py:load_receipts",
         "python_symbol:src/aguayluz/source_intelligence/store.py:record_receipt",
         "python_symbol:src/aguayluz/source_intelligence/store.py:source_intelligence_paths"
-      ]
+      ],
+      "analysis": {
+        "files": [
+          "scripts/certify_eia860m_reference.py"
+        ],
+        "symbols": [
+          "scripts/certify_eia860m_reference.py:acquire_snapshot",
+          "scripts/certify_eia860m_reference.py:run",
+          "scripts/certify_eia860m_reference.py:main"
+        ]
+      }
     }
   ],
   "exceptions": []
