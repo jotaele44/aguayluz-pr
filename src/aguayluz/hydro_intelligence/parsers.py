@@ -237,3 +237,79 @@ def parse_eia_860m_generator_rows(raw: bytes, *, sheet_name: str,
         return rows
     finally:
         workbook.close()
+
+
+
+def parse_eia_923_generation_workbook(
+    raw: bytes, *, sheet_name: str, header_row: int,
+    columns: dict[str, str], source_member_sha256: str,
+) -> list[SourceRow]:
+    """Extract EIA-923 candidates only under an explicitly reviewed sheet schema.
+
+    The caller supplies literal source-native column headings for state, plant,
+    prime mover and the selected net-generation period. The original member hash,
+    sheet and physical row are retained; no canonical plant/MWh claims are made.
+    """
+    if header_row < 1 or set(columns) != {"state", "plant", "prime_mover", "net_generation"}:
+        raise ValueError("Incomplete explicit EIA-923 column contract")
+    if (len(source_member_sha256) != 64 or
+            any(c not in "0123456789abcdef" for c in source_member_sha256)):
+        raise ValueError("Invalid source member SHA256")
+    inspect_eia_923_zip(raw)
+    try:
+        import openpyxl
+    except ImportError as exc:
+        raise RuntimeError("XLSX parser dependency unavailable") from exc
+    book = openpyxl.load_workbook(io.BytesIO(raw), read_only=True, data_only=True)
+    try:
+        if sheet_name not in book.sheetnames:
+            raise ValueError("EIA-923 source sheet not present")
+        iterator = book[sheet_name].iter_rows(values_only=True)
+        header = None
+        for number, cells in enumerate(iterator, 1):
+            if number == header_row:
+                header = ["" if value is None else str(value) for value in cells]
+                break
+        if header is None:
+            raise ValueError("EIA-923 reviewed header row not present")
+        positions = _header_index(
+            header, {role: (heading.strip().casefold(),) for role, heading in columns.items()}
+        )
+        if len(set(positions.values())) != len(columns):
+            raise ValueError("Distinct EIA-923 roles cannot share a source column")
+        observations = []
+        for physical_row, values in enumerate(iterator, header_row + 1):
+            if all(value is None or str(value).strip() == "" for value in values):
+                continue
+            if len(values) > len(header) and any(
+                value is not None and str(value).strip() for value in values[len(header):]
+            ):
+                raise ValueError("Unmapped populated EIA-923 source column")
+            row = list(values[:len(header)])
+            row.extend([None] * (len(header) - len(row)))
+            if str(row[positions["state"]] or "").strip().upper() != "PR":
+                continue
+            plant_value = row[positions["plant"]]
+            mover_value = row[positions["prime_mover"]]
+            generation_value = row[positions["net_generation"]]
+            plant_id = "" if plant_value is None else str(plant_value).strip()
+            mover = "" if mover_value is None else str(mover_value).strip()
+            if not re.fullmatch(r"\d+", plant_id) or not mover:
+                raise ValueError(f"Invalid EIA-923 native ID at row {physical_row}")
+            raw_row = {name: "" if value is None else str(value)
+                       for name, value in zip(header, row)}
+            generation = None if generation_value is None else str(generation_value)
+            observations.append(SourceRow(
+                source="EIA_923_WORKBOOK", row_number=physical_row, raw=raw_row,
+                observation={"plant_id_raw": plant_id,
+                             "prime_mover_raw": mover,
+                             "net_generation_raw": generation,
+                             "member_sha256": source_member_sha256,
+                             "sheet_name": sheet_name,
+                             "generation_header_raw": columns["net_generation"]},
+                state=("UNRESOLVED_MISSING_SOURCE_VALUE" if generation is None
+                       or not generation.strip() else "CANDIDATE_NOT_IDENTITY"),
+            ))
+        return observations
+    finally:
+        book.close()
