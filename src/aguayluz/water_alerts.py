@@ -5,8 +5,11 @@ active, but ``data/alert_events.jsonl`` historically held only hand-authored see
 placeholders. This module closes that gap by projecting the producer's *real* water
 signals into the alert layer:
 
-* **CONTAMINATION** — EPA SDWIS boil-water advisories and health-based
-  water-quality violations (``data/service_events.jsonl``, evidence tier T1).
+* **CONTAMINATION** — health-based EPA SDWIS water-quality violations and
+  explicitly sourced boil-water advisories (``data/service_events.jsonl``,
+  evidence tier T1). A SDWIS Tier-1 microbial violation is graded as acute, but it
+  is not reported as a boil-water advisory: the Tier-1 public-notice requirement
+  does not by itself establish that one was issued.
 * **HYDRO_OPS** — USGS daily reservoir readings (``data/reservoir_levels.jsonl``,
   T1) flagged low by a transparent *per-site statistical proxy*.
 
@@ -20,7 +23,7 @@ Provenance honesty:
   relative to that site's *own* recorded history — it never invents an absolute
   operating threshold.
 * Non-health monitoring/reporting violations are **not** promoted to alerts; they
-  remain in the service-event stream. Only acute (boil-water) and health-based
+  remain in the service-event stream. Only boil-water advisories and health-based
   quality events become CONTAMINATION alerts.
 
 The functions here are pure (no I/O, no wall-clock); ``scripts/build_water_alerts.py``
@@ -40,12 +43,20 @@ from .impact import MODULE_RADIUS_KM, AssetIndex, link_impact, merge_asset_ids
 
 # Contamination severities on the workbook's 0-5 operational floor. The
 # CONTAMINATION module's default floor is 3 (see config/alert_modules.yaml); an
-# acute microbial boil-water notice with a tier-1 public-notification requirement
-# is the most urgent, a non-acute health-based quality violation the least.
+# acute boil-water advisory and a health-based Tier-1 microbial violation are the
+# most urgent, a non-acute health-based quality violation the least.
 _SEV_BOIL_WATER_ACUTE = 4
 _SEV_BOIL_WATER = 3
+_SEV_MICROBIAL_VIOLATION_ACUTE = 4
 _SEV_HEALTH_VIOLATION_ACUTE = 3
 _SEV_HEALTH_VIOLATION = 2
+
+#: SDWIS RULE_GROUP_CODE values in EPA's Microbials family: 100 (family), 110 Total
+#: Coliform Rule, 111 Revised TCR, 120 Surface Water Treatment Rules, 130 Filter
+#: Backwash Rule, 140 Ground Water Rule. Both the family code and its subcodes are
+#: kept, so a row matches whichever one it carries. 200 and up (disinfectants and
+#: byproducts, chemicals, public notice, not regulated) are not microbial.
+MICROBIAL_RULE_GROUPS = frozenset({"100", "110", "111", "120", "130", "140"})
 
 #: Only these service-event types are promoted to CONTAMINATION alerts.
 _CONTAMINATION_EVENT_TYPES = frozenset({"boil_water", "water_quality_violation"})
@@ -140,8 +151,12 @@ def contamination_alert(
     else:  # water_quality_violation
         if not health_based:
             return None  # monitoring/reporting violation — not alert-worthy
-        severity = _SEV_HEALTH_VIOLATION_ACUTE if acute else _SEV_HEALTH_VIOLATION
-        title = "Health-based water-quality violation"
+        if acute and toks.get("rule_group") in MICROBIAL_RULE_GROUPS:
+            severity = _SEV_MICROBIAL_VIOLATION_ACUTE
+            title = "Tier-1 acute microbial violation (public notice required)"
+        else:
+            severity = _SEV_HEALTH_VIOLATION_ACUTE if acute else _SEV_HEALTH_VIOLATION
+            title = "Health-based water-quality violation"
 
     munis = _municipalities(event)
     lat, lon = _centroid(munis[0], geo) if munis and munis[0] != "(unscoped)" else (None, None)
