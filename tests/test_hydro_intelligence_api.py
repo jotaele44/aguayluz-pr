@@ -33,3 +33,19 @@ def test_readiness_consumes_only_valid_frozen_receipts(tmp_path):
     broken = source_artifact_state(tmp_path, "eia_923")
     assert broken["acquisition_state"] == "HASH_MISMATCH_OR_INVALID_RECEIPT"
     assert broken["byte_sha256"] is None
+
+
+def test_orphan_raw_bytes_never_misreported_as_not_acquired(tmp_path):
+    source_dir = tmp_path / "eia_923" / "aa"
+    source_dir.mkdir(parents=True)
+    (source_dir / "unreceipted-source-bytes").write_bytes(b"orphan")
+    state = source_artifact_state(tmp_path, "eia_923")
+    assert state["acquisition_state"] == "UNRESOLVED_ORPHANED_EVIDENCE"
+    assert state["byte_sha256"] is None
+
+
+def test_empty_source_directory_is_not_acquired(tmp_path):
+    (tmp_path / "eia_923").mkdir()
+    state = source_artifact_state(tmp_path, "eia_923")
+    assert state["acquisition_state"] == "NOT_ACQUIRED"
+    assert state["byte_sha256"] is None
