@@ -45,7 +45,12 @@ def source_intelligence_summary() -> JSONResponse:
             "schema_version": "aguayluz.source-intelligence/v1",
             "scope": SCOPE_STATEMENT,
             "coverage": report.model_dump(mode="json"),
-            "frontend_authorized": report.frontend_ready,
+            "coverage_matrix_ready": report.coverage_matrix_ready,
+            "backend_readiness_state": "OPEN",
+            "backend_readiness_reason": (
+                "REFERENCE_ADAPTER_ROW_PARSER_AND_UNIFIED_RUNTIME_RECEIPTS_NOT_YET_PASS"
+            ),
+            "frontend_authorized": False,
             "source_universe_certified": False,
             "domain_certification_complete": False,
         }
