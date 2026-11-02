@@ -1781,7 +1781,8 @@
       "analysis": {
         "files": [
           "src/aguayluz/hydro_intelligence/acquisition.py",
-          "src/aguayluz/hydro_intelligence/discovery.py"
+          "src/aguayluz/hydro_intelligence/discovery.py",
+          "src/aguayluz/hydro_intelligence/parsers.py"
         ],
         "symbols": [
           "src/aguayluz/hydro_intelligence/acquisition.py:ArtifactReceipt",
@@ -1794,13 +1795,66 @@
           "src/aguayluz/hydro_intelligence/discovery.py:acquire_with_retry",
           "src/aguayluz/hydro_intelligence/discovery.py:classify_failure",
           "src/aguayluz/hydro_intelligence/discovery.py:discover_links",
-          "src/aguayluz/hydro_intelligence/discovery.py:freeze_result_log"
+          "src/aguayluz/hydro_intelligence/discovery.py:freeze_result_log",
+          "src/aguayluz/hydro_intelligence/parsers.py:SourceRow",
+          "src/aguayluz/hydro_intelligence/parsers.py:inspect_eia_860m_xlsx",
+          "src/aguayluz/hydro_intelligence/parsers.py:inspect_eia_923_zip",
+          "src/aguayluz/hydro_intelligence/parsers.py:inspect_luma_pdf",
+          "src/aguayluz/hydro_intelligence/parsers.py:parse_eia_facility_fuel_csv"
         ]
       },
       "tests": {
         "contract": [
           "tests/test_hydro_intelligence_acquisition.py",
-          "tests/test_hydro_intelligence_discovery.py"
+          "tests/test_hydro_intelligence_discovery.py",
+          "tests/test_hydro_intelligence_parsers.py"
+        ]
+      }
+    },
+    {
+      "id": "hydro-intelligence-readiness-v1",
+      "classification": "analysis",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Read-only inventory of registered hydro sources; zero source artifacts or operational values are asserted before actual ingestion. No write or refresh controls until qualified producer exists.",
+      "backend": {
+        "files": [
+          "server/backend/hydro_intelligence_api.py",
+          "server/backend/main.py"
+        ],
+        "endpoints": [
+          "GET /hydro-intelligence/sources"
+        ],
+        "symbols": [
+          "server/backend/hydro_intelligence_api.py:hydro_sources",
+          "server/backend/hydro_intelligence_api.py:source_readiness"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/hydro-intelligence"
+        ],
+        "e2e_routes": [
+          "/hydro-intelligence"
+        ],
+        "components": [
+          "dashboard/src/pages/HydroIntelligencePage.jsx",
+          "dashboard/src/lib/hydro-intelligence-api.js",
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_hydro_intelligence_api.py"
+        ],
+        "contract": [
+          "tests/test_hydro_intelligence_parsers.py"
+        ],
+        "e2e": [
+          "dashboard/tests/hydro-intelligence.spec.mjs"
         ]
       }
     }
