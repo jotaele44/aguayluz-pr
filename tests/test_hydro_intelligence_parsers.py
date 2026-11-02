@@ -160,3 +160,15 @@ def test_eia923_rejects_unreviewed_schema():
                      "net_generation": "Invented monthly column"},
             source_member_sha256=hashlib.sha256(raw).hexdigest(),
         )
+
+
+def test_eia923_rejects_member_hash_mismatch():
+    raw = _eia_923_fake_workbook()
+    with pytest.raises(ValueError, match="member SHA256"):
+        parse_eia_923_generation_workbook(
+            raw, sheet_name="Reviewed source sheet", header_row=2,
+            columns={"state": "State", "plant": "Plant Id",
+                     "prime_mover": "Reported Prime Mover",
+                     "net_generation": "Netgen January"},
+            source_member_sha256="0" * 64,
+        )
