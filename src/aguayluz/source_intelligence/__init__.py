@@ -7,6 +7,7 @@ no network retrieval or entity promotion.
 
 from .catalog import DOMAIN_REGISTRY, SOURCE_FAMILIES, SOURCE_REQUIREMENTS
 from .coverage import coverage_report
+from .noaa_digital_coast import NOAA_DIGITAL_COAST_PRODUCTS, NOAA_DIGITAL_COAST_ROUTES
 from .models import (
     CoverageRole,
     CoverageState,
@@ -35,6 +36,8 @@ __all__ = [
     "DomainSourceRequirement",
     "HealthState",
     "MonitoringMode",
+    "NOAA_DIGITAL_COAST_PRODUCTS",
+    "NOAA_DIGITAL_COAST_ROUTES",
     "SOURCE_FAMILIES",
     "SOURCE_REQUIREMENTS",
     "SourceFamilyDefinition",
