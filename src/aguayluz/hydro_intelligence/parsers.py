@@ -128,6 +128,7 @@ def inspect_eia_860m_xlsx(raw: bytes) -> dict[str, Any]:
     """Require a valid OOXML workbook; record sheet names without fabricating rows."""
     if not raw.startswith(b"PK"):
         raise ValueError("Not an XLSX container")
+    inspect_eia_923_zip(raw)  # structural ZIP limits before decompression
     try:
         import openpyxl
     except ImportError as exc:
