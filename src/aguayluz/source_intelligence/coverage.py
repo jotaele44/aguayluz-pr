@@ -65,7 +65,7 @@ def coverage_report() -> CoverageSummary:
     unknown_score = 15.0 if unknown_primary == 0 else 0.0
     score = round(domain_score + source_score + cell_score + semantics_score + unknown_score, 2)
 
-    frontend_ready = (
+    coverage_matrix_ready = (
         score >= 95
         and not domains_without_required
         and unclassified == 0
@@ -81,5 +81,5 @@ def coverage_report() -> CoverageSummary:
         unknown_primary_source_families=unknown_primary,
         domains_without_required_source=domains_without_required,
         structural_readiness_score=score,
-        frontend_ready=frontend_ready,
+        coverage_matrix_ready=coverage_matrix_ready,
     )
