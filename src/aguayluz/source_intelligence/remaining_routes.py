@@ -18,9 +18,12 @@ from .routes import (
 )
 
 _VERIFIED_ROUTE_FAMILIES = {
+    # These source-family denominators are bounded by definition or by explicit
+    # repository evidence. Other families retain a provisional residual product
+    # even when some verified products/routes are registered elsewhere.
     "EIA_860M",
     "EIA_923",
-    "NOAA_DIGITAL_COAST_ELEVATION",
+    "LUMA_OUTAGES",
 }
 
 
