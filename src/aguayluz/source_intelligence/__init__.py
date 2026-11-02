@@ -19,6 +19,7 @@ from .models import (
     SourceHealth,
 )
 from .readiness import BackendReadiness, current_backend_readiness, score_backend_readiness
+from .route_registry import ACQUISITION_ROUTES, SOURCE_PRODUCTS
 from .runtime import (
     SourceManifestation,
     freeze_health_receipt,
@@ -28,6 +29,7 @@ from .runtime import (
 )
 
 __all__ = [
+    "ACQUISITION_ROUTES",
     "BackendReadiness",
     "CoverageRole",
     "CoverageState",
@@ -39,6 +41,7 @@ __all__ = [
     "NOAA_DIGITAL_COAST_PRODUCTS",
     "NOAA_DIGITAL_COAST_ROUTES",
     "SOURCE_FAMILIES",
+    "SOURCE_PRODUCTS",
     "SOURCE_REQUIREMENTS",
     "SourceFamilyDefinition",
     "SourceHealth",
