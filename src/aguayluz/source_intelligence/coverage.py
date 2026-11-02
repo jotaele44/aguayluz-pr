@@ -4,7 +4,6 @@ from __future__ import annotations
 from .catalog import DOMAIN_REGISTRY, SOURCE_FAMILIES, SOURCE_REQUIREMENTS
 from .models import CoverageState, CoverageSummary
 
-
 CLASSIFIED_STATES = {
     CoverageState.CLASSIFIED,
     CoverageState.REGISTERED,
