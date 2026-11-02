@@ -6,6 +6,7 @@ column. Neither LUMA PDF text nor an EIA aggregate proves unit-level facts.
 from __future__ import annotations
 
 import csv
+import hashlib
 import io
 import re
 import zipfile
@@ -118,8 +119,19 @@ def inspect_eia_923_zip(raw: bytes) -> list[dict[str, Any]]:
             total += info.file_size
             if total > MAX_EXPANDED_BYTES:
                 raise ValueError("Excessive archive payload")
+            member_hash = hashlib.sha256()
+            extracted_bytes = 0
+            with archive.open(info) as stream:
+                for block in iter(lambda: stream.read(1024 * 1024), b""):
+                    extracted_bytes += len(block)
+                    if extracted_bytes > MAX_MEMBER_BYTES or extracted_bytes > info.file_size:
+                        raise ValueError("Archive member exceeded declared size")
+                    member_hash.update(block)
+            if extracted_bytes != info.file_size:
+                raise ValueError("Archive member size mismatch")
             result.append({"path_raw": info.filename, "uncompressed_bytes": info.file_size,
                            "compressed_bytes": info.compress_size,
+                           "member_sha256": member_hash.hexdigest(),
                            "state": "STRUCTURAL_ONLY_NOT_PARSED"})
         return result
 
@@ -179,6 +191,7 @@ def parse_eia_860m_generator_rows(raw: bytes, *, sheet_name: str,
         import openpyxl
     except ImportError as exc:
         raise RuntimeError("XLSX parser dependency unavailable") from exc
+    inspect_eia_923_zip(raw)  # enforce ZIP/member limits before opening workbook
     workbook = openpyxl.load_workbook(io.BytesIO(raw), read_only=True, data_only=True)
     try:
         if sheet_name not in workbook.sheetnames:
