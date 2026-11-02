@@ -218,7 +218,7 @@ def test_archive_identity_same_payloads_different_paths() -> None:
     ) == PayloadIdentityClass.SAME_PAYLOADS_DIFFERENT_PATHS
 
 
-def test_route_governance_covers_every_family_and_has_no_unresolved_product_residue() -> None:
+def test_route_governance_is_complete_but_product_denominator_stays_fail_closed() -> None:
     summary = route_governance_summary()
     assert summary.governed_source_families == summary.total_source_families
     assert summary.ungoverned_source_family_ids == ()
@@ -227,7 +227,14 @@ def test_route_governance_covers_every_family_and_has_no_unresolved_product_resi
     assert summary.provisional_or_unresolved_product_ids == ()
     assert summary.products_without_resolved_payload_ids == ()
     assert summary.products_with_invalid_canonical_payload_count == 0
-    assert summary.zero_redundant_fetches_certifiable is True
+    assert summary.zero_redundant_fetches_within_registered_products is True
+    assert summary.payload_product_denominator_exhausted_family_ids == (
+        "EIA_860M",
+        "EIA_923",
+    )
+    assert summary.open_payload_product_denominator_family_ids
+    assert summary.payload_product_denominator_complete is False
+    assert summary.zero_redundant_fetches_certifiable is False
 
 
 def test_aggregate_registry_includes_eia_and_noaa_products() -> None:
