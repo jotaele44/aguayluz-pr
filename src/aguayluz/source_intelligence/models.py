@@ -103,7 +103,7 @@ class DomainSourceRequirement(BaseModel):
     spatial_scope: str = "PUERTO_RICO"
 
     @model_validator(mode="after")
-    def required_sources_cannot_be_out_of_scope(self) -> "DomainSourceRequirement":
+    def required_sources_cannot_be_out_of_scope(self) -> DomainSourceRequirement:
         if self.required and self.role == CoverageRole.OUT_OF_SCOPE:
             raise ValueError("required source family cannot be OUT_OF_SCOPE")
         return self
