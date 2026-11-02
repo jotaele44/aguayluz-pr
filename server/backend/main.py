@@ -31,6 +31,8 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 
+from server.backend.hydro_intelligence_api import router as hydro_intelligence_router
+
 logger = logging.getLogger(__name__)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -140,8 +142,6 @@ SECTOR_TYPE_MAP: dict[str, set[str]] = {
     "wastewater": {"wastewater", "wastewater_treatment", "sewage"},
     "telecom": {"telecom", "cell_tower", "fiber", "communications"},
 }
-
-from server.backend.hydro_intelligence_api import router as hydro_intelligence_router
 
 app = FastAPI(title="AguaYLuz-PR")
 app.include_router(hydro_intelligence_router)
