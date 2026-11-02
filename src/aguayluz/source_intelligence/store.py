@@ -14,7 +14,9 @@ from typing import Any
 from aguayluz import DATA_DIR
 from aguayluz.hazard_plane import Manifestation
 
+from .adapters.base import RawArtifact
 from .models import SourceAttemptState, SourceRuntimeReceipt
+from .runtime import persist_source_manifestation
 
 RECEIPTS_SCHEMA = "aguayluz.source-intelligence-receipts/v1"
 
@@ -31,7 +33,12 @@ class SourceIntelligencePaths:
     def receipts(self) -> Path:
         return self.data_dir / "source_intelligence_receipts.json"
 
+    @property
+    def runtime_root(self) -> Path:
+        return self.data_dir / "source_intelligence"
+
     def snapshot_dir(self, source_family_id: str) -> Path:
+        """Legacy compatibility path; canonical raw bytes live under runtime_root."""
         return self.data_dir / "source_intelligence_snapshots" / source_family_id
 
 
@@ -53,70 +60,7 @@ def _atomic_write(path: Path, text: str) -> None:
         raise
 
 
-def _manifestation_id(source_family_id: str, digest: str) -> str:
-    return f"SOURCEINTEL:{source_family_id}:{digest[:32]}"
-
-
-def _extension_from_media_type(media_type: str) -> str:
-    lowered = media_type.lower()
-    if "spreadsheetml.sheet" in lowered:
-        return "xlsx"
-    if "pdf" in lowered:
-        return "pdf"
-    if "json" in lowered:
-        return "json"
-    if "zip" in lowered:
-        return "zip"
-    if "csv" in lowered:
-        return "csv"
-    return "bin"
-
-
-def freeze_artifact(
-    source_family_id: str,
-    payload: bytes,
-    *,
-    authority: str,
-    source_record_id: str,
-    source_url: str,
-    retrieved_at: datetime,
-    media_type: str,
-    schema_signature: str | None = None,
-    record_count: int | None = None,
-    headers: dict[str, str] | None = None,
-    data_dir: Path | str | None = None,
-) -> tuple[Manifestation, Path]:
-    """Freeze exact bytes before parsing and return the immutable manifestation."""
-    digest = sha256(payload).hexdigest()
-    paths = source_intelligence_paths(data_dir)
-    target_dir = paths.snapshot_dir(source_family_id)
-    target_dir.mkdir(parents=True, exist_ok=True)
-    target = target_dir / f"{digest}.{_extension_from_media_type(media_type)}"
-    if target.exists():
-        existing = target.read_bytes()
-        if sha256(existing).hexdigest() != digest:
-            raise ValueError("content-addressed snapshot hash mismatch")
-    else:
-        target.write_bytes(payload)
-
-    lowered = {str(k).lower(): str(v) for k, v in (headers or {}).items()}
-    manifestation = Manifestation(
-        manifestation_id=_manifestation_id(source_family_id, digest),
-        source_authority=authority,
-        source_system=source_family_id,
-        source_record_id=source_record_id,
-        source_url=source_url,
-        retrieved_at_utc=retrieved_at.astimezone(timezone.utc),
-        byte_sha256=digest,
-        schema_signature=schema_signature,
-        record_count=record_count,
-        http_etag=lowered.get("etag"),
-        http_last_modified=lowered.get("last-modified"),
-    )
-    return manifestation, target
-
-
-def load_manifestations(data_dir: Path | str | None = None) -> list[Manifestation]:
+def freeze_artifact(\n    source_family_id: str,\n    payload: bytes,\n    *,\n    authority: str,\n    source_record_id: str,\n    source_url: str,\n    retrieved_at: datetime,\n    media_type: str,\n    schema_signature: str | None = None,\n    record_count: int | None = None,\n    headers: dict[str, str] | None = None,\n    data_dir: Path | str | None = None,\n) -> tuple[Manifestation, Path]:\n    """Freeze through the canonical SourceManifestation runtime.\n\n    store.py owns operational indexes/projections only. Exact source bytes and\n    immutable manifestation receipts are owned by runtime.py.\n    """\n    paths = source_intelligence_paths(data_dir)\n    artifact = RawArtifact(\n        source_family_id=source_family_id,\n        locator=source_url,\n        content=payload,\n        media_type=media_type,\n        retrieved_at_iso=retrieved_at.astimezone(timezone.utc).isoformat(),\n    )\n    frozen = persist_source_manifestation(\n        paths.runtime_root,\n        artifact,\n        schema_fingerprint=schema_signature,\n        record_count=record_count,\n        state="RAW_FROZEN_NOT_PARSED",\n    )\n    lowered = {str(k).lower(): str(v) for k, v in (headers or {}).items()}\n    manifestation = Manifestation(\n        manifestation_id=frozen.manifestation_id,\n        source_authority=authority,\n        source_system=source_family_id,\n        source_record_id=source_record_id,\n        source_url=source_url,\n        retrieved_at_utc=retrieved_at.astimezone(timezone.utc),\n        byte_sha256=frozen.byte_sha256,\n        schema_signature=schema_signature,\n        record_count=record_count,\n        http_etag=lowered.get("etag"),\n        http_last_modified=lowered.get("last-modified"),\n    )\n    target = (\n        paths.runtime_root\n        / "objects"\n        / "sha256"\n        / frozen.byte_sha256[:2]\n        / frozen.byte_sha256\n    )\n    return manifestation, target\n\n\ndef load_manifestations(data_dir: Path | str | None = None) -> list[Manifestation]:
     path = source_intelligence_paths(data_dir).manifestations
     if not path.is_file():
         return []
