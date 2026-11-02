@@ -60,7 +60,65 @@ def _atomic_write(path: Path, text: str) -> None:
         raise
 
 
-def freeze_artifact(\n    source_family_id: str,\n    payload: bytes,\n    *,\n    authority: str,\n    source_record_id: str,\n    source_url: str,\n    retrieved_at: datetime,\n    media_type: str,\n    schema_signature: str | None = None,\n    record_count: int | None = None,\n    headers: dict[str, str] | None = None,\n    data_dir: Path | str | None = None,\n) -> tuple[Manifestation, Path]:\n    """Freeze through the canonical SourceManifestation runtime.\n\n    store.py owns operational indexes/projections only. Exact source bytes and\n    immutable manifestation receipts are owned by runtime.py.\n    """\n    paths = source_intelligence_paths(data_dir)\n    artifact = RawArtifact(\n        source_family_id=source_family_id,\n        locator=source_url,\n        content=payload,\n        media_type=media_type,\n        retrieved_at_iso=retrieved_at.astimezone(timezone.utc).isoformat(),\n    )\n    frozen = persist_source_manifestation(\n        paths.runtime_root,\n        artifact,\n        schema_fingerprint=schema_signature,\n        record_count=record_count,\n        state="RAW_FROZEN_NOT_PARSED",\n    )\n    lowered = {str(k).lower(): str(v) for k, v in (headers or {}).items()}\n    manifestation = Manifestation(\n        manifestation_id=frozen.manifestation_id,\n        source_authority=authority,\n        source_system=source_family_id,\n        source_record_id=source_record_id,\n        source_url=source_url,\n        retrieved_at_utc=retrieved_at.astimezone(timezone.utc),\n        byte_sha256=frozen.byte_sha256,\n        schema_signature=schema_signature,\n        record_count=record_count,\n        http_etag=lowered.get("etag"),\n        http_last_modified=lowered.get("last-modified"),\n    )\n    target = (\n        paths.runtime_root\n        / "objects"\n        / "sha256"\n        / frozen.byte_sha256[:2]\n        / frozen.byte_sha256\n    )\n    return manifestation, target\n\n\ndef load_manifestations(data_dir: Path | str | None = None) -> list[Manifestation]:
+def freeze_artifact(
+    source_family_id: str,
+    payload: bytes,
+    *,
+    authority: str,
+    source_record_id: str,
+    source_url: str,
+    retrieved_at: datetime,
+    media_type: str,
+    schema_signature: str | None = None,
+    record_count: int | None = None,
+    headers: dict[str, str] | None = None,
+    data_dir: Path | str | None = None,
+) -> tuple[Manifestation, Path]:
+    """Freeze through the canonical SourceManifestation runtime.
+
+    store.py owns operational indexes/projections only. Exact source bytes and
+    immutable manifestation receipts are owned by runtime.py.
+    """
+    paths = source_intelligence_paths(data_dir)
+    artifact = RawArtifact(
+        source_family_id=source_family_id,
+        locator=source_url,
+        content=payload,
+        media_type=media_type,
+        retrieved_at_iso=retrieved_at.astimezone(timezone.utc).isoformat(),
+    )
+    frozen = persist_source_manifestation(
+        paths.runtime_root,
+        artifact,
+        schema_fingerprint=schema_signature,
+        record_count=record_count,
+        state="RAW_FROZEN_NOT_PARSED",
+    )
+    lowered = {str(k).lower(): str(v) for k, v in (headers or {}).items()}
+    manifestation = Manifestation(
+        manifestation_id=frozen.manifestation_id,
+        source_authority=authority,
+        source_system=source_family_id,
+        source_record_id=source_record_id,
+        source_url=source_url,
+        retrieved_at_utc=retrieved_at.astimezone(timezone.utc),
+        byte_sha256=frozen.byte_sha256,
+        schema_signature=schema_signature,
+        record_count=record_count,
+        http_etag=lowered.get("etag"),
+        http_last_modified=lowered.get("last-modified"),
+    )
+    target = (
+        paths.runtime_root
+        / "objects"
+        / "sha256"
+        / frozen.byte_sha256[:2]
+        / frozen.byte_sha256
+    )
+    return manifestation, target
+
+
+def load_manifestations(data_dir: Path | str | None = None) -> list[Manifestation]:
     path = source_intelligence_paths(data_dir).manifestations
     if not path.is_file():
         return []
