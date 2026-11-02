@@ -12,14 +12,18 @@ from aguayluz.source_intelligence import (
     SOURCE_REQUIREMENTS,
     coverage_report,
 )
+from aguayluz.source_intelligence.readiness import current_backend_readiness
+from aguayluz.source_intelligence.runtime import load_health_receipts
+from server.backend import main as legacy
 
 router = APIRouter(prefix="/source-intelligence", tags=["source-intelligence"])
 
 SCOPE_STATEMENT = (
     "Bounded V1 source-family denominator for AguaYLuz domains. "
-    "Structural frontend readiness does not imply source-universe certification, "
-    "live adapter health, or domain certification."
+    "Coverage-matrix readiness is separate from backend qualification, frontend "
+    "authorization, and source-universe certification."
 )
+RUNTIME_ROOT = legacy.DATA / "source_intelligence"
 
 
 def _requirement_index() -> dict[str, list[dict[str, object]]]:
@@ -37,20 +41,35 @@ def _requirement_index() -> dict[str, list[dict[str, object]]]:
     return by_source
 
 
+def _latest_health(source_family_id: str) -> dict[str, object] | None:
+    rows = load_health_receipts(RUNTIME_ROOT, source_family_id)
+    if not rows:
+        return None
+    return max(rows, key=lambda row: str(row.get("checked_at_utc") or ""))
+
+
 @router.get("/summary")
 def source_intelligence_summary() -> JSONResponse:
-    report = coverage_report()
+    coverage = coverage_report()
+    readiness = current_backend_readiness(
+        coverage_matrix_ready=coverage.coverage_matrix_ready
+    )
     return JSONResponse(
         {
             "schema_version": "aguayluz.source-intelligence/v1",
+            "api_contract_state": "UNFROZEN",
             "scope": SCOPE_STATEMENT,
-            "coverage": report.model_dump(mode="json"),
-            "coverage_matrix_ready": report.coverage_matrix_ready,
-            "backend_readiness_state": "OPEN",
-            "backend_readiness_reason": (
-                "REFERENCE_ADAPTER_ROW_PARSER_AND_UNIFIED_RUNTIME_RECEIPTS_NOT_YET_PASS"
+            "coverage": coverage.model_dump(mode="json"),
+            "coverage_matrix_ready": coverage.coverage_matrix_ready,
+            "backend_readiness": {
+                "score": readiness.score,
+                "states": readiness.states,
+                "unresolved": list(readiness.unresolved),
+            },
+            "backend_readiness_state": (
+                "PASS" if readiness.frontend_authorized else "OPEN"
             ),
-            "frontend_authorized": False,
+            "frontend_authorized": readiness.frontend_authorized,
             "source_universe_certified": False,
             "domain_certification_complete": False,
         }
@@ -75,9 +94,10 @@ def source_intelligence_sources() -> JSONResponse:
     for source in SOURCE_FAMILIES:
         item = source.model_dump(mode="json")
         item["requirements"] = requirements.get(source.source_family_id, [])
-        # A source registry entry is not a runtime-health receipt.
-        item["runtime_health"] = None
-        item["runtime_health_reason"] = "NO_UNIFIED_RUNTIME_RECEIPT"
+        item["runtime_health"] = _latest_health(source.source_family_id)
+        item["runtime_health_reason"] = (
+            None if item["runtime_health"] else "NO_UNIFIED_RUNTIME_RECEIPT"
+        )
         items.append(item)
     return JSONResponse(
         {
