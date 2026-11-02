@@ -14,6 +14,10 @@ from aguayluz.source_intelligence import (
     coverage_report,
 )
 from aguayluz.source_intelligence.adapters.base import RawArtifact
+from aguayluz.source_intelligence.acquisition import (
+    canonical_payload_already_frozen,
+    persist_canonical_acquisition,
+)
 from aguayluz.source_intelligence.adapters.eia860m import EIA860MAdapter, canonical_month_url
 from aguayluz.source_intelligence.health import evaluate_health
 from aguayluz.source_intelligence.models import HealthState
@@ -314,3 +318,51 @@ def test_usgs_geospatial_routes_resolve_canonically() -> None:
         )
         assert route.route_id == route_id
         assert route.may_publish_canonical is True
+
+
+def test_canonical_ingestion_is_idempotent_by_frozen_payload(tmp_path) -> None:
+    artifact = RawArtifact(
+        source_family_id="LUMA_OUTAGES",
+        locator="https://api.miluma.lumapr.com/miluma-outage-api/outage/municipality/towns",
+        content=b'{"SAN JUAN":[]}',
+        media_type="application/json",
+        retrieved_at_iso="2026-11-02T20:00:00Z",
+    )
+    manifestation, receipt = persist_canonical_acquisition(
+        tmp_path,
+        artifact,
+        product_id="LUMA_OUTAGE_TOWNS",
+        route_id="LUMA_OUTAGE_TOWNS_POST",
+        record_count=1,
+    )
+    second_manifestation, second_receipt = persist_canonical_acquisition(
+        tmp_path,
+        artifact,
+        product_id="LUMA_OUTAGE_TOWNS",
+        route_id="LUMA_OUTAGE_TOWNS_POST",
+        record_count=1,
+    )
+    assert second_manifestation == manifestation
+    assert second_receipt == receipt
+    assert canonical_payload_already_frozen(
+        tmp_path,
+        "LUMA_OUTAGE_TOWNS",
+        manifestation.byte_sha256,
+    )
+
+
+def test_canonical_ingestion_rejects_noncanonical_route(tmp_path) -> None:
+    artifact = RawArtifact(
+        source_family_id="NOAA_DIGITAL_COAST_ELEVATION",
+        locator="https://coast.noaa.gov/dataviewer/",
+        content=b"subset",
+        media_type="application/octet-stream",
+        retrieved_at_iso="2026-11-02T20:00:00Z",
+    )
+    with pytest.raises(ValueError, match="canonical payload route"):
+        persist_canonical_acquisition(
+            tmp_path,
+            artifact,
+            product_id="NOAA_DC_LIDAR_8630",
+            route_id="NOAA_DC_8630_DAV",
+        )
