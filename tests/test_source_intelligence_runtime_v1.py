@@ -91,8 +91,8 @@ def _xlsx(
         '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
         'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
         '<sheets>'
-        '<sheet name="Operating" sheetId="1" r:id="rId1"/>'
-        '<sheet name="Retired" sheetId="2" r:id="rId2"/>'
+        '<sheet name="Operating_PR" sheetId="1" r:id="rId1"/>'
+        '<sheet name="Retired_PR" sheetId="2" r:id="rId2"/>'
         '</sheets></workbook>'
     )
     relationships = (
