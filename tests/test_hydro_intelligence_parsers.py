@@ -9,9 +9,9 @@ from aguayluz.hydro_intelligence.parsers import (
     inspect_eia_860m_xlsx,
     inspect_eia_923_zip,
     inspect_luma_pdf,
-    parse_eia_facility_fuel_csv,
     parse_eia_860m_generator_rows,
     parse_eia_923_generation_workbook,
+    parse_eia_facility_fuel_csv,
 )
 
 
@@ -25,10 +25,10 @@ def _zip(members):
 
 def test_eia_plant_level_raw_preserved_without_name_binding():
     csv = (
-        "state,plantCode,period,primeMover,generation,plantName\n"
-        "PR,61225,2026-06,HY,001.250,Caonillas\n"
-        "NY,12,2026-06,HY,4,Other\n"
-    ).encode()
+        b"state,plantCode,period,primeMover,generation,plantName\n"
+        b"PR,61225,2026-06,HY,001.250,Caonillas\n"
+        b"NY,12,2026-06,HY,4,Other\n"
+    )
     rows = parse_eia_facility_fuel_csv(csv)
     assert len(rows) == 1
     assert rows[0].row_number == 2
