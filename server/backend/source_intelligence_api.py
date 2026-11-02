@@ -1,7 +1,9 @@
 """Read-only V1 API for the AguaYLuz source-intelligence control plane."""
 from __future__ import annotations
 
+import os
 from collections import defaultdict
+from pathlib import Path
 
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
@@ -17,16 +19,21 @@ from aguayluz.source_intelligence import (
 from aguayluz.source_intelligence.readiness import current_backend_readiness
 from aguayluz.source_intelligence.route_coverage import route_governance_summary
 from aguayluz.source_intelligence.runtime import load_health_receipts
-from server.backend import main as legacy
 
 router = APIRouter(prefix="/source-intelligence", tags=["source-intelligence"])
+
+API_CONTRACT_STATE = "FROZEN_V1"
+API_SCHEMA_VERSION = "aguayluz.source-intelligence/v1"
 
 SCOPE_STATEMENT = (
     "Bounded V1 source-family denominator for AguaYLuz domains. "
     "Coverage-matrix readiness is separate from backend qualification, frontend "
     "authorization, and source-universe certification."
 )
-RUNTIME_ROOT = legacy.DATA / "source_intelligence"
+REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+_workspace = os.getenv("AGUAYLUZ_DATA_HOME", "").strip()
+DATA_ROOT = Path(_workspace) / "data" if _workspace else REPO_ROOT / "data"
+RUNTIME_ROOT = DATA_ROOT / "source_intelligence"
 
 
 def _requirement_index() -> dict[str, list[dict[str, object]]]:
@@ -54,13 +61,16 @@ def _latest_health(source_family_id: str) -> dict[str, object] | None:
 @router.get("/summary")
 def source_intelligence_summary() -> JSONResponse:
     coverage = coverage_report()
+    route_governance = route_governance_summary()
     readiness = current_backend_readiness(
-        coverage_matrix_ready=coverage.coverage_matrix_ready
+        coverage_matrix_ready=coverage.coverage_matrix_ready,
+        api_contract_frozen=API_CONTRACT_STATE == "FROZEN_V1",
     )
+    domain_certification_complete = False
     return JSONResponse(
         {
-            "schema_version": "aguayluz.source-intelligence/v1",
-            "api_contract_state": "UNFROZEN",
+            "schema_version": API_SCHEMA_VERSION,
+            "api_contract_state": API_CONTRACT_STATE,
             "scope": SCOPE_STATEMENT,
             "coverage": coverage.model_dump(mode="json"),
             "coverage_matrix_ready": coverage.coverage_matrix_ready,
@@ -73,8 +83,14 @@ def source_intelligence_summary() -> JSONResponse:
                 "PASS" if readiness.frontend_authorized else "OPEN"
             ),
             "frontend_authorized": readiness.frontend_authorized,
-            "source_universe_certified": False,
-            "domain_certification_complete": False,
+            "route_governance": route_governance.model_dump(mode="json"),
+            "source_universe_certified": (
+                readiness.frontend_authorized
+                and route_governance.route_governance_coverage_complete
+                and route_governance.zero_redundant_fetches_certifiable
+                and domain_certification_complete
+            ),
+            "domain_certification_complete": domain_certification_complete,
         }
     )
 
@@ -152,9 +168,9 @@ def source_intelligence_route_governance() -> JSONResponse:
             "schema_version": "aguayluz.source-intelligence.route-governance/v1",
             "summary": summary.model_dump(mode="json"),
             "certification_rule": (
-                "zero_redundant_fetches_certifiable requires every governed source family "
-                "to have product/route governance and every product exactly one canonical "
-                "payload route"
+                "zero_redundant_fetches_certifiable requires every bounded source family "
+                "to have a terminal discovery surface, every payload-bearing product exactly "
+                "one canonical payload route, and zero provisional/unresolved product identities"
             ),
         }
     )
