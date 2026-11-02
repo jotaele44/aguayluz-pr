@@ -64,6 +64,17 @@ def source_artifact_state(root: Path, source_id: str) -> dict[str, Any]:
         except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError):
             return {"acquisition_state": "HASH_MISMATCH_OR_INVALID_RECEIPT",
                     "byte_sha256": None, "last_success_utc": None}
+    # Compare the entire bounded vault inventory with receipt-to-byte bindings.
+    # A valid receipt must never mask an extra unreceipted artifact.
+    expected = set()
+    for receipt in validated:
+        digest = receipt["sha256"]
+        expected.add(source_dir / digest[:2] / digest)
+        expected.add(source_dir / digest[:2] / (digest + ".receipt.json"))
+    for candidate in source_dir.rglob("*"):
+        if candidate.is_symlink() or (candidate.is_file() and candidate not in expected):
+            return {"acquisition_state": "UNRESOLVED_ORPHANED_EVIDENCE",
+                    "byte_sha256": None, "last_success_utc": None}
     latest = max(validated, key=lambda item: (item["fetched_at"], item["sha256"]))
     return {"acquisition_state": "RAW_FROZEN_NOT_PARSED",
             "byte_sha256": latest["sha256"],
