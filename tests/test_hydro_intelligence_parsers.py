@@ -11,6 +11,7 @@ from aguayluz.hydro_intelligence.parsers import (
     inspect_luma_pdf,
     parse_eia_facility_fuel_csv,
     parse_eia_860m_generator_rows,
+    parse_eia_923_generation_workbook,
 )
 
 
@@ -113,3 +114,49 @@ def test_eia_860m_rejects_unreviewed_sheet_or_header():
         parse_eia_860m_generator_rows(blob.getvalue(), sheet_name="Missing", header_row=1)
     with pytest.raises(ValueError):
         parse_eia_860m_generator_rows(blob.getvalue(), sheet_name="Sheet", header_row=1)
+
+
+def _eia_923_fake_workbook():
+    book = pytest.importorskip("openpyxl").Workbook()
+    sheet = book.active
+    sheet.title = "Reviewed source sheet"
+    sheet.append(["Official preamble", None, None, None])
+    sheet.append(["State", "Plant Id", "Reported Prime Mover", "Netgen January"])
+    sheet.append(["PR", 61225, "HY", 0])
+    sheet.append(["PR", 61226, "HY", None])
+    sheet.append(["NY", 999, "HY", 42])
+    buffer = io.BytesIO()
+    book.save(buffer)
+    return buffer.getvalue()
+
+
+def test_eia923_explicit_header_preserves_zero_and_missing_values():
+    raw = _eia_923_fake_workbook()
+    expected_sha = hashlib.sha256(raw).hexdigest()
+    rows = parse_eia_923_generation_workbook(
+        raw, sheet_name="Reviewed source sheet", header_row=2,
+        columns={"state": "State", "plant": "Plant Id",
+                 "prime_mover": "Reported Prime Mover",
+                 "net_generation": "Netgen January"},
+        source_member_sha256=expected_sha,
+    )
+    assert len(rows) == 2
+    assert rows[0].row_number == 3
+    assert rows[0].observation["net_generation_raw"] == "0"
+    assert rows[0].state == "CANDIDATE_NOT_IDENTITY"
+    assert rows[1].row_number == 4
+    assert rows[1].observation["net_generation_raw"] is None
+    assert rows[1].state == "UNRESOLVED_MISSING_SOURCE_VALUE"
+    assert rows[0].observation["member_sha256"] == expected_sha
+
+
+def test_eia923_rejects_unreviewed_schema():
+    raw = _eia_923_fake_workbook()
+    with pytest.raises(ValueError, match="Missing or ambiguous"):
+        parse_eia_923_generation_workbook(
+            raw, sheet_name="Reviewed source sheet", header_row=2,
+            columns={"state": "State", "plant": "Plant Id",
+                     "prime_mover": "Reported Prime Mover",
+                     "net_generation": "Invented monthly column"},
+            source_member_sha256=hashlib.sha256(raw).hexdigest(),
+        )
