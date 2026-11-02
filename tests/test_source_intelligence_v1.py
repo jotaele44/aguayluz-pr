@@ -464,3 +464,41 @@ def test_api_contract_requires_exact_head_authorization(monkeypatch) -> None:
     assert certified["backend_readiness"]["score"] == 100
     assert certified["backend_readiness"]["unresolved"] == []
     assert certified["frontend_authorized"] is True
+
+
+def test_verified_environmental_routes_resolve_canonically() -> None:
+    expected = {
+        "NRCS_SSURGO_SDA_QUERY": "NRCS_SSURGO_SDA_POST",
+        "USFWS_NWI_REST_DATA": "USFWS_NWI_REST_QUERY",
+        "LANDFIRE_LFPS_PRODUCTS": "LANDFIRE_LFPS_REQUEST",
+        "LANDSAT_STAC_ASSETS": "LANDSAT_STAC_ASSET_HREF",
+        "SENTINEL_STAC_ASSETS": "SENTINEL_STAC_ASSET_HREF",
+    }
+    for product_id, route_id in expected.items():
+        route = resolve_route(
+            product_id,
+            FetchPurpose.FULL_PAYLOAD,
+            products=SOURCE_PRODUCTS,
+            routes=ACQUISITION_ROUTES,
+        )
+        assert route.route_id == route_id
+        assert route.may_publish_canonical is True
+
+
+def test_stac_catalogs_are_discovery_not_payload_identity() -> None:
+    landsat = resolve_route(
+        "LANDSAT_STAC_ASSETS",
+        FetchPurpose.DISCOVER,
+        products=SOURCE_PRODUCTS,
+        routes=ACQUISITION_ROUTES,
+    )
+    sentinel = resolve_route(
+        "SENTINEL_STAC_ASSETS",
+        FetchPurpose.DISCOVER,
+        products=SOURCE_PRODUCTS,
+        routes=ACQUISITION_ROUTES,
+    )
+    assert landsat.route_id == "LANDSAT_STAC_DISCOVERY"
+    assert sentinel.route_id == "SENTINEL_STAC_DISCOVERY"
+    assert landsat.may_publish_canonical is False
+    assert sentinel.may_publish_canonical is False
