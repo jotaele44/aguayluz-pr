@@ -1790,7 +1790,8 @@
           "src/aguayluz/source_intelligence/health.py",
           "src/aguayluz/source_intelligence/models.py",
           "src/aguayluz/source_intelligence/readiness.py",
-          "src/aguayluz/source_intelligence/runtime.py"
+          "src/aguayluz/source_intelligence/runtime.py",
+          "src/aguayluz/source_intelligence/store.py"
         ],
         "endpoints": [
           "GET /coverage",
@@ -1833,7 +1834,16 @@
           "src/aguayluz/source_intelligence/runtime.py:persist_source_manifestation",
           "src/aguayluz/source_intelligence/runtime.py:verify_source_manifestation",
           "src/aguayluz/source_intelligence/runtime.py:freeze_health_receipt",
-          "src/aguayluz/source_intelligence/runtime.py:load_health_receipts"
+          "src/aguayluz/source_intelligence/runtime.py:load_health_receipts",
+          "src/aguayluz/source_intelligence/models.py:SourceAttemptState",
+          "src/aguayluz/source_intelligence/models.py:SourceRuntimeReceipt",
+          "src/aguayluz/source_intelligence/store.py:SourceIntelligencePaths",
+          "src/aguayluz/source_intelligence/store.py:append_manifestation",
+          "src/aguayluz/source_intelligence/store.py:freeze_artifact",
+          "src/aguayluz/source_intelligence/store.py:load_manifestations",
+          "src/aguayluz/source_intelligence/store.py:load_receipts",
+          "src/aguayluz/source_intelligence/store.py:record_receipt",
+          "src/aguayluz/source_intelligence/store.py:source_intelligence_paths"
         ]
       },
       "tests": {
