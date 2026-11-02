@@ -1,0 +1,96 @@
+name: LUMA monthly generation acquisition
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Acquisition mode
+        required: true
+        default: incremental
+        type: choice
+        options:
+          - incremental
+          - backfill
+      start_period:
+        description: Backfill floor (YYYY-MM)
+        required: true
+        default: '2023-01'
+        type: string
+      incremental_months:
+        description: Latest periods to recheck in incremental mode
+        required: true
+        default: '3'
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: luma-monthly-generation-acquisition
+  cancel-in-progress: false
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install parser and renderer dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+          python -m pip install --disable-pip-version-check pypdf
+
+      - name: Compile gate
+        run: |
+          python -m py_compile scripts/luma_monthly_generation_adapter.py
+          command -v pdftoppm
+          command -v pdfinfo
+
+      - name: Run governed acquisition
+        id: acquire
+        shell: bash
+        env:
+          MODE: ${{ inputs.mode }}
+          START_PERIOD: ${{ inputs.start_period }}
+          INCREMENTAL_MONTHS: ${{ inputs.incremental_months }}
+        run: |
+          set -uo pipefail
+          mkdir -p evidence/luma-monthly-generation
+          set +e
+          python scripts/luma_monthly_generation_adapter.py "$MODE"             --output evidence/luma-monthly-generation             --start "$START_PERIOD"             --incremental-months "$INCREMENTAL_MONTHS"             2>&1 | tee evidence/luma-monthly-generation/run-console.log
+          rc=${PIPESTATUS[0]}
+          set -e
+          printf '%s\n' "$rc" > evidence/luma-monthly-generation/adapter-exit-code.txt
+          printf '%s\n' "${{ github.sha }}" > evidence/luma-monthly-generation/workflow-head-sha.txt
+          printf '%s\n' "${{ github.run_id }}" > evidence/luma-monthly-generation/workflow-run-id.txt
+          printf '%s\n' "${{ github.run_attempt }}" > evidence/luma-monthly-generation/workflow-run-attempt.txt
+          printf '%s\n' "${{ inputs.mode }}" > evidence/luma-monthly-generation/workflow-mode.txt
+          exit "$rc"
+
+      - name: Verify required successful-run outputs
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s evidence/luma-monthly-generation/denominator.json
+          test -s evidence/luma-monthly-generation/manifest.jsonl
+          test -s evidence/luma-monthly-generation/manifest.csv
+          test -s evidence/luma-monthly-generation/page_index.jsonl
+          test -s evidence/luma-monthly-generation/replay.json
+          test -s evidence/luma-monthly-generation/archive.zip
+          test -s evidence/luma-monthly-generation/receipt.json
+
+      - name: Upload immutable acquisition evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: luma-monthly-generation-${{ inputs.mode }}-${{ github.run_id }}
+          path: evidence/luma-monthly-generation/
+          if-no-files-found: error
+          retention-days: 30
