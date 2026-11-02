@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import hashlib
 import io
-import xml.etree.ElementTree as ET
 import zipfile
+import xml.etree.ElementTree as ET
 from typing import Any
 
 from .base import AdapterCapabilities, RawArtifact
