@@ -16,6 +16,7 @@ from aguayluz.source_intelligence import (
 )
 from aguayluz.source_intelligence.readiness import current_backend_readiness
 from aguayluz.source_intelligence.runtime import load_health_receipts
+from aguayluz.source_intelligence.route_coverage import route_governance_summary
 from server.backend import main as legacy
 
 router = APIRouter(prefix="/source-intelligence", tags=["source-intelligence"])
@@ -139,5 +140,21 @@ def source_intelligence_routes() -> JSONResponse:
             "schema_version": "aguayluz.source-intelligence.routes/v1",
             "total": len(NOAA_DIGITAL_COAST_ROUTES),
             "items": [row.model_dump(mode="json") for row in NOAA_DIGITAL_COAST_ROUTES],
+        }
+    )
+
+
+@router.get("/route-governance")
+def source_intelligence_route_governance() -> JSONResponse:
+    summary = route_governance_summary()
+    return JSONResponse(
+        {
+            "schema_version": "aguayluz.source-intelligence.route-governance/v1",
+            "summary": summary.model_dump(mode="json"),
+            "certification_rule": (
+                "zero_redundant_fetches_certifiable requires every governed source family "
+                "to have product/route governance and every product exactly one canonical "
+                "payload route"
+            ),
         }
     )
