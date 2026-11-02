@@ -208,6 +208,7 @@ class ManifestRow:
     synthesized_landing_url: str
     landing_url: str | None
     pdf_url: str | None
+    publication_date: str | None
     retrieval_utc: str | None
     source_state: str
     http_status: int | None
@@ -224,6 +225,7 @@ class ManifestRow:
     page_complete_parse: bool | None
     page_complete_render: bool | None
     hydro_classification: str
+    negative_page_complete_ready: bool
     negative_certification_eligible: bool
     prior_manifestation_relation: str
     notes: list[str] = field(default_factory=list)
@@ -235,11 +237,31 @@ class AnchorParser(HTMLParser):
         self._href: str | None = None
         self._text: list[str] = []
         self.anchors: list[tuple[str, str]] = []
+        self.publication_dates: list[str] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        attrs_dict = dict(attrs)
+        if tag.lower() == "meta":
+            key = (attrs_dict.get("property") or attrs_dict.get("name") or "").lower()
+            if key in {
+                "article:published_time",
+                "article:modified_time",
+                "date",
+                "datepublished",
+                "publish-date",
+            }:
+                value = attrs_dict.get("content")
+                if value:
+                    self.publication_dates.append(value)
+            return
+        if tag.lower() == "time":
+            value = attrs_dict.get("datetime")
+            if value:
+                self.publication_dates.append(value)
+            return
         if tag.lower() != "a":
             return
-        self._href = dict(attrs).get("href")
+        self._href = attrs_dict.get("href")
         self._text = []
 
     def handle_data(self, data: str) -> None:
@@ -432,6 +454,14 @@ def looks_like_pdf(data: bytes, content_type: str | None = None) -> bool:
         # A PDF signature is stronger than a mislabeled server content type, but preserve the mismatch.
         return True
     return True
+
+
+def landing_publication_date(html: str) -> str | None:
+    parser = AnchorParser()
+    parser.feed(html)
+    if not parser.publication_dates:
+        return None
+    return sorted(set(parser.publication_dates))[0]
 
 
 def landing_pdf_links(html: str, landing_url: str) -> list[str]:
@@ -665,6 +695,7 @@ def acquire_manifestation(
                 synthesized_landing_url=synthesized,
                 landing_url=landing.final_url or landing_candidate,
                 pdf_url=None,
+                publication_date=None,
                 retrieval_utc=landing.retrieval_utc,
                 source_state=STATUS_SOURCE_UNAVAILABLE,
                 http_status=landing.http_status,
@@ -681,17 +712,20 @@ def acquire_manifestation(
                 page_complete_parse=None,
                 page_complete_render=None,
                 hydro_classification="UNRESOLVED",
+                negative_page_complete_ready=False,
                 negative_certification_eligible=False,
                 prior_manifestation_relation="NEW_OR_UNRESOLVED",
                 notes=[f"landing fetch failed: {landing.error or landing.status}"],
             )
         ]
 
+    publication_date: str | None = None
     if looks_like_pdf(landing.body, landing.content_type):
         pdf_urls = [landing.final_url or landing_candidate]
         notes.append("indexed/synthesized href resolved directly to PDF bytes")
     else:
         html = landing.body.decode("utf-8", "replace")
+        publication_date = landing_publication_date(html)
         pdf_urls = landing_pdf_links(html, landing.final_url or landing_candidate)
         if not pdf_urls:
             return [
@@ -706,6 +740,7 @@ def acquire_manifestation(
                     synthesized_landing_url=synthesized,
                     landing_url=landing.final_url or landing_candidate,
                     pdf_url=None,
+                    publication_date=publication_date,
                     retrieval_utc=landing.retrieval_utc,
                     source_state=STATUS_UNRESOLVED,
                     http_status=landing.http_status,
@@ -744,6 +779,7 @@ def acquire_manifestation(
                     synthesized_landing_url=synthesized,
                     landing_url=landing.final_url or landing_candidate,
                     pdf_url=pdf_url,
+                    publication_date=None,
                     retrieval_utc=pdf_fetch.retrieval_utc,
                     source_state=STATUS_SOURCE_UNAVAILABLE,
                     http_status=pdf_fetch.http_status,
@@ -794,6 +830,7 @@ def acquire_manifestation(
                     synthesized_landing_url=synthesized,
                     landing_url=landing.final_url or landing_candidate,
                     pdf_url=pdf_fetch.final_url or pdf_url,
+                    publication_date=publication_date,
                     retrieval_utc=pdf_fetch.retrieval_utc,
                     source_state="INVALID_PDF",
                     http_status=pdf_fetch.http_status,
@@ -879,15 +916,17 @@ def acquire_manifestation(
                 normalized_rows.extend(
                     typed_observations(str(period), page_no, page_text, digest)
                 )
-        negative_eligible = (
+        negative_page_complete_ready = (
             classification == "HYDRO_ABSENT"
             and bool(page_count)
             and parse_complete
             and render_complete
         )
+        negative_eligible = False
         if classification == "HYDRO_ABSENT":
             row_notes.append(
-                "bounded textual negative only; visual semantic review remains required"
+                "bounded textual negative only; rendered pages require independent visual "
+                "semantic review before any negative source-family certification"
             )
 
         page_index_path = output_root / "page_index.jsonl"
@@ -940,6 +979,7 @@ def acquire_manifestation(
                 synthesized_landing_url=synthesized,
                 landing_url=landing.final_url or landing_candidate,
                 pdf_url=pdf_fetch.final_url or pdf_url,
+                publication_date=publication_date,
                 retrieval_utc=pdf_fetch.retrieval_utc,
                 source_state=STATUS_PASS,
                 http_status=pdf_fetch.http_status,
@@ -956,6 +996,7 @@ def acquire_manifestation(
                 page_complete_parse=parse_complete,
                 page_complete_render=render_complete,
                 hydro_classification=classification,
+                negative_page_complete_ready=negative_page_complete_ready,
                 negative_certification_eligible=negative_eligible,
                 prior_manifestation_relation=relation_to_prior(
                     str(period), pdf_fetch.final_url or pdf_url, digest, prior_rows
@@ -1074,6 +1115,8 @@ def replay_snapshot(root: Path) -> dict[str, Any]:
     byte_pass = 0
     pdf_pass = 0
     page_count_pass = 0
+    page_text_replay_pass = 0
+    render_replay_pass = 0
     typed_unit_pass = 0
 
     pages_by_sha: dict[str, list[dict[str, Any]]] = {}
@@ -1107,7 +1150,10 @@ def replay_snapshot(root: Path) -> dict[str, Any]:
         pdf_pass += 1
 
         expected_pages = row.get("page_count")
-        indexed_pages = pages_by_sha.get(str(digest), [])
+        indexed_pages = sorted(
+            pages_by_sha.get(str(digest), []),
+            key=lambda x: int(x.get("page_number") or 0),
+        )
         if isinstance(expected_pages, int) and expected_pages > 0:
             if len(indexed_pages) == expected_pages:
                 page_count_pass += 1
@@ -1116,6 +1162,51 @@ def replay_snapshot(root: Path) -> dict[str, Any]:
                     f"{row.get('period')}: page-index count={len(indexed_pages)} "
                     f"expected={expected_pages}"
                 )
+                continue
+            try:
+                replay_texts = extract_pdf_pages(raw)
+            except Exception as exc:
+                failures.append(
+                    f"{row.get('period')}: replay text extraction failed: "
+                    f"{type(exc).__name__}: {exc}"
+                )
+                continue
+            if len(replay_texts) != expected_pages:
+                failures.append(
+                    f"{row.get('period')}: replay page count={len(replay_texts)} "
+                    f"expected={expected_pages}"
+                )
+                continue
+            text_ok = True
+            render_ok = True
+            for page_row, page_text in zip(indexed_pages, replay_texts, strict=True):
+                actual_text_sha = sha256_bytes(page_text.encode("utf-8"))
+                if actual_text_sha != page_row.get("text_sha256"):
+                    text_ok = False
+                    failures.append(
+                        f"{row.get('period')}: page={page_row.get('page_number')} "
+                        "text SHA mismatch"
+                    )
+                render_rel = page_row.get("render_path")
+                render_sha = page_row.get("render_sha256")
+                if not render_rel or not render_sha:
+                    render_ok = False
+                    failures.append(
+                        f"{row.get('period')}: page={page_row.get('page_number')} "
+                        "render receipt missing"
+                    )
+                    continue
+                render_file = root / str(render_rel)
+                if not render_file.is_file() or sha256_file(render_file) != render_sha:
+                    render_ok = False
+                    failures.append(
+                        f"{row.get('period')}: page={page_row.get('page_number')} "
+                        "render SHA mismatch/missing"
+                    )
+            if text_ok:
+                page_text_replay_pass += 1
+            if render_ok:
+                render_replay_pass += 1
 
     for obs in normalized:
         unit = str(obs.get("normalized_unit") or "")
@@ -1149,6 +1240,17 @@ def replay_snapshot(root: Path) -> dict[str, Any]:
             )
             else "FAIL"
         ),
+        "PAGE_TEXT_SHA_REPLAY": (
+            "PASS" if page_text_replay_pass == page_count_pass else "FAIL"
+        ),
+        "RENDER_SHA_REPLAY": (
+            "PASS" if render_replay_pass == page_count_pass else "FAIL"
+        ),
+        "NEGATIVE_AUTO_CERTIFICATION_DENY": (
+            "PASS"
+            if not any(bool(r.get("negative_certification_eligible")) for r in rows)
+            else "FAIL"
+        ),
         "TYPED_UNIT_VALIDATION": "PASS" if not any("typed-unit mismatch" in f for f in failures) else "FAIL",
         "NO_NAME_ONLY_CANONICAL_PROMOTION": "PASS" if not any("canonical claims" in f for f in failures) else "FAIL",
         "IDEMPOTENT_MANIFEST_KEYS": (
@@ -1165,6 +1267,8 @@ def replay_snapshot(root: Path) -> dict[str, Any]:
         "byte_replay_pass": byte_pass,
         "pdf_signature_pass": pdf_pass,
         "page_count_pass": page_count_pass,
+        "page_text_replay_pass": page_text_replay_pass,
+        "render_replay_pass": render_replay_pass,
         "typed_unit_rows_pass": typed_unit_pass,
         "duplicate_period_state": duplicates,
         "gates": gates,
