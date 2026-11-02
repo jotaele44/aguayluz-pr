@@ -2,13 +2,13 @@
 from __future__ import annotations
 
 from .eia_routes import EIA_ACQUISITION_ROUTES, EIA_SOURCE_PRODUCTS
+from .noaa_digital_coast import NOAA_DIGITAL_COAST_PRODUCTS, NOAA_DIGITAL_COAST_ROUTES
+from .remaining_routes import REMAINING_ACQUISITION_ROUTES, REMAINING_SOURCE_PRODUCTS
+from .routes import validate_route_registry
 from .verified_environmental_routes import (
     VERIFIED_ENVIRONMENTAL_PRODUCTS,
     VERIFIED_ENVIRONMENTAL_ROUTES,
 )
-from .noaa_digital_coast import NOAA_DIGITAL_COAST_PRODUCTS, NOAA_DIGITAL_COAST_ROUTES
-from .remaining_routes import REMAINING_ACQUISITION_ROUTES, REMAINING_SOURCE_PRODUCTS
-from .routes import validate_route_registry
 from .verified_geospatial_routes import (
     VERIFIED_GEOSPATIAL_PRODUCTS,
     VERIFIED_GEOSPATIAL_ROUTES,
