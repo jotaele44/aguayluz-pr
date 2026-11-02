@@ -13,7 +13,6 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
-from urllib.error import HTTPError
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 
@@ -75,7 +74,7 @@ def persist_bytes(root: Path, source_id: str, url: str, data: bytes,
                 os.link(tmp, target)  # atomic no-clobber; concurrent writers cannot replace frozen bytes
             except FileExistsError:
                 if target.read_bytes() != data:
-                    raise ValueError("Concurrent artifact differs from expected bytes")
+                    raise ValueError("Concurrent artifact differs from expected bytes") from None
         finally:
             if os.path.exists(tmp):
                 os.unlink(tmp)
