@@ -49,3 +49,24 @@ def test_empty_source_directory_is_not_acquired(tmp_path):
     state = source_artifact_state(tmp_path, "eia_923")
     assert state["acquisition_state"] == "NOT_ACQUIRED"
     assert state["byte_sha256"] is None
+
+
+def test_valid_receipt_cannot_hide_unreceipted_extra_bytes(tmp_path):
+    from aguayluz.hydro_intelligence.acquisition import persist_bytes
+
+    receipt = persist_bytes(tmp_path, "eia_923", "https://www.eia.gov/f923.zip", b"valid")
+    source = tmp_path / "eia_923" / receipt.sha256[:2]
+    (source / "unreviewed-source-data").write_bytes(b"orphan")
+    state = source_artifact_state(tmp_path, "eia_923")
+    assert state["acquisition_state"] == "UNRESOLVED_ORPHANED_EVIDENCE"
+    assert state["byte_sha256"] is None
+
+
+def test_valid_receipt_cannot_hide_symlinked_extra(tmp_path):
+    from aguayluz.hydro_intelligence.acquisition import persist_bytes
+
+    receipt = persist_bytes(tmp_path, "eia_923", "https://www.eia.gov/f923.zip", b"valid")
+    source = tmp_path / "eia_923" / receipt.sha256[:2]
+    (source / "unreviewed-link").symlink_to("nonexistent-target")
+    state = source_artifact_state(tmp_path, "eia_923")
+    assert state["acquisition_state"] == "UNRESOLVED_ORPHANED_EVIDENCE"
