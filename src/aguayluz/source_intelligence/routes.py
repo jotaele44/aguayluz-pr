@@ -45,6 +45,19 @@ class PayloadIdentityClass(str, Enum):
     UNRESOLVED = "UNRESOLVED"
 
 
+class ProductIdentityState(str, Enum):
+    VERIFIED = "VERIFIED"
+    PROVISIONAL = "PROVISIONAL"
+    UNRESOLVED = "UNRESOLVED"
+
+
+class ProductPayloadState(str, Enum):
+    CANONICAL_ROUTE = "CANONICAL_ROUTE"
+    DISCOVERY_ONLY = "DISCOVERY_ONLY"
+    NO_PUBLIC_PAYLOAD = "NO_PUBLIC_PAYLOAD"
+    UNRESOLVED = "UNRESOLVED"
+
+
 class FetchPurpose(str, Enum):
     DISCOVER = "DISCOVER"
     FULL_PAYLOAD = "FULL_PAYLOAD"
@@ -73,8 +86,10 @@ class SourceProductDefinition(BaseModel):
     native_dataset_id: str = Field(min_length=1)
     spatial_scope: str = Field(min_length=1)
     temporal_scope: str = Field(min_length=1)
+    identity_state: ProductIdentityState = ProductIdentityState.VERIFIED
+    payload_state: ProductPayloadState = ProductPayloadState.CANONICAL_ROUTE
     canonical_discovery_route_id: str
-    canonical_payload_route_id: str
+    canonical_payload_route_id: str | None = None
 
 
 class AcquisitionRouteDefinition(BaseModel):
@@ -144,19 +159,33 @@ def validate_route_registry(
     for product in products:
         owned = routes_by_product.get(product.product_id, [])
         canonical_payload = [r for r in owned if r.role == RouteRole.CANONICAL_PAYLOAD]
-        if len(canonical_payload) != 1:
-            raise ValueError(
-                f"{product.product_id} must have exactly one canonical payload route"
-            )
         by_id = {r.route_id: r for r in owned}
-        if product.canonical_payload_route_id not in by_id:
-            raise ValueError(f"{product.product_id} canonical payload route missing")
         if product.canonical_discovery_route_id not in by_id:
             raise ValueError(f"{product.product_id} canonical discovery route missing")
-        if by_id[product.canonical_payload_route_id].role != RouteRole.CANONICAL_PAYLOAD:
-            raise ValueError("canonical_payload_route_id does not point at CANONICAL_PAYLOAD")
         if by_id[product.canonical_discovery_route_id].role != RouteRole.DISCOVERY:
             raise ValueError("canonical_discovery_route_id does not point at DISCOVERY")
+        if product.payload_state == ProductPayloadState.CANONICAL_ROUTE:
+            if len(canonical_payload) != 1:
+                raise ValueError(
+                    f"{product.product_id} must have exactly one canonical payload route"
+                )
+            if product.canonical_payload_route_id not in by_id:
+                raise ValueError(f"{product.product_id} canonical payload route missing")
+            if by_id[product.canonical_payload_route_id].role != RouteRole.CANONICAL_PAYLOAD:
+                raise ValueError(
+                    "canonical_payload_route_id does not point at CANONICAL_PAYLOAD"
+                )
+        else:
+            if canonical_payload:
+                raise ValueError(
+                    f"{product.product_id} cannot declare CANONICAL_PAYLOAD while "
+                    f"payload_state={product.payload_state.value}"
+                )
+            if product.canonical_payload_route_id is not None:
+                raise ValueError(
+                    f"{product.product_id} canonical_payload_route_id must be null "
+                    f"when payload_state={product.payload_state.value}"
+                )
 
 
 def _purpose_roles(purpose: FetchPurpose) -> tuple[RouteRole, ...]:
@@ -187,6 +216,14 @@ def resolve_route(
     product = next((p for p in products if p.product_id == product_id), None)
     if product is None:
         raise ValueError(f"unknown source product {product_id}")
+    if (
+        purpose == FetchPurpose.FULL_PAYLOAD
+        and product.payload_state != ProductPayloadState.CANONICAL_ROUTE
+    ):
+        raise ValueError(
+            f"full payload route unresolved for {product_id}: "
+            f"{product.payload_state.value}"
+        )
     candidates = [
         r
         for r in routes
