@@ -7,7 +7,6 @@ no network retrieval or entity promotion.
 
 from .catalog import DOMAIN_REGISTRY, SOURCE_FAMILIES, SOURCE_REQUIREMENTS
 from .coverage import coverage_report
-from .noaa_digital_coast import NOAA_DIGITAL_COAST_PRODUCTS, NOAA_DIGITAL_COAST_ROUTES
 from .models import (
     CoverageRole,
     CoverageState,
@@ -18,6 +17,7 @@ from .models import (
     SourceFamilyDefinition,
     SourceHealth,
 )
+from .noaa_digital_coast import NOAA_DIGITAL_COAST_PRODUCTS, NOAA_DIGITAL_COAST_ROUTES
 from .readiness import BackendReadiness, current_backend_readiness, score_backend_readiness
 from .route_registry import ACQUISITION_ROUTES, SOURCE_PRODUCTS
 from .runtime import (
