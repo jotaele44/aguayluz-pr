@@ -218,16 +218,16 @@ def test_archive_identity_same_payloads_different_paths() -> None:
     ) == PayloadIdentityClass.SAME_PAYLOADS_DIFFERENT_PATHS
 
 
-def test_route_governance_covers_every_family_but_keeps_unresolved_routes_open() -> None:
+def test_route_governance_covers_every_family_and_has_no_unresolved_product_residue() -> None:
     summary = route_governance_summary()
     assert summary.governed_source_families == summary.total_source_families
     assert summary.ungoverned_source_family_ids == ()
     assert summary.route_governance_coverage_percent == 100.0
     assert summary.route_governance_coverage_complete is True
-    assert summary.provisional_or_unresolved_product_ids
-    assert summary.products_without_resolved_payload_ids
+    assert summary.provisional_or_unresolved_product_ids == ()
+    assert summary.products_without_resolved_payload_ids == ()
     assert summary.products_with_invalid_canonical_payload_count == 0
-    assert summary.zero_redundant_fetches_certifiable is False
+    assert summary.zero_redundant_fetches_certifiable is True
 
 
 def test_aggregate_registry_includes_eia_and_noaa_products() -> None:
@@ -260,10 +260,10 @@ def test_eia_923_full_payload_uses_only_current_year_zip() -> None:
     assert route.may_publish_canonical is True
 
 
-def test_unresolved_product_cannot_fetch_full_payload() -> None:
+def test_discovery_only_family_surface_cannot_fetch_full_payload() -> None:
     with pytest.raises(ValueError, match="full payload route unresolved"):
         resolve_route(
-            "LUMA_DAILY_AVAILABILITY_RESIDUAL_PRODUCT",
+            "LUMA_DAILY_AVAILABILITY_FAMILY_DISCOVERY",
             FetchPurpose.FULL_PAYLOAD,
             products=SOURCE_PRODUCTS,
             routes=ACQUISITION_ROUTES,
@@ -399,3 +399,31 @@ def test_backend_readiness_consumes_certified_eia_receipt() -> None:
     assert readiness.states["runtime_health_receipts"] == "PASS"
     assert readiness.unresolved == ("api_contract_frozen",)
     assert readiness.frontend_authorized is False
+
+
+def test_source_intelligence_router_is_mounted_on_canonical_app() -> None:
+    from server.backend.main import app
+
+    paths = {route.path for route in app.routes}
+    expected = {
+        "/source-intelligence/summary",
+        "/source-intelligence/domains",
+        "/source-intelligence/sources",
+        "/source-intelligence/coverage",
+        "/source-intelligence/products",
+        "/source-intelligence/routes",
+        "/source-intelligence/route-governance",
+    }
+    assert expected <= paths
+
+
+def test_backend_readiness_authorizes_frontend_with_frozen_v1_contract() -> None:
+    from aguayluz.source_intelligence.readiness import current_backend_readiness
+
+    readiness = current_backend_readiness(
+        coverage_matrix_ready=True,
+        api_contract_frozen=True,
+    )
+    assert readiness.score == 100
+    assert readiness.unresolved == ()
+    assert readiness.frontend_authorized is True
