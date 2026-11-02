@@ -1793,10 +1793,12 @@
           "src/aguayluz/source_intelligence/runtime.py"
         ],
         "endpoints": [
-          "GET /summary",
+          "GET /coverage",
           "GET /domains",
+          "GET /products",
+          "GET /routes",
           "GET /sources",
-          "GET /coverage"
+          "GET /summary"
         ],
         "symbols": [
           "server/backend/source_intelligence_api.py:source_intelligence_summary",
@@ -1841,7 +1843,28 @@
         "contract": [
           "tests/test_gui_parity.py"
         ]
-      }
+      },
+      "candidate_ids": [
+        "backend_endpoint:server/backend/source_intelligence_api.py:GET /products",
+        "backend_endpoint:server/backend/source_intelligence_api.py:GET /routes",
+        "python_module:src/aguayluz/source_intelligence/noaa_digital_coast.py",
+        "python_module:src/aguayluz/source_intelligence/routes.py",
+        "python_symbol:server/backend/source_intelligence_api.py:source_intelligence_products",
+        "python_symbol:server/backend/source_intelligence_api.py:source_intelligence_routes",
+        "python_symbol:src/aguayluz/source_intelligence/routes.py:AcquisitionRouteDefinition",
+        "python_symbol:src/aguayluz/source_intelligence/routes.py:ArchiveMemberDigest",
+        "python_symbol:src/aguayluz/source_intelligence/routes.py:FetchAction",
+        "python_symbol:src/aguayluz/source_intelligence/routes.py:FetchDecision",
+        "python_symbol:src/aguayluz/source_intelligence/routes.py:FetchPurpose",
+        "python_symbol:src/aguayluz/source_intelligence/routes.py:PayloadIdentityClass",
+        "python_symbol:src/aguayluz/source_intelligence/routes.py:RepresentationType",
+        "python_symbol:src/aguayluz/source_intelligence/routes.py:RouteRole",
+        "python_symbol:src/aguayluz/source_intelligence/routes.py:SourceProductDefinition",
+        "python_symbol:src/aguayluz/source_intelligence/routes.py:classify_archive_identity",
+        "python_symbol:src/aguayluz/source_intelligence/routes.py:fetch_decision",
+        "python_symbol:src/aguayluz/source_intelligence/routes.py:resolve_route",
+        "python_symbol:src/aguayluz/source_intelligence/routes.py:validate_route_registry"
+      ]
     }
   ],
   "exceptions": []
