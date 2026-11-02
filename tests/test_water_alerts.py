@@ -73,6 +73,26 @@ def test_health_based_quality_violation_becomes_alert():
     assert a.severity == 2
 
 
+def test_tier1_microbial_violation_is_acute_but_not_an_advisory():
+    ev = _boil_water(event_type="water_quality_violation",
+                     status_text="health_based=Y pn_tier=1 rule_group=110 compliance=A")
+    a = contamination_alert(ev, GEO)
+    assert a is not None
+    assert a.severity == 4  # same urgency as an acute advisory
+    assert "Tier-1 acute microbial violation" in a.source_title
+    assert "Boil-water" not in a.source_title
+
+
+def test_tier1_non_microbial_violation_keeps_health_severity():
+    # rule_group 210 (disinfection byproducts) is Tier-1 but not microbial.
+    ev = _boil_water(event_type="water_quality_violation",
+                     status_text="health_based=Y pn_tier=1 rule_group=210 compliance=A")
+    a = contamination_alert(ev, GEO)
+    assert a is not None
+    assert a.severity == 3
+    assert a.source_title.startswith("Health-based water-quality violation")
+
+
 def test_non_health_violation_is_not_alerted():
     ev = _boil_water(event_type="water_quality_violation",
                      status_text="health_based=N pn_tier=3 compliance=A")
