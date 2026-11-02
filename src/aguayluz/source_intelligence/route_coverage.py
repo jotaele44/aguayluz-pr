@@ -34,10 +34,10 @@ def route_governance_summary() -> RouteGovernanceSummary:
     governed_families = {product.source_family_id for product in products}
     all_families = {source.source_family_id for source in SOURCE_FAMILIES}
     ungoverned = tuple(sorted(all_families - governed_families))
-    coverage_percent = (
-        100.0
-        if not all_families
-        else round(100.0 * len(governed_families & all_families) / len(all_families), 2)
+    covered = len(governed_families & all_families)
+    coverage_percent = 100.0 if not all_families else round(
+        100.0 * covered / len(all_families),
+        2,
     )
     coverage_complete = not ungoverned and governed_families >= all_families
 
@@ -48,7 +48,6 @@ def route_governance_summary() -> RouteGovernanceSummary:
             if product.identity_state != ProductIdentityState.VERIFIED
         )
     )
-
     payload_blockers = tuple(
         sorted(
             product.product_id
@@ -83,7 +82,7 @@ def route_governance_summary() -> RouteGovernanceSummary:
 
     return RouteGovernanceSummary(
         total_source_families=len(all_families),
-        governed_source_families=len(governed_families & all_families),
+        governed_source_families=covered,
         ungoverned_source_family_ids=ungoverned,
         route_governance_coverage_percent=coverage_percent,
         route_governance_coverage_complete=coverage_complete,
