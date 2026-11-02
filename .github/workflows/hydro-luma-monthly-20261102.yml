@@ -1,0 +1,49 @@
+name: hydro-luma-monthly-20261102
+
+on:
+  push:
+    branches:
+      - ops/hydro-luma-monthly-20261102
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install parser
+        run: python -m pip install --disable-pip-version-check pypdf
+      - name: Compile gate
+        run: python -m py_compile scripts/ops_hydro_luma_monthly_20261102.py
+      - name: Acquire and scan reports
+        shell: bash
+        run: |
+          set -euo pipefail
+          export HYDRO_LUMA_MONTHLY_OUT=hydro-luma-monthly
+          python scripts/ops_hydro_luma_monthly_20261102.py | tee hydro-luma-monthly-console.json
+          test -s hydro-luma-monthly/derived/report.json
+          test -s hydro-luma-monthly-console.json
+      - name: Add workflow metadata
+        if: always()
+        run: |
+          mkdir -p hydro-luma-monthly
+          printf '%s\n' "${{ github.sha }}" > hydro-luma-monthly/workflow_commit_sha.txt
+          printf '%s\n' "${{ github.run_id }}" > hydro-luma-monthly/workflow_run_id.txt
+          printf '%s\n' "${{ github.run_attempt }}" > hydro-luma-monthly/workflow_run_attempt.txt
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hydro-luma-monthly-20261102
+          path: |
+            hydro-luma-monthly/
+            hydro-luma-monthly-console.json
+          if-no-files-found: error
+          retention-days: 30
