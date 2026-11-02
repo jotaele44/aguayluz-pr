@@ -6,14 +6,16 @@ Sources are constrained to HTTPS and configured hostnames.
 from __future__ import annotations
 
 import hashlib
+import ipaddress
 import json
 import os
+import socket
 import tempfile
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
-from urllib.request import HTTPRedirectHandler, Request, build_opener
+from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 
 
 class RejectRedirects(HTTPRedirectHandler):
@@ -44,6 +46,24 @@ def validate_url(url: str, allowed_hosts: set[str]) -> None:
         raise ValueError("Nonstandard source port is not permitted")
 
 
+def reject_nonpublic_dns(host: str) -> None:
+    """Reject non-global DNS answers; deployment still requires TLS IP pinning."""
+    try:
+        answers = socket.getaddrinfo(host, 443, type=socket.SOCK_STREAM)
+    except socket.gaierror as exc:
+        raise ValueError("DNS resolution failed") from exc
+    if not answers:
+        raise ValueError("DNS resolution returned no addresses")
+    for answer in answers:
+        address = answer[4][0].split("%", 1)[0]
+        try:
+            valid = ipaddress.ip_address(address).is_global
+        except ValueError as exc:
+            raise ValueError("DNS returned invalid IP") from exc
+        if not valid:
+            raise ValueError("DNS returned non-global IP")
+
+
 def persist_bytes(root: Path, source_id: str, url: str, data: bytes,
                   media_type: str = "application/octet-stream",
                   fetched_at: str | None = None) -> ArtifactReceipt:
@@ -58,8 +78,12 @@ def persist_bytes(root: Path, source_id: str, url: str, data: bytes,
         media_type=media_type,
     )
     folder = root / source_id / digest[:2]
+    if root.is_symlink() or root.parent.is_symlink() or (root / source_id).is_symlink() or folder.is_symlink():
+        raise ValueError("Symlinked evidence directory")
     folder.mkdir(parents=True, exist_ok=True)
     target = folder / digest
+    if target.is_symlink():
+        raise ValueError("Symlinked evidence artifact")
     if target.exists():
         if target.read_bytes() != data:
             raise ValueError("Stored artifact does not match its digest")
@@ -81,17 +105,32 @@ def persist_bytes(root: Path, source_id: str, url: str, data: bytes,
     # One receipt per identical artifact. Historical release metadata belongs
     # to a separate versioned discovery manifest, not an overwritten receipt.
     receipt_path = folder / (digest + ".receipt.json")
+    if receipt_path.is_symlink():
+        raise ValueError("Symlinked source receipt")
     if not receipt_path.exists():
-        receipt_path.write_text(json.dumps(asdict(receipt), sort_keys=True, indent=2) + "\n")
+        try:
+            with receipt_path.open("x", encoding="utf-8") as output:
+                output.write(json.dumps(asdict(receipt), sort_keys=True, indent=2) + "\n")
+                output.flush()
+                os.fsync(output.fileno())
+        except FileExistsError:
+            pass
+    try:
+        existing = json.loads(receipt_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise ValueError("Invalid stored receipt") from exc
+    if existing.get("source_id") != source_id or existing.get("sha256") != digest or existing.get("byte_count") != len(data):
+        raise ValueError("Stored receipt conflicts with source bytes")
     return receipt
 
 
 def fetch_artifact(url: str, *, allowed_hosts: set[str], timeout: float = 30,
                    max_bytes: int = MAX_BYTES) -> tuple[bytes, str]:
     validate_url(url, allowed_hosts)
+    reject_nonpublic_dns(urlparse(url).hostname)
     request = Request(url, headers={"User-Agent": "AguaYLuz-HydroEvidence/1.0"})
     # No automatic promotion; caller must validate source format and schema.
-    with build_opener(RejectRedirects()).open(request, timeout=timeout) as response:
+    with build_opener(ProxyHandler({}), RejectRedirects()).open(request, timeout=timeout) as response:
         validate_url(response.geturl(), allowed_hosts)
         length = response.headers.get("Content-Length")
         if length and int(length) > max_bytes:
