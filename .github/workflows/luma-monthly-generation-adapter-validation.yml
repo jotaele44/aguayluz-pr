@@ -1,0 +1,44 @@
+name: LUMA monthly generation adapter validation
+
+on:
+  push:
+    branches:
+      - feature/luma-monthly-generation-adapter
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install validation dependencies
+        run: |
+          python -m pip install --disable-pip-version-check pytest ruff pypdf
+
+      - name: Compile
+        run: |
+          python -m py_compile scripts/luma_monthly_generation_adapter.py
+
+      - name: Ruff
+        run: |
+          ruff check scripts/luma_monthly_generation_adapter.py tests/test_luma_monthly_generation_adapter.py
+
+      - name: Targeted regression suite
+        run: |
+          pytest -q tests/test_luma_monthly_generation_adapter.py
+
+      - name: CLI smoke
+        run: |
+          python scripts/luma_monthly_generation_adapter.py --help
+          python scripts/luma_monthly_generation_adapter.py backfill --help
+          python scripts/luma_monthly_generation_adapter.py incremental --help
+          python scripts/luma_monthly_generation_adapter.py replay --help
