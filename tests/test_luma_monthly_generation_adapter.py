@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
-import json
+import sys
 from pathlib import Path
 
 import pytest
@@ -12,6 +12,7 @@ SPEC = importlib.util.spec_from_file_location(
     REPO / "scripts" / "luma_monthly_generation_adapter.py",
 )
 adapter = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = adapter
 assert SPEC.loader is not None
 SPEC.loader.exec_module(adapter)
 
@@ -203,7 +204,9 @@ def test_duplicate_period_state_distinguishes_payload_and_url_changes():
     assert state["2026-02"]["state"] == "MULTIPLE_DISTINCT_PAYLOADS"
 
 
-def test_replay_verifies_frozen_bytes_page_counts_units_and_no_identity_promotion(tmp_path):
+def test_replay_verifies_frozen_bytes_page_counts_units_and_no_identity_promotion(
+    tmp_path, monkeypatch
+):
     root = tmp_path
     raw = root / "raw" / "2026-01"
     raw.mkdir(parents=True)
@@ -225,13 +228,20 @@ def test_replay_verifies_frozen_bytes_page_counts_units_and_no_identity_promotio
         }
     ]
     adapter.write_jsonl(root / "manifest.jsonl", manifest)
+    page_text = "Hydro Net Generation 1 MWh"
+    monkeypatch.setattr(adapter, "extract_pdf_pages", lambda _path: [page_text])
+    render = root / "pages" / "2026-01" / digest / "page-0001.png"
+    render.parent.mkdir(parents=True)
+    render.write_bytes(b"render-fixture")
     adapter.write_jsonl(
         root / "page_index.jsonl",
         [
             {
                 "manifestation_sha256": digest,
                 "page_number": 1,
-                "render_sha256": "render",
+                "text_sha256": adapter.sha256_bytes(page_text.encode("utf-8")),
+                "render_path": str(render.relative_to(root)),
+                "render_sha256": adapter.sha256_file(render),
             }
         ],
     )
@@ -268,6 +278,9 @@ def test_replay_verifies_frozen_bytes_page_counts_units_and_no_identity_promotio
         "SHA_REPLAY": "PASS",
         "PDF_SIGNATURE": "PASS",
         "PAGE_COUNT_CLOSURE": "PASS",
+        "PAGE_TEXT_SHA_REPLAY": "PASS",
+        "RENDER_SHA_REPLAY": "PASS",
+        "NEGATIVE_AUTO_CERTIFICATION_DENY": "PASS",
         "TYPED_UNIT_VALIDATION": "PASS",
         "NO_NAME_ONLY_CANONICAL_PROMOTION": "PASS",
         "IDEMPOTENT_MANIFEST_KEYS": "PASS",
@@ -322,3 +335,23 @@ def test_canonical_candidates_remain_withheld():
     assert candidates[0]["identity_state"] == "CANDIDATE_NOT_IDENTITY"
     assert candidates[0]["canonical_claim_state"] == "WITHHELD"
     assert "name-only" in candidates[0]["reason"]
+
+
+def test_landing_publication_date_prefers_explicit_metadata():
+    html = """
+    <html><head>
+      <meta property="article:published_time" content="2026-04-30T10:30:00-04:00">
+      <meta property="article:modified_time" content="2026-05-01T10:30:00-04:00">
+    </head><body></body></html>
+    """
+    assert adapter.landing_publication_date(html) == "2026-04-30T10:30:00-04:00"
+
+
+def test_negative_page_completeness_is_not_equivalent_to_certification():
+    # The adapter intentionally exposes page-complete readiness separately.
+    assert adapter.classify_hydro_text("Solar generation 42 MWh") == "HYDRO_ABSENT"
+    # Certification eligibility is only written by acquisition and is always denied
+    # automatically until independent visual semantic review occurs.
+    fields = adapter.ManifestRow.__dataclass_fields__
+    assert "negative_page_complete_ready" in fields
+    assert "negative_certification_eligible" in fields
