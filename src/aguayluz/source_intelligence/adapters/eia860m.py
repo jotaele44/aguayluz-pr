@@ -456,24 +456,37 @@ class EIA860MAdapter:
         ).encode("utf-8")
         return hashlib.sha256(encoded).hexdigest()
 
-    def parse_pr_hydro(self, artifact: RawArtifact) -> list[dict[str, Any]]:
+    def parse_operating_pr_hydro(self, artifact: RawArtifact) -> list[dict[str, Any]]:
         self.validate_transport(artifact)
         with zipfile.ZipFile(io.BytesIO(artifact.content)) as archive:
             sheets = _sheet_paths(archive)
             _, operating_path = _find_sheet(sheets, "operating")
-            _, retired_path = _find_sheet(sheets, "retired")
-            rows = [
-                *_parse_sheet(
-                    _worksheet_rows(archive, operating_path),
-                    record_kind="OPERATING",
-                ),
-                *_parse_sheet(
-                    _worksheet_rows(archive, retired_path),
-                    record_kind="RETIRED",
-                ),
-            ]
+            rows = _parse_sheet(
+                _worksheet_rows(archive, operating_path),
+                record_kind="OPERATING",
+            )
         validate_generator_invariants(rows)
         return rows
+
+    def parse_retired_pr_hydro(self, artifact: RawArtifact) -> list[dict[str, Any]]:
+        self.validate_transport(artifact)
+        with zipfile.ZipFile(io.BytesIO(artifact.content)) as archive:
+            sheets = _sheet_paths(archive)
+            _, retired_path = _find_sheet(sheets, "retired")
+            rows = _parse_sheet(
+                _worksheet_rows(archive, retired_path),
+                record_kind="RETIRED",
+            )
+        # A historical tab may be empty for a bounded source slice, so validate only
+        # when rows are present. Identity uniqueness remains sheet-scoped.
+        if rows:
+            validate_generator_invariants(rows)
+        return rows
+
+    def parse_pr_hydro(self, artifact: RawArtifact) -> list[dict[str, Any]]:
+        operating = self.parse_operating_pr_hydro(artifact)
+        retired = self.parse_retired_pr_hydro(artifact)
+        return [*operating, *retired]
 
     def parse(self, artifact: RawArtifact) -> list[dict[str, Any]]:
         return self.parse_pr_hydro(artifact)
