@@ -8,12 +8,11 @@ from __future__ import annotations
 
 import hashlib
 import io
-import zipfile
 import xml.etree.ElementTree as ET
+import zipfile
 from typing import Any
 
 from .base import AdapterCapabilities, RawArtifact
-
 
 SOURCE_FAMILY_ID = "EIA_860M"
 INDEX_URL = "https://www.eia.gov/electricity/data/eia860m/"
