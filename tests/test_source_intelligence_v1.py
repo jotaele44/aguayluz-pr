@@ -13,11 +13,11 @@ from aguayluz.source_intelligence import (
     SOURCE_PRODUCTS,
     coverage_report,
 )
-from aguayluz.source_intelligence.adapters.base import RawArtifact
 from aguayluz.source_intelligence.acquisition import (
     canonical_payload_already_frozen,
     persist_canonical_acquisition,
 )
+from aguayluz.source_intelligence.adapters.base import RawArtifact
 from aguayluz.source_intelligence.adapters.eia860m import (
     EIA860MAdapter,
     _find_sheet,
