@@ -141,7 +141,10 @@ SECTOR_TYPE_MAP: dict[str, set[str]] = {
     "telecom": {"telecom", "cell_tower", "fiber", "communications"},
 }
 
+from server.backend.hydro_intelligence_api import router as hydro_intelligence_router
+
 app = FastAPI(title="AguaYLuz-PR")
+app.include_router(hydro_intelligence_router)
 
 # CORS: allow the Vite dev server and any configured ALLOWED_ORIGINS
 _cors_origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
