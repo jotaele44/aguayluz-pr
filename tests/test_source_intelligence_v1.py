@@ -258,7 +258,7 @@ def test_eia_923_full_payload_uses_only_current_year_zip() -> None:
 def test_unresolved_product_cannot_fetch_full_payload() -> None:
     with pytest.raises(ValueError, match="full payload route unresolved"):
         resolve_route(
-            "LUMA_DAILY_AVAILABILITY_PRIMARY_PRODUCT",
+            "LUMA_DAILY_AVAILABILITY_RESIDUAL_PRODUCT",
             FetchPurpose.FULL_PAYLOAD,
             products=SOURCE_PRODUCTS,
             routes=ACQUISITION_ROUTES,
