@@ -35,6 +35,7 @@ from server.backend.monitoring_quality import (
     series_quality,
 )
 from server.backend.regulatory_api import router as regulatory_router
+from server.backend.source_intelligence_api import router as source_intelligence_router
 from server.backend.water_disruption_api import router as water_disruption_router
 
 
@@ -58,6 +59,7 @@ for middleware in reversed(legacy.app.user_middleware):
 app.include_router(water_disruption_router)
 app.include_router(cave_karst_router)
 app.include_router(regulatory_router)
+app.include_router(source_intelligence_router)
 app.include_router(environmental_exposure_router)
 app.include_router(hydromet_router)
 
