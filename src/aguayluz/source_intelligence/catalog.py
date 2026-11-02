@@ -1,0 +1,181 @@
+"""Bounded V1 domain and source-family denominator for AguaYLuz."""
+from __future__ import annotations
+
+from .models import (
+    CoverageRole,
+    CoverageState,
+    DomainDefinition,
+    DomainSourceRequirement,
+    MonitoringMode,
+    SourceFamilyDefinition,
+)
+
+
+def _domain(domain_id: str, label: str, scope: str, *classes: str) -> DomainDefinition:
+    return DomainDefinition(
+        domain_id=domain_id,
+        label=label,
+        scope=scope,
+        required_data_classes=classes or ("OBSERVATION",),
+        certification_rule=(
+            "Zero material unresolved source-coverage residue inside declared scope."
+        ),
+    )
+
+
+DOMAIN_REGISTRY = (
+    _domain("ENERGY_GENERATION", "Energy generation", "Generation inventory, output and plant state.", "ASSET", "OBSERVATION"),
+    _domain("ENERGY_GRID", "Energy grid", "Transmission, substations and interconnections.", "ASSET", "GEOMETRY"),
+    _domain("ENERGY_OUTAGES", "Energy outages", "Availability, derates, outages and interruptions.", "OBSERVATION"),
+    _domain("HYDROLOGY", "Hydrology", "Surface water, groundwater, discharge and rainfall-runoff.", "OBSERVATION", "GEOMETRY"),
+    _domain("RESERVOIRS_DAMS", "Reservoirs and dams", "Storage, levels, dams, spillways and dredging.", "ASSET", "OBSERVATION", "GEOMETRY"),
+    _domain("DRINKING_WATER", "Drinking water", "Systems, treatment, service and drinking-water evidence.", "ASSET", "OBSERVATION"),
+    _domain("WASTEWATER", "Wastewater", "Wastewater plants, collection and discharge events.", "ASSET", "OBSERVATION"),
+    _domain("WATER_QUALITY", "Water quality", "Surface, groundwater and drinking-water quality.", "OBSERVATION"),
+    _domain("FLOODING", "Flooding", "Gauges, flood thresholds, flood observations and hazard products.", "OBSERVATION", "GEOMETRY"),
+    _domain("COASTAL", "Coastal", "Coastal water levels, surge, erosion and coastal flooding.", "OBSERVATION", "GEOMETRY"),
+    _domain("WETLANDS_ECOLOGY", "Wetlands and ecology", "Wetlands, habitat and ecological context.", "GEOMETRY", "OBSERVATION"),
+    _domain("SOILS_GEOLOGY", "Soils and geology", "Soils, infiltration, karst and geologic constraints.", "GEOMETRY"),
+    _domain("WEATHER_CLIMATE", "Weather and climate", "Weather, rainfall, drought, tropical cyclones and climate context.", "OBSERVATION"),
+    _domain("INFRASTRUCTURE_PROJECTS", "Infrastructure projects", "Utility reconstruction, upgrades and mitigation.", "PROJECT"),
+    _domain("RECOVERY_FUNDING", "Recovery funding", "Recovery grants, obligations and mitigation funding.", "PROJECT", "FINANCIAL"),
+    _domain("REGULATORY", "Regulatory", "Orders, permits, filings, inspections and enforcement.", "REGULATORY_RECORD"),
+    _domain("GIS_BASE", "GIS base", "Authoritative utility and environmental geometry sources.", "GEOMETRY"),
+    _domain("REMOTE_SENSING", "Remote sensing", "Imagery and derived change observations.", "RASTER", "OBSERVATION"),
+    _domain("DEPENDENCIES", "Cross-sector dependencies", "Water-power-communications-road dependencies.", "RELATIONSHIP"),
+    _domain("RESILIENCE", "Resilience", "Restoration, redundancy, vulnerability and scenarios.", "PROJECT", "DERIVED"),
+)
+
+
+def _source(
+    source_family_id: str,
+    authority: str,
+    label: str,
+    locator: str,
+    mode: MonitoringMode,
+    *,
+    adapter_id: str | None = None,
+    identity_namespace: str | None = None,
+    mutable: bool = True,
+) -> SourceFamilyDefinition:
+    return SourceFamilyDefinition(
+        source_family_id=source_family_id,
+        authority=authority,
+        label=label,
+        canonical_locator=locator,
+        monitoring_mode=mode,
+        adapter_id=adapter_id,
+        identity_namespace=identity_namespace,
+        mutable=mutable,
+    )
+
+
+SOURCE_FAMILIES = (
+    _source("EIA_860M", "U.S. EIA", "EIA-860M monthly generator inventory", "https://www.eia.gov/electricity/data/eia860m/", MonitoringMode.DISCOVER_NEW_RELEASE, adapter_id="eia860m", identity_namespace="EIA_PLANT_GENERATOR"),
+    _source("EIA_923", "U.S. EIA", "EIA-923 generation and fuel data", "https://www.eia.gov/electricity/data/eia923/", MonitoringMode.DISCOVER_NEW_RELEASE, adapter_id="eia923", identity_namespace="EIA_PLANT_PRIME_MOVER"),
+    _source("EIA_EPM", "U.S. EIA", "Electric Power Monthly", "https://www.eia.gov/electricity/monthly/", MonitoringMode.DISCOVER_NEW_RELEASE),
+    _source("LUMA_DAILY_AVAILABILITY", "LUMA Energy", "Daily Availability Reports", "https://lumapr.com/monitoreo-de-bps/", MonitoringMode.DAILY_INDEX_SCAN, adapter_id="luma_daily_availability", identity_namespace="LUMA_PREPA_UNIT"),
+    _source("LUMA_OUTAGES", "LUMA Energy", "Outage and service status", "https://lumapr.com/", MonitoringMode.POLL_INTERVAL, adapter_id="luma_outages"),
+    _source("PREPA_REGULATORY", "PREPA", "PREPA utility regulatory filings", "https://energia.pr.gov/", MonitoringMode.DISCOVER_NEW_RELEASE, adapter_id="prepa_regulatory", identity_namespace="PREPA_ASSET"),
+    _source("NEPR_DOCKETS", "Puerto Rico Energy Bureau", "Energy Bureau dockets", "https://energia.pr.gov/", MonitoringMode.DISCOVER_NEW_RELEASE, adapter_id="nepr_dockets"),
+    _source("PRASA_OPERATIONS", "PRASA/AAA", "Water and wastewater operational sources", "https://www.acueductospr.com/", MonitoringMode.POLL_INTERVAL, adapter_id="prasa_operations", identity_namespace="PRASA_ASSET"),
+    _source("DRNA_HYDROLOGY", "DRNA", "Hydrology and reservoir sources", "https://www.drna.pr.gov/", MonitoringMode.DISCOVER_NEW_RELEASE, adapter_id="drna_hydrology"),
+    _source("USGS_NWIS", "USGS", "Water observations and site metadata", "https://api.waterdata.usgs.gov/", MonitoringMode.POLL_INTERVAL, adapter_id="usgs_nwis", identity_namespace="USGS_SITE"),
+    _source("USGS_3DEP", "USGS", "3DEP terrain", "https://www.usgs.gov/3d-elevation-program", MonitoringMode.DISCOVER_NEW_RELEASE),
+    _source("USGS_HYDROGRAPHY", "USGS", "National hydrography and 3DHP", "https://www.usgs.gov/national-hydrography", MonitoringMode.DISCOVER_NEW_RELEASE),
+    _source("NOAA_NWS_NWPS", "NOAA/NWS", "NWPS gauges and hydrometeorology", "https://water.noaa.gov/", MonitoringMode.POLL_INTERVAL, adapter_id="nwps"),
+    _source("NOAA_NHC", "NOAA/NHC", "Tropical cyclone advisories", "https://www.nhc.noaa.gov/", MonitoringMode.POLL_INTERVAL, adapter_id="nhc"),
+    _source("NOAA_COASTAL", "NOAA", "Coastal water-level products", "https://tidesandcurrents.noaa.gov/", MonitoringMode.POLL_INTERVAL, adapter_id="noaa_coastal"),
+    _source("EPA_SDWA", "US EPA", "Drinking-water regulatory data", "https://www.epa.gov/enviro/sdwis-search", MonitoringMode.DISCOVER_NEW_RELEASE, adapter_id="epa_sdwa", identity_namespace="PWSID"),
+    _source("EPA_WATERS", "US EPA", "Surface-water and environmental data", "https://www.epa.gov/waterdata", MonitoringMode.POLL_INTERVAL, adapter_id="epa_waters"),
+    _source("PRDOH_DRINKING_WATER", "Puerto Rico Department of Health", "Drinking-water reports", "https://www.salud.pr.gov/", MonitoringMode.DISCOVER_NEW_RELEASE),
+    _source("PRITS_WFS", "PRITS", "Puerto Rico geospatial services", "https://gis.pr.gov/", MonitoringMode.SERVICE_STATE_MONITOR, adapter_id="prits_wfs"),
+    _source("FEMA_RECOVERY", "FEMA", "Public assistance and mitigation records", "https://www.fema.gov/openfema-data-page", MonitoringMode.DISCOVER_NEW_RELEASE, adapter_id="fema_recovery"),
+    _source("COR3_RECOVERY", "COR3", "Puerto Rico recovery project records", "https://recovery.pr.gov/", MonitoringMode.DISCOVER_NEW_RELEASE, adapter_id="cor3_recovery"),
+    _source("HUD_CDBG", "HUD", "CDBG-DR and CDBG-MIT records", "https://www.hud.gov/", MonitoringMode.DISCOVER_NEW_RELEASE),
+    _source("DOE_RESILIENCE", "U.S. DOE", "Grid and energy resilience programs", "https://www.energy.gov/", MonitoringMode.DISCOVER_NEW_RELEASE),
+    _source("USFWS_NWI", "USFWS", "National Wetlands Inventory", "https://www.fws.gov/program/national-wetlands-inventory", MonitoringMode.DISCOVER_NEW_RELEASE),
+    _source("NRCS_SSURGO", "USDA NRCS", "SSURGO soils", "https://websoilsurvey.nrcs.usda.gov/", MonitoringMode.DISCOVER_NEW_RELEASE),
+    _source("FIA_FIADB", "USFS", "Forest Inventory and Analysis", "https://apps.fs.usda.gov/fia/datamart/", MonitoringMode.DISCOVER_NEW_RELEASE),
+    _source("LANDFIRE", "LANDFIRE", "Vegetation, fuels and disturbance", "https://landfire.gov/", MonitoringMode.DISCOVER_NEW_RELEASE),
+    _source("LANDSAT", "USGS/NASA", "Landsat imagery", "https://www.usgs.gov/landsat-missions", MonitoringMode.DISCOVER_NEW_RELEASE),
+    _source("SENTINEL", "ESA/Copernicus", "Sentinel imagery", "https://dataspace.copernicus.eu/", MonitoringMode.DISCOVER_NEW_RELEASE),
+    _source("NAIP", "USDA", "NAIP aerial imagery", "https://naip-usdaonline.hub.arcgis.com/", MonitoringMode.DISCOVER_NEW_RELEASE),
+)
+
+
+def _req(
+    domain: str,
+    source: str,
+    role: CoverageRole,
+    *,
+    required: bool = False,
+    adapter_required: bool = False,
+) -> DomainSourceRequirement:
+    return DomainSourceRequirement(
+        domain_id=domain,
+        source_family_id=source,
+        role=role,
+        required=required,
+        adapter_required=adapter_required,
+        state=CoverageState.REGISTERED,
+    )
+
+
+SOURCE_REQUIREMENTS = (
+    _req("ENERGY_GENERATION", "EIA_860M", CoverageRole.PRIMARY_AUTHORITY, required=True, adapter_required=True),
+    _req("ENERGY_GENERATION", "EIA_923", CoverageRole.PRIMARY_AUTHORITY, required=True, adapter_required=True),
+    _req("ENERGY_GENERATION", "EIA_EPM", CoverageRole.CORROBORATIVE),
+    _req("ENERGY_GENERATION", "PREPA_REGULATORY", CoverageRole.REGULATORY_RECORD, required=True, adapter_required=True),
+    _req("ENERGY_GRID", "LUMA_OUTAGES", CoverageRole.OPERATIONAL, required=True, adapter_required=True),
+    _req("ENERGY_GRID", "PREPA_REGULATORY", CoverageRole.REGULATORY_RECORD, required=True, adapter_required=True),
+    _req("ENERGY_GRID", "PRITS_WFS", CoverageRole.SPATIAL_AUTHORITY, required=True, adapter_required=True),
+    _req("ENERGY_OUTAGES", "LUMA_DAILY_AVAILABILITY", CoverageRole.OPERATIONAL, required=True, adapter_required=True),
+    _req("ENERGY_OUTAGES", "LUMA_OUTAGES", CoverageRole.OPERATIONAL, required=True, adapter_required=True),
+    _req("HYDROLOGY", "USGS_NWIS", CoverageRole.PRIMARY_AUTHORITY, required=True, adapter_required=True),
+    _req("HYDROLOGY", "NOAA_NWS_NWPS", CoverageRole.OPERATIONAL, required=True, adapter_required=True),
+    _req("HYDROLOGY", "DRNA_HYDROLOGY", CoverageRole.PRIMARY_AUTHORITY, required=True, adapter_required=True),
+    _req("RESERVOIRS_DAMS", "USGS_NWIS", CoverageRole.PRIMARY_AUTHORITY, required=True, adapter_required=True),
+    _req("RESERVOIRS_DAMS", "DRNA_HYDROLOGY", CoverageRole.PRIMARY_AUTHORITY, required=True, adapter_required=True),
+    _req("RESERVOIRS_DAMS", "PRITS_WFS", CoverageRole.SPATIAL_AUTHORITY),
+    _req("DRINKING_WATER", "PRASA_OPERATIONS", CoverageRole.OPERATIONAL, required=True, adapter_required=True),
+    _req("DRINKING_WATER", "EPA_SDWA", CoverageRole.PRIMARY_AUTHORITY, required=True, adapter_required=True),
+    _req("DRINKING_WATER", "PRDOH_DRINKING_WATER", CoverageRole.PRIMARY_AUTHORITY, required=True),
+    _req("WASTEWATER", "PRASA_OPERATIONS", CoverageRole.OPERATIONAL, required=True, adapter_required=True),
+    _req("WASTEWATER", "EPA_WATERS", CoverageRole.PRIMARY_AUTHORITY, required=True, adapter_required=True),
+    _req("WATER_QUALITY", "EPA_WATERS", CoverageRole.PRIMARY_AUTHORITY, required=True, adapter_required=True),
+    _req("WATER_QUALITY", "EPA_SDWA", CoverageRole.PRIMARY_AUTHORITY, required=True, adapter_required=True),
+    _req("WATER_QUALITY", "USGS_NWIS", CoverageRole.SECONDARY_AUTHORITY, required=True, adapter_required=True),
+    _req("FLOODING", "NOAA_NWS_NWPS", CoverageRole.PRIMARY_AUTHORITY, required=True, adapter_required=True),
+    _req("FLOODING", "USGS_NWIS", CoverageRole.SECONDARY_AUTHORITY, required=True, adapter_required=True),
+    _req("COASTAL", "NOAA_COASTAL", CoverageRole.PRIMARY_AUTHORITY, required=True, adapter_required=True),
+    _req("WETLANDS_ECOLOGY", "USFWS_NWI", CoverageRole.PRIMARY_AUTHORITY, required=True),
+    _req("WETLANDS_ECOLOGY", "DRNA_HYDROLOGY", CoverageRole.SECONDARY_AUTHORITY),
+    _req("SOILS_GEOLOGY", "NRCS_SSURGO", CoverageRole.PRIMARY_AUTHORITY, required=True),
+    _req("SOILS_GEOLOGY", "USGS_3DEP", CoverageRole.SPATIAL_AUTHORITY, required=True),
+    _req("WEATHER_CLIMATE", "NOAA_NWS_NWPS", CoverageRole.PRIMARY_AUTHORITY, required=True, adapter_required=True),
+    _req("WEATHER_CLIMATE", "NOAA_NHC", CoverageRole.PRIMARY_AUTHORITY, required=True, adapter_required=True),
+    _req("INFRASTRUCTURE_PROJECTS", "PREPA_REGULATORY", CoverageRole.REGULATORY_RECORD, required=True, adapter_required=True),
+    _req("INFRASTRUCTURE_PROJECTS", "PRASA_OPERATIONS", CoverageRole.REGULATORY_RECORD, required=True, adapter_required=True),
+    _req("INFRASTRUCTURE_PROJECTS", "COR3_RECOVERY", CoverageRole.PRIMARY_AUTHORITY, required=True, adapter_required=True),
+    _req("RECOVERY_FUNDING", "FEMA_RECOVERY", CoverageRole.PRIMARY_AUTHORITY, required=True, adapter_required=True),
+    _req("RECOVERY_FUNDING", "COR3_RECOVERY", CoverageRole.PRIMARY_AUTHORITY, required=True, adapter_required=True),
+    _req("RECOVERY_FUNDING", "HUD_CDBG", CoverageRole.PRIMARY_AUTHORITY, required=True),
+    _req("REGULATORY", "NEPR_DOCKETS", CoverageRole.PRIMARY_AUTHORITY, required=True, adapter_required=True),
+    _req("REGULATORY", "EPA_SDWA", CoverageRole.PRIMARY_AUTHORITY),
+    _req("REGULATORY", "EPA_WATERS", CoverageRole.PRIMARY_AUTHORITY),
+    _req("REGULATORY", "PREPA_REGULATORY", CoverageRole.REGULATORY_RECORD, required=True, adapter_required=True),
+    _req("GIS_BASE", "PRITS_WFS", CoverageRole.SPATIAL_AUTHORITY, required=True, adapter_required=True),
+    _req("GIS_BASE", "USGS_3DEP", CoverageRole.SPATIAL_AUTHORITY, required=True),
+    _req("GIS_BASE", "USGS_HYDROGRAPHY", CoverageRole.SPATIAL_AUTHORITY, required=True),
+    _req("REMOTE_SENSING", "LANDSAT", CoverageRole.PRIMARY_AUTHORITY, required=True),
+    _req("REMOTE_SENSING", "SENTINEL", CoverageRole.PRIMARY_AUTHORITY, required=True),
+    _req("REMOTE_SENSING", "NAIP", CoverageRole.SECONDARY_AUTHORITY),
+    _req("DEPENDENCIES", "PRITS_WFS", CoverageRole.SPATIAL_AUTHORITY, required=True, adapter_required=True),
+    _req("DEPENDENCIES", "LUMA_OUTAGES", CoverageRole.OPERATIONAL),
+    _req("DEPENDENCIES", "PRASA_OPERATIONS", CoverageRole.OPERATIONAL),
+    _req("RESILIENCE", "FEMA_RECOVERY", CoverageRole.PRIMARY_AUTHORITY, required=True, adapter_required=True),
+    _req("RESILIENCE", "COR3_RECOVERY", CoverageRole.PRIMARY_AUTHORITY, required=True, adapter_required=True),
+    _req("RESILIENCE", "DOE_RESILIENCE", CoverageRole.PRIMARY_AUTHORITY, required=True),
+    _req("RESILIENCE", "FIA_FIADB", CoverageRole.CORROBORATIVE),
+)
