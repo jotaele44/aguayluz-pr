@@ -255,6 +255,8 @@ def parse_eia_923_generation_workbook(
     if (len(source_member_sha256) != 64 or
             any(c not in "0123456789abcdef" for c in source_member_sha256)):
         raise ValueError("Invalid source member SHA256")
+    if hashlib.sha256(raw).hexdigest() != source_member_sha256:
+        raise ValueError("EIA-923 workbook does not match declared member SHA256")
     inspect_eia_923_zip(raw)
     try:
         import openpyxl
