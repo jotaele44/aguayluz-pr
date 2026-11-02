@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-
 GATE_WEIGHTS = {
     "coverage_matrix": 10,
     "immutable_manifestation_runtime": 15,
