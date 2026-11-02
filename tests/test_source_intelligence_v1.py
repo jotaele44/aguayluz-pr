@@ -209,11 +209,15 @@ def test_archive_identity_same_payloads_different_paths() -> None:
     ) == PayloadIdentityClass.SAME_PAYLOADS_DIFFERENT_PATHS
 
 
-def test_route_governance_stays_fail_closed_until_all_families_are_mapped() -> None:
+def test_route_governance_covers_every_family_but_keeps_unresolved_routes_open() -> None:
     summary = route_governance_summary()
-    assert summary.governed_source_families >= 1
-    assert summary.products_with_single_canonical_payload == summary.total_products
-    assert summary.ungoverned_source_family_ids
+    assert summary.governed_source_families == summary.total_source_families
+    assert summary.ungoverned_source_family_ids == ()
+    assert summary.route_governance_coverage_percent == 100.0
+    assert summary.route_governance_coverage_complete is True
+    assert summary.provisional_or_unresolved_product_ids
+    assert summary.products_without_resolved_payload_ids
+    assert summary.products_with_invalid_canonical_payload_count == 0
     assert summary.zero_redundant_fetches_certifiable is False
 
 
@@ -245,3 +249,13 @@ def test_eia_923_full_payload_uses_only_current_year_zip() -> None:
     )
     assert route.route_id == "EIA_923_CURRENT_YEAR_ZIP"
     assert route.may_publish_canonical is True
+
+
+def test_unresolved_product_cannot_fetch_full_payload() -> None:
+    with pytest.raises(ValueError, match="full payload route unresolved"):
+        resolve_route(
+            "LUMA_DAILY_AVAILABILITY_PRIMARY_PRODUCT",
+            FetchPurpose.FULL_PAYLOAD,
+            products=SOURCE_PRODUCTS,
+            routes=ACQUISITION_ROUTES,
+        )
