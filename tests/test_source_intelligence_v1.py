@@ -42,7 +42,7 @@ def test_catalog_has_declared_domain_and_source_denominators() -> None:
     assert report.unknown_primary_source_families == 0
     assert report.domains_without_required_source == ()
     assert report.structural_readiness_score >= 95
-    assert report.frontend_ready
+    assert report.coverage_matrix_ready
 
 
 def test_health_zero_rows_fails_closed() -> None:
