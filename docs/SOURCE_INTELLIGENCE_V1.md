@@ -66,9 +66,7 @@ The offline-safe EIA-860M adapter proves:
 - deterministic workbook sheet-name fingerprinting;
 - malformed/HTML negative behavior.
 
-Row parsing is intentionally still bounded. Production row parsing must first
-inspect real EIA-860M preambles and headers and preserve raw source strings
-before extracting Puerto Rico operating and retired rows.
+The reference adapter now implements a bounded XLSX preamble/header detector, Operating and Retired sheet parsing, raw-string preservation, Puerto Rico hydro filtering, and exact Plant ID + Generator ID invariants. Raw January/February 2026 workbook bytes are still unavailable in the current execution environment, so byte-level fixture certification remains OPEN and the normalized Jan/Feb replay fixture is explicitly DERIVED_KNOWN_GOOD rather than source-byte evidence.
 
 ## API V1
 
@@ -84,4 +82,4 @@ a fabricated healthy state.
 
 ## Current authorization state
 
-The V1 Coverage Matrix may reach structural readiness before the backend does. The API therefore reports frontend_authorized=false until the reference adapter has a production row parser, unified runtime receipts exist, and backend qualification passes. This prevents a static denominator from being mistaken for a production-ready backend.
+The V1 Coverage Matrix may reach structural readiness before the backend does. Source Intelligence now includes content-addressed immutable raw storage, immutable SourceManifestation receipts, source-health receipts, a production parser implementation, identity invariants, and readiness scoring. The API contract remains UNFROZEN and frontend_authorized remains false until exact-head qualification passes and the real January/February 2026 source bytes are frozen and replayed through the parser. This prevents implementation success or derived fixtures from being mistaken for source-byte certification.
