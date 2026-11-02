@@ -1,6 +1,6 @@
 # AguaYLuz Source Intelligence V1
 
-Status: implementation scaffold; no new live source activation.
+Status: backend-qualified candidate; no new live source activation.
 
 ## Purpose
 
@@ -66,7 +66,7 @@ The offline-safe EIA-860M adapter proves:
 - deterministic workbook sheet-name fingerprinting;
 - malformed/HTML negative behavior.
 
-The reference adapter now implements a bounded XLSX preamble/header detector, Operating and Retired sheet parsing, raw-string preservation, Puerto Rico hydro filtering, and exact Plant ID + Generator ID invariants. Raw January/February 2026 workbook bytes are still unavailable in the current execution environment, so byte-level fixture certification remains OPEN and the normalized Jan/Feb replay fixture is explicitly DERIVED_KNOWN_GOOD rather than source-byte evidence.
+The reference adapter implements bounded preamble/header detection, Puerto Rico-specific Operating/Retired sheet selection, raw-string preservation, Puerto Rico hydro filtering, and exact Plant ID + Generator ID invariants. The frozen 2026-11-02 reference receipt records authoritative January/February 2026 bytes, verified source SHA-256 values, 20 operating PR hydro units, 98.1 MW, 19 OP + 1 SB, and a Jan→Feb identity vector of INTERSECTION=20, A_ONLY=0, B_ONLY=0, UNION=20, SYMMETRIC_DIFFERENCE=0.
 
 ## API V1
 
@@ -82,4 +82,4 @@ a fabricated healthy state.
 
 ## Current authorization state
 
-The V1 Coverage Matrix may reach structural readiness before the backend does. Source Intelligence now includes content-addressed immutable raw storage, immutable SourceManifestation receipts, source-health receipts, a production parser implementation, identity invariants, and readiness scoring. The API contract remains UNFROZEN and frontend_authorized remains false until exact-head qualification passes and the real January/February 2026 source bytes are frozen and replayed through the parser. This prevents implementation success or derived fixtures from being mistaken for source-byte certification.
+The V1 Coverage Matrix may reach structural readiness before the backend does. Source Intelligence now includes content-addressed immutable raw storage, immutable SourceManifestation receipts, source-health receipts, a production parser implementation, identity invariants, and readiness scoring. The V1 API contract is frozen in code and backend readiness is evidence-backed by the committed EIA reference receipt. Frontend authorization may become PASS only when the exact-head CI wave for the candidate is green. Domain certification and AGUAYLUZ_SOURCE_UNIVERSE_CERTIFIED remain fail-closed until domain-level evidence gates and TheHub LOCKSTEP are separately proven.
