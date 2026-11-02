@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# ruff: noqa: E402  # src-path bootstrap must precede local imports
 """Manual, bounded source acquisition; never promotes source rows to canonical data.
 
 No scheduling or unattended deployment until the security and provenance gates pass.
