@@ -69,7 +69,9 @@ def _atomic_no_clobber(path: Path, data: bytes) -> None:
             os.link(tmp_name, path)
         except FileExistsError:
             if path.read_bytes() != data:
-                raise ValueError(f"concurrent writer changed immutable path: {path}")
+                raise ValueError(
+                    f"concurrent writer changed immutable path: {path}"
+                ) from None
     finally:
         if os.path.exists(tmp_name):
             os.unlink(tmp_name)
