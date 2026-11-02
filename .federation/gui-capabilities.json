@@ -1782,7 +1782,8 @@
         "files": [
           "src/aguayluz/hydro_intelligence/acquisition.py",
           "src/aguayluz/hydro_intelligence/discovery.py",
-          "src/aguayluz/hydro_intelligence/parsers.py"
+          "src/aguayluz/hydro_intelligence/parsers.py",
+          "scripts/ingest_hydro_intelligence.py"
         ],
         "symbols": [
           "src/aguayluz/hydro_intelligence/acquisition.py:ArtifactReceipt",
@@ -1801,14 +1802,17 @@
           "src/aguayluz/hydro_intelligence/parsers.py:inspect_eia_923_zip",
           "src/aguayluz/hydro_intelligence/parsers.py:inspect_luma_pdf",
           "src/aguayluz/hydro_intelligence/parsers.py:parse_eia_facility_fuel_csv",
-          "src/aguayluz/hydro_intelligence/parsers.py:parse_eia_860m_generator_rows"
+          "src/aguayluz/hydro_intelligence/parsers.py:parse_eia_860m_generator_rows",
+          "scripts/ingest_hydro_intelligence.py:source_record",
+          "scripts/ingest_hydro_intelligence.py:main"
         ]
       },
       "tests": {
         "contract": [
           "tests/test_hydro_intelligence_acquisition.py",
           "tests/test_hydro_intelligence_discovery.py",
-          "tests/test_hydro_intelligence_parsers.py"
+          "tests/test_hydro_intelligence_parsers.py",
+          "tests/test_ingest_hydro_intelligence.py"
         ]
       }
     },
