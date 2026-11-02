@@ -2,7 +2,6 @@
 import json
 
 import pytest
-
 from scripts import ingest_hydro_intelligence as runner
 
 
