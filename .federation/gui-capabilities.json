@@ -1777,9 +1777,10 @@
       "classification": "internal",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Backend/internal source-governance control plane covering the bounded denominator, immutable SourceManifestation storage, runtime source-health receipts, readiness scoring, and EIA-860M reference-adapter qualification. Frontend authorization remains fail-closed until all readiness gates pass.",
+      "rationale": "Backend/internal source-governance control plane covering the bounded source-family denominator, terminal discovery-surface governance, single canonical payload ingestion, immutable manifestations, runtime health receipts, evidence-backed EIA-860M qualification, and a frozen V1 read-only API. Domain certification and source-universe certification remain separately fail-closed.",
       "backend": {
         "files": [
+          "server/backend/main.py",
           "server/backend/source_intelligence_api.py",
           "src/aguayluz/source_intelligence/__init__.py",
           "src/aguayluz/source_intelligence/acquisition.py",
@@ -1798,13 +1799,13 @@
           "src/aguayluz/source_intelligence/verified_operational_routes.py"
         ],
         "endpoints": [
-          "GET /coverage",
-          "GET /domains",
-          "GET /products",
-          "GET /route-governance",
-          "GET /routes",
-          "GET /sources",
-          "GET /summary"
+          "GET /source-intelligence/coverage",
+          "GET /source-intelligence/domains",
+          "GET /source-intelligence/products",
+          "GET /source-intelligence/route-governance",
+          "GET /source-intelligence/routes",
+          "GET /source-intelligence/sources",
+          "GET /source-intelligence/summary"
         ],
         "symbols": [
           "server/backend/source_intelligence_api.py:source_intelligence_summary",
