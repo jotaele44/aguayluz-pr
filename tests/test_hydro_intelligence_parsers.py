@@ -1,4 +1,5 @@
 """Hydro parser fail-closed positive and negative regression fixtures."""
+import hashlib
 import io
 import zipfile
 
@@ -48,6 +49,7 @@ def test_zip_members_are_structural_not_measured():
     result = inspect_eia_923_zip(_zip([("file.xlsx", b"sample")]))
     assert len(result) == 1
     assert result[0]["state"] == "STRUCTURAL_ONLY_NOT_PARSED"
+    assert result[0]["member_sha256"] == hashlib.sha256(b"sample").hexdigest()
 
 
 def test_zip_traversal_rejected():
