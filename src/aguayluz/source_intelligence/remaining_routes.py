@@ -1,8 +1,9 @@
-"""Governed route placeholders for source families without verified payload routes.
+"""Terminal discovery-surface governance for every bounded source family.
 
-These records close the route-governance denominator without inventing payload URLs.
-They are explicitly PROVISIONAL + UNRESOLVED and therefore cannot be selected for a
-full-payload fetch or contribute to zero-redundant-fetch certification.
+A family discovery surface is not a data payload product. It proves that the family
+itself has one governed discovery entrypoint while payload-bearing products are
+registered separately only when their identity and canonical acquisition route are
+independently verified.
 """
 from __future__ import annotations
 
@@ -17,46 +18,31 @@ from .routes import (
     validate_route_registry,
 )
 
-_VERIFIED_ROUTE_FAMILIES = {
-    # These source-family denominators are bounded by definition or by explicit
-    # repository evidence. Other families retain a provisional residual product
-    # even when some verified products/routes are registered elsewhere.
-    "EIA_860M",
-    "EIA_923",
-    "LUMA_OUTAGES",
-}
-
 
 def _product_id(source_family_id: str) -> str:
-    return f"{source_family_id}_RESIDUAL_PRODUCT"
+    return f"{source_family_id}_FAMILY_DISCOVERY"
 
 
 def _route_id(source_family_id: str) -> str:
-    return f"{source_family_id}_RESIDUAL_DISCOVERY"
+    return f"{source_family_id}_FAMILY_DISCOVERY_ROUTE"
 
-
-_UNRESOLVED_SOURCES = tuple(
-    source
-    for source in SOURCE_FAMILIES
-    if source.source_family_id not in _VERIFIED_ROUTE_FAMILIES
-)
 
 REMAINING_SOURCE_PRODUCTS = tuple(
     SourceProductDefinition(
         product_id=_product_id(source.source_family_id),
         source_family_id=source.source_family_id,
-        label=f"{source.label} — governed provisional product boundary",
+        label=f"{source.label} — governed family discovery surface",
         origin_authority=source.authority,
         distributor=source.authority,
-        native_dataset_id=source.source_family_id,
+        native_dataset_id=f"{source.source_family_id}:DISCOVERY_SURFACE",
         spatial_scope="DECLARED_SOURCE_FAMILY_SCOPE",
         temporal_scope="AS_PUBLISHED",
-        identity_state=ProductIdentityState.PROVISIONAL,
-        payload_state=ProductPayloadState.UNRESOLVED,
+        identity_state=ProductIdentityState.VERIFIED,
+        payload_state=ProductPayloadState.DISCOVERY_ONLY,
         canonical_discovery_route_id=_route_id(source.source_family_id),
         canonical_payload_route_id=None,
     )
-    for source in _UNRESOLVED_SOURCES
+    for source in SOURCE_FAMILIES
 )
 
 REMAINING_ACQUISITION_ROUTES = tuple(
@@ -67,9 +53,8 @@ REMAINING_ACQUISITION_ROUTES = tuple(
         representation=RepresentationType.CATALOG,
         locator=source.canonical_locator,
         priority=1,
-        verification_only=True,
     )
-    for source in _UNRESOLVED_SOURCES
+    for source in SOURCE_FAMILIES
 )
 
 validate_route_registry(REMAINING_SOURCE_PRODUCTS, REMAINING_ACQUISITION_ROUTES)
