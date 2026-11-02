@@ -259,3 +259,42 @@ def test_unresolved_product_cannot_fetch_full_payload() -> None:
             products=SOURCE_PRODUCTS,
             routes=ACQUISITION_ROUTES,
         )
+
+
+def test_verified_operational_routes_resolve_without_family_aliasing() -> None:
+    expected = {
+        "LUMA_OUTAGE_TOWNS": "LUMA_OUTAGE_TOWNS_POST",
+        "LUMA_OUTAGE_REGIONS": "LUMA_OUTAGE_REGIONS_GET",
+        "USGS_WATERDATA_PEAKS": "USGS_PEAKS_ITEMS",
+        "NOAA_NWPS_GAUGES": "NOAA_NWPS_GAUGES_API",
+        "NOAA_NHC_CURRENT_STORMS": "NOAA_NHC_CURRENT_STORMS_JSON",
+        "NOAA_COOPS_WATER_LEVEL": "NOAA_COOPS_DATAGETTER",
+        "EPA_SDWIS_VIOLATIONS": "EPA_SDWIS_VIOLATIONS_EFSERVICE",
+        "FEMA_PR_DISASTER_DECLARATIONS": "FEMA_DECLARATIONS_API",
+    }
+    for product_id, route_id in expected.items():
+        route = resolve_route(
+            product_id,
+            FetchPurpose.FULL_PAYLOAD,
+            products=SOURCE_PRODUCTS,
+            routes=ACQUISITION_ROUTES,
+        )
+        assert route.route_id == route_id
+        assert route.may_publish_canonical is True
+
+
+def test_luma_outage_surfaces_are_distinct_products_not_fallback_aliases() -> None:
+    towns = resolve_route(
+        "LUMA_OUTAGE_TOWNS",
+        FetchPurpose.FULL_PAYLOAD,
+        products=SOURCE_PRODUCTS,
+        routes=ACQUISITION_ROUTES,
+    )
+    regions = resolve_route(
+        "LUMA_OUTAGE_REGIONS",
+        FetchPurpose.FULL_PAYLOAD,
+        products=SOURCE_PRODUCTS,
+        routes=ACQUISITION_ROUTES,
+    )
+    assert towns.product_id != regions.product_id
+    assert towns.route_id != regions.route_id
