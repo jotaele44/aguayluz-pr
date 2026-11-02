@@ -30,8 +30,13 @@ def source_artifact_state(root: Path, source_id: str) -> dict[str, Any]:
                 "last_success_utc": None}
     receipts = sorted(source_dir.glob("*/*.receipt.json"))
     if not receipts:
-        return {"acquisition_state": "NOT_ACQUIRED", "byte_sha256": None,
-                "last_success_utc": None}
+        # A populated vault without receipts is NOT evidence of source absence.
+        # Refuse to silently discard orphaned bytes or incomplete writes.
+        has_unreceipted_content = any(source_dir.rglob("*"))
+        return {"acquisition_state": (
+            "UNRESOLVED_ORPHANED_EVIDENCE" if has_unreceipted_content
+            else "NOT_ACQUIRED"
+        ), "byte_sha256": None, "last_success_utc": None}
     validated = []
     for receipt_path in receipts:
         try:
