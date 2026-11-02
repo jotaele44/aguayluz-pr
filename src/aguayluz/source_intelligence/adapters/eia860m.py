@@ -155,14 +155,38 @@ def _sheet_paths(archive: zipfile.ZipFile) -> dict[str, str]:
     return result
 
 
-def _find_sheet(sheet_paths: dict[str, str], prefix: str) -> tuple[str, str]:
+def _find_sheet(
+    sheet_paths: dict[str, str],
+    prefix: str,
+    *,
+    jurisdiction: str | None = None,
+) -> tuple[str, str]:
     matches = [
         (name, path)
         for name, path in sheet_paths.items()
         if _normalize_header(name).startswith(prefix)
     ]
+    if jurisdiction is not None:
+        jurisdiction_normalized = _normalize_header(jurisdiction)
+        jurisdiction_matches = []
+        for name, path in matches:
+            tokens = set(_normalize_header(name).split())
+            if jurisdiction_normalized in tokens or (
+                jurisdiction_normalized == "pr" and {"puerto", "rico"} <= tokens
+            ):
+                jurisdiction_matches.append((name, path))
+        if len(jurisdiction_matches) != 1:
+            candidates = sorted(name for name, _ in matches)
+            raise ValueError(
+                f"expected exactly one {prefix!r} sheet for jurisdiction "
+                f"{jurisdiction!r}; candidates={candidates}"
+            )
+        return jurisdiction_matches[0]
     if len(matches) != 1:
-        raise ValueError(f"expected exactly one {prefix!r} sheet, found {len(matches)}")
+        candidates = sorted(name for name, _ in matches)
+        raise ValueError(
+            f"expected exactly one {prefix!r} sheet; candidates={candidates}"
+        )
     return matches[0]
 
 
@@ -429,8 +453,8 @@ class EIA860MAdapter:
         self.validate_transport(artifact)
         with zipfile.ZipFile(io.BytesIO(artifact.content)) as archive:
             sheets = _sheet_paths(archive)
-            operating_name, operating_path = _find_sheet(sheets, "operating")
-            retired_name, retired_path = _find_sheet(sheets, "retired")
+            operating_name, operating_path = _find_sheet(sheets, "operating", jurisdiction="pr")
+            retired_name, retired_path = _find_sheet(sheets, "retired", jurisdiction="pr")
             operating_rows = _worksheet_rows(archive, operating_path)
             retired_rows = _worksheet_rows(archive, retired_path)
             operating_header, _, _ = detect_header(
@@ -460,7 +484,7 @@ class EIA860MAdapter:
         self.validate_transport(artifact)
         with zipfile.ZipFile(io.BytesIO(artifact.content)) as archive:
             sheets = _sheet_paths(archive)
-            _, operating_path = _find_sheet(sheets, "operating")
+            _, operating_path = _find_sheet(sheets, "operating", jurisdiction="pr")
             rows = _parse_sheet(
                 _worksheet_rows(archive, operating_path),
                 record_kind="OPERATING",
@@ -472,7 +496,7 @@ class EIA860MAdapter:
         self.validate_transport(artifact)
         with zipfile.ZipFile(io.BytesIO(artifact.content)) as archive:
             sheets = _sheet_paths(archive)
-            _, retired_path = _find_sheet(sheets, "retired")
+            _, retired_path = _find_sheet(sheets, "retired", jurisdiction="pr")
             rows = _parse_sheet(
                 _worksheet_rows(archive, retired_path),
                 record_kind="RETIRED",
