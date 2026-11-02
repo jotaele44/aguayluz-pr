@@ -6,7 +6,13 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from aguayluz.source_intelligence import DOMAIN_REGISTRY, SOURCE_FAMILIES, coverage_report
+from aguayluz.source_intelligence import (
+    ACQUISITION_ROUTES,
+    DOMAIN_REGISTRY,
+    SOURCE_FAMILIES,
+    SOURCE_PRODUCTS,
+    coverage_report,
+)
 from aguayluz.source_intelligence.adapters.base import RawArtifact
 from aguayluz.source_intelligence.adapters.eia860m import EIA860MAdapter, canonical_month_url
 from aguayluz.source_intelligence.health import evaluate_health
@@ -209,3 +215,33 @@ def test_route_governance_stays_fail_closed_until_all_families_are_mapped() -> N
     assert summary.products_with_single_canonical_payload == summary.total_products
     assert summary.ungoverned_source_family_ids
     assert summary.zero_redundant_fetches_certifiable is False
+
+
+def test_aggregate_registry_includes_eia_and_noaa_products() -> None:
+    ids = {product.product_id for product in SOURCE_PRODUCTS}
+    assert "EIA_860M_MONTHLY_GENERATOR" in ids
+    assert "EIA_923_ANNUAL_PACKAGE" in ids
+    assert "NOAA_DC_LIDAR_8630" in ids
+    assert len(ACQUISITION_ROUTES) >= 12
+
+
+def test_eia_860m_full_payload_uses_only_monthly_xlsx() -> None:
+    route = resolve_route(
+        "EIA_860M_MONTHLY_GENERATOR",
+        FetchPurpose.FULL_PAYLOAD,
+        products=SOURCE_PRODUCTS,
+        routes=ACQUISITION_ROUTES,
+    )
+    assert route.route_id == "EIA_860M_MONTHLY_XLSX"
+    assert route.may_publish_canonical is True
+
+
+def test_eia_923_full_payload_uses_only_current_year_zip() -> None:
+    route = resolve_route(
+        "EIA_923_ANNUAL_PACKAGE",
+        FetchPurpose.FULL_PAYLOAD,
+        products=SOURCE_PRODUCTS,
+        routes=ACQUISITION_ROUTES,
+    )
+    assert route.route_id == "EIA_923_CURRENT_YEAR_ZIP"
+    assert route.may_publish_canonical is True
