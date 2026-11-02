@@ -183,3 +183,30 @@ def test_https_redirect_status_is_refused(monkeypatch):
         acquisition.fetch_artifact(
             "https://www.eia.gov/redirect", allowed_hosts={"www.eia.gov"}
         )
+
+
+def test_pinned_https_preserves_access_denied_error_class(monkeypatch):
+    from aguayluz.hydro_intelligence import acquisition
+    from aguayluz.hydro_intelligence.discovery import classify_failure
+
+    class Response:
+        status = 403
+
+    class Connection:
+        def __init__(self, *args):
+            pass
+
+        def request(self, *args, **kwargs):
+            pass
+
+        def getresponse(self):
+            return Response()
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(acquisition, "reject_nonpublic_dns", lambda host: ("8.8.8.8",))
+    monkeypatch.setattr(acquisition, "_PinnedHTTPSConnection", Connection)
+    with pytest.raises(Exception) as error:
+        acquisition.fetch_artifact("https://lumapr.com/report.pdf", allowed_hosts={"lumapr.com"})
+    assert classify_failure(error.value) == "ACCESS_DENIED"
