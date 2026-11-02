@@ -62,7 +62,7 @@ def parse_eia_facility_fuel_csv(raw: bytes) -> list[SourceRow]:
             continue
         if len(values) != len(header):
             raise ValueError(f"Line {line}: column count mismatch")
-        record = dict(zip(header, values))
+        record = dict(zip(header, values, strict=True))
         if values[cols["state"]].strip().upper() != "PR":
             continue
         plant = values[cols["plant"]].strip()
@@ -227,7 +227,7 @@ def parse_eia_860m_generator_rows(raw: bytes, *, sheet_name: str,
             generator = str(cells[mapping["generator"]] or "").strip()
             if not plant or not generator:
                 raise ValueError(f"Missing source-native ID on row {source_line}")
-            raw_row = {h: "" if v is None else str(v) for h, v in zip(header, cells)}
+            raw_row = {h: "" if v is None else str(v) for h, v in zip(header, cells, strict=True)}
             rows.append(SourceRow(
                 source="EIA_860M", row_number=source_line,
                 raw=raw_row,
@@ -299,7 +299,7 @@ def parse_eia_923_generation_workbook(
             if not re.fullmatch(r"\d+", plant_id) or not mover:
                 raise ValueError(f"Invalid EIA-923 native ID at row {physical_row}")
             raw_row = {name: "" if value is None else str(value)
-                       for name, value in zip(header, row)}
+                       for name, value in zip(header, row, strict=True)}
             generation = None if generation_value is None else str(generation_value)
             observations.append(SourceRow(
                 source="EIA_923_WORKBOOK", row_number=physical_row, raw=raw_row,
