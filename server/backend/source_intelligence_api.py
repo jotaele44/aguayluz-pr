@@ -201,9 +201,9 @@ def source_intelligence_route_governance() -> JSONResponse:
             "schema_version": "aguayluz.source-intelligence.route-governance/v1",
             "summary": summary.model_dump(mode="json"),
             "certification_rule": (
-                "zero_redundant_fetches_certifiable requires every bounded source family "
-                "to have a terminal discovery surface, every payload-bearing product exactly "
-                "one canonical payload route, and zero provisional/unresolved product identities"
+                "zero_redundant_fetches_certifiable requires 100% governed family discovery, "
+                "zero invalid/duplicate registered product routes, and an explicitly exhausted "
+                "payload-product denominator for every bounded source family"
             ),
         }
     )
