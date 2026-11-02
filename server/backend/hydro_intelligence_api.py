@@ -37,11 +37,17 @@ def source_artifact_state(root: Path, source_id: str) -> dict[str, Any]:
         try:
             receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
             digest = receipt["sha256"]
+            if (receipt_path.is_symlink() or receipt_path.parent.is_symlink() or
+                    receipt_path.parent.parent.is_symlink()):
+                raise ValueError("Symlinked evidence path")
             if (receipt.get("source_id") != source_id or
                     len(digest) != 64 or any(x not in "0123456789abcdef" for x in digest)):
                 raise ValueError("Receipt identity mismatch")
             artifact_path = receipt_path.with_name(digest)
-            if not artifact_path.is_file():
+            if (not artifact_path.is_file() or artifact_path.is_symlink() or
+                    receipt_path.name != digest + ".receipt.json" or
+                    artifact_path.parent.name != digest[:2] or
+                    not isinstance(receipt.get("fetched_at"), str)):
                 raise ValueError("Missing original bytes")
             hasher = hashlib.sha256()
             with artifact_path.open("rb") as stream:
