@@ -7,16 +7,16 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
 from aguayluz.source_intelligence import (
-    DOMAIN_REGISTRY,
     ACQUISITION_ROUTES,
-    SOURCE_PRODUCTS,
+    DOMAIN_REGISTRY,
     SOURCE_FAMILIES,
+    SOURCE_PRODUCTS,
     SOURCE_REQUIREMENTS,
     coverage_report,
 )
 from aguayluz.source_intelligence.readiness import current_backend_readiness
-from aguayluz.source_intelligence.runtime import load_health_receipts
 from aguayluz.source_intelligence.route_coverage import route_governance_summary
+from aguayluz.source_intelligence.runtime import load_health_receipts
 from server.backend import main as legacy
 
 router = APIRouter(prefix="/source-intelligence", tags=["source-intelligence"])
