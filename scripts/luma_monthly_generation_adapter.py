@@ -237,6 +237,42 @@ class AnchorParser(HTMLParser):
         self.anchors: list[tuple[str, str]] = []
         self.publication_dates: list[str] = []
 
+class ReportRowParser(HTMLParser):
+    """Capture table-row text and links so title/link need not share one anchor."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._in_row = False
+        self._row_text: list[str] = []
+        self._row_links: list[str] = []
+        self.rows: list[tuple[str, list[str]]] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        tag = tag.lower()
+        attrs_dict = dict(attrs)
+        if tag == "tr":
+            self._in_row = True
+            self._row_text = []
+            self._row_links = []
+            return
+        if self._in_row and tag == "a":
+            href = attrs_dict.get("href")
+            if href:
+                self._row_links.append(href)
+
+    def handle_data(self, data: str) -> None:
+        if self._in_row:
+            self._row_text.append(data)
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag.lower() == "tr" and self._in_row:
+            text = " ".join(" ".join(self._row_text).split())
+            self.rows.append((text, list(self._row_links)))
+            self._in_row = False
+            self._row_text = []
+            self._row_links = []
+
+
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         attrs_dict = dict(attrs)
         if tag.lower() == "meta":
@@ -332,27 +368,57 @@ def synthesized_landing_url(period: Period) -> str:
     )
 
 
+def _period_from_text_or_url(text: str, absolute_url: str) -> Period | None:
+    match = REPORT_TITLE_RE.search(" ".join((text, absolute_url)))
+    if match:
+        return Period.from_month_name(match.group(1), match.group(2))
+    slug_match = re.search(
+        r"(?i)/(?:so_document/)?(" + "|".join(MONTHS) + r")-(\d{4})-"
+        r"monthly-generation-performance-report(?:/|$)",
+        urllib.parse.urlparse(absolute_url).path,
+    )
+    if slug_match:
+        return Period.from_month_name(slug_match.group(1), slug_match.group(2))
+    return None
+
+
 def parse_index_entries(html: str, index_url: str) -> list[DiscoveryEntry]:
-    parser = AnchorParser()
-    parser.feed(html)
     rows: list[DiscoveryEntry] = []
     seen: set[tuple[str, str]] = set()
+
+    # Primary path: bind the complete authoritative table-row text to every link
+    # in that row. LUMA places the report title and Download anchor in separate cells.
+    row_parser = ReportRowParser()
+    row_parser.feed(html)
+    for row_text, hrefs in row_parser.rows:
+        title_match = REPORT_TITLE_RE.search(row_text)
+        if not title_match:
+            continue
+        period = Period.from_month_name(title_match.group(1), title_match.group(2))
+        for href in hrefs:
+            absolute = urllib.parse.urljoin(index_url, href)
+            key = (str(period), absolute)
+            if key in seen:
+                continue
+            seen.add(key)
+            rows.append(
+                DiscoveryEntry(
+                    period=str(period),
+                    href=absolute,
+                    title_raw=row_text,
+                    index_url=index_url,
+                )
+            )
+
+    # Secondary path: preserve direct title-bearing or slug-bearing anchors that
+    # may exist outside normal table rows.
+    parser = AnchorParser()
+    parser.feed(html)
     for href, title in parser.anchors:
         absolute = urllib.parse.urljoin(index_url, href)
-        haystack = " ".join((title, absolute))
-        match = REPORT_TITLE_RE.search(haystack)
-        if not match:
-            # Some WordPress anchors carry only href slugs.
-            slug_match = re.search(
-                r"(?i)/(?:so_document/)?(" + "|".join(MONTHS) + r")-(\d{4})-"
-                r"monthly-generation-performance-report(?:/|$)",
-                urllib.parse.urlparse(absolute).path,
-            )
-            if not slug_match:
-                continue
-            period = Period.from_month_name(slug_match.group(1), slug_match.group(2))
-        else:
-            period = Period.from_month_name(match.group(1), match.group(2))
+        period = _period_from_text_or_url(title, absolute)
+        if period is None:
+            continue
         key = (str(period), absolute)
         if key in seen:
             continue
@@ -365,6 +431,29 @@ def parse_index_entries(html: str, index_url: str) -> list[DiscoveryEntry]:
                 index_url=index_url,
             )
         )
+
+    # Final denominator fallback: authoritative index text can establish that a
+    # report period exists even when the page exposes no usable href. The resulting
+    # synthesized landing URL remains explicitly discovery-only.
+    for match in REPORT_TITLE_RE.finditer(html):
+        period = Period.from_month_name(match.group(1), match.group(2))
+        if any(r.period == str(period) for r in rows):
+            continue
+        synthesized = synthesized_landing_url(period)
+        key = (str(period), synthesized)
+        if key in seen:
+            continue
+        seen.add(key)
+        rows.append(
+            DiscoveryEntry(
+                period=str(period),
+                href=synthesized,
+                title_raw=match.group(0),
+                index_url=index_url,
+                discovery_class="AUTHORITATIVE_INDEX_TEXT_SYNTHESIZED_URL",
+            )
+        )
+
     return sorted(rows, key=lambda x: (x.period, x.href))
 
 
