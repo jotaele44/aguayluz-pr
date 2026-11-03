@@ -16,9 +16,9 @@
   "spatial_generation": "federation-spatial-index/1",
   "spatial_note": "Compatible with federation spatial binding v0.2. While Spiderweb's transform is PROVISIONAL, this repository forbids exact Cell_ID ground claims and preserves full content-addressed uncertainty Cell_Set membership; identity remains CANDIDATE_NOT_IDENTITY.",
   "local_review": {
-    "date": "2026-10-11",
-    "change": "NWS hydromet plane: Stage IV Puerto Rico daily rainfall per municipio (source_truth.real_data_sources.stage_iv_pr) with WEATHER_HAZARD heavy-rain alerts, on top of NWPS river/reservoir gauge flood status",
-    "result": "All declared federation and spatial contracts remain compatible; new rows reach the Hub only through the existing alerts stream (new generated markers _nwpsflood_ and _qpeheavy_ mirrored in federation_export), and no canonical export schema changes"
+    "date": "2026-10-24",
+    "change": "Removed stored tokens and credentials: federation.json source_truth.runtime_required_keys is now empty (was EPA_WATERS_API_KEY, NEON_API_TOKEN) and the push-style Floot/Hub dispatch and centinelas ack steps are gone from CI",
+    "result": "All declared federation and spatial contracts remain compatible; runtime_required_keys is operator-config metadata, not part of the canonical export schema, and the Hub now pulls the committed exports from main instead of receiving a repository_dispatch"
   },
   "spatial_binding_v0_2": {
     "authority_commit": "bb8463c8d8cf4b54486674ee9b665ce3d2502e8b",

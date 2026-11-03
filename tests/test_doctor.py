@@ -18,24 +18,10 @@ def test_manifest_loads_and_declares_the_expected_checks():
     report = run(_REPO_ROOT)
     ids = {r.check_id for r in report.results}
     assert ids == {
-        "epa_waters_api_key_presence",
-        "neon_api_token_presence",
         "miluma_waf_gated",
         "aee_incidents_mirror_staleness",
         "outputs_schema_validation",
     }
-
-
-def test_presence_only_checks_never_report_pass():
-    """Regardless of whether EPA_WATERS_API_KEY/NEON_API_TOKEN happen to be
-    set in the environment running this test, presence-only checks must
-    never render PASS -- presence was never validity."""
-    report = run(_REPO_ROOT)
-    for check_id in ("epa_waters_api_key_presence", "neon_api_token_presence"):
-        result = report.by_id(check_id)
-        assert result is not None
-        assert result.status != "PASS", result
-        assert result.diagnosability_class.value == "presence-only"
 
 
 def test_not_automatable_checks_are_always_info_and_carry_last_known_state():
