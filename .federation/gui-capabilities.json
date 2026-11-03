@@ -1939,6 +1939,28 @@
           "scripts/certify_source_product_denominators.py:zip_member_manifest"
         ]
       }
+    },
+    {
+      "id": "source-intelligence-build-identity-runtime",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Packaged build-identity resolution and SHA validation are internal runtime integrity controls. They support the existing Source Intelligence API authorization state but are not standalone human-facing workflows and therefore do not require a separate GUI surface.",
+      "backend": {
+        "files": [
+          "src/aguayluz/source_intelligence/build_identity.py"
+        ],
+        "symbols": [
+          "src/aguayluz/source_intelligence/build_identity.py:BuildIdentity",
+          "src/aguayluz/source_intelligence/build_identity.py:resolve_build_identity",
+          "src/aguayluz/source_intelligence/build_identity.py:valid_commit_sha"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_source_intelligence_v1.py"
+        ]
+      }
     }
   ],
   "exceptions": []
