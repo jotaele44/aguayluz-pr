@@ -230,9 +230,10 @@ def test_health_receipts_are_content_addressed_and_replayable(tmp_path) -> None:
 
 def test_backend_readiness_requires_every_gate() -> None:
     current = current_backend_readiness(coverage_matrix_ready=True)
-    assert current.score == 10
+    assert current.score == 95
     assert not current.frontend_authorized
-    assert "real_jan_feb_source_bytes" in current.unresolved
+    assert current.unresolved == ("api_contract_frozen",)
+    assert current.states["real_jan_feb_source_bytes"] == "PASS"
     passed = score_backend_readiness({gate: "PASS" for gate in GATE_WEIGHTS})
     assert passed.score == 100
     assert passed.frontend_authorized
