@@ -510,3 +510,33 @@ def test_stac_catalogs_are_discovery_not_payload_identity() -> None:
     assert sentinel.route_id == "SENTINEL_STAC_DISCOVERY"
     assert landsat.may_publish_canonical is False
     assert sentinel.may_publish_canonical is False
+
+
+def test_eia_epm_full_payload_uses_monthly_package_zip() -> None:
+    route = resolve_route(
+        "EIA_EPM_MONTHLY_PACKAGE",
+        FetchPurpose.FULL_PAYLOAD,
+        products=SOURCE_PRODUCTS,
+        routes=ACQUISITION_ROUTES,
+    )
+    assert route.route_id == "EIA_EPM_ALL_TABLES_ZIP"
+    assert route.may_publish_canonical is True
+
+
+def test_luma_daily_availability_uses_index_bound_pdf_payload() -> None:
+    discovery = resolve_route(
+        "LUMA_DAILY_AVAILABILITY_REPORTS",
+        FetchPurpose.DISCOVER,
+        products=SOURCE_PRODUCTS,
+        routes=ACQUISITION_ROUTES,
+    )
+    payload = resolve_route(
+        "LUMA_DAILY_AVAILABILITY_REPORTS",
+        FetchPurpose.FULL_PAYLOAD,
+        products=SOURCE_PRODUCTS,
+        routes=ACQUISITION_ROUTES,
+    )
+    assert discovery.route_id == "LUMA_DAILY_AVAILABILITY_INDEX"
+    assert discovery.may_publish_canonical is False
+    assert payload.route_id == "LUMA_DAILY_AVAILABILITY_PDF"
+    assert payload.may_publish_canonical is True
