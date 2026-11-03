@@ -1916,12 +1916,25 @@
       ],
       "analysis": {
         "files": [
-          "scripts/certify_eia860m_reference.py"
+          "scripts/certify_eia860m_reference.py",
+          "scripts/certify_source_product_denominators.py"
         ],
         "symbols": [
           "scripts/certify_eia860m_reference.py:acquire_snapshot",
+          "scripts/certify_eia860m_reference.py:main",
           "scripts/certify_eia860m_reference.py:run",
-          "scripts/certify_eia860m_reference.py:main"
+          "scripts/certify_source_product_denominators.py:LinkParser",
+          "scripts/certify_source_product_denominators.py:certify_epm",
+          "scripts/certify_source_product_denominators.py:certify_luma",
+          "scripts/certify_source_product_denominators.py:date_gaps",
+          "scripts/certify_source_product_denominators.py:fetch",
+          "scripts/certify_source_product_denominators.py:freeze_bytes",
+          "scripts/certify_source_product_denominators.py:iso_date",
+          "scripts/certify_source_product_denominators.py:main",
+          "scripts/certify_source_product_denominators.py:parse_links",
+          "scripts/certify_source_product_denominators.py:run",
+          "scripts/certify_source_product_denominators.py:sha256_bytes",
+          "scripts/certify_source_product_denominators.py:zip_member_manifest"
         ]
       }
     }
