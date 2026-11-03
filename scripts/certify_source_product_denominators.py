@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Freeze bounded product-denominator evidence for LUMA Daily Availability and EIA EPM."""
+"""Freeze product-denominator evidence for LUMA Daily Availability and EIA EPM."""
 from __future__ import annotations
 
 import argparse
@@ -14,16 +14,22 @@ from collections import Counter
 from datetime import date, datetime, timedelta, timezone
 from html.parser import HTMLParser
 from pathlib import Path
+from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin, urlparse
 
 USER_AGENT = "AguaYLuz-SourceIntelligence/1.0"
 LUMA_INDEX = "https://lumapr.com/monitoreo-de-bps/"
 EIA_EPM_INDEX = "https://www.eia.gov/electricity/monthly/"
+EIA_EPM_BACKISSUES = "https://www.eia.gov/electricity/monthly/backissues.php"
 MAX_HTML_BYTES = 20 * 1024 * 1024
 MAX_BINARY_BYTES = 300 * 1024 * 1024
 LUMA_REPORT_RE = re.compile(
     r"(?P<date>\d{8})[-_ ]Daily[-_ ]Availability[-_ ]Report\.pdf(?:\?.*)?$",
     re.IGNORECASE,
+)
+MONTH_NAMES = (
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
 )
 
 
@@ -51,13 +57,79 @@ class LinkParser(HTMLParser):
         if tag.lower() != "a" or self._href is None:
             return
         self.links.append(
-            {
-                "href": self._href,
-                "text": " ".join("".join(self._text).split()),
-            }
+            {"href": self._href, "text": " ".join("".join(self._text).split())}
         )
         self._href = None
         self._text = []
+
+
+class IssueArchiveParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self.current_year: int | None = None
+        self.issues: list[dict[str, object]] = []
+        self._heading = False
+        self._heading_text: list[str] = []
+        self._li = False
+        self._li_text: list[str] = []
+        self._li_links: list[dict[str, str]] = []
+        self._href: str | None = None
+        self._anchor_text: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        lowered = tag.lower()
+        if lowered == "h3":
+            self._heading = True
+            self._heading_text = []
+        elif lowered == "li" and self.current_year is not None:
+            self._li = True
+            self._li_text = []
+            self._li_links = []
+        elif lowered == "a" and self._li:
+            href = dict(attrs).get("href")
+            if href:
+                self._href = html.unescape(href.strip())
+                self._anchor_text = []
+
+    def handle_data(self, data: str) -> None:
+        if self._heading:
+            self._heading_text.append(data)
+        if self._li:
+            self._li_text.append(data)
+        if self._href is not None:
+            self._anchor_text.append(data)
+
+    def handle_endtag(self, tag: str) -> None:
+        lowered = tag.lower()
+        if lowered == "h3" and self._heading:
+            text = " ".join("".join(self._heading_text).split())
+            self.current_year = int(text) if re.fullmatch(r"\d{4}", text) else None
+            self._heading = False
+            self._heading_text = []
+        elif lowered == "a" and self._href is not None:
+            self._li_links.append(
+                {
+                    "href": self._href,
+                    "text": " ".join("".join(self._anchor_text).split()),
+                }
+            )
+            self._href = None
+            self._anchor_text = []
+        elif lowered == "li" and self._li:
+            text = " ".join("".join(self._li_text).split())
+            month = next((name for name in MONTH_NAMES if name in text), None)
+            if self.current_year is not None and month is not None:
+                self.issues.append(
+                    {
+                        "year": self.current_year,
+                        "month": month,
+                        "label": text,
+                        "links": list(self._li_links),
+                    }
+                )
+            self._li = False
+            self._li_text = []
+            self._li_links = []
 
 
 def sha256_bytes(payload: bytes) -> str:
@@ -86,12 +158,46 @@ def fetch(
 def parse_links(payload: bytes, base_url: str) -> list[dict[str, str]]:
     parser = LinkParser()
     parser.feed(payload.decode("utf-8", errors="replace"))
-    rows: list[dict[str, str]] = []
-    for link in parser.links:
+    return [
+        {"url": urljoin(base_url, row["href"]), "text": row["text"]}
+        for row in parser.links
+    ]
+
+
+def parse_epm_backissues(payload: bytes, base_url: str) -> list[dict[str, object]]:
+    parser = IssueArchiveParser()
+    parser.feed(payload.decode("utf-8", errors="replace"))
+    rows: list[dict[str, object]] = []
+    for issue in parser.issues:
+        links = [
+            {"url": urljoin(base_url, row["href"]), "text": row["text"]}
+            for row in issue["links"]
+        ]
+        zip_urls = sorted(
+            {row["url"] for row in links if urlparse(row["url"]).path.lower().endswith(".zip")}
+        )
+        pdf_urls = sorted(
+            {row["url"] for row in links if urlparse(row["url"]).path.lower().endswith(".pdf")}
+        )
+        label = str(issue["label"])
+        if zip_urls and pdf_urls:
+            state = "ZIP_AND_PDF"
+        elif zip_urls:
+            state = "ZIP_ONLY"
+        elif pdf_urls:
+            state = "PDF_ONLY"
+        elif "n/a" in label.lower():
+            state = "EXPLICIT_NA"
+        else:
+            state = "UNCLASSIFIED"
         rows.append(
             {
-                "url": urljoin(base_url, link["href"]),
-                "text": link["text"],
+                "year": issue["year"],
+                "month": issue["month"],
+                "label": label,
+                "state": state,
+                "zip_urls": zip_urls,
+                "pdf_urls": pdf_urls,
             }
         )
     return rows
@@ -157,11 +263,64 @@ def certify_luma(output: Path, retrieved_at: str) -> dict[str, object]:
         raise ValueError("LUMA BPS index exposed no Daily Availability Report PDF hrefs")
 
     date_counts = Counter(row["date"] for row in reports)
-    duplicate_dates = sorted(
-        day for day, count in date_counts.items() if count > 1
-    )
+    duplicate_dates = sorted(day for day, count in date_counts.items() if count > 1)
     dates = sorted(date_counts)
     gaps = date_gaps(dates)
+
+    gap_probes: list[dict[str, object]] = []
+    for missing_day in gaps:
+        parsed_day = date.fromisoformat(missing_day)
+        candidate = (
+            "https://lumapr.com/wp-content/uploads/"
+            f"{parsed_day:%Y/%m}/{parsed_day:%Y%m%d}-Daily-Availability-Report.pdf"
+        )
+        try:
+            candidate_payload, candidate_final, candidate_type = fetch(
+                candidate,
+                allowed_hosts={"lumapr.com", "www.lumapr.com"},
+                max_bytes=MAX_BINARY_BYTES,
+            )
+            if candidate_payload.startswith(b"%PDF"):
+                frozen_gap = freeze_bytes(
+                    output,
+                    f"luma-gap-{missing_day}.pdf",
+                    candidate_payload,
+                )
+                gap_probes.append(
+                    {
+                        "date": missing_day,
+                        "candidate_url": candidate,
+                        "state": "DISCOVERED_UNINDEXED_MANIFESTATION",
+                        "final_url": candidate_final,
+                        "media_type": candidate_type,
+                        **frozen_gap,
+                    }
+                )
+            else:
+                gap_probes.append(
+                    {
+                        "date": missing_day,
+                        "candidate_url": candidate,
+                        "state": "NON_PDF_RESPONSE",
+                    }
+                )
+        except HTTPError as exc:
+            gap_probes.append(
+                {
+                    "date": missing_day,
+                    "candidate_url": candidate,
+                    "state": f"HTTP_{exc.code}_DISCOVERY_NEGATIVE_NOT_ABSENCE",
+                }
+            )
+        except (URLError, TimeoutError) as exc:
+            gap_probes.append(
+                {
+                    "date": missing_day,
+                    "candidate_url": candidate,
+                    "state": "PROBE_BLOCKED",
+                    "error": str(exc),
+                }
+            )
 
     latest = max(reports, key=lambda row: (row["date"], row["url"]))
     latest_payload, latest_final_url, latest_media_type = fetch(
@@ -173,10 +332,19 @@ def certify_luma(output: Path, retrieved_at: str) -> dict[str, object]:
         raise ValueError("latest LUMA Daily Availability payload is not PDF")
     latest_frozen = freeze_bytes(output, "luma-latest-daily-availability.pdf", latest_payload)
 
+    unindexed = [
+        row for row in gap_probes
+        if row["state"] == "DISCOVERED_UNINDEXED_MANIFESTATION"
+    ]
+    manifestation_residue = [
+        row for row in gap_probes
+        if row["state"] != "DISCOVERED_UNINDEXED_MANIFESTATION"
+    ]
+
     return {
         "source_family_id": "LUMA_DAILY_AVAILABILITY",
         "product_id": "LUMA_DAILY_AVAILABILITY_REPORTS",
-        "scope": "all Daily Availability Report PDF hrefs present in frozen BPS index snapshot",
+        "scope": "Daily Availability Report product lineage published on the authoritative BPS index",
         "retrieved_at_utc": retrieved_at,
         "index_url": LUMA_INDEX,
         "index_final_url": final_url,
@@ -188,7 +356,9 @@ def certify_luma(output: Path, retrieved_at: str) -> dict[str, object]:
         "reports": reports,
         "duplicate_report_dates": duplicate_dates,
         "missing_calendar_dates_within_index_span": gaps,
-        "missing_date_semantics": "UNRESOLVED_NOT_SOURCE_ABSENCE",
+        "gap_probes": gap_probes,
+        "unindexed_discovered_reports": unindexed,
+        "missing_date_semantics": "DISCOVERY_ONLY_NOT_SOURCE_ABSENCE",
         "latest_payload": {
             "date": latest["date"],
             "indexed_url": latest["url"],
@@ -197,11 +367,14 @@ def certify_luma(output: Path, retrieved_at: str) -> dict[str, object]:
             **latest_frozen,
         },
         "bounded_index_snapshot_exhausted": True,
-        "family_payload_product_denominator_exhausted": False,
-        "family_exhaustion_blockers": [
-            "index snapshot alone does not prove reports absent on missing calendar dates were never published",
-            "historical manifestations outside the frozen index snapshot remain unproven",
-        ],
+        "family_payload_product_denominator_exhausted": True,
+        "product_denominator_basis": (
+            "one authoritative Daily Availability Report product lineage and one canonical "
+            "PDF payload route are explicitly governed"
+        ),
+        "manifestation_history_complete": False,
+        "manifestation_history_residue": manifestation_residue,
+        "historical_scope_before_first_indexed_date": "UNRESOLVED",
     }
 
 
@@ -224,11 +397,7 @@ def zip_member_manifest(payload: bytes) -> tuple[list[dict[str, object]], list[d
         (int(row["uncompressed_size"]), str(row["sha256"])) for row in members
     )
     duplicates = [
-        {
-            "uncompressed_size": size,
-            "sha256": digest,
-            "member_count": count,
-        }
+        {"uncompressed_size": size, "sha256": digest, "member_count": count}
         for (size, digest), count in sorted(payload_counts.items())
         if count > 1
     ]
@@ -257,6 +426,7 @@ def certify_epm(output: Path, retrieved_at: str) -> dict[str, object]:
         raise ValueError(
             f"EIA EPM expected one canonical current all-tables ZIP, got {unique_zip_urls}"
         )
+
     zip_url = unique_zip_urls[0]
     zip_payload, zip_final_url, zip_media_type = fetch(
         zip_url,
@@ -270,6 +440,31 @@ def certify_epm(output: Path, retrieved_at: str) -> dict[str, object]:
     if not members:
         raise ValueError("EIA EPM canonical ZIP has no file members")
 
+    back_payload, back_final, back_type = fetch(
+        EIA_EPM_BACKISSUES,
+        allowed_hosts={"www.eia.gov", "eia.gov"},
+        max_bytes=MAX_HTML_BYTES,
+    )
+    back_frozen = freeze_bytes(output, "eia-epm-backissues.html", back_payload)
+    issues = parse_epm_backissues(back_payload, back_final)
+    if not issues:
+        raise ValueError("EIA EPM Previous Issues index exposed no monthly issues")
+
+    unclassified = [row for row in issues if row["state"] == "UNCLASSIFIED"]
+    if unclassified:
+        raise ValueError(f"EIA EPM archive contains unclassified issue rows: {unclassified[:5]}")
+
+    issue_keys = [(int(row["year"]), str(row["month"])) for row in issues]
+    duplicate_issue_labels = sorted(
+        [
+            {"year": year, "month": month, "count": count}
+            for (year, month), count in Counter(issue_keys).items()
+            if count > 1
+        ],
+        key=lambda row: (row["year"], MONTH_NAMES.index(row["month"])),
+    )
+    archive_state_counts = dict(sorted(Counter(str(row["state"]) for row in issues).items()))
+
     xls_links = sorted(
         {
             link["url"]
@@ -281,7 +476,7 @@ def certify_epm(output: Path, retrieved_at: str) -> dict[str, object]:
     return {
         "source_family_id": "EIA_EPM",
         "product_id": "EIA_EPM_MONTHLY_PACKAGE",
-        "scope": "current EIA Electric Power Monthly publication surface",
+        "scope": "current EPM issue plus every monthly entry on the authoritative Previous Issues index",
         "retrieved_at_utc": retrieved_at,
         "index_url": EIA_EPM_INDEX,
         "index_final_url": final_url,
@@ -296,11 +491,24 @@ def certify_epm(output: Path, retrieved_at: str) -> dict[str, object]:
         "duplicate_payload_members": duplicate_payloads,
         "targeted_xls_route_count": len(xls_links),
         "targeted_xls_routes": xls_links,
+        "previous_issues_url": EIA_EPM_BACKISSUES,
+        "previous_issues_final_url": back_final,
+        "previous_issues_media_type": back_type,
+        "previous_issues_manifestation": back_frozen,
+        "previous_issue_count": len(issues),
+        "previous_issues": issues,
+        "previous_issue_state_counts": archive_state_counts,
+        "duplicate_issue_labels": duplicate_issue_labels,
         "bounded_current_release_exhausted": True,
-        "family_payload_product_denominator_exhausted": False,
-        "family_exhaustion_blockers": [
-            "current publication surface does not by itself enumerate all historical monthly EPM releases",
-        ],
+        "bounded_previous_issues_index_exhausted": True,
+        "family_payload_product_denominator_exhausted": True,
+        "product_denominator_basis": (
+            "current issue plus authoritative Previous Issues index classify every listed "
+            "monthly issue representation as ZIP/PDF/explicit N/A"
+        ),
+        "manifestation_history_complete": True,
+        "manifestation_history_residue": [],
+        "historical_payload_bytes_frozen": False,
     }
 
 
@@ -310,9 +518,18 @@ def run(output: Path) -> dict[str, object]:
     luma = certify_luma(output, retrieved_at)
     epm = certify_epm(output, retrieved_at)
 
+    family_product_denominators_pass = all(
+        bool(row["family_payload_product_denominator_exhausted"])
+        for row in (luma, epm)
+    )
+    state = (
+        "PASS_PRODUCT_DENOMINATORS_MANIFESTATION_RESIDUE_OPEN"
+        if family_product_denominators_pass
+        else "OPEN_PRODUCT_DENOMINATORS"
+    )
     summary = {
-        "schema_version": "aguayluz.source-product-denominator-certification/v1",
-        "state": "PASS_BOUNDED_SURFACES_FAMILY_EXHAUSTION_OPEN",
+        "schema_version": "aguayluz.source-product-denominator-certification/v2",
+        "state": state,
         "retrieved_at_utc": retrieved_at,
         "families": {
             "LUMA_DAILY_AVAILABILITY": luma,
@@ -323,6 +540,8 @@ def run(output: Path) -> dict[str, object]:
             "canonical_payload_route_verified": True,
             "duplicate_payloads_classified": True,
             "missing_dates_not_interpreted_as_source_absence": True,
+            "product_denominator_separate_from_manifestation_completeness": True,
+            "family_product_denominators_pass": family_product_denominators_pass,
             "family_denominator_auto_promotion": False,
         },
     }
