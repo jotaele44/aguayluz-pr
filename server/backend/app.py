@@ -47,10 +47,18 @@ def _is_legacy_municipio_summary(route: Any) -> bool:
     return getattr(route, "path", None) == "/municipios/{name}/summary" and "GET" in getattr(route, "methods", set())
 
 
+def _is_legacy_source_intelligence(route: Any) -> bool:
+    path = getattr(route, "path", None)
+    return isinstance(path, str) and path.startswith("/source-intelligence/")
+
+
 app = FastAPI(title=legacy.app.title)
 app.router.routes.extend(
-    route for route in legacy.app.router.routes
-    if not _is_legacy_readings(route) and not _is_legacy_municipio_summary(route)
+    route
+    for route in legacy.app.router.routes
+    if not _is_legacy_readings(route)
+    and not _is_legacy_municipio_summary(route)
+    and not _is_legacy_source_intelligence(route)
 )
 app.exception_handlers.update(legacy.app.exception_handlers)
 app.dependency_overrides.update(legacy.app.dependency_overrides)
