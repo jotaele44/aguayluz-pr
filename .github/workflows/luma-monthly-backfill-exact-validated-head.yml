@@ -1,0 +1,85 @@
+name: LUMA monthly backfill exact validated head
+
+on:
+  push:
+    branches:
+      - ops/luma-monthly-backfill-20261103
+
+permissions:
+  contents: read
+
+concurrency:
+  group: luma-monthly-backfill-exact-validated-head
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout validated adapter head
+        uses: actions/checkout@v4
+        with:
+          ref: 56d04f02a0191d23c40fe68447053e6ff8174de3
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install parser and renderer dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+          python -m pip install --disable-pip-version-check pypdf
+
+      - name: Revalidate exact checked-out adapter
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "56d04f02a0191d23c40fe68447053e6ff8174de3"
+          python -m py_compile scripts/luma_monthly_generation_adapter.py
+
+      - name: Execute governed backfill
+        id: backfill
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p evidence/luma-monthly-generation
+          set +e
+          python scripts/luma_monthly_generation_adapter.py backfill \
+            --output evidence/luma-monthly-generation \
+            --start 2023-01 \
+            2>&1 | tee evidence/luma-monthly-generation/run-console.log
+          rc=${PIPESTATUS[0]}
+          set -e
+          printf '%s\n' "$rc" > evidence/luma-monthly-generation/adapter-exit-code.txt
+          printf '%s\n' "56d04f02a0191d23c40fe68447053e6ff8174de3" > evidence/luma-monthly-generation/validated-adapter-sha.txt
+          printf '%s\n' "${{ github.sha }}" > evidence/luma-monthly-generation/trigger-commit-sha.txt
+          printf '%s\n' "${{ github.run_id }}" > evidence/luma-monthly-generation/workflow-run-id.txt
+          printf '%s\n' "${{ github.run_attempt }}" > evidence/luma-monthly-generation/workflow-run-attempt.txt
+          exit "$rc"
+
+      - name: Verify successful-run output closure
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s evidence/luma-monthly-generation/index_receipts.json
+          test -s evidence/luma-monthly-generation/index_entries.jsonl
+          test -s evidence/luma-monthly-generation/denominator.json
+          test -s evidence/luma-monthly-generation/manifest.jsonl
+          test -s evidence/luma-monthly-generation/manifest.csv
+          test -s evidence/luma-monthly-generation/attempts.jsonl
+          test -s evidence/luma-monthly-generation/page_index.jsonl
+          test -s evidence/luma-monthly-generation/replay.json
+          test -s evidence/luma-monthly-generation/archive.zip
+          test -s evidence/luma-monthly-generation/receipt.json
+
+      - name: Upload complete backfill evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: luma-monthly-backfill-${{ github.run_id }}
+          path: evidence/luma-monthly-generation/
+          if-no-files-found: error
+          retention-days: 30
