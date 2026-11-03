@@ -52,10 +52,10 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
+from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from html.parser import HTMLParser
-from collections.abc import Iterable, Iterator, Sequence
 from pathlib import Path
 from typing import Any
 
