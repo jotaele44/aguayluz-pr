@@ -27,6 +27,14 @@ def test_discovery_persists_candidate_only(tmp_path, monkeypatch):
     assert state["state"] == "DISCOVERY_ONLY"
     assert state["candidate_count"] == 1
     assert state["completeness"] == "NOT_CLAIMED"
+    index_receipt = state["index_receipt"]
+    assert index_receipt["source_id"] == "eia_860m_index"
+    assert index_receipt["state"] == "RAW_FROZEN_NOT_PARSED"
+    assert state["index_sha256"] == index_receipt["sha256"]
+    original = (tmp_path / "result" / "raw" / "eia_860m_index"
+                / index_receipt["sha256"][:2] / index_receipt["sha256"])
+    assert original.read_bytes() == b'<a href="/archive/xls/march_generator2026.xlsx">March</a>'
+    assert list((tmp_path / "result" / "raw").rglob("*.receipt.json"))
 
 
 def test_failed_discovery_has_immutable_failure_receipt(tmp_path, monkeypatch):
@@ -47,3 +55,34 @@ def test_failed_discovery_has_immutable_failure_receipt(tmp_path, monkeypatch):
     state = json.loads(record.read_text())[0]
     assert state["state"] == "QUARANTINED_NOT_PROMOTED"
     assert state["failure_class"] == "RETRYABLE_TRANSPORT"
+
+
+def test_index_manifestation_revision_preserves_both_originals(tmp_path, monkeypatch):
+    import hashlib
+
+    registry = tmp_path / "registry.json"
+    registry.write_text(json.dumps({"source_families": [{
+        "source_id": "eia_923",
+        "index_url": "https://www.eia.gov/electricity/data/eia923/",
+        "artifact_type": "zip",
+    }]}))
+    monkeypatch.setattr(runner, "REGISTRY", registry)
+    index_pages = [
+        b'<a href="january.zip">January</a>',
+        b'<a href="february.zip">February</a>',
+    ]
+    monkeypatch.setattr(
+        runner, "fetch_artifact",
+        lambda *args, **kwargs: (index_pages.pop(0), "text/html"),
+    )
+    root = tmp_path / "result"
+    assert runner.main(["--source-id", "eia_923", "--data-root", str(root)]) == 0
+    assert runner.main(["--source-id", "eia_923", "--data-root", str(root)]) == 0
+    expected_hashes = {hashlib.sha256(page).hexdigest() for page in [
+        b'<a href="january.zip">January</a>',
+        b'<a href="february.zip">February</a>',
+    ]}
+    receipt_files = list((root / "raw" / "eia_923_index").rglob("*.receipt.json"))
+    assert {path.name.removesuffix(".receipt.json") for path in receipt_files} == expected_hashes
+    for digest in expected_hashes:
+        assert (root / "raw" / "eia_923_index" / digest[:2] / digest).is_file()
