@@ -408,10 +408,17 @@ def test_backend_readiness_consumes_certified_eia_receipt() -> None:
     assert readiness.frontend_authorized is False
 
 
-def test_source_intelligence_router_is_mounted_on_canonical_app() -> None:
-    from server.backend.main import app
+def test_source_intelligence_router_is_mounted_once_on_canonical_app() -> None:
+    from collections import Counter
 
-    paths = set(app.openapi()["paths"])
+    from server.backend.app import app
+
+    paths = [
+        path
+        for route in app.routes
+        if (path := getattr(route, "path", None)) is not None
+    ]
+    counts = Counter(paths)
     expected = {
         "/source-intelligence/summary",
         "/source-intelligence/domains",
@@ -421,7 +428,10 @@ def test_source_intelligence_router_is_mounted_on_canonical_app() -> None:
         "/source-intelligence/routes",
         "/source-intelligence/route-governance",
     }
-    assert expected <= paths
+    assert expected <= set(paths)
+    assert {path: counts[path] for path in expected} == {
+        path: 1 for path in expected
+    }
 
 
 def test_backend_readiness_authorizes_frontend_with_frozen_v1_contract() -> None:
