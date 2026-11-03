@@ -383,3 +383,36 @@ def test_current_manifest_drops_superseded_failure_after_success():
     current = adapter.reconcile_manifest_rows([failed, passed])
     assert current == [passed]
     # The caller preserves both rows separately in attempts.jsonl.
+
+
+def test_parse_index_binds_title_cell_to_separate_download_anchor():
+    html = """
+    <table>
+      <tr>
+        <td>March 2026 – Monthly Generation Performance Report</td>
+        <td><a href="/so_document/march-2026-monthly-generation-performance-report/">Download</a></td>
+      </tr>
+    </table>
+    """
+    rows = adapter.parse_index_entries(html, "https://lumapr.com/bps-monitoring/?lang=en")
+    assert len(rows) == 1
+    assert rows[0].period == "2026-03"
+    assert rows[0].href == (
+        "https://lumapr.com/so_document/march-2026-monthly-generation-performance-report/"
+    )
+    assert rows[0].discovery_class == "AUTHORITATIVE_INDEX_ENTRY"
+
+
+def test_parse_index_authoritative_text_fallback_keeps_synthesized_url_discovery_only():
+    html = """
+    <div>
+      <span>April 2026 – Monthly Generation Performance Report</span>
+    </div>
+    """
+    rows = adapter.parse_index_entries(html, "https://lumapr.com/bps-monitoring/?lang=en")
+    assert len(rows) == 1
+    assert rows[0].period == "2026-04"
+    assert rows[0].href == (
+        "https://lumapr.com/so_document/april-2026-monthly-generation-performance-report/"
+    )
+    assert rows[0].discovery_class == "AUTHORITATIVE_INDEX_TEXT_SYNTHESIZED_URL"
