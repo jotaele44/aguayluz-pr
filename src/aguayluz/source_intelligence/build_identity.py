@@ -6,7 +6,7 @@ import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
+from collections.abc import Iterable
 
 BUILD_IDENTITY_SCHEMA = "aguayluz.build-identity/v1"
 _SHA_RE = re.compile(r"[0-9a-fA-F]{40}")
