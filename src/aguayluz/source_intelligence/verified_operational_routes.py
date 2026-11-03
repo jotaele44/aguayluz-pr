@@ -11,6 +11,18 @@ from .routes import (
 
 VERIFIED_OPERATIONAL_PRODUCTS = (
     SourceProductDefinition(
+        product_id="LUMA_DAILY_AVAILABILITY_REPORTS",
+        source_family_id="LUMA_DAILY_AVAILABILITY",
+        label="LUMA Daily Availability Reports",
+        origin_authority="LUMA Energy",
+        distributor="LUMA Energy",
+        native_dataset_id="BPS:Daily Availability Report",
+        spatial_scope="PUERTO_RICO_SYSTEM",
+        temporal_scope="DAILY_REPORT_LINEAGE",
+        canonical_discovery_route_id="LUMA_DAILY_AVAILABILITY_INDEX",
+        canonical_payload_route_id="LUMA_DAILY_AVAILABILITY_PDF",
+    ),
+    SourceProductDefinition(
         product_id="LUMA_OUTAGE_TOWNS",
         source_family_id="LUMA_OUTAGES",
         label="MiLUMA municipality/town outage observations",
@@ -253,6 +265,24 @@ VERIFIED_OPERATIONAL_PRODUCTS = (
 )
 
 VERIFIED_OPERATIONAL_ROUTES = (
+    AcquisitionRouteDefinition(
+        route_id="LUMA_DAILY_AVAILABILITY_INDEX",
+        product_id="LUMA_DAILY_AVAILABILITY_REPORTS",
+        role=RouteRole.DISCOVERY,
+        representation=RepresentationType.CATALOG,
+        locator="https://lumapr.com/monitoreo-de-bps/",
+        priority=1,
+    ),
+    AcquisitionRouteDefinition(
+        route_id="LUMA_DAILY_AVAILABILITY_PDF",
+        product_id="LUMA_DAILY_AVAILABILITY_REPORTS",
+        role=RouteRole.CANONICAL_PAYLOAD,
+        representation=RepresentationType.FULL_PAYLOAD,
+        locator="PDF Download href resolved from each Daily Availability Report entry on https://lumapr.com/monitoreo-de-bps/",
+        priority=1,
+        lossless=True,
+        may_publish_canonical=True,
+    ),
     AcquisitionRouteDefinition(
         route_id="LUMA_OUTAGE_TOWNS_DISCOVERY",
         product_id="LUMA_OUTAGE_TOWNS",
