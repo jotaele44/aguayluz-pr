@@ -34,6 +34,18 @@ EIA_SOURCE_PRODUCTS = (
         canonical_discovery_route_id="EIA_923_INDEX",
         canonical_payload_route_id="EIA_923_CURRENT_YEAR_ZIP",
     ),
+    SourceProductDefinition(
+        product_id="EIA_EPM_MONTHLY_PACKAGE",
+        source_family_id="EIA_EPM",
+        label="Electric Power Monthly full-table release package",
+        origin_authority="U.S. EIA",
+        distributor="U.S. EIA",
+        native_dataset_id="Electric Power Monthly",
+        spatial_scope="UNITED_STATES_AND_TERRITORIES",
+        temporal_scope="MONTHLY_RELEASE",
+        canonical_discovery_route_id="EIA_EPM_INDEX",
+        canonical_payload_route_id="EIA_EPM_ALL_TABLES_ZIP",
+    ),
 )
 
 EIA_ACQUISITION_ROUTES = (
@@ -69,6 +81,24 @@ EIA_ACQUISITION_ROUTES = (
         role=RouteRole.CANONICAL_PAYLOAD,
         representation=RepresentationType.FULL_PAYLOAD,
         locator="https://www.eia.gov/electricity/data/eia923/xls/f923_{year}.zip",
+        priority=1,
+        lossless=True,
+        may_publish_canonical=True,
+    ),
+    AcquisitionRouteDefinition(
+        route_id="EIA_EPM_INDEX",
+        product_id="EIA_EPM_MONTHLY_PACKAGE",
+        role=RouteRole.DISCOVERY,
+        representation=RepresentationType.CATALOG,
+        locator="https://www.eia.gov/electricity/monthly/",
+        priority=1,
+    ),
+    AcquisitionRouteDefinition(
+        route_id="EIA_EPM_ALL_TABLES_ZIP",
+        product_id="EIA_EPM_MONTHLY_PACKAGE",
+        role=RouteRole.CANONICAL_PAYLOAD,
+        representation=RepresentationType.FULL_PAYLOAD,
+        locator="https://www.eia.gov/electricity/monthly/current_month/{release_month}{release_year}.zip",
         priority=1,
         lossless=True,
         may_publish_canonical=True,
