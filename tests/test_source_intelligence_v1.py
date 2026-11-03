@@ -540,3 +540,15 @@ def test_luma_daily_availability_uses_index_bound_pdf_payload() -> None:
     assert discovery.may_publish_canonical is False
     assert payload.route_id == "LUMA_DAILY_AVAILABILITY_PDF"
     assert payload.may_publish_canonical is True
+
+
+def test_eia_epm_uses_pdf_fallback_when_zip_route_is_unavailable() -> None:
+    route = resolve_route(
+        "EIA_EPM_MONTHLY_PACKAGE",
+        FetchPurpose.FULL_PAYLOAD,
+        products=SOURCE_PRODUCTS,
+        routes=ACQUISITION_ROUTES,
+        unavailable_route_ids={"EIA_EPM_ALL_TABLES_ZIP"},
+    )
+    assert route.route_id == "EIA_EPM_HISTORICAL_PDF"
+    assert route.may_publish_canonical is False
