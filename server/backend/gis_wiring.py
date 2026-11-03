@@ -226,6 +226,10 @@ class ScenarioRequest(BaseModel):
     max_hops: int = Field(default=net.DEFAULT_MAX_HOPS, ge=1, le=100)
 
 
+# Set by server/backend/app.py (which owns the JP flood-document index) so this module
+# never imports app.py back: app.py includes these routers.
+flood_document_lookup: Callable[[str], dict[str, Any] | None] | None = None
+
 domain_router = APIRouter(prefix="/gis", tags=["gis"])
 
 
@@ -327,9 +331,7 @@ def gis_feature_documents(layer_id: str, feature_id: str) -> dict[str, Any]:
         )
         if name is None:
             raise HTTPException(404, "municipio not found")
-        from server.backend import app as served_app  # imported lazily: app.py includes this router
-
-        binding = served_app._jp_flood_document_for_municipio(name)
+        binding = flood_document_lookup(name) if flood_document_lookup else None
         documents = []
         if binding:
             documents.append(

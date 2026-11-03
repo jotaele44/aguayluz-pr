@@ -11,6 +11,7 @@ from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 
+from server.backend import gis_wiring
 from server.backend import main as legacy
 from server.backend.cave_karst_api import router as cave_karst_router
 from server.backend.environmental_exposure_api import router as environmental_exposure_router
@@ -99,6 +100,11 @@ def _jp_flood_document_for_municipio(name: str) -> dict[str, Any] | None:
                 result["byte_certification"] = certification
             return result
     return None
+
+
+# The GIS documents route reads flood documents through this hook (no back-import).
+gis_wiring.flood_document_lookup = _jp_flood_document_for_municipio
+
 
 # `utility_asset.asset_id` prefix -> the reading `kind`(s) whose `site_no` it identifies.
 # One physical USGS stream gage backs both the daily-values `reservoir` vector

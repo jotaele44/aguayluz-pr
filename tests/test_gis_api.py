@@ -101,7 +101,7 @@ def test_history_and_documents(client, proxy_edge, monkeypatch):
     assert client.get("/gis/features/barrios/x/history").status_code == 404
     empty = client.get("/gis/features/municipios/72127/documents").json()
     assert empty["name"] == "San Juan"
-    monkeypatch.setattr(backend, "_jp_flood_document_for_municipio", lambda name: {"municipality": name})
+    monkeypatch.setattr(wiring, "flood_document_lookup", lambda name: {"municipality": name})
     bound = client.get("/gis/features/municipios/72127/documents").json()
     assert bound["documents"][0]["url"] == "/municipios/San Juan/flood-document/file"
 
