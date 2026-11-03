@@ -55,8 +55,9 @@ import zipfile
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from html.parser import HTMLParser
+from collections.abc import Iterable, Iterator, Sequence
 from pathlib import Path
-from typing import Any, Iterable, Iterator, Sequence
+from typing import Any
 
 SCHEMA_VERSION = "luma_monthly_generation_adapter/v1"
 DEFAULT_INDEX_URLS = (
@@ -144,14 +145,14 @@ class Period:
             raise ValueError(f"invalid month: {self.month}")
 
     @classmethod
-    def parse(cls, text: str) -> "Period":
+    def parse(cls, text: str) -> Period:
         m = re.fullmatch(r"(\d{4})-(\d{2})", text.strip())
         if not m:
             raise ValueError(f"period must be YYYY-MM: {text!r}")
         return cls(int(m.group(1)), int(m.group(2)))
 
     @classmethod
-    def from_month_name(cls, month_name: str, year: str | int) -> "Period":
+    def from_month_name(cls, month_name: str, year: str | int) -> Period:
         key = month_name.strip().lower()
         if key not in MONTH_NUMBER:
             raise ValueError(f"unknown month: {month_name!r}")
@@ -164,7 +165,7 @@ class Period:
     def month_name(self) -> str:
         return MONTH_NAME[self.month]
 
-    def next(self) -> "Period":
+    def next(self) -> Period:
         if self.month == 12:
             return Period(self.year + 1, 1)
         return Period(self.year, self.month + 1)
@@ -928,7 +929,9 @@ def acquire_manifestation(
 
         page_index_path = output_root / "page_index.jsonl"
         existing_pages = read_jsonl(page_index_path)
-        page_key = lambda r: (r.get("manifestation_sha256"), r.get("page_number"))
+        def page_key(r: dict[str, Any]) -> tuple[Any, Any]:
+            return (r.get("manifestation_sha256"), r.get("page_number"))
+
         merged_pages = {
             page_key(r): r for r in existing_pages
         }
@@ -941,13 +944,15 @@ def acquire_manifestation(
 
         normalized_path = output_root / "normalized" / "observations.jsonl"
         existing_obs = read_jsonl(normalized_path)
-        obs_key = lambda r: (
-            r.get("manifestation_sha256"),
-            r.get("page_number"),
-            r.get("raw_context"),
-            r.get("raw_value"),
-            r.get("raw_unit"),
-        )
+        def obs_key(r: dict[str, Any]) -> tuple[Any, Any, Any, Any, Any]:
+            return (
+                r.get("manifestation_sha256"),
+                r.get("page_number"),
+                r.get("raw_context"),
+                r.get("raw_value"),
+                r.get("raw_unit"),
+            )
+
         merged_obs = {obs_key(r): r for r in existing_obs}
         for r in normalized_rows:
             merged_obs[obs_key(r)] = r
@@ -1465,12 +1470,14 @@ def run_acquisition(args: argparse.Namespace) -> int:
                 new_rows.append(asdict(row))
 
     prior_attempts = read_jsonl(root / "attempts.jsonl")
-    attempt_key = lambda r: (
-        str(r.get("manifestation_key") or ""),
-        str(r.get("retrieval_utc") or ""),
-        str(r.get("source_state") or ""),
-        str(r.get("sha256") or ""),
-    )
+    def attempt_key(r: dict[str, Any]) -> tuple[str, str, str, str]:
+        return (
+            str(r.get("manifestation_key") or ""),
+            str(r.get("retrieval_utc") or ""),
+            str(r.get("source_state") or ""),
+            str(r.get("sha256") or ""),
+        )
+
     attempts = {attempt_key(r): r for r in prior_attempts}
     for row in new_rows:
         attempts[attempt_key(row)] = row
