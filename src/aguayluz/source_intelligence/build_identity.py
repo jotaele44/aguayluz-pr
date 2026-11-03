@@ -4,9 +4,9 @@ from __future__ import annotations
 import json
 import os
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from collections.abc import Iterable
 
 BUILD_IDENTITY_SCHEMA = "aguayluz.build-identity/v1"
 _SHA_RE = re.compile(r"[0-9a-fA-F]{40}")
