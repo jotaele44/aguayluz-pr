@@ -29,7 +29,7 @@ Rico (live probes, 2026-10-06/07):
 | Watches, Warnings and Advisories | **Display-only overlay** (not data) | already ingested from `api.weather.gov`; the CloudGIS layer is shown on the map, off by default |
 | Radar Base Reflectivity | **Display-only overlay** (not data) | MRMS mosaic covers PR (TJUA); shown on the map, off by default |
 | WPC excessive rainfall / QPF / winter, RFC flash-flood guidance, CPC hazards and temperature outlooks, NDFD, SPC, NOHRSC, APRFC | Not wired | CONUS-only per their own extents |
-| NDGD air quality (PM2.5, ozone, dust, smoke) | Not wired | PR coverage unverified; outside the water/power scope |
+| NDGD air quality (PM2.5, ozone, dust, smoke) | Not wired | PR coverage unverified; air quality comes from AirNow instead (outdoor-conditions layer, below) |
 | Reference maps (zones, CWA, NWM lakes) | Not wired | no utility signal by themselves |
 
 ## NWPS river gauges (wired)
@@ -128,6 +128,28 @@ normal, cell count, heavy-rain flag, and the source file's SHA-256 and retrieval
 The Stage IV source card shows freshness, arithmetic and **Refresh now**. On **Map →
 Municipio fill → Rainfall**, municipios are tinted by the latest 1-day mean, with the
 data day stated.
+
+## Outdoor-condition sources (wired)
+
+Six more registry entries share this plane's store, receipts and freshness, and each has
+a source card on the **NWS Hydromet** page. They feed the per-municipio outdoor-conditions
+layer; see [`OUTDOOR_CONDITIONS.md`](OUTDOOR_CONDITIONS.md) for bindings, states and the
+composer.
+
+| `source_id` | Ingest | Endpoint | Writes |
+|---|---|---|---|
+| `nws_surf_zone` | `scripts/ingest_nws_surf_zone.py` | `api.weather.gov/products/types/SRF/locations/SJU` → newest TJSJ product | records (`NWS_SRF:<zone>:<date>`, a revision only when the rip current risk or surf height changes; 7-day retention) + `data/outdoor_surf_state.jsonl` |
+| `nws_marine_alerts` | `scripts/ingest_nws_marine_alerts.py` | `api.weather.gov/alerts/active?area=AM`, San Juan marine zones only | records (`NWS_MARINE:<VTEC event>`, closed by a TERMINATED revision; 14-day retention) |
+| `ndbc_buoys` | `scripts/ingest_ndbc_buoys.py` | `ndbc.noaa.gov/data/latest_obs/latest_obs.txt` | `data/outdoor_buoy_state.jsonl` |
+| `epa_uv` | `scripts/ingest_epa_uv.py` | `data.epa.gov/efservice/getEnvirofactsUVDAILY/ZIP/{zip}/JSON`, one ZIP per municipio | `data/outdoor_uv_state.jsonl` |
+| `nws_gridpoint_heat` | `scripts/ingest_nws_gridpoint_heat.py` | `api.weather.gov/gridpoints/SJU/{x},{y}` at each municipio's internal point | `data/outdoor_heat_state.jsonl` |
+| `airnow` | `scripts/ingest_airnow.py` (needs `AIRNOW_API_KEY`) | `airnowapi.org/aq/observation/latLong/current/` | `data/outdoor_aqi_state.jsonl` |
+
+They run through one harness (`src/aguayluz/outdoor/runner.py`) with the same
+discipline as the NWPS ingest: bytes frozen before parsing, arithmetic closed or a FAIL
+receipt, `--src` offline, `--dry-run`. `scripts/ingest_nws_alerts.py` already covers the
+island's land zones (High Surf Advisory, Rip Current Statement, Heat Advisory); the
+marine ingest adds the AMZ7xx waters that `area=PR` never returns.
 
 ## Display-only map overlays
 

@@ -246,8 +246,9 @@ def test_every_schema_loads_and_validates_itself(schemas_dir):
     schemas = list(schemas_dir.glob("*.schema.json"))
     # The GIS sidecar adds six contracts: feature, layer, runtime, package,
     # impact report, and manifest; the vendored thehub-pr epistemic-state
-    # contract (candidate) adds one more. Root schema count is an explicit gate.
-    assert len(schemas) == 40, f"expected 40 schemas, found {len(schemas)}"
+    # contract (candidate) adds one more, and the outdoor-conditions layer
+    # (outdoor_condition.v1) one more. Root schema count is an explicit gate.
+    assert len(schemas) == 41, f"expected 41 schemas, found {len(schemas)}"
     for p in schemas:
         s = json.loads(p.read_text(encoding="utf-8"))
         Draft202012Validator.check_schema(s)
@@ -280,3 +281,41 @@ def test_natural_feature_rejects_unknown_group():
     bad = {**_first_natural_feature(), "group": "financial"}
     with pytest.raises(ValidationError):
         validate_against_schema("pr_natural_feature", bad)
+
+
+# ---------------- outdoor_condition.v1 ----------------
+
+
+def _outdoor_condition() -> dict:
+    component = {"state": "NOT_INGESTED", "source_ids": ["x"]}
+    names = ["rip_current", "marine_alerts", "sea_state", "beach_water_quality", "uv", "heat",
+             "air_quality", "rainfall_24h", "river_flood", "nws_alerts", "tropical_cyclone",
+             "earthquakes", "access_closures"]
+    return {
+        "schema_version": "aguayluz.outdoor-condition/v1", "condition_id": "AYL_OUTDOOR_72127",
+        "geoid": "72127", "municipio": "San Juan", "lat": 18.39, "lon": -66.06,
+        "geometry_precision": "REPRESENTATIVE_POINT", "coastal": True,
+        "composed_at": "2026-10-18T16:00:00Z", "as_of": None,
+        "summary": {"level": "INSUFFICIENT_DATA", "drivers": [], "components_with_data": [],
+                    "stale_components": [], "unavailable_components": names},
+        "components": {n: dict(component) for n in names},
+        "scope_note": "context, not safety advice",
+    }
+
+
+def test_outdoor_condition_valid():
+    validate_against_schema("outdoor_condition.v1", _outdoor_condition())
+
+
+@pytest.mark.parametrize("mutate", [
+    lambda r: r["components"]["uv"].update(state="SAFE"),          # no benign state exists
+    lambda r: r["components"].pop("heat"),                          # every component is required
+    lambda r: r["summary"].update(level="SAFE"),
+    lambda r: r.update(geometry_precision="OBSERVED_POINT"),        # a centroid is never observed
+    lambda r: r["components"]["uv"].update(source_ids=[]),
+])
+def test_outdoor_condition_rejects(mutate):
+    row = _outdoor_condition()
+    mutate(row)
+    with pytest.raises(ValidationError):
+        validate_against_schema("outdoor_condition.v1", row)

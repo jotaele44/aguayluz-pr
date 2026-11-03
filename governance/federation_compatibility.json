@@ -16,9 +16,9 @@
   "spatial_generation": "federation-spatial-index/1",
   "spatial_note": "Compatible with federation spatial binding v0.2. While Spiderweb's transform is PROVISIONAL, this repository forbids exact Cell_ID ground claims and preserves full content-addressed uncertainty Cell_Set membership; identity remains CANDIDATE_NOT_IDENTITY.",
   "local_review": {
-    "date": "2026-10-11",
-    "change": "NWS hydromet plane: Stage IV Puerto Rico daily rainfall per municipio (source_truth.real_data_sources.stage_iv_pr) with WEATHER_HAZARD heavy-rain alerts, on top of NWPS river/reservoir gauge flood status",
-    "result": "All declared federation and spatial contracts remain compatible; new rows reach the Hub only through the existing alerts stream (new generated markers _nwpsflood_ and _qpeheavy_ mirrored in federation_export), and no canonical export schema changes"
+    "date": "2026-10-20",
+    "change": "Outdoor-conditions layer: six new NWS hydromet-plane sources (NWS Surf Zone Forecast, NWS marine-zone alerts, NDBC buoys, EPA UV index, NWS gridpoint heat, AirNow) composed with existing planes into one current-conditions row per municipio (scripts/build_outdoor_conditions.py, schemas/outdoor_condition.v1.schema.json)",
+    "result": "All declared federation and spatial contracts remain compatible; outdoor rows reach the Hub only through the existing entities/relationships streams (entity_type outdoor_condition located_in its municipality, evidence_state COMPUTED at a REPRESENTATIVE_POINT) and WEATHER_HAZARD alerts through the existing alerts stream (new generated markers _ripcurrent_ and _marine_ mirrored in federation_export); no canonical export schema changes"
   },
   "spatial_binding_v0_2": {
     "authority_commit": "bb8463c8d8cf4b54486674ee9b665ce3d2502e8b",

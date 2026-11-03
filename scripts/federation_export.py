@@ -7,9 +7,12 @@ Maps the AguaYLuz infrastructure model onto the Hub's canonical contract:
   * each municipality        -> one `entities` row (entity_type=municipality)
   * each distinct source     -> one `sources` row
   * each service event       -> one `entities` row (entity_type=service_event)
+  * each municipio's outdoor conditions (data/outdoor_conditions.jsonl)
+                             -> one `entities` row (entity_type=outdoor_condition)
   * asset -[operated_by]-> operator
   * asset -[located_in]-> municipality
   * asset -[affected_by]-> service_event (per linked_asset_ids)
+  * outdoor_condition -[located_in]-> municipality
 
 Reads `--assets` / `--events` JSONL and writes
 `exports/federation/{sources,entities,relationships}.jsonl` + a Hub-conformant
@@ -57,6 +60,8 @@ STREAM_SCHEMA = {
     "alerts": "federation_alert.schema.json",
 }
 ALERT_INPUTS = ["data/alert_events.jsonl"]
+OUTDOOR_INPUTS = ["data/outdoor_conditions.jsonl"]
+OUTDOOR_SOURCE_REF = "aguayluz-pr outdoor-conditions layer (data/outdoor_conditions.jsonl; aguayluz.outdoor.compose)"
 
 # outputs/* deliverable: the operator-facing snapshot half of the canonical
 # contract. Each filename maps to a schema in schemas/. Validated against its
@@ -153,7 +158,7 @@ _SITE_COORDINATE_PREFIXES = ("USGS_", "USGSWQ_", "USGSFM_", "USGSGW_", "WQP_", "
 _GENERATED_ALERT_MARKERS = (
     "_sdwis_", "_resvlow_", "_gwlow_", "_coasthi_", "_seismic_", "_weather_",
     "_osha_", "_neonpub_", "_nhc_", "_drought_", "_precipshort_", "_nwpsflood_",
-    "_qpeheavy_",
+    "_qpeheavy_", "_ripcurrent_", "_marine_",
 )
 
 
@@ -215,7 +220,7 @@ def _alert_evidence_state(alert: dict[str, Any], located: bool) -> dict[str, Any
     return _evidence_state("COMPUTED" if generated else "CURATED", **fields)
 
 
-def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], now: str, geo: dict[str, dict] | None = None, crosswalk: list[dict[str, Any]] | None = None, alerts: list[dict[str, Any]] | None = None, dep_edges: list[dict[str, Any]] | None = None) -> dict[str, list[dict[str, Any]]]:
+def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], now: str, geo: dict[str, dict] | None = None, crosswalk: list[dict[str, Any]] | None = None, alerts: list[dict[str, Any]] | None = None, dep_edges: list[dict[str, Any]] | None = None, outdoor: list[dict[str, Any]] | None = None) -> dict[str, list[dict[str, Any]]]:
     inputs = [
         "data/utility_assets.jsonl",
         "data/service_events.jsonl",
@@ -449,6 +454,61 @@ def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], no
             row["location"] = loc
         row["evidence_state"] = _alert_evidence_state(al, "location" in row)
         alert_rows[alert_id] = row
+
+    # Outdoor-conditions layer -> one `entities` row per municipio. The composed row
+    # (aguayluz.outdoor.compose) rides in `attributes` whole: every component keeps its
+    # state, evidence class and timestamps, so the Hub can show "not covered" and
+    # "stale" instead of a blank. COMPUTED, and the point is the Census internal point
+    # standing in for the municipio, never a measurement location.
+    for row in outdoor or []:
+        geoid, muni = row.get("geoid"), row.get("municipio")
+        if not geoid or not muni:
+            continue
+        sid = source_for(OUTDOOR_SOURCE_REF, None, 0.8)
+        oid = _fid("ent", "outdoor_condition", geoid)
+        summary = row.get("summary") or {}
+        entities[oid] = {
+            "entity_id": oid, "source_id": sid,
+            "name": f"Outdoor conditions — {muni}",
+            "normalized_name": _norm(f"outdoor conditions {muni}"),
+            "entity_type": "outdoor_condition", "jurisdiction": "PR",
+            "external_ids": {"census_geoid": str(geoid), "aguayluz_condition_id": str(row.get("condition_id"))},
+            "confidence": 0.8, "lineage": _lineage("OUTDOOR_CONDITION_ENTITY", OUTDOOR_INPUTS),
+            "attributes": {
+                "municipality": muni,
+                "geoid": geoid,
+                "coastal": row.get("coastal"),
+                "status": summary.get("level"),
+                "level": summary.get("level"),
+                "drivers": summary.get("drivers") or [],
+                "stale_components": summary.get("stale_components") or [],
+                "unavailable_components": summary.get("unavailable_components") or [],
+                "as_of": row.get("as_of"),
+                "composed_at": row.get("composed_at"),
+                "components": row.get("components") or {},
+                "scope_note": row.get("scope_note"),
+                "schema_version": row.get("schema_version"),
+            },
+            "synthetic": False, "created_at": now, "extracted_at": now,
+        }
+        lat, lon = row.get("lat"), row.get("lon")
+        if isinstance(lat, (int, float)) and isinstance(lon, (int, float)):
+            entities[oid]["location"] = {"lat": round(float(lat), 6), "lon": round(float(lon), 6),
+                                         "municipality": muni}
+        fields: dict[str, Any] = {
+            "basis_note": "composed per municipio from public outdoor-condition sources; "
+                          "point is the Census internal point, not an observation site",
+            "expected_cadence_seconds": 900,
+        }
+        if "location" in entities[oid]:
+            fields.update(geometry_precision="REPRESENTATIVE_POINT", coordinate_method="CENSUS_INTERNAL_POINT")
+        precision = _temporal_precision(row.get("as_of"))
+        if precision:
+            fields["temporal_precision"] = precision
+        entities[oid]["evidence_state"] = _evidence_state("COMPUTED", **fields)
+        m_id = _fid("ent", "municipality", _norm(muni))
+        entities.setdefault(m_id, _entity(m_id, sid, muni, "municipality", 0.95, OUTDOOR_INPUTS, now))
+        relationships.update(_rel_kv(oid, "located_in", m_id, sid, 0.95, now, source_inputs=OUTDOOR_INPUTS))
 
     return {"sources": list(sources.values()),
             "entities": list(entities.values()),
@@ -811,6 +871,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--geo", default=str(DATA_ROOT / "geo/pr_municipios.json"))
     ap.add_argument("--crosswalk", default=str(DATA_ROOT / "asset_crosswalk.jsonl"),
                     help="cross-source dedup clusters; emits member -[duplicate_of]-> canonical edges")
+    ap.add_argument("--outdoor", default=str(DATA_ROOT / "outdoor_conditions.jsonl"),
+                    help="per-municipio outdoor conditions (scripts/build_outdoor_conditions.py); optional")
     ap.add_argument("--dep-edges", default=str(DATA_ROOT / "alert_dependency_edges.jsonl"),
                     help="alert dependency edges; `energizes` edges emit water -[energized_by]-> power relationships")
     ap.add_argument("--out", default=str(FEDERATION_ROOT))
@@ -850,7 +912,8 @@ def main(argv: list[str] | None = None) -> int:
         print("no input data (data/utility_assets.jsonl / service_events / aee_incidents / alert_events absent) — nothing to export")
         return 0
     now = now_dt.replace(microsecond=0).isoformat().replace("+00:00", "Z")
-    streams = build_streams(assets, events, now, geo, crosswalk, alerts, dep_edges)
+    outdoor = _load_jsonl(Path(args.outdoor))
+    streams = build_streams(assets, events, now, geo, crosswalk, alerts, dep_edges, outdoor)
     manifest_path = write_package(streams, Path(args.out), args.mode, now)
     counts = {k: len(v) for k, v in streams.items()}
     print(f"wrote {manifest_path} — {counts}")

@@ -14,10 +14,14 @@ events into operational alerts —
                                   + NCEI precipitation shortfall (data/precipitation_conditions.jsonl)
   * WEATHER_HAZARD             — NWPS gauge flood episodes (NWS hydromet plane:
                                   data/hydromet_records.jsonl + data/nwps_gauge_state.jsonl)
+  * WEATHER_HAZARD             — NWS Surf Zone Forecast rip current risk High and NWS
+                                  marine-zone alerts for PR waters (outdoor-condition
+                                  records on the same hydromet plane)
 
 Idempotent merge: hand-authored seed alerts and any non-generated rows are kept;
 previously-generated rows (alert_id containing any GENERATED_MARKERS substring —
-_sdwis_ / _resvlow_ / _seismic_ / _weather_ / _osha_ / _neonpub_ / _nwpsflood_ …) are replaced
+_sdwis_ / _resvlow_ / _seismic_ / _weather_ / _osha_ / _neonpub_ / _nwpsflood_ / _ripcurrent_ /
+_marine_ …) are replaced
 on every run. Output is sorted by alert_id for a stable diff.
 
 The exporter (scripts/federation_export.py) projects data/alert_events.jsonl into the

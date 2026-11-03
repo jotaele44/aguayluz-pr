@@ -35,6 +35,8 @@ by `scripts/build_alerts.py`, see [`src/aguayluz/alert_promotion/`](../src/aguay
 | `WEATHER_HAZARD` | NWS active hazard alerts (severity from hazard type + urgency) | `alert_promotion.weather` |
 | `WEATHER_HAZARD` | NWS NWPS gauge flood episodes (severity from the peak NWS flood category; closed on recession) | `alert_promotion.hydromet` |
 | `WEATHER_HAZARD` | NWS Stage IV heavy-rain days per municipio (1-day mean ≥ 3 in → 2, any cell ≥ 6 in → 3; active 72 h after the 12Z day, then closed) | `alert_promotion.hydromet` |
+| `WEATHER_HAZARD` | NWS Surf Zone Forecast rip current risk High per beach zone-day (3; closed when the day ends or a later forecast lowers the risk) | `alert_promotion.outdoor` |
+| `WEATHER_HAZARD` | NWS marine-zone alerts for Puerto Rico waters, one per VTEC event (advisory/watch 2, warning 3; closed when it leaves the active set) | `alert_promotion.outdoor` |
 
 `POWER_OPS` and `INDUSTRIAL` promoters are ready in the registry but gated on their
 sources (live outage feed / EPA ECHO), which are currently unavailable. Every alert with
