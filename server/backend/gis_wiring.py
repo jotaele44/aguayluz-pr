@@ -102,13 +102,37 @@ def _dependency_features() -> list[dict[str, Any]]:
     return features
 
 
-LOADERS: dict[str, Callable[[], list[dict[str, Any]]]] = {
+def _with_ids(features: list[dict[str, Any]], id_field: str) -> list[dict[str, Any]]:
+    """Set each feature's GeoJSON ``id`` from its own identifier property, so identify,
+    search and query report the id that trace, scenario, history and documents accept
+    (asset_id, alert_id, lid, geoid) rather than a generic fallback."""
+    out = []
+    for feature in features:
+        value = (feature.get("properties") or {}).get(id_field)
+        out.append({**feature, "id": str(value)} if value not in (None, "") else feature)
+    return out
+
+
+ID_FIELDS = {
+    **{layer_id: "asset_id" for layer_id in ASSET_LAYERS},
+    "asset_dependencies": "edge_id",
+    "alerts": "alert_id",
+    "river_gauges": "lid",
+    "municipios": "geoid",
+    "barrios": "geoid",
+}
+
+_RAW_LOADERS: dict[str, Callable[[], list[dict[str, Any]]]] = {
     **{layer_id: (lambda t=asset_type: _asset_features(t)) for layer_id, asset_type in ASSET_LAYERS.items()},
     "asset_dependencies": _dependency_features,
     "alerts": lambda: _response_json(legacy.alerts_geojson(critical_only=False))["features"],
     "river_gauges": lambda: _response_json(hydromet_api.hydromet_gauges_geojson())["features"],
     "municipios": lambda: list(legacy._municipios_geojson.get("features") or []),
     "barrios": lambda: list(legacy._barrios_geojson.get("features") or []),
+}
+LOADERS: dict[str, Callable[[], list[dict[str, Any]]]] = {
+    layer_id: (lambda f=loader, field=ID_FIELDS[layer_id]: _with_ids(f(), field))
+    for layer_id, loader in _RAW_LOADERS.items()
 }
 
 

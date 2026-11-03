@@ -120,3 +120,15 @@ def test_karst_loader_never_serves_geometry():
 
     features, manifest = asyncio.run(wiring.feature_loader("cave_karst"))
     assert features == [] and manifest["exists"] is False
+
+
+def test_identify_and_search_report_ids_the_domain_routes_accept(client, proxy_edge):
+    power_id = proxy_edge["from_node_id"]
+    hit = client.get("/gis/search", params={"q": power_id, "layers": "power_assets"}).json()["hits"][0]
+    assert hit["feature_id"] == power_id
+    lon, lat = hit["anchor"]
+    found = client.get("/gis/identify", params={"lon": lon, "lat": lat, "layers": "power_assets", "tol_m": 5}).json()
+    assert found["hits"][0]["feature_id"] == power_id
+    gauge = client.get("/gis/layers/river_gauges.geojson").json()["features"][0]
+    assert gauge["id"] == gauge["properties"]["lid"]
+
