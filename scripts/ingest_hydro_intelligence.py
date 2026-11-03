@@ -7,7 +7,6 @@ No scheduling or unattended deployment until the security and provenance gates p
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import sys
 from datetime import datetime, timezone
@@ -17,7 +16,7 @@ from urllib.parse import urlparse
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "src"))
 
-from aguayluz.hydro_intelligence.acquisition import fetch_artifact  # noqa: E402
+from aguayluz.hydro_intelligence.acquisition import fetch_artifact, persist_bytes  # noqa: E402
 from aguayluz.hydro_intelligence.discovery import (
     acquire_with_retry,
     classify_failure,
@@ -69,17 +68,27 @@ def main(argv: list[str] | None = None) -> int:
         if kind not in SUFFIX:
             raise ValueError("Discovery-only adapter required for this source type")
         if raw is not None:
+            index_receipt = persist_bytes(
+                args.data_root / "raw", args.source_id + "_index",
+                source["index_url"], raw, _media,
+            )
             candidates = discover_links(
                 args.source_id, source["index_url"], raw,
                 allowed_hosts, SUFFIX[kind],
             )
             output = [{
-            "state": "DISCOVERY_ONLY",
-            "index_sha256": hashlib.sha256(raw).hexdigest(),
-            "index_url": source["index_url"],
-            "candidate_count": len(candidates),
-            "candidates": [candidate.artifact_url for candidate in candidates],
-            "completeness": "NOT_CLAIMED",
+                "state": "DISCOVERY_ONLY",
+                "index_sha256": index_receipt.sha256,
+                "index_receipt": {
+                    "source_id": index_receipt.source_id,
+                    "sha256": index_receipt.sha256,
+                    "byte_count": index_receipt.byte_count,
+                    "state": index_receipt.state,
+                },
+                "index_url": source["index_url"],
+                "candidate_count": len(candidates),
+                "candidates": [candidate.artifact_url for candidate in candidates],
+                "completeness": "NOT_CLAIMED",
             }]
     receipt_path = args.data_root / "runs" / f"{args.source_id}-{stamp}.json"
     receipt_hash = freeze_result_log(receipt_path, output)
