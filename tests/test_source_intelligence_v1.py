@@ -411,7 +411,7 @@ def test_backend_readiness_consumes_certified_eia_receipt() -> None:
 def test_source_intelligence_router_is_mounted_on_canonical_app() -> None:
     from server.backend.main import app
 
-    paths = {route.path for route in app.routes}
+    paths = set(app.openapi()["paths"])
     expected = {
         "/source-intelligence/summary",
         "/source-intelligence/domains",
