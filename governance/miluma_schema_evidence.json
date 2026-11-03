@@ -1,0 +1,64 @@
+{
+  "schema_version": "miluma_schema_evidence_v1",
+  "endpoint": "https://api.miluma.lumapr.com/miluma-outage-api/outage/regionsWithoutService",
+  "live_schema_state": "RAW_UNFROZEN",
+  "historical_schema_state": "PROVISIONAL_HISTORICAL_SCHEMA",
+  "certification": "PROVISIONAL",
+  "historical_source": {
+    "repository": "jpadilla/tracking-luma-outages",
+    "source_type": "THIRD_PARTY_ARCHIVAL_TRANSFORM",
+    "source_binding": "scraper code explicitly fetches the same regionsWithoutService endpoint",
+    "raw_response_bytes_preserved": false,
+    "transformed_rows_preserved": true,
+    "observed_period": [
+      "2021-09-23T12",
+      "2023-10-24T06"
+    ],
+    "scraper_raw_shape": {
+      "root_type": "object",
+      "collection_field": "regions",
+      "row_fields": [
+        "name",
+        "totalClients",
+        "totalClientsWithoutService"
+      ]
+    },
+    "normalized_shape": {
+      "row_fields": [
+        "region",
+        "total_customers",
+        "affected_customers"
+      ],
+      "observed_region_count": 7,
+      "observed_regions": [
+        "ARECIBO",
+        "BAYAMON",
+        "CAROLINA",
+        "CAGUAS",
+        "MAYAGUEZ",
+        "PONCE",
+        "SAN JUAN"
+      ]
+    }
+  },
+  "promotion_rules": {
+    "historical_fields_may_inform_parser_tests": true,
+    "historical_fields_are_not_live_schema_identity": true,
+    "live_promotion_requires_receipt_verified_source_bytes": true,
+    "source_unavailable_is_zero": false,
+    "snapshot_change_is_restoration": false
+  },
+  "preb_comparison": {
+    "docket": "NEPR-MI-2019-0007",
+    "role": "INDEPENDENT_AGGREGATE_RELIABILITY_COMPARATOR",
+    "comparable_metrics": [
+      "System SAIDI (T&D FYTD)",
+      "System Monthly SAIDI (T&D)",
+      "System SAIFI (T&D FYTD)",
+      "System Monthly SAIFI (T&D)"
+    ],
+    "preliminary_values_may_be_revised": true,
+    "live_snapshot_identity": false,
+    "restoration_event_identity": false
+  }
+}
