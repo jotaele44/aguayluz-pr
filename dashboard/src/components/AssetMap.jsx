@@ -1,8 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { Activity, Layers, MapPinned, Satellite } from 'lucide-react'
 import { useSpatialTools, SpatialToolsPanel } from './SpatialToolsPanel'
+import { GisViewerControls, useGisViewer } from './GisViewerControls'
+import { createGisClient } from '../lib/gis/gisApi'
+import { createNetworkClient } from '../lib/gis/networkApi'
+import { API_BASE } from '../lib/api'
 import NwsOverlayToggles from './NwsOverlayToggles'
 import {
   NWS_CLOUDGIS_OVERLAYS, OVERLAY_ATTRIBUTION, OVERLAY_REFRESH_MS,
@@ -281,6 +285,18 @@ function ControlButton({ active, children, onClick, tone }) {
     </button>
   )
 }
+
+// Map layer toggles -> gis-layer-catalog/1.0 layer ids (config/gis_layer_catalog.yaml).
+const CATALOG_LAYER_BY_TOGGLE = {
+  power: 'power_assets', water: 'water_assets', wastewater: 'wastewater_assets',
+  municipios: 'municipios', barrios: 'barrios', alerts: 'alerts', gauges: 'river_gauges',
+}
+const TOGGLE_BY_CATALOG_LAYER = Object.fromEntries(Object.entries(CATALOG_LAYER_BY_TOGGLE).map(([t, id]) => [id, t]))
+// Style sources that render exactly one catalog layer, so opacity and saved views can
+// address them. The three asset layers share one clustered source, so they get no
+// per-layer opacity (changing it would silently change the other two).
+const SOURCE_BY_CATALOG_LAYER = { municipios: 'municipios', barrios: 'barrios', alerts: 'alert-events', river_gauges: 'river-gauges' }
+const PR_HOME_VIEW = { center: [-66.45, 18.22], zoom: 8.2 }
 
 export default function AssetMap({ assets, assetRows = [], municipios, barrios, events = [], alerts, gauges, droughtByGeoid, rainByGeoid, rainfallDate, rainfallError, eventDensityByGeoid, eventDensityState, selectedAssetId, selectedMunicipio, onSelect, onMunicipioSelect, onAlertSelect, flyTo }) {
   const containerRef = useRef(null)
@@ -750,7 +766,38 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
     }),
     [visibleAssets, eventGeo, alertGeo],
   )
-  const spatialTools = useSpatialTools({ mapRef, mapReady, targets: spatialToolTargets, interactionLockRef: spatialToolActiveRef })
+  // Backend GIS API (/gis/*): identify, search, polygon query/export, dependency
+  // trace and outage scenarios run against exactly the layers switched on here.
+  const gisClient = useMemo(() => createGisClient(API_BASE), [])
+  const networkClient = useMemo(() => createNetworkClient(API_BASE), [])
+  const activeCatalogLayers = useMemo(
+    () => Object.entries(CATALOG_LAYER_BY_TOGGLE).filter(([toggle]) => layers[toggle]).map(([, id]) => id),
+    [layers],
+  )
+  const viewerLayers = useMemo(() => activeCatalogLayers.filter((id) => SOURCE_BY_CATALOG_LAYER[id]), [activeCatalogLayers])
+  const sourceIdFor = useCallback((layerId) => SOURCE_BY_CATALOG_LAYER[layerId] ?? null, [])
+  const applyLayerVisibility = useCallback((visible) => {
+    setLayers((current) => {
+      const next = { ...current }
+      for (const [layerId, on] of Object.entries(visible)) {
+        const toggle = TOGGLE_BY_CATALOG_LAYER[layerId]
+        if (toggle) next[toggle] = on
+      }
+      return next
+    })
+  }, [])
+  const gisViewer = useGisViewer({
+    mapRef, mapReady, client: gisClient, producerRepo: 'aguayluz-pr', homeView: PR_HOME_VIEW,
+    activeLayers: viewerLayers, sourceIdFor, applyLayerVisibility,
+  })
+  const gisCatalog = gisViewer.catalog
+  const spatialToolsGis = useMemo(() => ({
+    client: gisClient,
+    network: networkClient,
+    activeLayers: () => activeCatalogLayers,
+    exportable: (layerId) => gisCatalog?.layers.find((layer) => layer.layer_id === layerId)?.exportable ?? false,
+  }), [activeCatalogLayers, gisCatalog, gisClient, networkClient])
+  const spatialTools = useSpatialTools({ mapRef, mapReady, targets: spatialToolTargets, interactionLockRef: spatialToolActiveRef, gis: spatialToolsGis })
 
   return (
     <div className="relative h-full w-full">
@@ -953,7 +1000,14 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
         )}
       </div>
 
-      {showTools && <SpatialToolsPanel {...spatialTools} />}
+      {showTools && (
+        <div className="absolute right-3 top-16 max-h-[80vh] w-[300px] space-y-2 overflow-y-auto">
+          <div className="rounded-xl border border-slate-700/70 bg-slate-950/85 p-3 text-[11px] text-slate-300">
+            <GisViewerControls {...gisViewer} />
+          </div>
+          <SpatialToolsPanel {...spatialTools} />
+        </div>
+      )}
     </div>
   )
 }
