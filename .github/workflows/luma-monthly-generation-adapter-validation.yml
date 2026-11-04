@@ -22,7 +22,7 @@ jobs:
 
       - name: Install validation dependencies
         run: |
-          python -m pip install --disable-pip-version-check pytest ruff pypdf
+          python -m pip install --disable-pip-version-check pytest==9.2.0 ruff==0.17.3 pypdf==6.21.4
 
       - name: Compile
         run: |
@@ -42,3 +42,26 @@ jobs:
           python scripts/luma_monthly_generation_adapter.py backfill --help
           python scripts/luma_monthly_generation_adapter.py incremental --help
           python scripts/luma_monthly_generation_adapter.py replay --help
+
+      - name: Internal capability inventory parity
+        run: python scripts/check_gui_parity.py
+
+  gui-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install frontend dependencies
+        working-directory: dashboard
+        run: npm ci
+      - name: Install browser
+        working-directory: dashboard
+        run: npx playwright install --with-deps chromium
+      - name: Required GUI parity regression
+        working-directory: dashboard
+        run: npm run test:gui-parity

@@ -416,3 +416,90 @@ def test_parse_index_authoritative_text_fallback_keeps_synthesized_url_discovery
         "https://lumapr.com/so_document/april-2026-monthly-generation-performance-report/"
     )
     assert rows[0].discovery_class == "AUTHORITATIVE_INDEX_TEXT_SYNTHESIZED_URL"
+
+
+def test_frozen_real_index_rows_close_45_periods_without_synthesis():
+    html = (Path(__file__).parent / "fixtures" / "luma_bps_monthly_rows_20261103.html").read_text()
+    rows = adapter.parse_index_entries(html, "https://lumapr.com/monitoreo-de-bps/")
+    expected = adapter.expected_periods_from_index(rows, adapter.Period(2023, 1))
+    assert len(rows) == len(expected) == 45
+    assert len({r.period for r in rows}) == 45
+    assert all(r.discovery_class == "AUTHORITATIVE_INDEX_ENTRY" for r in rows)
+    assert all(".pdf" in r.href for r in rows)
+    assert adapter.index_denominator(rows, expected)["gate"] == "PASS"
+    assert rows[0].href.endswith("/2023/03/January-2023-Monthly-Generation-Performance-Report.pdf")
+    assert rows[-1].href.endswith("/2026/10/2026.09_September-Generation-Performance-Report.pdf")
+
+
+def test_anchor_callbacks_preserve_metadata_and_pdf_links():
+    html = '<meta property="article:published_time" content="2026-01-01"><a href="/a.pdf">Download</a>'
+    assert adapter.landing_publication_date(html) == "2026-01-01"
+    assert adapter.landing_pdf_links(html, "https://example.test/x") == ["https://example.test/a.pdf"]
+
+
+@pytest.mark.parametrize("case", ["forbidden", "no_pdf", "invalid_pdf"])
+def test_failure_paths_preserve_raw_receipts_without_constructor_crash(tmp_path, monkeypatch, case):
+    def fetch(url, _timeout):
+        if case == "forbidden":
+            return adapter.FetchResult(url, status="SOURCE_UNAVAILABLE", http_status=403)
+        if case == "no_pdf":
+            return adapter.FetchResult(url, final_url=url, status="PASS", body=b"<html>no link</html>")
+        if url.endswith(".pdf"):
+            return adapter.FetchResult(url, final_url=url, status="PASS", body=b"not a pdf")
+        return adapter.FetchResult(url, final_url=url, status="PASS", body=b'<a href="/x.pdf">PDF</a>')
+
+    monkeypatch.setattr(adapter, "request_bytes", fetch)
+    entry = adapter.DiscoveryEntry("2026-01", "https://example.test/report", "January", "https://example.test/index")
+    rows = adapter.acquire_manifestation(adapter.Period(2026, 1), entry, tmp_path, 1, [])
+    assert len(rows) == 1
+    assert rows[0].source_state in {"SOURCE_UNAVAILABLE", "UNRESOLVED", "INVALID_PDF"}
+    assert rows[0].negative_page_complete_ready is False
+    receipts = list((tmp_path / "raw" / "http").rglob("*.json"))
+    assert receipts
+
+
+def test_empty_replay_and_missing_page_count_cannot_pass(tmp_path):
+    assert adapter.replay_snapshot(tmp_path)["overall"] == "FAIL"
+    raw = tmp_path / "raw" / "bad.pdf"
+    raw.parent.mkdir()
+    raw.write_bytes(b"%PDF-test")
+    adapter.write_jsonl(tmp_path / "manifest.jsonl", [{
+        "source_state": "PASS", "manifestation_key": "one", "raw_path": "raw/bad.pdf",
+        "sha256": adapter.sha256_file(raw), "byte_count": raw.stat().st_size, "page_count": None,
+    }])
+    result = adapter.replay_snapshot(tmp_path)
+    assert result["overall"] == "FAIL"
+    assert any("page count missing" in f for f in result["failures"])
+
+
+def test_discovery_anchors_do_not_collapse_same_pdf_or_failed_attempts():
+    assert adapter._manifestation_key("2026-01", "pdf", "sha", "one") != adapter._manifestation_key(
+        "2026-01", "pdf", "sha", "two"
+    )
+    assert adapter._manifestation_key("2026-01", None, None, "one") != adapter._manifestation_key(
+        "2026-01", None, None, "two"
+    )
+
+
+def test_index_response_bytes_are_frozen_and_archived(tmp_path, monkeypatch):
+    body = b"<a>index source bytes</a>"
+    monkeypatch.setattr(adapter, "request_bytes", lambda url, timeout: adapter.FetchResult(
+        url, final_url=url, status="PASS", body=body, retrieval_utc="2026-11-03T00:00:00Z"
+    ))
+    _, receipts = adapter.acquire_index(["https://example.test/index"], 1, tmp_path)
+    assert (tmp_path / receipts[0]["raw_path"]).read_bytes() == body
+    assert receipts[0]["sha256"] == adapter.sha256_bytes(body)
+    adapter.write_json(tmp_path / "index_receipts.json", receipts)
+    archive = adapter.deterministic_archive(tmp_path, tmp_path / "archive.zip")
+    assert receipts[0]["raw_path"] in {m["path"] for m in archive["members"]}
+    assert "index_receipts.json" in {m["path"] for m in archive["members"]}
+
+
+def test_failed_manifestation_denominator_returns_nonzero_even_if_byte_replay_passes(tmp_path, monkeypatch):
+    entry = adapter.DiscoveryEntry("2023-01", "https://example.test/one", "January", "https://example.test/index")
+    monkeypatch.setattr(adapter, "acquire_index", lambda *args: ([entry], []))
+    monkeypatch.setattr(adapter, "acquire_manifestation", lambda *args: [])
+    monkeypatch.setattr(adapter, "replay_snapshot", lambda root: {"overall": "PASS"})
+    args = adapter.parser().parse_args(["backfill", "--output", str(tmp_path)])
+    args.index_url = ["https://example.test/index"]
+    assert adapter.run_acquisition(args) != 0

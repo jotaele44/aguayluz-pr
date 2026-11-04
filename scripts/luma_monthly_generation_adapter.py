@@ -237,42 +237,6 @@ class AnchorParser(HTMLParser):
         self.anchors: list[tuple[str, str]] = []
         self.publication_dates: list[str] = []
 
-class ReportRowParser(HTMLParser):
-    """Capture table-row text and links so title/link need not share one anchor."""
-
-    def __init__(self) -> None:
-        super().__init__()
-        self._in_row = False
-        self._row_text: list[str] = []
-        self._row_links: list[str] = []
-        self.rows: list[tuple[str, list[str]]] = []
-
-    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        tag = tag.lower()
-        attrs_dict = dict(attrs)
-        if tag == "tr":
-            self._in_row = True
-            self._row_text = []
-            self._row_links = []
-            return
-        if self._in_row and tag == "a":
-            href = attrs_dict.get("href")
-            if href:
-                self._row_links.append(href)
-
-    def handle_data(self, data: str) -> None:
-        if self._in_row:
-            self._row_text.append(data)
-
-    def handle_endtag(self, tag: str) -> None:
-        if tag.lower() == "tr" and self._in_row:
-            text = " ".join(" ".join(self._row_text).split())
-            self.rows.append((text, list(self._row_links)))
-            self._in_row = False
-            self._row_text = []
-            self._row_links = []
-
-
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         attrs_dict = dict(attrs)
         if tag.lower() == "meta":
@@ -307,6 +271,42 @@ class ReportRowParser(HTMLParser):
             self.anchors.append((self._href, " ".join(self._text).strip()))
             self._href = None
             self._text = []
+
+
+class ReportRowParser(HTMLParser):
+    """Capture table-row text and links so title/link need not share one anchor."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._in_row = False
+        self._row_text: list[str] = []
+        self._row_links: list[str] = []
+        self.rows: list[tuple[str, list[str]]] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        tag = tag.lower()
+        attrs_dict = dict(attrs)
+        if tag == "tr":
+            self._in_row = True
+            self._row_text = []
+            self._row_links = []
+            return
+        if self._in_row and tag == "a":
+            href = attrs_dict.get("href")
+            if href:
+                self._row_links.append(href)
+
+    def handle_data(self, data: str) -> None:
+        if self._in_row:
+            self._row_text.append(data)
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag.lower() == "tr" and self._in_row:
+            text = " ".join(" ".join(self._row_text).split())
+            self.rows.append((text, list(self._row_links)))
+            self._in_row = False
+            self._row_text = []
+            self._row_links = []
 
 
 def utc_now() -> str:
@@ -534,6 +534,35 @@ def request_bytes(
     )
 
 
+def freeze_fetch(root: Path, kind: str, fetched: FetchResult) -> dict[str, Any]:
+    """Preserve response bytes and metadata before parsing or interpretation."""
+    receipt = {
+        "requested_url": fetched.requested_url,
+        "final_url": fetched.final_url,
+        "status": fetched.status,
+        "http_status": fetched.http_status,
+        "retrieval_utc": fetched.retrieval_utc,
+        "content_type": fetched.content_type,
+        "last_modified": fetched.last_modified,
+        "etag": fetched.etag,
+        "error": fetched.error,
+        "byte_count": len(fetched.body) if fetched.body is not None else None,
+        "sha256": sha256_bytes(fetched.body) if fetched.body is not None else None,
+    }
+    token = sha256_bytes(canonical_json(receipt).encode("utf-8"))
+    base = root / "raw" / "http" / kind
+    if fetched.body is not None:
+        path = base / f"{token}.bin"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if path.exists() and path.read_bytes() != fetched.body:
+            raise AdapterError(f"frozen response collision: {path}")
+        path.write_bytes(fetched.body)
+        receipt["raw_path"] = path.relative_to(root).as_posix()
+    receipt_path = base / f"{token}.json"
+    write_json(receipt_path, receipt)
+    return {**receipt, "receipt_path": receipt_path.relative_to(root).as_posix()}
+
+
 def looks_like_pdf(data: bytes, content_type: str | None = None) -> bool:
     if not data.startswith(PDF_MAGIC):
         return False
@@ -748,8 +777,10 @@ def select_incremental_periods(
     return sorted(selected)
 
 
-def _manifestation_key(period: str, pdf_url: str | None, sha: str | None) -> str:
-    basis = "\n".join((period, pdf_url or "", sha or ""))
+def _manifestation_key(
+    period: str, pdf_url: str | None, sha: str | None, discovery_anchor: str = ""
+) -> str:
+    basis = "\n".join((period, discovery_anchor, pdf_url or "", sha or ""))
     return hashlib.sha256(basis.encode("utf-8")).hexdigest()[:20]
 
 
@@ -768,13 +799,14 @@ def acquire_manifestation(
     landing_candidate = indexed_href or synthesized
 
     landing = request_bytes(landing_candidate, timeout)
+    freeze_fetch(output_root, "landing", landing)
     notes: list[str] = []
     if landing.status != STATUS_PASS or landing.body is None:
         return [
             ManifestRow(
                 schema_version=SCHEMA_VERSION,
                 period=str(period),
-                manifestation_key=_manifestation_key(str(period), None, None),
+                manifestation_key=_manifestation_key(str(period), None, None, landing_candidate),
                 discovery_class=discovery_class,
                 index_url=index_url,
                 index_title_raw=title,
@@ -819,7 +851,7 @@ def acquire_manifestation(
                 ManifestRow(
                     schema_version=SCHEMA_VERSION,
                     period=str(period),
-                    manifestation_key=_manifestation_key(str(period), None, None),
+                    manifestation_key=_manifestation_key(str(period), None, None, landing_candidate),
                     discovery_class=discovery_class,
                     index_url=index_url,
                     index_title_raw=title,
@@ -844,6 +876,7 @@ def acquire_manifestation(
                     page_complete_parse=None,
                     page_complete_render=None,
                     hydro_classification="UNRESOLVED",
+                    negative_page_complete_ready=False,
                     negative_certification_eligible=False,
                     prior_manifestation_relation="NEW_OR_UNRESOLVED",
                     notes=["landing page fetched but no PDF link resolved"],
@@ -852,13 +885,19 @@ def acquire_manifestation(
 
     rows: list[ManifestRow] = []
     for pdf_url in sorted(set(pdf_urls)):
-        pdf_fetch = request_bytes(pdf_url, timeout)
+        # Preserve the first response when an index href is already a PDF.
+        pdf_fetch = (
+            landing if looks_like_pdf(landing.body, landing.content_type)
+            and pdf_url == (landing.final_url or landing_candidate)
+            else request_bytes(pdf_url, timeout)
+        )
+        freeze_fetch(output_root, "pdf", pdf_fetch)
         if pdf_fetch.status != STATUS_PASS or pdf_fetch.body is None:
             rows.append(
                 ManifestRow(
                     schema_version=SCHEMA_VERSION,
                     period=str(period),
-                    manifestation_key=_manifestation_key(str(period), pdf_url, None),
+                    manifestation_key=_manifestation_key(str(period), pdf_url, None, landing_candidate),
                     discovery_class=discovery_class,
                     index_url=index_url,
                     index_title_raw=title,
@@ -883,6 +922,7 @@ def acquire_manifestation(
                     page_complete_parse=None,
                     page_complete_render=None,
                     hydro_classification="UNRESOLVED",
+                    negative_page_complete_ready=False,
                     negative_certification_eligible=False,
                     prior_manifestation_relation="NEW_OR_UNRESOLVED",
                     notes=notes + [f"PDF fetch failed: {pdf_fetch.error or pdf_fetch.status}"],
@@ -909,7 +949,7 @@ def acquire_manifestation(
                 ManifestRow(
                     schema_version=SCHEMA_VERSION,
                     period=str(period),
-                    manifestation_key=_manifestation_key(str(period), pdf_url, digest),
+                    manifestation_key=_manifestation_key(str(period), pdf_url, digest, landing_candidate),
                     discovery_class=discovery_class,
                     index_url=index_url,
                     index_title_raw=title,
@@ -934,6 +974,7 @@ def acquire_manifestation(
                     page_complete_parse=False,
                     page_complete_render=False,
                     hydro_classification="UNRESOLVED",
+                    negative_page_complete_ready=False,
                     negative_certification_eligible=False,
                     prior_manifestation_relation=relation_to_prior(
                         str(period), pdf_fetch.final_url or pdf_url, digest, prior_rows
@@ -1061,7 +1102,7 @@ def acquire_manifestation(
                 schema_version=SCHEMA_VERSION,
                 period=str(period),
                 manifestation_key=_manifestation_key(
-                    str(period), pdf_fetch.final_url or pdf_url, digest
+                    str(period), pdf_fetch.final_url or pdf_url, digest, landing_candidate
                 ),
                 discovery_class=discovery_class,
                 index_url=index_url,
@@ -1277,12 +1318,15 @@ def replay_snapshot(root: Path) -> dict[str, Any]:
         pdf_pass += 1
 
         expected_pages = row.get("page_count")
+        if not isinstance(expected_pages, int) or expected_pages < 1:
+            failures.append(f"{row.get('period')}: positive PDF page count missing")
+            continue
         indexed_pages = sorted(
             pages_by_sha.get(str(digest), []),
             key=lambda x: int(x.get("page_number") or 0),
         )
         if isinstance(expected_pages, int) and expected_pages > 0:
-            if len(indexed_pages) == expected_pages:
+            if [p.get("page_number") for p in indexed_pages] == list(range(1, expected_pages + 1)):
                 page_count_pass += 1
             else:
                 failures.append(
@@ -1352,6 +1396,8 @@ def replay_snapshot(root: Path) -> dict[str, Any]:
     if any(row.get("canonical_claim_state") != "WITHHELD" for row in canonical):
         failures.append("canonical claims contain unreviewed promoted identity")
 
+    if not any(r.get("source_state") == STATUS_PASS for r in rows):
+        failures.append("no successfully frozen source PDFs; empty replay cannot pass")
     duplicates = duplicate_period_state(rows)
     gates = {
         "SHA_REPLAY": "PASS" if byte_pass == sum(r.get("source_state") == STATUS_PASS for r in rows) else "FAIL",
@@ -1419,6 +1465,7 @@ def deterministic_archive(root: Path, archive_path: Path) -> dict[str, Any]:
         root / "index_entries.jsonl",
         root / "attempts.jsonl",
         root / "denominator.json",
+        root / "index_receipts.json",
         root / "replay.json",
     ]
     members: list[Path] = []
@@ -1476,7 +1523,7 @@ def index_denominator(
     }
 
 
-def acquire_index(index_urls: Sequence[str], timeout: float) -> tuple[list[DiscoveryEntry], list[dict[str, Any]]]:
+def acquire_index(index_urls: Sequence[str], timeout: float, root: Path | None = None) -> tuple[list[DiscoveryEntry], list[dict[str, Any]]]:
     all_entries: list[DiscoveryEntry] = []
     receipts: list[dict[str, Any]] = []
     for url in index_urls:
@@ -1494,6 +1541,8 @@ def acquire_index(index_urls: Sequence[str], timeout: float) -> tuple[list[Disco
             "sha256": sha256_bytes(fetched.body) if fetched.body is not None else None,
             "error": fetched.error,
         }
+        if root is not None:
+            receipt.update(freeze_fetch(root, "index", fetched))
         receipts.append(receipt)
         if fetched.status != STATUS_PASS or fetched.body is None:
             continue
@@ -1511,11 +1560,12 @@ def run_acquisition(args: argparse.Namespace) -> int:
     root.mkdir(parents=True, exist_ok=True)
     prior_rows = read_jsonl(root / "manifest.jsonl")
 
-    entries, index_receipts = acquire_index(args.index_url, args.timeout)
+    entries, index_receipts = acquire_index(args.index_url, args.timeout, root)
     write_jsonl(root / "index_entries.jsonl", [asdict(e) for e in entries])
     write_json(root / "index_receipts.json", index_receipts)
 
     start = Period.parse(args.start)
+    entries = [e for e in entries if Period.parse(e.period) >= start]
     expected = expected_periods_from_index(entries, start)
     if not expected:
         write_json(
@@ -1667,7 +1717,11 @@ def run_acquisition(args: argparse.Namespace) -> int:
             }
         )
     )
-    return 0 if replay.get("overall") == "PASS" else 3
+    return 0 if (
+        replay.get("overall") == "PASS"
+        and denom.get("gate") == "PASS"
+        and manifestation_denominator_gate == "PASS"
+    ) else 3
 
 
 def run_replay(args: argparse.Namespace) -> int:
