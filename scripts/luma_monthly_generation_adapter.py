@@ -1325,59 +1325,58 @@ def replay_snapshot(root: Path) -> dict[str, Any]:
             pages_by_sha.get(str(digest), []),
             key=lambda x: int(x.get("page_number") or 0),
         )
-        if isinstance(expected_pages, int) and expected_pages > 0:
-            if [p.get("page_number") for p in indexed_pages] == list(range(1, expected_pages + 1)):
-                page_count_pass += 1
-            else:
+        if [p.get("page_number") for p in indexed_pages] == list(range(1, expected_pages + 1)):
+            page_count_pass += 1
+        else:
+            failures.append(
+                f"{row.get('period')}: page-index count={len(indexed_pages)} "
+                f"expected={expected_pages}"
+            )
+            continue
+        try:
+            replay_texts = extract_pdf_pages(raw)
+        except Exception as exc:
+            failures.append(
+                f"{row.get('period')}: replay text extraction failed: "
+                f"{type(exc).__name__}: {exc}"
+            )
+            continue
+        if len(replay_texts) != expected_pages:
+            failures.append(
+                f"{row.get('period')}: replay page count={len(replay_texts)} "
+                f"expected={expected_pages}"
+            )
+            continue
+        text_ok = True
+        render_ok = True
+        for page_row, page_text in zip(indexed_pages, replay_texts, strict=True):
+            actual_text_sha = sha256_bytes(page_text.encode("utf-8"))
+            if actual_text_sha != page_row.get("text_sha256"):
+                text_ok = False
                 failures.append(
-                    f"{row.get('period')}: page-index count={len(indexed_pages)} "
-                    f"expected={expected_pages}"
+                    f"{row.get('period')}: page={page_row.get('page_number')} "
+                    "text SHA mismatch"
+                )
+            render_rel = page_row.get("render_path")
+            render_sha = page_row.get("render_sha256")
+            if not render_rel or not render_sha:
+                render_ok = False
+                failures.append(
+                    f"{row.get('period')}: page={page_row.get('page_number')} "
+                    "render receipt missing"
                 )
                 continue
-            try:
-                replay_texts = extract_pdf_pages(raw)
-            except Exception as exc:
+            render_file = root / str(render_rel)
+            if not render_file.is_file() or sha256_file(render_file) != render_sha:
+                render_ok = False
                 failures.append(
-                    f"{row.get('period')}: replay text extraction failed: "
-                    f"{type(exc).__name__}: {exc}"
+                    f"{row.get('period')}: page={page_row.get('page_number')} "
+                    "render SHA mismatch/missing"
                 )
-                continue
-            if len(replay_texts) != expected_pages:
-                failures.append(
-                    f"{row.get('period')}: replay page count={len(replay_texts)} "
-                    f"expected={expected_pages}"
-                )
-                continue
-            text_ok = True
-            render_ok = True
-            for page_row, page_text in zip(indexed_pages, replay_texts, strict=True):
-                actual_text_sha = sha256_bytes(page_text.encode("utf-8"))
-                if actual_text_sha != page_row.get("text_sha256"):
-                    text_ok = False
-                    failures.append(
-                        f"{row.get('period')}: page={page_row.get('page_number')} "
-                        "text SHA mismatch"
-                    )
-                render_rel = page_row.get("render_path")
-                render_sha = page_row.get("render_sha256")
-                if not render_rel or not render_sha:
-                    render_ok = False
-                    failures.append(
-                        f"{row.get('period')}: page={page_row.get('page_number')} "
-                        "render receipt missing"
-                    )
-                    continue
-                render_file = root / str(render_rel)
-                if not render_file.is_file() or sha256_file(render_file) != render_sha:
-                    render_ok = False
-                    failures.append(
-                        f"{row.get('period')}: page={page_row.get('page_number')} "
-                        "render SHA mismatch/missing"
-                    )
-            if text_ok:
-                page_text_replay_pass += 1
-            if render_ok:
-                render_replay_pass += 1
+        if text_ok:
+            page_text_replay_pass += 1
+        if render_ok:
+            render_replay_pass += 1
 
     for obs in normalized:
         unit = str(obs.get("normalized_unit") or "")
