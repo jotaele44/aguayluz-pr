@@ -44,7 +44,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y poppler-utils
-          python -m pip install --disable-pip-version-check pypdf
+          python -m pip install --disable-pip-version-check pypdf==6.21.4
+          mkdir -p evidence/luma-monthly-generation
+          python -m pip freeze > evidence/luma-monthly-generation/python-packages.txt
+          pdftoppm -v 2> evidence/luma-monthly-generation/renderer-version.txt
+          git rev-parse HEAD > evidence/luma-monthly-generation/adapter-head-sha.txt
+          sha256sum scripts/luma_monthly_generation_adapter.py > evidence/luma-monthly-generation/adapter-source.sha256
 
       - name: Compile gate
         run: |

@@ -60,6 +60,7 @@ from pathlib import Path
 from typing import Any
 
 SCHEMA_VERSION = "luma_monthly_generation_adapter/v1"
+PINNED_PYPDF_VERSION = "6.21.4"
 DEFAULT_INDEX_URLS = (
     "https://lumapr.com/monitoreo-de-bps/",
     "https://lumapr.com/bps-monitoring/?lang=en",
@@ -687,10 +688,15 @@ def typed_observations(
 
 def _pypdf_reader(path: Path) -> Any:
     try:
-        from pypdf import PdfReader  # type: ignore
+        import pypdf
     except ImportError as exc:  # pragma: no cover - exercised by runtime gate
         raise AdapterError("pypdf is required for page-complete parsing") from exc
-    return PdfReader(str(path))
+    if pypdf.__version__ != PINNED_PYPDF_VERSION:
+        raise AdapterError(
+            f"pypdf {PINNED_PYPDF_VERSION} is required for the frozen extraction contract; "
+            f"found {pypdf.__version__}; parser-version changes require a new reviewed snapshot"
+        )
+    return pypdf.PdfReader(str(path))
 
 
 def extract_pdf_pages(path: Path) -> list[str]:
@@ -1434,6 +1440,7 @@ def replay_snapshot(root: Path) -> dict[str, Any]:
     return {
         "schema_version": SCHEMA_VERSION,
         "replay_utc": utc_now(),
+        "required_pypdf_version": PINNED_PYPDF_VERSION,
         "manifest_rows": len(rows),
         "pass_source_rows": sum(r.get("source_state") == STATUS_PASS for r in rows),
         "byte_replay_pass": byte_pass,

@@ -503,3 +503,9 @@ def test_failed_manifestation_denominator_returns_nonzero_even_if_byte_replay_pa
     args = adapter.parser().parse_args(["backfill", "--output", str(tmp_path)])
     args.index_url = ["https://example.test/index"]
     assert adapter.run_acquisition(args) != 0
+
+def test_pdf_reader_rejects_unreviewed_parser_version_before_opening_input(tmp_path, monkeypatch):
+    fake = type("UnsupportedParser", (), {"__version__": "0.0"})()
+    monkeypatch.setitem(sys.modules, "pypdf", fake)
+    with pytest.raises(adapter.AdapterError, match="pypdf 6.21.4 is required"):
+        adapter._pypdf_reader(tmp_path / "unopened.pdf")
