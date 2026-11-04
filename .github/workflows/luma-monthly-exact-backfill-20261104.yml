@@ -1,0 +1,129 @@
+name: LUMA monthly exact-SHA backfill 20261104
+
+on:
+  push:
+    branches:
+      - ops/luma-monthly-backfill-20261104
+    paths:
+      - .github/workflows/luma-monthly-exact-backfill-20261104.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: luma-monthly-exact-backfill-20261104
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 55b61847691beeef59c36c37d53cdf982a17f065
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Bind exact authority
+        run: |
+          test "$(git rev-parse HEAD)" = "55b61847691beeef59c36c37d53cdf982a17f065"
+          mkdir -p evidence/luma-monthly-generation
+          git rev-parse HEAD > evidence/luma-monthly-generation/adapter-head-sha.txt
+          git rev-parse HEAD^{tree} > evidence/luma-monthly-generation/adapter-tree-sha.txt
+          sha256sum scripts/luma_monthly_generation_adapter.py > evidence/luma-monthly-generation/adapter-source.sha256
+          printf '%s\n' "${{ github.sha }}" > evidence/luma-monthly-generation/trigger-head-sha.txt
+          printf '%s\n' "${{ github.run_id }}" > evidence/luma-monthly-generation/workflow-run-id.txt
+      - name: Install validated toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+          python -m pip install --disable-pip-version-check pytest==9.2.0 ruff==0.17.3 pypdf==6.21.4
+          python --version > evidence/luma-monthly-generation/python-version.txt
+          pdftoppm -v 2> evidence/luma-monthly-generation/renderer-version.txt
+          python -m pip freeze > evidence/luma-monthly-generation/python-packages.txt
+      - name: Revalidate acquisition code
+        run: |
+          python -m py_compile scripts/luma_monthly_generation_adapter.py
+          ruff check scripts/luma_monthly_generation_adapter.py tests/test_luma_monthly_generation_adapter.py
+          pytest -q tests/test_luma_monthly_generation_adapter.py
+          python scripts/luma_monthly_generation_adapter.py backfill --help
+      - name: Governed complete backfill
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +e
+          python -u scripts/luma_monthly_generation_adapter.py backfill \
+            --start 2023-01 --output evidence/luma-monthly-generation \
+            > evidence/luma-monthly-generation/run-console.log 2>&1 &
+          adapter_pid=$!
+          while kill -0 "$adapter_pid" 2>/dev/null; do
+            python -c 'import pathlib,datetime; p=pathlib.Path("evidence/luma-monthly-generation"); print(datetime.datetime.now(datetime.timezone.utc).isoformat(), "PDFs", len(list((p/"raw").rglob("*.pdf"))), "rendered_pages", len(list((p/"pages").rglob("*.png"))))'
+            sleep 30
+          done
+          wait "$adapter_pid"
+          rc=$?
+          set -e
+          printf '%s\n' "$rc" > evidence/luma-monthly-generation/adapter-exit-code.txt
+          cat evidence/luma-monthly-generation/run-console.log
+          exit "$rc"
+      - name: Independent structural replay
+        if: always()
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib, json, pathlib, subprocess, zipfile
+          root = pathlib.Path("evidence/luma-monthly-generation")
+          failures = []
+          checked = 0
+          manifest = root / "manifest.jsonl"
+          if not manifest.exists():
+              failures.append("source manifest not produced")
+          else:
+              rows = [json.loads(line) for line in manifest.read_text().splitlines() if line]
+              passed = [r for r in rows if r.get("source_state") == "PASS"]
+              if not passed:
+                  failures.append("no successful source manifestations")
+              for row in passed:
+                  p = root / row["raw_path"]
+                  payload = p.read_bytes()
+                  if len(payload) != row["byte_count"] or hashlib.sha256(payload).hexdigest() != row["sha256"]:
+                      failures.append("byte integrity: " + row["period"])
+                  info = subprocess.run(["pdfinfo", str(p)], capture_output=True, text=True, check=False)
+                  counts = [int(x.split(":",1)[1]) for x in info.stdout.splitlines() if x.startswith("Pages:")]
+                  if info.returncode or counts != [row.get("page_count")]:
+                      failures.append("independent pdfinfo page count: " + row["period"])
+                  checked += 1
+              receipt = json.loads((root/"receipt.json").read_text())
+              archive = receipt["archive"]
+              zpath = root/"archive.zip"
+              if hashlib.sha256(zpath.read_bytes()).hexdigest() != archive["sha256"]:
+                  failures.append("outer archive SHA mismatch")
+              with zipfile.ZipFile(zpath) as z:
+                  actual = {i.filename:(i.file_size, hashlib.sha256(z.read(i)).hexdigest()) for i in z.infolist()}
+              expected = {m["path"]:(m["uncompressed_size"],m["sha256"]) for m in archive["members"]}
+              if actual != expected or len(actual) != archive["member_count"]:
+                  failures.append("archive member closure mismatch")
+              if receipt["manifestation_denominator_gate"] != "PASS":
+                  failures.append("manifestation denominator not closed")
+              if receipt["index_denominator"]["gate"] != "PASS":
+                  failures.append("period denominator not closed")
+          out = {"scope":"frozen bytes, full ZIP member path/size/SHA and independent pdfinfo page counts",
+                 "checked_pdf_manifestations": checked, "failures":failures,
+                 "overall":"PASS" if not failures else "FAIL",
+                 "semantic_visual_review":"OPEN", "canonical_promotion":"WITHHELD"}
+          (root/"independent-structural-replay.json").write_text(json.dumps(out,indent=2)+"\n")
+          print(json.dumps(out))
+          raise SystemExit(0 if not failures else 3)
+          PY
+      - name: Upload complete acquisition evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: luma-monthly-exact-backfill-${{ github.run_id }}
+          path: evidence/luma-monthly-generation/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 6
