@@ -1,0 +1,30 @@
+name: LUMA pinned replay toolchain 20261104
+on:
+  push:
+    branches: [ops/luma-evidence-replay-20261104]
+    paths: [.github/workflows/luma-replay-toolchain-20261104.yml]
+permissions:
+  contents: read
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Freeze exact validation dependencies
+        run: |
+          mkdir wheels
+          python -m pip download --dest wheels pytest==9.2.0 ruff==0.17.3 pypdf==6.21.4
+          python - <<'PY'
+          import hashlib,json,pathlib
+          rows=[{"path":p.name,"bytes":p.stat().st_size,"sha256":hashlib.sha256(p.read_bytes()).hexdigest()} for p in sorted(pathlib.Path("wheels").glob("*.whl"))]
+          pathlib.Path("wheels/wheel-manifest.json").write_text(json.dumps(rows,indent=2)+"\n")
+          print(json.dumps(rows))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: luma-pinned-toolchain-${{ github.run_id }}
+          path: wheels/
+          retention-days: 30
