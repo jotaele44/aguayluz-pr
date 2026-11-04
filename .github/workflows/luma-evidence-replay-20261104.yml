@@ -1,0 +1,123 @@
+name: LUMA frozen evidence review and incremental replay 20261104
+on:
+  push:
+    branches: [ops/luma-evidence-replay-20261104]
+    paths: [.github/workflows/luma-evidence-replay-20261104.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 55b61847691beeef59c36c37d53cdf982a17f065
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: luma-monthly-exact-backfill-41855193873
+          run-id: 41855193873
+          github-token: ${{ github.token }}
+          repository: jotaele44/aguayluz-pr
+          path: frozen
+      - name: Verify frozen source archive authority
+        run: |
+          test "$(cat frozen/adapter-head-sha.txt)" = "55b61847691beeef59c36c37d53cdf982a17f065"
+          printf '%s\n' "9fa8f8ff589c46f64d8117dbe2b7655c4c81a1e828e46913a0b4dd2fd379286a  frozen/archive.zip" | sha256sum --check
+          stat --format='%s' frozen/archive.zip
+      - name: Install extraction tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+          python -m pip install --disable-pip-version-check pypdf==6.21.4
+      - name: Prepare source-faithful review bundle
+        run: |
+          python - <<'PY'
+          import hashlib,json,pathlib,shutil,subprocess,zipfile
+          root=pathlib.Path("frozen")
+          review=pathlib.Path("review")
+          review.mkdir()
+          for name in ["manifest.jsonl","manifest.csv","receipt.json","replay.json","independent-structural-replay.json","denominator.json","index_receipts.json","index_entries.jsonl","attempts.jsonl","contradictions.jsonl","page_index.jsonl","adapter-head-sha.txt","adapter-source.sha256","renderer-version.txt","python-packages.txt"]:
+              if (root/name).is_file(): shutil.copy2(root/name,review/name)
+          for name in ["normalized","canonical"]:
+              if (root/name).is_dir(): shutil.copytree(root/name,review/name)
+          rows=[json.loads(l) for l in (root/"manifest.jsonl").read_text().splitlines() if l]
+          summary=[]
+          for row in rows:
+              raw=root/row["raw_path"]
+              dest=review/row["raw_path"]
+              dest.parent.mkdir(parents=True,exist_ok=True)
+              shutil.copy2(raw,dest)
+              target=review/"text"/(row["period"]+".txt")
+              target.parent.mkdir(parents=True,exist_ok=True)
+              subprocess.run(["pdftotext","-layout",str(raw),str(target)],check=True)
+              text=target.read_text()
+              pages=text.split("\f")
+              if pages and not pages[-1].strip(): pages.pop()
+              if len(pages)!=row["page_count"]: raise ValueError("independent text/page count discrepancy: "+row["period"])
+              matches=[]
+              for page_no,page in enumerate(pages,1):
+                  if any(term in page.lower() for term in ["hydro","caonillas","dos bocas","garzas","toro negro","yauco"]):
+                      matches.append({"page":page_no,"text":page})
+              summary.append({"period":row["period"],"sha256":row["sha256"],"page_count":row["page_count"],"parser_classification":row["hydro_classification"],"independent_hydro_pages":matches})
+          (review/"independent-layout-hydro-pages.json").write_text(json.dumps(summary,indent=2)+"\n")
+          artifact={"source_run":41855193873,"source_artifact":13338361363,"source_artifact_sha256":"94270745eae2000cc093f8cb7f3071922d75398b2474b53121cf5f65af7dcfae","source_archive_sha256":hashlib.sha256((root/"archive.zip").read_bytes()).hexdigest(),"pdfs":len(rows),"pages":sum(r["page_count"] for r in rows),"canonical_promotion":"WITHHELD","visual_review":"OPEN"}
+          (review/"review-receipt.json").write_text(json.dumps(artifact,indent=2)+"\n")
+          print(json.dumps({**artifact,"classifications":json.loads((root/"receipt.json").read_text())["classification_counts"]}))
+          with zipfile.ZipFile("LUMA_Monthly_Review_20261104.zip","w",zipfile.ZIP_DEFLATED,compresslevel=9) as z:
+              for p in sorted(review.rglob("*")):
+                  if p.is_file(): z.write(p,p.relative_to(review).as_posix())
+          PY
+      - name: Upload review PDFs and metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: luma-monthly-review-${{ github.run_id }}
+          path: LUMA_Monthly_Review_20261104.zip
+          compression-level: 0
+          retention-days: 30
+      - name: Upload original complete archive unchanged
+        uses: actions/upload-artifact@v4
+        with:
+          name: luma-monthly-original-archive-${{ github.run_id }}
+          path: frozen/archive.zip
+          compression-level: 0
+          retention-days: 30
+      - name: Replay incremental refresh on isolated copy
+        shell: bash
+        run: |
+          cp -a frozen incremental
+          python -u scripts/luma_monthly_generation_adapter.py incremental --output incremental --start 2023-01 --incremental-months 3
+          python - <<'PY'
+          import hashlib,json,pathlib
+          old=pathlib.Path("frozen"); new=pathlib.Path("incremental")
+          original=json.loads((old/"receipt.json").read_text()); updated=json.loads((new/"receipt.json").read_text())
+          def payloads(root):
+              return {(r["period"],r["pdf_url"],r["sha256"]) for r in (json.loads(l) for l in (root/"manifest.jsonl").read_text().splitlines()) if r["source_state"]=="PASS"}
+          before=payloads(old); after=payloads(new)
+          result={"source_run":41855193873,"selected_periods":updated["selected_periods"],"expected_latest_periods":original["selected_periods"][-3:],"preserved_payload_count":len(before&after),"old_only":sorted(before-after),"new_only":sorted(after-before),"source_archive_still_identical":hashlib.sha256((old/"archive.zip").read_bytes()).hexdigest()=="9fa8f8ff589c46f64d8117dbe2b7655c4c81a1e828e46913a0b4dd2fd379286a","replay":updated["replay"]["overall"],"source_family_state":updated["source_family_certification_state"],"canonical_promotion":"WITHHELD"}
+          (new/"incremental-comparison.json").write_text(json.dumps(result,indent=2)+"\n")
+          print(json.dumps(result))
+          assert result["source_archive_still_identical"]
+          assert result["replay"]=="PASS"
+          PY
+      - name: Upload incremental metadata
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: luma-monthly-incremental-replay-${{ github.run_id }}
+          path: |
+            incremental/receipt.json
+            incremental/manifest.jsonl
+            incremental/manifest.csv
+            incremental/attempts.jsonl
+            incremental/replay.json
+            incremental/incremental-comparison.json
+            incremental/denominator.json
+          if-no-files-found: warn
+          retention-days: 30
