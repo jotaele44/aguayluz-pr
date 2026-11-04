@@ -56,6 +56,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install production backend runtime
+        run: python -m pip install -r server/backend/requirements.txt
       - name: Install frontend dependencies
         working-directory: dashboard
         run: npm ci
@@ -65,3 +70,14 @@ jobs:
       - name: Required GUI parity regression
         working-directory: dashboard
         run: npm run test:gui-parity
+
+      - name: Upload GUI regression evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: luma-adapter-gui-regression-${{ github.run_id }}
+          path: |
+            dashboard/playwright-report/gui-parity
+            dashboard/test-results
+          if-no-files-found: ignore
+          retention-days: 14
