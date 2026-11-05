@@ -17,8 +17,8 @@
   "spatial_note": "Compatible with federation spatial binding v0.2. While Spiderweb's transform is PROVISIONAL, this repository forbids exact Cell_ID ground claims and preserves full content-addressed uncertainty Cell_Set membership; identity remains CANDIDATE_NOT_IDENTITY.",
   "local_review": {
     "date": "2026-11-05",
-    "change": "Added solid_waste_landfill_site_registry to federation.json source_truth.owns (ADR-0004, Proposed) and mirrored it in config/federation_manifest.yaml; no schema, ingest or export behavior changed",
-    "result": "All declared federation and spatial contracts remain compatible; source_truth.owns is declared-ownership metadata, not part of the canonical export schema, and federation.json validates against the hub repo_federation_manifest schema with zero errors before and after (hub source_truth is an unconstrained object). The previous 2026-10-24 review (runtime_required_keys emptied) is preserved in git history"
+    "change": "ADR-0004 solid-waste registry: source_truth.owns gained solid_waste_landfill_site_registry (aguayluz-pr#403) and source_truth.real_data_sources gained solid_waste_sites documenting the registry ingest; the export gains landfill_site entities (accepted EPA LMOP records only) with located_in relationships",
+    "result": "All declared federation and spatial contracts remain compatible; owns and real_data_sources are descriptive manifest metadata, not part of the canonical export schema, and federation.json validates against the hub repo_federation_manifest schema with zero errors (hub source_truth is an unconstrained object). The 32 landfill_site entities, their 32 located_in relationships and their 1 source row validate against the hub federation_entity, federation_relationship and federation_source schemas with zero errors, and a row with entity_type removed fails, so the check discriminates. Earlier reviews stay in git history"
   },
   "spatial_binding_v0_2": {
     "authority_commit": "bb8463c8d8cf4b54486674ee9b665ce3d2502e8b",
