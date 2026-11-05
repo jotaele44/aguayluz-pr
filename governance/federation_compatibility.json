@@ -16,9 +16,9 @@
   "spatial_generation": "federation-spatial-index/1",
   "spatial_note": "Compatible with federation spatial binding v0.2. While Spiderweb's transform is PROVISIONAL, this repository forbids exact Cell_ID ground claims and preserves full content-addressed uncertainty Cell_Set membership; identity remains CANDIDATE_NOT_IDENTITY.",
   "local_review": {
-    "date": "2026-10-24",
-    "change": "Removed stored tokens and credentials: federation.json source_truth.runtime_required_keys is now empty (was EPA_WATERS_API_KEY, NEON_API_TOKEN) and the push-style Floot/Hub dispatch and centinelas ack steps are gone from CI",
-    "result": "All declared federation and spatial contracts remain compatible; runtime_required_keys is operator-config metadata, not part of the canonical export schema, and the Hub now pulls the committed exports from main instead of receiving a repository_dispatch"
+    "date": "2026-11-05",
+    "change": "Added solid_waste_landfill_site_registry to federation.json source_truth.owns (ADR-0004, Proposed) and mirrored it in config/federation_manifest.yaml; no schema, ingest or export behavior changed",
+    "result": "All declared federation and spatial contracts remain compatible; source_truth.owns is declared-ownership metadata, not part of the canonical export schema, and federation.json validates against the hub repo_federation_manifest schema with zero errors before and after (hub source_truth is an unconstrained object). The previous 2026-10-24 review (runtime_required_keys emptied) is preserved in git history"
   },
   "spatial_binding_v0_2": {
     "authority_commit": "bb8463c8d8cf4b54486674ee9b665ce3d2502e8b",

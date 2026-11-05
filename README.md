@@ -7,6 +7,9 @@ Its federation alias is `aguayluz-pr`. It owns water and wastewater assets,
 power generation/grid infrastructure, outage and service-interruption events,
 and utility geospatial summaries, exporting them as canonical streams for
 downstream correlation in [`thehub-pr`](https://github.com/jotaele44/thehub-pr).
+Ownership of the Puerto Rico solid-waste (vertedero/landfill) site registry is
+proposed in [`docs/adr/ADR-0004-solid-waste-registry-ownership.md`](docs/adr/ADR-0004-solid-waste-registry-ownership.md);
+no site records are ingested yet.
 
 > **Diagnostic-only surface (ADR 0001, Phase 2).** This repo's dashboard is a
 > development and diagnostic tool for this producer only. The supported product
@@ -21,7 +24,7 @@ downstream correlation in [`thehub-pr`](https://github.com/jotaele44/thehub-pr).
 | Repository | `jotaele44/aguayluz-pr` |
 | Federation alias | `aguayluz-pr` |
 | Parent hub | [`thehub-pr`](https://github.com/jotaele44/thehub-pr) |
-| Primary function | Water/wastewater/power asset registry, outage and service-event monitoring |
+| Primary function | Water/wastewater/power asset registry, outage and service-event monitoring; solid-waste site registry (proposed, ADR-0004) |
 | Jurisdiction focus | Puerto Rico |
 | Upstream signal source | `centinelas-pr` (news/regulatory signals via `scripts/ingest_news_event.py`) |
 
