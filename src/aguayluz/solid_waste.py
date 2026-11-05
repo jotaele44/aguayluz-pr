@@ -570,7 +570,7 @@ def _names_compatible(left: Candidate, right: Candidate) -> bool:
     "Toa Alta" or "Vega Baja"). It is still a discovery signal, never identity.
     """
     a, b = _tokens(left.name), _tokens(right.name)
-    if not a or not b or not (a <= b or b <= a):
+    if not a or not b or not (a.issubset(b) or b.issubset(a)):
         return False
     return not left.municipality or not right.municipality or left.municipality == right.municipality
 
