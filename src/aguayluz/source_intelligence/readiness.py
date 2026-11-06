@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
+import sys
 
 GATE_WEIGHTS = {
     "coverage_matrix": 10,
@@ -17,12 +18,36 @@ GATE_WEIGHTS = {
     "api_contract_frozen": 5,
 }
 
-_REFERENCE_RECEIPT = (
-    Path(__file__).resolve().parents[3]
-    / "evidence"
-    / "source_intelligence"
-    / "eia860m-reference-2026-11-02.json"
-)
+def _reference_receipt_path() -> Path:
+    module_path = Path(__file__).resolve()
+    candidates = []
+    runtime_root = getattr(sys, "_MEIPASS", None)
+    if runtime_root:
+        candidates.append(
+            Path(runtime_root)
+            / "evidence"
+            / "source_intelligence"
+            / "eia860m-reference-2026-11-02.json"
+        )
+    candidates.extend(
+        [
+            module_path.parents[3]
+            / "evidence"
+            / "source_intelligence"
+            / "eia860m-reference-2026-11-02.json",
+            module_path.parents[2]
+            / "evidence"
+            / "source_intelligence"
+            / "eia860m-reference-2026-11-02.json",
+        ]
+    )
+    for candidate in candidates:
+        if candidate.is_file():
+            return candidate
+    return candidates[0]
+
+
+_REFERENCE_RECEIPT = _reference_receipt_path()
 
 
 @dataclass(frozen=True)
