@@ -1774,10 +1774,10 @@
     },
     {
       "id": "source-intelligence-v1-control-plane",
-      "classification": "internal",
+      "classification": "analysis",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Backend/internal source-governance control plane covering the bounded source-family denominator, terminal discovery-surface governance, single canonical payload ingestion, immutable manifestations, runtime health receipts, evidence-backed EIA-860M qualification, and a frozen V1 read-only API. Domain certification and source-universe certification remain separately fail-closed.",
+      "rationale": "Read-only governed Source Intelligence control plane. The dashboard exposes backend readiness, source-family/domain coverage, runtime health state, route/product provenance, and unresolved payload-denominator/domain-certification boundaries without promoting candidate identity or inferring around missing evidence.",
       "backend": {
         "files": [
           "server/backend/main.py",
@@ -1862,6 +1862,9 @@
         ],
         "contract": [
           "tests/test_gui_parity.py"
+        ],
+        "e2e": [
+          "dashboard/tests/gui-parity.spec.mjs"
         ]
       },
       "candidate_ids": [
@@ -1937,6 +1940,21 @@
           "scripts/certify_source_product_denominators.py:run",
           "scripts/certify_source_product_denominators.py:sha256_bytes",
           "scripts/certify_source_product_denominators.py:zip_member_manifest"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/source-intelligence"
+        ],
+        "e2e_routes": [
+          "/source-intelligence"
+        ],
+        "components": [
+          "dashboard/src/lib/api.js",
+          "dashboard/src/pages/SourceIntelligencePage.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
         ]
       }
     },
