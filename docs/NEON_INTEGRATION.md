@@ -69,7 +69,7 @@ scripts/ingest_neon.py
       ┌─────────────┴──────────────┐
       ▼                            ▼
 scripts/ingest_neon_products.py   scripts/build_alerts.py
-  (needs NEON_API_TOKEN)            └─► data/alert_events.jsonl
+  (needs a local NEON token)          └─► data/alert_events.jsonl
       └─► data/neon_readings.jsonl        (gitignored, auto-globbed by the exporter)
 ```
 
@@ -233,7 +233,7 @@ Two details that fail schema validation if missed:
 python scripts/ingest_neon.py                       # keyless; no credential needed
 python scripts/ingest_neon.py --src tests/fixtures/neon_site_cupe_sample.json   # offline
 
-export NEON_API_TOKEN=...                           # https://data.neonscience.org/myaccount
+export NEON_API_TOKEN=...   # local, optional; never committed or stored in CI
 python scripts/ingest_neon_products.py              # exits 0 with a notice if unset
 ```
 
@@ -276,9 +276,9 @@ availability registry while raising no alerts.
   rather than read from a guessed column. This gating is recorded in
   `federation.json#waf_blocked_sources`.
 
-  **How to check it, once a token has run.** `NEON_API_TOKEN` is wired into the
-  `--weekly` and `--all` steps of `.github/workflows/refresh.yml`, so the download runs
-  on the Monday cadence. Until 2026-08-02 that run left **nothing behind to inspect**:
+  **How to check it, once a token has run.** No token is configured in
+  `.github/workflows/refresh.yml`, so the scheduled `--weekly` and `--all` steps skip the
+  download and exit 0; it runs only where an operator exports a token locally. Until 2026-08-02 that run left **nothing behind to inspect**:
   `.gitignore` drops `data/*` and `outputs/*` wholesale, so the readings and the export
   were consumed in-job and discarded, and no artifact in the tree said whether the
   download had succeeded, been skipped, or matched a single column.

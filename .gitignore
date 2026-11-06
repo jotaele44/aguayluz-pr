@@ -290,6 +290,12 @@ exports/federation/
 !data/hydromet_manifestations.jsonl
 !data/hydromet_receipts.json
 !data/nwps_gauge_state.jsonl
+# Centinelas federation ingress (.github/workflows/centinelas-handoff.yml). The
+# per-handoff receipts are the durable proof that a handoff was received, and the
+# workflow acknowledges back to centinelas-pr only after they are pushed. Ignoring them
+# (as data/* used to) made every acknowledgment point at a record that was discarded.
+!data/centinelas_handoffs/
+!data/access_conditions.jsonl
 # Census-derived PR geodata: centroids (normalization/spatial joins) + boundary polygons (map layer)
 !data/geo/
 !data/geo/pr_municipios.json
