@@ -474,6 +474,68 @@ def test_api_contract_requires_exact_head_authorization(monkeypatch) -> None:
     assert certified["frontend_authorized"] is True
 
 
+
+def test_packaged_build_identity_authorizes_exact_sha(tmp_path, monkeypatch) -> None:
+    import json
+
+    import server.backend.source_intelligence_api as api
+
+    build_sha = "c" * 40
+    metadata = tmp_path / "build-identity.json"
+    metadata.write_text(
+        json.dumps(
+            {
+                "schema_version": "aguayluz.build-identity/v1",
+                "git_sha": build_sha,
+                "source": "test",
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(api, "BUILD_METADATA_PATH", metadata)
+    for env_name in api.BUILD_SHA_ENVS:
+        monkeypatch.delenv(env_name, raising=False)
+    monkeypatch.setenv(api.AUTHORIZED_SHA_ENV, build_sha)
+
+    payload = json.loads(api.source_intelligence_summary().body)
+    assert payload["build_sha"] == build_sha
+    assert payload["build_identity_state"] == "EMBEDDED"
+    assert payload["build_identity_error"] is None
+    assert payload["api_contract_state"] == "FROZEN_V1_CERTIFIED"
+
+
+def test_packaged_build_identity_conflict_fails_closed(tmp_path, monkeypatch) -> None:
+    import json
+
+    import server.backend.source_intelligence_api as api
+
+    embedded_sha = "d" * 40
+    metadata = tmp_path / "build-identity.json"
+    metadata.write_text(
+        json.dumps(
+            {
+                "schema_version": "aguayluz.build-identity/v1",
+                "git_sha": embedded_sha,
+                "source": "test",
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(api, "BUILD_METADATA_PATH", metadata)
+    monkeypatch.setenv("AGUAYLUZ_BUILD_SHA", "e" * 40)
+    monkeypatch.delenv("VERCEL_GIT_COMMIT_SHA", raising=False)
+    monkeypatch.delenv("GITHUB_SHA", raising=False)
+    monkeypatch.setenv(api.AUTHORIZED_SHA_ENV, embedded_sha)
+
+    payload = json.loads(api.source_intelligence_summary().body)
+    assert payload["build_sha"] is None
+    assert payload["build_identity_state"] == "CONTRADICTION"
+    assert payload["build_identity_error"] == "EMBEDDED_ENV_SHA_MISMATCH"
+    assert payload["api_contract_state"] == "FROZEN_V1_CANDIDATE"
+    assert payload["frontend_authorized"] is False
+
+
+
 def test_verified_environmental_routes_resolve_canonically() -> None:
     expected = {
         "NRCS_SSURGO_SDA_QUERY": "NRCS_SSURGO_SDA_POST",
