@@ -1,0 +1,88 @@
+"""Offline operator-runner tests: candidate discovery and failure receipts."""
+import json
+
+import pytest
+from scripts import ingest_hydro_intelligence as runner
+
+
+def test_missing_source_id_is_fail_closed():
+    with pytest.raises(ValueError):
+        runner.source_record({"source_families": []}, "unknown")
+
+
+def test_discovery_persists_candidate_only(tmp_path, monkeypatch):
+    registry = tmp_path / "registry.json"
+    registry.write_text(json.dumps({"source_families": [{
+        "source_id": "eia_860m",
+        "index_url": "https://www.eia.gov/electricity/data/eia860m/",
+        "artifact_type": "xlsx",
+    }]}))
+    monkeypatch.setattr(runner, "REGISTRY", registry)
+    monkeypatch.setattr(runner, "fetch_artifact", lambda *a, **k: (
+        b'<a href="/archive/xls/march_generator2026.xlsx">March</a>', "text/html"))
+    assert runner.main(["--source-id", "eia_860m", "--data-root", str(tmp_path / "result")]) == 0
+    records = list((tmp_path / "result" / "runs").glob("*.json"))
+    assert len(records) == 1
+    state = json.loads(records[0].read_text())[0]
+    assert state["state"] == "DISCOVERY_ONLY"
+    assert state["candidate_count"] == 1
+    assert state["completeness"] == "NOT_CLAIMED"
+    index_receipt = state["index_receipt"]
+    assert index_receipt["source_id"] == "eia_860m_index"
+    assert index_receipt["state"] == "RAW_FROZEN_NOT_PARSED"
+    assert state["index_sha256"] == index_receipt["sha256"]
+    original = (tmp_path / "result" / "raw" / "eia_860m_index"
+                / index_receipt["sha256"][:2] / index_receipt["sha256"])
+    assert original.read_bytes() == b'<a href="/archive/xls/march_generator2026.xlsx">March</a>'
+    assert list((tmp_path / "result" / "raw").rglob("*.receipt.json"))
+
+
+def test_failed_discovery_has_immutable_failure_receipt(tmp_path, monkeypatch):
+    registry = tmp_path / "registry.json"
+    registry.write_text(json.dumps({"source_families": [{
+        "source_id": "eia_923",
+        "index_url": "https://www.eia.gov/electricity/data/eia923/",
+        "artifact_type": "zip",
+    }]}))
+    monkeypatch.setattr(runner, "REGISTRY", registry)
+
+    def fails(*args, **kwargs):
+        raise TimeoutError("network unavailable")
+
+    monkeypatch.setattr(runner, "fetch_artifact", fails)
+    assert runner.main(["--source-id", "eia_923", "--data-root", str(tmp_path / "result")]) == 2
+    record = next((tmp_path / "result" / "runs").glob("*.json"))
+    state = json.loads(record.read_text())[0]
+    assert state["state"] == "QUARANTINED_NOT_PROMOTED"
+    assert state["failure_class"] == "RETRYABLE_TRANSPORT"
+
+
+def test_index_manifestation_revision_preserves_both_originals(tmp_path, monkeypatch):
+    import hashlib
+
+    registry = tmp_path / "registry.json"
+    registry.write_text(json.dumps({"source_families": [{
+        "source_id": "eia_923",
+        "index_url": "https://www.eia.gov/electricity/data/eia923/",
+        "artifact_type": "zip",
+    }]}))
+    monkeypatch.setattr(runner, "REGISTRY", registry)
+    index_pages = [
+        b'<a href="january.zip">January</a>',
+        b'<a href="february.zip">February</a>',
+    ]
+    monkeypatch.setattr(
+        runner, "fetch_artifact",
+        lambda *args, **kwargs: (index_pages.pop(0), "text/html"),
+    )
+    root = tmp_path / "result"
+    assert runner.main(["--source-id", "eia_923", "--data-root", str(root)]) == 0
+    assert runner.main(["--source-id", "eia_923", "--data-root", str(root)]) == 0
+    expected_hashes = {hashlib.sha256(page).hexdigest() for page in [
+        b'<a href="january.zip">January</a>',
+        b'<a href="february.zip">February</a>',
+    ]}
+    receipt_files = list((root / "raw" / "eia_923_index").rglob("*.receipt.json"))
+    assert {path.name.removesuffix(".receipt.json") for path in receipt_files} == expected_hashes
+    for digest in expected_hashes:
+        assert (root / "raw" / "eia_923_index" / digest[:2] / digest).is_file()
