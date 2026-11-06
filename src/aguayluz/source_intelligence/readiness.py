@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import json
+import sys
 from dataclasses import dataclass
 from pathlib import Path
-import sys
 
 GATE_WEIGHTS = {
     "coverage_matrix": 10,
