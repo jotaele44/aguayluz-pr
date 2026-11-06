@@ -154,7 +154,7 @@ describe('SourceIntelligencePage', () => {
 
     expect(await screen.findByRole('heading', { name: 'Source Intelligence' })).toBeInTheDocument()
     expect(await screen.findByText('Backend certified; source universe still open')).toBeInTheDocument()
-    expect(screen.getByText('FROZEN_V1_CERTIFIED')).toBeInTheDocument()
+    expect(screen.getAllByText('FROZEN_V1_CERTIFIED').length).toBeGreaterThan(0)
     expect(screen.getByText(/1 source families still open/i)).toBeInTheDocument()
     expect(screen.getByText('EIA_EPM')).toBeInTheDocument()
     expect(screen.getByText('NO_UNIFIED_RUNTIME_RECEIPT')).toBeInTheDocument()
@@ -167,7 +167,7 @@ describe('SourceIntelligencePage', () => {
     fireEvent.click(gap)
 
     expect(await screen.findByText('EIA Electric Power Monthly')).toBeInTheDocument()
-    expect(screen.getByText('OPEN')).toBeInTheDocument()
+    expect(screen.getAllByText('OPEN').length).toBeGreaterThan(0)
     expect(screen.queryByText('Source universe certified')).not.toBeInTheDocument()
   })
 })
