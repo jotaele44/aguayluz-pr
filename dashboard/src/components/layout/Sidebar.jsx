@@ -24,6 +24,7 @@ const NAV = [
   { to: '/environmental-exposure', icon: Activity, label: 'Exposure Graph' },
   { to: '/review', icon: ClipboardList, label: 'Review Queue' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
+  { to: '/source-intelligence', icon: Database, label: 'Source Intelligence' },
   { to: '/logs', icon: ScrollText, label: 'Live Logs' },
   { to: '/system', icon: SlidersHorizontal, label: 'System & Tools' },
 ]
