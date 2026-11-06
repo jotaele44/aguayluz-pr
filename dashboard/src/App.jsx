@@ -19,6 +19,7 @@ const AssetsPage = lazy(() => import('./pages/AssetsPage'))
 const AlertsPage = lazy(() => import('./pages/AlertsPage'))
 const AlertDetailPage = lazy(() => import('./pages/AlertDetailPage'))
 const SystemPage = lazy(() => import('./pages/SystemPage'))
+const SourceIntelligencePage = lazy(() => import('./pages/SourceIntelligencePage'))
 const OutagesPage = lazy(() => import('./pages/OutagesPage'))
 const MonitoringPage = lazy(() => import('./pages/MonitoringPage'))
 const CaveKarstPage = lazy(() => import('./pages/CaveKarstPage'))
@@ -70,6 +71,7 @@ function App() {
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/logs" element={<LiveLogsPage />} />
               <Route path="/system" element={<SystemPage />} />
+              <Route path="/source-intelligence" element={<SourceIntelligencePage />} />
               <Route path="/water-disruption" element={<WaterDisruption />} />
               <Route path="/sector/:sector" element={<SectorDetailPage />} />
               <Route path="/events/:id" element={<EventDetailPage />} />
