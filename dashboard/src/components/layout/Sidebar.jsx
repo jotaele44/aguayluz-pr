@@ -52,6 +52,8 @@ const NAV_GROUPS = [
         desc: 'Accept, reject or skip records awaiting review.' },
       { to: '/analytics', icon: BarChart3, label: 'Analytics',
         desc: 'Trends and summaries across sectors.' },
+      { to: '/source-intelligence', icon: Database, label: 'Source Intelligence',
+        desc: 'Source coverage, health, provenance and certification gaps.' },
       { to: '/logs', icon: ScrollText, label: 'Live Logs',
         desc: 'Streaming backend and ingest logs.' },
       { to: '/system', icon: SlidersHorizontal, label: 'System & Tools',

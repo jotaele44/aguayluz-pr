@@ -37,6 +37,8 @@ jobs:
       PRII_FORBIDDEN_SIBLING: thehub-pr
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Enable long Git paths on Windows
         if: runner.os == 'Windows'
@@ -146,10 +148,59 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
+      - name: Embed immutable build identity
+        shell: python
+        run: |
+          import json, pathlib, subprocess
+          sha = subprocess.check_output(
+              ["git", "rev-parse", "HEAD"], text=True
+          ).strip().lower()
+          if len(sha) != 40 or any(ch not in "0123456789abcdef" for ch in sha):
+              raise SystemExit("invalid checked-out git SHA")
+          path = pathlib.Path("config/build-identity.json")
+          path.parent.mkdir(parents=True, exist_ok=True)
+          path.write_text(
+              json.dumps(
+                  {
+                      "schema_version": "aguayluz.build-identity/v1",
+                      "git_sha": sha,
+                      "source": "github-actions",
+                  },
+                  sort_keys=True,
+              ) + "\n",
+              encoding="utf-8",
+          )
+
       - name: Freeze console build
         env:
           PRII_CONSOLE: "1"
         run: pyinstaller desktop/pyinstaller.spec --distpath dist-smoke --noconfirm
+
+      - name: Verify smoke build identity
+        shell: python
+        run: |
+          import hashlib, json, pathlib, subprocess
+          expected = subprocess.check_output(
+              ["git", "rev-parse", "HEAD"], text=True
+          ).strip().lower()
+          candidates = list(pathlib.Path("dist-smoke").rglob("config/build-identity.json"))
+          if not candidates:
+              raise SystemExit("smoke build identity missing")
+          payloads = []
+          for candidate in candidates:
+              raw = candidate.read_bytes()
+              data = json.loads(raw.decode("utf-8"))
+              if data.get("schema_version") != "aguayluz.build-identity/v1":
+                  raise SystemExit(f"smoke build identity schema mismatch: {candidate}")
+              if data.get("git_sha") != expected:
+                  raise SystemExit(f"smoke build identity SHA mismatch: {candidate}")
+              payloads.append(hashlib.sha256(raw).hexdigest())
+          if len(set(payloads)) != 1:
+              raise SystemExit("smoke build identity manifestations disagree")
+          print(
+              f"smoke build identity PASS: "
+              f"manifestations={len(candidates)} logical_payloads=1 sha={expected}"
+          )
 
       - name: Smoke test frozen app
         shell: python
@@ -161,6 +212,32 @@ jobs:
 
       - name: Freeze desktop app
         run: pyinstaller desktop/pyinstaller.spec --distpath dist-desktop --noconfirm
+
+      - name: Verify final build identity
+        shell: python
+        run: |
+          import hashlib, json, pathlib, subprocess
+          expected = subprocess.check_output(
+              ["git", "rev-parse", "HEAD"], text=True
+          ).strip().lower()
+          candidates = list(pathlib.Path("dist-desktop").rglob("config/build-identity.json"))
+          if not candidates:
+              raise SystemExit("final build identity missing")
+          payloads = []
+          for candidate in candidates:
+              raw = candidate.read_bytes()
+              data = json.loads(raw.decode("utf-8"))
+              if data.get("schema_version") != "aguayluz.build-identity/v1":
+                  raise SystemExit(f"final build identity schema mismatch: {candidate}")
+              if data.get("git_sha") != expected:
+                  raise SystemExit(f"final build identity SHA mismatch: {candidate}")
+              payloads.append(hashlib.sha256(raw).hexdigest())
+          if len(set(payloads)) != 1:
+              raise SystemExit("final build identity manifestations disagree")
+          print(
+              f"final build identity PASS: "
+              f"manifestations={len(candidates)} logical_payloads=1 sha={expected}"
+          )
 
       - name: Package bundle
         shell: bash
