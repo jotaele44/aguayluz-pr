@@ -444,35 +444,46 @@ def test_backend_readiness_authorizes_frontend_with_frozen_v1_contract() -> None
     assert readiness.frontend_authorized is True
 
 
-def test_api_contract_requires_exact_head_authorization(monkeypatch) -> None:
+def test_api_contract_requires_exact_head_authorization(tmp_path, monkeypatch) -> None:
     import json
 
-    from server.backend.source_intelligence_api import (
-        AUTHORIZED_SHA_ENV,
-        source_intelligence_summary,
-    )
+    import server.backend.source_intelligence_api as api
 
     build_sha = "a" * 40
-    monkeypatch.setenv("AGUAYLUZ_BUILD_SHA", build_sha)
-    monkeypatch.delenv(AUTHORIZED_SHA_ENV, raising=False)
+    metadata = tmp_path / "build-identity.json"
+    metadata.write_text(
+        json.dumps(
+            {
+                "schema_version": "aguayluz.build-identity/v1",
+                "git_sha": build_sha,
+                "source": "test",
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(api, "BUILD_METADATA_PATH", metadata)
+    for env_name in api.BUILD_SHA_ENVS:
+        monkeypatch.delenv(env_name, raising=False)
+    monkeypatch.delenv(api.AUTHORIZED_SHA_ENV, raising=False)
 
-    candidate = json.loads(source_intelligence_summary().body)
+    candidate = json.loads(api.source_intelligence_summary().body)
     assert candidate["api_contract_state"] == "FROZEN_V1_CANDIDATE"
     assert candidate["backend_readiness"]["score"] == 95
+    assert candidate["build_sha"] == build_sha
+    assert candidate["build_identity_state"] == "EMBEDDED"
     assert candidate["frontend_authorized"] is False
 
-    monkeypatch.setenv(AUTHORIZED_SHA_ENV, "b" * 40)
-    mismatch = json.loads(source_intelligence_summary().body)
+    monkeypatch.setenv(api.AUTHORIZED_SHA_ENV, "b" * 40)
+    mismatch = json.loads(api.source_intelligence_summary().body)
     assert mismatch["api_contract_state"] == "FROZEN_V1_CANDIDATE"
     assert mismatch["frontend_authorized"] is False
 
-    monkeypatch.setenv(AUTHORIZED_SHA_ENV, build_sha)
-    certified = json.loads(source_intelligence_summary().body)
+    monkeypatch.setenv(api.AUTHORIZED_SHA_ENV, build_sha)
+    certified = json.loads(api.source_intelligence_summary().body)
     assert certified["api_contract_state"] == "FROZEN_V1_CERTIFIED"
     assert certified["backend_readiness"]["score"] == 100
     assert certified["backend_readiness"]["unresolved"] == []
     assert certified["frontend_authorized"] is True
-
 
 
 def test_packaged_build_identity_authorizes_exact_sha(tmp_path, monkeypatch) -> None:
