@@ -1783,7 +1783,8 @@
           "src/aguayluz/hydro_intelligence/acquisition.py",
           "src/aguayluz/hydro_intelligence/discovery.py",
           "src/aguayluz/hydro_intelligence/parsers.py",
-          "scripts/ingest_hydro_intelligence.py"
+          "scripts/ingest_hydro_intelligence.py",
+          "src/aguayluz/hydro_intelligence/contracts.py"
         ],
         "symbols": [
           "src/aguayluz/hydro_intelligence/acquisition.py:ArtifactReceipt",
@@ -1806,7 +1807,8 @@
           "scripts/ingest_hydro_intelligence.py:source_record",
           "scripts/ingest_hydro_intelligence.py:main",
           "src/aguayluz/hydro_intelligence/acquisition.py:reject_nonpublic_dns",
-          "src/aguayluz/hydro_intelligence/parsers.py:parse_eia_923_generation_workbook"
+          "src/aguayluz/hydro_intelligence/parsers.py:parse_eia_923_generation_workbook",
+          "src/aguayluz/hydro_intelligence/contracts.py:validate_source_contract"
         ]
       },
       "tests": {
@@ -1814,7 +1816,8 @@
           "tests/test_hydro_intelligence_acquisition.py",
           "tests/test_hydro_intelligence_discovery.py",
           "tests/test_hydro_intelligence_parsers.py",
-          "tests/test_ingest_hydro_intelligence.py"
+          "tests/test_ingest_hydro_intelligence.py",
+          "tests/test_hydro_intelligence_contracts.py"
         ]
       }
     },
