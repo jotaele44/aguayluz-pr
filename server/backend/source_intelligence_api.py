@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import os
-import re
 from collections import defaultdict
 from pathlib import Path
 
@@ -17,6 +16,7 @@ from aguayluz.source_intelligence import (
     SOURCE_REQUIREMENTS,
     coverage_report,
 )
+from aguayluz.source_intelligence.build_identity import resolve_build_identity, valid_commit_sha
 from aguayluz.source_intelligence.readiness import current_backend_readiness
 from aguayluz.source_intelligence.route_coverage import route_governance_summary
 from aguayluz.source_intelligence.runtime import load_health_receipts
@@ -38,31 +38,20 @@ REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 _workspace = os.getenv("AGUAYLUZ_DATA_HOME", "").strip()
 DATA_ROOT = Path(_workspace) / "data" if _workspace else REPO_ROOT / "data"
 RUNTIME_ROOT = DATA_ROOT / "source_intelligence"
+BUILD_METADATA_PATH = REPO_ROOT / "config" / "build-identity.json"
 
 
-def _valid_commit_sha(value: str) -> bool:
-    return bool(re.fullmatch(r"[0-9a-fA-F]{40}", value))
-
-
-def _current_build_sha() -> str | None:
-    for env_name in BUILD_SHA_ENVS:
-        value = os.getenv(env_name, "").strip()
-        if value and _valid_commit_sha(value):
-            return value.lower()
-    return None
-
-
-def _contract_authorization() -> tuple[str, bool, str | None, str | None]:
-    build_sha = _current_build_sha()
+def _contract_authorization() -> tuple[str, bool, str | None, object]:
+    identity = resolve_build_identity(BUILD_METADATA_PATH, BUILD_SHA_ENVS)
     authorized_sha = os.getenv(AUTHORIZED_SHA_ENV, "").strip().lower()
-    if not _valid_commit_sha(authorized_sha):
+    if not valid_commit_sha(authorized_sha):
         authorized_sha = None
-    certified = bool(build_sha and authorized_sha and build_sha == authorized_sha)
+    certified = bool(identity.sha and authorized_sha and identity.sha == authorized_sha)
     return (
         API_CONTRACT_CERTIFIED_STATE if certified else API_CONTRACT_CANDIDATE_STATE,
         certified,
         authorized_sha,
-        build_sha,
+        identity,
     )
 
 
@@ -92,7 +81,7 @@ def _latest_health(source_family_id: str) -> dict[str, object] | None:
 def source_intelligence_summary() -> JSONResponse:
     coverage = coverage_report()
     route_governance = route_governance_summary()
-    contract_state, contract_certified, authorized_sha, build_sha = _contract_authorization()
+    contract_state, contract_certified, authorized_sha, build_identity = _contract_authorization()
     readiness = current_backend_readiness(
         coverage_matrix_ready=coverage.coverage_matrix_ready,
         api_contract_frozen=contract_certified,
@@ -103,7 +92,11 @@ def source_intelligence_summary() -> JSONResponse:
             "schema_version": API_SCHEMA_VERSION,
             "api_contract_state": contract_state,
             "api_contract_authorized_sha": authorized_sha,
-            "build_sha": build_sha,
+            "build_sha": build_identity.sha,
+            "build_identity_state": build_identity.state,
+            "build_identity_error": build_identity.error,
+            "embedded_build_sha": build_identity.embedded_sha,
+            "environment_build_sha": build_identity.env_sha,
             "scope": SCOPE_STATEMENT,
             "coverage": coverage.model_dump(mode="json"),
             "coverage_matrix_ready": coverage.coverage_matrix_ready,
