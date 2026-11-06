@@ -15,7 +15,7 @@ jobs:
           python - <<'PY'
           import hashlib, pathlib, tempfile, json
           text=pathlib.Path('.github/workflows/foia-canary-intake.yml').read_text()
-          required=['repository_dispatch','foia-canary','canary_branch','canary_receipt_namespace','no_production_promotion','artifacts/foia_canary_receipts','prii.foia.finding','0.2.0','foia-canary-ack','aguayluz-pr','extraction_confidence']
+          required=['repository_dispatch','foia-canary','canary_branch','canary_receipt_namespace','no_production_promotion','artifacts/foia_canary_receipts','prii.foia.finding','0.2.0','aguayluz-pr','extraction_confidence']
           for token in required: assert token in text, token
           for token in ['data/service_events.jsonl','ingest_centinelas_dispatch','payload_to_event']: assert token not in text, token
           key='synthetic-key'; digest=hashlib.sha256(key.encode()).hexdigest()

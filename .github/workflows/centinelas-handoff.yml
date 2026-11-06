@@ -29,8 +29,7 @@ jobs:
           # Environmental signals write service_events; access-condition handoffs
           # write access_conditions. The receipt is committed atomically with either.
           # Add only the paths this handoff produced. A failed add or push fails the
-          # job, so the Acknowledge step below never runs for a receipt that was not
-          # persisted on main.
+          # job visibly instead of reporting a handoff that was never persisted.
           for path in data/centinelas_handoffs data/service_events.jsonl data/access_conditions.jsonl; do
             if [ -e "$path" ]; then git add -- "$path"; fi
           done
@@ -47,18 +46,5 @@ jobs:
             sleep $((2 ** attempt))
             git pull --rebase origin "$branch"
           done
-          echo "::error::could not push the handoff receipt; not acknowledging"
+          echo "::error::could not push the handoff receipt"
           exit 1
-      - name: Acknowledge
-        env:
-          TOKEN: ${{ secrets.FEDERATION_DISPATCH_TOKEN }}
-          KEY: ${{ github.event.client_payload.idempotency_key }}
-          ITEM: ${{ github.event.client_payload.item_id }}
-          DUPLICATE: ${{ steps.ingest.outputs.duplicate }}
-        run: |
-          test -n "$TOKEN"
-          body=$(jq -nc --arg item "$ITEM" --arg key "$KEY" --argjson duplicate "$DUPLICATE" \
-            '{event_type:"centinelas-handoff-ack",client_payload:{item_id:$item,target:"aguayluz-pr",idempotency_key:$key,status:"acknowledged",duplicate:$duplicate}}')
-          curl -sSf -X POST -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/jotaele44/centinelas-pr/dispatches \
-            -d "$body"
