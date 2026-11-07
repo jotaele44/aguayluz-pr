@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/spiderweb-pr/schemas/gis_scenario_result_v1.schema.json",
+  "title": "PRII GIS scenario result v1",
+  "description": "Output of POST /gis/scenario in producers that hold a dependency network (for example aguayluz-pr asset dependencies, skywatcher-pr what-if airspace zones). A scenario is a hypothetical: its evidence_state is always HYPOTHESIS and it is never persisted into canonical exports or federation streams.",
+  "type": "object",
+  "required": [
+    "contract_version",
+    "producer_repo",
+    "scenario_id",
+    "inputs",
+    "impacted",
+    "affected_areas",
+    "evidence_state",
+    "persisted"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "contract_version": {"const": "gis-scenario-result/1.0"},
+    "producer_repo": {
+      "enum": ["spiderweb-pr", "moneysweep-pr", "aguayluz-pr", "skywatcher-pr", "ovnis-pr"]
+    },
+    "scenario_id": {
+      "description": "Deterministic content address of the inputs (sha256 of canonical JSON).",
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "scenario_kind": {"type": "string", "minLength": 1},
+    "inputs": {
+      "type": "object",
+      "required": ["selected", "parameters"],
+      "additionalProperties": false,
+      "properties": {
+        "selected": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["layer_id", "feature_id"],
+            "additionalProperties": false,
+            "properties": {
+              "layer_id": {"type": "string"},
+              "feature_id": {"type": "string"}
+            }
+          }
+        },
+        "parameters": {"type": "object"}
+      }
+    },
+    "impacted": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["feature_id"],
+        "additionalProperties": false,
+        "properties": {
+          "layer_id": {"type": ["string", "null"]},
+          "feature_id": {"type": "string"},
+          "hops": {"type": ["integer", "null"], "minimum": 0},
+          "relation": {"type": ["string", "null"]},
+          "edge_id": {
+            "description": "The dependency link through which this feature was first reached.",
+            "type": ["string", "null"]
+          },
+          "confidence": {
+            "description": "Confidence (0-100) of the weakest link on the path that reached this feature, as recorded by the producer.",
+            "type": ["number", "null"],
+            "minimum": 0,
+            "maximum": 100
+          },
+          "evidence_required": {
+            "description": "True when any link on the path is a proxy that still needs evidence (for example a proximity-inferred dependency, not a verified circuit).",
+            "type": ["boolean", "null"]
+          }
+        }
+      }
+    },
+    "affected_areas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["area_type", "area_id"],
+        "additionalProperties": false,
+        "properties": {
+          "area_type": {"enum": ["municipio", "barrio", "service_area", "zone", "other"]},
+          "area_id": {"type": "string"},
+          "name": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "unverified_links_used": {
+      "description": "True when any impacted feature was reached through a link with evidence_required. Consumers must then label the result as relying on unverified (proxy) dependencies.",
+      "type": "boolean"
+    },
+    "evidence_state": {"const": "HYPOTHESIS"},
+    "persisted": {"const": false},
+    "notes": {"type": "array", "items": {"type": "string"}}
+  }
+}

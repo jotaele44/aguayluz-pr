@@ -112,6 +112,13 @@ installs dependencies, later runs work offline):
 - `PRII-AGUAYLUZ.bat` (Windows)
 - `PRII-AGUAYLUZ.sh` (Linux)
 
+## GIS viewer API
+
+The Map page's GIS tools (layer catalog, identify, search, polygon query and export, saved
+views, print, dependency tracing and outage scenarios) are served by `/gis/*`. See
+[`docs/GIS_VIEWER_API.md`](docs/GIS_VIEWER_API.md). Dependency results that use
+proximity-inferred links are labelled as proxies, and scenarios are always `HYPOTHESIS`.
+
 ## Federation contract
 
 `federation.json` is this producer's manifest, conformant to

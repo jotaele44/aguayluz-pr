@@ -1771,6 +1771,139 @@
           "dashboard/tests/gui-parity.spec.mjs"
         ]
       }
+    },
+    {
+      "id": "gis-viewer-and-dependency-analysis",
+      "classification": "analysis",
+      "status": "active",
+      "requires_terminal": false,
+      "backend": {
+        "files": [
+          "server/backend/gis_api.py",
+          "server/backend/gis_wiring.py",
+          "src/aguayluz/gis_query.py",
+          "src/aguayluz/gis_geodesy.py",
+          "src/aguayluz/gis_catalog.py",
+          "src/aguayluz/gis_network.py",
+          "config/gis_layer_catalog.yaml"
+        ],
+        "endpoints": [
+          "GET /catalog",
+          "GET /features/{layer_id}/{feature_id}/documents",
+          "GET /features/{layer_id}/{feature_id}/history",
+          "GET /identify",
+          "GET /layers/{layer_id}.geojson",
+          "GET /search",
+          "GET /trace",
+          "POST /export",
+          "POST /query",
+          "POST /scenario"
+        ],
+        "symbols": [
+          "server/backend/gis_api.py:GisExportRequest",
+          "server/backend/gis_api.py:GisQueryRequest",
+          "server/backend/gis_api.py:build_gis_router",
+          "server/backend/gis_api.py:default_summary",
+          "server/backend/gis_wiring.py:ScenarioFeature",
+          "server/backend/gis_wiring.py:ScenarioRequest",
+          "server/backend/gis_wiring.py:feature_loader",
+          "server/backend/gis_wiring.py:gis_catalog",
+          "server/backend/gis_wiring.py:gis_feature_documents",
+          "server/backend/gis_wiring.py:gis_feature_history",
+          "server/backend/gis_wiring.py:gis_layer_geojson",
+          "server/backend/gis_wiring.py:gis_scenario",
+          "server/backend/gis_wiring.py:gis_trace",
+          "server/backend/gis_wiring.py:location_context",
+          "src/aguayluz/gis_catalog.py:GisCatalogError",
+          "src/aguayluz/gis_catalog.py:build_gis_catalog",
+          "src/aguayluz/gis_geodesy.py:geodesic_distance_m",
+          "src/aguayluz/gis_geodesy.py:validate_lon_lat",
+          "src/aguayluz/gis_network.py:NetworkEdge",
+          "src/aguayluz/gis_network.py:TraceHit",
+          "src/aguayluz/gis_network.py:edge_set_sha256",
+          "src/aguayluz/gis_network.py:edges_from_rows",
+          "src/aguayluz/gis_network.py:scenario_out_of_service",
+          "src/aguayluz/gis_network.py:trace",
+          "src/aguayluz/gis_query.py:FeatureParts",
+          "src/aguayluz/gis_query.py:GisQueryError",
+          "src/aguayluz/gis_query.py:QueryArea",
+          "src/aguayluz/gis_query.py:circle_ring",
+          "src/aguayluz/gis_query.py:distance_to_parts_m",
+          "src/aguayluz/gis_query.py:feature_anchor",
+          "src/aguayluz/gis_query.py:feature_bbox",
+          "src/aguayluz/gis_query.py:feature_identifier",
+          "src/aguayluz/gis_query.py:feature_parts",
+          "src/aguayluz/gis_query.py:features_to_csv",
+          "src/aguayluz/gis_query.py:fold_text",
+          "src/aguayluz/gis_query.py:identify",
+          "src/aguayluz/gis_query.py:intersects",
+          "src/aguayluz/gis_query.py:normalize_time",
+          "src/aguayluz/gis_query.py:parse_coordinate_text",
+          "src/aguayluz/gis_query.py:parse_geometry",
+          "src/aguayluz/gis_query.py:parse_time_range",
+          "src/aguayluz/gis_query.py:point_in_polygon",
+          "src/aguayluz/gis_query.py:query_layer",
+          "src/aguayluz/gis_query.py:search_features",
+          "src/aguayluz/gis_query.py:segments_intersect",
+          "src/aguayluz/gis_query.py:summarize"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/map"
+        ],
+        "e2e_routes": [
+          "/map"
+        ],
+        "components": [
+          "dashboard/src/components/AssetMap.jsx",
+          "dashboard/src/components/SpatialToolsPanel.jsx",
+          "dashboard/src/components/GisViewerControls.jsx",
+          "dashboard/src/lib/gis/gisApi.js",
+          "dashboard/src/lib/gis/networkApi.js",
+          "dashboard/src/lib/gis/mapState.js",
+          "dashboard/src/lib/gis/extentHistory.js",
+          "dashboard/src/lib/gis/measure.js",
+          "dashboard/src/lib/gis/opacity.js",
+          "dashboard/src/lib/gis/printMap.js",
+          "dashboard/src/lib/gis/externalLinks.js"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_gis_api.py",
+          "tests/test_gis_network.py",
+          "tests/test_gis_query.py",
+          "tests/test_gis_catalog.py"
+        ],
+        "contract": [
+          "tests/test_gui_parity.py"
+        ],
+        "unit": [
+          "dashboard/src/lib/gis/gis.test.js",
+          "dashboard/src/lib/gis/networkApi.test.js",
+          "dashboard/src/components/SpatialToolsPanel.gis.test.jsx"
+        ],
+        "e2e": [
+          "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "src/aguayluz/gis_network.py"
+        ],
+        "symbols": [
+          "src/aguayluz/gis_network.py:NetworkEdge",
+          "src/aguayluz/gis_network.py:TraceHit",
+          "src/aguayluz/gis_network.py:edge_set_sha256",
+          "src/aguayluz/gis_network.py:edges_from_rows",
+          "src/aguayluz/gis_network.py:scenario_out_of_service",
+          "src/aguayluz/gis_network.py:trace"
+        ]
+      }
     }
   ],
   "exceptions": []
