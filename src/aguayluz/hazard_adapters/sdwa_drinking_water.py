@@ -1,28 +1,50 @@
 """EPA SDWIS drinking-water violation adapter for the canonical hazard plane.
 
-This adapter normalizes already-fetched SDWA_VIOLATIONS_ENFORCEMENT rows.  It keeps
-Puerto Rico Department of Health annual-report manifestations separate from later
-federal SDWIS snapshots: federal rows reconcile identity and revision state; they do
-not overwrite what a state annual report published for its own frozen reporting year.
+SDWA_VIOLATIONS_ENFORCEMENT is a violation/enforcement association table: one
+violation can legitimately appear on multiple source rows because it has multiple
+enforcement actions.  This adapter therefore separates SOURCE ROW identity from
+VIOLATION SNAPSHOT identity before creating canonical hazard records.
 """
 from __future__ import annotations
 
 import json
 import re
+from collections.abc import Iterable
 from datetime import datetime, timezone
 from hashlib import sha256
 from typing import Any
 
 from aguayluz.hazard_plane import HazardFamily, HazardRecord, RecordKind, RecordStatus
 
+ENFORCEMENT_FIELDS = {
+    "ENFORCEMENT_ID",
+    "ENFORCEMENT_DATE",
+    "ENFORCEMENT_ACTION_TYPE_CODE",
+    "ENF_ACTION_CATEGORY",
+    "ENF_ORIGINATOR_CODE",
+    "ENF_FIRST_REPORTED_DATE",
+    "ENF_LAST_REPORTED_DATE",
+}
+_INTERNAL_NONMATERIAL_FIELDS = {
+    "_SOURCE_ROW_COUNT",
+    "_SOURCE_ROW_SHA256S",
+}
+
+
+def _canonical_json(value: Any) -> str:
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+
 
 def row_digest(row: dict[str, Any]) -> str:
-    payload = json.dumps(row, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-    return sha256(payload.encode("utf-8")).hexdigest()
+    return sha256(_canonical_json(row).encode("utf-8")).hexdigest()
+
+
+def _normalized_row(row: dict[str, Any]) -> dict[str, Any]:
+    return {str(key).strip().upper(): value for key, value in row.items()}
 
 
 def _value(row: dict[str, Any], *names: str) -> str:
-    normalized = {str(key).strip().upper(): value for key, value in row.items()}
+    normalized = _normalized_row(row)
     for name in names:
         value = normalized.get(name.upper())
         if value is not None and str(value).strip():
@@ -48,6 +70,76 @@ def _date(value: Any) -> datetime | None:
     return None
 
 
+def violation_snapshot_key(row: dict[str, Any]) -> tuple[str, str, str]:
+    """Source-table key used to collapse N enforcement rows into one violation snapshot."""
+    return (
+        _value(row, "SUBMISSIONYEARQUARTER"),
+        _value(row, "PWSID"),
+        _value(row, "VIOLATION_ID"),
+    )
+
+
+def _enforcement_action(row: dict[str, Any]) -> dict[str, str | None] | None:
+    normalized = _normalized_row(row)
+    action = {
+        field.lower(): (
+            str(normalized[field]).strip()
+            if normalized.get(field) is not None and str(normalized[field]).strip()
+            else None
+        )
+        for field in sorted(ENFORCEMENT_FIELDS)
+    }
+    return action if any(value is not None for value in action.values()) else None
+
+
+def collapse_violation_rows(rows: Iterable[dict[str, Any]]) -> dict[str, Any]:
+    """Collapse association rows for one SDWIS violation snapshot.
+
+    Violation-level fields must agree.  Enforcement columns are retained as an
+    explicit N-cardinality list instead of being misclassified as revisions.
+    """
+    materialized = list(rows)
+    if not materialized:
+        raise ValueError("cannot collapse an empty SDWIS violation snapshot")
+
+    normalized_rows = [_normalized_row(row) for row in materialized]
+    keys = {violation_snapshot_key(row) for row in normalized_rows}
+    if len(keys) != 1:
+        raise ValueError(f"mixed SDWIS violation snapshot keys: {sorted(keys)}")
+
+    representative = normalized_rows[0]
+    violation_fields = sorted(
+        set().union(*(row.keys() for row in normalized_rows)) - ENFORCEMENT_FIELDS
+    )
+    conflicts: dict[str, list[str]] = {}
+    for field in violation_fields:
+        values = {
+            str(row.get(field) or "").strip()
+            for row in normalized_rows
+        }
+        if len(values) > 1:
+            conflicts[field] = sorted(values)
+    if conflicts:
+        raise ValueError(f"conflicting violation-level values within source snapshot: {conflicts}")
+
+    actions_by_digest: dict[str, dict[str, str | None]] = {}
+    for row in normalized_rows:
+        action = _enforcement_action(row)
+        if action is not None:
+            actions_by_digest[row_digest(action)] = action
+
+    collapsed = {
+        field: representative.get(field)
+        for field in violation_fields
+    }
+    collapsed["_ENFORCEMENT_ACTIONS"] = [
+        actions_by_digest[digest] for digest in sorted(actions_by_digest)
+    ]
+    collapsed["_SOURCE_ROW_COUNT"] = len(materialized)
+    collapsed["_SOURCE_ROW_SHA256S"] = sorted(row_digest(row) for row in normalized_rows)
+    return collapsed
+
+
 def canonical_event_id(row: dict[str, Any]) -> str:
     pwsid = _value(row, "PWSID")
     violation_id = _value(row, "VIOLATION_ID")
@@ -56,8 +148,21 @@ def canonical_event_id(row: dict[str, Any]) -> str:
     return f"EPA_SDWIS_VIOLATION_UNRESOLVED:{row_digest(row)[:24]}"
 
 
+def snapshot_digest(row: dict[str, Any]) -> str:
+    """Digest material violation state, independent of quarterly transport metadata."""
+    payload: dict[str, Any] = {}
+    for key, value in row.items():
+        normalized_key = str(key).strip().upper()
+        if normalized_key == "SUBMISSIONYEARQUARTER":
+            continue
+        if normalized_key in _INTERNAL_NONMATERIAL_FIELDS:
+            continue
+        payload[normalized_key] = value
+    return sha256(_canonical_json(payload).encode("utf-8")).hexdigest()
+
+
 def stable_record_id(row: dict[str, Any]) -> str:
-    return f"{canonical_event_id(row)}:REV:{row_digest(row)[:20]}"
+    return f"{canonical_event_id(row)}:REV:{snapshot_digest(row)[:20]}"
 
 
 def _status(row: dict[str, Any]) -> RecordStatus:
@@ -110,7 +215,7 @@ def normalize(
     *,
     supersedes_record_id: str | None = None,
 ) -> HazardRecord:
-    """Normalize one SDWIS violation row without converting compliance failures into exposure."""
+    """Normalize one collapsed SDWIS violation snapshot without inferring exposure."""
     pwsid = _value(row, "PWSID")
     violation_id = _value(row, "VIOLATION_ID")
     facility_id = _value(row, "FACILITY_ID")
@@ -122,6 +227,14 @@ def normalize(
     title = violation_name or hazard_type.replace("_", " ").title()
     if system_name:
         title = f"{system_name}: {title}"
+
+    enforcement_actions = row.get("_ENFORCEMENT_ACTIONS")
+    if not isinstance(enforcement_actions, list):
+        enforcement_actions = []
+
+    source_row_hashes = row.get("_SOURCE_ROW_SHA256S")
+    if not isinstance(source_row_hashes, list):
+        source_row_hashes = [row_digest(row)]
 
     return HazardRecord(
         record_id=stable_record_id(row),
@@ -170,10 +283,10 @@ def normalize(
             "unit_of_measure": _value(row, "UNIT_OF_MEASURE") or None,
             "federal_mcl": _value(row, "FEDERAL_MCL") or None,
             "state_mcl": _value(row, "STATE_MCL") or None,
-            "latest_enforcement_id": _value(row, "LATEST_ENFORCEMENT_ID") or None,
-            "rtc_enforcement_id": _value(row, "RTC_ENFORCEMENT_ID") or None,
-            "source_row_sha256": row_digest(row),
-            "source_row": row,
+            "enforcement_actions": enforcement_actions,
+            "source_row_count": int(row.get("_SOURCE_ROW_COUNT") or len(source_row_hashes)),
+            "source_row_sha256s": source_row_hashes,
+            "violation_snapshot_sha256": snapshot_digest(row),
             "semantic_guardrail": (
                 "Compliance/monitoring/public-notification violations do not by themselves "
                 "establish contaminant exposure or measured exceedance."
