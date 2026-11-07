@@ -869,7 +869,16 @@ def system_status() -> JSONResponse:
 
 def _alert_is_actionable(alert: dict[str, Any]) -> bool:
     """Still in a live lifecycle state — anything the exporter has not retired."""
-    return str(alert.get("status")) not in INACTIVE_ALERT_STATUS
+    if str(alert.get("status")) in INACTIVE_ALERT_STATUS:
+        return False
+    if alert.get("end_at"):
+        try:
+            end = datetime.fromisoformat(str(alert["end_at"]).replace("Z", "+00:00"))
+            if end.tzinfo is None or end <= datetime.now(timezone.utc):
+                return False
+        except ValueError:
+            return False
+    return True
 
 
 def _alert_is_critical(alert: dict[str, Any]) -> bool:
@@ -885,6 +894,16 @@ def _alert_is_critical(alert: dict[str, Any]) -> bool:
 def _alert_municipios(alert: dict[str, Any]) -> list[str]:
     munis = alert.get("municipalities")
     return [str(m) for m in munis] if isinstance(munis, list) else []
+
+
+def _project_alerts() -> list[dict[str, Any]]:
+    """Time-aware API view; source rows remain unchanged on disk."""
+    return [
+        {**row, "source_status": row.get("status"), "status": "closed"}
+        if str(row.get("status")) not in INACTIVE_ALERT_STATUS and not _alert_is_actionable(row)
+        else row
+        for row in _alerts
+    ]
 
 
 @app.get("/alerts")
@@ -906,7 +925,7 @@ def alerts(
     carries the full SDWIS-derived contamination history. Callers get the true
     `total`; pass an explicit `limit` (negative for "all") to page past the default.
     """
-    result = _alerts
+    result = _project_alerts()
     if module_id:
         result = [a for a in result if a.get("module_id") == module_id]
     if status:
@@ -944,6 +963,7 @@ def alerts(
 @app.get("/alerts/facets")
 def alert_facets() -> JSONResponse:
     """Filter options + counts, derived from the corpus rather than hardcoded in the UI."""
+    _alerts = _project_alerts()
     return JSONResponse({
         "total": len(_alerts),
         "active": sum(1 for a in _alerts if _alert_is_actionable(a)),
@@ -967,7 +987,7 @@ def alert_facets() -> JSONResponse:
 def alerts_geojson(critical_only: bool = Query(default=False)) -> JSONResponse:
     """Point features for the map layer. Same lat/lon guard as /assets.geojson."""
     features = []
-    for a in _alerts:
+    for a in _project_alerts():
         if critical_only and not _alert_is_critical(a):
             continue
         lat, lon = a.get("latitude"), a.get("longitude")
@@ -1006,7 +1026,7 @@ def alert_gaps() -> JSONResponse:
 
 @app.get("/alerts/{alert_id}")
 def alert_detail(alert_id: str) -> JSONResponse:
-    for a in _alerts:
+    for a in _project_alerts():
         if str(a.get("alert_id", "")) == alert_id:
             return JSONResponse({**a, "is_critical": _alert_is_critical(a)})
     raise HTTPException(status_code=404, detail="Alert not found")
