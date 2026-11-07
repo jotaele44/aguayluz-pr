@@ -1,3 +1,4 @@
+import { federationOffline } from './offline/vite-offline.mjs';
 import react from '@vitejs/plugin-react'
 import { build, defineConfig } from 'vite'
 import { viteSingleFile } from 'vite-plugin-singlefile'
@@ -52,7 +53,7 @@ function inlineMaplibreWorker() {
 export default defineConfig({
   logLevel: 'error',
   base: offline ? './' : '/',
-  plugins: [react(), ...(offline ? [inlineMaplibreWorker(), viteSingleFile()] : [])],
+  plugins: [react(), ...(!offline ? [federationOffline({ appId: 'aguayluz-pr' })] : []), ...(offline ? [inlineMaplibreWorker(), viteSingleFile()] : [])],
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
   },
