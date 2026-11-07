@@ -31,9 +31,11 @@ seed written here is picked up without a restart.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import sys
+import uuid
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -79,29 +81,47 @@ _ITEMS = [
 
 
 def main() -> int:
+    if not _workspace:
+        print("seed_demo: AGUAYLUZ_DATA_HOME is required for isolated GUI parity", file=sys.stderr)
+        return 2
     if REVIEW_QUEUE.exists():
-        print(f"seed_demo: {REVIEW_QUEUE} already present — leaving it alone")
-        return 0
+        print(f"seed_demo: existing review queue blocks isolated seeding: {REVIEW_QUEUE}", file=sys.stderr)
+        return 2
+    if SEED_MARKER.exists():
+        print(f"seed_demo: stale ownership marker {SEED_MARKER} — refusing to seed", file=sys.stderr)
+        return 2
 
     payload = {"total": len(_ITEMS), "offset": 0, "items": _ITEMS}
+    encoded = (json.dumps(payload, indent=2) + "\n").encode("utf-8")
     try:
         OUTPUTS.mkdir(parents=True, exist_ok=True)
-        REVIEW_QUEUE.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-        # Written after the queue file, so a crash between the two leaves no
-        # marker and the teardown declines to delete anything.
-        SEED_MARKER.write_text(
-            "Written by server/ingestion/seed_demo.py. Presence of this file means\n"
-            "review_queue.json is a GUI-parity fixture and may be removed by\n"
-            "server/ingestion/gui_parity_teardown.py.\n",
-            encoding="utf-8",
-        )
-    except OSError as exc:
-        # The playwright config chains this with `&&`, so a non-zero exit fails
-        # the whole webServer boot rather than starting a backend with no data.
-        print(f"seed_demo: could not write {REVIEW_QUEUE}: {exc}", file=sys.stderr)
+        # Exclusive creation: never replace a concurrently created export.
+        with REVIEW_QUEUE.open("xb") as f:
+            f.write(encoded)
+            f.flush()
+            os.fsync(f.fileno())
+        stat = REVIEW_QUEUE.stat()
+        ownership = {
+            "schema_version": 1,
+            "run_id": os.getenv("AGUAYLUZ_GUI_PARITY_RUN_ID") or ("standalone-" + uuid.uuid4().hex),
+            "sha256": hashlib.sha256(encoded).hexdigest(),
+            "size": len(encoded),
+            "st_dev": stat.st_dev,
+            "st_ino": stat.st_ino,
+            "target": str(REVIEW_QUEUE.resolve()),
+        }
+        with SEED_MARKER.open("x", encoding="utf-8") as f:
+            json.dump(ownership, f, sort_keys=True)
+            f.write("\n")
+            f.flush()
+            os.fsync(f.fileno())
+    except (OSError, ValueError) as exc:
+        # If writing the marker failed, leave the unmatched fixture untouched;
+        # a subsequent run will fail closed, not assume the file is disposable.
+        print(f"seed_demo: incomplete fixture creation: {exc}", file=sys.stderr)
         return 1
 
-    print(f"seed_demo: wrote {len(_ITEMS)} review-queue records to {REVIEW_QUEUE}")
+    print(f"seed_demo: wrote {len(_ITEMS)} fixture records to {REVIEW_QUEUE}")
     return 0
 
 
