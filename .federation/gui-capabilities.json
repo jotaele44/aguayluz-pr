@@ -1528,7 +1528,7 @@
       "classification": "internal",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Offline-first Puerto Rico Department of Health annual drinking-water artifact freeze and EPA SDWIS reconciliation feeding the existing Environmental Exposure hazard plane. The source-freeze and downstream immutable-residue adjudication scripts are CI/provenance infrastructure, not an operator feature: it freezes official Salud bytes and a bounded EPA violations-member manifestation, while user consumption remains on the existing Environmental Exposure hazard surface. No duplicate route or terminal workflow is required.",
+      "rationale": "Offline-first Puerto Rico Department of Health annual drinking-water artifact freeze, OCR evidence derivation, and EPA SDWIS reconciliation feeding the existing Environmental Exposure hazard plane. The source-freeze, OCR and downstream immutable-residue adjudication scripts are CI/provenance infrastructure, not operator features: they freeze official Salud bytes (kept separate from derived OCR) and a bounded EPA violations-member manifestation, while user consumption remains on the existing Environmental Exposure hazard surface. No duplicate route or terminal workflow is required.",
       "backend": {
         "files": [
           "src/aguayluz/hazard_adapters/sdwa_drinking_water.py"
@@ -1544,7 +1544,8 @@
         "files": [
           "scripts/ingest_salud_sdwis_water.py",
           "scripts/freeze_salud_sdwis_2025_sources.py",
-          "scripts/adjudicate_salud_sdwis_2025_residue.py"
+          "scripts/adjudicate_salud_sdwis_2025_residue.py",
+          "scripts/freeze_salud_2025_ocr.py"
         ],
         "symbols": [
           "scripts/ingest_salud_sdwis_water.py:classify_sdwis_row",
@@ -1564,7 +1565,12 @@
           "scripts/adjudicate_salud_sdwis_2025_residue.py:sha256_file",
           "scripts/adjudicate_salud_sdwis_2025_residue.py:adjudicate",
           "scripts/adjudicate_salud_sdwis_2025_residue.py:run",
-          "scripts/adjudicate_salud_sdwis_2025_residue.py:main"
+          "scripts/adjudicate_salud_sdwis_2025_residue.py:main",
+          "scripts/freeze_salud_2025_ocr.py:sha256_file",
+          "scripts/freeze_salud_2025_ocr.py:download",
+          "scripts/freeze_salud_2025_ocr.py:pdfinfo",
+          "scripts/freeze_salud_2025_ocr.py:ocr_pdf",
+          "scripts/freeze_salud_2025_ocr.py:main"
         ]
       },
       "tests": {
