@@ -1771,6 +1771,70 @@
           "dashboard/tests/gui-parity.spec.mjs"
         ]
       }
+    },
+    {
+      "id": "luma-monthly-generation-source-freeze",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Isolated CI source-acquisition and provenance infrastructure. Freezes official LUMA monthly index, landing and PDF bytes and emits candidate observations for independent review. It does not publish claims or expose a new operator workflow. User-facing hydro ingestion controls and results remain an unimplemented integration scope; this internal adapter does not establish shipped GUI capability.",
+      "analysis": {
+        "files": [
+          "scripts/luma_monthly_generation_adapter.py"
+        ],
+        "symbols": [
+          "scripts/luma_monthly_generation_adapter.py:AdapterError",
+          "scripts/luma_monthly_generation_adapter.py:Period",
+          "scripts/luma_monthly_generation_adapter.py:DiscoveryEntry",
+          "scripts/luma_monthly_generation_adapter.py:FetchResult",
+          "scripts/luma_monthly_generation_adapter.py:ManifestRow",
+          "scripts/luma_monthly_generation_adapter.py:AnchorParser",
+          "scripts/luma_monthly_generation_adapter.py:ReportRowParser",
+          "scripts/luma_monthly_generation_adapter.py:utc_now",
+          "scripts/luma_monthly_generation_adapter.py:sha256_bytes",
+          "scripts/luma_monthly_generation_adapter.py:sha256_file",
+          "scripts/luma_monthly_generation_adapter.py:canonical_json",
+          "scripts/luma_monthly_generation_adapter.py:write_json",
+          "scripts/luma_monthly_generation_adapter.py:write_jsonl",
+          "scripts/luma_monthly_generation_adapter.py:read_jsonl",
+          "scripts/luma_monthly_generation_adapter.py:iter_periods",
+          "scripts/luma_monthly_generation_adapter.py:synthesized_landing_url",
+          "scripts/luma_monthly_generation_adapter.py:parse_index_entries",
+          "scripts/luma_monthly_generation_adapter.py:index_period_map",
+          "scripts/luma_monthly_generation_adapter.py:expected_periods_from_index",
+          "scripts/luma_monthly_generation_adapter.py:request_bytes",
+          "scripts/luma_monthly_generation_adapter.py:freeze_fetch",
+          "scripts/luma_monthly_generation_adapter.py:looks_like_pdf",
+          "scripts/luma_monthly_generation_adapter.py:landing_publication_date",
+          "scripts/luma_monthly_generation_adapter.py:landing_pdf_links",
+          "scripts/luma_monthly_generation_adapter.py:classify_units",
+          "scripts/luma_monthly_generation_adapter.py:classify_hydro_text",
+          "scripts/luma_monthly_generation_adapter.py:hydro_context_lines",
+          "scripts/luma_monthly_generation_adapter.py:typed_observations",
+          "scripts/luma_monthly_generation_adapter.py:extract_pdf_pages",
+          "scripts/luma_monthly_generation_adapter.py:render_pages",
+          "scripts/luma_monthly_generation_adapter.py:relation_to_prior",
+          "scripts/luma_monthly_generation_adapter.py:select_incremental_periods",
+          "scripts/luma_monthly_generation_adapter.py:acquire_manifestation",
+          "scripts/luma_monthly_generation_adapter.py:reconcile_manifest_rows",
+          "scripts/luma_monthly_generation_adapter.py:duplicate_period_state",
+          "scripts/luma_monthly_generation_adapter.py:manifest_csv",
+          "scripts/luma_monthly_generation_adapter.py:build_canonical_candidates",
+          "scripts/luma_monthly_generation_adapter.py:replay_snapshot",
+          "scripts/luma_monthly_generation_adapter.py:deterministic_archive",
+          "scripts/luma_monthly_generation_adapter.py:index_denominator",
+          "scripts/luma_monthly_generation_adapter.py:acquire_index",
+          "scripts/luma_monthly_generation_adapter.py:run_acquisition",
+          "scripts/luma_monthly_generation_adapter.py:run_replay",
+          "scripts/luma_monthly_generation_adapter.py:parser",
+          "scripts/luma_monthly_generation_adapter.py:main"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_luma_monthly_generation_adapter.py"
+        ]
+      }
     }
   ],
   "exceptions": []
