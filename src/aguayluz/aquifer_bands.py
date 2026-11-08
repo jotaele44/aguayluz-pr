@@ -175,7 +175,9 @@ _IV_URL = re.compile(
 _ANCHOR = re.compile(r'href=["\']([^"\']*AWLSites\.asp\?S=(\d{15})[^"\']*)["\']')
 _LEGEND_PAIR = re.compile(r'alt="(Blue|Yellow|Orange|Red) square icon"\s*>\s*([^<]+?)\s*</td>')
 _HTML_COMMENT = re.compile(r"<!--.*?-->", re.S)
-_SCRIPT = re.compile(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", re.S | re.I)
+# An HTML end tag may carry whitespace (and, per the spec, attributes): `</script >` closes a
+# script exactly as `</script>` does, so the end tag is matched as `</script[^>]*>`.
+_SCRIPT = re.compile(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script[^>]*>", re.S | re.I)
 
 
 def _balanced(text: str, open_index: int) -> str:
@@ -553,23 +555,42 @@ def well_view(
     return view
 
 
+# The module's public surface. The constants matter here: the producer, the API and the tests
+# read them as `ab.NAME` from other files, which a per-file analysis cannot see, so declaring
+# them is also what keeps them from reading as unused globals.
 __all__ = [
+    # constants
     "AUTHORITY_CLAIM",
-    "Band",
-    "BandPageError",
     "CLASSES",
     "CLASS_LABELS",
-    "ParsedPage",
-    "ParsedWell",
+    "DEPTH_CONVENTION",
+    "EFFECTIVE_DATE_STATUS",
+    "EVIDENCE_TIER",
+    "MAX_AGE_SECONDS",
     "PAGE_URL",
     "PARAMETER_CODE",
+    "RECEIPT_FILE",
+    "RECEIPT_SCHEMA",
+    "REGISTRY_FILE",
+    "SNAPSHOT_DIRNAME",
+    "SOURCE_ID",
+    # types
+    "Band",
+    "BandPageError",
+    "ParsedPage",
+    "ParsedWell",
+    # functions
+    "atomic_write",
+    "bands_from_json",
     "classify",
-    "current_registry",
     "critical_onset_ft",
+    "current_registry",
     "freshness",
     "latest_readings",
+    "load_receipt",
     "margin_to_critical_ft",
     "material_digest",
     "parse_page",
+    "read_jsonl",
     "well_view",
 ]

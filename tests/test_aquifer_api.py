@@ -73,7 +73,7 @@ def write_readings(data_dir, rows, name="usgs_continuous_readings.jsonl"):
 @pytest.fixture
 def populated(tmp_path, monkeypatch):
     assert ingest.main([
-        "--src", str(FIXTURES / "prdner_hydro_conditions_selected_wells.html"),
+        "--src", str(FIXTURES / "prdner_hydro_conditions_selected_wells.html.txt"),
         "--data-dir", str(tmp_path), "--assets", str(FIXTURES / "prdner_usgsgw_assets.jsonl"),
         "--now", "2026-11-08T16:00:00Z",
     ]) == 0

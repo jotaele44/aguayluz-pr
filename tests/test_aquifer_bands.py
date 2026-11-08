@@ -1,7 +1,10 @@
 """aguayluz.aquifer_bands: parser, classifier and read-side helpers.
 
 Positive inputs are the real capture of the USGS page (tests/fixtures/
-prdner_hydro_conditions_selected_wells.html, fetched 2026-11-08, SHA-256 20d8814f...).
+prdner_hydro_conditions_selected_wells.html.txt, fetched 2026-11-08, SHA-256 20d8814f...).
+The `.txt` suffix is deliberate: the capture is a verbatim third-party page whose exact bytes
+are the test oracle, and as `.html` a code scanner treats its inline JavaScript as first-party
+source and reports style findings on code this repo does not own and must not edit.
 The expected band edges below were extracted independently of the parser and are the
 oracle. Drift cases are CONSTRUCTED from that capture by editing it, and say so.
 """
@@ -17,7 +20,7 @@ import pytest
 
 from aguayluz import aquifer_bands as ab
 
-FIXTURE = Path(__file__).resolve().parent / "fixtures" / "prdner_hydro_conditions_selected_wells.html"
+FIXTURE = Path(__file__).resolve().parent / "fixtures" / "prdner_hydro_conditions_selected_wells.html.txt"
 PAGE = FIXTURE.read_bytes()
 TEXT = PAGE.decode("latin-1")
 
@@ -202,6 +205,16 @@ def test_structural_drift_raises_instead_of_being_guessed_at(case):
     build, message = DRIFT[case]
     with pytest.raises(ab.BandPageError, match=re.escape(message)):
         ab.parse_page(build())
+
+
+@pytest.mark.parametrize("end_tag", ["</script >", "</SCRIPT\n>", "</script foo=bar>"])
+def test_an_end_tag_with_whitespace_or_attributes_still_closes_the_script(end_tag):
+    """`</script >` is a valid HTML end tag. The first pattern matched only the literal
+    `</script>` (CodeQL flagged it as a bad tag filter), so a harmless markup change would have
+    failed the parse or merged two scripts. CONSTRUCTED from the capture: every end tag rewritten."""
+    assert "</script>" in TEXT
+    variant = TEXT.replace("</script>", end_tag).encode("latin-1")
+    assert ab.parse_page(variant) == ab.parse_page(PAGE)
 
 
 def test_two_chart_scripts_are_ambiguous_and_rejected():

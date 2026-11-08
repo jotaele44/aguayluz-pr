@@ -20,7 +20,7 @@ from aguayluz import aquifer_bands as ab
 
 REPO = Path(__file__).resolve().parent.parent
 FIXTURES = REPO / "tests" / "fixtures"
-PAGE = FIXTURES / "prdner_hydro_conditions_selected_wells.html"
+PAGE = FIXTURES / "prdner_hydro_conditions_selected_wells.html.txt"
 ASSETS = FIXTURES / "prdner_usgsgw_assets.jsonl"
 SCHEMAS = REPO / "schemas" / "aquifer-bands" / "v1"
 NOW = "2026-11-08T16:00:00Z"
