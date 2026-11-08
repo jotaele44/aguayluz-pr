@@ -2,7 +2,7 @@
   "schema_version": "aguayluz.hydromet-receipts/v1",
   "sources": {
     "nwps_gauges": {
-      "last_attempt_utc": "2026-11-08T19:17:38.702787Z",
+      "last_attempt_utc": "2026-11-08T19:32:39.136993Z",
       "last_error": null,
       "last_status": "PASS",
       "last_success": {
@@ -21,14 +21,15 @@
           "POINT_IN_POLYGON_WITH_ALIAS": 102,
           "UNRESOLVED": 12
         },
-        "bulk_manifestation_id": "HYDROMET:nwps_gauges:19c46bce6219e35db0b5d2e40cee45ac",
-        "byte_sha256": "19c46bce6219e35db0b5d2e40cee45ac51d3332500c8a1b6df01bc733c810f68",
+        "bulk_manifestation_id": "HYDROMET:nwps_gauges:ccda98e6103c03efb3f51dead4548799",
+        "byte_sha256": "ccda98e6103c03efb3f51dead454879925d78a1e2ca4b67b6edf235cd200fe2b",
         "detail_failures": [],
         "details_fetched": 0,
         "events_pruned": 0,
         "flood_categories": {
+          "action": 1,
           "low_threshold": 2,
-          "no_flooding": 80,
+          "no_flooding": 79,
           "not_defined": 34,
           "obs_not_current": 2
         },
@@ -46,7 +47,7 @@
         "usgs_matched": 108,
         "usgs_unmatched": 0
       },
-      "last_success_utc": "2026-11-08T19:17:38.702787Z",
+      "last_success_utc": "2026-11-08T19:32:39.136993Z",
       "referenced_manifestation_ids": [
         "HYDROMET:nwps_gauges:001721639f1cf5865ad5faf2d02d2f91",
         "HYDROMET:nwps_gauges:0571b6bb78316c7231d59b2515f118e3",
@@ -58,7 +59,6 @@
         "HYDROMET:nwps_gauges:11fd57aec003892622c7e600063e5276",
         "HYDROMET:nwps_gauges:16d745c6c980611f129f902d4054d5e6",
         "HYDROMET:nwps_gauges:17086caef10e883c579aab02f55f8a2f",
-        "HYDROMET:nwps_gauges:19c46bce6219e35db0b5d2e40cee45ac",
         "HYDROMET:nwps_gauges:1c8b84511e72a6d3a6ab273ecbab9125",
         "HYDROMET:nwps_gauges:1e52b7abbbe32bd43e2577498ba70d31",
         "HYDROMET:nwps_gauges:22927b5c80f4f0778cb95873f6877467",
@@ -142,6 +142,7 @@
         "HYDROMET:nwps_gauges:c4437e20ee17af7b8bb6aed063033cee",
         "HYDROMET:nwps_gauges:c494329d6f96532b1c8421abc405807f",
         "HYDROMET:nwps_gauges:cbe9412683af9e4ae1934be2de9bc303",
+        "HYDROMET:nwps_gauges:ccda98e6103c03efb3f51dead4548799",
         "HYDROMET:nwps_gauges:ce8376bb0af407ee8d6ceadfd1784427",
         "HYDROMET:nwps_gauges:d081e018fa451c61940b4a2c5b1e354c",
         "HYDROMET:nwps_gauges:d20809810305e403686bb399634b501e",
