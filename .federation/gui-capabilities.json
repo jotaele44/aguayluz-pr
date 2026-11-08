@@ -1742,6 +1742,94 @@
       }
     },
     {
+      "id": "aquifer-threshold-bands",
+      "classification": "analysis",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Condition bands (Optimum, Observation, Operational Adjustment, Critical) that a USGS page attributes to PRDNER for five south-coast observation wells, applied to each well's latest depth-to-water reading and shown on the Aquifer Bands page: per-well depth, class, margin to the Critical onset, a Provisional badge, the bands as a bar with a text alternative, and the source's freshness, SHA-256 and in-source inconsistencies. Evidence tier T2 and no published effective date, both stated on the page. Read-only by design: GET /aquifer/bands derives the class per request from the committed registry and the latest local reading, persists nothing, and has no refresh route -- scripts/ingest_prdner_well_bands.py runs only from the weekly/all cadences in .github/workflows/refresh.yml via scripts/refresh.py, never by a person, so no normal user path requires a terminal. The only control is Retry, which re-requests the same endpoint after a failed load. Band state is displayed, never alerted on: every current reading of these wells is provisional and the monitoring lifecycle ignores provisional rows by policy. Loading, error-with-retry, empty (no bands registered), no-reading, stale-reading and stale/failed-source states are rendered and unit-tested; the E2E spec runs without readings files, as CI does.",
+      "backend": {
+        "files": [
+          "server/backend/aquifer_api.py",
+          "server/backend/app.py",
+          "src/aguayluz/aquifer_bands.py"
+        ],
+        "endpoints": [
+          "GET /aquifer/bands"
+        ],
+        "symbols": [
+          "server/backend/aquifer_api.py:aquifer_bands",
+          "src/aguayluz/aquifer_bands.py:Band",
+          "src/aguayluz/aquifer_bands.py:BandPageError",
+          "src/aguayluz/aquifer_bands.py:ParsedPage",
+          "src/aguayluz/aquifer_bands.py:ParsedWell",
+          "src/aguayluz/aquifer_bands.py:atomic_write",
+          "src/aguayluz/aquifer_bands.py:bands_from_json",
+          "src/aguayluz/aquifer_bands.py:classify",
+          "src/aguayluz/aquifer_bands.py:critical_onset_ft",
+          "src/aguayluz/aquifer_bands.py:current_registry",
+          "src/aguayluz/aquifer_bands.py:freshness",
+          "src/aguayluz/aquifer_bands.py:latest_readings",
+          "src/aguayluz/aquifer_bands.py:load_receipt",
+          "src/aguayluz/aquifer_bands.py:margin_to_critical_ft",
+          "src/aguayluz/aquifer_bands.py:material_digest",
+          "src/aguayluz/aquifer_bands.py:parse_page",
+          "src/aguayluz/aquifer_bands.py:read_jsonl",
+          "src/aguayluz/aquifer_bands.py:well_view"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/ingest_prdner_well_bands.py"
+        ],
+        "symbols": [
+          "scripts/ingest_prdner_well_bands.py:AcquisitionError",
+          "scripts/ingest_prdner_well_bands.py:arithmetic",
+          "scripts/ingest_prdner_well_bands.py:bind",
+          "scripts/ingest_prdner_well_bands.py:build_revisions",
+          "scripts/ingest_prdner_well_bands.py:fetch_page",
+          "scripts/ingest_prdner_well_bands.py:load_assets",
+          "scripts/ingest_prdner_well_bands.py:main",
+          "scripts/ingest_prdner_well_bands.py:receipt_entry"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/aquifer-bands"
+        ],
+        "e2e_routes": [
+          "/aquifer-bands"
+        ],
+        "components": [
+          "dashboard/src/pages/AquiferBandsPage.jsx",
+          "dashboard/src/lib/aquifer-api.js",
+          "dashboard/src/lib/aquifer-hooks.js",
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_aquifer_api.py"
+        ],
+        "contract": [
+          "tests/test_aquifer_bands.py",
+          "tests/test_ingest_prdner_well_bands.py",
+          "tests/test_refresh_plans.py",
+          "tests/test_gui_parity.py"
+        ],
+        "unit": [
+          "dashboard/src/pages/AquiferBandsPage.test.jsx",
+          "dashboard/src/lib/aquifer-api.test.js"
+        ],
+        "e2e": [
+          "dashboard/tests/aquifer-bands.spec.mjs",
+          "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
+    },
+    {
       "id": "nws-cloudgis-map-overlays",
       "classification": "client_only",
       "status": "active",

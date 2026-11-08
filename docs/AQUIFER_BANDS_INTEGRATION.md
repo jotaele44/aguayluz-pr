@@ -68,7 +68,10 @@ entry**, so it is stored as `above_optimum` and never given a PRDNER name.
 | Receipt: latest attempt and latest success | `data/aquifer_band_receipt.json` |
 | Contracts | `schemas/aquifer-bands/v1/aquifer_band_registry.schema.json`, `aquifer_band_receipt.schema.json` |
 | Schedule | `scripts/refresh.py::STEP_AQUIFER_BANDS` (weekly and `--all`, optional) |
-| Tests | `tests/test_aquifer_bands.py`, `tests/test_ingest_prdner_well_bands.py` |
+| Read-only API | `server/backend/aquifer_api.py`: `GET /aquifer/bands` |
+| Dashboard | **Aquifer Bands** page (`/aquifer-bands`, under Water & Weather): `dashboard/src/pages/AquiferBandsPage.jsx`, `dashboard/src/lib/aquifer-api.js`, `dashboard/src/lib/aquifer-hooks.js` |
+| GUI-parity capability | `aquifer-threshold-bands` in `.federation/gui-capabilities.json` |
+| Tests | `tests/test_aquifer_bands.py`, `tests/test_ingest_prdner_well_bands.py`, `tests/test_aquifer_api.py`, `dashboard/src/pages/AquiferBandsPage.test.jsx`, `dashboard/src/lib/aquifer-api.test.js`, `dashboard/tests/aquifer-bands.spec.mjs` |
 
 The two JSON(L) files are committed on purpose (see `.gitignore`): the registry is the
 revision base each run diffs against, and the receipt is the only durable evidence the page
@@ -79,6 +82,31 @@ Readings are **not** re-ingested. The latest depth for each well comes from the 
 `data/usgs_continuous_readings.jsonl` (OGC `latest-continuous`, parameter 72019), falling
 back to `data/groundwater_levels.jsonl` (daily values). Wells bind by stable id to their
 `USGSGW_<site>` asset; the page's title only corroborates.
+
+## The panel
+
+`GET /aquifer/bands` derives everything per request from the committed registry and the latest
+local reading, so there is no state file to go stale and no write path: the page has no
+refresh button, because a control that scraped a third-party page on demand would add load and
+failure modes without adding evidence. The only control is **Retry** after a failed load.
+
+For each well the page shows the depth, the class **written out as text** (colour only
+reinforces it), the margin to the Critical onset ("6.33 ft past Critical onset" / "4.57 ft before
+Critical"), the reading's date with a **Provisional** or **Approved** badge, and the bands as a
+bar whose text alternative lists every edge. A depth beyond the chart axis is still Critical and
+its marker is clamped to the end of the bar. The source panel shows freshness
+(FRESH / STALE / FAILED / NEVER, with the hydromet plane's meaning), the last read and attempt,
+the fetched-bytes SHA-256, wells accounted, the in-source inconsistencies above, and the page's
+own "Map and Info" links, labelled as recorded but not fetched.
+
+States that are rendered rather than left blank: loading; request failure with a retry (never
+shown as "no wells"); no bands registered yet (with the source panel still shown if a receipt
+exists, so a page that never parsed says why); a well with **no local reading**, which keeps its
+bands and claims no class; a stale reading (older than two days, at the day resolution readings
+carry), which is flagged but still classified; and a STALE or FAILED source, which keeps showing
+the last verified bands. A fresh checkout has the registry but no readings files (they are
+gitignored and rebuilt by the refresh), so it shows the bands with no class until a refresh has
+run.
 
 ## Rules that are easy to get wrong
 
@@ -143,6 +171,8 @@ an analyst estimate of roughly 55–65%, not a measured base rate.
 ## Verifying a change
 
 ```bash
-python -m pytest -q tests/test_aquifer_bands.py tests/test_ingest_prdner_well_bands.py
+python -m pytest -q tests/test_aquifer_bands.py tests/test_ingest_prdner_well_bands.py tests/test_aquifer_api.py
 python scripts/ingest_prdner_well_bands.py --dry-run    # live fetch, writes nothing
+python scripts/check_gui_parity.py                      # the ratchet must report new=0
+cd dashboard && npx vitest run src/pages/AquiferBandsPage.test.jsx src/lib/aquifer-api.test.js
 ```
