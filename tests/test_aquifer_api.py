@@ -14,11 +14,20 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
-import server.backend.aquifer_api as aquifer_api
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
 
-from aguayluz import aquifer_bands as ab
+# Bare `pytest` (as CI runs it) puts only tests/ and src/ on sys.path, so `server` is importable
+# only if a module collected earlier put the repo root there. This file sorts before every other
+# test that imports `server`, so it must do it itself, as tests/test_backend_alerts_api.py does.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+pytest.importorskip("fastapi")
+pytest.importorskip("httpx")
+
+import server.backend.aquifer_api as aquifer_api  # noqa: E402
+from fastapi import FastAPI  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
+
+from aguayluz import aquifer_bands as ab  # noqa: E402
 
 REPO = Path(__file__).resolve().parent.parent
 FIXTURES = REPO / "tests" / "fixtures"
