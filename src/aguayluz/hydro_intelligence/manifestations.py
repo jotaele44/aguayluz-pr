@@ -6,7 +6,6 @@ claims in records; it does not certify receipt-to-byte integrity on its own.
 from __future__ import annotations
 
 import re
-from urllib.parse import urlparse
 
 from .acquisition import validate_url
 
