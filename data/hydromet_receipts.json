@@ -2,7 +2,7 @@
   "schema_version": "aguayluz.hydromet-receipts/v1",
   "sources": {
     "nwps_gauges": {
-      "last_attempt_utc": "2026-11-09T07:05:13.182376Z",
+      "last_attempt_utc": "2026-11-09T07:10:25.086814Z",
       "last_error": null,
       "last_status": "PASS",
       "last_success": {
@@ -33,8 +33,8 @@
           "obs_not_current": 3
         },
         "integrity": "PASS",
-        "manifestations_added": 1,
-        "manifestations_pruned": 1,
+        "manifestations_added": 0,
+        "manifestations_pruned": 0,
         "new_revisions": 0,
         "outcomes": {
           "retained": 118
@@ -46,7 +46,7 @@
         "usgs_matched": 108,
         "usgs_unmatched": 0
       },
-      "last_success_utc": "2026-11-09T07:05:13.182376Z",
+      "last_success_utc": "2026-11-09T07:10:25.086814Z",
       "referenced_manifestation_ids": [
         "HYDROMET:nwps_gauges:038567828bfc5a4a14dd63c9fff0f7ae",
         "HYDROMET:nwps_gauges:03fc9fb3355f58b74ad90e9b577d3664",
@@ -171,7 +171,7 @@
       "source_id": "nwps_gauges"
     },
     "stage_iv_pr": {
-      "last_attempt_utc": "2026-11-09T07:05:15.249093Z",
+      "last_attempt_utc": "2026-11-09T07:10:27.348805Z",
       "last_error": null,
       "last_status": "PASS",
       "last_success": {
@@ -184,32 +184,32 @@
           "state": "PASS",
           "unresolved": 0
         },
-        "byte_sha256": "d54bf937e4ef4fc6d3c617a3fc395aa27778e454fae2e001e39b8c6b5db86977",
+        "byte_sha256": "4fc3a3709b9dfc8b5ac6289bb95c4c789f5da35ac76dc1556a984385de3d03ad",
         "data_date": "2026-11-08",
-        "events_pruned": 156,
+        "events_pruned": 0,
         "files": [
           {
-            "byte_sha256": "d54bf937e4ef4fc6d3c617a3fc395aa27778e454fae2e001e39b8c6b5db86977",
+            "byte_sha256": "4fc3a3709b9dfc8b5ac6289bb95c4c789f5da35ac76dc1556a984385de3d03ad",
             "data_date": "2026-11-08",
-            "manifestation_id": "HYDROMET:stage_iv_pr:d54bf937e4ef4fc6d3c617a3fc395aa2",
+            "manifestation_id": "HYDROMET:stage_iv_pr:4fc3a3709b9dfc8b5ac6289bb95c4c78",
             "retained": 78,
             "url": "https://water.noaa.gov/resources/downloads/precip/stageIV/2026/11/08/nws_precip_1day_20261108_pr.tif",
             "window": "1day",
             "zones": 78
           },
           {
-            "byte_sha256": "3eabb098e446d5ea5f850c713f08f5ea1aaca76321d33b298886efbb72c50635",
+            "byte_sha256": "e5adc884f1565a80268614899b5d21ffb08c85521f231abfdf1fa9d8f414975a",
             "data_date": "2026-11-08",
-            "manifestation_id": "HYDROMET:stage_iv_pr:3eabb098e446d5ea5f850c713f08f5ea",
+            "manifestation_id": "HYDROMET:stage_iv_pr:e5adc884f1565a80268614899b5d21ff",
             "retained": 78,
             "url": "https://water.noaa.gov/resources/downloads/precip/stageIV/2026/11/08/nws_precip_last7days_20261108_pr.tif",
             "window": "last7days",
             "zones": 78
           },
           {
-            "byte_sha256": "402084b34f6741b26eefac6acaa491f9e7d8b7f1725fac90440c1184b679cbde",
+            "byte_sha256": "a4684fdedee9580052fe2eef75a4a40428a41cb620db4d586dcc0f188a4a3f41",
             "data_date": "2026-11-08",
-            "manifestation_id": "HYDROMET:stage_iv_pr:402084b34f6741b26eefac6acaa491f9",
+            "manifestation_id": "HYDROMET:stage_iv_pr:a4684fdedee9580052fe2eef75a4a404",
             "retained": 78,
             "url": "https://water.noaa.gov/resources/downloads/precip/stageIV/2026/11/08/nws_precip_last30days_20261108_pr.tif",
             "window": "last30days",
@@ -219,13 +219,13 @@
         "integrity": "PASS",
         "manifestations_added": 3,
         "manifestations_pruned": 3,
-        "new_revisions": 234,
-        "records_added": 234,
-        "relationships_added": 234,
+        "new_revisions": 0,
+        "records_added": 0,
+        "relationships_added": 0,
         "source_url": "https://water.noaa.gov/resources/downloads/precip/stageIV/2026/11/08/nws_precip_1day_20261108_pr.tif",
         "windows_missing": []
       },
-      "last_success_utc": "2026-11-09T07:05:15.249093Z",
+      "last_success_utc": "2026-11-09T07:10:27.348805Z",
       "referenced_manifestation_ids": [],
       "source_id": "stage_iv_pr"
     }
