@@ -231,6 +231,8 @@ def test_route_governance_is_complete_but_product_denominator_stays_fail_closed(
     assert summary.payload_product_denominator_exhausted_family_ids == (
         "EIA_860M",
         "EIA_923",
+        "EIA_EPM",
+        "LUMA_DAILY_AVAILABILITY",
     )
     assert summary.open_payload_product_denominator_family_ids
     assert summary.payload_product_denominator_complete is False
