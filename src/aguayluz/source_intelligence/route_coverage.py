@@ -10,11 +10,16 @@ from .routes import ProductIdentityState, ProductPayloadState, RouteRole
 # A governed discovery surface proves that the source family is represented in the
 # control plane. It does not prove that every payload-bearing product exposed by that
 # family has been discovered. Keep payload-product denominator exhaustion explicit and
-# fail-closed. These two EIA families are bounded to the registered public products.
+# fail-closed. EIA-860M/EIA-923 are bounded to their registered public products; EIA EPM
+# and LUMA Daily Availability are promoted only after the exact-head denominator
+# certification freezes authoritative publication indexes and verifies canonical payload
+# routes. This does not assert complete LUMA manifestation history.
 PAYLOAD_PRODUCT_DENOMINATOR_EXHAUSTED_FAMILY_IDS = frozenset(
     {
         "EIA_860M",
         "EIA_923",
+        "EIA_EPM",
+        "LUMA_DAILY_AVAILABILITY",
     }
 )
 
