@@ -1,11 +1,23 @@
-"""Small deterministic helpers for PRII federation export scripts."""
+"""Small deterministic helpers for PRII federation export scripts.
+
+Scripts run with this directory first on ``sys.path``, so this module shadows the
+pinned ``prii-export-utils`` package of the same name. ``fid``, ``norm`` and
+``sha256`` below are this repo's own (federation ids depend on them, so they are
+kept exactly as they are). Any other name, such as the ``source_monitors``
+helpers (thehub-pr ADR 0013), is served from the pinned package through the
+module ``__getattr__`` at the bottom.
+"""
 
 from __future__ import annotations
 
 import hashlib
+import importlib.machinery
+import importlib.util
 import re
+import sys
 import unicodedata
 from pathlib import Path
+from types import ModuleType
 from typing import Any
 
 
@@ -26,3 +38,35 @@ def sha256(path: str | Path) -> str:
         for chunk in iter(lambda: fh.read(1024 * 1024), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+_PINNED: ModuleType | None = None
+
+
+def _pinned_package() -> ModuleType:
+    """The installed ``prii-export-utils`` package this module shadows."""
+    global _PINNED
+    if _PINNED is None:
+        here = Path(__file__).resolve().parent
+        search = [p for p in sys.path if Path(p or ".").resolve() != here]
+        spec = importlib.machinery.PathFinder.find_spec("prii_export_utils", search)
+        if spec is None or spec.loader is None or not spec.submodule_search_locations:
+            raise ImportError("the pinned prii-export-utils package is not installed")
+        alias = "_prii_export_utils_pinned"
+        spec = importlib.util.spec_from_file_location(
+            alias, spec.origin, submodule_search_locations=list(spec.submodule_search_locations))
+        assert spec is not None and spec.loader is not None
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[alias] = module
+        spec.loader.exec_module(module)
+        _PINNED = module
+    return _PINNED
+
+
+def __getattr__(name: str) -> Any:  # PEP 562: names this module does not define
+    if name.startswith("__"):
+        raise AttributeError(name)
+    try:
+        return getattr(_pinned_package(), name)
+    except AttributeError:
+        raise AttributeError(f"module 'prii_export_utils' has no attribute {name!r}") from None

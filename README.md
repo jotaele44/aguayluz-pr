@@ -117,10 +117,17 @@ installs dependencies, later runs work offline):
 `federation.json` is this producer's manifest, conformant to
 `thehub-pr/schemas/repo_federation_manifest.schema.json`.
 `scripts/federation_export.py` writes
-`exports/federation/{sources,entities,relationships,alerts}.jsonl` plus a
-`manifest.json` validated against the vendored hub schema
+`exports/federation/{sources,entities,relationships,alerts,source_monitors}.jsonl`
+plus a `manifest.json` validated against the vendored hub schema
 `schemas/federation_export_manifest.schema.json`
 (`tests/test_federation_contract_compat.py`).
+
+`source_monitors.jsonl` (thehub-pr ADR 0013) has one row per source in
+`config/hydromet_sources.v1.json`, `config/hazard_advisory_sources.v1.json` and
+`config/environmental_exposure_sources.v1.json`, with when it last succeeded and
+how that is known: the hydromet run receipts (`data/hydromet_receipts.json`) or the
+latest retrieval in `data/hydromet_manifestations.jsonl`, whichever is more recent;
+every other source is reported as not recorded (`tests/test_federation_source_monitors.py`).
 
 Every exported row also carries an additive `evidence_state` declaration.
 It conforms to thehub-pr's candidate epistemic-state contract, vendored
