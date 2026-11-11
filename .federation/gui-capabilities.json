@@ -1223,7 +1223,7 @@
       "classification": "analysis",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Read-only, fail-closed environmental source→pathway→receptor graph. It preserves existing utility/regulatory identities, exposes provenance and causal state, and prohibits proximity/name-only evidence from becoming causal attribution.",
+      "rationale": "Read-only, fail-closed environmental source\u2192pathway\u2192receptor graph. It preserves existing utility/regulatory identities, exposes provenance and causal state, and prohibits proximity/name-only evidence from becoming causal attribution.",
       "backend": {
         "files": [
           "server/backend/environmental_exposure_api.py",
@@ -1769,6 +1769,33 @@
         "e2e": [
           "dashboard/tests/nws-hydromet.spec.mjs",
           "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "offline-app-shell-v1",
+      "classification": "client_only",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Production build precaches only shipped assets; passive shell status in existing layout. Data and sync readiness remain independent. No server mutations cached or queued.",
+      "frontend": {
+        "files": [
+          "dashboard/src/components/layout/DashboardLayout.jsx",
+          "dashboard/offline/offline-client.js"
+        ],
+        "routes": [
+          "/"
+        ],
+        "components": [
+          "dashboard/src/components/layout/DashboardLayout.jsx"
+        ],
+        "e2e_routes": [
+          "/"
+        ]
+      },
+      "tests": {
+        "e2e": [
+          "dashboard/offline/test-offline.mjs"
         ]
       }
     }
