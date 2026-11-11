@@ -31,6 +31,8 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 
+from server.backend.hydro_intelligence_api import router as hydro_intelligence_router
+
 logger = logging.getLogger(__name__)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -142,6 +144,7 @@ SECTOR_TYPE_MAP: dict[str, set[str]] = {
 }
 
 app = FastAPI(title="AguaYLuz-PR")
+app.include_router(hydro_intelligence_router)
 
 # CORS: allow the Vite dev server and any configured ALLOWED_ORIGINS
 _cors_origins = ["http://localhost:5173", "http://127.0.0.1:5173"]

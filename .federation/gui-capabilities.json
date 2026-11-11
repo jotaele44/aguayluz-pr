@@ -1771,6 +1771,107 @@
           "dashboard/tests/gui-parity.spec.mjs"
         ]
       }
+    },
+    {
+      "id": "hydro-intelligence-raw-acquisition-v1",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Internal pre-production source discovery and raw-byte evidence acquisition; no user-facing API or canonical promotion. Tracking HYDRO-RELEASE-A, expiry 2026-12-31. CI, independent review and GUI parity required before user workflow enablement.",
+      "analysis": {
+        "files": [
+          "src/aguayluz/hydro_intelligence/acquisition.py",
+          "src/aguayluz/hydro_intelligence/discovery.py",
+          "src/aguayluz/hydro_intelligence/parsers.py",
+          "scripts/ingest_hydro_intelligence.py",
+          "src/aguayluz/hydro_intelligence/contracts.py",
+          "src/aguayluz/hydro_intelligence/manifestations.py"
+        ],
+        "symbols": [
+          "src/aguayluz/hydro_intelligence/acquisition.py:ArtifactReceipt",
+          "src/aguayluz/hydro_intelligence/acquisition.py:validate_url",
+          "src/aguayluz/hydro_intelligence/acquisition.py:persist_bytes",
+          "src/aguayluz/hydro_intelligence/acquisition.py:fetch_artifact",
+          "src/aguayluz/hydro_intelligence/acquisition.py:acquire",
+          "src/aguayluz/hydro_intelligence/acquisition.py:RejectRedirects",
+          "src/aguayluz/hydro_intelligence/discovery.py:DiscoveryCandidate",
+          "src/aguayluz/hydro_intelligence/discovery.py:acquire_with_retry",
+          "src/aguayluz/hydro_intelligence/discovery.py:classify_failure",
+          "src/aguayluz/hydro_intelligence/discovery.py:discover_links",
+          "src/aguayluz/hydro_intelligence/discovery.py:freeze_result_log",
+          "src/aguayluz/hydro_intelligence/parsers.py:SourceRow",
+          "src/aguayluz/hydro_intelligence/parsers.py:inspect_eia_860m_xlsx",
+          "src/aguayluz/hydro_intelligence/parsers.py:inspect_eia_923_zip",
+          "src/aguayluz/hydro_intelligence/parsers.py:inspect_luma_pdf",
+          "src/aguayluz/hydro_intelligence/parsers.py:parse_eia_facility_fuel_csv",
+          "src/aguayluz/hydro_intelligence/parsers.py:parse_eia_860m_generator_rows",
+          "scripts/ingest_hydro_intelligence.py:source_record",
+          "scripts/ingest_hydro_intelligence.py:main",
+          "src/aguayluz/hydro_intelligence/acquisition.py:reject_nonpublic_dns",
+          "src/aguayluz/hydro_intelligence/parsers.py:parse_eia_923_generation_workbook",
+          "src/aguayluz/hydro_intelligence/contracts.py:validate_source_contract",
+          "src/aguayluz/hydro_intelligence/manifestations.py:classify_manifestations"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_hydro_intelligence_acquisition.py",
+          "tests/test_hydro_intelligence_discovery.py",
+          "tests/test_hydro_intelligence_parsers.py",
+          "tests/test_ingest_hydro_intelligence.py",
+          "tests/test_hydro_intelligence_contracts.py",
+          "tests/test_hydro_intelligence_manifestations.py"
+        ]
+      }
+    },
+    {
+      "id": "hydro-intelligence-readiness-v1",
+      "classification": "analysis",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Read-only source readiness inventory; not proof of acquisition, parsing or measured output. The AST-driven GUI capability checker indexes router-relative GET /sources from server/backend/hydro_intelligence_api.py. The FastAPI router mounts the public GET /hydro-intelligence/sources route. Register only the detector-visible endpoint, without creating a duplicate endpoint or weakening parity enforcement.",
+      "backend": {
+        "files": [
+          "server/backend/hydro_intelligence_api.py",
+          "server/backend/main.py"
+        ],
+        "endpoints": [
+          "GET /sources"
+        ],
+        "symbols": [
+          "server/backend/hydro_intelligence_api.py:hydro_sources",
+          "server/backend/hydro_intelligence_api.py:source_readiness",
+          "server/backend/hydro_intelligence_api.py:raw_root",
+          "server/backend/hydro_intelligence_api.py:source_artifact_state"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/hydro-intelligence"
+        ],
+        "e2e_routes": [
+          "/hydro-intelligence"
+        ],
+        "components": [
+          "dashboard/src/pages/HydroIntelligencePage.jsx",
+          "dashboard/src/lib/hydro-intelligence-api.js",
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_hydro_intelligence_api.py"
+        ],
+        "contract": [
+          "tests/test_hydro_intelligence_parsers.py"
+        ],
+        "e2e": [
+          "dashboard/tests/hydro-intelligence.spec.mjs"
+        ]
+      }
     }
   ],
   "exceptions": []
