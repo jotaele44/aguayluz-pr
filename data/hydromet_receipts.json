@@ -2,7 +2,7 @@
   "schema_version": "aguayluz.hydromet-receipts/v1",
   "sources": {
     "nwps_gauges": {
-      "last_attempt_utc": "2026-11-11T14:33:06.283732Z",
+      "last_attempt_utc": "2026-11-11T14:47:27.721993Z",
       "last_error": null,
       "last_status": "PASS",
       "last_success": {
@@ -21,33 +21,34 @@
           "POINT_IN_POLYGON_WITH_ALIAS": 102,
           "UNRESOLVED": 12
         },
-        "bulk_manifestation_id": "HYDROMET:nwps_gauges:e67575e3251b8eaf3ab6a9562de86fd0",
-        "byte_sha256": "e67575e3251b8eaf3ab6a9562de86fd0f41105897557554ef4af0d6dba8bdfb9",
+        "bulk_manifestation_id": "HYDROMET:nwps_gauges:45e15c04c66af87059765a911b8c5c23",
+        "byte_sha256": "45e15c04c66af87059765a911b8c5c23023c3300391ce223be99707b030702e1",
         "detail_failures": [],
         "details_fetched": 0,
         "events_pruned": 0,
         "flood_categories": {
+          "action": 1,
           "low_threshold": 2,
           "minor": 1,
-          "no_flooding": 79,
+          "no_flooding": 78,
           "not_defined": 34,
           "obs_not_current": 2
         },
         "integrity": "PASS",
         "manifestations_added": 1,
         "manifestations_pruned": 1,
-        "new_revisions": 0,
+        "new_revisions": 1,
         "outcomes": {
           "retained": 118
         },
-        "records_added": 0,
-        "relationships_added": 0,
+        "records_added": 1,
+        "relationships_added": 1,
         "retrieval_query": "bbox.xmin=-67.95&bbox.ymin=17.85&bbox.xmax=-65.2&bbox.ymax=18.55&srid=EPSG_4326",
         "source_url": "https://api.water.noaa.gov/nwps/v1/gauges",
         "usgs_matched": 108,
         "usgs_unmatched": 0
       },
-      "last_success_utc": "2026-11-11T14:33:06.283732Z",
+      "last_success_utc": "2026-11-11T14:47:27.721993Z",
       "referenced_manifestation_ids": [
         "HYDROMET:nwps_gauges:05d49e3c67fb788cdc54438e2657d5d7",
         "HYDROMET:nwps_gauges:0a3302b6a27b2d814e1852f4dadd821e",
@@ -78,6 +79,7 @@
         "HYDROMET:nwps_gauges:3a72fb1c0132f415f702407737243386",
         "HYDROMET:nwps_gauges:3ac5b74e801cbbbc00ead06c83255ff0",
         "HYDROMET:nwps_gauges:44e5ec60d393259820679aac44a43b64",
+        "HYDROMET:nwps_gauges:45e15c04c66af87059765a911b8c5c23",
         "HYDROMET:nwps_gauges:474f06388ce4b67405d23764eeaff80a",
         "HYDROMET:nwps_gauges:4772c0d65252b32493799af57ed927b2",
         "HYDROMET:nwps_gauges:4aa756b90285b22a237ae1ed128a913f",
@@ -155,7 +157,6 @@
         "HYDROMET:nwps_gauges:e24afca7ddd248a92c3444568737f4b6",
         "HYDROMET:nwps_gauges:e2ce17f32b97bc9572f3b0c1205f4b09",
         "HYDROMET:nwps_gauges:e4caaf173f8a002d312bbc055908a2d8",
-        "HYDROMET:nwps_gauges:e67575e3251b8eaf3ab6a9562de86fd0",
         "HYDROMET:nwps_gauges:e6a36b43b9eea25ecd5d75947a678e60",
         "HYDROMET:nwps_gauges:e83f82f5fbcdaf02a8b18aea03a1c9f0",
         "HYDROMET:nwps_gauges:ef98f6af75538071bf33ef2ae6d494db",
