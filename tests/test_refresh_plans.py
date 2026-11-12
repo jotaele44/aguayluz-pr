@@ -7,6 +7,7 @@ plans here instead.
 """
 
 import importlib.util
+import sys
 from pathlib import Path
 
 import pytest
@@ -126,6 +127,12 @@ def test_nhc_runs_in_the_fast_cadence_alongside_the_other_hazard_feeds():
 
 def test_readings_producers_are_scheduled():
     """Every reading kind the backend serves has a producer in at least one cadence."""
+    # `server` is a top-level package and pyproject only puts `src` on pythonpath, so this
+    # import used to work only when an earlier-collected module had already added the repo
+    # root to sys.path. Do it here so the test passes alone, in any order.
+    pytest.importorskip("fastapi")  # server.backend.main needs it; the rest of this file doesn't
+    if str(REPO) not in sys.path:
+        sys.path.insert(0, str(REPO))
     from server.backend.main import READINGS_FILES  # noqa: PLC0415 — import cost
 
     producers = {
