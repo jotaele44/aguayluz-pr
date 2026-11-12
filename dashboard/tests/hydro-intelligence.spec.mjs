@@ -11,5 +11,9 @@ test('hydro source readiness is navigable, provenance aware and fail closed', as
   const table = page.getByRole('table', { name: 'Hydroelectric evidence sources' })
   await expect(table).toBeVisible()
   await expect(table.locator('tbody tr')).toHaveCount(5)
+  await expect(table.locator('tbody tr td:first-child')).toHaveText([
+    'eia_860m', 'eia_923', 'luma_bps_daily', 'prepa_hydroco', 'pr_gis_water',
+  ])
+  await expect(page.getByRole('status')).toContainText('Automatic ingestion: not verified / disabled')
   await expect(table.getByText('NOT FROZEN').first()).toBeVisible()
 })

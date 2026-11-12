@@ -86,3 +86,20 @@ def test_index_manifestation_revision_preserves_both_originals(tmp_path, monkeyp
     assert {path.name.removesuffix(".receipt.json") for path in receipt_files} == expected_hashes
     for digest in expected_hashes:
         assert (root / "raw" / "eia_923_index" / digest[:2] / digest).is_file()
+
+
+def test_unsupported_discovery_adapter_never_fetches(tmp_path, monkeypatch):
+    def unexpected_fetch(*args, **kwargs):
+        pytest.fail("An unimplemented source adapter must not fetch")
+
+    monkeypatch.setattr(runner, "fetch_artifact", unexpected_fetch)
+    with pytest.raises(ValueError, match="adapter required"):
+        runner.main(["--source-id", "prepa_hydroco", "--data-root", str(tmp_path)])
+    assert not list(tmp_path.iterdir())
+
+
+def test_invalid_null_fetch_is_not_an_uninitialized_success(tmp_path, monkeypatch):
+    monkeypatch.setattr(runner, "fetch_artifact", lambda *a, **k: (None, "text/html"))
+    with pytest.raises(ValueError, match="Empty or oversized"):
+        runner.main(["--source-id", "eia_923", "--data-root", str(tmp_path)])
+    assert not list(tmp_path.rglob("*.json"))

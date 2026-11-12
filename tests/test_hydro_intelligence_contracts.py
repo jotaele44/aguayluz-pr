@@ -50,3 +50,18 @@ def test_registry_rejects_unsupported_or_unsafe_contract(mutation):
         registry["implementation_state"] = "PRODUCTION"
     with pytest.raises(ValueError):
         validate_source_contract(registry)
+
+
+@pytest.mark.parametrize("mutation", ["missing", "extra", "same_count_wrong_id"])
+def test_registry_requires_exact_registered_source_population(mutation):
+    registry = _registry()
+    if mutation == "missing":
+        registry["source_families"].pop()
+    elif mutation == "extra":
+        extra = copy.deepcopy(registry["source_families"][0])
+        extra["source_id"] = "unreviewed_source"
+        registry["source_families"].append(extra)
+    else:
+        registry["source_families"][0]["source_id"] = "unreviewed_source"
+    with pytest.raises(ValueError, match="source population"):
+        validate_source_contract(registry)

@@ -5,6 +5,9 @@ from urllib.parse import urlparse
 
 DISCOVERABLE_TYPES = {"xlsx", "zip", "pdf"}
 CONTRACT_ONLY_TYPES = {"regulatory_filing_or_native_workpaper", "vector_or_gis_container"}
+REQUIRED_SOURCE_IDS = frozenset({
+    "eia_860m", "eia_923", "luma_bps_daily", "prepa_hydroco", "pr_gis_water",
+})
 REQUIRED_FIELDS = {
     "source_id", "authority", "index_url", "artifact_type",
     "discovery_interval_hours", "periodicity", "identity_granularity",
@@ -55,6 +58,12 @@ def validate_source_contract(registry: dict) -> dict:
                 raise ValueError("Empty required source metadata")
         report.append({"source_id": source_id, "adapter_state": state,
                        "acquisition_state": "NOT_ASSERTED"})
+    if identifiers != REQUIRED_SOURCE_IDS:
+        raise ValueError(
+            "Unreviewed source population: "
+            f"missing={sorted(REQUIRED_SOURCE_IDS - identifiers)}, "
+            f"unexpected={sorted(identifiers - REQUIRED_SOURCE_IDS)}"
+        )
     return {
         "state": "CONTRACT_ONLY_NOT_RUNTIME",
         "source_count": len(sources),

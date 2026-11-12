@@ -63,6 +63,12 @@ def test_zip_duplicate_case_insensitive_path_rejected():
         inspect_eia_923_zip(_zip([("TABLE.xlsx", b"a"), ("table.xlsx", b"b")]))
 
 
+@pytest.mark.parametrize("alias", ["dir\\table.xlsx", "dir//table.xlsx", "dir/./table.xlsx"])
+def test_zip_equivalent_member_paths_fail_closed(alias):
+    with pytest.raises(ValueError, match="Duplicate"):
+        inspect_eia_923_zip(_zip([("dir/table.xlsx", b"a"), (alias, b"b")]))
+
+
 def test_luma_conflicting_dates_never_promote_units():
     result = inspect_luma_pdf(b"%PDF-1.7\n", pdf_filename_date="2026-08-30",
                               internal_report_date="2026-08-29")

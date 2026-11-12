@@ -13,6 +13,7 @@ import os
 import socket
 import ssl
 import tempfile
+from contextlib import suppress
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -131,18 +132,24 @@ def persist_bytes(root: Path, source_id: str, url: str, data: bytes,
     if receipt_path.is_symlink():
         raise ValueError("Symlinked source receipt")
     if not receipt_path.exists():
+        fd, tmp = tempfile.mkstemp(dir=folder)
         try:
-            with receipt_path.open("x", encoding="utf-8") as output:
+            with os.fdopen(fd, "w", encoding="utf-8") as output:
                 output.write(json.dumps(asdict(receipt), sort_keys=True, indent=2) + "\n")
                 output.flush()
                 os.fsync(output.fileno())
-        except FileExistsError:
-            pass
+            # Another writer may publish first; validate its complete receipt below.
+            with suppress(FileExistsError):
+                os.link(tmp, receipt_path)
+        finally:
+            if os.path.exists(tmp):
+                os.unlink(tmp)
     try:
         existing = json.loads(receipt_path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
         raise ValueError("Invalid stored receipt") from exc
-    if existing.get("source_id") != source_id or existing.get("sha256") != digest or existing.get("byte_count") != len(data):
+    if (not isinstance(existing, dict) or existing.get("source_id") != source_id
+            or existing.get("sha256") != digest or existing.get("byte_count") != len(data)):
         raise ValueError("Stored receipt conflicts with source bytes")
     return receipt
 

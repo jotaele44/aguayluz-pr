@@ -107,9 +107,10 @@ def inspect_eia_923_zip(raw: bytes) -> list[dict[str, Any]]:
             path = PurePosixPath(info.filename.replace("\\", "/"))
             if path.is_absolute() or ".." in path.parts or not path.parts:
                 raise ValueError("Unsafe archive member path")
-            if info.filename.casefold() in paths:
+            collision_key = path.as_posix().casefold()
+            if collision_key in paths:
                 raise ValueError("Duplicate casefolded archive path")
-            paths.add(info.filename.casefold())
+            paths.add(collision_key)
             if info.flag_bits & 1:
                 raise ValueError("Encrypted archive member")
             if info.file_size > MAX_MEMBER_BYTES:

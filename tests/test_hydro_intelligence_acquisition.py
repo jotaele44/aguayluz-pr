@@ -210,3 +210,40 @@ def test_pinned_https_preserves_access_denied_error_class(monkeypatch):
     with pytest.raises(Exception) as error:
         acquisition.fetch_artifact("https://lumapr.com/report.pdf", allowed_hosts={"lumapr.com"})
     assert classify_failure(error.value) == "ACCESS_DENIED"
+
+
+def test_receipt_publication_failure_leaves_no_partial_receipt(tmp_path, monkeypatch):
+    from aguayluz.hydro_intelligence import acquisition
+
+    real_fsync = acquisition.os.fsync
+    calls = []
+
+    def fail_receipt_sync(fd):
+        calls.append(fd)
+        if len(calls) == 2:
+            raise OSError("simulated receipt sync failure")
+        real_fsync(fd)
+
+    monkeypatch.setattr(acquisition.os, "fsync", fail_receipt_sync)
+    with pytest.raises(OSError, match="simulated"):
+        persist_bytes(tmp_path, "eia_923", "https://www.eia.gov/a.zip", b"source")
+    assert not list(tmp_path.rglob("*.receipt.json"))
+    monkeypatch.setattr(acquisition.os, "fsync", real_fsync)
+    receipt = persist_bytes(tmp_path, "eia_923", "https://www.eia.gov/a.zip", b"source")
+    assert receipt.sha256 == hashlib.sha256(b"source").hexdigest()
+
+
+def test_receipt_concurrent_winner_is_validated(tmp_path, monkeypatch):
+    from aguayluz.hydro_intelligence import acquisition
+
+    real_link = acquisition.os.link
+
+    def raced_link(source, target):
+        if target.name.endswith(".receipt.json"):
+            target.write_text('{"source_id":"wrong"}')
+            raise FileExistsError()
+        return real_link(source, target)
+
+    monkeypatch.setattr(acquisition.os, "link", raced_link)
+    with pytest.raises(ValueError, match="conflicts"):
+        persist_bytes(tmp_path, "eia_923", "https://www.eia.gov/a.zip", b"source")

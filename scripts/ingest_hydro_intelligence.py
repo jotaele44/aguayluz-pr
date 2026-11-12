@@ -56,6 +56,9 @@ def main(argv: list[str] | None = None) -> int:
         )
         output = [result]
     else:
+        kind = source["artifact_type"]
+        if kind not in SUFFIX:
+            raise ValueError("Discovery-only adapter required for this source type")
         try:
             raw, _media = fetch_artifact(source["index_url"], allowed_hosts=allowed_hosts)
         except Exception as error:
@@ -63,11 +66,7 @@ def main(argv: list[str] | None = None) -> int:
                        "source_id": args.source_id,
                        "failure_class": classify_failure(error),
                        "exception_type": type(error).__name__}]
-            raw = None
-        kind = source["artifact_type"]
-        if kind not in SUFFIX:
-            raise ValueError("Discovery-only adapter required for this source type")
-        if raw is not None:
+        else:
             index_receipt = persist_bytes(
                 args.data_root / "raw", args.source_id + "_index",
                 source["index_url"], raw, _media,
