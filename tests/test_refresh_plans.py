@@ -235,3 +235,18 @@ def test_stage_iv_runs_daily_and_up_optionally_before_alerts():
         scripts = [_script_of(s) for s in refresh.PLANS[cadence]]
         assert "scripts/ingest_stage_iv_pr.py" in scripts, f"{cadence}: Stage IV missing"
         assert scripts.index("scripts/ingest_stage_iv_pr.py") < scripts.index("scripts/build_alerts.py")
+
+
+def test_aquifer_bands_are_weekly_optional_and_follow_the_groundwater_assets():
+    """The PRDNER bands are constants on a static USGS page: weekly/all only, never the
+    15-minute or daily plans. The step is optional (a page change writes a FAIL receipt and
+    the run continues) and must come after ingest_usgs_groundwater.py, which creates the
+    USGSGW_ assets it binds to by stable id -- ordered before it, a first run would fail."""
+    script = "scripts/ingest_prdner_well_bands.py"
+    assert refresh.STEP_AQUIFER_BANDS[2] is True
+    for cadence in ("fast", "daily"):
+        assert script not in [_script_of(s) for s in refresh.PLANS[cadence]], cadence
+    for cadence in ("weekly", "all"):
+        scripts = [_script_of(s) for s in refresh.PLANS[cadence]]
+        assert scripts.count(script) == 1, cadence
+        assert scripts.index("scripts/ingest_usgs_groundwater.py") < scripts.index(script), cadence

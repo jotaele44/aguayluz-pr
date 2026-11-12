@@ -63,6 +63,13 @@ corpus is real public data, with some sources external or point-in-time.
   successor to `nwis/gwlevels`. `scripts/ingest_usgs_groundwater.py` reads Daily Values
   and therefore carries only the 36 PR wells with a continuous series; this adds the 48
   that are visited a few times a year and have no series at all.
+- **PRDNER aquifer condition bands** for five south-coast observation wells
+  (`scripts/ingest_prdner_well_bands.py`, keyless) — the Optimum / Observation / Operational
+  Adjustment / Critical depth-to-water thresholds that a USGS page attributes to PRDNER, read
+  from that page's inline JavaScript (tier T2; no effective date is published), frozen with
+  the page bytes' SHA-256, and bound by stable id to the existing `USGSGW_` wells. A depth is
+  classified against them at read time. Band state is displayed, never alerted on, while the
+  readings are provisional; see [`docs/AQUIFER_BANDS_INTEGRATION.md`](docs/AQUIFER_BANDS_INTEGRATION.md).
 - USGS **annual peak streamflow** (`scripts/ingest_usgs_peaks.py`, keyless) — 8,317 peaks
   across 244 sites, water years **1899–2025**, giving a flood baseline the 14-day and
   1-year windows elsewhere in the corpus cannot supply. The record maximum is

@@ -34,8 +34,11 @@ const NAV_GROUPS = [
       { to: '/assets', icon: Database, label: 'Assets',
         desc: 'Infrastructure registry with filters and detail.' },
       { to: '/water-disruption', icon: Droplets, label: 'Water & Weather',
-        desc: 'Water service validation and National Weather Service hydromet.',
-        links: [{ to: '/hydromet', label: 'NWS Hydromet' }] },
+        desc: 'Water service validation, National Weather Service hydromet and aquifer condition bands.',
+        links: [
+          { to: '/hydromet', label: 'NWS Hydromet' },
+          { to: '/aquifer-bands', label: 'Aquifer Bands' },
+        ] },
       { to: '/environmental-exposure', icon: Leaf, label: 'Environment',
         desc: 'Exposure graph and environmental sources.',
         links: [{ to: '/cave-karst', label: 'Cave & Karst' }] },

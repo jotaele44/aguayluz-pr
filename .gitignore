@@ -290,6 +290,14 @@ exports/federation/
 !data/hydromet_manifestations.jsonl
 !data/hydromet_receipts.json
 !data/nwps_gauge_state.jsonl
+# PRDNER aquifer condition bands for the five south-coast wells
+# (scripts/ingest_prdner_well_bands.py). Committed on purpose: the append-only registry is
+# the revision base each run diffs against (an ignored registry would make every CI runner
+# re-append revision 1), and the receipt is the only durable evidence the page was read and
+# parsed. Raw page bytes stay out (data/aquifer_band_snapshots/ falls under data/*); their
+# SHA-256 is recorded in every registry row.
+!data/aquifer_band_registry.jsonl
+!data/aquifer_band_receipt.json
 # Centinelas federation ingress (.github/workflows/centinelas-handoff.yml). The
 # per-handoff receipts are the durable proof that a handoff was received, and the
 # workflow acknowledges back to centinelas-pr only after they are pushed. Ignoring them
