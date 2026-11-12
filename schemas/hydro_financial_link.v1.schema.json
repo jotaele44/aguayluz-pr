@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/hydro_financial_link.v1.schema.json",
+  "title": "HydroFinancialLinkV1",
+  "description": "Unpromoted read-only cross-domain financial evidence binding. Validation of this shape alone does not certify provenance or identity.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "financial_record_id",
+    "money_sweep_source_revision",
+    "source_receipt_sha256",
+    "financial_record_type",
+    "financial_amount",
+    "currency",
+    "amount_semantics",
+    "as_of_date",
+    "hydro_entity_id",
+    "link_evidence_refs",
+    "identity_verification_status",
+    "provenance_state"
+  ],
+  "properties": {
+    "financial_record_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "money_sweep_source_revision": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_receipt_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "financial_record_type": {
+      "type": "string",
+      "enum": [
+        "award",
+        "contract",
+        "obligation",
+        "disbursement",
+        "expenditure",
+        "other"
+      ]
+    },
+    "financial_amount": {
+      "type": "number",
+      "minimum": 0
+    },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$"
+    },
+    "amount_semantics": {
+      "type": "string",
+      "enum": [
+        "awarded",
+        "obligated",
+        "disbursed",
+        "expended",
+        "estimated"
+      ]
+    },
+    "as_of_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "hydro_entity_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "link_evidence_refs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "identity_verification_status": {
+      "type": "string",
+      "enum": [
+        "UNVERIFIED",
+        "CANDIDATE",
+        "VERIFIED",
+        "DISPUTED"
+      ]
+    },
+    "provenance_state": {
+      "type": "string",
+      "enum": [
+        "FACT",
+        "COMPUTED",
+        "BINDING",
+        "INFERENCE",
+        "UNKNOWN"
+      ]
+    },
+    "allocation_share": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}
