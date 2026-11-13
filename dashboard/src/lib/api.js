@@ -125,6 +125,14 @@ export const getSummarySectors = () => getJSON('/summary/sectors', {})
 export const getCoverage = () => getJSON('/summary/coverage', null)
 export const getSystemStatus = () => getJSON('/system/status', null)
 
+export const getSourceIntelligenceSummary = () => getRequiredJSON('/source-intelligence/summary')
+export const getSourceIntelligenceDomains = () => getRequiredJSON('/source-intelligence/domains')
+export const getSourceIntelligenceSources = () => getRequiredJSON('/source-intelligence/sources')
+export const getSourceIntelligenceCoverage = () => getRequiredJSON('/source-intelligence/coverage')
+export const getSourceIntelligenceProducts = () => getRequiredJSON('/source-intelligence/products')
+export const getSourceIntelligenceRoutes = () => getRequiredJSON('/source-intelligence/routes')
+export const getSourceIntelligenceRouteGovernance = () => getRequiredJSON('/source-intelligence/route-governance')
+
 // Operational alert layer (docs/ALERT_SYSTEM.md). /alerts returns {total, offset, items}
 // like /events; getAlerts unwraps to the array for panel-style consumers.
 export const getAlertsPaged = (f = {}) => getJSON(`/alerts${qs(f)}`, { total: 0, offset: 0, items: [] })

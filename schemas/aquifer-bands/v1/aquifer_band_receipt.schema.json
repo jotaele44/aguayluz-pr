@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/aquifer-bands/v1/aquifer_band_receipt.schema.json",
+  "title": "PRDNER aquifer band run receipt",
+  "description": "Latest attempt and latest success of the aquifer-band producer. A failed run keeps the previous success, so a source outage is visible without erasing what was last verified.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "source_id",
+    "last_attempt_utc",
+    "last_status",
+    "last_error",
+    "last_success_utc",
+    "last_success"
+  ],
+  "properties": {
+    "schema_version": { "const": "aguayluz.aquifer-band-receipt/v1" },
+    "source_id": { "const": "prdner_aquifer_bands" },
+    "last_attempt_utc": { "type": "string", "format": "date-time" },
+    "last_status": { "enum": ["PASS", "FAIL"] },
+    "last_error": { "type": ["string", "null"] },
+    "last_success_utc": { "type": ["string", "null"], "format": "date-time" },
+    "last_success": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": [
+        "byte_sha256",
+        "source_url",
+        "retrieved_utc",
+        "arithmetic",
+        "revisions_appended",
+        "wells",
+        "ladder_discrepancies"
+      ],
+      "properties": {
+        "byte_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "source_url": { "type": "string", "format": "uri" },
+        "retrieved_utc": { "type": "string", "format": "date-time" },
+        "arithmetic": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["source", "retained", "excluded", "unresolved", "accounted", "delta", "state"],
+          "properties": {
+            "source": { "type": "integer", "minimum": 0 },
+            "retained": { "type": "integer", "minimum": 0 },
+            "excluded": { "type": "integer", "minimum": 0 },
+            "unresolved": { "type": "integer", "minimum": 0 },
+            "accounted": { "type": "integer", "minimum": 0 },
+            "delta": { "type": "integer" },
+            "state": { "enum": ["PASS", "FAIL"] }
+          }
+        },
+        "revisions_appended": { "type": "integer", "minimum": 0 },
+        "wells": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[0-9]{15}$" }
+        },
+        "ladder_discrepancies": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

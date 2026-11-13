@@ -13,6 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Enough history to rebase over the 15-minute refresh commits that can
+          # land on main while this job runs.
+          fetch-depth: 50
       - id: ingest
         env:
           CENTINELAS_CLIENT_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
@@ -24,6 +28,23 @@ jobs:
           git config user.email actions@users.noreply.github.com
           # Environmental signals write service_events; access-condition handoffs
           # write access_conditions. The receipt is committed atomically with either.
-          git add data/centinelas_handoffs data/service_events.jsonl data/access_conditions.jsonl 2>/dev/null || true
+          # Add only the paths this handoff produced. A failed add or push fails the
+          # job visibly instead of reporting a handoff that was never persisted.
+          for path in data/centinelas_handoffs data/service_events.jsonl data/access_conditions.jsonl; do
+            if [ -e "$path" ]; then git add -- "$path"; fi
+          done
+          if git diff --cached --quiet -- data/centinelas_handoffs; then
+            if [ "${{ steps.ingest.outputs.duplicate }}" != "true" ]; then
+              echo "::error::no new handoff receipt was staged for a non-duplicate handoff"
+              exit 1
+            fi
+          fi
           git diff --cached --quiet || git commit -m "data: ingest Centinelas handoff [skip ci]"
-          git push
+          branch="${{ github.event.repository.default_branch }}"
+          for attempt in 1 2 3 4; do
+            if git push origin "HEAD:$branch"; then exit 0; fi
+            sleep $((2 ** attempt))
+            git pull --rebase origin "$branch"
+          done
+          echo "::error::could not push the handoff receipt"
+          exit 1

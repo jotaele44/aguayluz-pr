@@ -7,6 +7,7 @@ plans here instead.
 """
 
 import importlib.util
+import sys
 from pathlib import Path
 
 import pytest
@@ -126,6 +127,12 @@ def test_nhc_runs_in_the_fast_cadence_alongside_the_other_hazard_feeds():
 
 def test_readings_producers_are_scheduled():
     """Every reading kind the backend serves has a producer in at least one cadence."""
+    # `server` is a top-level package and pyproject only puts `src` on pythonpath, so this
+    # import used to work only when an earlier-collected module had already added the repo
+    # root to sys.path. Do it here so the test passes alone, in any order.
+    pytest.importorskip("fastapi")  # server.backend.main needs it; the rest of this file doesn't
+    if str(REPO) not in sys.path:
+        sys.path.insert(0, str(REPO))
     from server.backend.main import READINGS_FILES  # noqa: PLC0415 — import cost
 
     producers = {
@@ -235,3 +242,18 @@ def test_stage_iv_runs_daily_and_up_optionally_before_alerts():
         scripts = [_script_of(s) for s in refresh.PLANS[cadence]]
         assert "scripts/ingest_stage_iv_pr.py" in scripts, f"{cadence}: Stage IV missing"
         assert scripts.index("scripts/ingest_stage_iv_pr.py") < scripts.index("scripts/build_alerts.py")
+
+
+def test_aquifer_bands_are_weekly_optional_and_follow_the_groundwater_assets():
+    """The PRDNER bands are constants on a static USGS page: weekly/all only, never the
+    15-minute or daily plans. The step is optional (a page change writes a FAIL receipt and
+    the run continues) and must come after ingest_usgs_groundwater.py, which creates the
+    USGSGW_ assets it binds to by stable id -- ordered before it, a first run would fail."""
+    script = "scripts/ingest_prdner_well_bands.py"
+    assert refresh.STEP_AQUIFER_BANDS[2] is True
+    for cadence in ("fast", "daily"):
+        assert script not in [_script_of(s) for s in refresh.PLANS[cadence]], cadence
+    for cadence in ("weekly", "all"):
+        scripts = [_script_of(s) for s in refresh.PLANS[cadence]]
+        assert scripts.count(script) == 1, cadence
+        assert scripts.index("scripts/ingest_usgs_groundwater.py") < scripts.index(script), cadence

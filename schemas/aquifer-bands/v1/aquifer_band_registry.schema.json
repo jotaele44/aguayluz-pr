@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/aquifer-bands/v1/aquifer_band_registry.schema.json",
+  "title": "PRDNER aquifer band registry revision",
+  "description": "One append-only revision of a south-coast observation well's condition bands, as published on the USGS hydro-conditions page and attributed there to PRDNER. A new row is written only when the bands materially change. Depths are feet below land surface, positive down.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "registry_id",
+    "revision",
+    "supersedes",
+    "asset_id",
+    "site_no",
+    "site_name_source",
+    "municipality",
+    "parameter_code",
+    "depth_convention",
+    "bands",
+    "axis_max_ft",
+    "material_digest",
+    "authority_claim",
+    "evidence_tier",
+    "effective_date",
+    "effective_date_status",
+    "source_url",
+    "reference_url",
+    "source_byte_sha256",
+    "first_observed_utc",
+    "ladder_discrepancies"
+  ],
+  "properties": {
+    "registry_id": { "type": "string", "pattern": "^AQBAND:[0-9]{15}:r[0-9]+$" },
+    "revision": { "type": "integer", "minimum": 1 },
+    "supersedes": {
+      "description": "registry_id of the revision this one replaces; null for revision 1.",
+      "type": ["string", "null"],
+      "pattern": "^AQBAND:[0-9]{15}:r[0-9]+$"
+    },
+    "asset_id": {
+      "description": "Stable-id binding to the groundwater-well asset. Names never bind.",
+      "type": "string",
+      "pattern": "^USGSGW_[0-9]{15}$"
+    },
+    "site_no": { "type": "string", "pattern": "^[0-9]{15}$" },
+    "site_name_source": {
+      "description": "The well's title as printed on the source page. Corroboration only.",
+      "type": "string",
+      "minLength": 1
+    },
+    "municipality": {
+      "description": "Snapshot of the bound asset's municipality at the time of this revision.",
+      "type": "string",
+      "minLength": 1
+    },
+    "parameter_code": { "const": "72019" },
+    "depth_convention": {
+      "const": "feet below land surface, positive down (the source page plots the same numbers negated)"
+    },
+    "bands": {
+      "description": "Shallow to deep, contiguous, from the land surface. shallow_ft <= depth < deep_ft.",
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["class", "shallow_ft", "deep_ft"],
+        "properties": {
+          "class": {
+            "enum": ["above_optimum", "optimum", "observation", "operational_adjustment", "critical"]
+          },
+          "shallow_ft": { "type": "number", "minimum": 0 },
+          "deep_ft": { "type": "number", "exclusiveMinimum": 0 }
+        }
+      }
+    },
+    "axis_max_ft": { "type": "number", "exclusiveMinimum": 0 },
+    "material_digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "authority_claim": {
+      "const": "Puerto Rico Department of Natural and Environmental Resources (PRDNER), as attributed by the USGS page; not independently verified"
+    },
+    "evidence_tier": { "const": "T2" },
+    "effective_date": {
+      "description": "Always null: the source publishes no adoption or effective date.",
+      "type": "null"
+    },
+    "effective_date_status": { "const": "not_published_by_source" },
+    "source_url": { "type": "string", "format": "uri" },
+    "reference_url": {
+      "description": "The page's own 'Map and Info' link for the well. Recorded, never fetched by this producer.",
+      "type": "string",
+      "format": "uri"
+    },
+    "source_byte_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "first_observed_utc": { "type": "string", "format": "date-time" },
+    "ladder_discrepancies": {
+      "description": "Differences, within rounding, between the page's chart ranges and its label ladder. Informational; not part of material_digest.",
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

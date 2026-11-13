@@ -219,6 +219,26 @@ def metric_for_parameter(parameter_code: Any) -> tuple[str, str] | None:
     return PARAMETER_METRICS.get(str(parameter_code or "").strip())
 
 
+#: Asset-id prefixes. Groundwater wells are owned by ``ingest_usgs_groundwater.py`` under
+#: ``USGSGW_`` (NOT ``USGS_``): surface-water ingest replaces every ``USGS_*`` row, so a
+#: well can never live there, and a reading keyed ``USGS_<well>`` points at no asset.
+SURFACE_ASSET_PREFIX = "USGS_"
+GROUNDWATER_ASSET_PREFIX = "USGSGW_"
+
+
+def asset_prefix_for_parameter(parameter_code: Any) -> str:
+    """Asset-id prefix whose asset owns readings of ``parameter_code``.
+
+    Decided by the parameter's metric rather than by site-number length, so a well is
+    bound to its ``USGSGW_`` asset by the quantity measured (depth to water, level above
+    datum), which is stable, instead of a heuristic about the identifier's shape.
+    """
+    mapped = metric_for_parameter(parameter_code)
+    if mapped is not None and mapped[0] == "groundwater_level":
+        return GROUNDWATER_ASSET_PREFIX
+    return SURFACE_ASSET_PREFIX
+
+
 def reading_row(
     *,
     site: str,

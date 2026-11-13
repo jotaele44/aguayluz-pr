@@ -1,0 +1,629 @@
+from __future__ import annotations
+
+import io
+import zipfile
+from datetime import datetime, timedelta, timezone
+
+import pytest
+
+from aguayluz.source_intelligence import (
+    ACQUISITION_ROUTES,
+    DOMAIN_REGISTRY,
+    SOURCE_FAMILIES,
+    SOURCE_PRODUCTS,
+    coverage_report,
+)
+from aguayluz.source_intelligence.acquisition import (
+    canonical_payload_already_frozen,
+    persist_canonical_acquisition,
+)
+from aguayluz.source_intelligence.adapters.base import RawArtifact
+from aguayluz.source_intelligence.adapters.eia860m import (
+    EIA860MAdapter,
+    _find_sheet,
+    canonical_month_url,
+)
+from aguayluz.source_intelligence.health import evaluate_health
+from aguayluz.source_intelligence.models import HealthState
+from aguayluz.source_intelligence.noaa_digital_coast import (
+    NOAA_DIGITAL_COAST_PRODUCTS,
+    NOAA_DIGITAL_COAST_ROUTES,
+)
+from aguayluz.source_intelligence.readiness import current_backend_readiness
+from aguayluz.source_intelligence.route_coverage import route_governance_summary
+from aguayluz.source_intelligence.routes import (
+    ArchiveMemberDigest,
+    FetchAction,
+    FetchPurpose,
+    PayloadIdentityClass,
+    classify_archive_identity,
+    fetch_decision,
+    resolve_route,
+)
+
+
+def _minimal_xlsx(*sheet_names: str) -> bytes:
+    workbook = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        '<sheets>'
+        + "".join(
+            f'<sheet name="{name}" sheetId="{i}" r:id="rId{i}" '
+            'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/>'
+            for i, name in enumerate(sheet_names, start=1)
+        )
+        + '</sheets></workbook>'
+    )
+    out = io.BytesIO()
+    with zipfile.ZipFile(out, "w") as archive:
+        archive.writestr("[Content_Types].xml", "<Types/>")
+        archive.writestr("xl/workbook.xml", workbook)
+        archive.writestr("xl/_rels/workbook.xml.rels", "<Relationships/>")
+    return out.getvalue()
+
+
+def test_catalog_has_declared_domain_and_source_denominators() -> None:
+    assert len(DOMAIN_REGISTRY) == 20
+    assert len(SOURCE_FAMILIES) >= 25
+    report = coverage_report()
+    assert report.total_domains == 20
+    assert report.unclassified_material_cells == 0
+    assert report.unknown_primary_source_families == 0
+    assert report.domains_without_required_source == ()
+    assert report.structural_readiness_score >= 95
+    assert report.coverage_matrix_ready
+
+
+def test_health_zero_rows_fails_closed() -> None:
+    health = evaluate_health(
+        "EIA_860M",
+        last_success=datetime.now(timezone.utc),
+        record_count=0,
+        expected_nonzero=True,
+    )
+    assert health.state == HealthState.VALIDATION_FAILED
+    assert health.error_class == "UNEXPECTED_ZERO_ROWS"
+
+
+def test_health_staleness_is_independent_of_previous_success() -> None:
+    now = datetime(2026, 11, 2, tzinfo=timezone.utc)
+    health = evaluate_health(
+        "EIA_860M",
+        now=now,
+        last_success=now - timedelta(days=60),
+        stale_after=timedelta(days=35),
+        record_count=20,
+    )
+    assert health.state == HealthState.STALE
+
+
+def test_eia860m_url_is_canonical_and_bounded() -> None:
+    assert canonical_month_url("march", 2026).endswith(
+        "/archive/xls/march_generator2026.xlsx"
+    )
+    with pytest.raises(ValueError):
+        canonical_month_url("smarch", 2026)
+
+
+def test_eia860m_rejects_html_masquerading_as_xlsx() -> None:
+    adapter = EIA860MAdapter()
+    artifact = RawArtifact(
+        source_family_id="EIA_860M",
+        locator="https://example.invalid/march.xlsx",
+        content=b"<html>error</html>",
+        media_type="text/html",
+        retrieved_at_iso="2026-11-02T00:00:00Z",
+    )
+    with pytest.raises(ValueError):
+        adapter.validate_transport(artifact)
+
+
+
+def test_eia860m_capabilities_declare_xlsx_transport() -> None:
+    capabilities = EIA860MAdapter().capabilities()
+    assert capabilities.adapter_id == "eia860m"
+    assert capabilities.authentication_class == "NONE"
+    assert capabilities.artifact_types == (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
+
+def _member(path: str, size: int, digest: str) -> ArchiveMemberDigest:
+    return ArchiveMemberDigest(path=path, uncompressed_size=size, sha256=digest)
+
+
+def test_noaa_digital_coast_route_registry_is_single_path() -> None:
+    product = NOAA_DIGITAL_COAST_PRODUCTS[0]
+    payload_routes = [
+        route
+        for route in NOAA_DIGITAL_COAST_ROUTES
+        if route.product_id == product.product_id
+        and route.role.value == "CANONICAL_PAYLOAD"
+    ]
+    assert len(payload_routes) == 1
+    assert payload_routes[0].route_id == product.canonical_payload_route_id
+
+
+def test_full_payload_resolution_prefers_bulk_https() -> None:
+    route = resolve_route(
+        "NOAA_DC_LIDAR_8630",
+        FetchPurpose.FULL_PAYLOAD,
+        products=NOAA_DIGITAL_COAST_PRODUCTS,
+        routes=NOAA_DIGITAL_COAST_ROUTES,
+    )
+    assert route.route_id == "NOAA_DC_8630_BULK_HTTPS"
+    assert route.may_publish_canonical is True
+
+
+def test_dav_is_subset_not_competing_canonical_source() -> None:
+    route = resolve_route(
+        "NOAA_DC_LIDAR_8630",
+        FetchPurpose.SUBSET,
+        products=NOAA_DIGITAL_COAST_PRODUCTS,
+        routes=NOAA_DIGITAL_COAST_ROUTES,
+    )
+    assert route.route_id == "NOAA_DC_8630_DAV"
+    assert route.may_publish_canonical is False
+
+
+def test_existing_canonical_payload_prevents_redundant_fetch() -> None:
+    decision = fetch_decision(
+        "NOAA_DC_LIDAR_8630",
+        FetchPurpose.FULL_PAYLOAD,
+        products=NOAA_DIGITAL_COAST_PRODUCTS,
+        routes=NOAA_DIGITAL_COAST_ROUTES,
+        existing_representation_route_ids={"NOAA_DC_8630_BULK_HTTPS"},
+    )
+    assert decision.action == FetchAction.SKIP_USE_EXISTING
+
+
+def test_fallback_payload_is_used_only_when_canonical_is_unavailable() -> None:
+    with pytest.raises(ValueError):
+        resolve_route(
+            "NOAA_DC_LIDAR_8630",
+            FetchPurpose.FULL_PAYLOAD,
+            products=NOAA_DIGITAL_COAST_PRODUCTS,
+            routes=NOAA_DIGITAL_COAST_ROUTES,
+            unavailable_route_ids={"NOAA_DC_8630_BULK_HTTPS"},
+        )
+
+
+def test_archive_identity_pure_recompression() -> None:
+    members = (
+        _member("a.laz", 100, "a" * 64),
+        _member("b.laz", 200, "b" * 64),
+    )
+    assert classify_archive_identity(
+        "1" * 64,
+        members,
+        "2" * 64,
+        members,
+    ) == PayloadIdentityClass.PURE_RECOMPRESSION
+
+
+def test_archive_identity_same_payloads_different_paths() -> None:
+    left = (
+        _member("left/a.laz", 100, "a" * 64),
+        _member("left/b.laz", 200, "b" * 64),
+    )
+    right = (
+        _member("right/x.laz", 200, "b" * 64),
+        _member("right/y.laz", 100, "a" * 64),
+    )
+    assert classify_archive_identity(
+        "1" * 64,
+        left,
+        "2" * 64,
+        right,
+    ) == PayloadIdentityClass.SAME_PAYLOADS_DIFFERENT_PATHS
+
+
+def test_route_governance_is_complete_but_product_denominator_stays_fail_closed() -> None:
+    summary = route_governance_summary()
+    assert summary.governed_source_families == summary.total_source_families
+    assert summary.ungoverned_source_family_ids == ()
+    assert summary.route_governance_coverage_percent == 100.0
+    assert summary.route_governance_coverage_complete is True
+    assert summary.provisional_or_unresolved_product_ids == ()
+    assert summary.products_without_resolved_payload_ids == ()
+    assert summary.products_with_invalid_canonical_payload_count == 0
+    assert summary.zero_redundant_fetches_within_registered_products is True
+    assert summary.payload_product_denominator_exhausted_family_ids == (
+        "EIA_860M",
+        "EIA_923",
+        "EIA_EPM",
+        "LUMA_DAILY_AVAILABILITY",
+    )
+    assert summary.open_payload_product_denominator_family_ids
+    assert summary.payload_product_denominator_complete is False
+    assert summary.zero_redundant_fetches_certifiable is False
+
+
+def test_aggregate_registry_includes_eia_and_noaa_products() -> None:
+    ids = {product.product_id for product in SOURCE_PRODUCTS}
+    assert "EIA_860M_MONTHLY_GENERATOR" in ids
+    assert "EIA_923_ANNUAL_PACKAGE" in ids
+    assert "NOAA_DC_LIDAR_8630" in ids
+    assert len(ACQUISITION_ROUTES) >= 12
+
+
+def test_eia_860m_full_payload_uses_only_monthly_xlsx() -> None:
+    route = resolve_route(
+        "EIA_860M_MONTHLY_GENERATOR",
+        FetchPurpose.FULL_PAYLOAD,
+        products=SOURCE_PRODUCTS,
+        routes=ACQUISITION_ROUTES,
+    )
+    assert route.route_id == "EIA_860M_MONTHLY_XLSX"
+    assert route.may_publish_canonical is True
+
+
+def test_eia_923_full_payload_uses_only_current_year_zip() -> None:
+    route = resolve_route(
+        "EIA_923_ANNUAL_PACKAGE",
+        FetchPurpose.FULL_PAYLOAD,
+        products=SOURCE_PRODUCTS,
+        routes=ACQUISITION_ROUTES,
+    )
+    assert route.route_id == "EIA_923_CURRENT_YEAR_ZIP"
+    assert route.may_publish_canonical is True
+
+
+def test_discovery_only_family_surface_cannot_fetch_full_payload() -> None:
+    with pytest.raises(ValueError, match="full payload route unresolved"):
+        resolve_route(
+            "LUMA_DAILY_AVAILABILITY_FAMILY_DISCOVERY",
+            FetchPurpose.FULL_PAYLOAD,
+            products=SOURCE_PRODUCTS,
+            routes=ACQUISITION_ROUTES,
+        )
+
+
+def test_verified_operational_routes_resolve_without_family_aliasing() -> None:
+    expected = {
+        "LUMA_OUTAGE_TOWNS": "LUMA_OUTAGE_TOWNS_POST",
+        "LUMA_OUTAGE_REGIONS": "LUMA_OUTAGE_REGIONS_GET",
+        "USGS_WATERDATA_PEAKS": "USGS_PEAKS_ITEMS",
+        "NOAA_NWPS_GAUGES": "NOAA_NWPS_GAUGES_API",
+        "NOAA_NHC_CURRENT_STORMS": "NOAA_NHC_CURRENT_STORMS_JSON",
+        "NOAA_COOPS_WATER_LEVEL": "NOAA_COOPS_DATAGETTER",
+        "EPA_SDWIS_VIOLATIONS": "EPA_SDWIS_VIOLATIONS_EFSERVICE",
+        "FEMA_PR_DISASTER_DECLARATIONS": "FEMA_DECLARATIONS_API",
+    }
+    for product_id, route_id in expected.items():
+        route = resolve_route(
+            product_id,
+            FetchPurpose.FULL_PAYLOAD,
+            products=SOURCE_PRODUCTS,
+            routes=ACQUISITION_ROUTES,
+        )
+        assert route.route_id == route_id
+        assert route.may_publish_canonical is True
+
+
+def test_luma_outage_surfaces_are_distinct_products_not_fallback_aliases() -> None:
+    towns = resolve_route(
+        "LUMA_OUTAGE_TOWNS",
+        FetchPurpose.FULL_PAYLOAD,
+        products=SOURCE_PRODUCTS,
+        routes=ACQUISITION_ROUTES,
+    )
+    regions = resolve_route(
+        "LUMA_OUTAGE_REGIONS",
+        FetchPurpose.FULL_PAYLOAD,
+        products=SOURCE_PRODUCTS,
+        routes=ACQUISITION_ROUTES,
+    )
+    assert towns.product_id != regions.product_id
+    assert towns.route_id != regions.route_id
+
+
+def test_usgs_geospatial_routes_resolve_canonically() -> None:
+    expected = {
+        "USGS_3DEP_TNMACCESS_PRODUCTS": "USGS_3DEP_TNMACCESS_PRODUCTS_API",
+        "USGS_3DHP_FEATURE_SERVICE": "USGS_3DHP_FEATURESERVER",
+    }
+    for product_id, route_id in expected.items():
+        route = resolve_route(
+            product_id,
+            FetchPurpose.FULL_PAYLOAD,
+            products=SOURCE_PRODUCTS,
+            routes=ACQUISITION_ROUTES,
+        )
+        assert route.route_id == route_id
+        assert route.may_publish_canonical is True
+
+
+def test_canonical_ingestion_is_idempotent_by_frozen_payload(tmp_path) -> None:
+    artifact = RawArtifact(
+        source_family_id="LUMA_OUTAGES",
+        locator="https://api.miluma.lumapr.com/miluma-outage-api/outage/municipality/towns",
+        content=b'{"SAN JUAN":[]}',
+        media_type="application/json",
+        retrieved_at_iso="2026-11-02T20:00:00Z",
+    )
+    manifestation, receipt = persist_canonical_acquisition(
+        tmp_path,
+        artifact,
+        product_id="LUMA_OUTAGE_TOWNS",
+        route_id="LUMA_OUTAGE_TOWNS_POST",
+        record_count=1,
+    )
+    second_manifestation, second_receipt = persist_canonical_acquisition(
+        tmp_path,
+        artifact,
+        product_id="LUMA_OUTAGE_TOWNS",
+        route_id="LUMA_OUTAGE_TOWNS_POST",
+        record_count=1,
+    )
+    assert second_manifestation == manifestation
+    assert second_receipt == receipt
+    assert canonical_payload_already_frozen(
+        tmp_path,
+        "LUMA_OUTAGE_TOWNS",
+        manifestation.byte_sha256,
+    )
+
+
+def test_canonical_ingestion_rejects_noncanonical_route(tmp_path) -> None:
+    artifact = RawArtifact(
+        source_family_id="NOAA_DIGITAL_COAST_ELEVATION",
+        locator="https://coast.noaa.gov/dataviewer/",
+        content=b"subset",
+        media_type="application/octet-stream",
+        retrieved_at_iso="2026-11-02T20:00:00Z",
+    )
+    with pytest.raises(ValueError, match="canonical payload route"):
+        persist_canonical_acquisition(
+            tmp_path,
+            artifact,
+            product_id="NOAA_DC_LIDAR_8630",
+            route_id="NOAA_DC_8630_DAV",
+        )
+
+
+def test_eia860m_sheet_selector_binds_pr_specific_tabs() -> None:
+    sheets = {
+        "Operating": "xl/worksheets/sheet1.xml",
+        "Operating_PR": "xl/worksheets/sheet2.xml",
+        "Retired": "xl/worksheets/sheet3.xml",
+        "Retired_PR": "xl/worksheets/sheet4.xml",
+    }
+    assert _find_sheet(sheets, "operating", jurisdiction="pr")[0] == "Operating_PR"
+    assert _find_sheet(sheets, "retired", jurisdiction="pr")[0] == "Retired_PR"
+
+
+def test_backend_readiness_consumes_certified_eia_receipt() -> None:
+    readiness = current_backend_readiness(
+        coverage_matrix_ready=True,
+        api_contract_frozen=False,
+    )
+    assert readiness.score == 95
+    assert readiness.states["reference_transport"] == "PASS"
+    assert readiness.states["reference_parser"] == "PASS"
+    assert readiness.states["identity_invariants"] == "PASS"
+    assert readiness.states["known_good_replay"] == "PASS"
+    assert readiness.states["real_jan_feb_source_bytes"] == "PASS"
+    assert readiness.states["immutable_manifestation_runtime"] == "PASS"
+    assert readiness.states["runtime_health_receipts"] == "PASS"
+    assert readiness.unresolved == ("api_contract_frozen",)
+    assert readiness.frontend_authorized is False
+
+
+def test_source_intelligence_router_is_mounted_once_on_canonical_app() -> None:
+    from server.backend.app import app
+
+    schema = app.openapi()
+    paths = schema["paths"]
+    expected = {
+        "/source-intelligence/summary",
+        "/source-intelligence/domains",
+        "/source-intelligence/sources",
+        "/source-intelligence/coverage",
+        "/source-intelligence/products",
+        "/source-intelligence/routes",
+        "/source-intelligence/route-governance",
+    }
+    assert expected <= set(paths)
+
+    operation_ids = []
+    for path in sorted(expected):
+        for operation in paths[path].values():
+            if isinstance(operation, dict) and "operationId" in operation:
+                operation_ids.append(operation["operationId"])
+    assert len(operation_ids) == len(set(operation_ids))
+
+
+def test_backend_readiness_authorizes_frontend_with_frozen_v1_contract() -> None:
+    from aguayluz.source_intelligence.readiness import current_backend_readiness
+
+    readiness = current_backend_readiness(
+        coverage_matrix_ready=True,
+        api_contract_frozen=True,
+    )
+    assert readiness.score == 100
+    assert readiness.unresolved == ()
+    assert readiness.frontend_authorized is True
+
+
+def test_api_contract_requires_exact_head_authorization(tmp_path, monkeypatch) -> None:
+    import json
+
+    import server.backend.source_intelligence_api as api
+
+    build_sha = "a" * 40
+    metadata = tmp_path / "build-identity.json"
+    metadata.write_text(
+        json.dumps(
+            {
+                "schema_version": "aguayluz.build-identity/v1",
+                "git_sha": build_sha,
+                "source": "test",
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(api, "BUILD_METADATA_PATH", metadata)
+    for env_name in api.BUILD_SHA_ENVS:
+        monkeypatch.delenv(env_name, raising=False)
+    monkeypatch.delenv(api.AUTHORIZED_SHA_ENV, raising=False)
+
+    candidate = json.loads(api.source_intelligence_summary().body)
+    assert candidate["api_contract_state"] == "FROZEN_V1_CANDIDATE"
+    assert candidate["backend_readiness"]["score"] == 95
+    assert candidate["build_sha"] == build_sha
+    assert candidate["build_identity_state"] == "EMBEDDED"
+    assert candidate["frontend_authorized"] is False
+
+    monkeypatch.setenv(api.AUTHORIZED_SHA_ENV, "b" * 40)
+    mismatch = json.loads(api.source_intelligence_summary().body)
+    assert mismatch["api_contract_state"] == "FROZEN_V1_CANDIDATE"
+    assert mismatch["frontend_authorized"] is False
+
+    monkeypatch.setenv(api.AUTHORIZED_SHA_ENV, build_sha)
+    certified = json.loads(api.source_intelligence_summary().body)
+    assert certified["api_contract_state"] == "FROZEN_V1_CERTIFIED"
+    assert certified["backend_readiness"]["score"] == 100
+    assert certified["backend_readiness"]["unresolved"] == []
+    assert certified["frontend_authorized"] is True
+
+
+def test_packaged_build_identity_authorizes_exact_sha(tmp_path, monkeypatch) -> None:
+    import json
+
+    import server.backend.source_intelligence_api as api
+
+    build_sha = "c" * 40
+    metadata = tmp_path / "build-identity.json"
+    metadata.write_text(
+        json.dumps(
+            {
+                "schema_version": "aguayluz.build-identity/v1",
+                "git_sha": build_sha,
+                "source": "test",
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(api, "BUILD_METADATA_PATH", metadata)
+    for env_name in api.BUILD_SHA_ENVS:
+        monkeypatch.delenv(env_name, raising=False)
+    monkeypatch.setenv(api.AUTHORIZED_SHA_ENV, build_sha)
+
+    payload = json.loads(api.source_intelligence_summary().body)
+    assert payload["build_sha"] == build_sha
+    assert payload["build_identity_state"] == "EMBEDDED"
+    assert payload["build_identity_error"] is None
+    assert payload["api_contract_state"] == "FROZEN_V1_CERTIFIED"
+
+
+def test_packaged_build_identity_conflict_fails_closed(tmp_path, monkeypatch) -> None:
+    import json
+
+    import server.backend.source_intelligence_api as api
+
+    embedded_sha = "d" * 40
+    metadata = tmp_path / "build-identity.json"
+    metadata.write_text(
+        json.dumps(
+            {
+                "schema_version": "aguayluz.build-identity/v1",
+                "git_sha": embedded_sha,
+                "source": "test",
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(api, "BUILD_METADATA_PATH", metadata)
+    monkeypatch.setenv("AGUAYLUZ_BUILD_SHA", "e" * 40)
+    monkeypatch.delenv("VERCEL_GIT_COMMIT_SHA", raising=False)
+    monkeypatch.delenv("GITHUB_SHA", raising=False)
+    monkeypatch.setenv(api.AUTHORIZED_SHA_ENV, embedded_sha)
+
+    payload = json.loads(api.source_intelligence_summary().body)
+    assert payload["build_sha"] is None
+    assert payload["build_identity_state"] == "CONTRADICTION"
+    assert payload["build_identity_error"] == "EMBEDDED_ENV_SHA_MISMATCH"
+    assert payload["api_contract_state"] == "FROZEN_V1_CANDIDATE"
+    assert payload["frontend_authorized"] is False
+
+
+
+def test_verified_environmental_routes_resolve_canonically() -> None:
+    expected = {
+        "NRCS_SSURGO_SDA_QUERY": "NRCS_SSURGO_SDA_POST",
+        "USFWS_NWI_REST_DATA": "USFWS_NWI_REST_QUERY",
+        "LANDFIRE_LFPS_PRODUCTS": "LANDFIRE_LFPS_REQUEST",
+        "LANDSAT_STAC_ASSETS": "LANDSAT_STAC_ASSET_HREF",
+        "SENTINEL_STAC_ASSETS": "SENTINEL_STAC_ASSET_HREF",
+    }
+    for product_id, route_id in expected.items():
+        route = resolve_route(
+            product_id,
+            FetchPurpose.FULL_PAYLOAD,
+            products=SOURCE_PRODUCTS,
+            routes=ACQUISITION_ROUTES,
+        )
+        assert route.route_id == route_id
+        assert route.may_publish_canonical is True
+
+
+def test_stac_catalogs_are_discovery_not_payload_identity() -> None:
+    landsat = resolve_route(
+        "LANDSAT_STAC_ASSETS",
+        FetchPurpose.DISCOVER,
+        products=SOURCE_PRODUCTS,
+        routes=ACQUISITION_ROUTES,
+    )
+    sentinel = resolve_route(
+        "SENTINEL_STAC_ASSETS",
+        FetchPurpose.DISCOVER,
+        products=SOURCE_PRODUCTS,
+        routes=ACQUISITION_ROUTES,
+    )
+    assert landsat.route_id == "LANDSAT_STAC_DISCOVERY"
+    assert sentinel.route_id == "SENTINEL_STAC_DISCOVERY"
+    assert landsat.may_publish_canonical is False
+    assert sentinel.may_publish_canonical is False
+
+
+def test_eia_epm_full_payload_uses_monthly_package_zip() -> None:
+    route = resolve_route(
+        "EIA_EPM_MONTHLY_PACKAGE",
+        FetchPurpose.FULL_PAYLOAD,
+        products=SOURCE_PRODUCTS,
+        routes=ACQUISITION_ROUTES,
+    )
+    assert route.route_id == "EIA_EPM_ALL_TABLES_ZIP"
+    assert route.may_publish_canonical is True
+
+
+def test_luma_daily_availability_uses_index_bound_pdf_payload() -> None:
+    discovery = resolve_route(
+        "LUMA_DAILY_AVAILABILITY_REPORTS",
+        FetchPurpose.DISCOVER,
+        products=SOURCE_PRODUCTS,
+        routes=ACQUISITION_ROUTES,
+    )
+    payload = resolve_route(
+        "LUMA_DAILY_AVAILABILITY_REPORTS",
+        FetchPurpose.FULL_PAYLOAD,
+        products=SOURCE_PRODUCTS,
+        routes=ACQUISITION_ROUTES,
+    )
+    assert discovery.route_id == "LUMA_DAILY_AVAILABILITY_INDEX"
+    assert discovery.may_publish_canonical is False
+    assert payload.route_id == "LUMA_DAILY_AVAILABILITY_PDF"
+    assert payload.may_publish_canonical is True
+
+
+def test_eia_epm_uses_pdf_fallback_when_zip_route_is_unavailable() -> None:
+    route = resolve_route(
+        "EIA_EPM_MONTHLY_PACKAGE",
+        FetchPurpose.FULL_PAYLOAD,
+        products=SOURCE_PRODUCTS,
+        routes=ACQUISITION_ROUTES,
+        unavailable_route_ids={"EIA_EPM_ALL_TABLES_ZIP"},
+    )
+    assert route.route_id == "EIA_EPM_HISTORICAL_PDF"
+    assert route.may_publish_canonical is False

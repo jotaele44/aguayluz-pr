@@ -89,6 +89,15 @@ STEP_USGS_STATISTICS = (
     ["scripts/ingest_usgs_statistics.py"],
     True,
 )
+# PRDNER condition bands for the five south-coast wells, read from a USGS page's inline JS.
+# Constants on a static page: weekly/all only. Optional, so a page change or outage writes a
+# FAIL receipt (shown on the dashboard) and the run continues. Must follow STEP_USGS_GW,
+# which creates the USGSGW_ assets this step binds to by stable id.
+STEP_AQUIFER_BANDS = (
+    "PRDNER aquifer bands (USGS page) → aquifer_band_registry",
+    ["scripts/ingest_prdner_well_bands.py"],
+    True,
+)
 STEP_USGS_RTFI = (
     "USGS real-time flood impacts",
     ["scripts/ingest_usgs_rtfi.py"],
@@ -301,6 +310,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_USGS_METADATA,
         STEP_USGS_WATER_QUALITY,
         STEP_USGS_STATISTICS,
+        STEP_AQUIFER_BANDS,
         STEP_USGS_RTFI,
         STEP_USGS_NIMS,
         STEP_NOAA_TIDES,
@@ -338,6 +348,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_USGS_METADATA,
         STEP_USGS_WATER_QUALITY,
         STEP_USGS_STATISTICS,
+        STEP_AQUIFER_BANDS,
         STEP_USGS_RTFI,
         STEP_USGS_NIMS,
         STEP_NOAA_TIDES,
