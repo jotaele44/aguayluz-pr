@@ -36,7 +36,7 @@ Basis: hub ADR 0009 limits the hub's authority to cross-producer identity equiva
 
 | Concept | Existing contract |
 |---|---|
-| Site | `schemas/environmental_entity.schema.json`: `entity_kind` `LANDFILL` (engineered or municipal), `SOLID_WASTE_FACILITY` (transfer and processing), `DISPOSAL_SITE` (unauthorized dumps); `authority`, `authority_id`; `valid_from`/`valid_until`; `review_status`. ID from `derive_entity_id(kind, authority, authority_id)`. |
+| Site | `schemas/environmental_entity.schema.json`: `entity_kind` `LANDFILL` (engineered or municipal), `SOLID_WASTE_FACILITY` (transfer and processing), `DISPOSAL_SITE` (unauthorized dumps); `authority`, `authority_id`; `valid_from`/`valid_until`; `review_status`. ID: an LMOP landfill uses `derive_entity_id(kind, authority, authority_id)`; an ECHO source record uses `echo_entity_id(registry_id)`, which hashes only the authority and the FRS RegistryID. The kind inferred from an ECHO facility name or SIC/NAICS code is a `needs_review` attribute and never part of the id, so a later reclassification cannot re-key the record. |
 | Geometry | `schemas/environmental_geometry.schema.json`: `geometry_role` `SOURCE_SITE_GEOMETRY`. Coordinate precision is stated in `transformation_notes`; approximate seeds carry `review_status` `needs_review`. No new role value is needed. |
 | Lifecycle | `schemas/environmental_exposure_event.schema.json`: closure as `SHUTDOWN`, `REACTIVATION`, `PERMIT_CHANGE`, `LISTING_CHANGE`, `REMEDIATION`; opening and enforcement actions as `OTHER` with `reason_raw`. |
 | Links | `schemas/exposure_relationship.schema.json`: default `causal_state` `DISCOVERY_CANDIDATE`. `NAME_ONLY` and `PROXIMITY_ONLY` evidence can never promote a causal relationship. |
