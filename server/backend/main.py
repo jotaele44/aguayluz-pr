@@ -31,8 +31,8 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 
-from server.backend.source_intelligence_api import router as source_intelligence_router
 from server.backend.grid_status_api import build_grid_status
+from server.backend.source_intelligence_api import router as source_intelligence_router
 
 logger = logging.getLogger(__name__)
 

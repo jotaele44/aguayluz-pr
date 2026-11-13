@@ -1,5 +1,5 @@
 """Adversarial grid-status semantics: a missing value is never zero."""
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 
 from server.backend.grid_status_api import build_grid_status
 
