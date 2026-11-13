@@ -7,6 +7,8 @@ Maps the AguaYLuz infrastructure model onto the Hub's canonical contract:
   * each municipality        -> one `entities` row (entity_type=municipality)
   * each distinct source     -> one `sources` row
   * each service event       -> one `entities` row (entity_type=service_event)
+  * each accepted landfill   -> one `entities` row (entity_type=landfill_site), from the
+    solid-waste registry (ADR-0004); records still needing review are not exported
   * asset -[operated_by]-> operator
   * asset -[located_in]-> municipality
   * asset -[affected_by]-> service_event (per linked_asset_ids)
@@ -217,7 +219,7 @@ def _alert_evidence_state(alert: dict[str, Any], located: bool) -> dict[str, Any
     return _evidence_state("COMPUTED" if generated else "CURATED", **fields)
 
 
-def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], now: str, geo: dict[str, dict] | None = None, crosswalk: list[dict[str, Any]] | None = None, alerts: list[dict[str, Any]] | None = None, dep_edges: list[dict[str, Any]] | None = None) -> dict[str, list[dict[str, Any]]]:
+def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], now: str, geo: dict[str, dict] | None = None, crosswalk: list[dict[str, Any]] | None = None, alerts: list[dict[str, Any]] | None = None, dep_edges: list[dict[str, Any]] | None = None, landfill_sites: list[dict[str, Any]] | None = None) -> dict[str, list[dict[str, Any]]]:
     inputs = [
         "data/utility_assets.jsonl",
         "data/service_events.jsonl",
@@ -227,6 +229,7 @@ def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], no
     geo = geo or {}
     crosswalk = crosswalk or []
     dep_edges = dep_edges or []
+    landfill_sites = landfill_sites or []
     sources: dict[str, dict[str, Any]] = {}
     entities: dict[str, dict[str, Any]] = {}
     relationships: dict[str, dict[str, Any]] = {}
@@ -452,6 +455,46 @@ def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], no
         row["evidence_state"] = _alert_evidence_state(al, "location" in row)
         alert_rows[alert_id] = row
 
+    # Solid-waste (landfill) sites, ADR-0004. Only accepted registry records arrive here (see
+    # _load_landfill_sites): records that still need review stay in the registry and out of
+    # the export, so the hub is not handed duplicate sites before cross-source identity is
+    # adjudicated. Geometry precision is left undeclared: the source states no datum or method.
+    for site in landfill_sites:
+        ent = site["entity"]
+        sid = source_for(site["source_ref"], site.get("source_hash"), _LANDFILL_CONF)
+        lid = _fid("ent", "landfill_site", ent["authority"], ent["authority_id"])
+        entities[lid] = _entity(
+            lid, sid, ent["name_raw"], "landfill_site", _LANDFILL_CONF, _LANDFILL_INPUTS, now
+        )
+        id_key = _LANDFILL_EXTERNAL_ID_KEYS.get(ent["authority"])
+        if id_key:
+            entities[lid]["external_ids"] = {id_key: str(ent["authority_id"])}
+        muni_raw = ent.get("municipality")
+        muni = (geo.get(_geo_key(muni_raw)) or {}).get("name") or muni_raw if muni_raw else None
+        attrs = {
+            "site_kind": ent["entity_kind"],
+            "authority": ent["authority"],
+            "municipality": muni,
+            "status": site.get("status"),
+            "opened_year": ent.get("valid_from"),
+            "closed_year": ent.get("valid_until"),
+            "evidence_tier": "T1",
+            "source_release": site.get("release"),
+            "review_status": ent["review_status"],
+        }
+        entities[lid]["attributes"] = {k: v for k, v in attrs.items() if v not in (None, "", [])}
+        if site.get("location"):
+            loc: dict[str, Any] = dict(site["location"])
+            if muni:
+                loc["municipality"] = muni
+            entities[lid]["location"] = loc
+        if muni:
+            m_id = _fid("ent", "municipality", _norm(muni))
+            entities.setdefault(m_id, _entity(m_id, sid, muni, "municipality", 0.95, _LANDFILL_INPUTS, now))
+            relationships.update(
+                _rel_kv(lid, "located_in", m_id, sid, _LANDFILL_CONF, now, source_inputs=_LANDFILL_INPUTS)
+            )
+
     return {"sources": list(sources.values()),
             "entities": list(entities.values()),
             "relationships": list(relationships.values()),
@@ -674,6 +717,58 @@ def _load_jsonl(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
         return []
     return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+
+
+# Solid-waste registry (ADR-0004) -> `landfill_site` entities. Stdlib only, like the rest of
+# this exporter: it reads the registry JSONL directly and never imports the aguayluz package.
+_LANDFILL_KINDS = frozenset({"LANDFILL", "DISPOSAL_SITE"})
+_LANDFILL_CONF = 0.8  # source-authoritative T1 record whose datum and precision are unstated
+_LANDFILL_INPUTS = [
+    "data/environmental_entities.jsonl",
+    "data/environmental_geometries.jsonl",
+    "data/solid_waste_receipts.json",
+]
+# Authoritative identifiers the hub can exact-match on (hub ADR 0009, EXACT_IDENTIFIER).
+_LANDFILL_EXTERNAL_ID_KEYS = {"EPA_LMOP": "epa_lmop_landfill_id"}
+
+
+def _load_landfill_sites(
+    entities_path: Path, geometries_path: Path, receipts_path: Path
+) -> list[dict[str, Any]]:
+    """Accepted landfill-kind registry records joined with their point and source manifestation."""
+    entities = [
+        e for e in _load_jsonl(entities_path)
+        if e.get("entity_kind") in _LANDFILL_KINDS and e.get("review_status") == "accepted"
+    ]
+    if not entities:
+        return []
+    points: dict[str, dict[str, float]] = {}
+    for g in _load_jsonl(geometries_path):
+        geom = g.get("geometry") or {}
+        if (
+            g.get("geometry_role") == "SOURCE_SITE_GEOMETRY"
+            and g.get("review_status") == "accepted"
+            and geom.get("type") == "Point"
+        ):
+            lon, lat = geom["coordinates"][:2]
+            points[g["entity_id"]] = {"lat": round(float(lat), 6), "lon": round(float(lon), 6)}
+    manifests: dict[str, dict[str, Any]] = {}
+    if receipts_path.is_file():
+        doc = json.loads(receipts_path.read_text(encoding="utf-8"))
+        manifests = {m.get("source_id", ""): m for m in doc.get("manifestations", [])}
+    sites = []
+    for e in sorted(entities, key=lambda r: r["entity_id"]):
+        manifest = manifests.get(e["authority"]) or {}
+        sites.append({
+            "entity": e,
+            "location": points.get(e["entity_id"]),
+            "source_ref": manifest.get("locator") or (e.get("source_record_ids") or [e["authority"]])[0],
+            "source_hash": manifest.get("byte_sha256") or manifest.get("response_sha256"),
+            "release": manifest.get("release"),
+            # LMOP's open/closed status is what valid_until encodes; other authorities state none.
+            "status": ("closed" if e.get("valid_until") else "open") if e["authority"] == "EPA_LMOP" else None,
+        })
+    return sites
 
 
 # ---------------------------------------------------------------------------
@@ -979,6 +1074,12 @@ def main(argv: list[str] | None = None) -> int:
                     help="cross-source dedup clusters; emits member -[duplicate_of]-> canonical edges")
     ap.add_argument("--dep-edges", default=str(DATA_ROOT / "alert_dependency_edges.jsonl"),
                     help="alert dependency edges; `energizes` edges emit water -[energized_by]-> power relationships")
+    ap.add_argument("--env-entities", default=str(DATA_ROOT / "environmental_entities.jsonl"),
+                    help="solid-waste registry entities; accepted landfill-kind rows project as landfill_site")
+    ap.add_argument("--env-geometries", default=str(DATA_ROOT / "environmental_geometries.jsonl"),
+                    help="registry geometries; accepted SOURCE_SITE_GEOMETRY points locate landfill_site rows")
+    ap.add_argument("--solid-waste-receipts", default=str(DATA_ROOT / "solid_waste_receipts.json"),
+                    help="registry receipts; the source manifestation (locator, hash, release) per site")
     ap.add_argument("--out", default=str(FEDERATION_ROOT))
     ap.add_argument("--outputs", default=str(OUTPUTS_ROOT),
                     help="operator-facing snapshot directory (7-file deliverable). Pass empty string to skip.")
@@ -1012,11 +1113,14 @@ def main(argv: list[str] | None = None) -> int:
     geo = _load_geo(Path(args.geo))
     crosswalk = _load_jsonl(Path(args.crosswalk))
     dep_edges = _load_jsonl(Path(args.dep_edges))
-    if not assets and not events and not alerts:
+    landfill_sites = _load_landfill_sites(
+        Path(args.env_entities), Path(args.env_geometries), Path(args.solid_waste_receipts)
+    )
+    if not assets and not events and not alerts and not landfill_sites:
         print("no input data (data/utility_assets.jsonl / service_events / aee_incidents / alert_events absent) — nothing to export")
         return 0
     now = now_dt.replace(microsecond=0).isoformat().replace("+00:00", "Z")
-    streams = build_streams(assets, events, now, geo, crosswalk, alerts, dep_edges)
+    streams = build_streams(assets, events, now, geo, crosswalk, alerts, dep_edges, landfill_sites)
     streams["source_monitors"] = build_source_monitors(now)
     manifest_path = write_package(streams, Path(args.out), args.mode, now)
     counts = {k: len(v) for k, v in streams.items()}

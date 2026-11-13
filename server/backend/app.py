@@ -12,6 +12,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 
 from server.backend import main as legacy
+from server.backend.aquifer_api import router as aquifer_router
 from server.backend.cave_karst_api import router as cave_karst_router
 from server.backend.environmental_exposure_api import router as environmental_exposure_router
 from server.backend.hydromet_api import router as hydromet_router
@@ -35,6 +36,7 @@ from server.backend.monitoring_quality import (
     series_quality,
 )
 from server.backend.regulatory_api import router as regulatory_router
+from server.backend.source_intelligence_api import router as source_intelligence_router
 from server.backend.water_disruption_api import router as water_disruption_router
 
 
@@ -46,10 +48,18 @@ def _is_legacy_municipio_summary(route: Any) -> bool:
     return getattr(route, "path", None) == "/municipios/{name}/summary" and "GET" in getattr(route, "methods", set())
 
 
+def _is_legacy_source_intelligence(route: Any) -> bool:
+    path = getattr(route, "path", None)
+    return isinstance(path, str) and path.startswith("/source-intelligence/")
+
+
 app = FastAPI(title=legacy.app.title)
 app.router.routes.extend(
-    route for route in legacy.app.router.routes
-    if not _is_legacy_readings(route) and not _is_legacy_municipio_summary(route)
+    route
+    for route in legacy.app.router.routes
+    if not _is_legacy_readings(route)
+    and not _is_legacy_municipio_summary(route)
+    and not _is_legacy_source_intelligence(route)
 )
 app.exception_handlers.update(legacy.app.exception_handlers)
 app.dependency_overrides.update(legacy.app.dependency_overrides)
@@ -58,8 +68,10 @@ for middleware in reversed(legacy.app.user_middleware):
 app.include_router(water_disruption_router)
 app.include_router(cave_karst_router)
 app.include_router(regulatory_router)
+app.include_router(source_intelligence_router)
 app.include_router(environmental_exposure_router)
 app.include_router(hydromet_router)
+app.include_router(aquifer_router)
 
 # Single source of truth: server.backend.main.READING_VECTOR_REGISTRY (see its definition
 # for the full reasoning). Referencing it here rather than keeping a second hand-maintained

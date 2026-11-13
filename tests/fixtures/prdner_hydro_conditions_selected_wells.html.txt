@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>USGS CFWSC - Goundwater Levels at Selected Observation Wells</title>
+<meta http-equiv="x-ua-compatible" content="IE=EDGE"/>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<meta http-equiv="content-language" content="en">
+<meta name="description" content="">
+<meta name="keywords" content="">
+<meta name="author" content="">
+<meta name="publisher" content="USGS - U.S. Geological Survey">
+<meta name="created" content="YYYYMMDD">
+<meta name="reviewed" content="YYYYMMDD">
+<meta name="expires" content="never">
+	
+<link href="/stylesheets/common.css" rel="stylesheet" type="text/css" media="screen" />
+<link href="/stylesheets/custom.css" rel="stylesheet" type="text/css" media="screen" />
+<link href="/styles/fl_drupal.css" rel="stylesheet" type="text/css">
+
+<script
+  src="https://code.jquery.com/jquery-1.12.4.min.js"
+  integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ="
+  crossorigin="anonymous"></script>
+
+<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css">
+
+<script
+  src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"
+  integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU="
+  crossorigin="anonymous"></script>
+
+<!--script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script-->
+<link rel="stylesheet" href="data/jqx.base.css" type="text/css" />
+
+<script type="text/javascript" src="/Scripts/jqwidgets/jqxcore.js"></script>
+<script type="text/javascript" src="/Scripts/jqwidgets/jqxdraw.js"></script>
+<script type="text/javascript" src="/Scripts/jqwidgets/jqxchart.core.js"></script>
+<script type="text/javascript" src="/Scripts/jqwidgets/jqxchart.annotations.js"></script>
+<script type="text/javascript" src="/Scripts/jqwidgets/jqxchart.api.js"></script>
+<script type="text/javascript" src="/Scripts/jqwidgets/jqxdata.js"></script>
+<script type="text/javascript" src="/Scripts/jqwidgets/jqxbulletchart.js"></script> 
+<script type="text/javascript" src="/Scripts/jqwidgets/jqxtooltip.js"></script>
+<!--script src="https://html2canvas.hertzen.com/build/html2canvas.js"></script-->
+	
+<!-- BEGIN GOOGLE ANALYTICS CWSC -->
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-34569248-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+<!-- END GOOGLE ANALYTICS CWSC -->
+<!-- BEGIN GOOGLE ANALYTICS USGS -->
+<script type="application/javascript" src="https://www2.usgs.gov/scripts/analytics/usgs-analytics.js"></script>
+<!-- END GOOGLE ANALYTICS USGS -->
+    
+
+
+<script type="text/javascript">
+var site  = []; //data min
+var dataDate = []; //min value
+var dataTime = []; //date max
+var dataVal = []; //max value
+		
+$(document).ready(function () { 
+ 
+  $(function() {
+	$("#accordion").accordion();
+  }); 
+		
+  $("#wellBulletChart1").jqxBulletChart({
+    width: 120,
+    height: 585,
+    barSize: 42,
+    title: "CONSTANCIA 3 WELL, PONCE&nbsp;&nbsp;&nbsp;",
+    description: "(in feet)",
+    ranges: [
+		{ startValue: -15.00, endValue: -13.65, color: "#D90000", opacity: 0.5 },
+		{ startValue: -13.65, endValue: -12.00, color: "#FFA64D", opacity: 0.5 },
+		{ startValue: -12.00, endValue: -10.49, color: "#FFFF00", opacity: 0.5 },
+		{ startValue: -10.49, endValue: -8.6, color: "#007FFF", opacity: 0.5 },
+        { startValue: -8.6, endValue: 0, color: "#468C00", opacity:0 }
+    ],
+    pointer: { value: -10, label: "Water Level bla", size: "25%", color: "#99E5FF" },
+    target: { value: -111, label: "Water Level bla bla", size: 0, color: "Black" },
+    ticks: { position: "far", interval: 3, size: 10 },
+    orientation: "vertical",
+	labelsFormatFunction: function (value, position) {
+		return "<span style='color: white;font-weight:bold;font-size:1.1em'>" + (value*-1)  + "</span>";
+    },
+    showTooltip: false
+  });	
+
+            $("#wellBulletChart2").jqxBulletChart({
+                width: 120,
+                height: 585,
+                barSize: 42,
+                title: "PIEZOMETER JAC-6, JUANA DIAZ",
+                description: "(in feet)",
+                ranges: [
+					{ startValue: -30.00, endValue: -26.90, color: "#D90000", opacity: 0.5 },
+					{ startValue: -26.90, endValue: -25.38, color: "#FFA64D", opacity: 0.5 },
+					{ startValue: -25.38, endValue: -22.02, color: "#FFFF00", opacity: 0.5 },
+					{ startValue: -22.02, endValue: -18.90, color: "#007FFF", opacity: 0.5 },
+                    { startValue: -18.90, endValue: 0, color: "#468C00", opacity: 0 }
+                ],
+                pointer: { value: -10, label: "Water Level bla", size: "25%", color: "#99E5FF",opacity: 0.5 },
+                target: { value: -111, label: "Water Level bla bla", size: 0, color: "Black" },
+                ticks: { position: "far", interval: 5, size: 10 },
+                //labelsFormat: "c",
+				orientation: "vertical",
+				labelsFormatFunction: function (value, position) {
+					//if (value == 0)
+                   	//	return "<span style='font-weight:bold;font-size:1.1em'>" + value  + "</span>";
+				   	//else
+				   		return "<span style='color: white;font-weight:bold;font-size:1.1em'>" + (value*-1)  + "</span>";
+                },
+                showTooltip: false
+            });	
+
+            $("#wellBulletChart3").jqxBulletChart({
+                width: 120,
+                height: 585,
+                barSize: 42,
+                title: "ALOMAR OESTE WELL, SANTA ISABEL",
+                description: "(in feet)",
+                ranges: [
+					{ startValue: -20.00, endValue: -17.40, color: "#D90000", opacity: 0.5 },
+					{ startValue: -17.40, endValue: -16.45, color: "#FFA64D", opacity: 0.5 },
+					{ startValue: -16.45, endValue: -15.79, color: "#FFFF00", opacity: 0.5 },
+					{ startValue: -15.79, endValue: -13.20, color: "#007FFF", opacity: 0.5 },
+                    { startValue: -13.20, endValue: 0, color: "#468C00", opacity: 0 }
+                ],
+                pointer: { value: -10, label: "Water Level bla", size: "25%", color: "#99E5FF" },
+                target: { value: -15.51, label: "Water Level bla bla", size: 0, color: "Black" },
+                ticks: { position: "far", interval: 4, size: 10 },
+                
+				orientation: "vertical",
+				labelsFormatFunction: function (value, position) {
+				//	if (value == 0)
+                 //  		return "<span style='font-weight:bold;font-size:1.1em'>" + value  + "</span>";
+				  // 	else
+				   		return "<span style='color: white;font-weight:bold;font-size:1.1em'>" + (value*-1) + "</span>";
+                },
+                showTooltip: false
+            });	
+			
+            $("#wellBulletChart4").jqxBulletChart({
+                width: 120,
+                height: 585,
+                barSize: 42,
+                title: "PIEZOMETER AGUIRRE HW 5B, SALINAS",
+                description: "(in feet)",
+                ranges: [
+					{ startValue: -35.00, endValue: -23.43, color: "#D90000", opacity: 0.5 },
+					{ startValue: -23.43, endValue: -21.42, color: "#FFA64D", opacity: 0.5 },
+					{ startValue: -21.42, endValue: -16.54, color: "#FFFF00", opacity: 0.5 },
+					{ startValue: -16.54, endValue: -12.25, color: "#007FFF", opacity: 0.5 },
+                    { startValue: -12.25, endValue: 0, color: "#468C00", opacity:0 }
+                ],
+                pointer: { value: -10, label: "Water Level bla", size: "25%", color: "#99E5FF", opacity: 0.5 },
+                target: { value: -111, label: "Water Level bla bla", size: 4, color: "Black" },
+                ticks: { position: "far", interval: 5, size: 10 },
+				orientation: "vertical",
+				labelsFormatFunction: function (value, position) {
+				   return "<span style='color: white;font-weight:bold;font-size:1.1em'>" +(value*-1)  + "</span>";
+                },
+                showTooltip: false
+            });	
+	
+  $("#wellBulletChart5").jqxBulletChart({
+    width: 120,
+    height: 585,
+    barSize: 42,
+    title: "PIEZOMETER RASA D, SALINAS",
+    description: "(in feet)",
+    ranges: [
+	  { startValue: -60.00, endValue: -51.55, color: "#D90000", opacity: 0.5 },
+	  { startValue: -51.55, endValue: -45.60, color: "#FFA64D", opacity: 0.5 },
+	  { startValue: -45.60, endValue: -38.20, color: "#FFFF00", opacity: 0.5 },
+	  { startValue: -38.20, endValue: -31.60, color: "#007FFF", opacity: 0.5 },
+      { startValue: -31.60, endValue: 0, color: "#468C00", opacity:0 }
+      ],
+    pointer: { value: -10, label: "Water Level bla", size: "25%", color: "#99E5FF", opacity: 0.5 },
+    target: { value: -111, label: "Water Level bla bla", size: 4, color: "Black" },
+    ticks: { position: "far", interval: 10, size: 10 },
+	orientation: "vertical",
+	labelsFormatFunction: function (value, position) {
+	return "<span style='color: white;font-weight:bold;font-size:1.1em'>" +(value*-1)  + "</span>";
+	},
+    showTooltip: false
+    });		
+        });
+	
+						
+
+	var xmlhttp = new XMLHttpRequest();
+  	var url = "https://waterservices.usgs.gov/nwis/iv/?format=rdb&sites=175934066364800,180057066311300,175734066233300,175947066130601,175910066155500 &parameterCd=72019";
+
+	xmlhttp.onreadystatechange = function() {
+    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+		
+		parseData(xmlhttp.responseText);
+		//closeModal();
+		
+		var goodData = true;
+		var index = site.indexOf("175934066364800");
+		value = validateValue(dataVal[index]);
+		if (value == -999.0) {
+			goodData = false;
+		}
+		
+		var value = Number(dataVal[index]);
+
+		var labelColor;
+		var barColor;
+		
+		if (value == -999.0) {
+			labelColor = "lightgray";
+			barColor = "lightgray";
+			value = 15.0;
+		} else if (value < 8.6) {
+			labelColor = "#468C00";
+		} else if (value < 10.49) {
+			labelColor = "#99CCFF";
+			barColor = "#71B8FF"
+		} else if (value < 12.0) {
+			labelColor = "#FFFF99";
+			barColor = "#FFFF6F";
+		} else if (value < 13.65) {
+			labelColor = "#FFDCB8";
+			barColor ="#FFC68C";
+		} else if (value < 15.0) {
+			labelColor = "#F09999";
+			barColor = "#E96B6B";
+		} 
+		$("#wellBulletChart1").jqxBulletChart("val", Number(dataVal[index])*-1);
+		
+		if (goodData) {
+			$("#wellBulletChart1").jqxBulletChart("description", "<span style='color: #000;background-color:"+labelColor+";font-weight:normal;font-size:1.4em;line-height:120%;'>&nbsp;"+value+" feet&nbsp;</span><br>"+dataDate[index]+"<br><br><br><br><br><br>");			
+		} else {
+			$("#wellBulletChart1").jqxBulletChart("description", "<span style='color: #000;background-color:"+labelColor+";font-weight:normal;font-size:1em;line-height:120%;'>Eqp Malfunction</span><br>"+dataDate[index]+"<br><br><br><br><br><br>");	
+		}
+		
+		$("#water1").css("background-position","0px "+parseInt((405*value/15)+180)+"px").slideDown("slow");
+		$("#t1").css("background-position","0px "+parseInt((405*value/15)+180-15)+"px");
+		$("#wellBulletChart1").jqxBulletChart({ pointer: {color: barColor, opacity: 0.3 }});
+		$("#wellBulletChart1").jqxBulletChart({ target: {value:  (value*-1)}});
+		//--------------------------------------------------------------------------
+
+		index = site.indexOf("180057066311300");
+		value = validateValue(dataVal[index]);
+		goodData = true;
+		if (value == -999.0) {
+			goodData = false;
+		}	
+		
+		value = Number(dataVal[index]);
+		if (value == -999.0) {
+			labelColor = "lightgray";
+			barColor = "lightgray";
+			value = 30.0;
+		} else if (value < 18.9) {
+			labelColor = "#468C00";
+		} else if (value < 22.02) {
+			labelColor = "#99CCFF";
+			barColor = "#71B8FF"
+		} else if (value < 25.38) {
+			labelColor = "#FFFF99";
+			barColor = "#FFFF6F";
+		} else if (value < 26.90) {
+			labelColor = "#FFDCB8";
+			barColor ="#FFC68C";
+		} else if (value < 30.00) {
+			labelColor = "#F09999";
+			barColor = "#E96B6B";
+		} 
+		$("#wellBulletChart2").jqxBulletChart("val", Number(dataVal[index])*-1);
+		if (goodData) {
+			$("#wellBulletChart2").jqxBulletChart("description", "<span style='color: #000;background-color:"+labelColor+";font-weight:normal;font-size:1.4em;line-height:120%;'>&nbsp;"+value+" feet&nbsp;</span><br>"+dataDate[index]+"<br><br><br><br><br><br>");			
+		} else {
+			$("#wellBulletChart2").jqxBulletChart("description", "<span style='color: #000;background-color:"+labelColor+";font-weight:normal;font-size:1em;line-height:120%;'>Eqp Malfunction</span><br>"+dataDate[index]+"<br><br><br><br><br><br>");	
+		}
+		
+		$("#water2").css("background-position","0px "+parseInt((405*value/30)+180)+"px");
+		$("#wellBulletChart2").jqxBulletChart({ pointer: {color: barColor, opacity: 0.3 }});
+		$("#wellBulletChart2").jqxBulletChart({ target: {value: (value*-1) }});
+		$("#t2").css("background-position","0px "+parseInt((405*value/30)+180-10)+"px");
+		//--------------------------------------------------------------------------
+		
+		index = site.indexOf("175734066233300");
+		value = validateValue(dataVal[index]);
+		goodData = true;
+		if (value == -999.0) {
+			goodData = false;
+		}		
+		
+		value = Number(dataVal[index]);
+		if (value == -999.0) {
+			labelColor = "lightgray";
+			barColor = "lightgray";
+			value = 20.0;
+		} else if (value < 13.20) {
+			labelColor = "#468C00";
+		} else if (value < 15.79) {
+			labelColor = "#99CCFF";
+			barColor = "#71B8FF"
+		} else if (value < 16.45) {
+			labelColor = "#FFFF99";
+			barColor = "#FFFF6F";
+		} else if (value < 17.40) {
+			labelColor = "#FFDCB8";
+			barColor ="#FFC68C";
+		} else if (value < 20.00) {
+			labelColor = "#F09999";
+			barColor = "#E96B6B";
+		} 
+		$("#wellBulletChart3").jqxBulletChart("val", Number(dataVal[index])*-1);
+
+		if (goodData) {
+			$("#wellBulletChart3").jqxBulletChart("description", "<span style='color: #000;background-color:"+labelColor+";font-weight:normal;font-size:1.4em;line-height:120%;'>&nbsp;"+value+" feet&nbsp;</span><br>"+dataDate[index]+"<br><br><br><br><br><br>");			
+		} else {
+			$("#wellBulletChart3").jqxBulletChart("description", "<span style='color: #000;background-color:"+labelColor+";font-weight:normal;font-size:1em;line-height:120%;'>Eqp Malfunction</span><br>"+dataDate[index]+"<br><br><br><br><br><br>");	
+		}
+		$("#wellBulletChart3").jqxBulletChart({ pointer: {color: barColor, opacity: 0.3 }});
+		$("#wellBulletChart3").jqxBulletChart({ target: {value: (value*-1) }});
+		$("#water3").css("background-position","0px "+parseInt((405*value/20)+180)+"px");
+		$("#t3").css("background-position","0px "+parseInt((405*value/20)+180-10)+"px");
+		//--------------------------------------------------------------------------
+		
+		index = site.indexOf("175947066130601");
+		value = validateValue(dataVal[index]);
+		goodData = true;
+		if (value == -999.0) {
+			goodData = false;
+		}
+		
+		value = Number(dataVal[index]);
+		
+		if (value == -999.0) {
+			labelColor = "lightgray";
+			barColor = "lightgray";
+			value = 35.0;
+		} else if (value < 12.25) {
+			labelColor = "#468C00";			
+		} else if (value < 16.54) {
+			labelColor = "#99CCFF";
+			barColor = "#71B8FF"
+		} else if (value < 21.43) {
+			labelColor = "#FFFF99";
+			barColor = "#FFFF6F";
+		} else if (value < 23.43) {
+			labelColor = "#FFDCB8";
+			barColor ="#FFC68C";
+		} else if (value < 35.00) {
+			labelColor = "#F09999";
+			barColor = "#E96B6B";
+		} 
+		$("#wellBulletChart4").jqxBulletChart("val", Number(dataVal[index])*-1);
+		if (goodData) {
+			$("#wellBulletChart4").jqxBulletChart("description", "<span style='color: #000;background-color:"+labelColor+";font-weight:normal;font-size:1.4em;line-height:120%;'>&nbsp;"+value+" feet&nbsp;</span><br>"+dataDate[index]+"<br><br><br><br><br><br>");			
+		} else {
+			$("#wellBulletChart4").jqxBulletChart("description", "<span style='color: #000;background-color:"+labelColor+";font-weight:normal;font-size:1em;line-height:120%;'>Eqp Malfunction</span><br>"+dataDate[index]+"<br><br><br><br><br><br>");	
+		}
+		
+		$("#wellBulletChart4").jqxBulletChart({ pointer: {color: barColor, opacity: 0.3 }});
+		$("#wellBulletChart4").jqxBulletChart({ target: {value:  (value*-1)}});
+		$("#water4").css("background-position","0px "+parseInt((405*value/35)+180)+"px");
+		$("#t4").css("background-position","0px "+parseInt((405*value/35)+180-10)+"px");
+   		//--------------------------------------------------------------------------
+			
+		index = site.indexOf("175910066155500");
+		value = validateValue(dataVal[index]);
+		goodData = true;
+		if (value == -999.0) {
+			goodData = false;
+		}
+
+		if (value == -999.0) {
+			labelColor = "lightgray";
+			barColor = "lightgray";
+			value = 60;
+		} else if (value < 38.20) {
+			labelColor = "#99CCFF";
+			barColor = "#71B8FF"
+		} else if (value < 45.60) {
+			labelColor = "#FFFF99";
+			barColor = "#FFFF6F";
+		} else if (value < 51.55) {
+			labelColor = "#FFDCB8";
+			barColor ="#FFC68C";
+		} else if (value < 60) {
+			labelColor = "#F09999";
+			barColor = "#E96B6B";
+		} 
+		$("#wellBulletChart5").jqxBulletChart("val", value*-1);
+		
+		if (goodData) {
+			$("#wellBulletChart5").jqxBulletChart("description", "<span style='color: #000;background-color:"+labelColor+";font-weight:normal;font-size:1.4em;line-height:120%;'>&nbsp;"+value+" feet&nbsp;</span><br>"+dataDate[index]+"<br><br><br><br><br><br>");			
+		} else {
+			$("#wellBulletChart5").jqxBulletChart("description", "<span style='color: #000;background-color:"+labelColor+";font-weight:normal;font-size:1em;line-height:120%;'>Eqp Malfunction</span><br>"+dataDate[index]+"<br><br><br><br><br><br>");	
+		}
+		
+		$("#wellBulletChart5").jqxBulletChart({ pointer: {color: barColor, opacity: 0.3 }});
+		$("#wellBulletChart5").jqxBulletChart({ target: {value:  (value*-1)}});
+		$("#water5").css("background-position","0px "+parseInt((405*value/60)+180)+"px");
+		$("#t5").css("background-position","0px "+parseInt((405*value/60)+180-10)+"px");		
+
+$("#wellPipes").css("z-index",0);
+$("#maindiv").css("z-index",-200);
+//alert($("#water1").css("z-index")+" "+$("#water2").css("z-index")+" "+$("#water3").css("z-index")+" "+" "+$("#water4").css("z-index")+" "+$("#wellPipes").css("z-index")+" "+$("maindiv").css("z-index"));
+    }
+}
+ xmlhttp.open("GET", url, true);
+ //openModal();
+ xmlhttp.send();
+
+ function validateValue(val) {
+	if (isNaN(val)) {
+		return -999.0;
+	} 
+	return Number(val);
+ }
+	
+ function parseData(data){
+
+//	if (DEBUG == 1)  alert("parseCSVFile");
+	//split into rows
+	var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+	var rows = data.split("\n");
+		
+	for (var i = 0; i < rows.length; i++) {		
+		// the columns are separated by comma
+		var column = rows[i].split("\t");
+
+		if (column[0] == "USGS") {
+			site.push(column[1]);
+			
+			var datetimeCol = column[2].split(' ');
+			var p = datetimeCol[0].split('-');
+			if (p.length == 3) {
+				dataDate.push(months[parseInt(p[1])-1]+" "+p[2]+", "+p[0]);
+			} else {
+				dataDate.push(datetimeCol[0]);
+			}
+			
+			dataTime.push(datetimeCol[1]);
+			
+			if (column[4] == "" && column.length > 6) {
+				dataVal.push(column[6]);
+			} else {
+				dataVal.push(column[4]);			 
+			}
+			// original - dataVal.push(column[4]);
+		}
+		
+	}
+					
+ }
+
+/*
+ function parseData(data){
+
+	var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+	var rows = data.split("\n");
+		
+	for (var i = 0; i < rows.length; i++) {		
+		// the columns are separated by comma
+		var column = rows[i].split("\t");
+
+		if (column[0] == "USGS") {
+			site.push(column[1]);
+			var datetimeCol = column[2].split(' ');
+			var p = datetimeCol[0].split('-');
+			if (p.length == 3) {
+				dataDate.push(months[parseInt(p[1])-1]+" "+p[2]+", "+p[0]);
+			} else {
+				dataDate.push(datetimeCol[0]);
+			}
+			
+			dataTime.push(datetimeCol[1]);
+			dataVal.push(column[4]);
+	}
+					
+ }
+*/
+	
+function myFunction(arr) {
+	
+    var out = "";
+    var i;
+    for(i = 0; i < arr.items.length; i++) {
+        out += '<p>' + arr.items[i].SITE_NO + '&nbsp;' + 
+        arr.items[i].STATION_NM + '</p>';
+    }
+    document.getElementById("id01").innerHTML = out;
+}
+
+function getWellInfo(arr, siteid) {
+    var out = "";
+    var i;
+    for(i = 0; i < arr.items.length; i++) {	
+        if (arr.items[i].SITE_NO == siteid) {
+		return arr.items[i];
+		}
+    }
+}								
+
+function openModal() {
+   document.getElementById('modal').style.display = 'block';
+}	
+function closeModal() {
+    document.getElementById('modal').style.display = 'none';
+}	
+
+	function expImg() {
+    	html2canvas($("#gw_page"), {
+        onrendered: function(canvas) {
+        var myImage = canvas.toDataURL("image/png");
+        var tWindow = window.open(""); 
+      	$(tWindow.document.body).html("<img id='Image' src=" + myImage + " style='width:100%;' ></img>").ready(function () {
+        tWindow.focus();
+        tWindow.print();
+        });
+        }
+        });
+	}
+	
+	function getExportServer() {
+      return 'https://www.jqwidgets.com/export_server/export.php';
+     }
+			
+	function saveImg() {
+
+    	html2canvas($("#chartInfo"), {
+        onrendered: function(canvas) {
+        var myImage = canvas.toDataURL("image/png");
+
+		var tWindow = window.open(""); 
+      	$(tWindow.document.body).html("<img src=" + myImage +" ></img>").ready(function () {
+        tWindow.focus();
+		});
+       }
+        });
+	}
+			
+    </script>
+<style type="text/css">
+#climate { color: #efe200; }
+.redLabel {
+	fill: #FFFFFF;
+    color: #FFFFFF;
+    font-size: 12px;
+    font-family: Verdana;
+}
+
+#accordion {
+ heightStyle: "content";
+ width:100%;
+}
+#accordion .ui-accordion-header a {
+text-decoration:none;
+text-shadow: 1px 1px 0px rgba(0,0,0,0.2);
+}
+#accordion .ui-state-focus {
+  outline: none;
+}
+#accordion div ul li:nth-child(odd) {
+ background: #FBFBFB; 
+}
+#accordion .ui-accordion-header {
+
+  /*	  font-size: 10pt; */
+	font-weight:bold;
+	border-style: none;
+}
+
+#accordion .ui-accordion-content {
+    color: #777;
+	border-style: none;
+    line-height: 16pt;
+
+	border:0;
+	font-size: 9pt;
+margin-left: -20px;
+margin-right: -5px;
+
+
+}
+
+@media print {
+#leftbar {
+	display:none;
+}
+.noprt {
+	display:none;
+}
+.prt {
+	display: inline ;
+}
+
+#modal {
+    display: none;
+    position: absolute;
+    top: 45%;
+    left: 45%;
+    width: 64px;
+    height: 64px;
+    padding:30px 15px 0px;
+    border: 3px solid #ababab;
+    box-shadow:1px 1px 10px #ababab;
+    border-radius:20px;
+    background-color: white;
+    z-index: 1002;
+    text-align:center;
+    overflow: auto;
+}
+
+*, *:before, *:after {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}	
+	
+</style>    
+</head>
+<body>
+
+<!-- START header and top navigation section -->
+<!-- BEGIN USGS Applications Header Template -->
+<header id="navbar" class="header-nav"  role="banner">
+  <div class="tmp-container">
+      <!-- primary navigation bar -->
+  		<!-- search bar-->
+      <div class="header-search">
+       <a class="logo-header" href="https://www.usgs.gov/" title="Home">
+          <img class="img"  src="/images/logo.png"  alt="Home" />
+        </a>
+        <form action="https://www.usgs.gov/science-explorer-results" method="GET" id="search-box">
+         <div class="fa-wrapper"><label for="se_search" class="only">Search</label>
+          <input id="se_search" type="search" name="es" placeholder="Search">
+          <button class="fa fa-search" type="submit">
+            <span class="only">Search</span>
+			 </button></div>
+        </form>
+      </div>
+      <!-- end search bar-->
+	</div> 
+	<!-- end header-container-->
+</header>
+<!-- END USGS Applications Header Template -->
+
+<!-- END of header section -->
+
+<table id="contenttable" cellpadding="0" cellspacing="0" summary="">
+<tr>
+<!-- START left side bar section -->
+<td id="leftbar" class="noprint">
+
+
+</td>
+<!-- END left side bar section -->
+
+<!-- START main body -->
+<td id="mainbody" style="height:100%; max-width: 1200px" >
+<!--td id="mainbody" style="width:700px;height:100%"-->
+
+<div  id="gw_page">
+<h1>Groundwater Levels at Selected Observation Wells in the South Coast of Puerto Rico</h1><br>
+<p>Depth-to-water is measured periodically to evaluate hydrologic conditions at important aquifers throughout Puerto Rico. Using this information water-level measurements from observation wells can be computed to understand the hydrologic stresses acting on aquifers and how these stresses affect groundwater conditions. The schematic below shows depth-to-water information for selected continuous recording observation wells along the South Coast aquifer, Puerto Rico.</p>
+<span style="margin-right:10px;float:right">Works better in IE</span><button onclick="saveImg()" style="margin-right:10px;float:right;" width="84">Save as PNG</button><button onclick="expImg()" style="margin-right:20px;float:right;" width="84" >Print Page </button><br>
+ <hr class="hr_style_light">
+
+<div  id="chartInfo">
+
+<div style="height:645px">
+  
+  <p ><a href="https://waterdata.usgs.gov/pr/nwis/?provisional" style="text-decoration:none">Provisional Data SUBJECT to REVISION</a></p>
+ 
+ <div id="maindiv"  style="position:absolute;left:auto;right:auto;overflow:hidden;background-image: url(/drought/images/GW_CROSS_SECTION_GROUND_ONLY.png); height: 600px; width: 1150px; background-repeat:no-repeat;z-index:auto;box-shadow: 0px 4px 4px #AAA;">
+
+    <div id="water1" style="padding-top:400px;position:absolute;left:5px;background-image: url(/drought/images/water.png); height: 200px; width: 190px;background-repeat:repeat-x;background-position:0px 1000px"></div>
+    <div id="water2" style="padding-top:400px;position:absolute;left:235px;background-image: url(/drought/images/water.png); height: 200px; width: 190px;background-repeat:repeat-x;background-position:0px 1000px"></div>
+    <div id="water3" style="padding-top:400px;position:absolute;left:465px;background-image: url(/drought/images/water.png); height: 200px; width: 190px;background-repeat:repeat-x;background-position:0px 1000px"></div>
+    <div id="water4" style="padding-top:400px;position:absolute;left:705px;background-image: url(/drought/images/water.png); height: 200px; width: 190px;background-repeat:repeat-x;background-position:0px 1000px"></div>
+	<div id="water5" style="padding-top:400px;position:absolute;left:936px;background-image: url(/drought/images/water.png); height: 200px; width: 190px;background-repeat:repeat-x;background-position:0px 1000px"></div>	 
+    <div id="wellPipes" style="position:absolute;left:0px;top:0px;"><img src="images/WELLS.pipes.png" width="1134" height="600"></div>
+    <!--div id="wellBulletChart1" style="float:left;padding-left:20px;z-index:9999"><p>&nbsp;</p></div-->
+ 	<div id="wellBulletChart1" style="position:absolute;left:38px;top:10px"><p>&nbsp;</p></div>
+    <div id="wellBulletChart2" style="position:absolute;left:268px;top:10px"><p>&nbsp;</p></div>
+    <div id="wellBulletChart3" style="position:absolute;left:498px;top:10px"><p>&nbsp;</p></div>
+    <div id="wellBulletChart4" style="position:absolute;left:740px;top:10px"><p>&nbsp;</p></div>  
+	<div id="wellBulletChart5" style="position:absolute;left:970px;top:10px"><p>&nbsp;</p></div> 
+	 
+    <div id="wellHat" style="position:absolute;left:0px;top:0px;"><img src="images/WELLS.hat.png" width="1134" height="600"></div>
+    <div id="usgslogo" style="position:absolute;left:2px;top:580px;"><img src="../images/usgswth.png" width="70" height="26"></div>
+
+	<div id="t1" style="padding-top: 400px; position: absolute; left: 2px; background-image: url(/drought/images/triangle.png); height: 218px; width: 190px; background-repeat: no-repeat; background-position: 0px 1000px"></div>
+    <div id="t2" style="padding-top:400px;position:absolute;left:233px;background-image: url(/drought/images/triangle.png); height: 200px; width: 190px;background-repeat:no-repeat;background-position:0px 1000px"></div>
+    <div id="t3" style="padding-top:400px;position:absolute;left:463px;background-image: url(/drought/images/triangle.png); height: 200px; width: 190px;background-repeat:no-repeat;background-position:0px 1000px"></div>
+    <div id="t4" style="padding-top:400px;position:absolute;left:703px;background-image: url(/drought/images/triangle.png); height: 200px; width: 190px;background-repeat:no-repeat;background-position:0px 1000px"></div>
+	<div id="t5" style="padding-top:400px;position:absolute;left:934px;background-image: url(/drought/images/triangle.png); height: 200px; width: 190px;background-repeat:no-repeat;background-position:0px 1000px"></div> 
+  </div>
+</div>
+</div>
+
+<div style="width:1150px">
+  <table width="1140" border="0" style="margin-right:10px;float:left;" >
+  <tr>
+    <td ><strong>Well Depth</strong>: 144 feet</td>
+    <td ><strong>Well Depth</strong>: 49 feet</td>
+    <td><strong>Well Depth</strong>: N/A</td>
+    <td ><strong>Well Depth</strong>: 51 feet</td>
+	<td ><strong>Well Depth</strong>: 87 feet</td>
+  </tr>
+  <tr>
+    <td><strong>Hole Depth</strong>: 150 feet</td>
+    <td><strong>Hole Depth</strong>: 49 feet</td>
+    <td><strong>Hole Depth</strong>: 70 feet</td>
+    <td><strong>Hole Depth</strong>: 52 feet</td>
+	<td><strong>Hole Depth</strong>: 87 feet</td>  
+  </tr>
+  <tr>
+    <td><strong><a href="https://groundwaterwatch.usgs.gov/AWLSites.asp?S=175934066364800&ncd=" target="_blank">Map and Info</a></strong></td>
+    <td><strong><a href="https://groundwaterwatch.usgs.gov/AWLSites.asp?S=180057066311300&ncd=" target="_blank">Map and Info</a></strong></td>
+    <td><strong><a href="https://groundwaterwatch.usgs.gov/AWLSites.asp?S=175734066233300&ncd=" target="_blank">Map and Info</a></strong></td>
+    <td><strong><a href="https://groundwaterwatch.usgs.gov/AWLSites.asp?S=175947066130601&ncd=" target="_blank">Map and Info</a></strong></td>
+	<td><strong><a href="https://groundwaterwatch.usgs.gov/AWLSites.asp?S=175910066155500&ncd=" target="_blank">Map and Info</a></strong></td>  
+  </tr>  
+
+</table>
+
+<p>&nbsp;</p>
+  <p style="font-size:0.85em;line-height:150% !important;margin-top:0"><strong>Note:</strong> Thresholds established by the Puerto Rico Department of Natural and Environmental Resources (PRDNER)</p>
+ <hr class="hr_style_light"><br>
+<table width="1100" border="0">
+  <tr>
+    <td height="38" colspan="5" align="center" style="font-size:1.5em;font-weight:bold;">EXPLANATION</td>
+    </tr>
+  <tr>
+    <td><img src="images/water_level_icon.gif" width="39" height="31" alt="Water level icon"> Water level</td>
+    <td><img src="images/blue_icon.gif" width="57" height="24" alt="Blue square icon"> Optimum condition</td>
+    <td><img src="images/yellow_icon.gif" width="57" height="24" alt="Yellow square icon"> Observation</td>
+    <td><img src="images/orange_icon.gif" width="57" height="24" alt="Orange square icon"> Operational Adjustment</td>
+    <td><img src="images/red_icon.gif" width="57" height="24" alt="Red square icon"> Critical condition</td>
+  </tr>
+
+</table>
+ <br>
+  </div>
+ 
+<!--p>* Thresholds established by the Puerto Rico Department of Natural and Environmental Resources (PRDNER)</p-->
+
+
+</div>
+
+ </div>
+</td></tr>
+
+</table>
+
+<!-- BEGIN USGS Footer Template -->
+
+<footer class="footer">
+	<div class="tmp-container">
+		<!-- .footer-wrap -->
+			<!-- .footer-doi -->
+			<div class="footer-doi">
+				<!-- footer nav links -->
+				<ul class="menu nav">
+					<li class="first leaf menu-links menu-level-1"><a href="https://www.doi.gov/privacy">DOI Privacy Policy</a></li>
+					<li class="leaf menu-links menu-level-1"><a href="https://www.usgs.gov/laws/policies_notices.html">Legal</a></li>
+					<li class="leaf menu-links menu-level-1"><a href="https://www2.usgs.gov/laws/accessibility.html">Accessibility</a></li>
+					<li class="leaf menu-links menu-level-1"><a href="https://www.usgs.gov/sitemap.html">Site Map</a></li>
+					<li class="last leaf menu-links menu-level-1"><a href="https://answers.usgs.gov/">Contact USGS</a></li>
+				</ul>
+				<!--/ footer nav links -->      
+			</div>
+			<!-- /.footer-doi -->
+
+			<hr>
+
+		<!-- .footer-utl-links -->
+		<div class="footer-doi">
+			<ul class="menu nav">
+				<li class="first leaf menu-links menu-level-1"><a href="https://www.doi.gov/">U.S. Department of the Interior</a></li>
+				<li class="leaf menu-links menu-level-1"><a href="https://www.doioig.gov/">DOI Inspector General</a></li>
+				<li class="leaf menu-links menu-level-1"><a href="https://www.whitehouse.gov/">White House</a></li>
+				<li class="leaf menu-links menu-level-1"><a href="https://www.whitehouse.gov/omb/management/egov/">E-gov</a></li>
+				<li class="leaf menu-links menu-level-1"><a href="https://www.doi.gov/pmb/eeo/no-fear-act">No Fear Act</a></li>
+				<li class="last leaf menu-links menu-level-1"><a href="https://www2.usgs.gov/foia">FOIA</a></li>
+			</ul>
+			</div>			
+		<!-- /.footer-utl-links -->
+		<!-- .footer-social-links -->
+		<div class="footer-social-links">
+			<ul class="social">
+				<li class="follow">Follow</li>
+				<li class="twitter">
+					<a href="https://twitter.com/usgs" target="_blank">
+						<i class="fa fa-twitter-square"><span class="only">Twitter</span></i>
+					</a>
+				</li>
+				<li class="facebook">
+					<a href="https://facebook.com/usgeologicalsurvey" target="_blank">
+						<i class="fa fa-facebook-square"><span class="only">Facebook</span></i>
+					</a>
+				</li>
+				<li class="googleplus">
+					<a href="https://plus.google.com/112624925658443863798/posts" target="_blank">
+						<i class="fa fa-google-plus-square"><span class="only">Google+</span></i>
+					</a>
+				</li>
+				<li class="github">
+					<a href="https://github.com/usgs" target="_blank">
+						<i class="fa fa-github"><span class="only">GitHub</span></i>
+					</a>
+				</li>
+				<li class="flickr">
+					<a href="https://flickr.com/usgeologicalsurvey" target="_blank">
+						<i class="fa fa-flickr"><span class="only">Flickr</span></i>
+					</a>
+				</li>
+				<li class="youtube">
+					<a href="http://youtube.com/usgs" target="_blank">
+						<i class="fa fa-youtube-play"><span class="only">YouTube</span></i>
+					</a>
+				</li>
+				<li class="instagram">
+					<a href="https://instagram.com/usgs" target="_blank">
+						<i class="fa fa-instagram"><span class="only">Instagram</span></i>
+					</a>
+				</li>
+			</ul>
+		</div>
+		<!-- /.footer-social-links -->
+	</div>
+		<!-- /.footer-wrap -->	
+</footer>
+<!-- END USGS Footer Template- -->
+
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a575a8491e41e5c9',t:'MTc5NDE1MjIyOQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a575a8491e41e5c9',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
