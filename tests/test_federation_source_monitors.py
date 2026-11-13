@@ -123,3 +123,31 @@ def test_local_helpers_keep_their_ids_and_reach_the_pinned_package():
     assert callable(prii_export_utils.resolve_last_success)
     with pytest.raises(AttributeError):
         prii_export_utils.no_such_helper  # noqa: B018
+
+
+def test_pinned_package_loads_from_an_archive(tmp_path):
+    # The desktop build bundles the pinned package in PyInstaller's archive, where it has
+    # no source file on disk, so the shim must import it with the loader its finder
+    # returns. A zip on sys.path is the same case: an archive-backed loader, no file to reopen.
+    import subprocess
+    import zipfile
+
+    package = Path(prii_export_utils._pinned_package().__file__).parent
+    archive = tmp_path / "pinned.zip"
+    with zipfile.ZipFile(archive, "w") as zf:
+        for path in sorted(package.glob("*.py")):
+            zf.write(path, f"prii_export_utils/{path.name}")
+    code = "\n".join([
+        "import sys",
+        "from pathlib import Path",
+        f"sys.path[:0] = [{str(REPO / 'scripts')!r}, {str(archive)!r}]",
+        "import prii_export_utils as shim",
+        f"assert Path(shim.__file__).resolve() == Path({str(REPO / 'scripts' / 'prii_export_utils.py')!r})",
+        "assert shim.norm('Río Grande') == 'rio_grande'",
+        "row = shim.source_monitor_row",
+        "assert callable(row) and row.__module__ == 'prii_export_utils.source_monitor', row.__module__",
+        "assert sys.modules['prii_export_utils'] is shim",
+    ])
+    # -S: no site-packages, so the zip is the only place the pinned package can come from.
+    result = subprocess.run([sys.executable, "-S", "-c", code], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr

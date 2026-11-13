@@ -40,25 +40,36 @@ def sha256(path: str | Path) -> str:
     return h.hexdigest()
 
 
+_NAME = "prii_export_utils"
 _PINNED: ModuleType | None = None
 
 
 def _pinned_package() -> ModuleType:
-    """The installed ``prii-export-utils`` package this module shadows."""
+    """The installed ``prii-export-utils`` package this module shadows.
+
+    It is imported with the loader its own finder returns and under its real name, so
+    it loads wherever the package lives: site-packages, a zip, or the PyInstaller
+    archive the desktop build bundles it in, where there is no source file to reopen.
+    This module holds that name in ``sys.modules``; it steps aside while the package
+    and its submodules import, then takes the name back.
+    """
     global _PINNED
     if _PINNED is None:
         here = Path(__file__).resolve().parent
         search = [p for p in sys.path if Path(p or ".").resolve() != here]
-        spec = importlib.machinery.PathFinder.find_spec("prii_export_utils", search)
+        spec = importlib.machinery.PathFinder.find_spec(_NAME, search)
         if spec is None or spec.loader is None or not spec.submodule_search_locations:
             raise ImportError("the pinned prii-export-utils package is not installed")
-        alias = "_prii_export_utils_pinned"
-        spec = importlib.util.spec_from_file_location(
-            alias, spec.origin, submodule_search_locations=list(spec.submodule_search_locations))
-        assert spec is not None and spec.loader is not None
         module = importlib.util.module_from_spec(spec)
-        sys.modules[alias] = module
-        spec.loader.exec_module(module)
+        shim = sys.modules.get(_NAME)
+        sys.modules[_NAME] = module
+        try:
+            spec.loader.exec_module(module)
+        finally:
+            if shim is None:
+                sys.modules.pop(_NAME, None)
+            else:
+                sys.modules[_NAME] = shim
         _PINNED = module
     return _PINNED
 
