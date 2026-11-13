@@ -1312,11 +1312,14 @@
         "contract": [
           "tests/test_environmental_exposure.py",
           "tests/test_gui_parity.py",
-          "tests/test_hazard_plane.py"
+          "tests/test_hazard_plane.py",
+          "dashboard/src/pages/EnvironmentalExposurePage.test.jsx",
+          "dashboard/src/lib/environmental-exposure-api.test.js"
         ],
         "e2e": [
           "dashboard/tests/gui-parity.spec.mjs",
-          "dashboard/tests/hazard-advisory.spec.mjs"
+          "dashboard/tests/hazard-advisory.spec.mjs",
+          "dashboard/tests/solid-waste-registry.spec.mjs"
         ]
       }
     },
@@ -1325,7 +1328,7 @@
       "classification": "internal",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Bounded keyless EPA LMOP and ECHO ingestion that freezes the Puerto Rico solid-waste (landfill) site registry (ADR-0004) and feeds the existing Environmental Exposure graph. It is an internal producer workflow run on demand to refresh a hash-pinned snapshot, not a second user control surface: the records are read through the existing GET /environmental-exposure/entities endpoint. RAW source rows stay apart from canonical records, cross-source matches stay CANDIDATE_NOT_IDENTITY, a filter the source silently ignores fails closed, and the result is always OPEN.",
+      "rationale": "Bounded keyless EPA LMOP and ECHO ingestion that freezes the Puerto Rico solid-waste (landfill) site registry (ADR-0004) and feeds the existing Environmental Exposure graph. It is an internal producer workflow run on demand to refresh a hash-pinned snapshot, not a second user control surface: the records are read through the existing GET /environmental-exposure/entities endpoint and listed, read-only, in the Solid-waste sites section of the Environmental Exposure page (covered by the environmental-exposure-graph capability). RAW source rows stay apart from canonical records, cross-source matches stay CANDIDATE_NOT_IDENTITY, a filter the source silently ignores fails closed, and the result is always OPEN.",
       "backend": {
         "files": [
           "src/aguayluz/solid_waste.py"

@@ -105,8 +105,11 @@ corpus is real public data, with some sources external or point-in-time.
   Puerto Rico solid-waste authority list, EPA Region 2 enforcement records or unauthorized-dump
   source has been acquired, and ECHO silently ignores its `p_naics` filter, so every ECHO query
   carries a filtered-versus-unfiltered control. Accepted sites export as `landfill_site`
-  entities. The Environmental Exposure page counts the new entities; the records themselves are
-  served by `GET /environmental-exposure/entities`, and the page has no per-site list yet. See
+  entities. The records are served by `GET /environmental-exposure/entities`, and the
+  Environmental Exposure page lists every site read-only (name, kind, municipality, source record,
+  opened year, closure, review state). A missing closure reads "No closure recorded" or "Not
+  stated by source", never "Open", and a list that disagrees with the graph summary is shown as
+  incomplete. The list has no coordinates yet. See
   [`docs/adr/ADR-0004-solid-waste-registry-ownership.md`](docs/adr/ADR-0004-solid-waste-registry-ownership.md)
   (Proposed).
 - Operational alert events (`docs/ALERT_SYSTEM.md`) and the 78-municipio /
