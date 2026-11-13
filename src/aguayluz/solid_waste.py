@@ -244,6 +244,7 @@ def _sheet_cells(xml: bytes, shared: list[str]) -> list[dict[int, str]]:
     rows: list[dict[int, str]] = []
     for row in ET.fromstring(xml).iter(_NS + "row"):
         cells: dict[int, str] = {}
+        next_col = 0
         for cell in row.findall(_NS + "c"):
             kind = cell.get("t")
             value = cell.find(_NS + "v")
@@ -256,7 +257,11 @@ def _sheet_cells(xml: bytes, shared: list[str]) -> list[dict[int, str]]:
                 text = shared[int(value.text)]
             else:
                 text = value.text
-            cells[_col_index(cell.get("r") or "A1")] = text
+            # The cell reference is optional in the spec: without one, a cell follows the previous.
+            ref = cell.get("r")
+            col = _col_index(ref) if ref else next_col
+            cells[col] = text
+            next_col = col + 1
         rows.append(cells)
     return rows
 

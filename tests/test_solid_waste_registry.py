@@ -432,6 +432,61 @@ def test_dry_run_writes_nothing(offline, capsys):
     assert not list(offline["data"].iterdir())
 
 
+def test_a_missing_source_file_fails_closed_with_exit_2_and_writes_nothing(offline, capsys):
+    offline["lmop"].unlink()
+    assert run(offline) == 2
+    assert "FAIL-CLOSED" in capsys.readouterr().err
+    assert not list(offline["data"].iterdir())
+
+
+def test_a_network_failure_fails_closed_with_exit_2_and_writes_nothing(offline, monkeypatch, capsys):
+    import requests
+
+    def down(url: str) -> bytes:
+        raise requests.ConnectionError("network down")
+
+    monkeypatch.setattr(script, "fetch_lmop_bytes", down)
+    rc = script.main([
+        "--lmop-url", URL, "--echo-src", str(offline["echo"]), "--assets", str(offline["assets"]),
+        "--data-dir", str(offline["data"]), "--retrieved-at", NOW,
+    ])
+    assert rc == 2
+    assert "network down" in capsys.readouterr().err
+    assert not list(offline["data"].iterdir())
+
+
+def test_an_offline_workbook_must_name_the_release_it_belongs_to(offline, capsys):
+    rc = script.main([
+        "--lmop-src", str(offline["lmop"]), "--echo-src", str(offline["echo"]),
+        "--assets", str(offline["assets"]), "--data-dir", str(offline["data"]), "--retrieved-at", NOW,
+    ])
+    assert rc == 2
+    assert "--lmop-url" in capsys.readouterr().err
+    assert not list(offline["data"].iterdir())
+
+
+def test_a_schema_failure_in_a_later_table_leaves_every_file_untouched(offline, capsys):
+    # An invalid geometry row used to be found only after the entity file had been replaced.
+    geometries = offline["data"] / "environmental_geometries.jsonl"
+    geometries.write_text(json.dumps({"geometry_id": "NOT_A_VALID_ROW"}) + "\n")
+    before = {p.name: p.read_bytes() for p in offline["data"].iterdir()}
+    assert run(offline) == 2
+    assert "before any file was written" in capsys.readouterr().err
+    assert {p.name: p.read_bytes() for p in offline["data"].iterdir()} == before
+
+
+def test_cells_without_a_reference_take_the_next_column():
+    ns = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+    xml = (
+        f'<worksheet xmlns="{ns}"><sheetData><row>'
+        '<c t="inlineStr"><is><t>a</t></is></c><c t="inlineStr"><is><t>b</t></is></c>'
+        '<c r="E1" t="inlineStr"><is><t>e</t></is></c><c t="inlineStr"><is><t>f</t></is></c>'
+        "</row></sheetData></worksheet>"
+    ).encode()
+    # The spec makes ``r`` optional. Each missing one follows the previous cell, never column A.
+    assert sw._sheet_cells(xml, []) == [{0: "a", 1: "b", 4: "e", 5: "f"}]
+
+
 # ---------------------------------------------------------------------------
 # Federation export: accepted landfills project as `landfill_site`
 # ---------------------------------------------------------------------------

@@ -17,7 +17,7 @@ list, no EPA Region 2 enforcement records and no unauthorized-dump source have b
 Run:
     python scripts/ingest_solid_waste_registry.py                    # live fetch, write data/
     python scripts/ingest_solid_waste_registry.py --dry-run          # build and print, write nothing
-    python scripts/ingest_solid_waste_registry.py --lmop-src f.xlsx --echo-src echo.json   # offline
+    python scripts/ingest_solid_waste_registry.py --lmop-src f.xlsx --lmop-url <release url> --echo-src echo.json   # offline
 
 Writes ``data/environmental_entities.jsonl``, ``environmental_geometries.jsonl``,
 ``environmental_exposure_events.jsonl`` (via ``aguayluz.environmental_exposure_db``),
@@ -33,6 +33,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+import jsonschema
 
 REPO = Path(__file__).resolve().parent.parent
 if str(REPO / "src") not in sys.path:
@@ -191,6 +193,17 @@ def write_outputs(built: dict[str, Any], data_dir: Path) -> None:
         "environmental_geometry": data_dir / "environmental_geometries.jsonl",
         "environmental_exposure_event": data_dir / "environmental_exposure_events.jsonl",
     }
+    # Validate every table, existing rows and incoming rows alike, before any file is written.
+    # Otherwise a schema failure in the geometry or event table would be found only after the
+    # entity file had already been replaced, leaving a mixed snapshot. Raises
+    # ``jsonschema.ValidationError``; ``main`` turns that into a fail-closed exit.
+    for kind, incoming in (
+        ("environmental_entity", entities),
+        ("environmental_geometry", geometries),
+        ("environmental_exposure_event", events),
+    ):
+        db.load(kind, paths[kind])
+        db.merge(kind, [], incoming)
     owned_ids = {
         e["entity_id"]
         for e in db.load("environmental_entity", paths["environmental_entity"])
@@ -222,7 +235,12 @@ def write_outputs(built: dict[str, Any], data_dir: Path) -> None:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--lmop-src", help="offline LMOP xlsx file (default: fetch --lmop-url)")
-    ap.add_argument("--lmop-url", default=LMOP_URL, help="LMOP workbook URL; the release is read from it")
+    ap.add_argument(
+        "--lmop-url",
+        default=None,
+        help=f"LMOP workbook URL; the release is read from it (default for a live fetch: {LMOP_URL}). "
+        "Required with --lmop-src, so a file is never labelled as a release it is not",
+    )
     ap.add_argument("--echo-src", help="offline ECHO JSON ({query, filtered_rows, unfiltered_rows, facilities})")
     ap.add_argument("--assets", default=str(DATA_DIR / "utility_assets.jsonl"))
     ap.add_argument("--data-dir", default=str(DATA_DIR))
@@ -233,11 +251,20 @@ def main(argv: list[str] | None = None) -> int:
     now = args.retrieved_at or datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace(
         "+00:00", "Z"
     )
+    if args.lmop_src and not args.lmop_url:
+        print(
+            "FAIL-CLOSED: --lmop-src needs --lmop-url naming the release that file belongs to; "
+            "the default URL would label an unknown workbook as the 2024-09 release",
+            file=sys.stderr,
+        )
+        return 2
+    lmop_url = args.lmop_url or LMOP_URL
     try:
-        lmop_bytes = Path(args.lmop_src).read_bytes() if args.lmop_src else fetch_lmop_bytes(args.lmop_url)
+        lmop_bytes = Path(args.lmop_src).read_bytes() if args.lmop_src else fetch_lmop_bytes(lmop_url)
         echo = json.loads(Path(args.echo_src).read_text(encoding="utf-8")) if args.echo_src else fetch_echo()
-        built = build(lmop_bytes, args.lmop_url, echo, _load_jsonl(Path(args.assets)), now)
-    except (sw.FilterIgnoredError, ValueError, KeyError) as exc:
+        built = build(lmop_bytes, lmop_url, echo, _load_jsonl(Path(args.assets)), now)
+    # OSError covers a missing file and every ``requests`` failure (RequestException is an IOError).
+    except (sw.FilterIgnoredError, ValueError, KeyError, OSError) as exc:
         print(f"FAIL-CLOSED: {exc}", file=sys.stderr)
         return 2
 
@@ -246,7 +273,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.dry_run:
         print("dry-run: nothing written")
         return 0
-    write_outputs(built, Path(args.data_dir))
+    try:
+        write_outputs(built, Path(args.data_dir))
+    except jsonschema.ValidationError as exc:
+        print(f"FAIL-CLOSED: schema validation failed before any file was written: {exc.message}", file=sys.stderr)
+        return 2
     print(f"wrote {Path(args.data_dir)} (entities, geometries, events, source rows, receipts)")
     return 0
 
