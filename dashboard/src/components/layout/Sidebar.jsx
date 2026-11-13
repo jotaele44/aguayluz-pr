@@ -136,7 +136,7 @@ export default function Sidebar() {
   const close = () => setOpen(false)
 
   // Each time the drawer opens, start on the tab that holds the current page.
-  useEffect(() => { if (open) setTab(groupFor(pathname)) }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (open) setTab(groupFor(pathname)) }, [open, pathname])
 
   useEffect(() => {
     if (!open) return undefined

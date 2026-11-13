@@ -14,6 +14,9 @@ Feature branch: `feature/grid-status-monitor-v1`.
 
 - Backend targeted tests: 6 PASS.
 - Frontend targeted tests: 2 PASS.
+- Chromium GUI reachability: 1 PASS.
+- Chromium mobile navigation + 430/393/390/375px grid checks: 6 PASS.
+- GUI parity inventory: PASS, 0 new unmatched capabilities.
 - FastAPI route smoke: HTTP 200, `SOURCE_UNAVAILABLE`, five null values with empty source corpus.
 - Focused ESLint: PASS.
 - Vite production build: PASS.
