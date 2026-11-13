@@ -1321,6 +1321,57 @@
       }
     },
     {
+      "id": "solid-waste-registry-ingest",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Bounded keyless EPA LMOP and ECHO ingestion that freezes the Puerto Rico solid-waste (landfill) site registry (ADR-0004) and feeds the existing Environmental Exposure graph. It is an internal producer workflow run on demand to refresh a hash-pinned snapshot, not a second user control surface: the records are read through the existing GET /environmental-exposure/entities endpoint. RAW source rows stay apart from canonical records, cross-source matches stay CANDIDATE_NOT_IDENTITY, a filter the source silently ignores fails closed, and the result is always OPEN.",
+      "backend": {
+        "files": [
+          "src/aguayluz/solid_waste.py"
+        ],
+        "symbols": [
+          "src/aguayluz/environmental_exposure_db.py:replace_where",
+          "src/aguayluz/solid_waste.py:Candidate",
+          "src/aguayluz/solid_waste.py:FilterIgnoredError",
+          "src/aguayluz/solid_waste.py:LmopTable",
+          "src/aguayluz/solid_waste.py:RegistryRecords",
+          "src/aguayluz/solid_waste.py:build_echo_records",
+          "src/aguayluz/solid_waste.py:build_lmop_records",
+          "src/aguayluz/solid_waste.py:build_receipts",
+          "src/aguayluz/solid_waste.py:candidate_bindings",
+          "src/aguayluz/solid_waste.py:candidates_from_records",
+          "src/aguayluz/solid_waste.py:canonical_sha256",
+          "src/aguayluz/solid_waste.py:classify_echo",
+          "src/aguayluz/solid_waste.py:coverage_ledger",
+          "src/aguayluz/solid_waste.py:echo_filter_control",
+          "src/aguayluz/solid_waste.py:haversine_m",
+          "src/aguayluz/solid_waste.py:lmop_release_from_url",
+          "src/aguayluz/solid_waste.py:normalize_name",
+          "src/aguayluz/solid_waste.py:read_lmop_workbook",
+          "src/aguayluz/solid_waste.py:seed_candidates",
+          "src/aguayluz/solid_waste.py:select_state"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/ingest_solid_waste_registry.py"
+        ],
+        "symbols": [
+          "scripts/ingest_solid_waste_registry.py:build",
+          "scripts/ingest_solid_waste_registry.py:fetch_echo",
+          "scripts/ingest_solid_waste_registry.py:fetch_lmop_bytes",
+          "scripts/ingest_solid_waste_registry.py:main",
+          "scripts/ingest_solid_waste_registry.py:write_outputs"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_solid_waste_registry.py"
+        ]
+      }
+    },
+    {
       "id": "prii-export-utils-internal",
       "classification": "internal",
       "status": "active",

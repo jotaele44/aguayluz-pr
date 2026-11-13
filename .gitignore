@@ -304,6 +304,15 @@ exports/federation/
 # (as data/* used to) made every acknowledgment point at a record that was discarded.
 !data/centinelas_handoffs/
 !data/access_conditions.jsonl
+# Puerto Rico solid-waste (landfill) site registry (ADR-0004): canonical records, RAW source
+# rows and the receipts (manifestations, candidate bindings, coverage ledger). Small, public
+# and reproducible with scripts/ingest_solid_waste_registry.py. The EPA LMOP workbook itself
+# stays out; its SHA-256 is what the receipts commit.
+!data/environmental_entities.jsonl
+!data/environmental_geometries.jsonl
+!data/environmental_exposure_events.jsonl
+!data/solid_waste_source_rows.jsonl
+!data/solid_waste_receipts.json
 # Census-derived PR geodata: centroids (normalization/spatial joins) + boundary polygons (map layer)
 !data/geo/
 !data/geo/pr_municipios.json
