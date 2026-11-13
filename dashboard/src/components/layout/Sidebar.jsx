@@ -17,6 +17,8 @@ const NAV_GROUPS = [
     items: [
       { to: '/', end: true, icon: LayoutDashboard, label: 'Overview',
         desc: 'Current status across power, water, wastewater and telecom.' },
+      { to: '/grid-status', icon: BarChart3, label: 'Electric Grid',
+        desc: 'Source-backed electricity status and explicit coverage gaps.' },
       { to: '/map', icon: Map, label: 'Map',
         desc: 'Assets and hazard overlays across Puerto Rico.' },
       { to: '/alerts', icon: ShieldAlert, label: 'Alerts',
