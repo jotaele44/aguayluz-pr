@@ -32,6 +32,7 @@ from urllib.parse import urlsplit
 
 from prii_export_utils import fid as _fid
 from prii_export_utils import norm as _norm
+from prii_export_utils import resolve_last_success, source_monitor_row
 from prii_export_utils import sha256 as _sha256
 
 # Allow `python scripts/federation_export.py` from a fresh clone without an
@@ -57,6 +58,7 @@ STREAM_SCHEMA = {
     "entities": "federation_entity.schema.json",
     "relationships": "federation_relationship.schema.json",
     "alerts": "federation_alert.schema.json",
+    "source_monitors": "federation_source_monitor.schema.json",
 }
 ALERT_INPUTS = ["data/alert_events.jsonl"]
 
@@ -499,6 +501,170 @@ def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], no
             "alerts": list(alert_rows.values())}
 
 
+# ── source_monitors (thehub-pr ADR 0013) ─────────────────────────────────────
+# One row per source this repo monitors, from its three source registries. When a
+# source last succeeded comes from the committed hydromet run receipts (written by
+# hydromet.store.record_receipt; RUN_RECEIPT) or from the latest retrieval in the
+# committed hydromet manifestations (OUTPUT_DERIVED); the more recent wins
+# (prii_export_utils.resolve_last_success). Every other source is NOT_RECORDED:
+# nothing here infers a time from file dates.
+SOURCE_MONITOR_REGISTRIES = {
+    "hydromet": "config/hydromet_sources.v1.json",
+    "hazard": "config/hazard_advisory_sources.v1.json",
+    "exposure": "config/environmental_exposure_sources.v1.json",
+}
+HYDROMET_RECEIPTS = "hydromet_receipts.json"
+HYDROMET_MANIFESTATIONS = "hydromet_manifestations.jsonl"
+# Manifestation rows name their source_system, not the registry source_id. Pinned
+# here; tests/test_federation_source_monitors.py fails on a committed manifestation
+# whose system is not mapped.
+HYDROMET_SOURCE_SYSTEMS = {
+    "NWPS API v1": "nwps_gauges",
+    "NWPS Stage IV downloads (PR GeoTIFF)": "stage_iv_pr",
+}
+_RECEIPT_ATTEMPT_STATUS = {"PASS": "success", "FAIL": "failure"}
+_CADENCE_WINDOWS = {
+    "realtime": 3600, "hourly": 3600, "daily": 86400, "weekly": 7 * 86400,
+    "monthly": 31 * 86400, "quarterly": 92 * 86400, "yearly": 366 * 86400,
+}
+_NAMED_CADENCE = {
+    "realtime": "realtime", "hourly": "hourly", "daily": "daily", "weekly": "weekly",
+    "monthly": "monthly", "quarterly": "quarterly", "yearly": "yearly", "annual": "yearly",
+}
+
+
+def _cadence_from_seconds(seconds: Any) -> str:
+    try:
+        value = float(seconds)
+    except (TypeError, ValueError):
+        return "unknown"
+    if value <= 0:
+        return "unknown"
+    for name in ("yearly", "quarterly", "monthly", "weekly", "daily", "hourly"):
+        if value * 1.25 >= _CADENCE_WINDOWS[name]:
+            return name
+    return "realtime"
+
+
+def _cadence_from_text(text: Any) -> str:
+    if not isinstance(text, str) or not text.strip():
+        return "unknown"
+    first = text.strip().lower().replace(";", " ").replace(",", " ").split()[0]
+    return _NAMED_CADENCE.get(first, "unknown")
+
+
+def _monitor_window(cadence: str, declared_seconds: Any = None) -> int | None:
+    try:
+        declared = float(declared_seconds) if declared_seconds is not None else 0.0
+    except (TypeError, ValueError):
+        # A non-numeric declared window is ignored rather than trusted.
+        declared = 0.0
+    if declared > 0:
+        return int(declared)
+    return _CADENCE_WINDOWS.get(cadence)
+
+
+def _binding_status(raw: Any) -> str:
+    """Hazard-family binding state (BOUND…/CERTIFIED…/OPEN…) as a declared status."""
+    if not isinstance(raw, str) or not raw.strip():
+        return "unknown"
+    value = raw.strip().upper()
+    if value.startswith("OPEN"):
+        return "not_active"
+    if "OPEN" in value or "UNRESOLVED" in value:
+        return "partial"
+    if value.startswith(("BOUND", "CERTIFIED")):
+        return "active"
+    return "unknown"
+
+
+def _hydromet_receipts(path: Path) -> dict[str, dict[str, Any]]:
+    if not path.exists():
+        return {}
+    sources = json.loads(path.read_text(encoding="utf-8")).get("sources")
+    return sources if isinstance(sources, dict) else {}
+
+
+def _latest_hydromet_retrievals(path: Path) -> dict[str, str]:
+    latest: dict[str, str] = {}
+    for row in _load_jsonl(path):
+        source_id = HYDROMET_SOURCE_SYSTEMS.get(str(row.get("source_system")))
+        at = row.get("retrieved_at_utc")
+        if not source_id or not isinstance(at, str):
+            continue
+        if source_id not in latest or _parse_utc(at) > _parse_utc(latest[source_id]):
+            latest[source_id] = at
+    return latest
+
+
+def _parse_utc(value: str) -> datetime:
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+
+
+def _monitor_lineage() -> dict[str, Any]:
+    return {
+        "producer_script": PRODUCER_SCRIPT,
+        "producer_phase": "SOURCE_MONITOR",
+        "source_inputs": [*SOURCE_MONITOR_REGISTRIES.values(),
+                          f"data/{HYDROMET_RECEIPTS}", f"data/{HYDROMET_MANIFESTATIONS}"],
+        "extraction_method": "registry_projection",
+    }
+
+
+def build_source_monitors(now: str, *, repo_root: Path = REPO_ROOT,
+                          data_root: Path | None = None) -> list[dict[str, Any]]:
+    """The ``source_monitors`` stream: one row per registered source, sorted by id."""
+    data_dir = data_root if data_root is not None else DATA_ROOT
+    receipts = _hydromet_receipts(data_dir / HYDROMET_RECEIPTS)
+    derived = _latest_hydromet_retrievals(data_dir / HYDROMET_MANIFESTATIONS)
+    lineage = _monitor_lineage()
+    rows: dict[str, dict[str, Any]] = {}
+
+    def add(source_ref: str, registry: str, **fields: Any) -> None:
+        if source_ref in rows:
+            raise ValueError(f"duplicate source id {source_ref!r} across source registries")
+        rows[source_ref] = source_monitor_row(
+            producer=PRODUCER, source_ref=source_ref, registry_path=SOURCE_MONITOR_REGISTRIES[registry],
+            lineage=lineage, created_at=now, extracted_at=now, **fields,
+        )
+
+    def registry(name: str) -> dict[str, Any]:
+        return json.loads((repo_root / SOURCE_MONITOR_REGISTRIES[name]).read_text(encoding="utf-8"))
+
+    for src in registry("hydromet")["sources"]:
+        sid = src["source_id"]
+        receipt = receipts.get(sid) or {}
+        at, basis = resolve_last_success({"last_success_at": receipt.get("last_success_utc")}, derived.get(sid))
+        cadence = _cadence_from_seconds(src.get("cadence_seconds"))
+        endpoints = src.get("endpoints") if isinstance(src.get("endpoints"), dict) else {}
+        add(sid, "hydromet", name=src.get("label") or sid, declared_status="unknown", cadence=cadence,
+            cadence_window_seconds=_monitor_window(cadence, src.get("max_age_seconds") or src.get("cadence_seconds")),
+            last_success_at=at, last_success_basis=basis,
+            last_attempt_at=receipt.get("last_attempt_utc"),
+            last_attempt_status=_RECEIPT_ATTEMPT_STATUS.get(str(receipt.get("last_status"))),
+            producer_family=src.get("family"),
+            source_url=next((v for v in endpoints.values() if isinstance(v, str)), None))
+
+    for fam in registry("hazard")["families"]:
+        cadence = _cadence_from_text(fam.get("update_semantics"))
+        add(fam["family"], "hazard",
+            name=f"{fam['authority']}: {fam['family']}" if fam.get("authority") else fam["family"],
+            declared_status=_binding_status(fam.get("status")), cadence=cadence,
+            cadence_window_seconds=_monitor_window(cadence), last_success_at=None,
+            last_success_basis="NOT_RECORDED", producer_family=fam.get("hazard_family"),
+            source_url=fam.get("url"))
+
+    for fam in registry("exposure")["families"]:
+        add(fam["family"], "exposure",
+            name=f"{fam['authority']}: {fam['family']}" if fam.get("authority") else fam["family"],
+            declared_status="unknown", cadence="unknown", last_success_at=None,
+            last_success_basis="NOT_RECORDED", producer_family="ENVIRONMENTAL_EXPOSURE",
+            source_url=fam.get("discovery_locator"))
+
+    return [rows[k] for k in sorted(rows)]
+
+
 def _entity(eid, sid, name, etype, conf, inputs, now):
     return {
         "entity_id": eid, "source_id": sid, "name": name,
@@ -527,7 +693,7 @@ def _rel_kv(src_ent, rtype, tgt_ent, sid, conf, now, source_inputs=None, evidenc
 def write_package(streams, out_dir: Path, mode: str, now: str) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     files = []
-    for stream in ("sources", "entities", "relationships", "alerts"):
+    for stream in ("sources", "entities", "relationships", "alerts", "source_monitors"):
         rows = streams.get(stream, [])
         if not rows:
             continue
@@ -955,6 +1121,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     now = now_dt.replace(microsecond=0).isoformat().replace("+00:00", "Z")
     streams = build_streams(assets, events, now, geo, crosswalk, alerts, dep_edges, landfill_sites)
+    streams["source_monitors"] = build_source_monitors(now)
     manifest_path = write_package(streams, Path(args.out), args.mode, now)
     counts = {k: len(v) for k, v in streams.items()}
     print(f"wrote {manifest_path} — {counts}")

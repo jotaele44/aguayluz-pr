@@ -52,7 +52,8 @@ with a FAIL receipt. A record revision is written only when the *material state*
 - `data/hydromet_records.jsonl` — `HazardRecord` revisions (family `HYDROMETEOROLOGY`)
 - `data/hydromet_relationships.jsonl` — bindings
 - `data/hydromet_manifestations.jsonl` — frozen responses, pruned to those still referenced
-- `data/hydromet_receipts.json` — last attempt / last success per source
+- `data/hydromet_receipts.json` — last attempt / last success per source (also the run
+  receipts behind each hydromet row of the `source_monitors` federation export stream)
 - `data/nwps_gauge_state.jsonl` — current per-gauge snapshot
 
 **Bindings and evidence.**
