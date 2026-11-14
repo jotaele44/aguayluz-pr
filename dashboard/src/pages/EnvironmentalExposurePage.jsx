@@ -10,9 +10,109 @@ import {
   getHazardEvents,
   getHazardIntegrity,
   getHazardSummary,
+  getSolidWasteSites,
+  SOLID_WASTE_KINDS,
 } from '@/lib/environmental-exposure-api'
 
 const pretty = (value) => String(value || 'unknown').replaceAll('_', ' ').toLowerCase()
+
+// Only an LMOP row can state a closure, and only a closed site carries
+// valid_until. A missing valid_until therefore means "none recorded", never
+// "open": an entity row does not carry the source's own status field.
+function closureLabel(site) {
+  if (site.valid_until) return `Closed ${site.valid_until}`
+  if (site.authority === 'EPA_LMOP') return 'No closure recorded'
+  return 'Not stated by source'
+}
+
+const siteName = (site) => site.canonical_name || site.name_raw || site.authority_id
+
+const bySite = (a, b) => (
+  Number(a.review_status === 'needs_review') - Number(b.review_status === 'needs_review')
+  || String(a.municipality || '').localeCompare(String(b.municipality || ''))
+  || siteName(a).localeCompare(siteName(b))
+)
+
+function SolidWasteSites({ summary }) {
+  const sitesQuery = useQuery({
+    queryKey: ['environmental-exposure', 'solid-waste-sites'],
+    queryFn: getSolidWasteSites,
+  })
+  const sites = [...(sitesQuery.data?.items ?? [])].sort(bySite)
+  // The summary counts every entity by kind. The list client falls back to an
+  // empty list on any error, so a list that disagrees with the summary is
+  // treated as incomplete instead of being read as "no sites".
+  const expected = SOLID_WASTE_KINDS.reduce((sum, kind) => sum + (summary.entity_kind?.[kind] ?? 0), 0)
+  const listed = sitesQuery.data?.total ?? 0
+  const needsReview = sites.filter((site) => site.review_status === 'needs_review').length
+  const mismatch = !sitesQuery.isLoading && (listed !== expected || sites.length !== listed)
+
+  return (
+    <section className="mb-6 rounded-lg border border-slate-800 bg-slate-900/60" aria-label="Solid-waste site registry">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-800 px-4 py-3">
+        <div className="min-w-0 flex-1 basis-96">
+          <h2 className="text-sm font-semibold text-slate-100">Solid-waste sites (vertedero registry)</h2>
+          <p className="mt-1 text-xs text-slate-500">
+            Bounded registry from EPA LMOP and EPA ECHO only. It is not a complete inventory: unauthorized
+            dumps, the Puerto Rico solid-waste authority list and EPA Region 2 enforcement records are not
+            covered. ECHO rows are classified from facility names and need review. Listing a site says
+            nothing about contamination or exposure.
+          </p>
+        </div>
+        <div className="rounded border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-xs font-semibold text-amber-200">
+          OPEN
+        </div>
+      </div>
+
+      {sitesQuery.isLoading ? (
+        <div role="status" className="p-5 text-sm text-slate-400">Loading solid-waste sites…</div>
+      ) : mismatch ? (
+        <div role="alert" className="p-5 text-sm text-red-200">
+          The site list ({listed} listed, {sites.length} received) does not match the graph summary
+          ({expected}). Treat it as incomplete; no site is implied absent.
+        </div>
+      ) : sites.length === 0 ? (
+        <div className="p-5 text-sm text-slate-400">No solid-waste site records are materialized.</div>
+      ) : (
+        <>
+          <div className="px-4 pt-3 text-xs text-slate-500">
+            {sites.length} records · {needsReview} need review
+          </div>
+          <div className="overflow-x-auto">
+            <table className="mt-2 w-full text-left text-xs">
+              <thead className="border-y border-slate-800 text-slate-500">
+                <tr>
+                  <th className="px-4 py-2 font-medium">Site</th>
+                  <th className="px-4 py-2 font-medium">Kind</th>
+                  <th className="px-4 py-2 font-medium">Municipality</th>
+                  <th className="px-4 py-2 font-medium">Source record</th>
+                  <th className="px-4 py-2 font-medium">Opened</th>
+                  <th className="px-4 py-2 font-medium">Closure</th>
+                  <th className="px-4 py-2 font-medium">Review</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sites.map((site) => (
+                  <tr key={site.entity_id} className="border-b border-slate-800/70 last:border-0">
+                    <td className="px-4 py-3 text-slate-200">{siteName(site)}</td>
+                    <td className="px-4 py-3 text-slate-300">{pretty(site.entity_kind)}</td>
+                    <td className="px-4 py-3 text-slate-300">{site.municipality || '—'}</td>
+                    <td className="px-4 py-3 font-mono text-[11px] text-slate-400">
+                      {site.authority} · {site.authority_id}
+                    </td>
+                    <td className="px-4 py-3 text-slate-400">{site.valid_from || '—'}</td>
+                    <td className="px-4 py-3 text-slate-400">{closureLabel(site)}</td>
+                    <td className="px-4 py-3 text-slate-300">{pretty(site.review_status)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </section>
+  )
+}
 
 function MetricCard({ label, value, detail, icon: Icon }) {
   return (
@@ -268,6 +368,8 @@ export default function EnvironmentalExposurePage() {
                   </div>
                 </section>
               )}
+
+              <SolidWasteSites summary={summary} />
 
               <section className="rounded-lg border border-slate-800 bg-slate-900/60">
                 <div className="border-b border-slate-800 px-4 py-3">
