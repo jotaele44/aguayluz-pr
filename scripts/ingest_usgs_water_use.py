@@ -206,7 +206,6 @@ def main(argv: list[str] | None = None) -> int:
         })
 
     block = config["transcription_2010"]
-    pdf_digest = block["pinned_sha256"]
     pdf_verified = False
     if args.fetch:
         try:

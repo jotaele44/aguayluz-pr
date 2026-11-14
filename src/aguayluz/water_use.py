@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import io
 import json
+import math
 import re
 import unicodedata
 import zipfile
@@ -194,7 +195,7 @@ def _number(row: SheetRow, column: str, what: str) -> float:
             value = float(value.strip())
         except ValueError as exc:
             raise WaterUseSourceError(f"row {row.number}: {what} is not a number ({value!r})") from exc
-    if value != value or value < 0:  # NaN or negative
+    if not math.isfinite(value) or value < 0:
         raise WaterUseSourceError(f"row {row.number}: {what} is not a non-negative number")
     return round(float(value), 4)
 
