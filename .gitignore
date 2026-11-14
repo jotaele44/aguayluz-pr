@@ -298,6 +298,13 @@ exports/federation/
 # SHA-256 is recorded in every registry row.
 !data/aquifer_band_registry.jsonl
 !data/aquifer_band_receipt.json
+# USGS water-use estimates, 2010 / 2015 / 2020 (scripts/ingest_usgs_water_use.py). Committed on
+# purpose: the releases are static, the producer runs on demand rather than on a schedule, and
+# the gui-parity job boots the backend with no network, so the page needs the rows in the tree.
+# Raw bytes stay out (data/water_use_snapshots/ falls under data/*); the xlsx files the rows
+# were read from are committed byte-identical under tests/fixtures/usgs_water_use/.
+!data/water_use_estimates.jsonl
+!data/water_use_receipt.json
 # Centinelas federation ingress (.github/workflows/centinelas-handoff.yml). The
 # per-handoff receipts are the durable proof that a handoff was received, and the
 # workflow acknowledges back to centinelas-pr only after they are pushed. Ignoring them

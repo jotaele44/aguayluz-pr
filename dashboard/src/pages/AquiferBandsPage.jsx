@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { AlertTriangle, Database, Droplets, Gauge, ShieldAlert } from 'lucide-react'
 
 import ErrorBoundary from '@/components/ErrorBoundary'
@@ -263,6 +264,10 @@ export default function AquiferBandsPage() {
             <div className="space-y-1 text-sm text-sky-100/90">
               <p>{data?.scope?.statement ?? FALLBACK_SCOPE}</p>
               {data?.scope?.alerting_reason && <p className="text-xs text-sky-200/80">{data.scope.alerting_reason}</p>}
+              <p className="text-xs text-sky-200/80">
+                For how much of Puerto Rico&apos;s public supply comes from groundwater, see{' '}
+                <Link className="underline hover:text-sky-100" to="/water-use">Water Use</Link>.
+              </p>
             </div>
           </div>
 
