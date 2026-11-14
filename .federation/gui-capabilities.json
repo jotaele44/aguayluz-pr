@@ -1881,6 +1881,92 @@
       }
     },
     {
+      "id": "usgs-water-use-estimates",
+      "classification": "analysis",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "USGS estimates of freshwater withdrawals in Puerto Rico for 2010, 2015 and 2020, shown on the Water Use page: public supply by source (surface water, groundwater) per year with shares, a bar with a text alternative, the evidence tier and extraction method of each year, the other freshwater categories for the year that publishes them, public supply by municipality of intake with a year toggle, and each source's DOI and pinned SHA-256. Read-only by design: GET /water-use/estimates serves the committed rows, computes shares per request, persists nothing and has no refresh route. The sources are static five-yearly publications, so scripts/ingest_usgs_water_use.py is run on demand by a maintainer when USGS publishes a new release, and is deliberately absent from scripts/refresh.py; a user never needs it to see the figures, which are committed, so no normal user path requires a terminal. The only controls are Retry, which re-requests the same endpoint after a failed load, and the year toggle. Nothing is alerted on: these are historical estimates, which the page states. Where USGS published two values for one year the page shows both and offers no reason, because the source gives none. Loading, error-with-retry, empty, no-published-split and failed-source states are rendered and unit-tested.",
+      "backend": {
+        "files": [
+          "server/backend/water_use_api.py",
+          "server/backend/app.py",
+          "src/aguayluz/water_use.py"
+        ],
+        "endpoints": [
+          "GET /water-use/estimates"
+        ],
+        "symbols": [
+          "server/backend/water_use_api.py:water_use_estimates",
+          "src/aguayluz/water_use.py:ParsedTable",
+          "src/aguayluz/water_use.py:SheetRow",
+          "src/aguayluz/water_use.py:WaterUseSourceError",
+          "src/aguayluz/water_use.py:fold",
+          "src/aguayluz/water_use.py:island_summary",
+          "src/aguayluz/water_use.py:load_estimates",
+          "src/aguayluz/water_use.py:load_municipios",
+          "src/aguayluz/water_use.py:load_receipt",
+          "src/aguayluz/water_use.py:load_sources",
+          "src/aguayluz/water_use.py:municipio_table",
+          "src/aguayluz/water_use.py:parse_category",
+          "src/aguayluz/water_use.py:parse_irrigation_municipio",
+          "src/aguayluz/water_use.py:parse_public_supply_municipio",
+          "src/aguayluz/water_use.py:parse_source",
+          "src/aguayluz/water_use.py:parse_trends_restated",
+          "src/aguayluz/water_use.py:read_xlsx_rows",
+          "src/aguayluz/water_use.py:restatements",
+          "src/aguayluz/water_use.py:slug",
+          "src/aguayluz/water_use.py:transcription_records"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/ingest_usgs_water_use.py"
+        ],
+        "symbols": [
+          "scripts/ingest_usgs_water_use.py:AcquisitionError",
+          "scripts/ingest_usgs_water_use.py:arithmetic",
+          "scripts/ingest_usgs_water_use.py:fetch_xlsx",
+          "scripts/ingest_usgs_water_use.py:main",
+          "scripts/ingest_usgs_water_use.py:receipt_entry"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/water-use"
+        ],
+        "e2e_routes": [
+          "/water-use"
+        ],
+        "components": [
+          "dashboard/src/pages/WaterUsePage.jsx",
+          "dashboard/src/lib/water-use-api.js",
+          "dashboard/src/lib/water-use-hooks.js",
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_water_use_api.py"
+        ],
+        "contract": [
+          "tests/test_water_use.py",
+          "tests/test_ingest_usgs_water_use.py",
+          "tests/test_gui_parity.py"
+        ],
+        "unit": [
+          "dashboard/src/pages/WaterUsePage.test.jsx",
+          "dashboard/src/lib/water-use-api.test.js"
+        ],
+        "e2e": [
+          "dashboard/tests/water-use.spec.mjs",
+          "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
+    },
+    {
       "id": "nws-cloudgis-map-overlays",
       "classification": "client_only",
       "status": "active",

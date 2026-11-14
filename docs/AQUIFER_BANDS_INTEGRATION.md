@@ -58,6 +58,10 @@ The page's legend names four conditions (blue Optimum, yellow Observation, orang
 Operational Adjustment, red Critical). The green band shallower than Optimum has **no legend
 entry**, so it is stored as `above_optimum` and never given a PRDNER name.
 
+How much of the island's public supply these aquifers and the others provide (10.8% from
+groundwater in 2020) is covered separately in [`WATER_USE_INTEGRATION.md`](WATER_USE_INTEGRATION.md);
+the Aquifer Bands page links to it.
+
 ## What was wired
 
 | Piece | Path |
@@ -69,7 +73,7 @@ entry**, so it is stored as `above_optimum` and never given a PRDNER name.
 | Contracts | `schemas/aquifer-bands/v1/aquifer_band_registry.schema.json`, `aquifer_band_receipt.schema.json` |
 | Schedule | `scripts/refresh.py::STEP_AQUIFER_BANDS` (weekly and `--all`, optional) |
 | Read-only API | `server/backend/aquifer_api.py`: `GET /aquifer/bands` |
-| Dashboard | **Aquifer Bands** page (`/aquifer-bands`, under Water & Weather): `dashboard/src/pages/AquiferBandsPage.jsx`, `dashboard/src/lib/aquifer-api.js`, `dashboard/src/lib/aquifer-hooks.js` |
+| Dashboard | **Aquifer Bands** page (`/aquifer-bands`, under Water & Weather; links to **Water Use**): `dashboard/src/pages/AquiferBandsPage.jsx`, `dashboard/src/lib/aquifer-api.js`, `dashboard/src/lib/aquifer-hooks.js` |
 | GUI-parity capability | `aquifer-threshold-bands` in `.federation/gui-capabilities.json` |
 | Tests | `tests/test_aquifer_bands.py`, `tests/test_ingest_prdner_well_bands.py`, `tests/test_aquifer_api.py`, `dashboard/src/pages/AquiferBandsPage.test.jsx`, `dashboard/src/lib/aquifer-api.test.js`, `dashboard/tests/aquifer-bands.spec.mjs` |
 
