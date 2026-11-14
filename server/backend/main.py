@@ -31,6 +31,7 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 
+from server.backend.grid_status_api import build_grid_status
 from server.backend.source_intelligence_api import router as source_intelligence_router
 
 logger = logging.getLogger(__name__)
@@ -373,6 +374,12 @@ def health() -> JSONResponse:
         },
         "readiness": readiness,
     })
+
+
+@app.get("/grid/status")
+def grid_status() -> JSONResponse:
+    """Read-only grid-status alpha backed by the existing MiLUMA snapshot store."""
+    return JSONResponse(build_grid_status(_load_jsonl(DATA / "luma_status_snapshots.jsonl")))
 
 
 @app.get("/outages/status")
