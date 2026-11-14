@@ -23,6 +23,7 @@ import pytest
 
 from aguayluz import environmental_exposure_db as db
 from aguayluz import solid_waste as sw
+from aguayluz.environmental_exposure import derive_entity_id
 from aguayluz.models import validate_against_schema
 
 REPO = Path(__file__).resolve().parents[1]
@@ -352,6 +353,29 @@ def test_receipts_are_open_and_keep_the_rejected_name_only_seeds():
     assert all("Populated Place" in reason for reason in rejected.values())
     notes = receipts["source_service_notes"]
     assert len(notes) == 1 and "p_naics" in notes[0]["note"] and "15256" in notes[0]["note"]
+
+
+def test_echo_entity_id_does_not_depend_on_the_inferred_kind():
+    # The kind is inferred from NAICS and the name, so it can flip between ECHO snapshots. The
+    # id must not flip with it, or a binding keyed on the old id is orphaned.
+    landfill = echo_row("Same Place", "110000001", "PONCE", "562212")
+    facility = echo_row("Same Place", "110000001", "PONCE", None)
+    a = sw.build_echo_records([landfill], "p_sic=4953").entities[0]
+    b = sw.build_echo_records([facility], "p_sic=4953").entities[0]
+    assert (a["entity_kind"], b["entity_kind"]) == ("LANDFILL", "SOLID_WASTE_FACILITY")
+    assert a["entity_id"] == b["entity_id"] == sw.echo_entity_id("110000001")
+
+
+def test_echo_entity_ids_are_distinct_per_registry_id_and_never_collide_with_lmop():
+    assert sw.echo_entity_id("110000001") != sw.echo_entity_id("110000002")
+    assert sw.echo_entity_id("2342") != derive_entity_id("LANDFILL", sw.LMOP_AUTHORITY, "2342")
+    with pytest.raises(ValueError):
+        sw.echo_entity_id("   ")
+
+
+def test_lmop_entity_ids_do_not_change():
+    # Arroyo's registry id is committed data and the hub join hangs off the LMOP ids: pin it.
+    assert derive_entity_id("LANDFILL", sw.LMOP_AUTHORITY, "2342") == "AYL_ENV_82613f26edf78844c97b563c"
 
 
 # ---------------------------------------------------------------------------
