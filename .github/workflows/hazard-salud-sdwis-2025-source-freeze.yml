@@ -1,0 +1,98 @@
+name: Salud SDWIS 2025 Source Freeze
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/hazard-salud-sdwis-2025-source-freeze.yml"
+      - "scripts/freeze_salud_sdwis_2025_sources.py"
+      - ".federation/gui-capabilities.json"
+      - "config/hazard_advisory_sources.v1.json"
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/hazard-salud-sdwis-2025-source-freeze.yml"
+      - "scripts/freeze_salud_sdwis_2025_sources.py"
+      - ".federation/gui-capabilities.json"
+      - "config/hazard_advisory_sources.v1.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: salud-sdwis-2025-source-freeze-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+          python -m pip install pydantic
+
+      - name: Freeze Salud and EPA source manifestations
+        env:
+          PYTHONPATH: src:.
+        run: |
+          python scripts/freeze_salud_sdwis_2025_sources.py             --output-root artifacts/salud_sdwis_2025_source_freeze
+
+      - name: Verify frozen-source arithmetic
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+
+          receipt = json.loads(
+              Path("artifacts/salud_sdwis_2025_source_freeze/source_freeze_receipt.json")
+              .read_text(encoding="utf-8")
+          )
+          assert receipt["salud"]["source"] == 3, receipt
+          assert receipt["salud"]["frozen"] == 3, receipt
+          assert receipt["salud"]["delta"] == 0, receipt
+          assert receipt["epa"]["zip_full_sha256_status"] == "PASS", receipt
+          assert receipt["epa"]["zip_full_sha256"], receipt
+          assert receipt["epa"]["zip_full_bytes_observed"] == receipt["epa"]["zip_identity"]["content_length"], receipt
+          assert receipt["epa"]["target_member"]["member_name"].upper().endswith(
+              "SDWA_VIOLATIONS_ENFORCEMENT.CSV"
+          ), receipt
+          assert receipt["epa"]["compressed_sha256"], receipt
+          assert receipt["epa"]["uncompressed_sha256"], receipt
+          assert receipt["epa"]["pr_2025_arithmetic"]["state"] == "PASS", receipt
+          assert receipt["epa"]["pr_2025_arithmetic"]["delta"] == 0, receipt
+          assert receipt["epa"]["unresolved_row_count"] == receipt["epa"]["pr_2025_arithmetic"]["unresolved"], receipt
+          unresolved = Path(
+              "artifacts/salud_sdwis_2025_source_freeze/"
+              + receipt["epa"]["unresolved_rows_file"]
+          )
+          assert unresolved.is_file(), receipt
+          assert receipt["epa"]["unresolved_rows_file_sha256"], receipt
+          assert sum(receipt["epa"]["unresolved_reason_counts"].values()) == receipt["epa"]["unresolved_row_count"], receipt
+          print(json.dumps({
+              "salud": receipt["salud"],
+              "epa_zip_full_sha256": receipt["epa"]["zip_full_sha256"],
+              "epa_zip_full_bytes_observed": receipt["epa"]["zip_full_bytes_observed"],
+              "target_member": receipt["epa"]["target_member"],
+              "pr_2025_arithmetic": receipt["epa"]["pr_2025_arithmetic"],
+              "unresolved_reason_counts": receipt["epa"]["unresolved_reason_counts"],
+              "unresolved_rows_file_sha256": receipt["epa"]["unresolved_rows_file_sha256"],
+          }, indent=2, sort_keys=True))
+
+      - name: Upload frozen source evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: salud-sdwis-2025-source-freeze
+          path: artifacts/salud_sdwis_2025_source_freeze
+          if-no-files-found: error
+          retention-days: 90

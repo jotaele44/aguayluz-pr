@@ -77,6 +77,61 @@ def test_continuous_parser_isolates_timestamp_and_provisional_state():
     }
 
 
+def _continuous_feature(site: str, parameter_code: str, value: str, unit: str) -> dict:
+    return {
+        "properties": {
+            "monitoring_location_id": f"USGS-{site}",
+            "parameter_code": parameter_code,
+            "value": value,
+            "unit_of_measure": unit,
+            "time": "2026-11-08T14:15:00+00:00",
+            "approvals_status": ["Working"],
+        }
+    }
+
+
+def test_continuous_groundwater_readings_bind_to_the_well_asset_not_a_stream_id():
+    """72019 is depth to water in a well. Wells are USGSGW_ assets; no USGS_<well> row
+    exists, so a reading keyed USGS_<well> pointed at nothing (verified against the five
+    south-coast PRDNER wells: none has a USGS_ asset). Surface water must stay USGS_."""
+    module = load_script("ingest_usgs_continuous.py")
+    documents = [
+        {
+            "features": [
+                _continuous_feature("175947066130601", "72019", "29.77", "ft"),
+                _continuous_feature("50059000", "00060", "12.5", "ft3/s"),
+            ]
+        }
+    ]
+    rows, skipped = module.rows_from_documents(documents)
+    by_param = {row["parameter_code"]: row for row in rows}
+    assert by_param["72019"]["asset_id"] == "USGSGW_175947066130601"
+    assert by_param["72019"]["site_no"] == "175947066130601"
+    assert by_param["72019"]["metric"] == "groundwater_level"
+    assert by_param["00060"]["asset_id"] == "USGS_50059000"
+    assert skipped["unsupported_parameter"] == 0
+
+
+def test_asset_prefix_follows_the_measured_quantity():
+    from aguayluz.usgs_water_api import asset_prefix_for_parameter, reading_row
+
+    assert asset_prefix_for_parameter("72019") == "USGSGW_"
+    assert asset_prefix_for_parameter(" 62610 ") == "USGSGW_"  # level above datum: still a well
+    for surface in ("00060", "00065", "62615", "00054", "99999", "", None):
+        assert asset_prefix_for_parameter(surface) == "USGS_"
+    # The reading id must not depend on the prefix: re-running after this fix replaces
+    # rows in place instead of forking every well reading into a second id.
+    kwargs = dict(
+        site="175947066130601", parameter_code="72019", value=29.77, unit="ft",
+        observed_at="2026-11-08T14:15:00+00:00", source_ref="t", provisional=True,
+        id_namespace="usgscv",
+    )
+    old = reading_row(**kwargs)
+    new = reading_row(**kwargs, asset_prefix="USGSGW_")
+    assert old["reading_id"] == new["reading_id"]
+    assert old["asset_id"] == "USGS_175947066130601" and new["asset_id"] == "USGSGW_175947066130601"
+
+
 def test_metadata_parser_preserves_thresholds_and_publication_gap(monkeypatch):
     module = load_script("ingest_usgs_time_series_metadata.py")
     documents = [
@@ -189,6 +244,22 @@ def test_water_quality_nondetect_is_preserved_not_zero():
     assert skipped["nondetect"] == 1
 
 
+def test_rtfi_state_lookup_requires_authoritative_integer_id():
+    module = load_script("ingest_usgs_rtfi.py")
+    assert module.state_id_from_count(
+        {
+            "state_id": 72,
+            "state_name": "Puerto Rico",
+            "state_abbreviation": "PR",
+            "reference_point_count": 0,
+        }
+    ) == 72
+    with pytest.raises(ValueError):
+        module.state_id_from_count({"state_id": "PR", "state_abbreviation": "PR"})
+    with pytest.raises(ValueError):
+        module.state_id_from_count({"state_id": 72, "state_abbreviation": "TX"})
+
+
 def test_rtfi_only_creates_declared_nwis_edges():
     module = load_script("ingest_usgs_rtfi.py")
     document = [
@@ -200,6 +271,47 @@ def test_rtfi_only_creates_declared_nwis_edges():
     assert len(edges) == 1
     assert edges[0]["authoritative_association"] is True
     assert edges[0]["from_id"] == "USGS_50059000"
+
+
+def test_rtfi_preserves_current_api_coordinates_and_flood_fields():
+    module = load_script("ingest_usgs_rtfi.py")
+    document = [
+        {
+            "id": 7,
+            "site_name": "USGS Example Gage",
+            "rp_name": "Bridge deck",
+            "description": "Surveyed bridge reference point",
+            "state_id": 72,
+            "county_id": 1,
+            "latitude": 18.1234,
+            "longitude": -66.4321,
+            "nwis_id": "USGS-50059000",
+            "nws_id": "EXMPL",
+            "rp_elevation": 12.5,
+            "unit": "ft",
+            "gage_height": 10.25,
+            "is_flooding": False,
+            "active": True,
+            "plot_param": "00065",
+            "plot_series_id": "series-1",
+        }
+    ]
+    locations, _ = module.parse(
+        document,
+        source_ref="https://api.waterdata.usgs.gov/rtfi-api/referencepoints/state/72",
+    )
+    row = locations[0]
+    assert row["name"] == "Bridge deck"
+    assert row["site_name"] == "USGS Example Gage"
+    assert row["lat"] == 18.1234
+    assert row["lon"] == -66.4321
+    assert row["elevation"] == 12.5
+    assert row["elevation_unit"] == "ft"
+    assert row["gage_height"] == 10.25
+    assert row["is_flooding"] is False
+    assert row["plot_param"] == "00065"
+    assert row["plot_series_id"] == "series-1"
+    assert row["source_ref"].endswith("/state/72")
 
 
 def test_nims_image_listing_performs_no_visual_inference():

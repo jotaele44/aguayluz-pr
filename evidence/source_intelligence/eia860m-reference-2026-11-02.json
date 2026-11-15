@@ -1,0 +1,63 @@
+{
+  "schema_version": "aguayluz.source-intelligence.reference-certification-receipt/v1",
+  "state": "PASS",
+  "source_family_id": "EIA_860M",
+  "workflow_run_id": 41519544607,
+  "workflow_job_id": 125531704402,
+  "artifact_id": 13177206689,
+  "artifact_name": "eia860m-reference-evidence",
+  "artifact_size_bytes": 51845828,
+  "artifact_sha256": "909d1a46e0d9aad82e6936501b92495b38ac58bb8b9954818c75972344fca3c9",
+  "artifact_expires_at": "2027-01-31T20:28:42Z",
+  "branch_head_sha": "2cb4f50b8ecbb88b64aca87bcb4f2ff2df95b19f",
+  "certification_json_sha256": "0beeebb19ac3173170289cfff1b0b1e396a2eb4b811a16ceaf447af911629ad1",
+  "schema_fingerprint": "11e942a66047e23fbc3ab886ae13ceb56b4c775a8c17aaeee8fe6aaf6442d4dd",
+  "snapshots": {
+    "2026-01": {
+      "source_url": "https://www.eia.gov/electricity/data/eia860m/archive/xls/january_generator2026.xlsx",
+      "byte_count": 13518786,
+      "byte_sha256": "a02a0262c98e6b4fc8451e3f88c3983c2edd015b1bff2c5174df91e331ae9cf8",
+      "manifestation_id": "SRCM_7a491ef17a1c63f085d34d7c",
+      "operating_count": 20,
+      "operating_nameplate_mw": 98.1,
+      "operating_status_counts": {
+        "OP": 19,
+        "SB": 1
+      },
+      "retired_count": 0
+    },
+    "2026-02": {
+      "source_url": "https://www.eia.gov/electricity/data/eia860m/archive/xls/february_generator2026.xlsx",
+      "byte_count": 13468269,
+      "byte_sha256": "9f76e3a186ba0814ea836a357213bab0ea8e18955d862a92e877dc028af755e8",
+      "manifestation_id": "SRCM_f08e42f8ae768cbb463515aa",
+      "operating_count": 20,
+      "operating_nameplate_mw": 98.1,
+      "operating_status_counts": {
+        "OP": 19,
+        "SB": 1
+      },
+      "retired_count": 0
+    }
+  },
+  "jan_feb_replay": {
+    "intersection": 20,
+    "a_only": 0,
+    "b_only": 0,
+    "union": 20,
+    "symmetric_difference": 0,
+    "changed": 0,
+    "a_nameplate_mw": 98.1,
+    "b_nameplate_mw": 98.1
+  },
+  "invariants": {
+    "raw_bytes_acquired": true,
+    "expected_sha256_verified": true,
+    "xlsx_schema_pass": true,
+    "operating_pr_parser_pass": true,
+    "retired_pr_parser_pass": true,
+    "plant_generator_identity_pass": true,
+    "immutable_manifestation_receipts_pass": true,
+    "runtime_health_receipts_pass": true
+  }
+}

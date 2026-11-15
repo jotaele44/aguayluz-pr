@@ -16,6 +16,9 @@ the I/O):
 * osha      — :func:`aguayluz.alert_promotion.osha.osha_alerts`         (INDUSTRIAL)
 * neon      — :func:`aguayluz.alert_promotion.neon.neon_alerts`         (CONTAMINATION /
   HYDRO_OPS / WEATHER_HAZARD / TELECOM_SCADA, routed by what the product measures)
+* hydromet  — :func:`aguayluz.alert_promotion.hydromet.hydromet_alerts` (WEATHER_HAZARD;
+  NWPS river/reservoir gauge flood episodes and Stage IV heavy-rain days from the NWS
+  hydromet plane)
 * drought   — :func:`aguayluz.alert_promotion.drought.drought_alerts` /
   :func:`aguayluz.alert_promotion.drought.precipitation_shortfall_alerts` (WEATHER_HAZARD;
   USDM classification-band + NCEI percent-of-normal precipitation, kept as two
@@ -23,7 +26,7 @@ the I/O):
 
 Each promoter stamps a distinct ``alert_id`` marker (``_sdwis_`` / ``_resvlow_`` /
 ``_seismic_`` / ``_weather_`` / ``_osha_`` / ``_neonpub_`` / ``_drought_`` /
-``_precipshort_``) so the idempotent merge in
+``_precipshort_`` / ``_nwpsflood_`` / ``_qpeheavy_``) so the idempotent merge in
 the CLI can replace only its own previously-generated rows while preserving seeds and
 manual entries.
 
@@ -46,6 +49,7 @@ from .drought import (
     drought_alerts,
     precipitation_shortfall_alerts,
 )
+from .hydromet import HEAVY_RAIN_MARKER, NWPS_FLOOD_MARKER, HydrometInputs, hydromet_alerts
 from .neon import NEON_MARKER, neon_alerts
 from .nhc import NHC_MARKER, nhc_alerts
 from .osha import OSHA_MARKER, osha_alerts
@@ -56,7 +60,7 @@ from .weather import WEATHER_MARKER, weather_alerts
 GENERATED_MARKERS: tuple[str, ...] = (
     "_sdwis_", "_resvlow_", "_gwlow_", "_coasthi_",
     SEISMIC_MARKER, WEATHER_MARKER, OSHA_MARKER, NEON_MARKER, NHC_MARKER,
-    DROUGHT_MARKER, PRECIP_MARKER,
+    DROUGHT_MARKER, PRECIP_MARKER, NWPS_FLOOD_MARKER, HEAVY_RAIN_MARKER,
 )
 
 #: Operational-severity floor (0-5 scale) at or above which an alert is life-safety
@@ -86,6 +90,7 @@ def build_all_alerts(
     *,
     reservoir_percentile: float = 10.0,
     neon_events: list[dict[str, Any]] | None = None,
+    hydromet: HydrometInputs | None = None,
 ) -> list[AlertEvent]:
     """Run every registered promoter over the ingested signals.
 
@@ -99,6 +104,10 @@ def build_all_alerts(
     changes, which are metadata about a feed rather than service events, so they
     arrive on their own keyword-only argument. Omitting it yields no NEON alerts,
     preserving prior behaviour for existing callers.
+
+    ``hydromet`` carries the NWS hydromet plane (``data/hydromet_records.jsonl`` —
+    NWPS gauge and Stage IV rainfall records — + ``data/nwps_gauge_state.jsonl``);
+    omitting it yields no hydromet alerts.
     """
     index = build_asset_index(assets or [])
     alerts: list[AlertEvent] = []
@@ -114,6 +123,7 @@ def build_all_alerts(
     alerts.extend(neon_alerts(neon_events or [], geo, index))
     alerts.extend(drought_alerts(readings or [], geo, index, assets))
     alerts.extend(precipitation_shortfall_alerts(readings or [], geo, index, assets))
+    alerts.extend(hydromet_alerts(hydromet, geo, index))
     return alerts
 
 
@@ -133,6 +143,10 @@ __all__ = [
     "precipitation_shortfall_alerts",
     "DROUGHT_MARKER",
     "PRECIP_MARKER",
+    "HydrometInputs",
+    "hydromet_alerts",
+    "NWPS_FLOOD_MARKER",
+    "HEAVY_RAIN_MARKER",
     "load_geo",
     "AssetIndex",
     "build_asset_index",
