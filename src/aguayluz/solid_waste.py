@@ -444,6 +444,19 @@ def classify_echo(row: dict[str, Any]) -> tuple[str, str]:
     return "SOLID_WASTE_FACILITY", "SIC_4953_ONLY"
 
 
+def echo_entity_id(registry_id: str) -> str:
+    """Stable id for an ECHO source record: the authority and its RegistryID, nothing inferred.
+
+    The entity kind of an ECHO row is inferred from its name and NAICS codes (``classify_echo``),
+    so it can change between ECHO snapshots. An id derived from the kind would change with the
+    classification and orphan any binding or adjudication keyed on the old one. The kind stays
+    an attribute of the record; it is not part of its identity.
+    """
+    if not registry_id.strip():
+        raise ValueError("an ECHO RegistryID is required for source-record identity")
+    return stable_id("AYL_ENV", "ECHO_SOURCE_RECORD", ECHO_AUTHORITY, registry_id)
+
+
 def build_echo_records(facilities: list[dict[str, Any]], query_label: str) -> RegistryRecords:
     out = RegistryRecords()
     seen: set[str] = set()
@@ -467,7 +480,7 @@ def build_echo_records(facilities: list[dict[str, Any]], query_label: str) -> Re
 
         kind, basis = classify_echo(raw)
         name = str(raw["FacName"]).strip()
-        entity_id = derive_entity_id(kind, ECHO_AUTHORITY, rid)
+        entity_id = echo_entity_id(rid)
         out.entities.append(
             {
                 "entity_id": entity_id,
