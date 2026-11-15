@@ -107,6 +107,7 @@ export const getEvents = async (f = {}) => {
   return r?.items ?? r ?? []
 }
 export const getEventsPaged = (f = {}) => getJSON(`/events${qs(f)}`, { total: 0, offset: 0, items: [] })
+export const getGridStatus = () => getRequiredJSON('/grid/status')
 export const getLumaOutageStatus = (f = {}) => getJSON(
   `/outages/status${qs(f)}`,
   { total: 0, latest: null, items: [], schema_state: 'RAW_UNFROZEN' },
