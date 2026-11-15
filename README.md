@@ -102,8 +102,12 @@ corpus is real public data, with some sources external or point-in-time.
   `SHUTDOWN` event per closed site, plus 16 EPA ECHO facilities (SIC 4953) held as `needs_review`
   source records. A closure year on an *open* site is a projection and stays in the RAW rows.
   Cross-source matches stay `CANDIDATE_NOT_IDENTITY`, and the result is **OPEN**: no structured
-  Puerto Rico solid-waste authority list, EPA Region 2 enforcement records or unauthorized-dump
-  source has been acquired, and ECHO silently ignores its `p_naics` filter, so every ECHO query
+  Puerto Rico solid-waste authority list or unauthorized-dump source has been acquired. EPA
+  enforcement context is partial: of the 3,788 Puerto Rico ECHO enforcement cases pulled on
+  2026-11-13, the 51 that concern landfills are kept as RAW rows and linked to sites as candidates
+  (by name; two by case number in an ECHO facility report), nothing is created from them as an
+  entity or event, and the state agency's own records are not covered. ECHO silently ignores its
+  `p_naics` filter and its case service drops filters it does not know, so every ECHO query
   carries a filtered-versus-unfiltered control. Accepted sites export as `landfill_site`
   entities. The Environmental Exposure page counts the new entities; the records themselves are
   served by `GET /environmental-exposure/entities`, and the page has no per-site list yet. See

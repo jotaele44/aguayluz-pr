@@ -49,6 +49,10 @@ Three landfill-named pins in `spiderweb-pr`'s pin registry, two GNIS "Vertedero"
 
 Landfill sites are exported as `entity_type` `landfill_site`. The hub entity schema types `entity_type` as a free string and hub schemas are frozen, so no hub schema change is required. This ADR adds landfill sites only; exporting the wider environmental plane is a separate change.
 
+## Enforcement context
+
+EPA enforcement history for the registry's sites is carried as context, not as site data. The ECHO case service is pulled for the whole state and filtered locally, because it silently drops any filter it does not know; its state filter is proven to work (a nonsense state returns nothing, and the filtered count is below the unfiltered total) before a pull is trusted. Cases that concern landfills are kept as RAW rows and linked to sites as `CANDIDATE_NOT_IDENTITY` bindings: by name (whole-municipality-name containment), or, where an ECHO facility report lists the case number among its own source ids, by that id, to the ECHO record only. A name link is never promoted to an id link, and nothing is created from a case as an entity, geometry or event, because that would assert an identity a name cannot support. A municipality named in a case that has no LMOP site is recorded as a registry-gap lead in the receipts, never as a site. The ledger states what is not covered: places spelled differently, unnamed rows, and the state agency's own records (ECHO carries only some state-led actions). The result stays OPEN.
+
 ## Imagery
 
 Not owned here. A per-site satellite timeline is `spiderweb-pr`'s deliverable, and dated scenes ride hub `observations` rows (hub ADR 0008 precedent), marked provisional.
