@@ -305,6 +305,12 @@ exports/federation/
 # were read from are committed byte-identical under tests/fixtures/usgs_water_use/.
 !data/water_use_estimates.jsonl
 !data/water_use_receipt.json
+# Puerto Rico hydrologic feature inventory (scripts/ingest_hydro_*.py, scripts/build_hydro_inventory.py).
+# Committed on purpose: the claims are the evidence base the builder rebuilds from (CI runs
+# build_hydro_inventory.py --check against them), and the gui-parity job boots the backend with no
+# network. Raw downloaded bytes are not committed; their SHA-256 is in every claim block and receipt.
+!data/hydro/
+!data/geo/pr_aquifers.geojson
 # Centinelas federation ingress (.github/workflows/centinelas-handoff.yml). The
 # per-handoff receipts are the durable proof that a handoff was received, and the
 # workflow acknowledges back to centinelas-pr only after they are pushed. Ignoring them

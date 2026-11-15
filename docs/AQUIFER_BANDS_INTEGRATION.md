@@ -58,6 +58,8 @@ The page's legend names four conditions (blue Optimum, yellow Observation, orang
 Operational Adjustment, red Critical). The green band shallower than Optimum has **no legend
 entry**, so it is stored as `above_optimum` and never given a PRDNER name.
 
+Which aquifer each well belongs to, by USGS code or by location, is in the hydrologic feature
+inventory ([`HYDRO_FEATURE_INVENTORY.md`](HYDRO_FEATURE_INVENTORY.md)).
 How much of the island's public supply these aquifers and the others provide (10.8% from
 groundwater in 2020) is covered separately in [`WATER_USE_INTEGRATION.md`](WATER_USE_INTEGRATION.md);
 the Aquifer Bands page links to it.

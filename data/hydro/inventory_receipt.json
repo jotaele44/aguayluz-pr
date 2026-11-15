@@ -1,0 +1,564 @@
+{
+  "completeness_claimed": false,
+  "conflicts": 16,
+  "coverage": {
+    "aquifer": {
+      "by_authority": {
+        "PR_DRNA": 17,
+        "USGS": 142
+      },
+      "by_source_combination": {
+        "drna_pira_2016": 17,
+        "usgs_aquifer_codes": 35,
+        "usgs_ha730_aquifers_pr": 104,
+        "usgs_ha730_text": 1,
+        "usgs_national_aquifer_codes": 2
+      },
+      "candidate_links_i4": 20,
+      "candidate_links_i5": 0,
+      "features_lower": 141,
+      "features_upper": 159
+    },
+    "well": {
+      "bound_authoritative": 351,
+      "bound_by_polygon_only": 4841,
+      "by_source_combination": {
+        "epa_sdwis_wells": 1384,
+        "usgs_monitoring_locations": 3,
+        "usgs_monitoring_locations+wqp_wells": 5434,
+        "wqp_wells": 240
+      },
+      "candidate_links_i4": 60,
+      "candidate_links_i5": 66,
+      "features_lower": 7001,
+      "features_upper": 7061,
+      "located": 5677,
+      "unlocated": 1384,
+      "with_usgs_aquifer_code": 347
+    }
+  },
+  "denominator_definition": "the union of the enumerated sources; every retained claim is assigned to exactly one feature and every excluded claim carries a reason",
+  "generated_at": "2026-11-15T02:00:00Z",
+  "manifestations": [
+    {
+      "byte_sha256": "31a29b9b8cd1bd385b332b899b18f78027ee67dce48923056feb3ac28066a5c4",
+      "bytes": 486949,
+      "pin_matches": true,
+      "source_key": "usgs_ha730_aquifers_pr",
+      "url": "https://doi.org/10.5066/P98YGFVN"
+    },
+    {
+      "byte_sha256": "20a1a02fba79685722d0d539efdffa74d0806d4ff7ab9afdf2c7655ce979f6bb",
+      "bytes": 1708617,
+      "pin_matches": null,
+      "source_key": "usgs_aquifer_codes",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/aquifer-codes/items?limit=10000&f=json"
+    },
+    {
+      "byte_sha256": "819bedc9e64d21e4d8dd1d9bb770960b2c8085a36042ccf40abe46359934e7d5",
+      "bytes": 15531,
+      "pin_matches": null,
+      "source_key": "usgs_national_aquifer_codes",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/national-aquifer-codes/items?limit=10000&f=json"
+    },
+    {
+      "byte_sha256": "76d3417a0f738f0ebc4173f66f7506440b5b186d35e33a1d9a7531da1509ce3e",
+      "bytes": 4171549,
+      "pin_matches": null,
+      "source_key": "usgs_monitoring_locations",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items?state_code=72&limit=2000&f=json"
+    },
+    {
+      "byte_sha256": "50c14cc6db9a634e5d72fbd72fafe32cb99ec46f4c56de401fab9b0478cd9c4a",
+      "bytes": 4181216,
+      "pin_matches": null,
+      "source_key": "usgs_monitoring_locations",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items?state_code=72&limit=2000&f=json"
+    },
+    {
+      "byte_sha256": "85304c625ac0edaf882320fb8a7b4b31eac97df07361a2e64ed009140bf3820d",
+      "bytes": 4173758,
+      "pin_matches": null,
+      "source_key": "usgs_monitoring_locations",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items?state_code=72&limit=2000&f=json"
+    },
+    {
+      "byte_sha256": "b7fa4d5bbcfbbcda86992d667b4baf88b8856951621e9fd7f2a3418890d7468e",
+      "bytes": 2758910,
+      "pin_matches": null,
+      "source_key": "usgs_monitoring_locations",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items?state_code=72&limit=2000&f=json"
+    },
+    {
+      "byte_sha256": "3d35ac2a9409e863a6a6bde655316c732dacf1cfb5dbd1c17a12dc1fa7537bf7",
+      "bytes": 44626,
+      "pin_matches": null,
+      "source_key": "usgs_ha730_text",
+      "url": "https://pubs.usgs.gov/ha/ha730/ch_n/N-PR_VItext1.html"
+    },
+    {
+      "byte_sha256": "9eae700699e53f62e529e42474ef95d1608aa31b35d1da50139383cc5346d24e",
+      "bytes": 30642,
+      "pin_matches": null,
+      "source_key": "usgs_ha730_text",
+      "url": "https://pubs.usgs.gov/ha/ha730/ch_n/N-PR_VItext4.html"
+    },
+    {
+      "byte_sha256": "76d3417a0f738f0ebc4173f66f7506440b5b186d35e33a1d9a7531da1509ce3e",
+      "bytes": 4171549,
+      "pin_matches": null,
+      "source_key": "usgs_monitoring_locations",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items?state_code=72&limit=2000&f=json"
+    },
+    {
+      "byte_sha256": "50c14cc6db9a634e5d72fbd72fafe32cb99ec46f4c56de401fab9b0478cd9c4a",
+      "bytes": 4181216,
+      "pin_matches": null,
+      "source_key": "usgs_monitoring_locations",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items?state_code=72&limit=2000&f=json"
+    },
+    {
+      "byte_sha256": "85304c625ac0edaf882320fb8a7b4b31eac97df07361a2e64ed009140bf3820d",
+      "bytes": 4173758,
+      "pin_matches": null,
+      "source_key": "usgs_monitoring_locations",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items?state_code=72&limit=2000&f=json"
+    },
+    {
+      "byte_sha256": "b7fa4d5bbcfbbcda86992d667b4baf88b8856951621e9fd7f2a3418890d7468e",
+      "bytes": 2758910,
+      "pin_matches": null,
+      "source_key": "usgs_monitoring_locations",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items?state_code=72&limit=2000&f=json"
+    },
+    {
+      "byte_sha256": "b4de25a57e42efdfed92b484e8358d04d88bff8a675450d9ac28a3ab88a573fb",
+      "bytes": 1413887,
+      "pin_matches": null,
+      "source_key": "usgs_nwis_site_gw",
+      "url": "https://waterservices.usgs.gov/nwis/site/?format=rdb&stateCd=pr&siteType=GW&siteOutput=expanded&siteStatus=all"
+    },
+    {
+      "byte_sha256": "7cbdc6858e6ba0066ceb139e8254d429d90073873b6b24a6cab4103062e32711",
+      "bytes": 1746632,
+      "pin_matches": null,
+      "source_key": "wqp_wells",
+      "url": "https://www.waterqualitydata.us/data/Station/search?statecode=US%3A72&siteType=Well&mimeType=csv&zip=no&providers=NWIS&providers=STORET"
+    },
+    {
+      "byte_sha256": "fe47fd05bf8b518c96566924ee00571138830df4c12f02e0f369312fa8ba73f6",
+      "bytes": 878451,
+      "pin_matches": null,
+      "source_key": "epa_sdwis_wells",
+      "url": "https://data.epa.gov/efservice/WATER_SYSTEM_FACILITY/PRIMACY_AGENCY_CODE/PR/FACILITY_TYPE_CODE/WL/ROWS/0:9999/JSON"
+    },
+    {
+      "byte_sha256": "af033ff1f30c562ca115578be25904ecf0438359667636d7de85dfdedf5c6fbe",
+      "bytes": 1334475,
+      "pin_matches": null,
+      "source_key": "epa_sdwis_systems",
+      "url": "https://data.epa.gov/efservice/WATER_SYSTEM/PRIMACY_AGENCY_CODE/PR/ROWS/0:1999/JSON"
+    }
+  ],
+  "open_residue": [
+    "PRASA production wells: EPA SDWIS lists them without coordinates, so they are not placed or bound to an aquifer",
+    "DRNA water-franchise registry of permitted wells: no public registry found",
+    "DRNA and Junta de Planificación aquifer layers: sige.pr.gov and gis.otg.pr.gov unreachable from the build environment",
+    "names of the HA 730-N alluvial-valley polygons: the release labels them only by class",
+    "springs, streams, waterbodies, reservoirs, intakes and gauges: later phases"
+  ],
+  "phase_scope": {
+    "feature_types_enumerated": [
+      "aquifer",
+      "well"
+    ],
+    "feature_types_not_enumerated": [
+      "spring",
+      "stream",
+      "waterbody",
+      "reservoir",
+      "intake",
+      "gauge"
+    ]
+  },
+  "schema_version": "aguayluz.hydro-inventory-receipt/v1",
+  "source_ledgers": {
+    "drna_pira_2016": {
+      "accounted": 17,
+      "assigned_to_features": 17,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 17,
+      "source": 17,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "epa_sdwis_wells": {
+      "accounted": 1384,
+      "assigned_to_features": 1384,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 1384,
+      "source": 1384,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "usgs_aquifer_codes": {
+      "accounted": 35,
+      "assigned_to_features": 35,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 35,
+      "source": 35,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "usgs_ha730_aquifers_pr": {
+      "accounted": 104,
+      "assigned_to_features": 104,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 104,
+      "source": 104,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "usgs_ha730_text": {
+      "accounted": 1,
+      "assigned_to_features": 1,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 1,
+      "source": 1,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "usgs_monitoring_locations": {
+      "accounted": 7318,
+      "assigned_to_features": 5437,
+      "delta": 0,
+      "excluded": 1881,
+      "excluded_by_reason": {
+        "site type not enumerated in this phase": 1881
+      },
+      "retained": 5437,
+      "source": 7318,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "usgs_national_aquifer_codes": {
+      "accounted": 2,
+      "assigned_to_features": 2,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 2,
+      "source": 2,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "wqp_wells": {
+      "accounted": 5674,
+      "assigned_to_features": 5674,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 5674,
+      "source": 5674,
+      "state": "PASS",
+      "unresolved": 0
+    }
+  },
+  "spatial": {
+    "aquifer_code_by_polygon_class": {
+      "100ALVT": {
+        "997": 1
+      },
+      "110CGJV": {
+        "115": 3
+      },
+      "110EPRZ": {
+        "115": 1
+      },
+      "110GUNC": {
+        "115": 3,
+        "908": 1
+      },
+      "110GYNL": {
+        "115": 3,
+        "999": 1
+      },
+      "110HNGB": {
+        "115": 3
+      },
+      "110LJVL": {
+        "115": 5
+      },
+      "110QRNR": {
+        "114": 1,
+        "908": 11
+      },
+      "110RCBV": {
+        "115": 1
+      },
+      "110SCPL": {
+        "114": 138,
+        "908": 4,
+        "997": 3
+      },
+      "110TLLB": {
+        "115": 2,
+        "999": 1
+      },
+      "110YBCV": {
+        "115": 1
+      },
+      "110YCVL": {
+        "115": 2
+      },
+      "111AVMC": {
+        "114": 1,
+        "115": 3,
+        "908": 1,
+        "997": 1
+      },
+      "111AVMV": {
+        "114": 10,
+        "115": 1,
+        "908": 1,
+        "997": 2
+      },
+      "111HLCN": {
+        "115": 2
+      },
+      "111VLAV": {
+        "115": 37,
+        "908": 4,
+        "997": 1
+      },
+      "122AGUD": {
+        "4191": 2
+      },
+      "122AMMN": {
+        "4191": 3,
+        "999": 1
+      },
+      "122CIBO": {
+        "115": 2,
+        "4191": 1,
+        "4192": 1
+      },
+      "122MNBL": {
+        "4191": 1
+      },
+      "122NRCSL": {
+        "115": 2,
+        "4191": 9,
+        "4192": 2,
+        "997": 1,
+        "999": 1
+      },
+      "122NRCSU": {
+        "115": 12,
+        "4191": 40,
+        "4192": 3,
+        "997": 6
+      },
+      "122PONC": {
+        "114": 4
+      },
+      "122RIND": {
+        "997": 1
+      },
+      "210VLCC": {
+        "115": 1,
+        "908": 5
+      }
+    },
+    "located_wells_without_polygon": {
+      "in_non_aquifer_unit": 487,
+      "no_location": 1384,
+      "outside_all_polygons": 18
+    }
+  },
+  "stage_receipts": {
+    "aquifers": {
+      "datum": {
+        "checks": {
+          "declared_nad27": {
+            "accuracy_m": 16.0,
+            "median_m": 241.0,
+            "median_north_offset_m": 209.5,
+            "operation": "Inverse of unnamed + NAD27 to WGS 84 (1) (with axis order normalized for visualization)",
+            "p90_m": 322.0,
+            "unavailable_better_operations": []
+          },
+          "puerto_rico_1940": {
+            "accuracy_m": 6.0,
+            "median_m": 25.9,
+            "median_north_offset_m": 1.9,
+            "operation": "Inverse of unnamed + Puerto Rico to WGS 84 (3) (with axis order normalized for visualization)",
+            "p90_m": 92.3,
+            "unavailable_better_operations": [
+              "Inverse of unnamed + Puerto Rico to NAD83 (1) + NAD83 to WGS 84 (35)",
+              "Inverse of unnamed + Puerto Rico to WGS 84 (4)"
+            ]
+          }
+        },
+        "declared_wkt_sha256": "1f3a904211e1a5016a57c98f0fee4fc10d8ce8a6af75b0e67c596ad1939ea4b3",
+        "gate_m": 100.0,
+        "used": "EPSG:4139 Puerto Rico 1940"
+      },
+      "ledgers": {
+        "aquifer_codes": {
+          "codes_assigned_in_pr": 26,
+          "codes_named_for_pr_unassigned": 9,
+          "excluded": {
+            "122ALMS": "stratigraphic unit ('Almirante Sur Sand Lentil of Cibao Formation') with no Puerto Rico location assigned",
+            "122CMUY": "stratigraphic unit ('Camuy Limestone') with no Puerto Rico location assigned",
+            "122GJTC": "stratigraphic unit ('Guajataca Member of Cibao Formation') with no Puerto Rico location assigned",
+            "122JNDZ": "stratigraphic unit ('Juana Diaz Formation') with no Puerto Rico location assigned",
+            "122MCRB": "stratigraphic unit ('Mucarabones Sand') with no Puerto Rico location assigned",
+            "122QBDA": "stratigraphic unit ('Quebrada Arenas Limestone Member of Cibao Formation') with no Puerto Rico location assigned",
+            "122UPPR": "stratigraphic unit ('Upper Member of Cibao Formation') with no Puerto Rico location assigned",
+            "123LRES": "stratigraphic unit ('Lares Limestone of Rio Guatemala Group') with no Puerto Rico location assigned",
+            "123SSBS": "stratigraphic unit ('San Sabastian Formation of Rio Guatemala Group') with no Puerto Rico location assigned",
+            "124RPDR": "stratigraphic unit ('Rio Piedras Siltstone') with no Puerto Rico location assigned",
+            "N9999OTHER": "catch-all national code ('Other aquifers'), not an aquifer unit"
+          },
+          "national_codes_assigned_in_pr": 3
+        },
+        "claims": 159,
+        "ha730_groups": 104,
+        "ha730_polygons": {
+          "accounted": 473,
+          "delta": 0,
+          "excluded": 263,
+          "excluded_by_reason": {
+            "'other' in the source, not an aquifer": 43,
+            "confining unit in the source, not an aquifer": 69,
+            "outside Puerto Rico (U.S. Virgin Islands)": 151
+          },
+          "retained": 210,
+          "source": 473,
+          "state": "PASS",
+          "unresolved": 0
+        }
+      },
+      "run_utc": "2026-11-15T02:00:00Z",
+      "simplification": {
+        "area_check": {
+          "114": {
+            "relative_change": 0.0013,
+            "simplified_km2": 374.943,
+            "source_km2": 374.44
+          },
+          "115": {
+            "relative_change": 0.0007,
+            "simplified_km2": 1167.46,
+            "source_km2": 1166.693
+          },
+          "4191": {
+            "relative_change": -0.0001,
+            "simplified_km2": 711.771,
+            "source_km2": 711.828
+          },
+          "4192": {
+            "relative_change": -0.0001,
+            "simplified_km2": 561.124,
+            "source_km2": 561.178
+          },
+          "420": {
+            "relative_change": -0.0047,
+            "simplified_km2": 49.656,
+            "source_km2": 49.888
+          },
+          "907": {
+            "relative_change": -0.0066,
+            "simplified_km2": 30.193,
+            "source_km2": 30.392
+          },
+          "908": {
+            "relative_change": 0.0,
+            "simplified_km2": 5442.692,
+            "source_km2": 5442.679
+          },
+          "997": {
+            "relative_change": -0.0007,
+            "simplified_km2": 494.209,
+            "source_km2": 494.565
+          },
+          "999": {
+            "relative_change": -0.0003,
+            "simplified_km2": 446.744,
+            "source_km2": 446.858
+          }
+        },
+        "decimals": 5,
+        "tolerance_deg": 0.0003
+      },
+      "stage": "aquifers",
+      "status": "PASS"
+    },
+    "sites": {
+      "ledgers": {
+        "epa_sdwis_wells": {
+          "active": 712,
+          "inactive": 672,
+          "rows": 1384
+        },
+        "usgs_monitoring_locations": {
+          "by_site_type": {
+            "AT": 80,
+            "ES": 80,
+            "FA-CS": 65,
+            "FA-DV": 17,
+            "FA-QC": 1,
+            "FA-STS": 7,
+            "FA-WDS": 82,
+            "FA-WWTP": 3,
+            "GW": 5197,
+            "GW-CR": 1,
+            "GW-MW": 78,
+            "GW-TH": 161,
+            "LA-OU": 1,
+            "LA-PLY": 1,
+            "LA-SNK": 1,
+            "LK": 121,
+            "OC": 2,
+            "OC-CO": 18,
+            "SB-TSM": 4,
+            "SP": 221,
+            "ST": 1083,
+            "ST-CA": 61,
+            "ST-DCH": 1,
+            "ST-TS": 1,
+            "WE": 31
+          },
+          "cross_check": {
+            "api_groundwater_sites": 5437,
+            "aquifer_code_differences": 0,
+            "legacy_groundwater_sites": 5437,
+            "note": "The legacy service's siteType=GW includes the GW-TH, GW-MW and GW-CR subtypes, which the API lists separately; that is why 5,437 and 5,197 both appear in earlier notes.",
+            "only_api": 0,
+            "only_legacy": 0
+          },
+          "sites": 7318
+        },
+        "wqp_wells": {
+          "other_rows": 240,
+          "rows": 5674,
+          "usgs_rows": 5434
+        }
+      },
+      "run_utc": "2026-11-15T02:00:00Z",
+      "stage": "sites",
+      "status": "PASS"
+    }
+  }
+}

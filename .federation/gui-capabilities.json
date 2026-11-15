@@ -1967,6 +1967,137 @@
       }
     },
     {
+      "id": "hydro-feature-inventory",
+      "classification": "analysis",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "The reconciled inventory of Puerto Rico's aquifers and wells, shown on the Hydro Inventory page and used by the Monitoring page's groundwater series. Every source statement (USGS HA 730-N polygons and text, USGS aquifer codes, USGS monitoring locations, the Water Quality Portal, EPA SDWIS, DRNA PIRA 2016) is kept as a claim; claims merge into one feature only on a published identifier, and name or distance matches are listed as candidates, so counts are shown as a range. Source disagreements are listed unresolved. Each well's monitoring state is computed per request from the reading files on the server, and a server without them says so. Read-only by design: the ingests (scripts/ingest_hydro_aquifers.py, scripts/ingest_hydro_sites.py) and scripts/build_hydro_inventory.py are run by a maintainer, and their outputs are committed, so no normal user path requires a terminal. Controls: section buttons, a well search and source filter with paging, opening a feature's detail, Retry after a failed load, and on Monitoring an aquifer filter with an opt-in toggle for wells that are only inside the mapped outline. Loading, error-with-retry, empty, readings-absent, unlocated-well and unnamed-polygon states are rendered and unit-tested.",
+      "backend": {
+        "files": [
+          "server/backend/hydro_inventory_api.py",
+          "server/backend/app.py",
+          "src/aguayluz/hydro_inventory.py"
+        ],
+        "endpoints": [
+          "GET /hydro/inventory/summary",
+          "GET /hydro/features",
+          "GET /hydro/features/{feature_id:path}",
+          "GET /hydro/aquifer-wells",
+          "GET /hydro/conflicts",
+          "GET /hydro/candidates",
+          "GET /hydro/aquifers.geojson"
+        ],
+        "symbols": [
+          "server/backend/hydro_inventory_api.py:hydro_aquifer_wells",
+          "server/backend/hydro_inventory_api.py:hydro_aquifers_geojson",
+          "server/backend/hydro_inventory_api.py:hydro_candidates",
+          "server/backend/hydro_inventory_api.py:hydro_conflicts",
+          "server/backend/hydro_inventory_api.py:hydro_feature",
+          "server/backend/hydro_inventory_api.py:hydro_features",
+          "server/backend/hydro_inventory_api.py:hydro_summary",
+          "src/aguayluz/hydro_inventory.py:InventoryStore",
+          "src/aguayluz/hydro_inventory.py:PolygonIndex",
+          "src/aguayluz/hydro_inventory.py:aquifer_feature_id",
+          "src/aguayluz/hydro_inventory.py:aquifer_links",
+          "src/aguayluz/hydro_inventory.py:atomic_write",
+          "src/aguayluz/hydro_inventory.py:build_aquifers",
+          "src/aguayluz/hydro_inventory.py:build_inventory",
+          "src/aguayluz/hydro_inventory.py:build_wells",
+          "src/aguayluz/hydro_inventory.py:canonical_sha256",
+          "src/aguayluz/hydro_inventory.py:claim",
+          "src/aguayluz/hydro_inventory.py:close_ledger",
+          "src/aguayluz/hydro_inventory.py:component_count",
+          "src/aguayluz/hydro_inventory.py:conflict",
+          "src/aguayluz/hydro_inventory.py:haversine_m",
+          "src/aguayluz/hydro_inventory.py:link",
+          "src/aguayluz/hydro_inventory.py:monitoring_state",
+          "src/aguayluz/hydro_inventory.py:name_tokens",
+          "src/aguayluz/hydro_inventory.py:names_compatible",
+          "src/aguayluz/hydro_inventory.py:normalize_name",
+          "src/aguayluz/hydro_inventory.py:read_claims",
+          "src/aguayluz/hydro_inventory.py:read_jsonl",
+          "src/aguayluz/hydro_inventory.py:seeded_conflicts",
+          "src/aguayluz/hydro_inventory.py:well_aquifer_links",
+          "src/aguayluz/hydro_inventory.py:well_candidates",
+          "src/aguayluz/hydro_inventory.py:well_names",
+          "src/aguayluz/hydro_inventory.py:wells_in_aquifer",
+          "src/aguayluz/hydro_inventory.py:write_claims",
+          "src/aguayluz/hydro_inventory.py:write_fail_receipt",
+          "src/aguayluz/hydro_inventory.py:write_jsonl"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/ingest_hydro_aquifers.py",
+          "scripts/ingest_hydro_sites.py",
+          "scripts/build_hydro_inventory.py"
+        ],
+        "symbols": [
+          "scripts/ingest_hydro_aquifers.py:AcquisitionError",
+          "scripts/ingest_hydro_aquifers.py:acquire",
+          "scripts/ingest_hydro_aquifers.py:choose_transformer",
+          "scripts/ingest_hydro_aquifers.py:coastline_offsets",
+          "scripts/ingest_hydro_aquifers.py:code_claims",
+          "scripts/ingest_hydro_aquifers.py:group_features",
+          "scripts/ingest_hydro_aquifers.py:island_of",
+          "scripts/ingest_hydro_aquifers.py:main",
+          "scripts/ingest_hydro_aquifers.py:pira_claims",
+          "scripts/ingest_hydro_aquifers.py:process_polygons",
+          "scripts/ingest_hydro_aquifers.py:text_claims",
+          "scripts/ingest_hydro_aquifers.py:write_geojson",
+          "scripts/ingest_hydro_sites.py:AcquisitionError",
+          "scripts/ingest_hydro_sites.py:acquire",
+          "scripts/ingest_hydro_sites.py:main",
+          "scripts/ingest_hydro_sites.py:parse_rdb",
+          "scripts/ingest_hydro_sites.py:sdwis_claims",
+          "scripts/ingest_hydro_sites.py:usgs_claims",
+          "scripts/ingest_hydro_sites.py:wqp_claims",
+          "scripts/build_hydro_inventory.py:asset_ids_by_site",
+          "scripts/build_hydro_inventory.py:build",
+          "scripts/build_hydro_inventory.py:main",
+          "scripts/build_hydro_inventory.py:render"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/hydro-inventory",
+          "/monitoring"
+        ],
+        "e2e_routes": [
+          "/hydro-inventory"
+        ],
+        "components": [
+          "dashboard/src/pages/HydroInventoryPage.jsx",
+          "dashboard/src/lib/hydro-inventory-api.js",
+          "dashboard/src/lib/hydro-inventory-hooks.js",
+          "dashboard/src/components/MonitoringCharts.jsx",
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_hydro_inventory_api.py"
+        ],
+        "contract": [
+          "tests/test_hydro_inventory.py",
+          "tests/test_ingest_hydro_sites.py",
+          "tests/test_ingest_hydro_aquifers.py",
+          "tests/test_gui_parity.py"
+        ],
+        "unit": [
+          "dashboard/src/pages/HydroInventoryPage.test.jsx",
+          "dashboard/src/lib/hydro-inventory-api.test.js"
+        ],
+        "e2e": [
+          "dashboard/tests/hydro-inventory.spec.mjs",
+          "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
+    },
+    {
       "id": "nws-cloudgis-map-overlays",
       "classification": "client_only",
       "status": "active",
