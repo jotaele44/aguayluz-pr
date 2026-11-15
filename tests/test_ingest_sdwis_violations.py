@@ -36,18 +36,21 @@ def test_municipality_resolved_to_canonical_accented():
     assert muni == "Bayamón"
 
 
-def test_tier1_microbial_acute_maps_to_boil_water():
+def test_tier1_microbial_is_never_inferred_as_boil_water():
     rows = {r["event_id"]: r for r in _events()}
-    # PR0002000 9100777: health_based=Y, tier=1, rule_group=100 (coliform) -> boil_water
-    bw = rows["AYL_EVT_20240915_PR0002000_9100777"]
-    assert bw["event_type"] == "boil_water"
-    assert bw["review_status"] == "needs_review"  # health-based + unresolved
-    # PR0002591 9001234: health_based=Y but tier=2 -> stays water_quality_violation
+    # PR0002000 9100777: health_based=Y, tier=1, rule_group=100 (coliform). A Tier-1
+    # public-notice requirement does not prove a boil-water advisory was issued, so it
+    # stays a violation; pn_tier and rule_group stay in status_text for the alert layer.
+    v = rows["AYL_EVT_20240915_PR0002000_9100777"]
+    assert v["event_type"] == "water_quality_violation"
+    assert "pn_tier=1" in v["status_text"] and "rule_group=100" in v["status_text"]
+    assert v["review_status"] == "needs_review"  # health-based + unresolved
+    # PR0002591 9001234: health_based=Y, tier=2 -> water_quality_violation
     assert rows["AYL_EVT_20230401_PR0002591_9001234"]["event_type"] == "water_quality_violation"
-    # PR0002000 9200888: health_based=Y, tier=1, but rule_group=210 (Disinfection
-    # Byproducts / chlorine dioxide — acute but "do NOT boil") -> water_quality_violation,
-    # NOT boil_water. Regression guard: 210 was in the old over-broad rule-group set.
+    # PR0002000 9200888: health_based=Y, tier=1, rule_group=210 (disinfection
+    # byproducts) -> water_quality_violation
     assert rows["AYL_EVT_20241001_PR0002000_9200888"]["event_type"] == "water_quality_violation"
+    assert all(r["event_type"] != "boil_water" for r in rows.values())
 
 
 def test_events_are_schema_shaped():
@@ -61,7 +64,7 @@ def test_events_are_schema_shaped():
     pat = re.compile(SCHEMA["properties"]["event_id"]["pattern"])
     for r in rows:
         assert req <= set(r) and set(r) <= allowed
-        assert r["event_type"] in ("water_quality_violation", "boil_water")
+        assert r["event_type"] == "water_quality_violation"
         for k, choices in enums.items():
             if k in r:
                 assert r[k] in choices

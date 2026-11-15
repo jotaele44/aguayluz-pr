@@ -25,6 +25,18 @@ STEP_NHC = (
     ["scripts/ingest_nhc_storms.py"],
     True,
 )
+# NWS NWPS river/reservoir gauges → NWS hydromet plane. Optional: an NWPS outage writes
+# a FAIL receipt (shown on the dashboard's NWS Hydromet page) and the run continues.
+STEP_NWPS_GAUGES = (
+    "NWS NWPS river gauges → hydromet plane",
+    ["scripts/ingest_nwps_gauges.py"],
+    True,
+)
+STEP_STAGE_IV = (
+    "NWS Stage IV PR rainfall → hydromet plane",
+    ["scripts/ingest_stage_iv_pr.py"],
+    True,
+)
 STEP_USGS_QUAKES = (
     "USGS earthquakes → service_events",
     ["scripts/ingest_usgs_quakes.py"],
@@ -75,6 +87,15 @@ STEP_USGS_WATER_QUALITY = (
 STEP_USGS_STATISTICS = (
     "USGS statistics baselines",
     ["scripts/ingest_usgs_statistics.py"],
+    True,
+)
+# PRDNER condition bands for the five south-coast wells, read from a USGS page's inline JS.
+# Constants on a static page: weekly/all only. Optional, so a page change or outage writes a
+# FAIL receipt (shown on the dashboard) and the run continues. Must follow STEP_USGS_GW,
+# which creates the USGSGW_ assets this step binds to by stable id.
+STEP_AQUIFER_BANDS = (
+    "PRDNER aquifer bands (USGS page) → aquifer_band_registry",
+    ["scripts/ingest_prdner_well_bands.py"],
     True,
 )
 STEP_USGS_RTFI = (
@@ -146,6 +167,11 @@ STEP_SDWIS = (
     "EPA SDWIS violations → service_events",
     ["scripts/ingest_sdwis_violations.py"],
     False,
+)
+STEP_DRNA_BEACH = (
+    "DRNA beach monitoring → canonical hazard plane",
+    ["scripts/ingest_drna_beach_monitoring.py", "--year", "2026"],
+    True,
 )
 STEP_ECHO = ("EPA ECHO CWA enforcement → service_events", ["scripts/ingest_echo.py"], True)
 STEP_FEMA = ("FEMA disaster declarations → service_events", ["scripts/ingest_fema.py"], True)
@@ -233,6 +259,7 @@ PLANS: dict[str, list[tuple]] = {
     "fast": [
         STEP_NWS,
         STEP_NHC,
+        STEP_NWPS_GAUGES,
         STEP_USGS_QUAKES,
         STEP_USGS_CONTINUOUS,
         STEP_USGS_RTFI,
@@ -252,6 +279,8 @@ PLANS: dict[str, list[tuple]] = {
     "daily": [
         STEP_NWS,
         STEP_NHC,
+        STEP_NWPS_GAUGES,
+        STEP_STAGE_IV,
         STEP_USGS_QUAKES,
         STEP_USGS_LEVELS,
         STEP_USGS_GW,
@@ -269,6 +298,8 @@ PLANS: dict[str, list[tuple]] = {
     "weekly": [
         STEP_NWS,
         STEP_NHC,
+        STEP_NWPS_GAUGES,
+        STEP_STAGE_IV,
         STEP_USGS_QUAKES,
         STEP_USGS_ASSETS,
         STEP_USGS_LEVELS,
@@ -279,6 +310,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_USGS_METADATA,
         STEP_USGS_WATER_QUALITY,
         STEP_USGS_STATISTICS,
+        STEP_AQUIFER_BANDS,
         STEP_USGS_RTFI,
         STEP_USGS_NIMS,
         STEP_NOAA_TIDES,
@@ -293,6 +325,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_PRECIP_NCEI,
         STEP_SOIL_ENRICH,
         STEP_SDWIS,
+        STEP_DRNA_BEACH,
         STEP_ECHO,
         STEP_FEMA,
         STEP_OSHA,
@@ -303,6 +336,8 @@ PLANS: dict[str, list[tuple]] = {
     "all": [
         STEP_NWS,
         STEP_NHC,
+        STEP_NWPS_GAUGES,
+        STEP_STAGE_IV,
         STEP_USGS_QUAKES,
         STEP_USGS_ASSETS,
         STEP_USGS_LEVELS,
@@ -313,6 +348,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_USGS_METADATA,
         STEP_USGS_WATER_QUALITY,
         STEP_USGS_STATISTICS,
+        STEP_AQUIFER_BANDS,
         STEP_USGS_RTFI,
         STEP_USGS_NIMS,
         STEP_NOAA_TIDES,
@@ -327,6 +363,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_PRECIP_NCEI,
         STEP_SOIL_ENRICH,
         STEP_SDWIS,
+        STEP_DRNA_BEACH,
         STEP_ECHO,
         STEP_FEMA,
         STEP_OSHA,

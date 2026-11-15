@@ -11,19 +11,29 @@ name: pip-audit
 # detects rather than assumes. Weekly matters more than per-push here: an
 # advisory is usually published long after the code stops changing.
 #
-# Report-only to start (continue-on-error), matching the convention already set
-# by moneysweep-pr: a newly disclosed CVE should surface as a visible signal,
-# not block unrelated work. Promote to gating once the baseline is clean.
+# The lock is already fully resolved and pinned, so pip-audit reads the pins as
+# they are (--no-deps --disable-pip) rather than handing them back to pip to
+# resolve again. That second resolve is what used to break: `uv export` emits
+# hashes, hashes put pip in hash-checking mode, and the federation's own
+# `name @ git+…` packages cannot be hashed — so pip aborted before auditing a
+# single package, and continue-on-error reported the run as a pass.
+#
+# Report-only for findings (continue-on-error), matching the convention already
+# set by moneysweep-pr: a newly disclosed CVE should surface as a visible signal,
+# not block unrelated work. Promote to gating once the baseline is clean. A scan
+# that never ran is not a finding, though: the Report step fails the job when
+# pip-audit produced no report, so a broken audit cannot pass as a clean one.
 
 on:
   schedule:
     - cron: "0 6 * * 1" # Mondays 06:00 UTC
   pull_request:
-    paths: # only when the dependency set itself moves
+    paths: # only when the dependency set itself moves, or this audit does
       - "uv.lock"
       - "requirements.lock"
       - "constraints.txt"
       - "pyproject.toml"
+      - ".github/workflows/pip-audit.yml"
   workflow_dispatch:
 
 permissions:
@@ -53,7 +63,9 @@ jobs:
         run: |
           set -euo pipefail
           if [ -f uv.lock ]; then
-            uv export --frozen --no-emit-project \
+            # No hashes: the audit reads the pins directly (see the header),
+            # and the direct references dropped below can never carry one.
+            uv export --frozen --no-emit-project --no-hashes \
               --format requirements-txt -o /tmp/locked.txt
           elif [ -f requirements.lock ]; then
             cp requirements.lock /tmp/locked.txt
@@ -63,13 +75,84 @@ jobs:
             echo "::error::no lock artifact (uv.lock / requirements.lock / constraints.txt)"
             exit 1
           fi
-          # Drop editable and local-path entries: these local federation
-          # packages have no PyPI advisories and would fail resolution outside
-          # their checkout context. Their own repo's audit covers them.
-          grep -vE '^\s*(-e |\.\./|/)' /tmp/locked.txt > /tmp/audit.txt
-          echo "auditing $(grep -cE '^[A-Za-z0-9]' /tmp/audit.txt || echo 0) pinned packages"
+          # Drop editable, local-path and direct-reference (`name @ git+…`,
+          # `name @ https://…`) entries. These are the federation's own
+          # packages: not on PyPI, so there is no advisory to match and no
+          # version to pin. Every PyPI dependency they pull in stays — the lock
+          # is fully resolved, so each one is pinned on a line of its own.
+          grep -vE '^\s*(-e\s|\.\.?/|/)' /tmp/locked.txt \
+            | grep -vE '^\s*[A-Za-z0-9][A-Za-z0-9._-]*\s*(\[[^]]*\])?\s*@' \
+            > /tmp/audit.txt || true
+          pinned=$(grep -cE '^\s*[A-Za-z0-9]' /tmp/audit.txt || true)
+          if [ "${pinned:-0}" -eq 0 ]; then
+            echo "::error::nothing left to audit after filtering the locked set"
+            exit 1
+          fi
+          echo "auditing ${pinned} pinned packages"
 
       - name: Audit
         continue-on-error: true
         run: |
-          pipx run pip-audit --requirement /tmp/audit.txt --desc
+          pipx run pip-audit --requirement /tmp/audit.txt \
+            --no-deps --disable-pip --format json --output /tmp/pip-audit.json
+
+      # pip-audit exits non-zero both for findings and for its own failures, and
+      # continue-on-error cannot tell those apart. The JSON report is only
+      # written once an audit has actually completed, so its absence is the
+      # signal that nothing was scanned.
+      - name: Report
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import sys
+
+          path = "/tmp/pip-audit.json"
+          if not os.path.isfile(path) or os.path.getsize(path) == 0:
+              print("::error::pip-audit produced no report, so nothing was audited (see the Audit step log)")
+              sys.exit(1)
+          with open(path, encoding="utf-8") as fh:
+              deps = json.load(fh)["dependencies"]
+
+          # pip-audit can list one advisory more than once for a package (the
+          # same id with its aliases in a different order), so count ids.
+          vulnerable = {}
+          for d in deps:
+              advisories = {}
+              for v in d.get("vulns") or []:
+                  advisories.setdefault(v["id"], v)
+              if advisories:
+                  vulnerable[(d["name"], d["version"])] = advisories
+          skipped = [d for d in deps if d.get("skip_reason")]
+          findings = sum(len(a) for a in vulnerable.values())
+          result = (
+              f"{findings} known vulnerabilities in {len(vulnerable)} of them"
+              if findings
+              else "no known vulnerabilities"
+          )
+          lines = [
+              "## pip-audit (report-only)",
+              "",
+              f"{len(deps) - len(skipped)} locked packages audited: {result}"
+              + (f"; {len(skipped)} skipped." if skipped else "."),
+          ]
+          if vulnerable:
+              lines += ["", "| Package | Version | Advisory | Aliases | Fixed in |", "|---|---|---|---|---|"]
+              for (name, version), advisories in sorted(vulnerable.items()):
+                  for vid, v in sorted(advisories.items()):
+                      aliases = ", ".join(sorted(v.get("aliases") or [])) or "-"
+                      fixed = ", ".join(v.get("fix_versions") or []) or "no fix yet"
+                      lines.append(f"| {name} | {version} | {vid} | {aliases} | {fixed} |")
+          if skipped:
+              lines += ["", "Skipped:", ""] + [f"- {d['name']}: {d['skip_reason']}" for d in skipped]
+
+          text = "\n".join(lines) + "\n"
+          print(text)
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as fh:
+              fh.write(text)
+          if findings:
+              print(
+                  f"::warning::pip-audit found {findings} known vulnerabilities in "
+                  f"{len(vulnerable)} locked packages (report-only; see the job summary)"
+              )
+          PY

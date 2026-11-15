@@ -12,11 +12,13 @@ events into operational alerts —
                                — NEON publication events (data/neon_publication_events.jsonl)
   * WEATHER_HAZARD             — USDM drought classification (data/drought_conditions.jsonl)
                                   + NCEI precipitation shortfall (data/precipitation_conditions.jsonl)
+  * WEATHER_HAZARD             — NWPS gauge flood episodes (NWS hydromet plane:
+                                  data/hydromet_records.jsonl + data/nwps_gauge_state.jsonl)
 
 Idempotent merge: hand-authored seed alerts and any non-generated rows are kept;
 previously-generated rows (alert_id containing any GENERATED_MARKERS substring —
-_sdwis_ / _resvlow_ / _seismic_ / _weather_ / _osha_ / _neonpub_) are replaced on every run. Output is
-sorted by alert_id for a stable diff.
+_sdwis_ / _resvlow_ / _seismic_ / _weather_ / _osha_ / _neonpub_ / _nwpsflood_ …) are replaced
+on every run. Output is sorted by alert_id for a stable diff.
 
 The exporter (scripts/federation_export.py) projects data/alert_events.jsonl into the
 canonical `alerts` stream, so no exporter change is needed for these to reach the Hub.
@@ -28,6 +30,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -37,9 +40,11 @@ if _SRC.exists() and str(_SRC) not in sys.path:
 
 from aguayluz.alert_promotion import (  # noqa: E402
     GENERATED_MARKERS,
+    HydrometInputs,
     build_all_alerts,
     load_geo,
 )
+from aguayluz.hydromet import store as hydromet_store  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -84,6 +89,9 @@ def main() -> int:
                     help="municipio centroids for alert coordinates")
     ap.add_argument("--assets", default="data/utility_assets.jsonl",
                     help="utility assets (linked to each alert via sectors_impacted/linked_asset_ids)")
+    ap.add_argument("--hydromet-dir", default="data",
+                    help="directory holding the NWS hydromet plane files (hydromet_records.jsonl, "
+                         "nwps_gauge_state.jsonl); optional")
     ap.add_argument("--out", default="data/alert_events.jsonl")
     ap.add_argument("--percentile", type=float, default=10.0,
                     help="tail percentile for the level proxies (reservoir/aquifer/coastal)")
@@ -106,10 +114,18 @@ def main() -> int:
     geo_doc = json.loads(geo_path.read_text()) if geo_path.is_file() else {}
     geo = load_geo(geo_doc.get("municipios", []) if isinstance(geo_doc, dict) else geo_doc)
 
+    hydromet_dir = REPO_ROOT / args.hydromet_dir
+    hydromet = HydrometInputs(
+        records=hydromet_store.load_records(hydromet_dir),
+        gauge_state=hydromet_store.load_gauge_state(hydromet_dir),
+        now=datetime.now(timezone.utc),
+    )
+
     alerts = build_all_alerts(
         events, readings, geo, assets,
         reservoir_percentile=args.percentile,
         neon_events=neon_events,
+        hydromet=hydromet,
     )
     generated = [a.model_dump() for a in alerts]
 

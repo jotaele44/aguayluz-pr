@@ -1,0 +1,91 @@
+name: PR grid V2 NWPS migration packet
+
+on:
+  push:
+    branches: ["feat/pr-grid-v2-nwps-migration-v1"]
+  pull_request:
+    paths:
+      - "data/nwps_gauge_state.jsonl"
+      - "scripts/export_nwps_grid_v2_source_records.py"
+      - "tests/test_export_nwps_grid_v2_source_records.py"
+      - ".github/workflows/pr-grid-v2-nwps-migration.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  freeze-nwps-packet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Verify exporter regressions
+        run: python -m pip install pytest && python -m pytest -q tests/test_export_nwps_grid_v2_source_records.py
+
+      - name: Export frozen NWPS V2 migration packet
+        run: |
+          mkdir -p artifacts/pr-grid-v2-nwps
+          python scripts/export_nwps_grid_v2_source_records.py             --source data/nwps_gauge_state.jsonl             --binding-out artifacts/pr-grid-v2-nwps/binding_input.jsonl             --records-out artifacts/pr-grid-v2-nwps/profile_records.jsonl             --receipt-out artifacts/pr-grid-v2-nwps/producer_receipt.json
+
+      - name: Assert exact producer denominator and fail-closed semantics
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          root = Path("artifacts/pr-grid-v2-nwps")
+          binding = root / "binding_input.jsonl"
+          records = root / "profile_records.jsonl"
+          receipt = json.loads((root / "producer_receipt.json").read_text())
+
+          binding_rows = [json.loads(x) for x in binding.read_text().splitlines() if x.strip()]
+          record_rows = [json.loads(x) for x in records.read_text().splitlines() if x.strip()]
+
+          assert receipt["State"] == "PASS"
+          assert receipt["Input_Record_Count"] == 118
+          assert receipt["Binding_Input_Record_Count"] == 118
+          assert receipt["Profile_Record_Count"] == 118
+          assert receipt["Unique_Record_ID_Count"] == 118
+          assert receipt["Source_Manifestation_Count"] == 1
+          assert len(binding_rows) == 118
+          assert len(record_rows) == 118
+          assert len({row["Record_ID"] for row in binding_rows}) == 118
+          assert all(row["Repository"] == "aguayluz-pr" for row in binding_rows)
+          assert all(row["Source_CRS"] == "EPSG:4326" for row in binding_rows)
+          assert all(row["Coordinate_Evidence_State"] == "VERIFIED_SOURCE_COORDINATE" for row in binding_rows)
+          assert all(row["Uncertainty_Class"] == "EXACT" for row in binding_rows)
+          assert all("Cell_ID" not in row for row in binding_rows)
+          assert receipt["Binding_Input_SHA256"] == hashlib.sha256(binding.read_bytes()).hexdigest()
+          assert receipt["Profile_Records_SHA256"] == hashlib.sha256(records.read_bytes()).hexdigest()
+          print("NWPS_PRODUCER_PACKET=PASS")
+          PY
+
+      - name: Upload frozen producer packet
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: aguayluz-nwps-pr-grid-v2-source-packet
+          path: artifacts/pr-grid-v2-nwps/
+          retention-days: 90
+
+      - name: Persist producer-owned migration packet
+        if: github.event_name == 'push'
+        run: |
+          mkdir -p federation/spatial/migrations/nwps_v1
+          cp artifacts/pr-grid-v2-nwps/binding_input.jsonl federation/spatial/migrations/nwps_v1/binding_input.jsonl
+          cp artifacts/pr-grid-v2-nwps/profile_records.jsonl federation/spatial/migrations/nwps_v1/profile_records.jsonl
+          cp artifacts/pr-grid-v2-nwps/producer_receipt.json federation/spatial/migrations/nwps_v1/producer_receipt.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add federation/spatial/migrations/nwps_v1
+          if git diff --cached --quiet; then
+            echo "PRODUCER_PACKET_ALREADY_FROZEN=PASS"
+            exit 0
+          fi
+          git commit -m "cert(spatial): freeze NWPS V2 producer packet"
+          git push origin HEAD:feat/pr-grid-v2-nwps-migration-v1
