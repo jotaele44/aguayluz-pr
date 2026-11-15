@@ -7,6 +7,8 @@ Maps the AguaYLuz infrastructure model onto the Hub's canonical contract:
   * each municipality        -> one `entities` row (entity_type=municipality)
   * each distinct source     -> one `sources` row
   * each service event       -> one `entities` row (entity_type=service_event)
+  * each accepted landfill   -> one `entities` row (entity_type=landfill_site), from the
+    solid-waste registry (ADR-0004); records still needing review are not exported
   * asset -[operated_by]-> operator
   * asset -[located_in]-> municipality
   * asset -[affected_by]-> service_event (per linked_asset_ids)
@@ -30,6 +32,7 @@ from urllib.parse import urlsplit
 
 from prii_export_utils import fid as _fid
 from prii_export_utils import norm as _norm
+from prii_export_utils import resolve_last_success, source_monitor_row
 from prii_export_utils import sha256 as _sha256
 
 # Allow `python scripts/federation_export.py` from a fresh clone without an
@@ -55,6 +58,7 @@ STREAM_SCHEMA = {
     "entities": "federation_entity.schema.json",
     "relationships": "federation_relationship.schema.json",
     "alerts": "federation_alert.schema.json",
+    "source_monitors": "federation_source_monitor.schema.json",
 }
 ALERT_INPUTS = ["data/alert_events.jsonl"]
 
@@ -159,7 +163,8 @@ _SITE_COORDINATE_PREFIXES = ("USGS_", "USGSWQ_", "USGSFM_", "USGSGW_", "WQP_", "
 # inlined like _CRITICAL_SEVERITY so the exporter runs without the package.
 _GENERATED_ALERT_MARKERS = (
     "_sdwis_", "_resvlow_", "_gwlow_", "_coasthi_", "_seismic_", "_weather_",
-    "_osha_", "_neonpub_", "_nhc_", "_drought_", "_precipshort_",
+    "_osha_", "_neonpub_", "_nhc_", "_drought_", "_precipshort_", "_nwpsflood_",
+    "_qpeheavy_",
 )
 
 
@@ -221,7 +226,7 @@ def _alert_evidence_state(alert: dict[str, Any], located: bool) -> dict[str, Any
     return _evidence_state("COMPUTED" if generated else "CURATED", **fields)
 
 
-def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], now: str, geo: dict[str, dict] | None = None, crosswalk: list[dict[str, Any]] | None = None, alerts: list[dict[str, Any]] | None = None, dep_edges: list[dict[str, Any]] | None = None) -> dict[str, list[dict[str, Any]]]:
+def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], now: str, geo: dict[str, dict] | None = None, crosswalk: list[dict[str, Any]] | None = None, alerts: list[dict[str, Any]] | None = None, dep_edges: list[dict[str, Any]] | None = None, landfill_sites: list[dict[str, Any]] | None = None) -> dict[str, list[dict[str, Any]]]:
     inputs = [
         "data/utility_assets.jsonl",
         "data/service_events.jsonl",
@@ -231,6 +236,7 @@ def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], no
     geo = geo or {}
     crosswalk = crosswalk or []
     dep_edges = dep_edges or []
+    landfill_sites = landfill_sites or []
     sources: dict[str, dict[str, Any]] = {}
     entities: dict[str, dict[str, Any]] = {}
     relationships: dict[str, dict[str, Any]] = {}
@@ -456,10 +462,214 @@ def build_streams(assets: list[dict[str, Any]], events: list[dict[str, Any]], no
         row["evidence_state"] = _alert_evidence_state(al, "location" in row)
         alert_rows[alert_id] = row
 
+    # Solid-waste (landfill) sites, ADR-0004. Only accepted registry records arrive here (see
+    # _load_landfill_sites): records that still need review stay in the registry and out of
+    # the export, so the hub is not handed duplicate sites before cross-source identity is
+    # adjudicated. Geometry precision is left undeclared: the source states no datum or method.
+    for site in landfill_sites:
+        ent = site["entity"]
+        sid = source_for(site["source_ref"], site.get("source_hash"), _LANDFILL_CONF)
+        lid = _fid("ent", "landfill_site", ent["authority"], ent["authority_id"])
+        entities[lid] = _entity(
+            lid, sid, ent["name_raw"], "landfill_site", _LANDFILL_CONF, _LANDFILL_INPUTS, now
+        )
+        id_key = _LANDFILL_EXTERNAL_ID_KEYS.get(ent["authority"])
+        if id_key:
+            entities[lid]["external_ids"] = {id_key: str(ent["authority_id"])}
+        muni_raw = ent.get("municipality")
+        muni = (geo.get(_geo_key(muni_raw)) or {}).get("name") or muni_raw if muni_raw else None
+        attrs = {
+            "site_kind": ent["entity_kind"],
+            "authority": ent["authority"],
+            "municipality": muni,
+            "status": site.get("status"),
+            "opened_year": ent.get("valid_from"),
+            "closed_year": ent.get("valid_until"),
+            "evidence_tier": "T1",
+            "source_release": site.get("release"),
+            "review_status": ent["review_status"],
+        }
+        entities[lid]["attributes"] = {k: v for k, v in attrs.items() if v not in (None, "", [])}
+        if site.get("location"):
+            loc: dict[str, Any] = dict(site["location"])
+            if muni:
+                loc["municipality"] = muni
+            entities[lid]["location"] = loc
+        if muni:
+            m_id = _fid("ent", "municipality", _norm(muni))
+            entities.setdefault(m_id, _entity(m_id, sid, muni, "municipality", 0.95, _LANDFILL_INPUTS, now))
+            relationships.update(
+                _rel_kv(lid, "located_in", m_id, sid, _LANDFILL_CONF, now, source_inputs=_LANDFILL_INPUTS)
+            )
+
     return {"sources": list(sources.values()),
             "entities": list(entities.values()),
             "relationships": list(relationships.values()),
             "alerts": list(alert_rows.values())}
+
+
+# ── source_monitors (thehub-pr ADR 0013) ─────────────────────────────────────
+# One row per source this repo monitors, from its three source registries. When a
+# source last succeeded comes from the committed hydromet run receipts (written by
+# hydromet.store.record_receipt; RUN_RECEIPT) or from the latest retrieval in the
+# committed hydromet manifestations (OUTPUT_DERIVED); the more recent wins
+# (prii_export_utils.resolve_last_success). Every other source is NOT_RECORDED:
+# nothing here infers a time from file dates.
+SOURCE_MONITOR_REGISTRIES = {
+    "hydromet": "config/hydromet_sources.v1.json",
+    "hazard": "config/hazard_advisory_sources.v1.json",
+    "exposure": "config/environmental_exposure_sources.v1.json",
+}
+HYDROMET_RECEIPTS = "hydromet_receipts.json"
+HYDROMET_MANIFESTATIONS = "hydromet_manifestations.jsonl"
+# Manifestation rows name their source_system, not the registry source_id. Pinned
+# here; tests/test_federation_source_monitors.py fails on a committed manifestation
+# whose system is not mapped.
+HYDROMET_SOURCE_SYSTEMS = {
+    "NWPS API v1": "nwps_gauges",
+    "NWPS Stage IV downloads (PR GeoTIFF)": "stage_iv_pr",
+}
+_RECEIPT_ATTEMPT_STATUS = {"PASS": "success", "FAIL": "failure"}
+_CADENCE_WINDOWS = {
+    "realtime": 3600, "hourly": 3600, "daily": 86400, "weekly": 7 * 86400,
+    "monthly": 31 * 86400, "quarterly": 92 * 86400, "yearly": 366 * 86400,
+}
+_NAMED_CADENCE = {
+    "realtime": "realtime", "hourly": "hourly", "daily": "daily", "weekly": "weekly",
+    "monthly": "monthly", "quarterly": "quarterly", "yearly": "yearly", "annual": "yearly",
+}
+
+
+def _cadence_from_seconds(seconds: Any) -> str:
+    try:
+        value = float(seconds)
+    except (TypeError, ValueError):
+        return "unknown"
+    if value <= 0:
+        return "unknown"
+    for name in ("yearly", "quarterly", "monthly", "weekly", "daily", "hourly"):
+        if value * 1.25 >= _CADENCE_WINDOWS[name]:
+            return name
+    return "realtime"
+
+
+def _cadence_from_text(text: Any) -> str:
+    if not isinstance(text, str) or not text.strip():
+        return "unknown"
+    first = text.strip().lower().replace(";", " ").replace(",", " ").split()[0]
+    return _NAMED_CADENCE.get(first, "unknown")
+
+
+def _monitor_window(cadence: str, declared_seconds: Any = None) -> int | None:
+    try:
+        declared = float(declared_seconds) if declared_seconds is not None else 0.0
+    except (TypeError, ValueError):
+        # A non-numeric declared window is ignored rather than trusted.
+        declared = 0.0
+    if declared > 0:
+        return int(declared)
+    return _CADENCE_WINDOWS.get(cadence)
+
+
+def _binding_status(raw: Any) -> str:
+    """Hazard-family binding state (BOUND…/CERTIFIED…/OPEN…) as a declared status."""
+    if not isinstance(raw, str) or not raw.strip():
+        return "unknown"
+    value = raw.strip().upper()
+    if value.startswith("OPEN"):
+        return "not_active"
+    if "OPEN" in value or "UNRESOLVED" in value:
+        return "partial"
+    if value.startswith(("BOUND", "CERTIFIED")):
+        return "active"
+    return "unknown"
+
+
+def _hydromet_receipts(path: Path) -> dict[str, dict[str, Any]]:
+    if not path.exists():
+        return {}
+    sources = json.loads(path.read_text(encoding="utf-8")).get("sources")
+    return sources if isinstance(sources, dict) else {}
+
+
+def _latest_hydromet_retrievals(path: Path) -> dict[str, str]:
+    latest: dict[str, str] = {}
+    for row in _load_jsonl(path):
+        source_id = HYDROMET_SOURCE_SYSTEMS.get(str(row.get("source_system")))
+        at = row.get("retrieved_at_utc")
+        if not source_id or not isinstance(at, str):
+            continue
+        if source_id not in latest or _parse_utc(at) > _parse_utc(latest[source_id]):
+            latest[source_id] = at
+    return latest
+
+
+def _parse_utc(value: str) -> datetime:
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+
+
+def _monitor_lineage() -> dict[str, Any]:
+    return {
+        "producer_script": PRODUCER_SCRIPT,
+        "producer_phase": "SOURCE_MONITOR",
+        "source_inputs": [*SOURCE_MONITOR_REGISTRIES.values(),
+                          f"data/{HYDROMET_RECEIPTS}", f"data/{HYDROMET_MANIFESTATIONS}"],
+        "extraction_method": "registry_projection",
+    }
+
+
+def build_source_monitors(now: str, *, repo_root: Path = REPO_ROOT,
+                          data_root: Path | None = None) -> list[dict[str, Any]]:
+    """The ``source_monitors`` stream: one row per registered source, sorted by id."""
+    data_dir = data_root if data_root is not None else DATA_ROOT
+    receipts = _hydromet_receipts(data_dir / HYDROMET_RECEIPTS)
+    derived = _latest_hydromet_retrievals(data_dir / HYDROMET_MANIFESTATIONS)
+    lineage = _monitor_lineage()
+    rows: dict[str, dict[str, Any]] = {}
+
+    def add(source_ref: str, registry: str, **fields: Any) -> None:
+        if source_ref in rows:
+            raise ValueError(f"duplicate source id {source_ref!r} across source registries")
+        rows[source_ref] = source_monitor_row(
+            producer=PRODUCER, source_ref=source_ref, registry_path=SOURCE_MONITOR_REGISTRIES[registry],
+            lineage=lineage, created_at=now, extracted_at=now, **fields,
+        )
+
+    def registry(name: str) -> dict[str, Any]:
+        return json.loads((repo_root / SOURCE_MONITOR_REGISTRIES[name]).read_text(encoding="utf-8"))
+
+    for src in registry("hydromet")["sources"]:
+        sid = src["source_id"]
+        receipt = receipts.get(sid) or {}
+        at, basis = resolve_last_success({"last_success_at": receipt.get("last_success_utc")}, derived.get(sid))
+        cadence = _cadence_from_seconds(src.get("cadence_seconds"))
+        endpoints = src.get("endpoints") if isinstance(src.get("endpoints"), dict) else {}
+        add(sid, "hydromet", name=src.get("label") or sid, declared_status="unknown", cadence=cadence,
+            cadence_window_seconds=_monitor_window(cadence, src.get("max_age_seconds") or src.get("cadence_seconds")),
+            last_success_at=at, last_success_basis=basis,
+            last_attempt_at=receipt.get("last_attempt_utc"),
+            last_attempt_status=_RECEIPT_ATTEMPT_STATUS.get(str(receipt.get("last_status"))),
+            producer_family=src.get("family"),
+            source_url=next((v for v in endpoints.values() if isinstance(v, str)), None))
+
+    for fam in registry("hazard")["families"]:
+        cadence = _cadence_from_text(fam.get("update_semantics"))
+        add(fam["family"], "hazard",
+            name=f"{fam['authority']}: {fam['family']}" if fam.get("authority") else fam["family"],
+            declared_status=_binding_status(fam.get("status")), cadence=cadence,
+            cadence_window_seconds=_monitor_window(cadence), last_success_at=None,
+            last_success_basis="NOT_RECORDED", producer_family=fam.get("hazard_family"),
+            source_url=fam.get("url"))
+
+    for fam in registry("exposure")["families"]:
+        add(fam["family"], "exposure",
+            name=f"{fam['authority']}: {fam['family']}" if fam.get("authority") else fam["family"],
+            declared_status="unknown", cadence="unknown", last_success_at=None,
+            last_success_basis="NOT_RECORDED", producer_family="ENVIRONMENTAL_EXPOSURE",
+            source_url=fam.get("discovery_locator"))
+
+    return [rows[k] for k in sorted(rows)]
 
 
 def _entity(eid, sid, name, etype, conf, inputs, now):
@@ -490,7 +700,7 @@ def _rel_kv(src_ent, rtype, tgt_ent, sid, conf, now, source_inputs=None, evidenc
 def write_package(streams, out_dir: Path, mode: str, now: str) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     files = []
-    for stream in ("sources", "entities", "relationships", "alerts"):
+    for stream in ("sources", "entities", "relationships", "alerts", "source_monitors"):
         rows = streams.get(stream, [])
         if not rows:
             continue
@@ -514,6 +724,58 @@ def _load_jsonl(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
         return []
     return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+
+
+# Solid-waste registry (ADR-0004) -> `landfill_site` entities. Stdlib only, like the rest of
+# this exporter: it reads the registry JSONL directly and never imports the aguayluz package.
+_LANDFILL_KINDS = frozenset({"LANDFILL", "DISPOSAL_SITE"})
+_LANDFILL_CONF = 0.8  # source-authoritative T1 record whose datum and precision are unstated
+_LANDFILL_INPUTS = [
+    "data/environmental_entities.jsonl",
+    "data/environmental_geometries.jsonl",
+    "data/solid_waste_receipts.json",
+]
+# Authoritative identifiers the hub can exact-match on (hub ADR 0009, EXACT_IDENTIFIER).
+_LANDFILL_EXTERNAL_ID_KEYS = {"EPA_LMOP": "epa_lmop_landfill_id"}
+
+
+def _load_landfill_sites(
+    entities_path: Path, geometries_path: Path, receipts_path: Path
+) -> list[dict[str, Any]]:
+    """Accepted landfill-kind registry records joined with their point and source manifestation."""
+    entities = [
+        e for e in _load_jsonl(entities_path)
+        if e.get("entity_kind") in _LANDFILL_KINDS and e.get("review_status") == "accepted"
+    ]
+    if not entities:
+        return []
+    points: dict[str, dict[str, float]] = {}
+    for g in _load_jsonl(geometries_path):
+        geom = g.get("geometry") or {}
+        if (
+            g.get("geometry_role") == "SOURCE_SITE_GEOMETRY"
+            and g.get("review_status") == "accepted"
+            and geom.get("type") == "Point"
+        ):
+            lon, lat = geom["coordinates"][:2]
+            points[g["entity_id"]] = {"lat": round(float(lat), 6), "lon": round(float(lon), 6)}
+    manifests: dict[str, dict[str, Any]] = {}
+    if receipts_path.is_file():
+        doc = json.loads(receipts_path.read_text(encoding="utf-8"))
+        manifests = {m.get("source_id", ""): m for m in doc.get("manifestations", [])}
+    sites = []
+    for e in sorted(entities, key=lambda r: r["entity_id"]):
+        manifest = manifests.get(e["authority"]) or {}
+        sites.append({
+            "entity": e,
+            "location": points.get(e["entity_id"]),
+            "source_ref": manifest.get("locator") or (e.get("source_record_ids") or [e["authority"]])[0],
+            "source_hash": manifest.get("byte_sha256") or manifest.get("response_sha256"),
+            "release": manifest.get("release"),
+            # LMOP's open/closed status is what valid_until encodes; other authorities state none.
+            "status": ("closed" if e.get("valid_until") else "open") if e["authority"] == "EPA_LMOP" else None,
+        })
+    return sites
 
 
 # ---------------------------------------------------------------------------
@@ -819,6 +1081,12 @@ def main(argv: list[str] | None = None) -> int:
                     help="cross-source dedup clusters; emits member -[duplicate_of]-> canonical edges")
     ap.add_argument("--dep-edges", default=str(DATA_ROOT / "alert_dependency_edges.jsonl"),
                     help="alert dependency edges; `energizes` edges emit water -[energized_by]-> power relationships")
+    ap.add_argument("--env-entities", default=str(DATA_ROOT / "environmental_entities.jsonl"),
+                    help="solid-waste registry entities; accepted landfill-kind rows project as landfill_site")
+    ap.add_argument("--env-geometries", default=str(DATA_ROOT / "environmental_geometries.jsonl"),
+                    help="registry geometries; accepted SOURCE_SITE_GEOMETRY points locate landfill_site rows")
+    ap.add_argument("--solid-waste-receipts", default=str(DATA_ROOT / "solid_waste_receipts.json"),
+                    help="registry receipts; the source manifestation (locator, hash, release) per site")
     ap.add_argument("--out", default=str(FEDERATION_ROOT))
     ap.add_argument("--outputs", default=str(OUTPUTS_ROOT),
                     help="operator-facing snapshot directory (7-file deliverable). Pass empty string to skip.")
@@ -852,11 +1120,15 @@ def main(argv: list[str] | None = None) -> int:
     geo = _load_geo(Path(args.geo))
     crosswalk = _load_jsonl(Path(args.crosswalk))
     dep_edges = _load_jsonl(Path(args.dep_edges))
-    if not assets and not events and not alerts:
+    landfill_sites = _load_landfill_sites(
+        Path(args.env_entities), Path(args.env_geometries), Path(args.solid_waste_receipts)
+    )
+    if not assets and not events and not alerts and not landfill_sites:
         print("no input data (data/utility_assets.jsonl / service_events / aee_incidents / alert_events absent) — nothing to export")
         return 0
     now = now_dt.replace(microsecond=0).isoformat().replace("+00:00", "Z")
-    streams = build_streams(assets, events, now, geo, crosswalk, alerts, dep_edges)
+    streams = build_streams(assets, events, now, geo, crosswalk, alerts, dep_edges, landfill_sites)
+    streams["source_monitors"] = build_source_monitors(now)
     manifest_path = write_package(streams, Path(args.out), args.mode, now)
     counts = {k: len(v) for k, v in streams.items()}
     print(f"wrote {manifest_path} — {counts}")

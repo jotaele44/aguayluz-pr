@@ -1,0 +1,44 @@
+{
+ "_capture": {
+  "source": "https://api.water.noaa.gov/nwps/v1/gauges/NGIP4",
+  "retrieved_utc": "2026-10-07T19:40:00Z",
+  "trimmed": "real response reduced to the fields the adapter reads; crests, impacts, images and datums removed"
+ },
+ "lid": "NGIP4",
+ "name": "Rio Icacos near Naguabo",
+ "latitude": 18.27523254,
+ "longitude": -65.7854406,
+ "usgsId": "50075000",
+ "reachId": "800038641",
+ "county": "",
+ "state": {
+  "abbreviation": "PR",
+  "name": "Puerto Rico"
+ },
+ "inService": {
+  "enabled": true,
+  "message": ""
+ },
+ "flood": {
+  "stageUnits": "ft",
+  "flowUnits": "cfs",
+  "categories": {
+   "major": {
+    "stage": 9,
+    "flow": 2668
+   },
+   "moderate": {
+    "stage": 8,
+    "flow": 2135
+   },
+   "minor": {
+    "stage": 7,
+    "flow": 1502
+   },
+   "action": {
+    "stage": 4,
+    "flow": 355
+   }
+  }
+ }
+}

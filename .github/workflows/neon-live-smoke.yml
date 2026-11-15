@@ -98,8 +98,6 @@ jobs:
           print("Provider failure-state regression: PASS")
           PY
       - name: Bounded NEON-only live health smoke
-        env:
-          NEON_API_TOKEN: ${{ secrets.NEON_API_TOKEN }}
         run: |
           python - <<'PY'
           import json
@@ -140,9 +138,8 @@ jobs:
               }, sort_keys=True))
               raise SystemExit(1)
 
+          # Anonymous access: the site-metadata endpoint needs no credential.
           token = resolve_token()
-          if not token:
-              emit_failure("SECRET_ABSENT")
 
           try:
               with NeonClient(token=token, max_retries=0) as client:

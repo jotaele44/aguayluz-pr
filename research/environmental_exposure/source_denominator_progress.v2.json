@@ -57,5 +57,25 @@
     "UIC_PR",
     "PR_DRNA_CONTAMINATED_SITES",
     "PR_SOLID_WASTE"
+  ],
+  "solid_waste_subscope_updates": [
+    {
+      "family": "PR_SOLID_WASTE",
+      "as_of": "2026-11-05",
+      "state": "PARTIAL_BOUNDED_FEDERAL_SOURCES",
+      "newly_closed": [
+        "EPA LMOP 2024-09 release, Puerto Rico rows: 32 of 32 ingested (22 Open, 10 Closed); every row has coordinates",
+        "EPA ECHO p_st=PR p_sic=4953: 16 of 16 ingested (12 landfill-kind, 4 other); filtered-versus-unfiltered control passed (16 of 15256)",
+        "EPA ECHO silently ignores the p_naics filter (562212 and 999999 both returned 15256 rows): recorded as a service defect and defended by the control"
+      ],
+      "remaining_open": [
+        "Puerto Rico solid-waste authority site list (no structured source located)",
+        "EPA Region 2 landfill enforcement records",
+        "unauthorized dumps (no source acquired)",
+        "cross-source identity: 11 LMOP-ECHO, 3 LMOP-spiderweb-pin and 3 LMOP-USGS-well candidate pairs, all CANDIDATE_NOT_IDENTITY, hub adjudication",
+        "LMOP alone does not close the denominator: ECHO lists CALABAZA LANDFILL with no LMOP counterpart"
+      ],
+      "evidence_manifest": "data/solid_waste_receipts.json"
+    }
   ]
 }

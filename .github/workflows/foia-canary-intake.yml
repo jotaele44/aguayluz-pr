@@ -63,15 +63,3 @@ jobs:
           git add artifacts/foia_canary_receipts
           git diff --cached --quiet || git commit -m "test: persist FOIA canary receipt [skip ci]"
           git push origin "HEAD:$CANARY_BRANCH"
-      - name: Callback acknowledgment
-        env:
-          TOKEN: ${{ secrets.FEDERATION_DISPATCH_TOKEN }}
-          RECORD_ID: ${{ steps.persist.outputs.record_id }}
-          DUPLICATE: ${{ steps.persist.outputs.duplicate }}
-          CANARY_BRANCH: ${{ github.event.client_payload.canary_branch }}
-          KEY: ${{ github.event.client_payload.idempotency_key }}
-          DESTINATION: ${{ github.event.client_payload.destination }}
-        run: |
-          test -n "$TOKEN"
-          body=$(jq -nc --arg key "$KEY" --arg destination "$DESTINATION" --arg record_id "$RECORD_ID" --arg branch "$CANARY_BRANCH" --argjson duplicate "$DUPLICATE" '{event_type:"foia-canary-ack",client_payload:{idempotency_key:$key,destination:$destination,record_id:$record_id,duplicate:$duplicate,status:"acknowledged",canary:true,canary_branch:$branch,no_production_promotion:true}}')
-          curl -sSf -X POST -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" https://api.github.com/repos/jotaele44/centinelas-pr/dispatches -d "$body"
