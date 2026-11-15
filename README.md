@@ -7,6 +7,10 @@ Its federation alias is `aguayluz-pr`. It owns water and wastewater assets,
 power generation/grid infrastructure, outage and service-interruption events,
 and utility geospatial summaries, exporting them as canonical streams for
 downstream correlation in [`thehub-pr`](https://github.com/jotaele44/thehub-pr).
+Ownership of the Puerto Rico solid-waste (vertedero/landfill) site registry is
+proposed in [`docs/adr/ADR-0004-solid-waste-registry-ownership.md`](docs/adr/ADR-0004-solid-waste-registry-ownership.md).
+The registry is populated from EPA sources (see *Real-data status*); its source denominator is
+still **OPEN**.
 
 > **Diagnostic-only surface (ADR 0001, Phase 2).** This repo's dashboard is a
 > development and diagnostic tool for this producer only. The supported product
@@ -21,7 +25,7 @@ downstream correlation in [`thehub-pr`](https://github.com/jotaele44/thehub-pr).
 | Repository | `jotaele44/aguayluz-pr` |
 | Federation alias | `aguayluz-pr` |
 | Parent hub | [`thehub-pr`](https://github.com/jotaele44/thehub-pr) |
-| Primary function | Water/wastewater/power asset registry, outage and service-event monitoring |
+| Primary function | Water/wastewater/power asset registry, outage and service-event monitoring; solid-waste site registry (proposed, ADR-0004) |
 | Jurisdiction focus | Puerto Rico |
 | Upstream signal source | `centinelas-pr` (news/regulatory signals via `scripts/ingest_news_event.py`) |
 
@@ -48,8 +52,9 @@ corpus is real public data, with some sources external or point-in-time.
   `data/neon_availability.jsonl` (`scripts/ingest_neon.py`, keyless). Publication
   changes promote to alerts and activate the `TELECOM_SCADA` module. Stream
   discharge / surface-water chemistry readings
-  (`scripts/ingest_neon_products.py`) need `NEON_API_TOKEN` — NEON's `/api/v0/data`
-  endpoint returns 403 anonymously, so that step skips and exits 0 without one.
+  (`scripts/ingest_neon_products.py`) need a NEON token, which this repo does not
+  configure — NEON's `/api/v0/data` endpoint returns 403 anonymously, so that step skips
+  and exits 0.
   See [`docs/NEON_INTEGRATION.md`](docs/NEON_INTEGRATION.md).
 - USGS discrete water-quality samples for the Laguna Cartagena basin
   (`scripts/ingest_usgs_samples.py`, keyless) — 120 results across the lake, its outflow
@@ -62,6 +67,13 @@ corpus is real public data, with some sources external or point-in-time.
   successor to `nwis/gwlevels`. `scripts/ingest_usgs_groundwater.py` reads Daily Values
   and therefore carries only the 36 PR wells with a continuous series; this adds the 48
   that are visited a few times a year and have no series at all.
+- **PRDNER aquifer condition bands** for five south-coast observation wells
+  (`scripts/ingest_prdner_well_bands.py`, keyless) — the Optimum / Observation / Operational
+  Adjustment / Critical depth-to-water thresholds that a USGS page attributes to PRDNER, read
+  from that page's inline JavaScript (tier T2; no effective date is published), frozen with
+  the page bytes' SHA-256, and bound by stable id to the existing `USGSGW_` wells. A depth is
+  classified against them at read time. Band state is displayed, never alerted on, while the
+  readings are provisional; see [`docs/AQUIFER_BANDS_INTEGRATION.md`](docs/AQUIFER_BANDS_INTEGRATION.md).
 - USGS **annual peak streamflow** (`scripts/ingest_usgs_peaks.py`, keyless) — 8,317 peaks
   across 244 sites, water years **1899–2025**, giving a flood baseline the 14-day and
   1-year windows elsewhere in the corpus cannot supply. The record maximum is
@@ -96,6 +108,23 @@ corpus is real public data, with some sources external or point-in-time.
   the NWPS, Stage IV, NWS, NHC, USGS quake, DRNA beach and El Yunque data above. Rip current risk
   High and PR marine alerts promote to `WEATHER_HAZARD`. Conditions are context, not safety advice;
   see [`docs/OUTDOOR_CONDITIONS.md`](docs/OUTDOOR_CONDITIONS.md).
+- Puerto Rico **solid-waste (landfill) site registry** (`scripts/ingest_solid_waste_registry.py`,
+  keyless, run on demand) — the 32 Puerto Rico landfills in EPA's LMOP database, 2024-09 release
+  (22 open, 10 closed; coordinates, years opened and closed) as `LANDFILL` entities with a
+  `SHUTDOWN` event per closed site, plus 16 EPA ECHO facilities (SIC 4953) held as `needs_review`
+  source records. A closure year on an *open* site is a projection and stays in the RAW rows.
+  Cross-source matches stay `CANDIDATE_NOT_IDENTITY`, and the result is **OPEN**: no structured
+  Puerto Rico solid-waste authority list, EPA Region 2 enforcement records or unauthorized-dump
+  source has been acquired, and ECHO silently ignores its `p_naics` filter, so every ECHO query
+  carries a filtered-versus-unfiltered control. Accepted sites export as `landfill_site`
+  entities. The records are served by `GET /environmental-exposure/entities`, and the
+  Environmental Exposure page lists every site read-only (name, kind, municipality, source record,
+  opened year, closure, review state). A missing closure reads "No closure recorded" or "Not
+  stated by source", never "Open", and a list that disagrees with the graph summary is shown as
+  incomplete, with a retry button that reloads the list and the summary together. The list has no
+  coordinates yet. See
+  [`docs/adr/ADR-0004-solid-waste-registry-ownership.md`](docs/adr/ADR-0004-solid-waste-registry-ownership.md)
+  (Proposed).
 - Operational alert events (`docs/ALERT_SYSTEM.md`) and the 78-municipio /
   901-barrio geo layer under `data/geo/` (U.S. Census cartographic boundaries).
 
@@ -128,10 +157,17 @@ installs dependencies, later runs work offline):
 `federation.json` is this producer's manifest, conformant to
 `thehub-pr/schemas/repo_federation_manifest.schema.json`.
 `scripts/federation_export.py` writes
-`exports/federation/{sources,entities,relationships,alerts}.jsonl` plus a
-`manifest.json` validated against the vendored hub schema
+`exports/federation/{sources,entities,relationships,alerts,source_monitors}.jsonl`
+plus a `manifest.json` validated against the vendored hub schema
 `schemas/federation_export_manifest.schema.json`
 (`tests/test_federation_contract_compat.py`).
+
+`source_monitors.jsonl` (thehub-pr ADR 0013) has one row per source in
+`config/hydromet_sources.v1.json`, `config/hazard_advisory_sources.v1.json` and
+`config/environmental_exposure_sources.v1.json`, with when it last succeeded and
+how that is known: the hydromet run receipts (`data/hydromet_receipts.json`) or the
+latest retrieval in `data/hydromet_manifestations.jsonl`, whichever is more recent;
+every other source is reported as not recorded (`tests/test_federation_source_monitors.py`).
 
 Every exported row also carries an additive `evidence_state` declaration.
 It conforms to thehub-pr's candidate epistemic-state contract, vendored

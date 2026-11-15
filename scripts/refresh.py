@@ -56,7 +56,8 @@ STEP_BUOYS = (
     ["scripts/ingest_ndbc_buoys.py"],
     True,
 )
-# Skips (exit 0, no receipt) without the AIRNOW_API_KEY secret.
+# Skips (exit 0, no receipt) without AIRNOW_API_KEY in the environment; the scheduled
+# refresh workflow passes no credentials, so it skips there.
 STEP_AIRNOW = (
     "AirNow air quality → outdoor conditions (needs AIRNOW_API_KEY)",
     ["scripts/ingest_airnow.py"],
@@ -130,6 +131,15 @@ STEP_USGS_WATER_QUALITY = (
 STEP_USGS_STATISTICS = (
     "USGS statistics baselines",
     ["scripts/ingest_usgs_statistics.py"],
+    True,
+)
+# PRDNER condition bands for the five south-coast wells, read from a USGS page's inline JS.
+# Constants on a static page: weekly/all only. Optional, so a page change or outage writes a
+# FAIL receipt (shown on the dashboard) and the run continues. Must follow STEP_USGS_GW,
+# which creates the USGSGW_ assets this step binds to by stable id.
+STEP_AQUIFER_BANDS = (
+    "PRDNER aquifer bands (USGS page) → aquifer_band_registry",
+    ["scripts/ingest_prdner_well_bands.py"],
     True,
 )
 STEP_USGS_RTFI = (
@@ -350,6 +360,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_USGS_METADATA,
         STEP_USGS_WATER_QUALITY,
         STEP_USGS_STATISTICS,
+        STEP_AQUIFER_BANDS,
         STEP_USGS_RTFI,
         STEP_USGS_NIMS,
         STEP_NOAA_TIDES,
@@ -389,6 +400,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_USGS_METADATA,
         STEP_USGS_WATER_QUALITY,
         STEP_USGS_STATISTICS,
+        STEP_AQUIFER_BANDS,
         STEP_USGS_RTFI,
         STEP_USGS_NIMS,
         STEP_NOAA_TIDES,

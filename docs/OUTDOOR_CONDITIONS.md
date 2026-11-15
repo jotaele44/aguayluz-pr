@@ -26,8 +26,9 @@ FAIL receipt, and each source is a registry entry in `config/hydromet_sources.v1
 | NWS gridded heat index (`nws_gridpoint_heat`) | `scripts/ingest_nws_gridpoint_heat.py` | Maximum heat index, wet-bulb globe temperature and air temperature over the next 24 and 48 h at each municipio's internal point | daily |
 | AirNow (`airnow`) | `scripts/ingest_airnow.py` | Current AQI by reporting area and pollutant (Saharan dust shows as PM10/PM2.5) | 15 min; **needs `AIRNOW_API_KEY`** |
 
-All six are keyless except AirNow. Without the `AIRNOW_API_KEY` repository secret the
-AirNow ingest prints why and exits 0 **without writing a receipt**, so the source reads
+All six are keyless except AirNow, which reads `AIRNOW_API_KEY` from the environment it runs
+in. The scheduled refresh workflow passes no credentials (repository secrets were removed
+from CI), so there, and anywhere else without the key, the AirNow ingest prints why and exits 0 **without writing a receipt**, so the source reads
 `NEVER` and the air-quality component reads `NOT_CONFIGURED`. Its tests run on a fixture
 constructed from AirNow's documented format (`tests/fixtures/outdoor/airnow/README.md`);
 the live path has not run here.

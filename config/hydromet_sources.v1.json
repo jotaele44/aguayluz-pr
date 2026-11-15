@@ -216,7 +216,7 @@
       "refresh_script": "scripts/ingest_airnow.py",
       "binding_semantics": "AirNow returns a reporting area and its coordinates per pollutant. The composer attaches the nearest reporting area to each municipio within 40 km of its internal point (PROXIMITY, labelled with the area name and distance).",
       "update_semantics": "One request per query point per run, de-duplicated by reporting area and pollutant; the current AQI rows are rewritten into data/outdoor_aqi_state.jsonl. State only, no records. Without AIRNOW_API_KEY the ingest skips and writes no receipt, so the source reads NEVER.",
-      "known_limits": "AirNow data are preliminary and unvalidated (not for regulatory use). Needs the AIRNOW_API_KEY repository secret; built and tested against a fixture constructed from AirNow's documented response until that key exists.",
+      "known_limits": "AirNow data are preliminary and unvalidated (not for regulatory use). Needs AIRNOW_API_KEY in the environment that runs the ingest (the scheduled refresh workflow passes no credentials); built and tested against a fixture constructed from AirNow's documented response until that key exists.",
       "raw_snapshot_policy": "Raw response bytes under data/hydromet_snapshots/airnow/ (gitignored); byte SHA-256 committed in data/hydromet_manifestations.jsonl. The API key is never written to a manifestation, receipt or log.",
       "license": "AirNow data courtesy of the U.S. EPA AirNow program; preliminary data, attribution required"
     }

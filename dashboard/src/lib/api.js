@@ -99,6 +99,7 @@ export const getHealth = () => getJSON('/health', { status: 'down', counts: {}, 
 export const getAssets = (f = {}) => getJSON(`/assets${qs(f)}`, [])
 export const getAssetsGeojson = () => getJSON('/assets.geojson', { type: 'FeatureCollection', features: [] })
 export const getMunicipiosGeojson = () => getJSON('/municipios.geojson', { type: 'FeatureCollection', features: [] })
+export const getMunicipiosSummary = () => getRequiredJSON('/municipios/summary')
 export const getBarriosGeojson = () => getJSON('/barrios.geojson', null)
 export const getEventDensity = (f = {}) => getRequiredJSON(`/municipios/event_density${qs(f)}`)
 // /events returns {total, offset, items}; getEvents unwraps to the array for backward compat.
@@ -124,6 +125,14 @@ export const getSummary = () => getJSON('/summary', {})
 export const getSummarySectors = () => getJSON('/summary/sectors', {})
 export const getCoverage = () => getJSON('/summary/coverage', null)
 export const getSystemStatus = () => getJSON('/system/status', null)
+
+export const getSourceIntelligenceSummary = () => getRequiredJSON('/source-intelligence/summary')
+export const getSourceIntelligenceDomains = () => getRequiredJSON('/source-intelligence/domains')
+export const getSourceIntelligenceSources = () => getRequiredJSON('/source-intelligence/sources')
+export const getSourceIntelligenceCoverage = () => getRequiredJSON('/source-intelligence/coverage')
+export const getSourceIntelligenceProducts = () => getRequiredJSON('/source-intelligence/products')
+export const getSourceIntelligenceRoutes = () => getRequiredJSON('/source-intelligence/routes')
+export const getSourceIntelligenceRouteGovernance = () => getRequiredJSON('/source-intelligence/route-governance')
 
 // Operational alert layer (docs/ALERT_SYSTEM.md). /alerts returns {total, offset, items}
 // like /events; getAlerts unwraps to the array for panel-style consumers.

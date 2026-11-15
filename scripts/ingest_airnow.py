@@ -52,8 +52,8 @@ def _key(index: int) -> str:
 def preflight(args) -> str | None:
     if args.src is None and not os.environ.get(ENV_KEY, "").strip():
         return (f"{ENV_KEY} not set. AirNow's API needs a (free) key: "
-                "https://docs.airnowapi.org/ ; add it as the AIRNOW_API_KEY repository secret, "
-                "or pass --src to run offline.")
+                "https://docs.airnowapi.org/ ; set it in the environment that runs this ingest "
+                "(the scheduled refresh workflow passes no credentials), or pass --src to run offline.")
     return None
 
 

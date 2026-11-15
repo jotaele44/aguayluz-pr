@@ -17,6 +17,7 @@ APP_NAME = "PRII-AGUAYLUZ"
 # thehub-pr/tools/build_program_icons.py, so the frozen build, the committed
 # PRII-*.app bundle and the web favicons all trace back to one master.
 BRANDING = REPO_ROOT / "assets" / "branding"
+EVIDENCE_SOURCE_INTELLIGENCE = REPO_ROOT / "evidence" / "source_intelligence"
 # PyInstaller wants .ico on Windows and .icns on macOS; it warns and ignores the
 # argument on other platforms, so leave it unset there.
 EXE_ICON = str(BRANDING / "icon.ico") if sys.platform == "win32" else None
@@ -34,6 +35,8 @@ datas = [
     (str(REPO_ROOT / "config"), "config"),
     (str(BRANDING / "icon-256.png"), "assets/branding"),
 ]
+if EVIDENCE_SOURCE_INTELLIGENCE.exists():
+    datas.append((str(EVIDENCE_SOURCE_INTELLIGENCE), "evidence/source_intelligence"))
 if (REPO_ROOT / "outputs").exists():
     datas.append((str(REPO_ROOT / "outputs"), "outputs"))
 
