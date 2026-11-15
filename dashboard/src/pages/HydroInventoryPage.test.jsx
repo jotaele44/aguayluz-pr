@@ -25,6 +25,10 @@ const SUMMARY = {
     aquifer: { features_upper: 159, features_lower: 141 },
     well: { features_upper: 7061, features_lower: 7001, unlocated: 1384, located: 5677 },
     spring: { features_upper: 223, features_lower: 223, unlocated: 0, located: 223 },
+    stream: { features_upper: 15881, features_lower: 15881, unlocated: 0, located: 15881 },
+    waterbody: { features_upper: 3276, features_lower: 3276, unlocated: 0 },
+    reservoir: { features_upper: 798, features_lower: 798, unlocated: 0 },
+    intake: { features_upper: 697, features_lower: 697, unlocated: 697 },
   },
   source_ledgers: { epa_sdwis_wells: { source: 1384, assigned_to_features: 1384, excluded_by_reason: {}, state: 'PASS' } },
   open_residue: ['PRASA production wells: EPA SDWIS lists them without coordinates'],
@@ -43,6 +47,9 @@ const WELLS = { total: 2, offset: 0, limit: 50, items: [
 ] }
 const SPRINGS = { total: 1, offset: 0, limit: 50, items: [
   { feature_id: 'SPRING:GNIS:1611576', feature_type: 'spring', display_name: 'Ojo de Agua', sources: ['usgs_gnis_names'], lat: 18.4, lon: -66.6, located: true },
+] }
+const STREAMS = { total: 1, offset: 0, limit: 50, items: [
+  { feature_id: 'STREAM:NHD:26446092', feature_type: 'stream', display_name: 'Río Grande de Loíza', sources: ['usgs_nhd_flowlines'], flow_type: 'stream/river', lengthkm: 0.853, huc8: '21010005', lat: 18.3, lon: -65.9, located: true },
 ] }
 const CONFLICTS = { total: 1, items: [{
   conflict_id: 'HYC_1', attribute: 'south_coast_aquifer_units', kind: 'classification', resolution: 'UNRESOLVED_SHOWN', feature_ids: [],
@@ -69,7 +76,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   client.getHydroSummary.mockResolvedValue(SUMMARY)
   client.getHydroFeatures.mockImplementation((params) => Promise.resolve(
-    params.type === 'aquifer' ? AQUIFERS : params.type === 'spring' ? SPRINGS : WELLS))
+    params.type === 'aquifer' ? AQUIFERS : params.type === 'spring' ? SPRINGS : params.type === 'stream' ? STREAMS : WELLS))
   client.getHydroFeature.mockResolvedValue(DETAIL)
   client.getHydroConflicts.mockResolvedValue(CONFLICTS)
   client.getHydroCandidates.mockResolvedValue(CANDIDATES)
@@ -80,7 +87,9 @@ describe('HydroInventoryPage', () => {
     renderPage()
     expect(await screen.findByTestId('tile-aquifers')).toHaveTextContent('141–159')
     expect(screen.getByTestId('tile-wells')).toHaveTextContent('7001–7061')
-    expect(screen.getByTestId('tile-unlocated')).toHaveTextContent('1384')
+    expect(screen.getByTestId('tile-unlocated')).toHaveTextContent('2081')
+    expect(screen.getByTestId('tile-streams')).toHaveTextContent('15881')
+    expect(screen.getByTestId('tile-lakes')).toHaveTextContent('4074')
     expect(screen.getByTestId('tile-springs')).toHaveTextContent('223')
     expect(screen.getByText(/property of this server, not of the wells/)).toBeInTheDocument()
   })
@@ -99,6 +108,7 @@ describe('HydroInventoryPage', () => {
     const table = await screen.findByRole('table', { name: 'Wells' })
     expect(within(table).getByText('USGS + Water Quality Portal')).toBeInTheDocument()
     expect(within(table).getByText('not published by the source')).toBeInTheDocument()
+    expect(within(table).getByText('USGS aquifer code 110SCPL')).toBeInTheDocument()
     expect(within(table).getByText('Readings not on this server')).toBeInTheDocument()
   })
 
@@ -108,6 +118,14 @@ describe('HydroInventoryPage', () => {
     const table = await screen.findByRole('table', { name: 'Springs' })
     expect(within(table).getByText('USGS GNIS')).toBeInTheDocument()
     expect(client.getHydroFeatures).toHaveBeenCalledWith(expect.objectContaining({ type: 'spring' }))
+  })
+
+  it('lists surface features by type with type-specific details', async () => {
+    renderPage()
+    fireEvent.click(await screen.findByRole('button', { name: 'Surface water' }))
+    const table = await screen.findByRole('table', { name: 'Stream reaches' })
+    expect(within(table).getByText('stream/river · 0.853 km · HUC8 21010005')).toBeInTheDocument()
+    expect(within(table).getByText('USGS NHD')).toBeInTheDocument()
   })
 
   it('opens a feature and shows what each source says about it', async () => {

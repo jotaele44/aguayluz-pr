@@ -7,8 +7,10 @@ entity, no way to say which aquifer a well draws from, and no account of wells t
 other agencies list. The goal set for this work was to include every known aquifer, well,
 spring and stream, and to reflect what is known rather than what any one source says.
 
-This document covers **phase 1, aquifers and wells**, and **phase 2, springs**. Streams,
-waterbodies, reservoirs, intakes and gauges are later phases. The receipt's `phase_scope` names them as
+This document covers **phase 1** (aquifers and wells), **phase 2** (springs) and **phase 3**
+(streams, named watercourses, waterfalls, waterbodies, reservoirs, intakes, gauges and
+watersheds). Every feature type is now enumerated. Phase 4 (an aquifer-level series and the
+map workspace) adds no new feature type. The receipt's `phase_scope` names them as
 not enumerated, and the page says so.
 
 ## What "100%" means here
@@ -38,7 +40,13 @@ is uncertain, the count is a range. It also does not mean no other aquifer or we
 | EPA SDWIS well facilities | 1,384 wells (712 active, 672 inactive), **with no coordinates** | T2 | hashed |
 | DRNA PIRA 2016 | 17 named aquifer units, hand-transcribed with page references | T2 | SHA-256 of the PDF |
 | Water Quality Portal, site type Spring | 221 rows, all USGS (I1 joins) | T2 | hashed |
-| USGS GNIS domestic names, Puerto Rico | 434 hydrographic names of 5,818 rows: 2 springs (phase 2); streams, lakes and reservoirs wait for phase 3 | T2 | hashed |
+| USGS GNIS domestic names, Puerto Rico | 434 hydrographic names of 5,818 rows: springs, streams, canals, falls, lakes, swamps and reservoirs | T2 | hashed |
+| USGS NHD large scale, flowlines (The National Map) | 17,093 mapped reaches; 1,212 coastline segments excluded by reason | T1 | hashed per page |
+| USGS NHD large scale, waterbodies | 3,869 polygons (lakes and ponds, swamps, reservoirs) | T1 | hashed per page |
+| USGS Watershed Boundary Dataset | 6 HUC8 and 29 HUC10 watersheds | T1 | hashed |
+| EPA SDWIS intake facilities | 690 intakes (353 active), **with no coordinates** | T2 | hashed |
+| NOAA NWPS gauges (`data/nwps_gauge_state.jsonl`) | 118 forecast gauges, each publishing its USGS site number | T1 | hashed |
+| Repository assets (`data/utility_assets.jsonl`) | 124 OSM reservoirs and 7 local intake points (which carry no coordinates) | T3 | hashed |
 
 All sources, URLs and pins are in `config/hydro_inventory_sources.v1.json`.
 
@@ -54,6 +62,42 @@ Each spring is linked to the HA 730-N polygon it sits in (`SPRING_IN_AQUIFER`,
 This is a small number for an island with extensive karst. It is what the public sources
 enumerate, not an estimate of how many springs exist; springs known only from speleological
 or local records are listed as a known gap.
+
+## Surface water (phase 3)
+
+| Feature type | Count | How it is built |
+|---|---|---|
+| Stream reaches | 15,881 | every NHD flowline that is not coastline, keyed by its NHD permanent identifier |
+| Named watercourses | 324 | GNIS streams, canals, channels and guts; joined to their reaches through the GNIS id NHD publishes (I2) |
+| Waterfalls | 5 | GNIS falls |
+| Waterbodies | 3,276 | NHD lakes, ponds and swamps grouped by published GNIS id, plus GNIS lakes, swamps and basins |
+| Reservoirs | 798 | NHD reservoirs and GNIS reservoirs grouped by published GNIS id, plus the 124 OSM reservoirs as their own features |
+| Intakes | 697 | 690 SDWIS intakes and 7 local intake points, none with coordinates |
+| Gauges | 1,670 | every USGS monitoring location that is not a well or spring; NWS gauges merge on the USGS id they publish (I2) |
+| Watersheds | 35 | WBD HUC8 and HUC10 |
+
+Rules specific to this phase:
+
+- **GNIS ids are compared as numbers.** NHD zero-pads them (`01609456`) and GNIS does not
+  (`1609456`). Read as text, every reach would fail to join its watercourse. After
+  normalising, 1 GNIS id published by NHD has no GNIS record.
+- **One reach of a named river is not the river.** The watercourse feature is the named
+  stream; its 15,881 reaches are features of their own, linked by
+  `REACH_OF_WATERCOURSE`.
+- **OSM reservoirs never merge with NHD reservoirs.** No published identifier joins them, so
+  each OSM reservoir inside an NHD polygon gets a candidate link instead
+  (54 links).
+- **Waterbody kind disagreements are kept.** Where NHD and GNIS classify the same named
+  waterbody differently (lake against reservoir, for instance), a conflict records both.
+- **Location gives watershed membership and gauges on waterbodies, nothing more.**
+  11,884 placed features carry their HUC10; 73 lake gauges sit inside an NHD
+  waterbody (`GAUGE_ON_WATERBODY`, `DERIVED_TOPOLOGICAL`). A gauge's reach on the stream
+  network is not computed, because that needs network navigation, not distance.
+
+Geometry is committed simplified (0.0003°, five decimals) in files of at most 2 MB:
+`data/geo/streams/<huc8>.geojson`, `data/geo/pr_waterbodies.geojson` and
+`data/geo/pr_watersheds.geojson`. Feature rows are split the same way, one file per type and,
+for streams, per HUC8, so every file stays under the commit limit.
 
 ## Identity: when two claims are one feature
 
@@ -144,14 +188,16 @@ That is a property of the server, not of the wells, and the page says so.
 | Aquifer ingest (needs the `[geo]` extra) | `scripts/ingest_hydro_aquifers.py` |
 | Site ingest | `scripts/ingest_hydro_sites.py` |
 | GNIS names ingest | `scripts/ingest_hydro_names.py` |
+| Surface-water ingest (needs shapely) | `scripts/ingest_hydro_nhd.py` |
 | Builder, with `--check` | `scripts/build_hydro_inventory.py` |
 | Claims, features, links, conflicts, receipts (committed) | `data/hydro/` |
 | Aquifer polygons, WGS84 (committed) | `data/geo/pr_aquifers.geojson` |
+| Stream, waterbody and watershed geometry (committed) | `data/geo/streams/`, `data/geo/pr_waterbodies.geojson`, `data/geo/pr_watersheds.geojson` |
 | API | `server/backend/hydro_inventory_api.py`: `/hydro/inventory/summary`, `/hydro/features`, `/hydro/features/{id}`, `/hydro/aquifer-wells`, `/hydro/conflicts`, `/hydro/candidates`, `/hydro/aquifers.geojson` |
 | Page | **Hydro Inventory** (`/hydro-inventory`, under Water & Weather): `dashboard/src/pages/HydroInventoryPage.jsx` |
 | Monitoring | aquifer filter on the groundwater series in `dashboard/src/components/MonitoringCharts.jsx` |
 | GUI-parity capability | `hydro-feature-inventory` in `.federation/gui-capabilities.json` |
-| Tests | `tests/test_hydro_inventory.py`, `tests/test_ingest_hydro_sites.py`, `tests/test_ingest_hydro_names.py`, `tests/test_ingest_hydro_aquifers.py`, `tests/test_hydro_inventory_api.py`, `dashboard/src/pages/HydroInventoryPage.test.jsx`, `dashboard/src/lib/hydro-inventory-api.test.js`, `dashboard/tests/hydro-inventory.spec.mjs` |
+| Tests | `tests/test_hydro_inventory.py`, `tests/test_ingest_hydro_sites.py`, `tests/test_ingest_hydro_names.py`, `tests/test_ingest_hydro_nhd.py`, `tests/test_ingest_hydro_aquifers.py`, `tests/test_hydro_inventory_api.py`, `dashboard/src/pages/HydroInventoryPage.test.jsx`, `dashboard/src/lib/hydro-inventory-api.test.js`, `dashboard/tests/hydro-inventory.spec.mjs` |
 
 Claims are stored with the fields every claim in a file shares written once per block. The
 per-claim SHA-256 is kept as an index into the block's list of manifestations, which keeps
@@ -168,6 +214,11 @@ every file under the 5,120 KB commit limit. `read_claims` restores full claims.
 - **Names of the 98 HA 730-N alluvial-valley polygons.** The release labels them only by
   class. They are labelled here by the municipios they cover, and flagged as unnamed in the
   source.
+- **PRASA's intakes.** EPA SDWIS lists 690 without coordinates; they are listed, not
+  placed.
+- **Gauge position on the stream network.** Gauges are placed in watersheds by location;
+  their reach is not computed.
+- **DRNA reservoir and embalse lists.** `sige.pr.gov` could not be reached.
 - **Springs outside the public sources.** GNIS names only 2 springs in Puerto Rico and USGS
   monitors 221; no public spring registry was found.
 - **USGS stratigraphic codes with no Puerto Rico well assigned.** Ten are listed in the

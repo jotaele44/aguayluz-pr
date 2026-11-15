@@ -18,7 +18,7 @@ from aguayluz import hydro_inventory as hi
 
 REPO = Path(__file__).resolve().parent.parent
 HYDRO = REPO / "data" / "hydro"
-FEATURES = hi.read_jsonl(HYDRO / hi.FEATURES_FILE)
+FEATURES = [f for p in sorted(HYDRO.glob(hi.FEATURES_FILE.format("*"))) for f in hi.read_jsonl(p)]
 LINKS = hi.read_jsonl(HYDRO / hi.LINKS_FILE)
 CONFLICTS = hi.read_jsonl(HYDRO / hi.CONFLICTS_FILE)
 RECEIPT = json.loads((HYDRO / hi.RECEIPT_FILE).read_text(encoding="utf-8"))
@@ -125,14 +125,15 @@ def test_committed_inventory_is_exactly_what_its_claims_build():
 
 def test_every_source_ledger_closes_and_nothing_claims_completeness():
     assert RECEIPT["completeness_claimed"] is False
-    assert RECEIPT["phase_scope"]["feature_types_enumerated"] == ["aquifer", "well", "spring"]
+    assert RECEIPT["phase_scope"]["feature_types_enumerated"] == list(hi.FEATURE_TYPES)
+    assert RECEIPT["phase_scope"]["feature_types_not_enumerated"] == []
     for key, ledger in RECEIPT["source_ledgers"].items():
         assert ledger["state"] == "PASS" and ledger["delta"] == 0, key
         assert ledger["assigned_to_features"] == ledger["retained"], key
 
 
 def test_coverage_is_a_range_and_counts_match_the_files():
-    for kind in ("aquifer", "well", "spring"):
+    for kind in hi.FEATURE_TYPES:
         cov = RECEIPT["coverage"][kind]
         assert cov["features_lower"] <= cov["features_upper"]
         assert cov["features_upper"] == sum(1 for f in FEATURES if f["feature_type"] == kind)
@@ -199,7 +200,34 @@ def test_every_usgs_spring_and_every_gnis_spring_is_a_feature_and_none_merge_on_
     assert RECEIPT["coverage"]["spring"]["features_upper"] == len(springs)
 
 
-def test_feature_types_outside_the_phase_are_counted_not_dropped():
-    gnis = RECEIPT["source_ledgers"]["usgs_gnis_names"]
-    assert gnis["excluded_by_reason"]["feature type not enumerated in this phase"] == gnis["source"] - gnis["retained"]
-    assert set(RECEIPT["phase_scope"]["feature_types_not_enumerated"]) == {"stream", "waterbody", "reservoir", "intake", "gauge"}
+def test_every_mapped_reach_is_a_stream_and_only_coastline_is_excluded():
+    ledger = RECEIPT["source_ledgers"]["usgs_nhd_flowlines"]
+    assert ledger["excluded_by_reason"] == {"coastline, not a watercourse": ledger["excluded"]}
+    assert sum(1 for f in FEATURES if f["feature_type"] == "stream") == ledger["retained"] > 15000
+    for path in HYDRO.glob(hi.FEATURES_FILE.format("*")):
+        assert path.stat().st_size < 5_000_000, path.name
+
+
+def test_reaches_join_watercourses_only_on_the_gnis_id_nhd_publishes():
+    reach_links = [lk for lk in LINKS if lk["link_type"] == "REACH_OF_WATERCOURSE"]
+    assert reach_links and all(lk["identity_tier"] == "I2" and lk["edge_class"] == "AUTHORITATIVE" for lk in reach_links)
+    for lk in reach_links[:200]:
+        assert BY_ID[lk["from"]]["gnis_id"] == lk["to"].rsplit(":", 1)[1]
+    assert RECEIPT["surface"]["nhd_gnis_ids_without_gnis_record"] <= 5
+
+
+def test_nws_gauges_merge_with_usgs_sites_on_the_usgs_id_they_publish():
+    merged = [f for f in FEATURES if f["feature_type"] == "gauge" and set(f["sources"]) == {"noaa_nwps_gauges", "usgs_monitoring_locations"}]
+    assert len(merged) >= 100 and all(f["identity_evidence"][0]["tier"] == "I2" for f in merged)
+
+
+def test_waterbody_kind_disagreements_are_kept():
+    kinds = [c for c in CONFLICTS if c["attribute"] == "waterbody_kind"]
+    assert kinds and all(c["resolution"] == "UNRESOLVED_SHOWN" for c in kinds)
+
+
+def test_unlocated_intakes_are_listed_and_never_placed():
+    intakes = [f for f in FEATURES if f["feature_type"] == "intake"]
+    sdwis = [f for f in intakes if f["feature_id"].startswith("INTAKE:SDWIS:")]
+    assert len(sdwis) == RECEIPT["source_ledgers"]["epa_sdwis_intakes"]["retained"]
+    assert all(f["lat"] is None and "huc10" not in f for f in sdwis)

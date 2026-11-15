@@ -81,14 +81,15 @@ corpus is real public data, with some sources external or point-in-time.
   file pinned by SHA-256; 2010 exists only as a PDF and is a manual transcription bound to
   that PDF's hash (tier T2). These are five-yearly estimates, not current production; see
   [`docs/WATER_USE_INTEGRATION.md`](docs/WATER_USE_INTEGRATION.md).
-- **Hydrologic feature inventory: aquifers, wells and springs**
+- **Hydrologic feature inventory: aquifers, wells, springs and surface water**
   (`scripts/ingest_hydro_aquifers.py`, `scripts/ingest_hydro_sites.py`, `scripts/ingest_hydro_names.py`,
-  `scripts/build_hydro_inventory.py`, keyless, run on demand). Every aquifer and well described by
+  `scripts/ingest_hydro_nhd.py`, `scripts/build_hydro_inventory.py`, keyless, run on demand). Every aquifer and well described by
   USGS (HA 730-N polygons and text, aquifer codes, 5,437 monitoring wells), the Water Quality
   Portal, EPA SDWIS (1,384 wells, no coordinates) and DRNA PIRA 2016, reconciled across sources.
   Claims merge only on a published identifier, name and distance matches stay candidates, so
   counts are ranges (159 aquifer features, range 141–159; 7,061 wells, range 7,001–7,061; 223
-  springs, from USGS and GNIS).
+  springs; 15,881 NHD stream reaches grouped into 324 named watercourses; 3,276 waterbodies;
+  798 reservoirs; 1,670 gauges; 697 intakes, none with coordinates).
   Source disagreements are kept unresolved. The USGS polygons declare NAD27 but fit the coastline
   only as Puerto Rico 1940, which the ingest re-checks every run. Shown on the Hydro Inventory page
   and as an aquifer filter on Monitoring; see

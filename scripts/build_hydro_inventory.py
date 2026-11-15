@@ -33,7 +33,7 @@ from aguayluz import hydro_inventory as hi  # noqa: E402
 
 ASSET_PREFIXES = ("USGSGW_", "USGSFM_", "USGSWQ_")
 STAGES = {"aquifers": "ingest_aquifers_receipt.json", "sites": "ingest_sites_receipt.json",
-          "names": "ingest_names_receipt.json"}
+          "names": "ingest_names_receipt.json", "surface": "ingest_surface_receipt.json"}
 
 
 def asset_ids_by_site(path: Path) -> dict[str, list[str]]:
@@ -67,18 +67,26 @@ def build(data_dir: Path, config_dir: Path) -> dict[str, Any]:
         stages[stage] = receipt
     config = json.loads((config_dir / hi.SOURCES_CONFIG).read_text(encoding="utf-8"))
     geo = json.loads((data_dir / "geo" / hi.AQUIFER_GEOJSON).read_text(encoding="utf-8"))
+    waterbodies = json.loads((data_dir / "geo" / "pr_waterbodies.geojson").read_text(encoding="utf-8"))
+    watersheds = json.loads((data_dir / "geo" / "pr_watersheds.geojson").read_text(encoding="utf-8"))
     generated = max(r["run_utc"] for r in stages.values())
     return hi.build_inventory(claims=claims, aquifer_geojson=geo,
                               asset_ids_by_site=asset_ids_by_site(data_dir / "utility_assets.jsonl"),
                               equivalences=config["analyst_name_equivalences"]["pairs"], stage_receipts=stages,
-                              now=generated)
+                              now=generated, waterbody_geojson=waterbodies, watershed_geojson=watersheds)
 
 
 def render(result: dict[str, Any]) -> dict[str, str]:
     def jsonl(rows: list[dict[str, Any]]) -> str:
         return "".join(json.dumps(r, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n" for r in rows)
 
-    return {hi.FEATURES_FILE: jsonl(result["features"]), hi.LINKS_FILE: jsonl(result["links"]),
+    by_type: dict[str, list[dict[str, Any]]] = {t: [] for t in hi.FEATURE_TYPES if t != "stream"}
+    for f in result["features"]:
+        # 15,881 reaches would not fit one file under the commit limit, so streams go one file per HUC8
+        key = f"stream_{f.get('huc8') or 'unknown'}" if f["feature_type"] == "stream" else f["feature_type"]
+        by_type.setdefault(key, []).append(f)
+    return {**{hi.FEATURES_FILE.format(t): jsonl(rows) for t, rows in by_type.items()},
+            hi.LINKS_FILE: jsonl(result["links"]),
             hi.CONFLICTS_FILE: jsonl(result["conflicts"]),
             hi.RECEIPT_FILE: json.dumps(result["receipt"], indent=2, sort_keys=True, ensure_ascii=False) + "\n"}
 
@@ -94,19 +102,23 @@ def main(argv: list[str] | None = None) -> int:
     if args.check:
         stale = [name for name, text in outputs.items()
                  if not (hydro / name).is_file() or (hydro / name).read_text(encoding="utf-8") != text]
+        stale += [p.name for p in hydro.glob(hi.FEATURES_FILE.format("*")) if p.name not in outputs]
         if stale:
             print(f"build_hydro_inventory: committed outputs differ from a rebuild: {', '.join(stale)}", file=sys.stderr)
             return 1
         print("build_hydro_inventory: committed outputs match a rebuild")
         return 0
+    for stale in hydro.glob(hi.FEATURES_FILE.format("*")):
+        if stale.name not in outputs:
+            stale.unlink()
     for name, text in outputs.items():
         hi.atomic_write(hydro / name, text)
+    (hydro / "features.jsonl").unlink(missing_ok=True)  # the single-file layout used before per-type files
     receipt = json.loads(outputs[hi.RECEIPT_FILE])
     cov = receipt["coverage"]
-    print(f"build_hydro_inventory: {cov['aquifer']['features_upper']} aquifer features "
-          f"(range {cov['aquifer']['features_lower']}–{cov['aquifer']['features_upper']}), "
-          f"{cov['well']['features_upper']} well features (range {cov['well']['features_lower']}–"
-          f"{cov['well']['features_upper']}), {receipt['conflicts']} conflicts")
+    parts = [f"{t} {c['features_lower']}–{c['features_upper']}" if c["features_lower"] != c["features_upper"]
+             else f"{t} {c['features_upper']}" for t, c in cov.items()]
+    print(f"build_hydro_inventory: {', '.join(parts)}; {receipt['conflicts']} conflicts")
     return 0
 
 

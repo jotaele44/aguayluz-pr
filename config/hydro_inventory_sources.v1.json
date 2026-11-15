@@ -102,17 +102,83 @@
       "evidence_tier": "T2",
       "classes": {
         "Spring": "spring",
-        "Stream": "stream",
-        "Canal": "stream",
-        "Channel": "stream",
-        "Gut": "stream",
-        "Falls": "stream",
+        "Stream": "watercourse",
+        "Canal": "watercourse",
+        "Channel": "watercourse",
+        "Gut": "watercourse",
+        "Falls": "waterfall",
         "Lake": "waterbody",
         "Swamp": "waterbody",
         "Basin": "waterbody",
         "Reservoir": "reservoir"
       },
       "note": "Only the hydrographic feature classes are read; populated places, summits, valleys and the like are counted in the receipt and excluded."
+    },
+    {
+      "source_key": "usgs_nhd_flowlines",
+      "authority": "USGS_NHD",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid",
+      "evidence_tier": "T1",
+      "paging": "resultOffset/resultRecordCount 1000",
+      "ftype": {
+        "460": "stream/river",
+        "336": "canal/ditch",
+        "558": "artificial path (through a waterbody)",
+        "334": "connector",
+        "428": "pipeline",
+        "420": "underground conduit",
+        "566": "coastline"
+      },
+      "excluded_ftypes": {
+        "566": "coastline, not a watercourse"
+      }
+    },
+    {
+      "source_key": "usgs_nhd_waterbodies",
+      "authority": "USGS_NHD",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/12/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid",
+      "evidence_tier": "T1",
+      "ftype": {
+        "436": "reservoir",
+        "390": "lake/pond",
+        "466": "swamp/marsh",
+        "361": "playa",
+        "493": "estuary",
+        "378": "ice mass"
+      },
+      "reservoir_ftypes": [
+        "436"
+      ]
+    },
+    {
+      "source_key": "usgs_wbd",
+      "authority": "USGS_WBD",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/wbd/MapServer/",
+      "layers": {
+        "huc8": 4,
+        "huc10": 5
+      },
+      "evidence_tier": "T1"
+    },
+    {
+      "source_key": "epa_sdwis_intakes",
+      "authority": "EPA_SDWIS",
+      "url": "https://data.epa.gov/efservice/WATER_SYSTEM_FACILITY/PRIMACY_AGENCY_CODE/PR/FACILITY_TYPE_CODE/IN/ROWS/0:9999/JSON",
+      "evidence_tier": "T2"
+    },
+    {
+      "source_key": "noaa_nwps_gauges",
+      "authority": "NOAA_NWS",
+      "path": "data/nwps_gauge_state.jsonl",
+      "evidence_tier": "T1",
+      "note": "Read from the committed NWPS gauge state; the usgs_id it publishes is identity-grade (I2)."
+    },
+    {
+      "source_key": "repo_utility_assets",
+      "authority": "REPO",
+      "path": "data/utility_assets.jsonl",
+      "evidence_tier": "T3",
+      "note": "OSM reservoirs (RSV_) and local intake/outfall points (LOCAL_ intake_outfall) already in the asset registry."
     }
   ],
   "aquifer_codes": {

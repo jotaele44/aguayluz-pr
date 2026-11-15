@@ -12,11 +12,12 @@ import {
 } from '@/lib/hydro-inventory-hooks'
 import { cn } from '@/lib/utils'
 
-const FALLBACK_SCOPE = 'Every aquifer, well and spring the enumerated public sources describe, reconciled across sources. Name and distance matches are listed as candidates, never merged.'
+const FALLBACK_SCOPE = 'Every aquifer, well, spring, stream and waterbody the enumerated public sources describe, reconciled across sources. Name and distance matches are listed as candidates, never merged.'
 const SECTIONS = [
   { key: 'aquifers', label: 'Aquifers' },
   { key: 'wells', label: 'Wells' },
   { key: 'springs', label: 'Springs' },
+  { key: 'surface', label: 'Surface water' },
   { key: 'conflicts', label: 'Conflicts' },
   { key: 'candidates', label: 'Candidates' },
   { key: 'sources', label: 'Sources & coverage' },
@@ -44,6 +45,31 @@ const SOURCE_LABEL = {
   epa_sdwis_wells: 'EPA SDWIS',
   wqp_springs: 'Water Quality Portal',
   usgs_gnis_names: 'USGS GNIS',
+  usgs_nhd_flowlines: 'USGS NHD',
+  usgs_nhd_waterbodies: 'USGS NHD',
+  usgs_wbd: 'USGS WBD',
+  epa_sdwis_intakes: 'EPA SDWIS',
+  noaa_nwps_gauges: 'NOAA NWS',
+  repo_utility_assets: 'Repository assets',
+}
+const SURFACE_TYPES = [
+  ['stream', 'Stream reaches'], ['watercourse', 'Named watercourses'], ['waterfall', 'Waterfalls'],
+  ['waterbody', 'Waterbodies'], ['reservoir', 'Reservoirs'], ['intake', 'Intakes'], ['gauge', 'Gauges'],
+  ['watershed', 'Watersheds'],
+]
+const detailFor = (f) => {
+  switch (f.feature_type) {
+    case 'well':
+    case 'spring': return f.aquifer_code ? `USGS aquifer code ${f.aquifer_code}` : ''
+    case 'stream': return [f.flow_type, f.lengthkm != null ? `${f.lengthkm} km` : null, f.huc8 ? `HUC8 ${f.huc8}` : null].filter(Boolean).join(' · ')
+    case 'watercourse': return `${f.reaches ?? 0} mapped reaches${f.gnis_class ? ` · ${f.gnis_class}` : ''}`
+    case 'waterbody':
+    case 'reservoir': return [f.water_type, f.areasqkm != null ? `${f.areasqkm} km²` : null].filter(Boolean).join(' · ')
+    case 'gauge': return [f.site_type_code ? `USGS ${f.site_type_code}` : null, f.nws_lid ? `NWS ${f.nws_lid}` : null].filter(Boolean).join(' · ')
+    case 'intake': return f.activity === 'A' ? 'active' : f.activity === 'I' ? 'inactive' : ''
+    case 'watershed': return `${(f.level ?? '').toUpperCase()} ${f.huc ?? ''}`
+    default: return ''
+  }
 }
 const PAGE = 50
 const range = (cov) => (cov ? (cov.features_lower === cov.features_upper ? `${cov.features_upper}` : `${cov.features_lower}–${cov.features_upper}`) : '—')
@@ -57,15 +83,20 @@ function Tiles({ summary }) {
   const aq = summary?.coverage?.aquifer
   const wl = summary?.coverage?.well
   const sp = summary?.coverage?.spring
+  const cov = summary?.coverage ?? {}
+  const unplaced = Object.values(cov).reduce((n, c) => n + (c?.unlocated ?? 0), 0)
+  const lakes = (cov.waterbody?.features_upper ?? 0) + (cov.reservoir?.features_upper ?? 0)
   const tiles = [
     { label: 'Aquifers (range)', value: range(aq), icon: Layers, testid: 'tile-aquifers' },
     { label: 'Wells (range)', value: range(wl), icon: Waves, testid: 'tile-wells' },
     { label: 'Springs (range)', value: range(sp), icon: Droplet, testid: 'tile-springs' },
-    { label: 'Wells without a location', value: wl?.unlocated ?? '—', icon: MapPinOff, testid: 'tile-unlocated' },
+    { label: 'Stream reaches', value: range(cov.stream), icon: Waves, testid: 'tile-streams' },
+    { label: 'Waterbodies & reservoirs', value: summary?.coverage ? lakes : '—', icon: Droplet, testid: 'tile-lakes' },
+    { label: 'Listed, not placed (no coordinates)', value: summary?.coverage ? unplaced : '—', icon: MapPinOff, testid: 'tile-unlocated' },
     { label: 'Source disagreements', value: summary?.conflicts ?? '—', icon: Scale, testid: 'tile-conflicts' },
   ]
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
       {tiles.map(({ label, value, icon: Icon, testid }) => (
         <div key={label} data-testid={testid} className="rounded-lg border border-slate-800 bg-slate-900/70 p-4">
           <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500"><Icon className="h-4 w-4" aria-hidden="true" />{label}</div>
@@ -172,6 +203,7 @@ const POINT_SOURCES = {
 }
 
 function WellTable({ onSelect, type = 'well', label = 'Wells' }) {
+  const sourceOptions = POINT_SOURCES[type] ?? null
   const [q, setQ] = useState('')
   const [source, setSource] = useState('')
   const [offset, setOffset] = useState(0)
@@ -184,7 +216,7 @@ function WellTable({ onSelect, type = 'well', label = 'Wells' }) {
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <input aria-label={`Search ${label.toLowerCase()}`} value={q} onChange={(e) => { setQ(e.target.value); setOffset(0) }} placeholder="Search name or id" className="h-8 w-56 rounded border border-slate-700 bg-slate-950 px-2 text-xs text-slate-200" />
         <div role="group" aria-label="Source" className="flex flex-wrap gap-1">
-          {POINT_SOURCES[type].map(([key, text]) => (
+          {(sourceOptions ?? []).map(([key, text]) => (
             <Button key={key || 'all'} size="sm" variant="outline" aria-pressed={source === key} onClick={() => { setSource(key); setOffset(0) }} className={cn('h-7 border-slate-700 bg-slate-950 text-xs', source === key ? 'border-sky-500/60 text-sky-200' : 'text-slate-400')}>{text}</Button>
           ))}
         </div>
@@ -195,9 +227,9 @@ function WellTable({ onSelect, type = 'well', label = 'Wells' }) {
           <table className="w-full min-w-[900px] text-left text-xs" aria-label={label}>
             <thead className="text-[11px] uppercase tracking-wide text-slate-500">
               <tr className="border-b border-slate-800">
-                <th className="py-2 pr-3 font-medium">{type === 'spring' ? 'Spring' : 'Well'}</th><th className="py-2 pr-3 font-medium">Sources</th>
-                <th className="py-2 pr-3 font-medium">USGS aquifer code</th><th className="py-2 pr-3 font-medium">Location</th>
-                <th className="py-2 pr-3 font-medium">Monitoring</th>
+                <th className="py-2 pr-3 font-medium">Name</th><th className="py-2 pr-3 font-medium">Sources</th>
+                <th className="py-2 pr-3 font-medium">Details</th><th className="py-2 pr-3 font-medium">Location</th>
+                {type === 'well' && <th className="py-2 pr-3 font-medium">Monitoring</th>}
               </tr>
             </thead>
             <tbody>
@@ -208,9 +240,9 @@ function WellTable({ onSelect, type = 'well', label = 'Wells' }) {
                     <div className="font-mono text-[10px] font-normal text-slate-500">{f.feature_id}</div>
                   </th>
                   <td className="py-1.5 pr-3 text-slate-400">{f.sources.map(sourceLabel).join(' + ')}</td>
-                  <td className="py-1.5 pr-3 font-mono text-slate-300">{f.aquifer_code ?? '—'}</td>
-                  <td className="py-1.5 pr-3 text-slate-400">{f.located ? `${f.lat}, ${f.lon}` : 'not published by the source'}</td>
-                  <td className="py-1.5 pr-3">{f.monitoring && <Badge className={STATE_TONE[f.monitoring.state]}>{STATE_LABEL[f.monitoring.state]}</Badge>}</td>
+                  <td className="py-1.5 pr-3 text-slate-300">{detailFor(f) || '—'}</td>
+                  <td className="py-1.5 pr-3 text-slate-400">{f.located === false ? 'not published by the source' : f.lat != null ? `${f.lat}, ${f.lon}` : 'polygon'}{f.huc10 ? ` · HUC10 ${f.huc10}` : ''}</td>
+                  {type === 'well' && <td className="py-1.5 pr-3">{f.monitoring && <Badge className={STATE_TONE[f.monitoring.state]}>{STATE_LABEL[f.monitoring.state]}</Badge>}</td>}
                 </tr>
               ))}
             </tbody>
@@ -222,6 +254,21 @@ function WellTable({ onSelect, type = 'well', label = 'Wells' }) {
           <Button size="sm" variant="outline" disabled={offset + PAGE >= total} onClick={() => setOffset(offset + PAGE)} className="h-7 border-slate-700 bg-slate-950 text-xs text-slate-300">Next</Button>
         </div>
       </PanelState>
+    </>
+  )
+}
+
+function SurfaceSection({ onSelect }) {
+  const [type, setType] = useState('stream')
+  const label = SURFACE_TYPES.find(([key]) => key === type)?.[1] ?? type
+  return (
+    <>
+      <div role="group" aria-label="Surface feature type" className="mb-3 flex flex-wrap gap-1">
+        {SURFACE_TYPES.map(([key, text]) => (
+          <Button key={key} size="sm" variant="outline" aria-pressed={type === key} onClick={() => setType(key)} className={cn('h-7 border-slate-700 bg-slate-950 text-xs', type === key ? 'border-sky-500/60 text-sky-200' : 'text-slate-400')}>{text}</Button>
+        ))}
+      </div>
+      <WellTable key={type} onSelect={onSelect} type={type} label={label} />
     </>
   )
 }
@@ -313,7 +360,7 @@ export default function HydroInventoryPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <PageHeader title="Hydro Inventory" subtitle="Puerto Rico aquifers, wells and springs, reconciled across every enumerated source" />
+      <PageHeader title="Hydro Inventory" subtitle="Puerto Rico aquifers, wells, springs, streams, waterbodies, intakes and gauges, reconciled across every enumerated source" />
       <div className="min-h-0 flex-1 space-y-5 overflow-auto p-6">
         <ErrorBoundary label="Hydrologic inventory">
           <div role="note" aria-label="Hydro inventory scope" className="flex items-start gap-3 rounded-lg border border-sky-500/30 bg-sky-500/10 p-4">
@@ -353,6 +400,7 @@ export default function HydroInventoryPage() {
               {section === 'aquifers' && <AquiferTable onSelect={setSelected} />}
               {section === 'wells' && <WellTable onSelect={setSelected} />}
               {section === 'springs' && <WellTable key="springs" onSelect={setSelected} type="spring" label="Springs" />}
+              {section === 'surface' && <SurfaceSection onSelect={setSelected} />}
               {section === 'conflicts' && <ConflictList />}
               {section === 'candidates' && <CandidateList onSelect={setSelected} />}
               {section === 'sources' && <SourcesPanel summary={summary} />}

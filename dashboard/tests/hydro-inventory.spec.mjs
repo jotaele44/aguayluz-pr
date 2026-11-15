@@ -22,7 +22,8 @@ test('Hydro Inventory is reachable from the sidebar and shows coverage, aquifers
 
   const body = await (await request.get(`${backendUrl}/hydro/inventory/summary`)).json()
   expect(body.scope.completeness_claimed).toBe(false)
-  expect(body.phase_scope.feature_types_enumerated).toEqual(['aquifer', 'well'])
+  expect(body.phase_scope.feature_types_not_enumerated).toEqual([])
+  expect(body.phase_scope.feature_types_enumerated).toEqual(expect.arrayContaining(['aquifer', 'well', 'spring', 'stream', 'gauge']))
   const { aquifer, well } = body.coverage
   expect(aquifer.features_lower).toBeLessThanOrEqual(aquifer.features_upper)
   for (const ledger of Object.values(body.source_ledgers)) expect(ledger.state).toBe('PASS')

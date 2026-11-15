@@ -1,6 +1,6 @@
 {
   "completeness_claimed": false,
-  "conflicts": 16,
+  "conflicts": 32,
   "coverage": {
     "aquifer": {
       "by_authority": {
@@ -19,6 +19,44 @@
       "features_lower": 141,
       "features_upper": 159
     },
+    "gauge": {
+      "by_source_combination": {
+        "noaa_nwps_gauges": 10,
+        "noaa_nwps_gauges+usgs_monitoring_locations": 108,
+        "usgs_monitoring_locations": 1552
+      },
+      "candidate_links_i4": 0,
+      "candidate_links_i5": 0,
+      "features_lower": 1670,
+      "features_upper": 1670,
+      "located": 1585,
+      "unlocated": 85
+    },
+    "intake": {
+      "by_source_combination": {
+        "epa_sdwis_intakes": 690,
+        "repo_utility_assets": 7
+      },
+      "candidate_links_i4": 0,
+      "candidate_links_i5": 0,
+      "features_lower": 697,
+      "features_upper": 697,
+      "located": 0,
+      "unlocated": 697
+    },
+    "reservoir": {
+      "by_source_combination": {
+        "repo_utility_assets": 124,
+        "usgs_gnis_names": 21,
+        "usgs_nhd_waterbodies": 653
+      },
+      "candidate_links_i4": 10,
+      "candidate_links_i5": 44,
+      "features_lower": 798,
+      "features_upper": 798,
+      "located": 798,
+      "unlocated": 0
+    },
     "spring": {
       "bound_authoritative": 0,
       "bound_by_polygon_only": 132,
@@ -33,6 +71,61 @@
       "located": 223,
       "unlocated": 0,
       "with_usgs_aquifer_code": 0
+    },
+    "stream": {
+      "by_source_combination": {
+        "usgs_nhd_flowlines": 15881
+      },
+      "candidate_links_i4": 0,
+      "candidate_links_i5": 0,
+      "features_lower": 15881,
+      "features_upper": 15881,
+      "located": 15881,
+      "unlocated": 0
+    },
+    "waterbody": {
+      "by_source_combination": {
+        "usgs_gnis_names": 60,
+        "usgs_gnis_names+usgs_nhd_waterbodies": 22,
+        "usgs_nhd_waterbodies": 3194
+      },
+      "candidate_links_i4": 0,
+      "candidate_links_i5": 0,
+      "features_lower": 3276,
+      "features_upper": 3276,
+      "located": 3276,
+      "unlocated": 0
+    },
+    "watercourse": {
+      "by_source_combination": {
+        "usgs_gnis_names": 324
+      },
+      "candidate_links_i4": 0,
+      "candidate_links_i5": 0,
+      "features_lower": 324,
+      "features_upper": 324,
+      "located": 324,
+      "unlocated": 0
+    },
+    "waterfall": {
+      "by_source_combination": {
+        "usgs_gnis_names": 5
+      },
+      "candidate_links_i4": 0,
+      "candidate_links_i5": 0,
+      "features_lower": 5,
+      "features_upper": 5,
+      "located": 5,
+      "unlocated": 0
+    },
+    "watershed": {
+      "by_source_combination": {
+        "usgs_wbd": 35
+      },
+      "candidate_links_i4": 0,
+      "candidate_links_i5": 0,
+      "features_lower": 35,
+      "features_upper": 35
     },
     "well": {
       "bound_authoritative": 351,
@@ -187,6 +280,195 @@
       "pin_matches": null,
       "source_key": "usgs_gnis_names",
       "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/GeographicNames/DomesticNames/DomesticNames_PR_Text.zip"
+    },
+    {
+      "byte_sha256": "791f57fa3e0187f5d2117057afdc6efc4a90386b911a456cb9992c85d8b348ff",
+      "bytes": 2129070,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "a63f7565dbc8d79c5d293d6ea674869dbdb908c2fce4ebc13471ea897b3ce9e9",
+      "bytes": 2326157,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "f896294d786366408d17b7b1289d0e73630fdef97182ad50c07cc41f5d485665",
+      "bytes": 2058262,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "79a00325058d800f3f04cc4ba5e1e42c45d272b7052bfe7c4ff333ddff80e752",
+      "bytes": 2172309,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "e5251febd9b93afca5908cc96304cea1c9d72a156238ff63e20563d52c2f1c1b",
+      "bytes": 2284601,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "1325737e19aafe91c00898a7174a0402d863fb6604339a55d272f3ef7a292d1e",
+      "bytes": 2131320,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "81345049fa2e7f7f9cf6419eb6b47dc5ed469ab3a6b393a0c851cbb352087bc2",
+      "bytes": 2199940,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "71920859f6330bb3f4673b359a1759fef09e26d095e39340604383d190fd7bc0",
+      "bytes": 2265511,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "e91a1066630ee50a2cc6fd63e879bb5fc50957788f0108f5da42f9f8137c45a3",
+      "bytes": 2195626,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "66be88caa0064cf65f627751f8d7aea392379ada55c85a5c52fbb35edd966323",
+      "bytes": 2300374,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "0e4e9f40f2b99a20493ad4e17edc89270a348bcea26745d777918fd22275584d",
+      "bytes": 2278467,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "58942c8a6c8c40e7466a4c8910d8a96789cf19149942b6f4c48aaff518ad4902",
+      "bytes": 2305611,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "39e0513d80460a81b87b6d5e747053e48804c5573ecbb668768852f63e6abde7",
+      "bytes": 2278074,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "df0ab3eda826ce4f91f6ef6c4281b5798995b0afdc50886184870ba2106fa23d",
+      "bytes": 2219274,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "1d6adeed740f158254b0fdfa2c97c3064e4d019781f32a944b9ed6b377a14663",
+      "bytes": 2239637,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "5677ef30c40f3fd5221494222c36a4eb2f7094d5d21181fca5ea99f09763b6a5",
+      "bytes": 2283938,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "755d933ef0d7abe76131630efe4f41a56e433d1c67cf2cf4cb3fceaa6cb4dcc1",
+      "bytes": 2288086,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "c50353d7b0c41a0c1376b8d6f55b88dbbf711a82ec42db84577ec5fde8495503",
+      "bytes": 250408,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "ed778c73ea51338d6576fb5992b189f2b94d9f3d5e199f46c1af520d6b0b3e6c",
+      "bytes": 42,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "99f1a0c8a7e9b537c8dc728f6b75ce6e846545371e61383532653ea08f365883",
+      "bytes": 3316844,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_waterbodies",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/12/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "0f619d73fed6aef4fdbba273c8b15a16f38bb84ec0faf050726cf382e8ad1b96",
+      "bytes": 2857762,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_waterbodies",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/12/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "873b79c1e222923712dfa4a7138f376941d7ff281194e54f286857ec45eef239",
+      "bytes": 1906948,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_waterbodies",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/12/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "9e5a36e817df835695106d8bf77bb3411008a8eef9a204dcce94e8b459feedc7",
+      "bytes": 1519272,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_waterbodies",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/12/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "ed778c73ea51338d6576fb5992b189f2b94d9f3d5e199f46c1af520d6b0b3e6c",
+      "bytes": 42,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_waterbodies",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/12/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "3aa65f59a80a5a2faab4de15373751672f67f4d85e4711a943d0bb6ebeb5f834",
+      "bytes": 1559088,
+      "pin_matches": null,
+      "source_key": "usgs_wbd",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/wbd/MapServer/4/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&f=geojson"
+    },
+    {
+      "byte_sha256": "8c6e1c15cfe6280e13e46bb509895aca0aed9b37414c59236e210d9191e65ae7",
+      "bytes": 7253927,
+      "pin_matches": null,
+      "source_key": "usgs_wbd",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/wbd/MapServer/5/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&f=geojson"
+    },
+    {
+      "byte_sha256": "2d35d9ae98cff26d2a03776357d3be8107d66ac15aa8bcb8c96a23e95377bcd4",
+      "bytes": 439369,
+      "pin_matches": null,
+      "source_key": "epa_sdwis_intakes",
+      "url": "https://data.epa.gov/efservice/WATER_SYSTEM_FACILITY/PRIMACY_AGENCY_CODE/PR/FACILITY_TYPE_CODE/IN/ROWS/0:9999/JSON"
     }
   ],
   "open_residue": [
@@ -195,21 +477,25 @@
     "DRNA and Junta de Planificación aquifer layers: sige.pr.gov and gis.otg.pr.gov unreachable from the build environment",
     "names of the HA 730-N alluvial-valley polygons: the release labels them only by class",
     "springs known only from speleological or local records: GNIS names 2 springs in Puerto Rico and USGS monitors 221; no public spring registry was found",
-    "streams, waterbodies, reservoirs, intakes and gauges: later phases"
+    "PRASA intakes: EPA SDWIS lists 690 intake facilities without coordinates; they are listed, not placed",
+    "stream gauges are attributed to watersheds by location; their reach on the stream network is not computed (that needs network navigation, not distance)",
+    "DRNA reservoir and embalse lists: sige.pr.gov unreachable from the build environment"
   ],
   "phase_scope": {
     "feature_types_enumerated": [
       "aquifer",
       "well",
-      "spring"
-    ],
-    "feature_types_not_enumerated": [
+      "spring",
       "stream",
+      "watercourse",
+      "waterfall",
       "waterbody",
       "reservoir",
       "intake",
-      "gauge"
-    ]
+      "gauge",
+      "watershed"
+    ],
+    "feature_types_not_enumerated": []
   },
   "schema_version": "aguayluz.hydro-inventory-receipt/v1",
   "source_ledgers": {
@@ -224,6 +510,17 @@
       "state": "PASS",
       "unresolved": 0
     },
+    "epa_sdwis_intakes": {
+      "accounted": 690,
+      "assigned_to_features": 690,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 690,
+      "source": 690,
+      "state": "PASS",
+      "unresolved": 0
+    },
     "epa_sdwis_wells": {
       "accounted": 1384,
       "assigned_to_features": 1384,
@@ -232,6 +529,28 @@
       "excluded_by_reason": {},
       "retained": 1384,
       "source": 1384,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "noaa_nwps_gauges": {
+      "accounted": 118,
+      "assigned_to_features": 118,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 118,
+      "source": 118,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "repo_utility_assets": {
+      "accounted": 131,
+      "assigned_to_features": 131,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 131,
+      "source": 131,
       "state": "PASS",
       "unresolved": 0
     },
@@ -248,13 +567,11 @@
     },
     "usgs_gnis_names": {
       "accounted": 434,
-      "assigned_to_features": 2,
+      "assigned_to_features": 434,
       "delta": 0,
-      "excluded": 432,
-      "excluded_by_reason": {
-        "feature type not enumerated in this phase": 432
-      },
-      "retained": 2,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 434,
       "source": 434,
       "state": "PASS",
       "unresolved": 0
@@ -283,13 +600,11 @@
     },
     "usgs_monitoring_locations": {
       "accounted": 7318,
-      "assigned_to_features": 5658,
+      "assigned_to_features": 7318,
       "delta": 0,
-      "excluded": 1660,
-      "excluded_by_reason": {
-        "feature type not enumerated in this phase": 1660
-      },
-      "retained": 5658,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 7318,
       "source": 7318,
       "state": "PASS",
       "unresolved": 0
@@ -302,6 +617,41 @@
       "excluded_by_reason": {},
       "retained": 2,
       "source": 2,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "usgs_nhd_flowlines": {
+      "accounted": 17093,
+      "assigned_to_features": 15881,
+      "delta": 0,
+      "excluded": 1212,
+      "excluded_by_reason": {
+        "coastline, not a watercourse": 1212
+      },
+      "retained": 15881,
+      "source": 17093,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "usgs_nhd_waterbodies": {
+      "accounted": 3869,
+      "assigned_to_features": 3869,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 3869,
+      "source": 3869,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "usgs_wbd": {
+      "accounted": 35,
+      "assigned_to_features": 35,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 35,
+      "source": 35,
       "state": "PASS",
       "unresolved": 0
     },
@@ -675,6 +1025,63 @@
       "run_utc": "2026-11-15T02:00:00Z",
       "stage": "sites",
       "status": "PASS"
+    },
+    "surface": {
+      "geometry_budget_bytes": 2000000,
+      "geometry_bytes": {
+        "pr_waterbodies.geojson": 1077575,
+        "pr_watersheds.geojson": 440422,
+        "streams/21010002.geojson": 757677,
+        "streams/21010003.geojson": 779643,
+        "streams/21010004.geojson": 871094,
+        "streams/21010005.geojson": 1379498,
+        "streams/21010008.geojson": 46378
+      },
+      "ledgers": {
+        "epa_sdwis_intakes": {
+          "rows": 690
+        },
+        "noaa_nwps_gauges": {
+          "rows": 118
+        },
+        "repo_utility_assets": {
+          "rows": 131
+        },
+        "usgs_nhd_flowlines": {
+          "accounted": 17093,
+          "delta": 0,
+          "excluded": 1212,
+          "excluded_by_reason": {
+            "coastline, not a watercourse": 1212
+          },
+          "retained": 15881,
+          "source": 17093,
+          "state": "PASS",
+          "unresolved": 0
+        },
+        "usgs_nhd_waterbodies": {
+          "rows": 3869
+        },
+        "usgs_wbd": {
+          "rows": 35
+        }
+      },
+      "run_utc": "2026-11-15T02:00:00Z",
+      "simplification": {
+        "decimals": 5,
+        "tolerance_deg": 0.0003
+      },
+      "stage": "surface",
+      "status": "PASS"
     }
+  },
+  "surface": {
+    "examples": [
+      "1611971"
+    ],
+    "gauges_on_waterbodies": 73,
+    "nhd_gnis_ids_without_gnis_record": 1,
+    "osm_reservoir_candidates": 54,
+    "with_huc10": 11884
   }
 }

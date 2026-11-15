@@ -26,7 +26,7 @@ def run(data_dir, src=FIXTURES):
 def test_hydrographic_classes_are_claimed_and_every_other_row_is_counted(tmp_path):
     assert run(tmp_path) == 0
     claims = hi.read_claims(tmp_path / hi.HYDRO_DIR / "claims_gnis_names.jsonl")
-    assert {c["feature_type"] for c in claims} == {"spring", "stream", "reservoir"}
+    assert {c["feature_type"] for c in claims} == {"spring", "watercourse", "reservoir"}
     assert sum(1 for c in claims if c["feature_type"] == "spring") == 2
     ledger = json.loads((tmp_path / hi.HYDRO_DIR / "ingest_names_receipt.json").read_text())["ledgers"]["usgs_gnis_names"]
     assert ledger["source"] == 11 and ledger["retained"] == 7 and ledger["delta"] == 0

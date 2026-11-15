@@ -29,16 +29,17 @@ _STORE = hi.InventoryStore()
 _CLAIMS: dict[str, Any] = {"key": None, "by_id": {}}
 
 SCOPE_STATEMENT = (
-    "Every aquifer, well and spring that the enumerated public sources describe for Puerto Rico, Vieques, Culebra and "
+    "Every aquifer, well, spring, stream reach, watercourse, waterbody, reservoir, intake, gauge and watershed that the enumerated public sources describe for Puerto Rico, Vieques, Culebra and "
     "Mona, reconciled across sources. Claims are merged only when a source publishes another source's "
     "identifier; name or distance matches are listed as candidates, so counts are a range. Source "
-    "disagreements are shown, not resolved. Streams, waterbodies, reservoirs, intakes and gauges are "
-    "not enumerated yet. This inventory makes no claim of completeness beyond its sources."
+    "disagreements are shown, not resolved. This inventory makes no claim of completeness beyond its sources."
 )
 ROW_FIELDS = ("feature_id", "feature_type", "display_name", "sources", "lat", "lon", "site_no", "site_type_code",
               "aquifer_code", "national_aquifer_code", "municipio", "island", "area_km2", "municipios",
               "authority", "aq_code", "system", "member_wells", "located", "well_depth_ft", "activity",
-              "name_is_source_class_only", "utility_asset_ids", "member_springs")
+              "name_is_source_class_only", "utility_asset_ids", "member_springs", "flow_type", "lengthkm",
+              "huc8", "huc10", "gnis_id", "reaches", "water_type", "areasqkm", "nhd_polygons", "nws_lid", "level",
+              "huc", "gnis_class")
 
 
 def _now() -> datetime:
