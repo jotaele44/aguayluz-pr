@@ -33,7 +33,9 @@ def test_offline_run_writes_every_claim_set_and_a_pass_receipt(tmp_path):
     usgs = hi.read_claims(hydro / "claims_usgs_sites.jsonl")
     wqp = hi.read_claims(hydro / "claims_wqp_wells.jsonl")
     sdwis = hi.read_claims(hydro / "claims_sdwis_wells.jsonl")
-    assert len(usgs) == 49 and len(wqp) == 52 and len(sdwis) == 8
+    springs = hi.read_claims(hydro / "claims_wqp_springs.jsonl")
+    assert len(usgs) == 49 and len(wqp) == 52 and len(sdwis) == 8 and len(springs) == 2
+    assert {c["feature_type"] for c in usgs} == {"well", "spring", "gauge"}
     receipt = json.loads((hydro / "ingest_sites_receipt.json").read_text())
     assert receipt["status"] == "PASS"
     assert receipt["ledgers"]["usgs_monitoring_locations"]["cross_check"]["aquifer_code_differences"] == 0

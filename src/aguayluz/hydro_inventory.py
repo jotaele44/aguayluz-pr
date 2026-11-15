@@ -47,7 +47,7 @@ AQUIFER_GEOJSON = "pr_aquifers.geojson"
 RECEIPT_SCHEMA = "aguayluz.hydro-inventory-receipt/v1"
 
 FEATURE_TYPES: tuple[str, ...] = ("aquifer", "well", "spring", "stream", "waterbody", "reservoir", "intake", "gauge")
-PHASE_ENUMERATED: tuple[str, ...] = ("aquifer", "well")
+PHASE_ENUMERATED: tuple[str, ...] = ("aquifer", "well", "spring")
 MONITORING_STATES: tuple[str, ...] = ("MONITORED_NOW", "HISTORICAL_ONLY", "NO_DATA", "READINGS_ABSENT_ON_SERVER")
 #: A discrete-measurement well is visited a few times a year; a year plus a month is one cycle.
 MONITORED_NOW_DAYS = 400
@@ -402,6 +402,58 @@ def build_wells(site_claims: list[dict[str, Any]], wqp_claims: list[dict[str, An
     return features, conflicts
 
 
+def build_springs(site_claims: list[dict[str, Any]], wqp_claims: list[dict[str, Any]],
+                  gnis_claims: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Spring features: USGS sites (I1 with their WQP copies) and GNIS names, never merged on names."""
+    groups: dict[str, list[dict[str, Any]]] = {}
+    for c in site_claims:
+        if c["disposition"] == "RETAINED" and c["feature_type"] == "spring":
+            groups.setdefault(f"SPRING:USGS:{c['source_feature_id']}", []).append(c)
+    for c in wqp_claims:
+        if c["disposition"] == "RETAINED":
+            site = c["attributes"].get("usgs_site_no")
+            groups.setdefault(f"SPRING:USGS:{site}" if site else f"SPRING:WQP:{c['source_feature_id']}", []).append(c)
+    for c in gnis_claims:
+        if c["disposition"] == "RETAINED" and c["feature_type"] == "spring":
+            groups.setdefault(f"SPRING:GNIS:{c['source_feature_id']}", []).append(c)
+    out = []
+    for key in sorted(groups):
+        members = groups[key]
+        site = key.split(":", 2)[2] if key.startswith("SPRING:USGS:") else None
+        ev = [{"tier": "I1", "key": f"USGS_SITE:{site}", "claim_ids": sorted(c["claim_id"] for c in members)}] \
+            if site and len({c["source_key"] for c in members}) > 1 else []
+        usgs = next((c for c in members if c["source_key"] == "usgs_monitoring_locations"), None)
+        attrs = usgs["attributes"] if usgs else members[0]["attributes"]
+        f = _feature(key, "spring", members, ev, site_no=site, aquifer_code=attrs.get("aquifer_code"),
+                     national_aquifer_code=attrs.get("national_aquifer_code"),
+                     municipio=attrs.get("county_name"), located=None)
+        f["located"] = f["lat"] is not None
+        out.append(f)
+    return out
+
+
+def point_candidates(items: list[dict[str, Any]], radius_m: float = WELL_PROXIMITY_M) -> list[dict[str, Any]]:
+    """Name+proximity (I4) and proximity-only (I5) candidates between features from different namespaces."""
+    def ns(f: Mapping[str, Any]) -> str:
+        return f["feature_id"].split(":")[1]
+
+    stop = frozenset(t for f in items for t in normalize_name(f.get("municipio")).split())
+    located = sorted((f for f in items if f["lat"] is not None), key=lambda f: f["feature_id"])
+    out = []
+    for i, a in enumerate(located):
+        for b in located[i + 1:]:
+            if ns(a) == ns(b):
+                continue
+            d = haversine_m(a["lat"], a["lon"], b["lat"], b["lon"])
+            if d > radius_m:
+                continue
+            named = names_compatible(a["display_name"], b["display_name"], stop)
+            out.append(link("CANDIDATE_SAME_FEATURE", a["feature_id"], b["feature_id"], "CANDIDATE",
+                            ["NORMALIZED_NAME", "PROXIMITY"] if named else ["PROXIMITY_ONLY"],
+                            tier="I4" if named else "I5", distance_m=round(d, 1)))
+    return out
+
+
 def conflict(key: str, feature_ids: list[str], attribute: str, kind: str, values: list[dict[str, Any]],
              note: str | None = None, resolution: str = "UNRESOLVED_SHOWN") -> dict[str, Any]:
     return _clean({"conflict_id": "HYC_" + canonical_sha256(key)[:16], "feature_ids": sorted(feature_ids),
@@ -419,16 +471,17 @@ def link(link_type: str, source: str, target: str, edge_class: str, evidence: li
 
 
 def well_aquifer_links(wells: list[dict[str, Any]], aquifers: list[dict[str, Any]],
-                       polygon_index: PolygonIndex) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+                       polygon_index: PolygonIndex, link_type: str = "WELL_IN_AQUIFER"
+                       ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     ids = {f["feature_id"] for f in aquifers}
     links, crosstab, outside = [], {}, {"no_location": 0, "outside_all_polygons": 0, "in_non_aquifer_unit": 0}
     for w in wells:
         code, nat = w.get("aquifer_code"), w.get("national_aquifer_code")
         if code and aquifer_feature_id(f"USGS_AQFR:{code}") in ids:
-            links.append(link("WELL_IN_AQUIFER", w["feature_id"], aquifer_feature_id(f"USGS_AQFR:{code}"),
+            links.append(link(link_type, w["feature_id"], aquifer_feature_id(f"USGS_AQFR:{code}"),
                               "AUTHORITATIVE", ["USGS_AQUIFER_CODE"], basis=f"USGS aquifer_code {code}"))
         if nat and aquifer_feature_id(f"USGS_NAQFR:{nat}") in ids:
-            links.append(link("WELL_IN_AQUIFER", w["feature_id"], aquifer_feature_id(f"USGS_NAQFR:{nat}"),
+            links.append(link(link_type, w["feature_id"], aquifer_feature_id(f"USGS_NAQFR:{nat}"),
                               "AUTHORITATIVE", ["USGS_NATIONAL_AQUIFER_CODE"], basis=f"USGS national_aquifer_code {nat}"))
         if w["lat"] is None:
             outside["no_location"] += 1
@@ -440,9 +493,9 @@ def well_aquifer_links(wells: list[dict[str, Any]], aquifers: list[dict[str, Any
         elif not groups:
             outside["in_non_aquifer_unit"] += 1
         for g in groups:
-            links.append(link("WELL_IN_AQUIFER", w["feature_id"], aquifer_feature_id(g), "DERIVED_TOPOLOGICAL",
+            links.append(link(link_type, w["feature_id"], aquifer_feature_id(g), "DERIVED_TOPOLOGICAL",
                               ["POINT_IN_MAPPED_POLYGON"],
-                              basis="well location inside the HA 730-N polygon; the map says nothing about screen depth"))
+                              basis="location inside the HA 730-N polygon; the map says nothing about depth"))
         if code:
             klass = ",".join(sorted({str(h.get("aq_code")) for h in hits})) or "none"
             crosstab.setdefault(code, {}).setdefault(klass, 0)
@@ -605,10 +658,15 @@ def build_inventory(*, claims: list[dict[str, Any]], aquifer_geojson: Mapping[st
     index = PolygonIndex(f for f in aquifer_geojson.get("features", [])
                          if (f.get("properties") or {}).get("disposition") == "RETAINED"
                          or (f.get("properties") or {}).get("exclusion_reason", "").startswith(("confining", "'other'")))
+    springs = build_springs(by_source.get("usgs_monitoring_locations", []), by_source.get("wqp_springs", []),
+                            by_source.get("usgs_gnis_names", []))
     wl, spatial = well_aquifer_links(wells, aquifers, index)
+    sl, spring_spatial = well_aquifer_links(springs, aquifers, index, "SPRING_IN_AQUIFER")
+    spatial["springs"] = spring_spatial
     al = aquifer_links(aquifer_claims, aquifers, wells, wl, equivalences)
     wc = well_candidates(wells)
-    links = sorted(wl + al + wc, key=lambda x: x["link_id"])
+    sc = point_candidates(springs)
+    links = sorted(wl + sl + al + wc + sc, key=lambda x: x["link_id"])
     ids = [x["link_id"] for x in links]
     if len(ids) != len(set(ids)):
         raise ValueError("duplicate link ids")
@@ -616,19 +674,22 @@ def build_inventory(*, claims: list[dict[str, Any]], aquifer_geojson: Mapping[st
     conflicts = sorted(seeded_conflicts(claims_by_sfid, aquifers, (stage_receipts.get("aquifers") or {}).get("datum"))
                        + coord_conflicts, key=lambda x: x["conflict_id"])
 
-    features = aquifers + wells
+    features = aquifers + wells + springs
     assigned = {cid for f in features for cid in f["claim_ids"]}
-    retained = {c["claim_id"] for c in claims if c["disposition"] == "RETAINED"
-                and (c["feature_type"] == "aquifer" or c["source_key"] != "usgs_monitoring_locations"
-                     or c["attributes"].get("site_type_code") in GW_SITE_TYPES)}
+    retained = {c["claim_id"] for c in claims if c["disposition"] == "RETAINED" and c["feature_type"] in PHASE_ENUMERATED}
     if retained - assigned:
         raise ValueError(f"{len(retained - assigned)} retained claims were not assigned to a feature")
     members: dict[str, dict[str, int]] = {}
     for lk in wl:
         m = members.setdefault(lk["to"], {"AUTHORITATIVE": 0, "DERIVED_TOPOLOGICAL": 0})
         m[lk["edge_class"]] += 1
+    spring_members: dict[str, int] = {}
+    for lk in sl:
+        spring_members[lk["to"]] = spring_members.get(lk["to"], 0) + 1
     for f in aquifers:
         f["member_wells"] = members.get(f["feature_id"], {"AUTHORITATIVE": 0, "DERIVED_TOPOLOGICAL": 0})
+        if spring_members.get(f["feature_id"]):
+            f["member_springs"] = spring_members[f["feature_id"]]
 
     def type_summary(kind: str, items: list[dict[str, Any]]) -> dict[str, Any]:
         nodes = [f["feature_id"] for f in items]
@@ -641,13 +702,14 @@ def build_inventory(*, claims: list[dict[str, Any]], aquifer_geojson: Mapping[st
         for f in items:
             combo = "+".join(f["sources"])
             out["by_source_combination"][combo] = out["by_source_combination"].get(combo, 0) + 1
-        if kind == "well":
+        if kind in ("well", "spring"):
+            own = wl if kind == "well" else sl
             out["located"] = sum(1 for f in items if f["located"])
             out["unlocated"] = sum(1 for f in items if not f["located"])
             out["with_usgs_aquifer_code"] = sum(1 for f in items if f.get("aquifer_code"))
-            out["bound_authoritative"] = len({x["from"] for x in wl if x["edge_class"] == "AUTHORITATIVE"})
-            out["bound_by_polygon_only"] = len({x["from"] for x in wl if x["edge_class"] == "DERIVED_TOPOLOGICAL"}
-                                               - {x["from"] for x in wl if x["edge_class"] == "AUTHORITATIVE"})
+            out["bound_authoritative"] = len({x["from"] for x in own if x["edge_class"] == "AUTHORITATIVE"})
+            out["bound_by_polygon_only"] = len({x["from"] for x in own if x["edge_class"] == "DERIVED_TOPOLOGICAL"}
+                                               - {x["from"] for x in own if x["edge_class"] == "AUTHORITATIVE"})
         if kind == "aquifer":
             out["by_authority"] = {}
             for f in items:
@@ -664,7 +726,7 @@ def build_inventory(*, claims: list[dict[str, Any]], aquifer_geojson: Mapping[st
             elif c["claim_id"] not in assigned:
                 out_of_phase += 1
         if out_of_phase:
-            excluded["site type not enumerated in this phase"] = out_of_phase
+            excluded["feature type not enumerated in this phase"] = out_of_phase
         ledger = close_ledger(source_rows=len(rows), retained=len(rows) - sum(excluded.values()),
                               excluded=excluded, unresolved=0)
         ledger["assigned_to_features"] = sum(1 for c in rows if c["claim_id"] in assigned)
@@ -677,7 +739,8 @@ def build_inventory(*, claims: list[dict[str, Any]], aquifer_geojson: Mapping[st
         "completeness_claimed": False,
         "denominator_definition": "the union of the enumerated sources; every retained claim is assigned to exactly "
                                   "one feature and every excluded claim carries a reason",
-        "coverage": {"aquifer": type_summary("aquifer", aquifers), "well": type_summary("well", wells)},
+        "coverage": {"aquifer": type_summary("aquifer", aquifers), "well": type_summary("well", wells),
+                     "spring": type_summary("spring", springs)},
         "source_ledgers": source_ledgers,
         "spatial": spatial,
         "conflicts": len(conflicts),
@@ -689,7 +752,9 @@ def build_inventory(*, claims: list[dict[str, Any]], aquifer_geojson: Mapping[st
             "DRNA water-franchise registry of permitted wells: no public registry found",
             "DRNA and Junta de Planificación aquifer layers: sige.pr.gov and gis.otg.pr.gov unreachable from the build environment",
             "names of the HA 730-N alluvial-valley polygons: the release labels them only by class",
-            "springs, streams, waterbodies, reservoirs, intakes and gauges: later phases",
+            "springs known only from speleological or local records: GNIS names 2 springs in Puerto Rico and USGS "
+            "monitors 221; no public spring registry was found",
+            "streams, waterbodies, reservoirs, intakes and gauges: later phases",
         ],
     }
     return {"features": features, "links": links, "conflicts": conflicts, "receipt": receipt}
@@ -782,7 +847,8 @@ __all__ = [
     "LINKS_FILE", "MONITORED_NOW_DAYS", "MONITORING_STATES", "PHASE_ENUMERATED", "RECEIPT_FILE", "RECEIPT_SCHEMA",
     "SOURCES_CONFIG", "WELL_PROXIMITY_M",
     "InventoryStore", "PolygonIndex",
-    "aquifer_feature_id", "aquifer_links", "atomic_write", "build_aquifers", "build_inventory", "build_wells", "canonical_sha256",
+    "aquifer_feature_id", "aquifer_links", "atomic_write", "build_aquifers", "build_inventory", "build_springs",
+    "build_wells", "point_candidates", "canonical_sha256",
     "claim", "close_ledger", "component_count", "conflict", "haversine_m", "link", "monitoring_state",
     "name_tokens", "names_compatible", "well_names", "normalize_name", "read_claims", "read_jsonl", "seeded_conflicts", "well_aquifer_links",
     "well_candidates", "wells_in_aquifer", "write_claims", "write_fail_receipt", "write_jsonl",

@@ -24,6 +24,7 @@ const SUMMARY = {
   coverage: {
     aquifer: { features_upper: 159, features_lower: 141 },
     well: { features_upper: 7061, features_lower: 7001, unlocated: 1384, located: 5677 },
+    spring: { features_upper: 223, features_lower: 223, unlocated: 0, located: 223 },
   },
   source_ledgers: { epa_sdwis_wells: { source: 1384, assigned_to_features: 1384, excluded_by_reason: {}, state: 'PASS' } },
   open_residue: ['PRASA production wells: EPA SDWIS lists them without coordinates'],
@@ -39,6 +40,9 @@ const AQUIFERS = { total: 2, items: [
 const WELLS = { total: 2, offset: 0, limit: 50, items: [
   { feature_id: 'WELL:USGS:175947066130601', feature_type: 'well', display_name: 'PIEZOMETER AGUIRRE HW 5B, SALINAS, PR', sources: ['usgs_monitoring_locations', 'wqp_wells'], aquifer_code: '110SCPL', lat: 17.994133, lon: -66.216, located: true, monitoring: { state: 'READINGS_ABSENT_ON_SERVER', last_observed_date: null } },
   { feature_id: 'WELL:SDWIS:PR0003373:1312', feature_type: 'well', display_name: 'CABO ROJO I', sources: ['epa_sdwis_wells'], located: false, monitoring: { state: 'NO_DATA', last_observed_date: null } },
+] }
+const SPRINGS = { total: 1, offset: 0, limit: 50, items: [
+  { feature_id: 'SPRING:GNIS:1611576', feature_type: 'spring', display_name: 'Ojo de Agua', sources: ['usgs_gnis_names'], lat: 18.4, lon: -66.6, located: true },
 ] }
 const CONFLICTS = { total: 1, items: [{
   conflict_id: 'HYC_1', attribute: 'south_coast_aquifer_units', kind: 'classification', resolution: 'UNRESOLVED_SHOWN', feature_ids: [],
@@ -64,7 +68,8 @@ function renderPage() {
 beforeEach(() => {
   vi.clearAllMocks()
   client.getHydroSummary.mockResolvedValue(SUMMARY)
-  client.getHydroFeatures.mockImplementation((params) => Promise.resolve(params.type === 'aquifer' ? AQUIFERS : WELLS))
+  client.getHydroFeatures.mockImplementation((params) => Promise.resolve(
+    params.type === 'aquifer' ? AQUIFERS : params.type === 'spring' ? SPRINGS : WELLS))
   client.getHydroFeature.mockResolvedValue(DETAIL)
   client.getHydroConflicts.mockResolvedValue(CONFLICTS)
   client.getHydroCandidates.mockResolvedValue(CANDIDATES)
@@ -76,6 +81,7 @@ describe('HydroInventoryPage', () => {
     expect(await screen.findByTestId('tile-aquifers')).toHaveTextContent('141–159')
     expect(screen.getByTestId('tile-wells')).toHaveTextContent('7001–7061')
     expect(screen.getByTestId('tile-unlocated')).toHaveTextContent('1384')
+    expect(screen.getByTestId('tile-springs')).toHaveTextContent('223')
     expect(screen.getByText(/property of this server, not of the wells/)).toBeInTheDocument()
   })
 
@@ -94,6 +100,14 @@ describe('HydroInventoryPage', () => {
     expect(within(table).getByText('USGS + Water Quality Portal')).toBeInTheDocument()
     expect(within(table).getByText('not published by the source')).toBeInTheDocument()
     expect(within(table).getByText('Readings not on this server')).toBeInTheDocument()
+  })
+
+  it('lists springs with their own sources', async () => {
+    renderPage()
+    fireEvent.click(await screen.findByRole('button', { name: 'Springs' }))
+    const table = await screen.findByRole('table', { name: 'Springs' })
+    expect(within(table).getByText('USGS GNIS')).toBeInTheDocument()
+    expect(client.getHydroFeatures).toHaveBeenCalledWith(expect.objectContaining({ type: 'spring' }))
   })
 
   it('opens a feature and shows what each source says about it', async () => {

@@ -32,7 +32,8 @@ from aguayluz import CONFIG_DIR, DATA_DIR  # noqa: E402
 from aguayluz import hydro_inventory as hi  # noqa: E402
 
 ASSET_PREFIXES = ("USGSGW_", "USGSFM_", "USGSWQ_")
-STAGES = {"aquifers": "ingest_aquifers_receipt.json", "sites": "ingest_sites_receipt.json"}
+STAGES = {"aquifers": "ingest_aquifers_receipt.json", "sites": "ingest_sites_receipt.json",
+          "names": "ingest_names_receipt.json"}
 
 
 def asset_ids_by_site(path: Path) -> dict[str, list[str]]:

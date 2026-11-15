@@ -6,7 +6,7 @@ Sources (``config/hydro_inventory_sources.v1.json``), all live, every page hashe
   * USGS Water Data API ``monitoring-locations`` for state 72, every site type
   * USGS NWIS site service (groundwater): a cross-check that the two USGS services list the
     same wells with the same aquifer codes. It adds no claims; a disagreement fails the run.
-  * Water Quality Portal stations of type Well (USGS and Puerto Rico EQB)
+  * Water Quality Portal stations of type Well (USGS and Puerto Rico EQB) and of type Spring
   * EPA SDWIS well facilities (``WL``) and water systems, which carry no coordinates
 
 Outputs, committed:
@@ -14,6 +14,7 @@ Outputs, committed:
   * ``data/hydro/claims_usgs_sites.jsonl``    every USGS monitoring location (later phases use the
     other site types)
   * ``data/hydro/claims_wqp_wells.jsonl``
+  * ``data/hydro/claims_wqp_springs.jsonl``
   * ``data/hydro/claims_sdwis_wells.jsonl``
   * ``data/hydro/ingest_sites_receipt.json``
 
@@ -45,6 +46,7 @@ RAW_NAMES = {
     "wqp_wells": "wqp_wells.csv",
     "epa_sdwis_wells": "sdwis_wl.json",
     "epa_sdwis_systems": "sdwis_ws.json",
+    "wqp_springs": "wqp_springs.csv",
 }
 USGS_KEEP = ("site_type_code", "county_name", "hydrologic_unit_code", "aquifer_code", "national_aquifer_code",
              "aquifer_type_code", "well_constructed_depth", "hole_constructed_depth", "altitude", "vertical_datum",
@@ -102,7 +104,7 @@ def acquire(config: dict[str, Any], src_dir: Path | None) -> dict[str, Any]:
             nxt = [link["href"] for link in page.get("links", []) if link.get("rel") == "next"]
             url = nxt[0] if nxt and page.get("features") else None
     raw["ml_pages"] = pages
-    for key in ("usgs_nwis_site_gw", "wqp_wells", "epa_sdwis_wells", "epa_sdwis_systems"):
+    for key in ("usgs_nwis_site_gw", "wqp_wells", "wqp_springs", "epa_sdwis_wells", "epa_sdwis_systems"):
         url = live[key]["url"]
         payload = (src_dir / RAW_NAMES[key]).read_bytes() if src_dir else _get(url)
         if not payload.strip():
@@ -110,6 +112,15 @@ def acquire(config: dict[str, Any], src_dir: Path | None) -> dict[str, Any]:
         record(key, url, payload)
         raw[key] = payload
     return raw
+
+
+def _feature_type(site_type: str) -> str:
+    """USGS site type to inventory feature type. Every other monitoring location is a gauge."""
+    if site_type.startswith("GW"):
+        return "well"
+    if site_type == "SP":
+        return "spring"
+    return "gauge"
 
 
 def parse_rdb(payload: bytes) -> list[dict[str, str]]:
@@ -135,7 +146,7 @@ def usgs_claims(raw: dict[str, Any], now: str, min_gw_sites: int = MIN_USGS_GW_S
             in_pr = lon is not None and hi.PR_BOUNDS[0] <= lon <= hi.PR_BOUNDS[2] and hi.PR_BOUNDS[1] <= lat <= hi.PR_BOUNDS[3]
             claims.append(hi.claim(
                 source_key="usgs_monitoring_locations", authority="USGS",
-                feature_type="well" if str(p.get("site_type_code", "")).startswith("GW") else "gauge",
+                feature_type=_feature_type(str(p.get("site_type_code") or "")),
                 source_feature_id=site, name_raw=p.get("monitoring_location_name"), evidence_tier="T1",
                 manifestation_sha256=digest, retrieved_utc=now, lat=lat if in_pr else None, lon=lon if in_pr else None,
                 attributes={k: p.get(k) for k in USGS_KEEP} | ({"coordinates_outside_pr_bounds": [lon, lat]} if lon is not None and not in_pr else {})))
@@ -164,8 +175,8 @@ def usgs_claims(raw: dict[str, Any], now: str, min_gw_sites: int = MIN_USGS_GW_S
                                             "both appear in earlier notes."}}
 
 
-def wqp_claims(raw: dict[str, Any], now: str) -> list[dict[str, Any]]:
-    rows = list(csv.DictReader(io.StringIO(raw["wqp_wells"].decode("utf-8", "replace"))))
+def wqp_claims(raw: dict[str, Any], now: str, key: str = "wqp_wells", feature_type: str = "well") -> list[dict[str, Any]]:
+    rows = list(csv.DictReader(io.StringIO(raw[key].decode("utf-8", "replace"))))
     if not rows or "MonitoringLocationIdentifier" not in rows[0]:
         raise AcquisitionError("WQP response is not a station table")
     out = []
@@ -181,9 +192,9 @@ def wqp_claims(raw: dict[str, Any], now: str) -> list[dict[str, Any]]:
         if r.get("OrganizationIdentifier", "").upper().startswith("DEMOTEST"):
             excluded = "test data published under a demonstration organisation"
         out.append(hi.claim(
-            source_key="wqp_wells", authority="WQP:" + r.get("OrganizationIdentifier", ""), feature_type="well",
+            source_key=key, authority="WQP:" + r.get("OrganizationIdentifier", ""), feature_type=feature_type,
             source_feature_id=mid, name_raw=r.get("MonitoringLocationName"), evidence_tier="T2",
-            manifestation_sha256=raw["sha"]["wqp_wells"], retrieved_utc=now,
+            manifestation_sha256=raw["sha"][key], retrieved_utc=now,
             lat=lat if in_pr else None, lon=lon if in_pr else None,
             attributes={"organization": r.get("OrganizationIdentifier"), "usgs_site_no": usgs_site,
                         "datum": r.get("HorizontalCoordinateReferenceSystemDatumName"),
@@ -244,6 +255,7 @@ def main(argv: list[str] | None = None) -> int:
         raw = acquire(config, None if args.fetch else args.src_dir)
         usgs, usgs_ledger = usgs_claims(raw, now, args.min_gw_sites)
         wqp = wqp_claims(raw, now)
+        wqp_springs = wqp_claims(raw, now, "wqp_springs", "spring")
         sdwis = sdwis_claims(raw, now)
     except Exception as exc:  # noqa: BLE001 - every failure leaves a FAIL receipt
         print(f"ingest_hydro_sites: FAIL — {exc}", file=sys.stderr)
@@ -254,6 +266,8 @@ def main(argv: list[str] | None = None) -> int:
                "ledgers": {"usgs_monitoring_locations": usgs_ledger,
                            "wqp_wells": {"rows": len(wqp), "usgs_rows": sum(1 for c in wqp if c["attributes"].get("usgs_site_no")),
                                          "other_rows": sum(1 for c in wqp if not c["attributes"].get("usgs_site_no"))},
+                           "wqp_springs": {"rows": len(wqp_springs),
+                                           "usgs_rows": sum(1 for c in wqp_springs if c["attributes"].get("usgs_site_no"))},
                            "epa_sdwis_wells": {"rows": len(sdwis),
                                                "active": sum(1 for c in sdwis if c["attributes"].get("facility_activity_code") == "A"),
                                                "inactive": sum(1 for c in sdwis if c["attributes"].get("facility_activity_code") == "I")}}}
@@ -262,6 +276,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     hi.write_claims(hydro / "claims_usgs_sites.jsonl", usgs)
     hi.write_claims(hydro / "claims_wqp_wells.jsonl", wqp)
+    hi.write_claims(hydro / "claims_wqp_springs.jsonl", wqp_springs)
     hi.write_claims(hydro / "claims_sdwis_wells.jsonl", sdwis)
     hi.atomic_write(receipt_path, json.dumps(summary, indent=2, sort_keys=True, default=str) + "\n")
     print(f"ingest_hydro_sites: PASS — {len(usgs)} USGS sites, {len(wqp)} WQP wells, {len(sdwis)} SDWIS wells")

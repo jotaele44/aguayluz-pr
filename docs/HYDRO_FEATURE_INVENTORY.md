@@ -7,8 +7,8 @@ entity, no way to say which aquifer a well draws from, and no account of wells t
 other agencies list. The goal set for this work was to include every known aquifer, well,
 spring and stream, and to reflect what is known rather than what any one source says.
 
-This document covers **phase 1: aquifers and wells**. Springs, streams, waterbodies,
-reservoirs, intakes and gauges are later phases. The receipt's `phase_scope` names them as
+This document covers **phase 1, aquifers and wells**, and **phase 2, springs**. Streams,
+waterbodies, reservoirs, intakes and gauges are later phases. The receipt's `phase_scope` names them as
 not enumerated, and the page says so.
 
 ## What "100%" means here
@@ -37,8 +37,23 @@ is uncertain, the count is a range. It also does not mean no other aquifer or we
 | Water Quality Portal, site type Well | 5,434 USGS rows (I1 joins) and 240 Puerto Rico EQB wells | T2 | hashed |
 | EPA SDWIS well facilities | 1,384 wells (712 active, 672 inactive), **with no coordinates** | T2 | hashed |
 | DRNA PIRA 2016 | 17 named aquifer units, hand-transcribed with page references | T2 | SHA-256 of the PDF |
+| Water Quality Portal, site type Spring | 221 rows, all USGS (I1 joins) | T2 | hashed |
+| USGS GNIS domestic names, Puerto Rico | 434 hydrographic names of 5,818 rows: 2 springs (phase 2); streams, lakes and reservoirs wait for phase 3 | T2 | hashed |
 
 All sources, URLs and pins are in `config/hydro_inventory_sources.v1.json`.
+
+## Springs (phase 2)
+
+223 spring features: the 221 USGS spring sites (each joined to its Water Quality Portal copy
+by site number) and the 2 springs GNIS names in Puerto Rico. No GNIS spring lies within
+150 m of a USGS spring, so there are no candidate pairs and the count is not a range.
+
+Each spring is linked to the HA 730-N polygon it sits in (`SPRING_IN_AQUIFER`,
+`DERIVED_TOPOLOGICAL`). None of the 221 USGS springs carries a USGS aquifer code.
+
+This is a small number for an island with extensive karst. It is what the public sources
+enumerate, not an estimate of how many springs exist; springs known only from speleological
+or local records are listed as a known gap.
 
 ## Identity: when two claims are one feature
 
@@ -128,6 +143,7 @@ That is a property of the server, not of the wells, and the page says so.
 | Pure module: claims, identity, links, conflicts, ledgers, read side (stdlib only) | `src/aguayluz/hydro_inventory.py` |
 | Aquifer ingest (needs the `[geo]` extra) | `scripts/ingest_hydro_aquifers.py` |
 | Site ingest | `scripts/ingest_hydro_sites.py` |
+| GNIS names ingest | `scripts/ingest_hydro_names.py` |
 | Builder, with `--check` | `scripts/build_hydro_inventory.py` |
 | Claims, features, links, conflicts, receipts (committed) | `data/hydro/` |
 | Aquifer polygons, WGS84 (committed) | `data/geo/pr_aquifers.geojson` |
@@ -135,7 +151,7 @@ That is a property of the server, not of the wells, and the page says so.
 | Page | **Hydro Inventory** (`/hydro-inventory`, under Water & Weather): `dashboard/src/pages/HydroInventoryPage.jsx` |
 | Monitoring | aquifer filter on the groundwater series in `dashboard/src/components/MonitoringCharts.jsx` |
 | GUI-parity capability | `hydro-feature-inventory` in `.federation/gui-capabilities.json` |
-| Tests | `tests/test_hydro_inventory.py`, `tests/test_ingest_hydro_sites.py`, `tests/test_ingest_hydro_aquifers.py`, `tests/test_hydro_inventory_api.py`, `dashboard/src/pages/HydroInventoryPage.test.jsx`, `dashboard/src/lib/hydro-inventory-api.test.js`, `dashboard/tests/hydro-inventory.spec.mjs` |
+| Tests | `tests/test_hydro_inventory.py`, `tests/test_ingest_hydro_sites.py`, `tests/test_ingest_hydro_names.py`, `tests/test_ingest_hydro_aquifers.py`, `tests/test_hydro_inventory_api.py`, `dashboard/src/pages/HydroInventoryPage.test.jsx`, `dashboard/src/lib/hydro-inventory-api.test.js`, `dashboard/tests/hydro-inventory.spec.mjs` |
 
 Claims are stored with the fields every claim in a file shares written once per block. The
 per-claim SHA-256 is kept as an index into the block's list of manifestations, which keeps
@@ -152,6 +168,8 @@ every file under the 5,120 KB commit limit. `read_claims` restores full claims.
 - **Names of the 98 HA 730-N alluvial-valley polygons.** The release labels them only by
   class. They are labelled here by the municipios they cover, and flagged as unnamed in the
   source.
+- **Springs outside the public sources.** GNIS names only 2 springs in Puerto Rico and USGS
+  monitors 221; no public spring registry was found.
 - **USGS stratigraphic codes with no Puerto Rico well assigned.** Ten are listed in the
   receipt as known but not enumerated.
 

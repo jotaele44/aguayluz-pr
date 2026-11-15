@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, GitCompare, Layers, MapPinOff, Scale, Waves } from 'lucide-react'
+import { AlertTriangle, Droplet, GitCompare, Layers, MapPinOff, Scale, Waves } from 'lucide-react'
 
 import ErrorBoundary from '@/components/ErrorBoundary'
 import PageHeader from '@/components/common/PageHeader'
@@ -12,10 +12,11 @@ import {
 } from '@/lib/hydro-inventory-hooks'
 import { cn } from '@/lib/utils'
 
-const FALLBACK_SCOPE = 'Every aquifer and well the enumerated public sources describe, reconciled across sources. Name and distance matches are listed as candidates, never merged.'
+const FALLBACK_SCOPE = 'Every aquifer, well and spring the enumerated public sources describe, reconciled across sources. Name and distance matches are listed as candidates, never merged.'
 const SECTIONS = [
   { key: 'aquifers', label: 'Aquifers' },
   { key: 'wells', label: 'Wells' },
+  { key: 'springs', label: 'Springs' },
   { key: 'conflicts', label: 'Conflicts' },
   { key: 'candidates', label: 'Candidates' },
   { key: 'sources', label: 'Sources & coverage' },
@@ -41,6 +42,8 @@ const SOURCE_LABEL = {
   usgs_monitoring_locations: 'USGS',
   wqp_wells: 'Water Quality Portal',
   epa_sdwis_wells: 'EPA SDWIS',
+  wqp_springs: 'Water Quality Portal',
+  usgs_gnis_names: 'USGS GNIS',
 }
 const PAGE = 50
 const range = (cov) => (cov ? (cov.features_lower === cov.features_upper ? `${cov.features_upper}` : `${cov.features_lower}–${cov.features_upper}`) : '—')
@@ -53,14 +56,16 @@ function Badge({ className, children }) {
 function Tiles({ summary }) {
   const aq = summary?.coverage?.aquifer
   const wl = summary?.coverage?.well
+  const sp = summary?.coverage?.spring
   const tiles = [
     { label: 'Aquifers (range)', value: range(aq), icon: Layers, testid: 'tile-aquifers' },
     { label: 'Wells (range)', value: range(wl), icon: Waves, testid: 'tile-wells' },
+    { label: 'Springs (range)', value: range(sp), icon: Droplet, testid: 'tile-springs' },
     { label: 'Wells without a location', value: wl?.unlocated ?? '—', icon: MapPinOff, testid: 'tile-unlocated' },
     { label: 'Source disagreements', value: summary?.conflicts ?? '—', icon: Scale, testid: 'tile-conflicts' },
   ]
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
       {tiles.map(({ label, value, icon: Icon, testid }) => (
         <div key={label} data-testid={testid} className="rounded-lg border border-slate-800 bg-slate-900/70 p-4">
           <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500"><Icon className="h-4 w-4" aria-hidden="true" />{label}</div>
@@ -161,38 +166,43 @@ function AquiferTable({ onSelect }) {
   )
 }
 
-function WellTable({ onSelect }) {
+const POINT_SOURCES = {
+  well: [['', 'All sources'], ['usgs_monitoring_locations', 'USGS'], ['wqp_wells', 'Water Quality Portal'], ['epa_sdwis_wells', 'EPA SDWIS']],
+  spring: [['', 'All sources'], ['usgs_monitoring_locations', 'USGS'], ['usgs_gnis_names', 'USGS GNIS']],
+}
+
+function WellTable({ onSelect, type = 'well', label = 'Wells' }) {
   const [q, setQ] = useState('')
   const [source, setSource] = useState('')
   const [offset, setOffset] = useState(0)
-  const params = useMemo(() => ({ type: 'well', q: q || undefined, source: source || undefined, limit: PAGE, offset }), [q, source, offset])
+  const params = useMemo(() => ({ type, q: q || undefined, source: source || undefined, limit: PAGE, offset }), [type, q, source, offset])
   const query = useHydroFeatures(params)
   const items = query.data?.items ?? []
   const total = query.data?.total ?? 0
   return (
     <>
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <input aria-label="Search wells" value={q} onChange={(e) => { setQ(e.target.value); setOffset(0) }} placeholder="Search name or id" className="h-8 w-56 rounded border border-slate-700 bg-slate-950 px-2 text-xs text-slate-200" />
+        <input aria-label={`Search ${label.toLowerCase()}`} value={q} onChange={(e) => { setQ(e.target.value); setOffset(0) }} placeholder="Search name or id" className="h-8 w-56 rounded border border-slate-700 bg-slate-950 px-2 text-xs text-slate-200" />
         <div role="group" aria-label="Source" className="flex flex-wrap gap-1">
-          {[['', 'All sources'], ['usgs_monitoring_locations', 'USGS'], ['wqp_wells', 'Water Quality Portal'], ['epa_sdwis_wells', 'EPA SDWIS']].map(([key, label]) => (
-            <Button key={key || 'all'} size="sm" variant="outline" aria-pressed={source === key} onClick={() => { setSource(key); setOffset(0) }} className={cn('h-7 border-slate-700 bg-slate-950 text-xs', source === key ? 'border-sky-500/60 text-sky-200' : 'text-slate-400')}>{label}</Button>
+          {POINT_SOURCES[type].map(([key, text]) => (
+            <Button key={key || 'all'} size="sm" variant="outline" aria-pressed={source === key} onClick={() => { setSource(key); setOffset(0) }} className={cn('h-7 border-slate-700 bg-slate-950 text-xs', source === key ? 'border-sky-500/60 text-sky-200' : 'text-slate-400')}>{text}</Button>
           ))}
         </div>
-        <span className="text-[11px] text-slate-500">{total} wells</span>
+        <span className="text-[11px] text-slate-500">{total} {label.toLowerCase()}</span>
       </div>
-      <PanelState isLoading={query.isLoading} isError={query.isError} errorText={`Wells unavailable: ${String(query.error?.message ?? query.error)}`} isEmpty={!items.length} emptyText="No wells match.">
+      <PanelState isLoading={query.isLoading} isError={query.isError} errorText={`${label} unavailable: ${String(query.error?.message ?? query.error)}`} isEmpty={!items.length} emptyText={`No ${label.toLowerCase()} match.`}>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-left text-xs" aria-label="Wells">
+          <table className="w-full min-w-[900px] text-left text-xs" aria-label={label}>
             <thead className="text-[11px] uppercase tracking-wide text-slate-500">
               <tr className="border-b border-slate-800">
-                <th className="py-2 pr-3 font-medium">Well</th><th className="py-2 pr-3 font-medium">Sources</th>
+                <th className="py-2 pr-3 font-medium">{type === 'spring' ? 'Spring' : 'Well'}</th><th className="py-2 pr-3 font-medium">Sources</th>
                 <th className="py-2 pr-3 font-medium">USGS aquifer code</th><th className="py-2 pr-3 font-medium">Location</th>
                 <th className="py-2 pr-3 font-medium">Monitoring</th>
               </tr>
             </thead>
             <tbody>
               {items.map((f) => (
-                <tr key={f.feature_id} className="border-b border-slate-900" data-testid="well-row">
+                <tr key={f.feature_id} className="border-b border-slate-900" data-testid={`${type}-row`}>
                   <th scope="row" className="py-1.5 pr-3 font-medium text-slate-200">
                     <button type="button" className="text-left hover:underline" onClick={() => onSelect(f.feature_id)}>{f.display_name ?? '(no name)'}</button>
                     <div className="font-mono text-[10px] font-normal text-slate-500">{f.feature_id}</div>
@@ -303,7 +313,7 @@ export default function HydroInventoryPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <PageHeader title="Hydro Inventory" subtitle="Puerto Rico aquifers and wells, reconciled across every enumerated source" />
+      <PageHeader title="Hydro Inventory" subtitle="Puerto Rico aquifers, wells and springs, reconciled across every enumerated source" />
       <div className="min-h-0 flex-1 space-y-5 overflow-auto p-6">
         <ErrorBoundary label="Hydrologic inventory">
           <div role="note" aria-label="Hydro inventory scope" className="flex items-start gap-3 rounded-lg border border-sky-500/30 bg-sky-500/10 p-4">
@@ -342,6 +352,7 @@ export default function HydroInventoryPage() {
             <Panel>
               {section === 'aquifers' && <AquiferTable onSelect={setSelected} />}
               {section === 'wells' && <WellTable onSelect={setSelected} />}
+              {section === 'springs' && <WellTable key="springs" onSelect={setSelected} type="spring" label="Springs" />}
               {section === 'conflicts' && <ConflictList />}
               {section === 'candidates' && <CandidateList onSelect={setSelected} />}
               {section === 'sources' && <SourcesPanel summary={summary} />}

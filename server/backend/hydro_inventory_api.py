@@ -29,16 +29,16 @@ _STORE = hi.InventoryStore()
 _CLAIMS: dict[str, Any] = {"key": None, "by_id": {}}
 
 SCOPE_STATEMENT = (
-    "Every aquifer and well that the enumerated public sources describe for Puerto Rico, Vieques, Culebra and "
+    "Every aquifer, well and spring that the enumerated public sources describe for Puerto Rico, Vieques, Culebra and "
     "Mona, reconciled across sources. Claims are merged only when a source publishes another source's "
     "identifier; name or distance matches are listed as candidates, so counts are a range. Source "
-    "disagreements are shown, not resolved. Springs, streams, waterbodies, reservoirs, intakes and gauges are "
+    "disagreements are shown, not resolved. Streams, waterbodies, reservoirs, intakes and gauges are "
     "not enumerated yet. This inventory makes no claim of completeness beyond its sources."
 )
 ROW_FIELDS = ("feature_id", "feature_type", "display_name", "sources", "lat", "lon", "site_no", "site_type_code",
               "aquifer_code", "national_aquifer_code", "municipio", "island", "area_km2", "municipios",
               "authority", "aq_code", "system", "member_wells", "located", "well_depth_ft", "activity",
-              "name_is_source_class_only", "utility_asset_ids")
+              "name_is_source_class_only", "utility_asset_ids", "member_springs")
 
 
 def _now() -> datetime:
@@ -161,13 +161,16 @@ def hydro_feature(feature_id: str) -> JSONResponse:
     claims = _claims()
     links = data["links_by_feature"].get(feature_id, [])
     wells = [lk for lk in links if lk["link_type"] == "WELL_IN_AQUIFER" and lk["to"] == feature_id]
+    springs = [lk for lk in links if lk["link_type"] == "SPRING_IN_AQUIFER" and lk["to"] == feature_id]
     return JSONResponse({
         "feature": {**feature, **({"monitoring": hi.monitoring_state(feature, _STORE.last_observations(DATA_DIR), _now().date())}
                                   if feature["feature_type"] == "well" else {})},
         "claims": [claims[c] for c in feature["claim_ids"] if c in claims],
-        "links": [lk for lk in links if not (lk["link_type"] == "WELL_IN_AQUIFER" and lk["to"] == feature_id)],
+        "links": [lk for lk in links if not (lk["link_type"] in ("WELL_IN_AQUIFER", "SPRING_IN_AQUIFER")
+                                             and lk["to"] == feature_id)],
         "member_wells": {"authoritative": sum(1 for lk in wells if lk["edge_class"] == "AUTHORITATIVE"),
                          "polygon_only": sum(1 for lk in wells if lk["edge_class"] == "DERIVED_TOPOLOGICAL")},
+        "member_springs": len(springs),
         "conflicts": [c for c in data["conflicts"] if feature_id in c["feature_ids"]],
     })
 

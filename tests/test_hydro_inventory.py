@@ -125,14 +125,14 @@ def test_committed_inventory_is_exactly_what_its_claims_build():
 
 def test_every_source_ledger_closes_and_nothing_claims_completeness():
     assert RECEIPT["completeness_claimed"] is False
-    assert RECEIPT["phase_scope"]["feature_types_enumerated"] == ["aquifer", "well"]
+    assert RECEIPT["phase_scope"]["feature_types_enumerated"] == ["aquifer", "well", "spring"]
     for key, ledger in RECEIPT["source_ledgers"].items():
         assert ledger["state"] == "PASS" and ledger["delta"] == 0, key
         assert ledger["assigned_to_features"] == ledger["retained"], key
 
 
 def test_coverage_is_a_range_and_counts_match_the_files():
-    for kind in ("aquifer", "well"):
+    for kind in ("aquifer", "well", "spring"):
         cov = RECEIPT["coverage"][kind]
         assert cov["features_lower"] <= cov["features_upper"]
         assert cov["features_upper"] == sum(1 for f in FEATURES if f["feature_type"] == kind)
@@ -187,3 +187,19 @@ def test_aquifer_features_cover_every_source_and_carry_member_counts():
     assert BY_ID["AQ:USGS_AQFR:110SCPL"]["member_wells"]["AUTHORITATIVE"] == 145
     assert {"AQ:HA730:4191:main", "AQ:HA730:4192:main", "AQ:HA730:114:main"} <= set(BY_ID)
     assert all(f["island"] in ("main", "vieques", "culebra") for f in aquifers if f["feature_id"].startswith("AQ:HA730:"))
+
+
+def test_every_usgs_spring_and_every_gnis_spring_is_a_feature_and_none_merge_on_names():
+    sites = RECEIPT["stage_receipts"]["sites"]["ledgers"]["usgs_monitoring_locations"]["by_site_type"]
+    springs = [f for f in FEATURES if f["feature_type"] == "spring"]
+    assert sum(1 for f in springs if f["feature_id"].startswith("SPRING:USGS:")) == sites["SP"]
+    gnis = RECEIPT["stage_receipts"]["names"]["ledgers"]["usgs_gnis_names"]["retained_by_class"]["Spring"]
+    assert sum(1 for f in springs if f["feature_id"].startswith("SPRING:GNIS:")) == gnis
+    assert all(f["located"] for f in springs)
+    assert RECEIPT["coverage"]["spring"]["features_upper"] == len(springs)
+
+
+def test_feature_types_outside_the_phase_are_counted_not_dropped():
+    gnis = RECEIPT["source_ledgers"]["usgs_gnis_names"]
+    assert gnis["excluded_by_reason"]["feature type not enumerated in this phase"] == gnis["source"] - gnis["retained"]
+    assert set(RECEIPT["phase_scope"]["feature_types_not_enumerated"]) == {"stream", "waterbody", "reservoir", "intake", "gauge"}

@@ -35,20 +35,114 @@
     }
   ],
   "live_sources": [
-    {"source_key": "usgs_monitoring_locations", "authority": "USGS", "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items?state_code=72&limit=2000&f=json", "evidence_tier": "T1"},
-    {"source_key": "usgs_nwis_site_gw", "authority": "USGS", "url": "https://waterservices.usgs.gov/nwis/site/?format=rdb&stateCd=pr&siteType=GW&siteOutput=expanded&siteStatus=all", "evidence_tier": "T1", "role": "cross-check of the Water Data API well list; not a separate claim set"},
-    {"source_key": "usgs_aquifer_codes", "authority": "USGS", "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/aquifer-codes/items?limit=10000&f=json", "evidence_tier": "T1"},
-    {"source_key": "usgs_national_aquifer_codes", "authority": "USGS", "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/national-aquifer-codes/items?limit=10000&f=json", "evidence_tier": "T1"},
-    {"source_key": "wqp_wells", "authority": "WQP", "url": "https://www.waterqualitydata.us/data/Station/search?statecode=US%3A72&siteType=Well&mimeType=csv&zip=no&providers=NWIS&providers=STORET", "evidence_tier": "T2"},
-    {"source_key": "epa_sdwis_wells", "authority": "EPA_SDWIS", "url": "https://data.epa.gov/efservice/WATER_SYSTEM_FACILITY/PRIMACY_AGENCY_CODE/PR/FACILITY_TYPE_CODE/WL/ROWS/0:9999/JSON", "evidence_tier": "T2"},
-    {"source_key": "epa_sdwis_systems", "authority": "EPA_SDWIS", "url": "https://data.epa.gov/efservice/WATER_SYSTEM/PRIMACY_AGENCY_CODE/PR/ROWS/0:1999/JSON", "evidence_tier": "T2", "role": "system names and cities for the well claims"},
-    {"source_key": "usgs_ha730_text", "authority": "USGS", "url": "https://pubs.usgs.gov/ha/ha730/ch_n/", "pages": ["N-PR_VItext1.html", "N-PR_VItext4.html"], "evidence_tier": "T1"}
+    {
+      "source_key": "usgs_monitoring_locations",
+      "authority": "USGS",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items?state_code=72&limit=2000&f=json",
+      "evidence_tier": "T1"
+    },
+    {
+      "source_key": "usgs_nwis_site_gw",
+      "authority": "USGS",
+      "url": "https://waterservices.usgs.gov/nwis/site/?format=rdb&stateCd=pr&siteType=GW&siteOutput=expanded&siteStatus=all",
+      "evidence_tier": "T1",
+      "role": "cross-check of the Water Data API well list; not a separate claim set"
+    },
+    {
+      "source_key": "usgs_aquifer_codes",
+      "authority": "USGS",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/aquifer-codes/items?limit=10000&f=json",
+      "evidence_tier": "T1"
+    },
+    {
+      "source_key": "usgs_national_aquifer_codes",
+      "authority": "USGS",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/national-aquifer-codes/items?limit=10000&f=json",
+      "evidence_tier": "T1"
+    },
+    {
+      "source_key": "wqp_wells",
+      "authority": "WQP",
+      "url": "https://www.waterqualitydata.us/data/Station/search?statecode=US%3A72&siteType=Well&mimeType=csv&zip=no&providers=NWIS&providers=STORET",
+      "evidence_tier": "T2"
+    },
+    {
+      "source_key": "epa_sdwis_wells",
+      "authority": "EPA_SDWIS",
+      "url": "https://data.epa.gov/efservice/WATER_SYSTEM_FACILITY/PRIMACY_AGENCY_CODE/PR/FACILITY_TYPE_CODE/WL/ROWS/0:9999/JSON",
+      "evidence_tier": "T2"
+    },
+    {
+      "source_key": "epa_sdwis_systems",
+      "authority": "EPA_SDWIS",
+      "url": "https://data.epa.gov/efservice/WATER_SYSTEM/PRIMACY_AGENCY_CODE/PR/ROWS/0:1999/JSON",
+      "evidence_tier": "T2",
+      "role": "system names and cities for the well claims"
+    },
+    {
+      "source_key": "usgs_ha730_text",
+      "authority": "USGS",
+      "url": "https://pubs.usgs.gov/ha/ha730/ch_n/",
+      "pages": [
+        "N-PR_VItext1.html",
+        "N-PR_VItext4.html"
+      ],
+      "evidence_tier": "T1"
+    },
+    {
+      "source_key": "wqp_springs",
+      "authority": "WQP",
+      "url": "https://www.waterqualitydata.us/data/Station/search?statecode=US%3A72&siteType=Spring&mimeType=csv&zip=no&providers=NWIS&providers=STORET",
+      "evidence_tier": "T2"
+    },
+    {
+      "source_key": "usgs_gnis_names",
+      "authority": "USGS_GNIS",
+      "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/GeographicNames/DomesticNames/DomesticNames_PR_Text.zip",
+      "evidence_tier": "T2",
+      "classes": {
+        "Spring": "spring",
+        "Stream": "stream",
+        "Canal": "stream",
+        "Channel": "stream",
+        "Gut": "stream",
+        "Falls": "stream",
+        "Lake": "waterbody",
+        "Swamp": "waterbody",
+        "Basin": "waterbody",
+        "Reservoir": "reservoir"
+      },
+      "note": "Only the hydrographic feature classes are read; populated places, summits, valleys and the like are counted in the receipt and excluded."
+    }
   ],
   "aquifer_codes": {
     "selection_rule": "A USGS local or national aquifer code enters the inventory when (a) at least one Puerto Rico monitoring location is assigned to it, or (b) it is listed below because its USGS name refers explicitly to a Puerto Rico place, valley or island. Stratigraphic codes with no assigned Puerto Rico well are recorded as known but not enumerated.",
-    "named_for_puerto_rico_unassigned": ["110CEBP", "110CYVL", "110MUNB", "110RGAV", "110RGJV", "110RSRD", "110RYZV", "122ISLM", "122LIRO"],
-    "stratigraphic_known_not_enumerated": ["122ALMS", "122CMUY", "122GJTC", "122JNDZ", "122MCRB", "122QBDA", "122UPPR", "123LRES", "123SSBS", "124RPDR"],
-    "catch_all_excluded": ["N9999OTHER"]
+    "named_for_puerto_rico_unassigned": [
+      "110CEBP",
+      "110CYVL",
+      "110MUNB",
+      "110RGAV",
+      "110RGJV",
+      "110RSRD",
+      "110RYZV",
+      "122ISLM",
+      "122LIRO"
+    ],
+    "stratigraphic_known_not_enumerated": [
+      "122ALMS",
+      "122CMUY",
+      "122GJTC",
+      "122JNDZ",
+      "122MCRB",
+      "122QBDA",
+      "122UPPR",
+      "123LRES",
+      "123SSBS",
+      "124RPDR"
+    ],
+    "catch_all_excluded": [
+      "N9999OTHER"
+    ]
   },
   "text_claims": [
     {
@@ -74,38 +168,212 @@
     }
   ],
   "pira_2016_units": [
-    {"unit_key": "PIRA:NCL_SUPERIOR", "name_raw": "Acuífero Superior (Llano o Freático) de la caliza de la Costa Norte", "system": "Costa Norte", "rock_type": "limestone_karst_and_alluvium", "page": "PDF p. 108-109", "quote": "Los dos acuíferos son denominados el Acuífero Superior y el Acuífero Inferior"},
-    {"unit_key": "PIRA:NCL_INFERIOR", "name_raw": "Acuífero Inferior (Profundo o Artesiano) de la caliza de la Costa Norte", "system": "Costa Norte", "rock_type": "limestone_confined", "page": "PDF p. 110", "quote": "El Acuífero Inferior (Profundo o Artesiano) incluye capas de las formaciones San Sebastián, Lares y Montebello"},
-    {"unit_key": "PIRA:SUR_PATILLAS_ARROYO", "name_raw": "Valle aluvial de Patillas a Arroyo", "system": "Costa Sur", "rock_type": "alluvial", "page": "PDF p. 113"},
-    {"unit_key": "PIRA:SUR_GUAYAMA_SALINAS", "name_raw": "Valle aluvial de Guayama a Salinas", "system": "Costa Sur", "rock_type": "alluvial", "page": "PDF p. 113"},
-    {"unit_key": "PIRA:SUR_COAMO", "name_raw": "Valle aluvial de Coamo", "system": "Costa Sur", "rock_type": "alluvial", "page": "PDF p. 113"},
-    {"unit_key": "PIRA:SUR_JUANA_DIAZ_PONCE", "name_raw": "Valle aluvial de Juana Díaz a Ponce", "system": "Costa Sur", "rock_type": "alluvial", "page": "PDF p. 113"},
-    {"unit_key": "PIRA:SUR_TALLABOA", "name_raw": "Acuífero aluvial de Tallaboa", "system": "Costa Sur", "rock_type": "alluvial", "page": "PDF p. 113"},
-    {"unit_key": "PIRA:SUR_YAUCO", "name_raw": "Acuífero aluvial de Yauco", "system": "Costa Sur", "rock_type": "alluvial", "page": "PDF p. 113"},
-    {"unit_key": "PIRA:SUR_GUANICA", "name_raw": "Acuífero aluvial de Guánica", "system": "Costa Sur", "rock_type": "alluvial", "page": "PDF p. 113"},
-    {"unit_key": "PIRA:SUR_GUAYANILLA", "name_raw": "Valle aluvial del río Guayanilla", "system": "Costa Sur", "rock_type": "alluvial", "page": "PDF p. 276"},
-    {"unit_key": "PIRA:SUR_LOCO", "name_raw": "Valle aluvial del río Loco", "system": "Costa Sur", "rock_type": "alluvial", "page": "PDF p. 276"},
-    {"unit_key": "PIRA:SUR_LAJAS", "name_raw": "Valle de Lajas", "system": "Costa Sur", "rock_type": "alluvial", "page": "PDF p. 113", "quote": "En el Valle de Lajas el acuífero no es significativo o contiene agua salina"},
-    {"unit_key": "PIRA:SUR_CALIZA_PONCE_PENUELAS", "name_raw": "Rocas calizas de Juana Díaz a Ponce y Peñuelas (acuífero de baja productividad)", "system": "Costa Sur", "rock_type": "limestone", "page": "PDF p. 113"},
-    {"unit_key": "PIRA:INTERIOR_CAGUAS", "name_raw": "Acuífero aluvial del valle de Caguas", "system": "Valles interiores", "rock_type": "alluvial", "page": "PDF p. 115"},
-    {"unit_key": "PIRA:INTERIOR_JUNCOS", "name_raw": "Acuífero aluvial del valle de Juncos", "system": "Valles interiores", "rock_type": "alluvial", "page": "PDF p. 115"},
-    {"unit_key": "PIRA:INTERIOR_CAYEY", "name_raw": "Acuífero aluvial del valle de Cayey", "system": "Valles interiores", "rock_type": "alluvial", "page": "PDF p. 115"},
-    {"unit_key": "PIRA:ROCA_FRACTURADA", "name_raw": "Acuíferos de roca fracturada", "system": "Roca fracturada", "rock_type": "fractured_igneous", "page": "PDF p. 273"}
+    {
+      "unit_key": "PIRA:NCL_SUPERIOR",
+      "name_raw": "Acuífero Superior (Llano o Freático) de la caliza de la Costa Norte",
+      "system": "Costa Norte",
+      "rock_type": "limestone_karst_and_alluvium",
+      "page": "PDF p. 108-109",
+      "quote": "Los dos acuíferos son denominados el Acuífero Superior y el Acuífero Inferior"
+    },
+    {
+      "unit_key": "PIRA:NCL_INFERIOR",
+      "name_raw": "Acuífero Inferior (Profundo o Artesiano) de la caliza de la Costa Norte",
+      "system": "Costa Norte",
+      "rock_type": "limestone_confined",
+      "page": "PDF p. 110",
+      "quote": "El Acuífero Inferior (Profundo o Artesiano) incluye capas de las formaciones San Sebastián, Lares y Montebello"
+    },
+    {
+      "unit_key": "PIRA:SUR_PATILLAS_ARROYO",
+      "name_raw": "Valle aluvial de Patillas a Arroyo",
+      "system": "Costa Sur",
+      "rock_type": "alluvial",
+      "page": "PDF p. 113"
+    },
+    {
+      "unit_key": "PIRA:SUR_GUAYAMA_SALINAS",
+      "name_raw": "Valle aluvial de Guayama a Salinas",
+      "system": "Costa Sur",
+      "rock_type": "alluvial",
+      "page": "PDF p. 113"
+    },
+    {
+      "unit_key": "PIRA:SUR_COAMO",
+      "name_raw": "Valle aluvial de Coamo",
+      "system": "Costa Sur",
+      "rock_type": "alluvial",
+      "page": "PDF p. 113"
+    },
+    {
+      "unit_key": "PIRA:SUR_JUANA_DIAZ_PONCE",
+      "name_raw": "Valle aluvial de Juana Díaz a Ponce",
+      "system": "Costa Sur",
+      "rock_type": "alluvial",
+      "page": "PDF p. 113"
+    },
+    {
+      "unit_key": "PIRA:SUR_TALLABOA",
+      "name_raw": "Acuífero aluvial de Tallaboa",
+      "system": "Costa Sur",
+      "rock_type": "alluvial",
+      "page": "PDF p. 113"
+    },
+    {
+      "unit_key": "PIRA:SUR_YAUCO",
+      "name_raw": "Acuífero aluvial de Yauco",
+      "system": "Costa Sur",
+      "rock_type": "alluvial",
+      "page": "PDF p. 113"
+    },
+    {
+      "unit_key": "PIRA:SUR_GUANICA",
+      "name_raw": "Acuífero aluvial de Guánica",
+      "system": "Costa Sur",
+      "rock_type": "alluvial",
+      "page": "PDF p. 113"
+    },
+    {
+      "unit_key": "PIRA:SUR_GUAYANILLA",
+      "name_raw": "Valle aluvial del río Guayanilla",
+      "system": "Costa Sur",
+      "rock_type": "alluvial",
+      "page": "PDF p. 276"
+    },
+    {
+      "unit_key": "PIRA:SUR_LOCO",
+      "name_raw": "Valle aluvial del río Loco",
+      "system": "Costa Sur",
+      "rock_type": "alluvial",
+      "page": "PDF p. 276"
+    },
+    {
+      "unit_key": "PIRA:SUR_LAJAS",
+      "name_raw": "Valle de Lajas",
+      "system": "Costa Sur",
+      "rock_type": "alluvial",
+      "page": "PDF p. 113",
+      "quote": "En el Valle de Lajas el acuífero no es significativo o contiene agua salina"
+    },
+    {
+      "unit_key": "PIRA:SUR_CALIZA_PONCE_PENUELAS",
+      "name_raw": "Rocas calizas de Juana Díaz a Ponce y Peñuelas (acuífero de baja productividad)",
+      "system": "Costa Sur",
+      "rock_type": "limestone",
+      "page": "PDF p. 113"
+    },
+    {
+      "unit_key": "PIRA:INTERIOR_CAGUAS",
+      "name_raw": "Acuífero aluvial del valle de Caguas",
+      "system": "Valles interiores",
+      "rock_type": "alluvial",
+      "page": "PDF p. 115"
+    },
+    {
+      "unit_key": "PIRA:INTERIOR_JUNCOS",
+      "name_raw": "Acuífero aluvial del valle de Juncos",
+      "system": "Valles interiores",
+      "rock_type": "alluvial",
+      "page": "PDF p. 115"
+    },
+    {
+      "unit_key": "PIRA:INTERIOR_CAYEY",
+      "name_raw": "Acuífero aluvial del valle de Cayey",
+      "system": "Valles interiores",
+      "rock_type": "alluvial",
+      "page": "PDF p. 115"
+    },
+    {
+      "unit_key": "PIRA:ROCA_FRACTURADA",
+      "name_raw": "Acuíferos de roca fracturada",
+      "system": "Roca fracturada",
+      "rock_type": "fractured_igneous",
+      "page": "PDF p. 273"
+    }
   ],
   "analyst_name_equivalences": {
     "note": "Spanish-English or place-name equivalences written by the analyst. They create CANDIDATE links only (evidence ANALYST_NAME_EQUIVALENCE); they never merge features.",
     "pairs": [
-      ["PIRA:NCL_SUPERIOR", "USGS_AQFR:122NRCSU"], ["PIRA:NCL_SUPERIOR", "HA730:4191:main"],
-      ["PIRA:NCL_INFERIOR", "USGS_AQFR:122NRCSL"], ["PIRA:NCL_INFERIOR", "HA730:4192:main"],
-      ["USGS_AQFR:122NRCSU", "HA730:4191:main"], ["USGS_AQFR:122NRCSL", "HA730:4192:main"],
-      ["USGS_NAQFR:N300STHCST", "HA730:114:main"], ["USGS_AQFR:110SCPL", "HA730:114:main"],
-      ["PIRA:SUR_TALLABOA", "USGS_AQFR:110TLLB"], ["PIRA:SUR_YAUCO", "USGS_AQFR:110YCVL"],
-      ["PIRA:SUR_GUANICA", "USGS_AQFR:110GUNC"], ["PIRA:SUR_GUAYANILLA", "USGS_AQFR:110GYNL"],
-      ["PIRA:SUR_LAJAS", "USGS_AQFR:110LJVL"], ["PIRA:SUR_CALIZA_PONCE_PENUELAS", "USGS_AQFR:122PONC"],
-      ["PIRA:INTERIOR_CAGUAS", "USGS_AQFR:110CGJV"], ["PIRA:INTERIOR_JUNCOS", "USGS_AQFR:110CGJV"],
-      ["PIRA:INTERIOR_CAYEY", "USGS_AQFR:110CYVL"], ["PIRA:ROCA_FRACTURADA", "USGS_AQFR:210VLCC"],
-      ["PIRA:ROCA_FRACTURADA", "HA730:908:main"],
-      ["HA730_TEXT:ESPERANZA_RESOLUCION", "USGS_AQFR:110EPRZ"]
+      [
+        "PIRA:NCL_SUPERIOR",
+        "USGS_AQFR:122NRCSU"
+      ],
+      [
+        "PIRA:NCL_SUPERIOR",
+        "HA730:4191:main"
+      ],
+      [
+        "PIRA:NCL_INFERIOR",
+        "USGS_AQFR:122NRCSL"
+      ],
+      [
+        "PIRA:NCL_INFERIOR",
+        "HA730:4192:main"
+      ],
+      [
+        "USGS_AQFR:122NRCSU",
+        "HA730:4191:main"
+      ],
+      [
+        "USGS_AQFR:122NRCSL",
+        "HA730:4192:main"
+      ],
+      [
+        "USGS_NAQFR:N300STHCST",
+        "HA730:114:main"
+      ],
+      [
+        "USGS_AQFR:110SCPL",
+        "HA730:114:main"
+      ],
+      [
+        "PIRA:SUR_TALLABOA",
+        "USGS_AQFR:110TLLB"
+      ],
+      [
+        "PIRA:SUR_YAUCO",
+        "USGS_AQFR:110YCVL"
+      ],
+      [
+        "PIRA:SUR_GUANICA",
+        "USGS_AQFR:110GUNC"
+      ],
+      [
+        "PIRA:SUR_GUAYANILLA",
+        "USGS_AQFR:110GYNL"
+      ],
+      [
+        "PIRA:SUR_LAJAS",
+        "USGS_AQFR:110LJVL"
+      ],
+      [
+        "PIRA:SUR_CALIZA_PONCE_PENUELAS",
+        "USGS_AQFR:122PONC"
+      ],
+      [
+        "PIRA:INTERIOR_CAGUAS",
+        "USGS_AQFR:110CGJV"
+      ],
+      [
+        "PIRA:INTERIOR_JUNCOS",
+        "USGS_AQFR:110CGJV"
+      ],
+      [
+        "PIRA:INTERIOR_CAYEY",
+        "USGS_AQFR:110CYVL"
+      ],
+      [
+        "PIRA:ROCA_FRACTURADA",
+        "USGS_AQFR:210VLCC"
+      ],
+      [
+        "PIRA:ROCA_FRACTURADA",
+        "HA730:908:main"
+      ],
+      [
+        "HA730_TEXT:ESPERANZA_RESOLUCION",
+        "USGS_AQFR:110EPRZ"
+      ]
     ]
   }
 }

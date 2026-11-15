@@ -42,7 +42,7 @@ def client() -> TestClient:
 def test_summary_states_scope_and_says_when_readings_are_absent(data_dir):
     body = client().get("/hydro/inventory/summary").json()
     assert body["scope"]["completeness_claimed"] is False
-    assert body["phase_scope"]["feature_types_enumerated"] == ["aquifer", "well"]
+    assert body["phase_scope"]["feature_types_enumerated"] == ["aquifer", "well", "spring"]
     assert body["monitoring"]["readings_present"] is False
     assert set(body["monitoring"]["wells_by_state"]) == {"READINGS_ABSENT_ON_SERVER"}
     assert body["coverage"]["well"]["features_upper"] == 7061

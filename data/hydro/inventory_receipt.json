@@ -19,6 +19,21 @@
       "features_lower": 141,
       "features_upper": 159
     },
+    "spring": {
+      "bound_authoritative": 0,
+      "bound_by_polygon_only": 132,
+      "by_source_combination": {
+        "usgs_gnis_names": 2,
+        "usgs_monitoring_locations+wqp_springs": 221
+      },
+      "candidate_links_i4": 0,
+      "candidate_links_i5": 0,
+      "features_lower": 223,
+      "features_upper": 223,
+      "located": 223,
+      "unlocated": 0,
+      "with_usgs_aquifer_code": 0
+    },
     "well": {
       "bound_authoritative": 351,
       "bound_by_polygon_only": 4841,
@@ -146,6 +161,13 @@
       "url": "https://www.waterqualitydata.us/data/Station/search?statecode=US%3A72&siteType=Well&mimeType=csv&zip=no&providers=NWIS&providers=STORET"
     },
     {
+      "byte_sha256": "0112326db9cc9382d5b3637f47eaa6bb76a3b99a92c7b01ba34b253155bda383",
+      "bytes": 64720,
+      "pin_matches": null,
+      "source_key": "wqp_springs",
+      "url": "https://www.waterqualitydata.us/data/Station/search?statecode=US%3A72&siteType=Spring&mimeType=csv&zip=no&providers=NWIS&providers=STORET"
+    },
+    {
       "byte_sha256": "fe47fd05bf8b518c96566924ee00571138830df4c12f02e0f369312fa8ba73f6",
       "bytes": 878451,
       "pin_matches": null,
@@ -158,6 +180,13 @@
       "pin_matches": null,
       "source_key": "epa_sdwis_systems",
       "url": "https://data.epa.gov/efservice/WATER_SYSTEM/PRIMACY_AGENCY_CODE/PR/ROWS/0:1999/JSON"
+    },
+    {
+      "byte_sha256": "34353139cded2a943b063fae7bbeef7ef00db5c1d5b33ef311318cc4b5e32d71",
+      "bytes": 268776,
+      "pin_matches": null,
+      "source_key": "usgs_gnis_names",
+      "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/GeographicNames/DomesticNames/DomesticNames_PR_Text.zip"
     }
   ],
   "open_residue": [
@@ -165,15 +194,16 @@
     "DRNA water-franchise registry of permitted wells: no public registry found",
     "DRNA and Junta de Planificación aquifer layers: sige.pr.gov and gis.otg.pr.gov unreachable from the build environment",
     "names of the HA 730-N alluvial-valley polygons: the release labels them only by class",
-    "springs, streams, waterbodies, reservoirs, intakes and gauges: later phases"
+    "springs known only from speleological or local records: GNIS names 2 springs in Puerto Rico and USGS monitors 221; no public spring registry was found",
+    "streams, waterbodies, reservoirs, intakes and gauges: later phases"
   ],
   "phase_scope": {
     "feature_types_enumerated": [
       "aquifer",
-      "well"
+      "well",
+      "spring"
     ],
     "feature_types_not_enumerated": [
-      "spring",
       "stream",
       "waterbody",
       "reservoir",
@@ -216,6 +246,19 @@
       "state": "PASS",
       "unresolved": 0
     },
+    "usgs_gnis_names": {
+      "accounted": 434,
+      "assigned_to_features": 2,
+      "delta": 0,
+      "excluded": 432,
+      "excluded_by_reason": {
+        "feature type not enumerated in this phase": 432
+      },
+      "retained": 2,
+      "source": 434,
+      "state": "PASS",
+      "unresolved": 0
+    },
     "usgs_ha730_aquifers_pr": {
       "accounted": 104,
       "assigned_to_features": 104,
@@ -240,13 +283,13 @@
     },
     "usgs_monitoring_locations": {
       "accounted": 7318,
-      "assigned_to_features": 5437,
+      "assigned_to_features": 5658,
       "delta": 0,
-      "excluded": 1881,
+      "excluded": 1660,
       "excluded_by_reason": {
-        "site type not enumerated in this phase": 1881
+        "feature type not enumerated in this phase": 1660
       },
-      "retained": 5437,
+      "retained": 5658,
       "source": 7318,
       "state": "PASS",
       "unresolved": 0
@@ -259,6 +302,17 @@
       "excluded_by_reason": {},
       "retained": 2,
       "source": 2,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "wqp_springs": {
+      "accounted": 221,
+      "assigned_to_features": 221,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 221,
+      "source": 221,
       "state": "PASS",
       "unresolved": 0
     },
@@ -384,6 +438,14 @@
       "in_non_aquifer_unit": 487,
       "no_location": 1384,
       "outside_all_polygons": 18
+    },
+    "springs": {
+      "aquifer_code_by_polygon_class": {},
+      "located_wells_without_polygon": {
+        "in_non_aquifer_unit": 90,
+        "no_location": 0,
+        "outside_all_polygons": 1
+      }
     }
   },
   "stage_receipts": {
@@ -505,6 +567,56 @@
       "stage": "aquifers",
       "status": "PASS"
     },
+    "names": {
+      "ledgers": {
+        "usgs_gnis_names": {
+          "accounted": 5818,
+          "delta": 0,
+          "excluded": 5384,
+          "excluded_by_reason": {
+            "GNIS class 'Area' is not hydrographic": 7,
+            "GNIS class 'Bar' is not hydrographic": 70,
+            "GNIS class 'Bay' is not hydrographic": 101,
+            "GNIS class 'Beach' is not hydrographic": 98,
+            "GNIS class 'Cape' is not hydrographic": 199,
+            "GNIS class 'Census' is not hydrographic": 5,
+            "GNIS class 'Civil' is not hydrographic": 1200,
+            "GNIS class 'Cliff' is not hydrographic": 1,
+            "GNIS class 'Flat' is not hydrographic": 4,
+            "GNIS class 'Gap' is not hydrographic": 3,
+            "GNIS class 'Island' is not hydrographic": 148,
+            "GNIS class 'Military' is not hydrographic": 44,
+            "GNIS class 'Plain' is not hydrographic": 1,
+            "GNIS class 'Populated Place' is not hydrographic": 2578,
+            "GNIS class 'Range' is not hydrographic": 20,
+            "GNIS class 'Ridge' is not hydrographic": 19,
+            "GNIS class 'Sea' is not hydrographic": 2,
+            "GNIS class 'Summit' is not hydrographic": 307,
+            "GNIS class 'Valley' is not hydrographic": 576,
+            "GNIS class 'Woods' is not hydrographic": 1
+          },
+          "retained": 434,
+          "retained_by_class": {
+            "Basin": 8,
+            "Canal": 37,
+            "Channel": 31,
+            "Falls": 5,
+            "Gut": 6,
+            "Lake": 49,
+            "Reservoir": 37,
+            "Spring": 2,
+            "Stream": 250,
+            "Swamp": 9
+          },
+          "source": 5818,
+          "state": "PASS",
+          "unresolved": 0
+        }
+      },
+      "run_utc": "2026-11-15T02:00:00Z",
+      "stage": "names",
+      "status": "PASS"
+    },
     "sites": {
       "ledgers": {
         "epa_sdwis_wells": {
@@ -549,6 +661,10 @@
             "only_legacy": 0
           },
           "sites": 7318
+        },
+        "wqp_springs": {
+          "rows": 221,
+          "usgs_rows": 221
         },
         "wqp_wells": {
           "other_rows": 240,

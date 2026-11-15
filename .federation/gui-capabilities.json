@@ -1971,7 +1971,7 @@
       "classification": "analysis",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "The reconciled inventory of Puerto Rico's aquifers and wells, shown on the Hydro Inventory page and used by the Monitoring page's groundwater series. Every source statement (USGS HA 730-N polygons and text, USGS aquifer codes, USGS monitoring locations, the Water Quality Portal, EPA SDWIS, DRNA PIRA 2016) is kept as a claim; claims merge into one feature only on a published identifier, and name or distance matches are listed as candidates, so counts are shown as a range. Source disagreements are listed unresolved. Each well's monitoring state is computed per request from the reading files on the server, and a server without them says so. Read-only by design: the ingests (scripts/ingest_hydro_aquifers.py, scripts/ingest_hydro_sites.py) and scripts/build_hydro_inventory.py are run by a maintainer, and their outputs are committed, so no normal user path requires a terminal. Controls: section buttons, a well search and source filter with paging, opening a feature's detail, Retry after a failed load, and on Monitoring an aquifer filter with an opt-in toggle for wells that are only inside the mapped outline. Loading, error-with-retry, empty, readings-absent, unlocated-well and unnamed-polygon states are rendered and unit-tested.",
+      "rationale": "The reconciled inventory of Puerto Rico's aquifers, wells and springs, shown on the Hydro Inventory page and used by the Monitoring page's groundwater series. Every source statement (USGS HA 730-N polygons and text, USGS aquifer codes, USGS monitoring locations, the Water Quality Portal, EPA SDWIS, USGS GNIS, DRNA PIRA 2016) is kept as a claim; claims merge into one feature only on a published identifier, and name or distance matches are listed as candidates, so counts are shown as a range. Source disagreements are listed unresolved. Each well's monitoring state is computed per request from the reading files on the server, and a server without them says so. Read-only by design: the ingests (scripts/ingest_hydro_aquifers.py, scripts/ingest_hydro_sites.py) and scripts/build_hydro_inventory.py are run by a maintainer, and their outputs are committed, so no normal user path requires a terminal. Controls: section buttons, a well search and source filter with paging, opening a feature's detail, Retry after a failed load, and on Monitoring an aquifer filter with an opt-in toggle for wells that are only inside the mapped outline. Loading, error-with-retry, empty, readings-absent, unlocated-well and unnamed-polygon states are rendered and unit-tested.",
       "backend": {
         "files": [
           "server/backend/hydro_inventory_api.py",
@@ -2002,6 +2002,7 @@
           "src/aguayluz/hydro_inventory.py:atomic_write",
           "src/aguayluz/hydro_inventory.py:build_aquifers",
           "src/aguayluz/hydro_inventory.py:build_inventory",
+          "src/aguayluz/hydro_inventory.py:build_springs",
           "src/aguayluz/hydro_inventory.py:build_wells",
           "src/aguayluz/hydro_inventory.py:canonical_sha256",
           "src/aguayluz/hydro_inventory.py:claim",
@@ -2014,6 +2015,7 @@
           "src/aguayluz/hydro_inventory.py:name_tokens",
           "src/aguayluz/hydro_inventory.py:names_compatible",
           "src/aguayluz/hydro_inventory.py:normalize_name",
+          "src/aguayluz/hydro_inventory.py:point_candidates",
           "src/aguayluz/hydro_inventory.py:read_claims",
           "src/aguayluz/hydro_inventory.py:read_jsonl",
           "src/aguayluz/hydro_inventory.py:seeded_conflicts",
@@ -2030,9 +2032,14 @@
         "files": [
           "scripts/ingest_hydro_aquifers.py",
           "scripts/ingest_hydro_sites.py",
-          "scripts/build_hydro_inventory.py"
+          "scripts/build_hydro_inventory.py",
+          "scripts/ingest_hydro_names.py"
         ],
         "symbols": [
+          "scripts/build_hydro_inventory.py:asset_ids_by_site",
+          "scripts/build_hydro_inventory.py:build",
+          "scripts/build_hydro_inventory.py:main",
+          "scripts/build_hydro_inventory.py:render",
           "scripts/ingest_hydro_aquifers.py:AcquisitionError",
           "scripts/ingest_hydro_aquifers.py:acquire",
           "scripts/ingest_hydro_aquifers.py:choose_transformer",
@@ -2045,17 +2052,17 @@
           "scripts/ingest_hydro_aquifers.py:process_polygons",
           "scripts/ingest_hydro_aquifers.py:text_claims",
           "scripts/ingest_hydro_aquifers.py:write_geojson",
+          "scripts/ingest_hydro_names.py:AcquisitionError",
+          "scripts/ingest_hydro_names.py:claims_from",
+          "scripts/ingest_hydro_names.py:main",
+          "scripts/ingest_hydro_names.py:parse",
           "scripts/ingest_hydro_sites.py:AcquisitionError",
           "scripts/ingest_hydro_sites.py:acquire",
           "scripts/ingest_hydro_sites.py:main",
           "scripts/ingest_hydro_sites.py:parse_rdb",
           "scripts/ingest_hydro_sites.py:sdwis_claims",
           "scripts/ingest_hydro_sites.py:usgs_claims",
-          "scripts/ingest_hydro_sites.py:wqp_claims",
-          "scripts/build_hydro_inventory.py:asset_ids_by_site",
-          "scripts/build_hydro_inventory.py:build",
-          "scripts/build_hydro_inventory.py:main",
-          "scripts/build_hydro_inventory.py:render"
+          "scripts/ingest_hydro_sites.py:wqp_claims"
         ]
       },
       "frontend": {
@@ -2085,7 +2092,8 @@
           "tests/test_hydro_inventory.py",
           "tests/test_ingest_hydro_sites.py",
           "tests/test_ingest_hydro_aquifers.py",
-          "tests/test_gui_parity.py"
+          "tests/test_gui_parity.py",
+          "tests/test_ingest_hydro_names.py"
         ],
         "unit": [
           "dashboard/src/pages/HydroInventoryPage.test.jsx",
