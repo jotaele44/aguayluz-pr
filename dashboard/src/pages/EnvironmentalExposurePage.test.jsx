@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { axe } from 'vitest-axe'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -147,6 +147,44 @@ describe('EnvironmentalExposurePage solid-waste registry', () => {
     const alert = await within(region).findByRole('alert')
     expect(alert).toHaveTextContent(/does not match the graph summary \(3\)/)
     expect(within(region).queryByText(/No solid-waste site records/)).toBeNull()
+  })
+
+  it('offers a retry that refetches the registry and the summary, and recovers when the API does', async () => {
+    // The first load fails (the client reports a failure as an empty list); the backend then recovers.
+    getSolidWasteSites
+      .mockResolvedValueOnce({ total: 0, items: [] })
+      .mockResolvedValueOnce({ total: 3, items: SITES })
+    renderPage()
+    const region = await section()
+    const retry = await within(region).findByRole('button', { name: /retry loading the registry/i })
+    const summaryCalls = getEnvironmentalExposureSummary.mock.calls.length
+    fireEvent.click(retry)
+    await within(region).findByText('Cayey Landfill')
+    expect(within(region).queryByRole('alert')).toBeNull()
+    expect(within(region).queryByRole('button', { name: /retry/i })).toBeNull()
+    expect(getSolidWasteSites).toHaveBeenCalledTimes(2)
+    expect(getEnvironmentalExposureSummary.mock.calls.length).toBe(summaryCalls + 1)
+  })
+
+  it('disables the retry control while the registry is being refetched', async () => {
+    let release
+    getSolidWasteSites
+      .mockResolvedValueOnce({ total: 0, items: [] })
+      .mockReturnValueOnce(new Promise((resolve) => { release = resolve }))
+    renderPage()
+    const region = await section()
+    fireEvent.click(await within(region).findByRole('button', { name: /retry loading the registry/i }))
+    const busy = await within(region).findByRole('button', { name: /retrying/i })
+    expect(busy).toBeDisabled()
+    release({ total: 3, items: SITES })
+    await within(region).findByText('Cayey Landfill')
+  })
+
+  it('shows no retry control when the list is complete', async () => {
+    renderPage()
+    const region = await section()
+    await within(region).findByText('Cayey Landfill')
+    expect(within(region).queryByRole('button')).toBeNull()
   })
 
   it('treats a truncated list as incomplete', async () => {

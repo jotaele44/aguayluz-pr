@@ -109,7 +109,8 @@ corpus is real public data, with some sources external or point-in-time.
   Environmental Exposure page lists every site read-only (name, kind, municipality, source record,
   opened year, closure, review state). A missing closure reads "No closure recorded" or "Not
   stated by source", never "Open", and a list that disagrees with the graph summary is shown as
-  incomplete. The list has no coordinates yet. See
+  incomplete, with a retry button that reloads the list and the summary together. The list has no
+  coordinates yet. See
   [`docs/adr/ADR-0004-solid-waste-registry-ownership.md`](docs/adr/ADR-0004-solid-waste-registry-ownership.md)
   (Proposed).
 - Operational alert events (`docs/ALERT_SYSTEM.md`) and the 78-municipio /

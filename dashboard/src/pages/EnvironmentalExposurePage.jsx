@@ -33,11 +33,18 @@ const bySite = (a, b) => (
   || siteName(a).localeCompare(siteName(b))
 )
 
-function SolidWasteSites({ summary }) {
+function SolidWasteSites({ summary, onRetry }) {
   const sitesQuery = useQuery({
     queryKey: ['environmental-exposure', 'solid-waste-sites'],
     queryFn: getSolidWasteSites,
   })
+  // The API client turns every failure into a "successful" empty result, so the query layer never
+  // retries by itself and window focus does not refetch. The incomplete-list state therefore needs
+  // its own retry, and it refetches the summary too because the check compares the two.
+  const retry = () => {
+    onRetry?.()
+    sitesQuery.refetch()
+  }
   const sites = [...(sitesQuery.data?.items ?? [])].sort(bySite)
   // The summary counts every entity by kind. The list client falls back to an
   // empty list on any error, so a list that disagrees with the summary is
@@ -68,8 +75,18 @@ function SolidWasteSites({ summary }) {
         <div role="status" className="p-5 text-sm text-slate-400">Loading solid-waste sites…</div>
       ) : mismatch ? (
         <div role="alert" className="p-5 text-sm text-red-200">
-          The site list ({listed} listed, {sites.length} received) does not match the graph summary
-          ({expected}). Treat it as incomplete; no site is implied absent.
+          <p>
+            The site list ({listed} listed, {sites.length} received) does not match the graph summary
+            ({expected}). Treat it as incomplete; no site is implied absent.
+          </p>
+          <button
+            type="button"
+            onClick={retry}
+            disabled={sitesQuery.isFetching}
+            className="mt-3 rounded border border-red-400/40 px-3 py-1 text-xs font-medium text-red-100 hover:bg-red-500/10 disabled:opacity-50"
+          >
+            {sitesQuery.isFetching ? 'Retrying…' : 'Retry loading the registry'}
+          </button>
         </div>
       ) : sites.length === 0 ? (
         <div className="p-5 text-sm text-slate-400">No solid-waste site records are materialized.</div>
@@ -369,7 +386,7 @@ export default function EnvironmentalExposurePage() {
                 </section>
               )}
 
-              <SolidWasteSites summary={summary} />
+              <SolidWasteSites summary={summary} onRetry={() => summaryQuery.refetch()} />
 
               <section className="rounded-lg border border-slate-800 bg-slate-900/60">
                 <div className="border-b border-slate-800 px-4 py-3">
