@@ -146,13 +146,18 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
 
 
 def write_jsonl(path: Path, rows: Iterable[Mapping[str, Any]]) -> None:
-    atomic_write(path, "".join(json.dumps(r, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n"
-                               for r in rows))
+    atomic_write(path, "".join(json.dumps(r, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
+                               + "\n" for r in rows))
+
+
+def _is_missing(value: Any) -> bool:
+    # NaN is how pandas spells a missing shapefile attribute; it is not a value and JSON cannot hold it
+    return value is None or (isinstance(value, float) and value != value) or value in ("", [], {})
 
 
 def _clean(value: Any) -> Any:
     if isinstance(value, dict):
-        return {k: _clean(v) for k, v in value.items() if v not in (None, "", [], {})}
+        return {k: _clean(v) for k, v in value.items() if not _is_missing(v)}
     return value
 
 
@@ -218,8 +223,8 @@ def write_claims(path: Path, claims: list[dict[str, Any]]) -> None:
             if c["disposition"] != "RETAINED":
                 row["x"] = c["exclusion_reason"]
             lines.append(row)
-    atomic_write(path, "".join(json.dumps(r, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n"
-                               for r in lines))
+    atomic_write(path, "".join(json.dumps(r, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
+                               + "\n" for r in lines))
 
 
 def read_claims(path: Path) -> list[dict[str, Any]]:
@@ -991,6 +996,161 @@ def monitoring_state(feature: Mapping[str, Any], last_obs: Mapping[str, str] | N
     return {"state": "MONITORED_NOW" if age <= MONITORED_NOW_DAYS else "HISTORICAL_ONLY", "last_observed_date": day}
 
 
+# ── aquifer-level series ──────────────────────────────────────────────────────
+SERIES_PARAMETER = "72019"
+SERIES_MIN_YEARS = 5
+SERIES_MIN_WELLS = 3
+SERIES_LIMITS = (
+    "Median of each well's departure from its own normal for that calendar month (the median of the well's whole "
+    "approved record for that month, which needs at least five years), in feet; positive means the "
+    "water is deeper than usual for that well. It is not a water-table elevation and not a storage or volume "
+    "estimate. The wells contributing change over time, so a step can be a change of membership (marked). "
+    "Wells are not weighted by area. Wells assigned to a different aquifer are never pooled in, so the upper "
+    "and lower North Coast Limestone aquifers stay apart. Display only; nothing alerts on it."
+)
+
+
+def _median(values: list[float]) -> float:
+    v = sorted(values)
+    n = len(v)
+    return v[n // 2] if n % 2 else (v[n // 2 - 1] + v[n // 2]) / 2
+
+
+def _quartiles(values: list[float]) -> tuple[float, float]:
+    v = sorted(values)
+    half = len(v) // 2
+    lower, upper = v[:half], v[half + (len(v) % 2):]
+    return _median(lower or v), _median(upper or v)
+
+
+def series_members(data: Mapping[str, Any], aquifer_id: str, include_polygon: bool) -> tuple[dict[str, str], dict[str, int]]:
+    """``{site_no: binding}`` for wells that may contribute, and why others may not.
+
+    A well inside the outline but assigned by USGS to some other aquifer is excluded: pooling it
+    would mix aquifers, which is exactly what the upper/lower North Coast split forbids.
+    """
+    by_id = data["by_id"]
+    coded = set(wells_in_aquifer(data, aquifer_id, False))
+    members: dict[str, str] = {}
+    excluded = {"coded_to_another_aquifer": 0, "no_usgs_site_number": 0}
+    candidates = set(wells_in_aquifer(data, aquifer_id, include_polygon))
+    for fid in sorted(candidates):
+        f = by_id[fid]
+        site = f.get("site_no")
+        if not site:
+            excluded["no_usgs_site_number"] += 1
+            continue
+        if fid in coded:
+            members[site] = "USGS_AQUIFER_CODE"
+        elif f.get("aquifer_code") or f.get("national_aquifer_code"):
+            excluded["coded_to_another_aquifer"] += 1
+        else:
+            members[site] = "INSIDE_MAPPED_OUTLINE"
+    return members, excluded
+
+
+def monthly_by_well(rows: Iterable[Mapping[str, Any]], sites: set[str]) -> tuple[dict[str, dict[str, dict[str, Any]]], dict[str, int]]:
+    """``{site: {YYYY-MM: {value, provisional}}}`` from reading rows; monthly median per well.
+
+    Only parameter 72019 (depth below land surface, feet) is used: 62610 runs the other way.
+    """
+    buckets: dict[tuple[str, str, bool], list[float]] = {}
+    skipped = {"other_parameter_code": 0, "non_numeric": 0}
+    for r in rows:
+        site = str(r.get("site_no") or "")
+        if site not in sites or r.get("metric") != "groundwater_level":
+            continue
+        if str(r.get("parameter_code")) != SERIES_PARAMETER or str(r.get("unit", "ft")).lower() not in ("ft", "feet"):
+            skipped["other_parameter_code"] += 1
+            continue
+        try:
+            value = float(r["value"])
+        except (KeyError, TypeError, ValueError):
+            skipped["non_numeric"] += 1
+            continue
+        if value != value:
+            skipped["non_numeric"] += 1
+            continue
+        month = str(r.get("observed_date") or "")[:7]
+        if len(month) != 7:
+            continue
+        buckets.setdefault((site, month, bool(r.get("provisional"))), []).append(value)
+    out: dict[str, dict[str, dict[str, Any]]] = {}
+    for (site, month, provisional), values in buckets.items():
+        slot = out.setdefault(site, {})
+        if provisional and month in slot and not slot[month]["provisional"]:
+            continue  # an approved value for the month wins
+        slot[month] = {"value": _median(values), "provisional": provisional}
+    return out, skipped
+
+
+def aquifer_series(monthly: Mapping[str, Mapping[str, Mapping[str, Any]]], members: Mapping[str, str]) -> dict[str, Any]:
+    """Approved and provisional series of the median per-well monthly anomaly, with membership changes."""
+    anomalies: dict[str, dict[str, tuple[float, bool]]] = {}
+    no_baseline = 0
+    for site in members:
+        months = monthly.get(site, {})
+        approved = {m: v["value"] for m, v in months.items() if not v["provisional"]}
+        by_cal: dict[str, list[float]] = {}
+        for m, v in approved.items():
+            by_cal.setdefault(m[5:], []).append(v)
+        baseline = {cal: _median(vals) for cal, vals in by_cal.items() if len(vals) >= SERIES_MIN_YEARS}
+        if not baseline:
+            if months:
+                no_baseline += 1
+            continue
+        for m, v in months.items():
+            if m[5:] in baseline:
+                anomalies.setdefault(m, {})[site] = (round(v["value"] - baseline[m[5:]], 3), v["provisional"])
+
+    def build(provisional: bool) -> list[dict[str, Any]]:
+        points, previous = [], None
+        for m in sorted(anomalies):
+            wells = {s: a for s, (a, p) in anomalies[m].items() if p == provisional}
+            if not wells:
+                continue
+            ids = sorted(wells)
+            point: dict[str, Any] = {"month": m, "n": len(ids), "wells": ids}
+            if len(ids) >= SERIES_MIN_WELLS:
+                q1, q3 = _quartiles(list(wells.values()))
+                point.update(median_ft=round(_median(list(wells.values())), 3), q1_ft=round(q1, 3), q3_ft=round(q3, 3))
+            else:
+                point["median_ft"] = None
+                point["insufficient"] = True
+            point["membership_changed"] = previous is not None and set(ids) != previous
+            previous = set(ids)
+            points.append(point)
+        return points
+
+    approved_points = build(False)
+    return {
+        "unit": "ft",
+        "statistic": "median of per-well monthly anomalies against each well's own calendar-month median",
+        "parameter_code": SERIES_PARAMETER,
+        "min_years_for_baseline": SERIES_MIN_YEARS,
+        "min_wells_per_point": SERIES_MIN_WELLS,
+        "limits": SERIES_LIMITS,
+        "members": [{"site_no": s, "binding": b} for s, b in sorted(members.items())],
+        "contributing_wells": sorted({s for m in anomalies.values() for s in m}),
+        "wells_without_baseline": no_baseline,
+        "wells_without_readings": sum(1 for s in members if not monthly.get(s)),
+        "points": approved_points,
+        "provisional_points": build(True),
+        "points_with_value": sum(1 for p in approved_points if p["median_ft"] is not None),
+    }
+
+
+def iter_groundwater_rows(data_dir: Path) -> Iterable[dict[str, Any]]:
+    for name in READING_FILES:
+        path = data_dir / name
+        if not path.is_file():
+            continue
+        with path.open(encoding="utf-8") as handle:
+            for line in handle:
+                if '"groundwater_level"' in line:
+                    yield json.loads(line)
+
+
 def wells_in_aquifer(data: Mapping[str, Any], aquifer_id: str, include_polygon: bool) -> list[str]:
     classes = {"AUTHORITATIVE", "DERIVED_TOPOLOGICAL"} if include_polygon else {"AUTHORITATIVE"}
     return sorted({lk["from"] for lk in data["links_by_feature"].get(aquifer_id, [])
@@ -1003,7 +1163,8 @@ __all__ = [
     "SOURCES_CONFIG", "WELL_PROXIMITY_M",
     "InventoryStore", "PolygonIndex",
     "aquifer_feature_id", "aquifer_links", "atomic_write", "build_aquifers", "build_inventory", "build_springs",
-    "build_surface", "build_wells", "point_candidates", "surface_links", "canonical_sha256",
+    "build_surface", "build_wells", "point_candidates", "surface_links", "aquifer_series", "series_members",
+    "monthly_by_well", "iter_groundwater_rows", "SERIES_LIMITS", "SERIES_MIN_WELLS", "SERIES_MIN_YEARS", "SERIES_PARAMETER", "canonical_sha256",
     "claim", "close_ledger", "component_count", "conflict", "haversine_m", "link", "monitoring_state",
     "name_tokens", "names_compatible", "well_names", "normalize_name", "read_claims", "read_jsonl", "seeded_conflicts", "well_aquifer_links",
     "well_candidates", "wells_in_aquifer", "write_claims", "write_fail_receipt", "write_jsonl",

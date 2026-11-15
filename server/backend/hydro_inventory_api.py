@@ -153,6 +153,22 @@ def hydro_aquifer_wells(aquifer: str, include_polygon: bool = False) -> JSONResp
                          "polygon_only": len(set(members) - authoritative)})
 
 
+@router.get("/hydro/aquifer-series")
+def hydro_aquifer_series(aquifer: str, include_polygon: bool = False) -> JSONResponse:
+    """Median per-well monthly depth anomaly for one aquifer, from the reading files on this server."""
+    data = _data()
+    feature = data["by_id"].get(aquifer)
+    if feature is None or feature["feature_type"] != "aquifer":
+        raise HTTPException(status_code=404, detail=f"unknown aquifer {aquifer}")
+    members, excluded = hi.series_members(data, aquifer, include_polygon)
+    readings_present = _STORE.last_observations(DATA_DIR) is not None
+    monthly, skipped = hi.monthly_by_well(hi.iter_groundwater_rows(DATA_DIR) if readings_present else [], set(members))
+    series = hi.aquifer_series(monthly, members)
+    return JSONResponse({"aquifer": aquifer, "aquifer_name": feature.get("display_name"), "include_polygon": include_polygon,
+                         "readings_present": readings_present, "excluded_wells": excluded, "skipped_rows": skipped,
+                         **series})
+
+
 @router.get("/hydro/features/{feature_id:path}")
 def hydro_feature(feature_id: str) -> JSONResponse:
     data = _data()
@@ -191,6 +207,52 @@ def hydro_candidates(type: str | None = Query(None, alias="type"), tier: str | N
     named = [{**lk, "from_name": data["by_id"][lk["from"]].get("display_name"),
               "to_name": data["by_id"][lk["to"]].get("display_name")} for lk in items]
     return JSONResponse({"total": len(named), "items": named})
+
+
+_GEO_FILES = {"waterbodies": "pr_waterbodies.geojson", "watersheds": "pr_watersheds.geojson"}
+_POINT_TYPES = ("well", "spring", "gauge", "reservoir", "waterfall")
+
+
+@router.get("/hydro/geo/{name}.geojson")
+def hydro_geo(name: str) -> Response:
+    """Committed surface-water geometry: ``waterbodies``, ``watersheds`` or ``streams-<HUC8>``."""
+    if name.startswith("streams-") and name[8:].isdigit():
+        path = DATA_DIR / "geo" / "streams" / f"{name[8:]}.geojson"
+    elif name in _GEO_FILES:
+        path = DATA_DIR / "geo" / _GEO_FILES[name]
+    else:
+        raise HTTPException(status_code=404, detail=f"unknown geometry {name}")
+    if not path.is_file():
+        return JSONResponse({"type": "FeatureCollection", "features": []})
+    return Response(content=path.read_bytes(), media_type="application/geo+json")
+
+
+@router.get("/hydro/stream-tiles")
+def hydro_stream_tiles() -> JSONResponse:
+    folder = DATA_DIR / "geo" / "streams"
+    tiles = sorted(p.stem for p in folder.glob("*.geojson")) if folder.is_dir() else []
+    return JSONResponse({"tiles": tiles})
+
+
+@router.get("/hydro/points.geojson")
+def hydro_points(type: str = Query(..., alias="type")) -> JSONResponse:  # noqa: A002
+    """Placed features of one point type, with monitoring state for wells. Unplaced features are never drawn."""
+    if type not in _POINT_TYPES:
+        raise HTTPException(status_code=422, detail=f"type must be one of {', '.join(_POINT_TYPES)}")
+    data = _data()
+    last_obs = _STORE.last_observations(DATA_DIR) if type == "well" else None
+    today = _now().date()
+    features = []
+    for f in data["features"]:
+        if f["feature_type"] != type or f.get("lat") is None:
+            continue
+        props = {"id": f["feature_id"], "name": f.get("display_name"), "sources": len(f["sources"])}
+        if type == "well":
+            props["state"] = hi.monitoring_state(f, last_obs, today)["state"]
+            props["coded"] = bool(f.get("aquifer_code"))
+        features.append({"type": "Feature", "properties": props,
+                         "geometry": {"type": "Point", "coordinates": [f["lon"], f["lat"]]}})
+    return JSONResponse({"type": "FeatureCollection", "features": features})
 
 
 @router.get("/hydro/aquifers.geojson")

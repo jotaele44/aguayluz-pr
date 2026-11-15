@@ -351,20 +351,24 @@ def write_geojson(rows: list[dict[str, Any]], path: Path) -> None:
             return [rnd(o) for o in obj]
         return obj
 
+    def clean(value: Any) -> Any:
+        # shapefile attributes come through pandas, where a missing value is NaN; JSON has no NaN
+        return None if isinstance(value, float) and value != value else value
+
     features = []
     for r in rows:
         if r["disposition"] != "RETAINED" and r["exclusion_reason"].startswith("outside"):
             continue  # Virgin Islands polygons are counted in the receipt, not drawn
         geom = mapping(r["geometry"])
         features.append({"type": "Feature",
-                         "properties": {k: r[k] for k in ("polygon_id", "aq_code", "aq_name", "island", "area_km2",
-                                                          "group_key", "disposition", "exclusion_reason")},
+                         "properties": {k: clean(r[k]) for k in ("polygon_id", "aq_code", "aq_name", "island", "area_km2",
+                                                                "group_key", "disposition", "exclusion_reason")},
                          "geometry": {"type": geom["type"], "coordinates": rnd(geom["coordinates"])}})
     doc = {"type": "FeatureCollection",
            "_source": "USGS HA 730-N aquifers_pr (doi:10.5066/P98YGFVN); datum read as Puerto Rico 1940; "
                       f"simplified {SIMPLIFY_DEG} deg, {DECIMALS} decimals. Built by scripts/ingest_hydro_aquifers.py.",
            "features": features}
-    hi.atomic_write(path, json.dumps(doc, ensure_ascii=False, separators=(",", ":")) + "\n")
+    hi.atomic_write(path, json.dumps(doc, ensure_ascii=False, separators=(",", ":"), allow_nan=False) + "\n")
 
 
 # ── claims ────────────────────────────────────────────────────────────────────

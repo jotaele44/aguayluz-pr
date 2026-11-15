@@ -275,7 +275,7 @@ def _write_geo(path: Path, features: list[dict[str, Any]], note: str) -> int:
         g = mapping(geom.simplify(SIMPLIFY_DEG, preserve_topology=True))
         out.append({"type": "Feature", "properties": props, "geometry": {"type": g["type"], "coordinates": rnd(g["coordinates"])}})
     text = json.dumps({"type": "FeatureCollection", "_source": note, "features": out}, ensure_ascii=False,
-                      separators=(",", ":")) + "\n"
+                      separators=(",", ":"), allow_nan=False) + "\n"
     if len(text.encode()) > GEO_FILE_BUDGET_BYTES:
         raise ValueError(f"{path.name} would be {len(text.encode())} bytes, over the {GEO_FILE_BUDGET_BYTES}-byte budget")
     hi.atomic_write(path, text)

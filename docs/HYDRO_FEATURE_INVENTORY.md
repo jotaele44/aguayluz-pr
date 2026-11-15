@@ -99,6 +99,53 @@ Geometry is committed simplified (0.0003°, five decimals) in files of at most 2
 `data/geo/pr_watersheds.geojson`. Feature rows are split the same way, one file per type and,
 for streams, per HUC8, so every file stays under the commit limit.
 
+## Aquifer series and map (phase 4)
+
+### Aquifer depth anomaly
+
+On Monitoring, choosing an aquifer on a groundwater series adds the **aquifer depth anomaly**
+(`GET /hydro/aquifer-series`). It is computed per request from the reading files on the
+server; nothing is stored.
+
+1. **Members.** The wells USGS assigns to the aquifer by code. An opt-in toggle adds wells that
+   only sit inside the mapped outline, but never a well USGS assigns to a *different* aquifer,
+   so the upper and lower North Coast Limestone aquifers are never pooled.
+2. **Readings.** Parameter 72019 only (depth below land surface, feet). 62610 runs the other
+   way and is counted and skipped. Each well's readings are reduced to a monthly median, and an
+   approved value for a month wins over a provisional one.
+3. **Baseline.** For each well and calendar month, the median of that well's whole approved
+   record for that month, if it has at least **five** years. A well without one does not
+   contribute.
+4. **Anomaly.** The month's value minus the baseline, in feet; positive means deeper water than
+   usual for that well.
+5. **Aggregate.** The median across contributing wells, with quartiles and the well list,
+   shown only when **three** or more wells contribute. Months where the set of wells changes
+   are marked, because a step can be a change of membership. Provisional months form a
+   separate series that is not drawn on the line.
+
+It is not a water-table elevation and not a storage or volume estimate. Wells are not
+weighted by area, and nothing alerts on it. A server without reading files (a fresh checkout,
+CI) says so instead of drawing an empty line.
+
+### Map workspace
+
+The Monitoring page's map workspace, previously a placeholder, now draws only source
+geometry:
+
+- HA 730-N aquifers, coloured by class;
+- HUC10 watersheds and NHD waterbodies;
+- NHD stream reaches, loaded per HUC8 when the layer is turned on;
+- located wells, coloured by monitoring state and ringed when USGS assigns an aquifer code;
+- springs and gauges.
+
+Features whose source publishes no location are never placed. A layer that fails to load is
+reported on the page.
+
+Building the map exposed a phase 1 defect: polygons with no class name had been written with
+`NaN`, which is not JSON, so browsers rejected the whole aquifer file. Every writer now refuses
+NaN, missing attributes are dropped, and a test parses every committed inventory file as
+strict JSON.
+
 ## Identity: when two claims are one feature
 
 | Tier | Evidence | Effect |
@@ -193,9 +240,9 @@ That is a property of the server, not of the wells, and the page says so.
 | Claims, features, links, conflicts, receipts (committed) | `data/hydro/` |
 | Aquifer polygons, WGS84 (committed) | `data/geo/pr_aquifers.geojson` |
 | Stream, waterbody and watershed geometry (committed) | `data/geo/streams/`, `data/geo/pr_waterbodies.geojson`, `data/geo/pr_watersheds.geojson` |
-| API | `server/backend/hydro_inventory_api.py`: `/hydro/inventory/summary`, `/hydro/features`, `/hydro/features/{id}`, `/hydro/aquifer-wells`, `/hydro/conflicts`, `/hydro/candidates`, `/hydro/aquifers.geojson` |
+| API | `server/backend/hydro_inventory_api.py`: `/hydro/aquifer-series`, `/hydro/points.geojson`, `/hydro/geo/{name}.geojson`, `/hydro/stream-tiles`, `/hydro/inventory/summary`, `/hydro/features`, `/hydro/features/{id}`, `/hydro/aquifer-wells`, `/hydro/conflicts`, `/hydro/candidates`, `/hydro/aquifers.geojson` |
 | Page | **Hydro Inventory** (`/hydro-inventory`, under Water & Weather): `dashboard/src/pages/HydroInventoryPage.jsx` |
-| Monitoring | aquifer filter on the groundwater series in `dashboard/src/components/MonitoringCharts.jsx` |
+| Monitoring | aquifer filter and aquifer depth anomaly (`dashboard/src/components/MonitoringCharts.jsx`, `AquiferSeriesChart.jsx`); map workspace (`HydroMapWorkspace.jsx` in `WaterMonitoringConsole.jsx`) |
 | GUI-parity capability | `hydro-feature-inventory` in `.federation/gui-capabilities.json` |
 | Tests | `tests/test_hydro_inventory.py`, `tests/test_ingest_hydro_sites.py`, `tests/test_ingest_hydro_names.py`, `tests/test_ingest_hydro_nhd.py`, `tests/test_ingest_hydro_aquifers.py`, `tests/test_hydro_inventory_api.py`, `dashboard/src/pages/HydroInventoryPage.test.jsx`, `dashboard/src/lib/hydro-inventory-api.test.js`, `dashboard/tests/hydro-inventory.spec.mjs` |
 

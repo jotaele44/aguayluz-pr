@@ -231,3 +231,79 @@ def test_unlocated_intakes_are_listed_and_never_placed():
     sdwis = [f for f in intakes if f["feature_id"].startswith("INTAKE:SDWIS:")]
     assert len(sdwis) == RECEIPT["source_ledgers"]["epa_sdwis_intakes"]["retained"]
     assert all(f["lat"] is None and "huc10" not in f for f in sdwis)
+
+
+# ── aquifer-level series (rows CONSTRUCTED) ───────────────────────────────────
+def _rows(site, values_by_month, provisional=False, param="72019"):
+    return [{"site_no": site, "metric": "groundwater_level", "parameter_code": param, "unit": "ft",
+             "value": v, "observed_date": f"{m}-15", "provisional": provisional} for m, v in values_by_month.items()]
+
+
+def _history(site, base, years=range(2015, 2021), month="03"):
+    return {f"{y}-{month}": base + (y - 2015) * 0.1 for y in years}
+
+
+def test_series_uses_each_wells_own_baseline_and_needs_three_wells():
+    rows = []
+    for site, base in (("A", 10.0), ("B", 50.0), ("C", 30.0)):
+        rows += _rows(site, _history(site, base))
+        rows += _rows(site, {"2024-03": base + 2.0})        # two feet deeper than its own March
+    rows += _rows("A", {"2024-03": 99.0}, param="62610")    # level above datum: must be ignored
+    monthly, skipped = hi.monthly_by_well(rows, {"A", "B", "C"})
+    assert skipped["other_parameter_code"] == 1
+    series = hi.aquifer_series(monthly, {"A": "USGS_AQUIFER_CODE", "B": "USGS_AQUIFER_CODE", "C": "USGS_AQUIFER_CODE"})
+    last = series["points"][-1]
+    assert last["month"] == "2024-03" and last["n"] == 3
+    # Baseline is the median of the well's whole approved record for March: offsets 0.0-0.5 and 2.0 -> 0.3.
+    assert abs(last["median_ft"] - 1.7) < 1e-9
+    two = hi.aquifer_series(monthly, {"A": "USGS_AQUIFER_CODE", "B": "USGS_AQUIFER_CODE"})
+    assert two["points"][-1]["median_ft"] is None and two["points"][-1]["insufficient"]
+
+
+def test_a_well_with_fewer_than_five_years_has_no_baseline_and_provisional_months_stay_separate():
+    rows = _rows("A", _history("A", 10.0, years=range(2018, 2022)))           # four years only
+    rows += _rows("B", _history("B", 20.0)) + _rows("B", {"2024-03": 21.0}, provisional=True)
+    monthly, _ = hi.monthly_by_well(rows, {"A", "B"})
+    series = hi.aquifer_series(monthly, {"A": "USGS_AQUIFER_CODE", "B": "USGS_AQUIFER_CODE"})
+    assert series["wells_without_baseline"] == 1 and series["contributing_wells"] == ["B"]
+    assert [p["month"] for p in series["provisional_points"]] == ["2024-03"]
+    assert "2024-03" not in [p["month"] for p in series["points"]]
+
+
+def test_membership_changes_are_marked():
+    rows = []
+    for site in ("A", "B", "C", "D"):
+        rows += _rows(site, _history(site, 10.0, years=range(2010, 2016)))
+    rows += _rows("D", {"2016-03": 10.0})
+    monthly, _ = hi.monthly_by_well(rows, {"A", "B", "C", "D"})
+    series = hi.aquifer_series(monthly, dict.fromkeys("ABCD", "USGS_AQUIFER_CODE"))
+    changes = [p["month"] for p in series["points"] if p["membership_changed"]]
+    assert changes == ["2016-03"]
+
+
+def test_wells_coded_to_another_aquifer_are_never_pooled():
+    store = hi.InventoryStore().load(REPO / "data")
+    members, excluded = hi.series_members(store, "AQ:HA730:4191:main", include_polygon=True)
+    upper_codes = {BY_ID[f"WELL:USGS:{s}"].get("aquifer_code") for s, b in members.items() if b == "INSIDE_MAPPED_OUTLINE"}
+    assert upper_codes == {None}
+    assert excluded["coded_to_another_aquifer"] > 0
+    coded, _ = hi.series_members(store, "AQ:USGS_AQFR:122NRCSU", include_polygon=False)
+    assert coded and set(coded.values()) == {"USGS_AQUIFER_CODE"}
+
+
+def test_every_committed_inventory_file_is_strict_json():
+    # Browsers reject NaN outright; one NaN in pr_aquifers.geojson once kept every aquifer off the map.
+    def reject(constant):
+        raise ValueError(f"non-JSON constant {constant}")
+
+    paths = list(HYDRO.glob("*.json*")) + list((REPO / "data" / "geo").glob("pr_*.geojson")) \
+        + list((REPO / "data" / "geo" / "streams").glob("*.geojson"))
+    assert len(paths) > 20
+    for path in paths:
+        text = path.read_text(encoding="utf-8")
+        if path.suffix == ".jsonl":
+            for line in text.splitlines():
+                if line.strip():
+                    json.loads(line, parse_constant=reject)
+        else:
+            json.loads(text, parse_constant=reject)

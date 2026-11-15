@@ -60,3 +60,28 @@ test('groundwater series on Monitoring can be filtered by aquifer', async ({ pag
   await expect(filter).toContainText(`${wells.authoritative} assigned by a USGS aquifer code`)
   expect(failures, failures.join('\n')).toEqual([])
 })
+
+test('the Monitoring map workspace draws source geometry and the aquifer series panel explains itself', async ({ page, request }) => {
+  const failures = trackRuntimeFailures(page)
+  const points = await (await request.get(`${backendUrl}/hydro/points.geojson?type=well`)).json()
+  expect(points.features.length).toBeGreaterThan(5000)
+  expect(points.features.every((f) => f.geometry.type === 'Point')).toBe(true)
+  const series = await (await request.get(`${backendUrl}/hydro/aquifer-series?aquifer=AQ:USGS_AQFR:110SCPL`)).json()
+  expect(series.limits).toContain('not a water-table elevation')
+
+  await page.goto('/monitoring', { waitUntil: 'domcontentloaded' })
+  const workspace = page.getByTestId('hydro-map-workspace')
+  await expect(workspace).toBeVisible()
+  await expect(workspace.getByRole('group', { name: 'Map layers' }).getByRole('checkbox')).toHaveCount(7)
+  await expect(workspace.locator('canvas')).toBeVisible()
+
+  await page.getByRole('button', { name: /Groundwater/ }).first().click()
+  await page.getByRole('combobox', { name: 'Monitoring series' }).click()
+  await page.getByRole('option', { name: 'Groundwater depth (discrete)' }).click()
+  await page.getByTestId('aquifer-filter').getByRole('combobox', { name: 'Aquifer filter' }).click()
+  await page.getByRole('option', { name: /South Coastal Plain Alluvial Aquifer/ }).click()
+  const panel = page.getByTestId('aquifer-series')
+  await expect(panel).toContainText('Aquifer depth anomaly (median of wells)')
+  if (!series.readings_present) await expect(panel).toContainText('This server holds no reading files')
+  expect(failures, failures.join('\n')).toEqual([])
+})

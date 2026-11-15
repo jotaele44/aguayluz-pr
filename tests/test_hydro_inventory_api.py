@@ -98,3 +98,24 @@ def test_the_router_is_mounted_on_the_app_ci_boots():
     app_module = pytest.importorskip("server.backend.app")
     paths = app_module.app.openapi()["paths"]
     assert "/hydro/inventory/summary" in paths and "/hydro/aquifer-wells" in paths
+
+
+def test_aquifer_series_reads_the_server_readings(data_dir):
+    # CONSTRUCTED: six Marches of history and one current March for three South Coast coded wells.
+    body = client().get("/hydro/aquifer-series", params={"aquifer": "AQ:USGS_AQFR:110SCPL"}).json()
+    assert body["readings_present"] is False and body["points"] == []
+    sites = [m["site_no"] for m in body["members"]][:3]
+    rows = []
+    for site in sites:
+        for year in range(2015, 2021):
+            rows.append({"site_no": site, "metric": "groundwater_level", "parameter_code": "72019", "unit": "ft",
+                         "value": 20.0, "observed_date": f"{year}-03-10", "provisional": False})
+        rows.append({"site_no": site, "metric": "groundwater_level", "parameter_code": "72019", "unit": "ft",
+                     "value": 23.0, "observed_date": "2026-03-10", "provisional": False})
+    (data_dir / "usgs_field_measurements_readings.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
+    body = client().get("/hydro/aquifer-series", params={"aquifer": "AQ:USGS_AQFR:110SCPL"}).json()
+    assert body["readings_present"] is True and body["points"][-1] == {
+        "month": "2026-03", "n": 3, "wells": sorted(sites), "median_ft": 3.0, "q1_ft": 3.0, "q3_ft": 3.0,
+        "membership_changed": False}
+    assert "not a water-table elevation" in body["limits"]
+    assert client().get("/hydro/aquifer-series", params={"aquifer": "WELL:USGS:175947066130601"}).status_code == 404

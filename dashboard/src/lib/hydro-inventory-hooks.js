@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import {
-  getAquiferWells, getHydroCandidates, getHydroConflicts, getHydroFeature, getHydroFeatures, getHydroSummary,
+  getAquiferSeries, getStreamTiles, getAquiferWells, getHydroCandidates, getHydroConflicts, getHydroFeature, getHydroFeatures, getHydroSummary,
 } from '@/lib/hydro-inventory-api'
 
 // The inventory changes only when a maintainer re-runs the ingests: no polling.
@@ -25,3 +25,10 @@ export const useAquiferWells = (aquifer, includePolygon) => useQuery({
   enabled: Boolean(aquifer),
   ...STATIC,
 })
+export const useAquiferSeries = (aquifer, includePolygon) => useQuery({
+  queryKey: ['hydro', 'aquifer-series', aquifer, includePolygon],
+  queryFn: () => getAquiferSeries(aquifer, includePolygon),
+  enabled: Boolean(aquifer),
+  ...STATIC,
+})
+export const useStreamTiles = () => useQuery({ queryKey: ['hydro', 'stream-tiles'], queryFn: getStreamTiles, ...STATIC })

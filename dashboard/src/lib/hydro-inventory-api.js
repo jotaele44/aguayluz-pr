@@ -39,3 +39,11 @@ export const getHydroCandidates = async (params) => (OFFLINE ? EMPTY_LIST : get(
 export const getAquiferWells = async (aquifer, includePolygon) => (OFFLINE
   ? { aquifer, include_polygon: includePolygon, site_nos: [], wells: 0, authoritative: 0, polygon_only: 0 }
   : get('/hydro/aquifer-wells', { aquifer, include_polygon: includePolygon ? 'true' : undefined }))
+export const getAquiferSeries = async (aquifer, includePolygon) => (OFFLINE
+  ? { aquifer, readings_present: false, points: [], provisional_points: [], members: [], contributing_wells: [] }
+  : get('/hydro/aquifer-series', { aquifer, include_polygon: includePolygon ? 'true' : undefined }))
+export const getStreamTiles = async () => (OFFLINE ? { tiles: [] } : get('/hydro/stream-tiles'))
+// Map geometry URLs, handed straight to MapLibre as GeoJSON sources.
+export const hydroGeoUrl = (name) => `${API_BASE}/hydro/geo/${name}.geojson`
+export const hydroPointsUrl = (type) => `${API_BASE}/hydro/points.geojson?type=${type}`
+export const hydroAquifersUrl = () => `${API_BASE}/hydro/aquifers.geojson`

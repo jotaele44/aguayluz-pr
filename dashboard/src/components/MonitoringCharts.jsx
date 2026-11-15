@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import AquiferSeriesChart from '@/components/AquiferSeriesChart'
 import { useReadingsEnvelope } from '@/lib/hooks'
 import { useAquiferWells, useHydroFeatures } from '@/lib/hydro-inventory-hooks'
 import {
@@ -182,6 +183,10 @@ export default function MonitoringCharts() {
           )}
           <Link to="/hydro-inventory" className="text-sky-300 hover:underline">Hydro Inventory</Link>
         </div>
+      )}
+      {groundwater && aquifer && (
+        <AquiferSeriesChart aquifer={aquifer} includePolygon={includePolygon}
+          aquiferName={aquiferOptions.find((f) => f.feature_id === aquifer)?.display_name ?? aquifer} />
       )}
 
       <div className="rounded-lg border border-slate-800 bg-slate-900 p-3 shadow-xs">
