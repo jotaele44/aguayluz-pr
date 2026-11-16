@@ -576,11 +576,19 @@ SOURCE_MONITOR_REGISTRIES = {
 HYDROMET_RECEIPTS = "hydromet_receipts.json"
 HYDROMET_MANIFESTATIONS = "hydromet_manifestations.jsonl"
 # Manifestation rows name their source_system, not the registry source_id. Pinned
-# here; tests/test_federation_source_monitors.py fails on a committed manifestation
-# whose system is not mapped.
+# here, one entry per source in config/hydromet_sources.v1.json, each string copied
+# from the SOURCE_SYSTEM constant of that source's refresh_script.
+# tests/test_federation_source_monitors.py fails on a committed manifestation whose
+# system is not mapped, and on a mapping that has drifted from those constants.
 HYDROMET_SOURCE_SYSTEMS = {
     "NWPS API v1": "nwps_gauges",
     "NWPS Stage IV downloads (PR GeoTIFF)": "stage_iv_pr",
+    "api.weather.gov products (SRF)": "nws_surf_zone",
+    "api.weather.gov alerts (area=AM)": "nws_marine_alerts",
+    "NDBC latest_obs.txt": "ndbc_buoys",
+    "EPA Envirofacts UV (getEnvirofactsUVDAILY)": "epa_uv",
+    "api.weather.gov gridpoints (forecastGridData)": "nws_gridpoint_heat",
+    "AirNow API (observation/latLong/current)": "airnow",
 }
 _RECEIPT_ATTEMPT_STATUS = {"PASS": "success", "FAIL": "failure"}
 _CADENCE_WINDOWS = {
