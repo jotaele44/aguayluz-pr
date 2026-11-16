@@ -169,9 +169,12 @@ plus a `manifest.json` validated against the vendored hub schema
 `source_monitors.jsonl` (thehub-pr ADR 0013) has one row per source in
 `config/hydromet_sources.v1.json`, `config/hazard_advisory_sources.v1.json` and
 `config/environmental_exposure_sources.v1.json`, with when it last succeeded and
-how that is known: the hydromet run receipts (`data/hydromet_receipts.json`) or the
-latest retrieval in `data/hydromet_manifestations.jsonl`, whichever is more recent;
-every other source is reported as not recorded (`tests/test_federation_source_monitors.py`).
+how that is known. For a hydromet source that is its run receipt
+(`data/hydromet_receipts.json`) or the latest retrieval in
+`data/hydromet_manifestations.jsonl`, whichever is more recent; a hydromet source with
+neither (for example AirNow before an API key exists) is reported as not recorded. Every
+hazard-advisory and environmental-exposure source is reported as not recorded
+(`tests/test_federation_source_monitors.py`).
 
 Every exported row also carries an additive `evidence_state` declaration.
 It conforms to thehub-pr's candidate epistemic-state contract, vendored
