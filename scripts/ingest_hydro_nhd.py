@@ -10,7 +10,8 @@ Sources (``config/hydro_inventory_sources.v1.json``):
   * NOAA NWPS gauges (``data/nwps_gauge_state.jsonl``, committed) and the repository's own
     OSM reservoirs and local intake points (``data/utility_assets.jsonl``)
 
-Every mapped flowline reach becomes a claim (coastline segments are excluded by reason). A
+Every mapped flowline reach becomes a claim (coastline segments are excluded by reason);
+canal/ditch reaches (FType 336) are claimed as canals. A
 reach's published ``gnis_id`` is what later joins it to its named watercourse (I2).
 Geometry is simplified and written to committed files that stay under the size budget:
 
@@ -48,6 +49,8 @@ SIMPLIFY_DEG = 0.0003
 DECIMALS = 5
 GEO_FILE_BUDGET_BYTES = 2_000_000
 PAGE = 1000
+#: NHD FType 336 CanalDitch: a built conveyance, listed as a canal rather than a stream reach.
+CANAL_FTYPES = frozenset({"336"})
 
 
 class AcquisitionError(RuntimeError):
@@ -150,7 +153,8 @@ def flowline_claims(raw: dict[str, Any], source: dict[str, Any], now: str) -> tu
             coords = (f.get("geometry") or {}).get("coordinates") or []
             mid = coords[len(coords) // 2] if coords and isinstance(coords[0], list) and not isinstance(coords[0][0], list) else None
             claims.append(hi.claim(
-                source_key="usgs_nhd_flowlines", authority="USGS_NHD", feature_type="stream", source_feature_id=pid,
+                source_key="usgs_nhd_flowlines", authority="USGS_NHD",
+                feature_type="canal" if ftype in CANAL_FTYPES else "stream", source_feature_id=pid,
                 name_raw=p.get("gnis_name"), evidence_tier="T1", manifestation_sha256=digest, retrieved_utc=now,
                 lat=mid[1] if mid else None, lon=mid[0] if mid else None,
                 attributes={"gnis_id": _gnis(p.get("gnis_id")), "reachcode": p.get("reachcode"),

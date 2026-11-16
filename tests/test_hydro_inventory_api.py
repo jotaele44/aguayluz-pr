@@ -45,7 +45,7 @@ def test_summary_states_scope_and_says_when_readings_are_absent(data_dir):
     assert body["phase_scope"]["feature_types_enumerated"] == list(hi.FEATURE_TYPES)
     assert body["monitoring"]["readings_present"] is False
     assert set(body["monitoring"]["wells_by_state"]) == {"READINGS_ABSENT_ON_SERVER"}
-    assert body["coverage"]["well"]["features_upper"] == 7061
+    assert body["coverage"]["well"]["features_upper"] == 7321
     assert {s["source_key"] for s in body["sources"]} >= {"usgs_monitoring_locations", "usgs_ha730_aquifers_pr"}
 
 
@@ -84,7 +84,7 @@ def test_lists_filter_and_page(data_dir):
     aquifers = client().get("/hydro/features", params={"type": "aquifer", "limit": 500}).json()
     assert aquifers["total"] == 159 and all(i["feature_type"] == "aquifer" for i in aquifers["items"])
     page = client().get("/hydro/features", params={"type": "well", "limit": 10, "offset": 20}).json()
-    assert page["total"] == 7061 and len(page["items"]) == 10
+    assert page["total"] == 7321 and len(page["items"]) == 10
     assert client().get("/hydro/features", params={"type": "volcano"}).status_code == 422
     assert client().get("/hydro/features/WELL:USGS:000").status_code == 404
     candidates = client().get("/hydro/candidates", params={"type": "well", "tier": "I4"}).json()

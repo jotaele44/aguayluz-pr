@@ -179,6 +179,97 @@
       "path": "data/utility_assets.jsonl",
       "evidence_tier": "T3",
       "note": "OSM reservoirs (RSV_) and local intake/outfall points (LOCAL_ intake_outfall) already in the asset registry."
+    },
+    {
+      "source_key": "prasa_facilities",
+      "authority": "PRASA",
+      "evidence_tier": "T2",
+      "url": "https://services8.arcgis.com/RdbQZfEkeO8qG89L/arcgis/rest/services/PR_PRASA_Facilities/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&orderByFields=OBJECTID&f=json",
+      "item": "https://www.arcgis.com/home/item.html?id=c189dd9e74c54981afcac8f923b10f35",
+      "vintage": "PRASA facilities in PR obtained May 2020 (item description); not a current registry",
+      "paging": "resultOffset/resultRecordCount 2000",
+      "tipo_map": {
+        "Pozo": "well",
+        "Toma": "intake",
+        "Embalse": "reservoir",
+        "Planta Filtración": "treatment_plant",
+        "Planta Tratamiento Sanitario": "wastewater_plant",
+        "Estación Bomas Potable": "pump_station",
+        "Estación Bomas Sanitaria": "pump_station",
+        "Tanque": "tank"
+      },
+      "excluded_tipos": {
+        "Oficina": "administrative office, not a water facility"
+      },
+      "min_rows": 4000,
+      "not_ingested": "layers 1-5 (gravity, main, service and pumping pipe lines, about 335,000 segments): distribution network, outside the hydrologic scope"
+    },
+    {
+      "source_key": "usace_nid",
+      "authority": "USACE_NID",
+      "evidence_tier": "T1",
+      "url": "https://nid.sec.usace.army.mil/api/nation/csv",
+      "filter": "State = Puerto Rico",
+      "min_rows": 30,
+      "note": "the CSV starts with a 'Data Last Updated:' line before the header"
+    },
+    {
+      "source_key": "epa_echo_potw",
+      "authority": "EPA_ECHO",
+      "evidence_tier": "T1",
+      "url": "https://echodata.epa.gov/echo/cwa_rest_services.get_facilities?output=JSON&p_st=PR&qcolumns=1,2,4,22,26,27,29,30,53,56,62",
+      "qid_url": "https://echodata.epa.gov/echo/cwa_rest_services.get_qid?output=JSON&qcolumns=1,2,4,22,26,27,29,30,53,56,62",
+      "retained_facility_type": "POTW",
+      "excluded_reason": "NPDES permittee that is not a publicly owned treatment works",
+      "min_potw": 40
+    },
+    {
+      "source_key": "epa_sdwis_facilities",
+      "authority": "EPA_SDWIS",
+      "evidence_tier": "T2",
+      "url": "https://data.epa.gov/efservice/WATER_SYSTEM_FACILITY/PRIMACY_AGENCY_CODE/PR/FACILITY_TYPE_CODE/{code}/ROWS/0:9999/JSON",
+      "type_map": {
+        "TP": "treatment_plant",
+        "SP": "spring",
+        "ST": "tank"
+      },
+      "not_ingested": {
+        "DS": "distribution system entry: not a physical water feature",
+        "WL": "ingested as epa_sdwis_wells",
+        "IN": "ingested as epa_sdwis_intakes"
+      },
+      "location": "SDWIS publishes no facility coordinates"
+    },
+    {
+      "source_key": "fema_nonprasa_sites",
+      "authority": "FEMA_R2_EPA",
+      "evidence_tier": "T2",
+      "url": "https://services.arcgis.com/XG15cJAlne2vxtgt/arcgis/rest/services/CriticalFacilitiesAssessment_withNonPRASA_PR/FeatureServer/1/query?where=1%3D1&outFields=*&outSR=4326&orderByFields=OBJECTID&resultRecordCount=2000&f=json",
+      "layer_title": "Non-PRASA Sites (EPA), in FEMA Region 2 CriticalFacilitiesAssessment_withNonPRASA_PR",
+      "vintage": "post-Hurricane Maria assessments, 2017",
+      "location_meaning": "one point per community water system, not per facility",
+      "min_rows": 200
+    },
+    {
+      "source_key": "usfws_nwi",
+      "authority": "USFWS_NWI",
+      "evidence_tier": "T1",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson",
+      "paging": "resultOffset/resultRecordCount 500",
+      "min_rows": 10000,
+      "type_map": {
+        "Estuarine and Marine Wetland": "wetland",
+        "Freshwater Emergent Wetland": "wetland",
+        "Freshwater Forested/Shrub Wetland": "wetland",
+        "Freshwater Pond": "waterbody",
+        "Lake": "waterbody"
+      },
+      "excluded_types": {
+        "Riverine": "riverine channel: represented by the NHD stream reaches",
+        "Estuarine and Marine Deepwater": "open estuarine or marine water, not a wetland or waterbody feature",
+        "NA": "no wetland type in the source"
+      },
+      "vintage": "Puerto Rico NWI mapping is largely from 1980s imagery; the service is current, the mapping is not"
     }
   ],
   "aquifer_codes": {
@@ -441,5 +532,27 @@
         "USGS_AQFR:110EPRZ"
       ]
     ]
-  }
+  },
+  "residue_sources": [
+    {
+      "source": "Junta de Planificación SIGE, MIPR/AgricolaPUT_v10_N layer 1 'Canal de Riego' (sige.pr.gov)",
+      "state": "UNREACHABLE_FROM_ENVIRONMENT",
+      "detail": "the egress gateway could not connect to sige.pr.gov (2026-11-15); NHD canal/ditch reaches stand in, at coarser detail"
+    },
+    {
+      "source": "Gobierno de PR geoserver, workspace pr_geodata (geoserver2.pr.gov): PRASA and DRNA layers",
+      "state": "UNREACHABLE_FROM_ENVIRONMENT",
+      "detail": "connection reset on every attempt from the build environment (2026-11-15)"
+    },
+    {
+      "source": "EPA Region 2 'Non PRASA Pseudo Locations' (ArcGIS item 66f5627a461b4a64820f1c94237bc2a0)",
+      "state": "EXCLUDED_BY_SOURCE_STATEMENT",
+      "detail": "its description says 'The locations DO NOT represent actual Non PRASA locations'"
+    },
+    {
+      "source": "OpenStreetMap (Overpass API, Geofabrik extract)",
+      "state": "NOT_OFFICIAL",
+      "detail": "volunteer mapping (T3); not used to create features"
+    }
+  ]
 }

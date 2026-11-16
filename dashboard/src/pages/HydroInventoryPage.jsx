@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, Droplet, GitCompare, Layers, MapPinOff, Scale, Waves } from 'lucide-react'
+import { AlertTriangle, Droplet, Factory, GitCompare, Layers, MapPinOff, Scale, Waves } from 'lucide-react'
 
 import ErrorBoundary from '@/components/ErrorBoundary'
 import PageHeader from '@/components/common/PageHeader'
@@ -18,6 +18,8 @@ const SECTIONS = [
   { key: 'wells', label: 'Wells' },
   { key: 'springs', label: 'Springs' },
   { key: 'surface', label: 'Surface water' },
+  { key: 'infrastructure', label: 'Water infrastructure' },
+  { key: 'wetlands', label: 'Wetlands' },
   { key: 'conflicts', label: 'Conflicts' },
   { key: 'candidates', label: 'Candidates' },
   { key: 'sources', label: 'Sources & coverage' },
@@ -51,22 +53,42 @@ const SOURCE_LABEL = {
   epa_sdwis_intakes: 'EPA SDWIS',
   noaa_nwps_gauges: 'NOAA NWS',
   repo_utility_assets: 'Repository assets',
+  prasa_facilities: 'PRASA layer (May 2020)',
+  usace_nid: 'USACE NID',
+  epa_echo_potw: 'EPA ECHO (NPDES)',
+  epa_sdwis_facilities: 'EPA SDWIS',
+  fema_nonprasa_sites: 'FEMA/EPA non-PRASA sites (2017)',
+  usfws_nwi: 'USFWS NWI',
 }
 const SURFACE_TYPES = [
-  ['stream', 'Stream reaches'], ['watercourse', 'Named watercourses'], ['waterfall', 'Waterfalls'],
+  ['stream', 'Stream reaches'], ['canal', 'Canals'], ['watercourse', 'Named watercourses'], ['waterfall', 'Waterfalls'],
   ['waterbody', 'Waterbodies'], ['reservoir', 'Reservoirs'], ['intake', 'Intakes'], ['gauge', 'Gauges'],
   ['watershed', 'Watersheds'],
 ]
+const INFRA_TYPES = [
+  ['dam', 'Dams'], ['treatment_plant', 'Treatment plants'], ['wastewater_plant', 'Wastewater plants'],
+  ['pump_station', 'Pump stations'], ['tank', 'Tanks'], ['water_system', 'Non-PRASA systems'],
+]
+const WETLAND_TYPES = [['wetland', 'Wetlands'], ['waterbody', 'Ponds and lakes (all sources)']]
 const detailFor = (f) => {
   switch (f.feature_type) {
     case 'well':
     case 'spring': return f.aquifer_code ? `USGS aquifer code ${f.aquifer_code}` : ''
+    case 'canal':
     case 'stream': return [f.flow_type, f.lengthkm != null ? `${f.lengthkm} km` : null, f.huc8 ? `HUC8 ${f.huc8}` : null].filter(Boolean).join(' · ')
     case 'watercourse': return `${f.reaches ?? 0} mapped reaches${f.gnis_class ? ` · ${f.gnis_class}` : ''}`
     case 'waterbody':
-    case 'reservoir': return [f.water_type, f.areasqkm != null ? `${f.areasqkm} km²` : null].filter(Boolean).join(' · ')
+    case 'reservoir': return [f.water_type ?? f.wetland_type ?? f.prasa_tipo, f.areasqkm != null ? `${f.areasqkm} km²` : null].filter(Boolean).join(' · ')
     case 'gauge': return [f.site_type_code ? `USGS ${f.site_type_code}` : null, f.nws_lid ? `NWS ${f.nws_lid}` : null].filter(Boolean).join(' · ')
-    case 'intake': return f.activity === 'A' ? 'active' : f.activity === 'I' ? 'inactive' : ''
+    case 'intake':
+    case 'treatment_plant':
+    case 'wastewater_plant':
+    case 'pump_station':
+    case 'tank': return [f.prasa_tipo, f.status, f.permit_status ? `permit ${f.permit_status}` : null, f.capacity != null ? `capacity ${f.capacity}` : null,
+      f.activity === 'A' ? 'active' : f.activity === 'I' ? 'inactive' : null].filter(Boolean).join(' · ')
+    case 'dam': return [f.nid_id, f.purpose, f.river, f.year_completed ? `completed ${f.year_completed}` : null].filter(Boolean).join(' · ')
+    case 'water_system': return [f.pwsid, f.status_2017 ? `2017: ${f.status_2017.toLowerCase()}` : null].filter(Boolean).join(' · ')
+    case 'wetland': return [f.wetland_type, f.nwi_code, f.acres != null ? `${f.acres} ac` : null].filter(Boolean).join(' · ')
     case 'watershed': return `${(f.level ?? '').toUpperCase()} ${f.huc ?? ''}`
     default: return ''
   }
@@ -86,17 +108,21 @@ function Tiles({ summary }) {
   const cov = summary?.coverage ?? {}
   const unplaced = Object.values(cov).reduce((n, c) => n + (c?.unlocated ?? 0), 0)
   const lakes = (cov.waterbody?.features_upper ?? 0) + (cov.reservoir?.features_upper ?? 0)
+  const FACILITY = ['dam', 'intake', 'treatment_plant', 'wastewater_plant', 'pump_station', 'tank']
+  const sum = (k) => FACILITY.reduce((n, t) => n + (cov[t]?.[k] ?? 0), 0)
+  const facilities = sum('features_lower') === sum('features_upper') ? `${sum('features_upper')}` : `${sum('features_lower')}–${sum('features_upper')}`
   const tiles = [
     { label: 'Aquifers (range)', value: range(aq), icon: Layers, testid: 'tile-aquifers' },
     { label: 'Wells (range)', value: range(wl), icon: Waves, testid: 'tile-wells' },
     { label: 'Springs (range)', value: range(sp), icon: Droplet, testid: 'tile-springs' },
     { label: 'Stream reaches', value: range(cov.stream), icon: Waves, testid: 'tile-streams' },
     { label: 'Waterbodies & reservoirs', value: summary?.coverage ? lakes : '—', icon: Droplet, testid: 'tile-lakes' },
+    { label: 'Water facilities (range)', value: summary?.coverage ? facilities : '—', icon: Factory, testid: 'tile-facilities' },
     { label: 'Listed, not placed (no coordinates)', value: summary?.coverage ? unplaced : '—', icon: MapPinOff, testid: 'tile-unlocated' },
     { label: 'Source disagreements', value: summary?.conflicts ?? '—', icon: Scale, testid: 'tile-conflicts' },
   ]
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-8">
       {tiles.map(({ label, value, icon: Icon, testid }) => (
         <div key={label} data-testid={testid} className="rounded-lg border border-slate-800 bg-slate-900/70 p-4">
           <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500"><Icon className="h-4 w-4" aria-hidden="true" />{label}</div>
@@ -258,13 +284,14 @@ function WellTable({ onSelect, type = 'well', label = 'Wells' }) {
   )
 }
 
-function SurfaceSection({ onSelect }) {
-  const [type, setType] = useState('stream')
-  const label = SURFACE_TYPES.find(([key]) => key === type)?.[1] ?? type
+function SurfaceSection({ onSelect, types = SURFACE_TYPES, groupLabel = 'Surface feature type', note = null }) {
+  const [type, setType] = useState(types[0][0])
+  const label = types.find(([key]) => key === type)?.[1] ?? type
   return (
     <>
-      <div role="group" aria-label="Surface feature type" className="mb-3 flex flex-wrap gap-1">
-        {SURFACE_TYPES.map(([key, text]) => (
+      {note && <p className="mb-2 text-[11px] text-slate-500">{note}</p>}
+      <div role="group" aria-label={groupLabel} className="mb-3 flex flex-wrap gap-1">
+        {types.map(([key, text]) => (
           <Button key={key} size="sm" variant="outline" aria-pressed={type === key} onClick={() => setType(key)} className={cn('h-7 border-slate-700 bg-slate-950 text-xs', type === key ? 'border-sky-500/60 text-sky-200' : 'text-slate-400')}>{text}</Button>
         ))}
       </div>
@@ -360,7 +387,7 @@ export default function HydroInventoryPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <PageHeader title="Hydro Inventory" subtitle="Puerto Rico aquifers, wells, springs, streams, waterbodies, intakes and gauges, reconciled across every enumerated source" />
+      <PageHeader title="Hydro Inventory" subtitle="Puerto Rico aquifers, wells, springs, streams, canals, waterbodies, wetlands, dams, water facilities and gauges, reconciled across every enumerated source" />
       <div className="min-h-0 flex-1 space-y-5 overflow-auto p-6">
         <ErrorBoundary label="Hydrologic inventory">
           <div role="note" aria-label="Hydro inventory scope" className="flex items-start gap-3 rounded-lg border border-sky-500/30 bg-sky-500/10 p-4">
@@ -401,6 +428,10 @@ export default function HydroInventoryPage() {
               {section === 'wells' && <WellTable onSelect={setSelected} />}
               {section === 'springs' && <WellTable key="springs" onSelect={setSelected} type="spring" label="Springs" />}
               {section === 'surface' && <SurfaceSection onSelect={setSelected} />}
+              {section === 'infrastructure' && <SurfaceSection key="infrastructure" onSelect={setSelected} types={INFRA_TYPES} groupLabel="Infrastructure feature type"
+                note="Dams from the USACE National Inventory of Dams; PRASA facilities from PRASA's public layer, a May 2020 snapshot; wastewater plants also from EPA NPDES permits; treatment plants also from EPA SDWIS, which publishes no coordinates. Publishers share no facility id, so PRASA, EPA and USACE records are linked only as candidates. Wells and intakes from PRASA are under Wells and Surface water." />}
+              {section === 'wetlands' && <SurfaceSection key="wetlands" onSelect={setSelected} types={WETLAND_TYPES} groupLabel="Wetland feature type"
+                note="USFWS National Wetlands Inventory polygons. The Puerto Rico mapping is largely from 1980s imagery. Riverine and deepwater polygons are excluded (streams and open water are listed elsewhere); NWI ponds inside an NHD waterbody are candidates, not merges." />}
               {section === 'conflicts' && <ConflictList />}
               {section === 'candidates' && <CandidateList onSelect={setSelected} />}
               {section === 'sources' && <SourcesPanel summary={summary} />}

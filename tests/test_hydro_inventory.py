@@ -196,14 +196,20 @@ def test_every_usgs_spring_and_every_gnis_spring_is_a_feature_and_none_merge_on_
     assert sum(1 for f in springs if f["feature_id"].startswith("SPRING:USGS:")) == sites["SP"]
     gnis = RECEIPT["stage_receipts"]["names"]["ledgers"]["usgs_gnis_names"]["retained_by_class"]["Spring"]
     assert sum(1 for f in springs if f["feature_id"].startswith("SPRING:GNIS:")) == gnis
-    assert all(f["located"] for f in springs)
+    # every spring with a published location is placed; SDWIS springs have none and are never placed
+    assert all(f["located"] for f in springs if not f["feature_id"].startswith("SPRING:SDWIS:"))
+    assert not any(f["located"] for f in springs if f["feature_id"].startswith("SPRING:SDWIS:"))
     assert RECEIPT["coverage"]["spring"]["features_upper"] == len(springs)
 
 
 def test_every_mapped_reach_is_a_stream_and_only_coastline_is_excluded():
     ledger = RECEIPT["source_ledgers"]["usgs_nhd_flowlines"]
     assert ledger["excluded_by_reason"] == {"coastline, not a watercourse": ledger["excluded"]}
-    assert sum(1 for f in FEATURES if f["feature_type"] == "stream") == ledger["retained"] > 15000
+    streams = sum(1 for f in FEATURES if f["feature_type"] == "stream")
+    canals = [f for f in FEATURES if f["feature_type"] == "canal"]
+    # NHD canal/ditch reaches (FType 336) are listed as canals; every other retained reach is a stream
+    assert streams + len(canals) == ledger["retained"] > 15000
+    assert canals and all(f["feature_id"].startswith("CANAL:NHD:") and f["flow_type"] == "canal/ditch" for f in canals)
     for path in HYDRO.glob(hi.FEATURES_FILE.format("*")):
         assert path.stat().st_size < 5_000_000, path.name
 
@@ -307,3 +313,57 @@ def test_every_committed_inventory_file_is_strict_json():
                     json.loads(line, parse_constant=reject)
         else:
             json.loads(text, parse_constant=reject)
+
+
+# ── phase 5: water infrastructure and wetlands ────────────────────────────────
+def test_publishers_without_a_shared_id_never_merge():
+    """PRASA, EPA (SDWIS, NPDES) and USACE publish no common facility id, so no feature holds two of them."""
+    publishers = {"prasa_facilities", "epa_sdwis_wells", "epa_sdwis_intakes", "epa_sdwis_facilities", "epa_echo_potw", "usace_nid"}
+    for f in FEATURES:
+        assert len(publishers & set(f["sources"])) <= 1, f["feature_id"]
+    cross = [lk for lk in LINKS if lk["link_type"] == "CANDIDATE_SAME_FEATURE"
+             and {lk["from"].split(":")[1], lk["to"].split(":")[1]} == {"SDWIS", "PRASA"}]
+    assert cross and all(lk["identity_tier"] == "I5" and lk["evidence_classes"] == ["NORMALIZED_NAME_ONLY"] for lk in cross)
+
+
+def test_non_prasa_systems_join_sdwis_only_on_the_published_pwsid():
+    systems = {f["feature_id"]: f for f in FEATURES if f["feature_type"] == "water_system"}
+    assert len(systems) >= 200 and all(f["located"] and f["location_meaning"].startswith("one point per") for f in systems.values())
+    joins = [lk for lk in LINKS if lk["link_type"] == "FACILITY_OF_SYSTEM"]
+    assert joins
+    for lk in joins:
+        assert lk["identity_tier"] == "I1" and lk["edge_class"] == "AUTHORITATIVE"
+        assert lk["from"].split(":")[2] == systems[lk["to"]]["pwsid"]
+        assert BY_ID[lk["from"]]["lat"] is None  # the system point is never copied onto the facility
+
+
+def test_every_nid_dam_is_listed_and_the_faast_prepa_dams_are_among_them():
+    dams = [f for f in FEATURES if f["feature_type"] == "dam"]
+    assert len(dams) == RECEIPT["source_ledgers"]["usace_nid"]["source"] >= 30
+    names = {hi.normalize_name(f["display_name"]) for f in dams}
+    # dam names in FEMA DR-4339 PREPA FAASt project sites, a discovery list, checked against the registry
+    faast = ["Adjuntas", "Carite", "Coamo", "Caonillas", "Dos Bocas", "Garzas", "Guayabal", "Guayo", "Guineo", "Loco",
+             "Matrullas", "Patillas", "Pellejas", "Prieto", "Vivi", "Yahuecas"]
+    assert all(hi.normalize_name(f"{n} Dam") in names for n in faast)
+    # the FAASt list spells it 'Luchetti'; NID publishes 'Lucchetti' (also known as Yauco Dam)
+    assert hi.normalize_name("Lucchetti Dam") in names and hi.normalize_name("Luchetti Dam") not in names
+    near = [lk for lk in LINKS if lk["link_type"] == "DAM_ON_RESERVOIR"]
+    assert near and all(lk["edge_class"] == "CANDIDATE" and lk["distance_m"] <= hi.DAM_RESERVOIR_M for lk in near)
+
+
+def test_canals_wetlands_and_facilities_are_counted_and_unplaced_ones_say_so():
+    cov = RECEIPT["coverage"]
+    assert cov["canal"]["features_upper"] > 2000
+    assert cov["wetland"]["features_upper"] == RECEIPT["stage_receipts"]["wetlands"]["ledgers"]["usfws_nwi"]["retained_by_feature_type"]["wetland"]
+    plants = [f for f in FEATURES if f["feature_type"] == "treatment_plant"]
+    assert all(f["located"] == f["feature_id"].startswith("PLANT:PRASA:") for f in plants)
+    for f in FEATURES:
+        if f["feature_type"] == "wetland":
+            assert f["name_is_source_class_only"] and f["display_name"] == f["wetland_type"]
+
+
+def test_count_disagreements_between_registries_are_shown():
+    by_attr = {c["attribute"]: c for c in CONFLICTS}
+    for attribute in ("wastewater_plant_count", "treatment_plant_count", "reservoir_count"):
+        c = by_attr[attribute]
+        assert c["feature_ids"] == [] and c["resolution"] == "UNRESOLVED_SHOWN" and len(c["values_by_claim"]) >= 2

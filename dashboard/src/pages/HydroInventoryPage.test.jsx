@@ -51,6 +51,12 @@ const SPRINGS = { total: 1, offset: 0, limit: 50, items: [
 const STREAMS = { total: 1, offset: 0, limit: 50, items: [
   { feature_id: 'STREAM:NHD:26446092', feature_type: 'stream', display_name: 'Río Grande de Loíza', sources: ['usgs_nhd_flowlines'], flow_type: 'stream/river', lengthkm: 0.853, huc8: '21010005', lat: 18.3, lon: -65.9, located: true },
 ] }
+const DAMS = { total: 1, offset: 0, limit: 50, items: [
+  { feature_id: 'DAM:NID:PR00003', feature_type: 'dam', display_name: 'Lucchetti Dam', sources: ['usace_nid'], nid_id: 'PR00003', purpose: 'Irrigation', river: 'Yauco River', year_completed: '1952', lat: 18.091787, lon: -66.864526, located: true },
+] }
+const WETLANDS = { total: 1, offset: 0, limit: 50, items: [
+  { feature_id: 'WETLAND:NWI:0000F43A-65EA-4423-A8C7-EB54E93F16EE', feature_type: 'wetland', display_name: 'Freshwater Forested/Shrub Wetland', name_is_source_class_only: true, sources: ['usfws_nwi'], wetland_type: 'Freshwater Forested/Shrub Wetland', nwi_code: 'PFO3A', acres: 2.206, huc8: '21010005', lat: 18.353982, lon: -65.700823, located: true },
+] }
 const CONFLICTS = { total: 1, items: [{
   conflict_id: 'HYC_1', attribute: 'south_coast_aquifer_units', kind: 'classification', resolution: 'UNRESOLVED_SHOWN', feature_ids: [],
   values_by_claim: [{ source_key: 'usgs_ha730_aquifers_pr', value: "one 'South coast aquifer'" }, { source_key: 'drna_pira_2016', value: 'independent valley aquifers' }],
@@ -76,7 +82,8 @@ beforeEach(() => {
   vi.clearAllMocks()
   client.getHydroSummary.mockResolvedValue(SUMMARY)
   client.getHydroFeatures.mockImplementation((params) => Promise.resolve(
-    params.type === 'aquifer' ? AQUIFERS : params.type === 'spring' ? SPRINGS : params.type === 'stream' ? STREAMS : WELLS))
+    params.type === 'aquifer' ? AQUIFERS : params.type === 'spring' ? SPRINGS : params.type === 'stream' ? STREAMS
+      : params.type === 'dam' ? DAMS : params.type === 'wetland' ? WETLANDS : WELLS))
   client.getHydroFeature.mockResolvedValue(DETAIL)
   client.getHydroConflicts.mockResolvedValue(CONFLICTS)
   client.getHydroCandidates.mockResolvedValue(CANDIDATES)
@@ -126,6 +133,25 @@ describe('HydroInventoryPage', () => {
     const table = await screen.findByRole('table', { name: 'Stream reaches' })
     expect(within(table).getByText('stream/river · 0.853 km · HUC8 21010005')).toBeInTheDocument()
     expect(within(table).getByText('USGS NHD')).toBeInTheDocument()
+  })
+
+  it('lists water infrastructure from the official registries and says the PRASA layer is a 2020 snapshot', async () => {
+    renderPage()
+    fireEvent.click(await screen.findByRole('button', { name: 'Water infrastructure' }))
+    const table = await screen.findByRole('table', { name: 'Dams' })
+    expect(within(table).getByText('PR00003 · Irrigation · Yauco River · completed 1952')).toBeInTheDocument()
+    expect(within(table).getByText('USACE NID')).toBeInTheDocument()
+    expect(screen.getByText(/May 2020 snapshot/)).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Infrastructure feature type' })).toBeInTheDocument()
+  })
+
+  it('lists NWI wetlands with their class and states the mapping vintage', async () => {
+    renderPage()
+    fireEvent.click(await screen.findByRole('button', { name: 'Wetlands' }))
+    const table = await screen.findByRole('table', { name: 'Wetlands' })
+    expect(within(table).getByText('Freshwater Forested/Shrub Wetland · PFO3A · 2.206 ac')).toBeInTheDocument()
+    expect(screen.getByText(/1980s imagery/)).toBeInTheDocument()
+    expect(client.getHydroFeatures).toHaveBeenCalledWith(expect.objectContaining({ type: 'wetland' }))
   })
 
   it('opens a feature and shows what each source says about it', async () => {

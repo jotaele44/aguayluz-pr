@@ -7,11 +7,16 @@ entity, no way to say which aquifer a well draws from, and no account of wells t
 other agencies list. The goal set for this work was to include every known aquifer, well,
 spring and stream, and to reflect what is known rather than what any one source says.
 
-This document covers **phase 1** (aquifers and wells), **phase 2** (springs) and **phase 3**
+This document covers **phase 1** (aquifers and wells), **phase 2** (springs), **phase 3**
 (streams, named watercourses, waterfalls, waterbodies, reservoirs, intakes, gauges and
-watersheds). Every feature type is now enumerated. Phase 4 (an aquifer-level series and the
-map workspace) adds no new feature type. The receipt's `phase_scope` names them as
-not enumerated, and the page says so.
+watersheds) and **phase 5** (canals, wetlands, dams, treatment and wastewater plants, pump
+stations, tanks and non-PRASA community water systems). Phase 4 (an aquifer-level series and
+the map workspace) adds no feature type. Every feature type is enumerated; the receipt's
+`phase_scope` would name any that were not, and the page would say so.
+
+Phase 5 uses official registries only. Files supplied by the user (OSM extracts, canal and
+facility spreadsheets, project registers) were used to find these registries and as test
+cross-checks, never as claims.
 
 ## What "100%" means here
 
@@ -47,6 +52,12 @@ is uncertain, the count is a range. It also does not mean no other aquifer or we
 | EPA SDWIS intake facilities | 690 intakes (353 active), **with no coordinates** | T2 | hashed |
 | NOAA NWPS gauges (`data/nwps_gauge_state.jsonl`) | 118 forecast gauges, each publishing its USGS site number | T1 | hashed |
 | Repository assets (`data/utility_assets.jsonl`) | 124 OSM reservoirs and 7 local intake points (which carry no coordinates) | T3 | hashed |
+| PRASA public facility layer, ArcGIS `PR_PRASA_Facilities` (May 2020 snapshot) | 4,325 facilities; 4,254 retained, 71 offices excluded | T2 | hashed per page |
+| USACE National Inventory of Dams, nation CSV | 36 Puerto Rico dams | T1 | hashed |
+| EPA ECHO, Clean Water Act facilities in Puerto Rico | 2,820 NPDES permittees; 63 publicly owned treatment works retained, 2,757 excluded by reason | T1 | hashed per page |
+| EPA SDWIS facilities of type TP, SP and ST | 1,648 treatment plants, 5 springs, 2 storage, **with no coordinates** | T2 | hashed |
+| FEMA Region 2, EPA non-PRASA sites (2017) | 235 rows; 233 community systems keyed by PWSID, 2 excluded (no id) | T2 | hashed |
+| USFWS National Wetlands Inventory (MapServer) | 16,357 polygons; 7,960 wetlands and 1,673 ponds and lakes retained, 6,724 excluded by reason | T1 | hashed per page |
 
 All sources, URLs and pins are in `config/hydro_inventory_sources.v1.json`.
 
@@ -55,6 +66,7 @@ All sources, URLs and pins are in `config/hydro_inventory_sources.v1.json`.
 223 spring features: the 221 USGS spring sites (each joined to its Water Quality Portal copy
 by site number) and the 2 springs GNIS names in Puerto Rico. No GNIS spring lies within
 150 m of a USGS spring, so there are no candidate pairs and the count is not a range.
+Phase 5 adds the 5 springs EPA SDWIS lists as water sources, without coordinates, for 228.
 
 Each spring is linked to the HA 730-N polygon it sits in (`SPRING_IN_AQUIFER`,
 `DERIVED_TOPOLOGICAL`). None of the 221 USGS springs carries a USGS aquifer code.
@@ -67,7 +79,8 @@ or local records are listed as a known gap.
 
 | Feature type | Count | How it is built |
 |---|---|---|
-| Stream reaches | 15,881 | every NHD flowline that is not coastline, keyed by its NHD permanent identifier |
+| Stream reaches | 13,373 | every NHD flowline that is not coastline or canal/ditch, keyed by its NHD permanent identifier |
+| Canals | 2,508 | NHD flowlines of FType 336 (canal/ditch), same identifier; added in phase 5 |
 | Named watercourses | 324 | GNIS streams, canals, channels and guts; joined to their reaches through the GNIS id NHD publishes (I2) |
 | Waterfalls | 5 | GNIS falls |
 | Waterbodies | 3,276 | NHD lakes, ponds and swamps grouped by published GNIS id, plus GNIS lakes, swamps and basins |
@@ -82,7 +95,7 @@ Rules specific to this phase:
   (`1609456`). Read as text, every reach would fail to join its watercourse. After
   normalising, 1 GNIS id published by NHD has no GNIS record.
 - **One reach of a named river is not the river.** The watercourse feature is the named
-  stream; its 15,881 reaches are features of their own, linked by
+  stream; its reaches (stream and canal) are features of their own, linked by
   `REACH_OF_WATERCOURSE`.
 - **OSM reservoirs never merge with NHD reservoirs.** No published identifier joins them, so
   each OSM reservoir inside an NHD polygon gets a candidate link instead
@@ -90,7 +103,7 @@ Rules specific to this phase:
 - **Waterbody kind disagreements are kept.** Where NHD and GNIS classify the same named
   waterbody differently (lake against reservoir, for instance), a conflict records both.
 - **Location gives watershed membership and gauges on waterbodies, nothing more.**
-  11,884 placed features carry their HUC10; 73 lake gauges sit inside an NHD
+  18,141 placed features carry their HUC10; 73 lake gauges sit inside an NHD
   waterbody (`GAUGE_ON_WATERBODY`, `DERIVED_TOPOLOGICAL`). A gauge's reach on the stream
   network is not computed, because that needs network navigation, not distance.
 
@@ -145,6 +158,54 @@ Building the map exposed a phase 1 defect: polygons with no class name had been 
 `NaN`, which is not JSON, so browsers rejected the whole aquifer file. Every writer now refuses
 NaN, missing attributes are dropped, and a test parses every committed inventory file as
 strict JSON.
+
+## Water infrastructure and wetlands (phase 5)
+
+| Feature type | Count | Sources and how it is built |
+|---|---|---|
+| Dams | 36 | USACE NID, keyed by NID ID; each dam within 500 m of a mapped NHD waterbody gets a `DAM_ON_RESERVOIR` candidate link (32 dams, 47 links) |
+| Treatment plants | 1,762 | 114 PRASA filtration plants (placed) and 1,648 SDWIS treatment facilities (unlocated) |
+| Wastewater plants | 114, range 89–114 | 51 PRASA plants and 63 NPDES publicly owned treatment works; 25 name-and-distance (≤ 500 m) candidates narrow the range |
+| Pump stations | 2,112 | PRASA potable and sanitary pump stations |
+| Tanks | 1,573 | 1,571 PRASA tanks and 2 SDWIS storage facilities |
+| Non-PRASA water systems | 233 | FEMA Region 2's EPA sites, one point per community system, keyed by PWSID |
+| Wetlands | 7,960 | NWI estuarine/marine, freshwater emergent and forested/shrub wetlands |
+| Wells, intakes, reservoirs, springs, waterbodies | + 260, + 138, + 8, + 5, + 1,673 | PRASA wells, intakes and reservoirs; SDWIS springs; NWI ponds and lakes |
+
+Rules specific to this phase:
+
+- **Publishers that share no id never merge.** PRASA, EPA and USACE publish no common
+  facility identifier. PRASA wells, intakes and wastewater plants get name-and-distance
+  candidates against the other publishers' placed features (wells ≤ 150 m, intakes ≤ 300 m,
+  wastewater plants ≤ 500 m). Unlocated SDWIS facilities get name-only candidates (I5,
+  exact normalised name) against PRASA facilities of the same type.
+- **A community system's location is not a facility's.** SDWIS facilities whose PWSID matches
+  a FEMA/EPA site link to that system (`FACILITY_OF_SYSTEM`, I1, 498 links). The system's
+  point is never copied onto the facility, which stays unlocated.
+- **NWI ponds are not NHD lakes.** 534 NWI ponds and lakes inside an NHD waterbody polygon are
+  I5 candidates; they do not narrow the waterbody range.
+- **Canals are flowlines.** NHD FType 336 reaches are claimed as `canal`. Their geometry stays
+  in the stream tiles and is drawn grey.
+- **Exclusions are counted, not dropped.** 71 PRASA offices; 2,757 NPDES permittees that are
+  not publicly owned treatment works; 2 FEMA rows with no id; NWI riverine polygons (5,621,
+  represented by the reaches), deepwater (1,068), untyped (21) and outside the Puerto Rico
+  watersheds (14). The PRASA pipe-network layers (about 335,000 segments) and SDWIS
+  distribution entries are outside the hydrologic scope and are not read.
+- **Sources that could not be used are named in the receipt** (`residue_sources`):
+  `sige.pr.gov` and `geoserver2.pr.gov`, unreachable; EPA's "Non PRASA Pseudo Locations",
+  excluded because its own description says *"The locations DO NOT represent actual Non PRASA
+  locations"*; OpenStreetMap, not official.
+- **Count disagreements are shown.** Wastewater plants (PRASA 51, NPDES 63), treatment plants
+  (PRASA 114, SDWIS 1,648) and reservoirs (NID 36 dams, PRASA 8, NHD 798 polygons) are
+  conflicts with no single feature. 31 PRASA rows typed `Tanque` carry the abbreviation
+  `WTP`; they are listed as tanks and the disagreement is recorded.
+- **Discovery lists are checked against the registry, not added.** All 17 PREPA dams named in
+  the FEMA DR-4339 FAASt project sites are NID dams. The list spells one of them "Luchetti";
+  NID publishes "Lucchetti" (also "Yauco Dam").
+
+NWI geometry is committed simplified (0.0003°, five decimals) as `data/geo/wetlands/<huc8>.geojson`;
+the largest tile is 1.3 MB. The PRASA facility points are shown with their vintage on the page
+and the map.
 
 ## Identity: when two claims are one feature
 
@@ -236,15 +297,17 @@ That is a property of the server, not of the wells, and the page says so.
 | Site ingest | `scripts/ingest_hydro_sites.py` |
 | GNIS names ingest | `scripts/ingest_hydro_names.py` |
 | Surface-water ingest (needs shapely) | `scripts/ingest_hydro_nhd.py` |
+| Water-infrastructure ingest | `scripts/ingest_hydro_infrastructure.py` |
+| Wetlands ingest (needs shapely) | `scripts/ingest_hydro_wetlands.py` |
 | Builder, with `--check` | `scripts/build_hydro_inventory.py` |
 | Claims, features, links, conflicts, receipts (committed) | `data/hydro/` |
 | Aquifer polygons, WGS84 (committed) | `data/geo/pr_aquifers.geojson` |
-| Stream, waterbody and watershed geometry (committed) | `data/geo/streams/`, `data/geo/pr_waterbodies.geojson`, `data/geo/pr_watersheds.geojson` |
+| Stream, waterbody, watershed and wetland geometry (committed) | `data/geo/streams/`, `data/geo/pr_waterbodies.geojson`, `data/geo/pr_watersheds.geojson`, `data/geo/wetlands/` |
 | API | `server/backend/hydro_inventory_api.py`: `/hydro/aquifer-series`, `/hydro/points.geojson`, `/hydro/geo/{name}.geojson`, `/hydro/stream-tiles`, `/hydro/inventory/summary`, `/hydro/features`, `/hydro/features/{id}`, `/hydro/aquifer-wells`, `/hydro/conflicts`, `/hydro/candidates`, `/hydro/aquifers.geojson` |
 | Page | **Hydro Inventory** (`/hydro-inventory`, under Water & Weather): `dashboard/src/pages/HydroInventoryPage.jsx` |
 | Monitoring | aquifer filter and aquifer depth anomaly (`dashboard/src/components/MonitoringCharts.jsx`, `AquiferSeriesChart.jsx`); map workspace (`HydroMapWorkspace.jsx` in `WaterMonitoringConsole.jsx`) |
 | GUI-parity capability | `hydro-feature-inventory` in `.federation/gui-capabilities.json` |
-| Tests | `tests/test_hydro_inventory.py`, `tests/test_ingest_hydro_sites.py`, `tests/test_ingest_hydro_names.py`, `tests/test_ingest_hydro_nhd.py`, `tests/test_ingest_hydro_aquifers.py`, `tests/test_hydro_inventory_api.py`, `dashboard/src/pages/HydroInventoryPage.test.jsx`, `dashboard/src/lib/hydro-inventory-api.test.js`, `dashboard/tests/hydro-inventory.spec.mjs` |
+| Tests | `tests/test_hydro_inventory.py`, `tests/test_ingest_hydro_sites.py`, `tests/test_ingest_hydro_names.py`, `tests/test_ingest_hydro_nhd.py`, `tests/test_ingest_hydro_infrastructure.py`, `tests/test_ingest_hydro_wetlands.py`, `tests/test_ingest_hydro_aquifers.py`, `tests/test_hydro_inventory_api.py`, `dashboard/src/pages/HydroInventoryPage.test.jsx`, `dashboard/src/lib/hydro-inventory-api.test.js`, `dashboard/tests/hydro-inventory.spec.mjs` |
 
 Claims are stored with the fields every claim in a file shares written once per block. The
 per-claim SHA-256 is kept as an index into the block's list of manifestations, which keeps
@@ -252,17 +315,27 @@ every file under the 5,120 KB commit limit. `read_claims` restores full claims.
 
 ## Known gaps
 
-- **PRASA's production wells.** EPA SDWIS lists them without coordinates. They are in the
-  inventory as unlocated wells, never placed on a map and never bound to an aquifer by
-  location.
+- **PRASA's production wells.** EPA SDWIS lists them without coordinates. PRASA's public
+  layer places 260 PRASA wells, but it is a May 2020 snapshot and publishes no SDWIS id, so
+  the two are linked by name only (I5 candidates). The SDWIS wells stay unlocated and are
+  never bound to an aquifer by location.
+- **PRASA facilities after May 2020.** The public layer is a snapshot; facilities built,
+  retired or renamed since then are not reflected. A current copy is a records-request item.
+- **Drinking-water treatment plants outside PRASA's layer.** SDWIS lists 1,648 treatment
+  facilities without coordinates.
+- **Irrigation canals at survey detail.** The Junta de Planificación canal layer
+  (`sige.pr.gov`) could not be reached; NHD canal/ditch reaches stand in at coarser detail.
+- **Gobierno de PR geoserver** (`geoserver2.pr.gov`, workspace `pr_geodata`, with PRASA and
+  DRNA layers). The connection was reset on every attempt from the build environment.
+- **Wetland mapping vintage.** NWI mapping for Puerto Rico is largely from 1980s imagery.
 - **DRNA water-franchise registry.** No public registry was found.
 - **DRNA and Junta de Planificación aquifer layers.** `sige.pr.gov` and `gis.otg.pr.gov`
   could not be reached from the build environment.
 - **Names of the 98 HA 730-N alluvial-valley polygons.** The release labels them only by
   class. They are labelled here by the municipios they cover, and flagged as unnamed in the
   source.
-- **PRASA's intakes.** EPA SDWIS lists 690 without coordinates; they are listed, not
-  placed.
+- **Intakes.** EPA SDWIS lists 690 without coordinates; PRASA's 2020 layer places 138 PRASA
+  intakes, linked to SDWIS by name only.
 - **Gauge position on the stream network.** Gauges are placed in watersheds by location;
   their reach is not computed.
 - **DRNA reservoir and embalse lists.** `sige.pr.gov` could not be reached.
@@ -274,10 +347,12 @@ every file under the 5,120 KB commit limit. `read_claims` restores full claims.
 ## Verifying a change
 
 ```bash
-python -m pytest -q tests/test_hydro_inventory.py tests/test_ingest_hydro_sites.py tests/test_ingest_hydro_aquifers.py tests/test_hydro_inventory_api.py
+python -m pytest -q tests/test_hydro_inventory.py tests/test_ingest_hydro_*.py tests/test_hydro_inventory_api.py
 python scripts/build_hydro_inventory.py --check       # committed outputs equal a rebuild
 python scripts/ingest_hydro_sites.py --fetch --dry-run
 python scripts/ingest_hydro_aquifers.py --fetch --dry-run   # needs .[geo]
+python scripts/ingest_hydro_infrastructure.py --fetch --dry-run
+python scripts/ingest_hydro_wetlands.py --fetch --dry-run   # needs shapely
 python scripts/check_gui_parity.py
 cd dashboard && npx vitest run src/pages/HydroInventoryPage.test.jsx src/lib/hydro-inventory-api.test.js
 ```

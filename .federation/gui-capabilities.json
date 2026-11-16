@@ -1971,7 +1971,7 @@
       "classification": "analysis",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "The reconciled inventory of Puerto Rico's aquifers, wells, springs, stream reaches, watercourses, waterbodies, reservoirs, intakes, gauges and watersheds, shown on the Hydro Inventory page and used by the Monitoring page's groundwater series. Every source statement (USGS HA 730-N polygons and text, USGS aquifer codes, USGS monitoring locations, the Water Quality Portal, EPA SDWIS, USGS GNIS, USGS NHD and WBD, NOAA NWPS, DRNA PIRA 2016) is kept as a claim; claims merge into one feature only on a published identifier, and name or distance matches are listed as candidates, so counts are shown as a range. Source disagreements are listed unresolved. Each well's monitoring state is computed per request from the reading files on the server, and a server without them says so. Read-only by design: the ingests (scripts/ingest_hydro_aquifers.py, scripts/ingest_hydro_sites.py) and scripts/build_hydro_inventory.py are run by a maintainer, and their outputs are committed, so no normal user path requires a terminal. Controls: section buttons, a well search and source filter with paging, opening a feature's detail, Retry after a failed load, and on Monitoring an aquifer filter with an opt-in toggle for wells that are only inside the mapped outline. Loading, error-with-retry, empty, readings-absent, unlocated-well and unnamed-polygon states are rendered and unit-tested. On Monitoring, choosing an aquifer also shows the aquifer depth anomaly: the median of each contributing well's monthly departure from its own calendar-month median, parameter 72019 only, at least five years per baseline and three wells per point, with membership changes marked; wells USGS assigns to another aquifer are never pooled in, it is labelled as not a water-table elevation or storage estimate, and nothing alerts on it. Monitoring's map workspace draws only source geometry (aquifers, watersheds, waterbodies, stream reaches loaded per HUC8, located wells, springs and gauges) with per-layer toggles, and reports a layer that fails to load.",
+      "rationale": "The reconciled inventory of Puerto Rico's aquifers, wells, springs, stream reaches, canals, watercourses, waterbodies, wetlands, reservoirs, dams, intakes, treatment and wastewater plants, pump stations, tanks, non-PRASA community water systems, gauges and watersheds, shown on the Hydro Inventory page and used by the Monitoring page's groundwater series. Every source statement (USGS HA 730-N polygons and text, USGS aquifer codes, USGS monitoring locations, the Water Quality Portal, EPA SDWIS, USGS GNIS, USGS NHD and WBD, NOAA NWPS, DRNA PIRA 2016, PRASA's public May 2020 facility layer, the USACE National Inventory of Dams, EPA ECHO NPDES permits, FEMA Region 2's non-PRASA sites and the USFWS National Wetlands Inventory) is kept as a claim; claims merge into one feature only on a published identifier, and name or distance matches are listed as candidates, so counts are shown as a range. Source disagreements are listed unresolved. Each well's monitoring state is computed per request from the reading files on the server, and a server without them says so. Read-only by design: the ingests (scripts/ingest_hydro_aquifers.py, scripts/ingest_hydro_sites.py, scripts/ingest_hydro_names.py, scripts/ingest_hydro_nhd.py, scripts/ingest_hydro_infrastructure.py, scripts/ingest_hydro_wetlands.py) and scripts/build_hydro_inventory.py are run by a maintainer, and their outputs are committed, so no normal user path requires a terminal. Controls: section buttons, a well search and source filter with paging, opening a feature's detail, Retry after a failed load, and on Monitoring an aquifer filter with an opt-in toggle for wells that are only inside the mapped outline. Loading, error-with-retry, empty, readings-absent, unlocated-well and unnamed-polygon states are rendered and unit-tested. On Monitoring, choosing an aquifer also shows the aquifer depth anomaly: the median of each contributing well's monthly departure from its own calendar-month median, parameter 72019 only, at least five years per baseline and three wells per point, with membership changes marked; wells USGS assigns to another aquifer are never pooled in, it is labelled as not a water-table elevation or storage estimate, and nothing alerts on it. Monitoring's map workspace draws only source geometry (aquifers, watersheds, waterbodies, stream reaches and canals and NWI wetlands loaded per HUC8, located wells, springs, gauges, NID dams, treatment plants, pump stations and tanks) with per-layer toggles, and reports a layer that fails to load.",
       "backend": {
         "files": [
           "server/backend/hydro_inventory_api.py",
@@ -2010,24 +2010,29 @@
           "src/aguayluz/hydro_inventory.py:aquifer_series",
           "src/aguayluz/hydro_inventory.py:atomic_write",
           "src/aguayluz/hydro_inventory.py:build_aquifers",
+          "src/aguayluz/hydro_inventory.py:build_infrastructure",
           "src/aguayluz/hydro_inventory.py:build_inventory",
           "src/aguayluz/hydro_inventory.py:build_springs",
           "src/aguayluz/hydro_inventory.py:build_surface",
           "src/aguayluz/hydro_inventory.py:build_wells",
+          "src/aguayluz/hydro_inventory.py:build_wetlands",
           "src/aguayluz/hydro_inventory.py:canonical_sha256",
           "src/aguayluz/hydro_inventory.py:claim",
           "src/aguayluz/hydro_inventory.py:close_ledger",
           "src/aguayluz/hydro_inventory.py:component_count",
           "src/aguayluz/hydro_inventory.py:conflict",
           "src/aguayluz/hydro_inventory.py:haversine_m",
+          "src/aguayluz/hydro_inventory.py:infrastructure_links",
           "src/aguayluz/hydro_inventory.py:iter_groundwater_rows",
           "src/aguayluz/hydro_inventory.py:link",
           "src/aguayluz/hydro_inventory.py:monitoring_state",
           "src/aguayluz/hydro_inventory.py:monthly_by_well",
+          "src/aguayluz/hydro_inventory.py:name_only_candidates",
           "src/aguayluz/hydro_inventory.py:name_tokens",
           "src/aguayluz/hydro_inventory.py:names_compatible",
           "src/aguayluz/hydro_inventory.py:normalize_name",
           "src/aguayluz/hydro_inventory.py:point_candidates",
+          "src/aguayluz/hydro_inventory.py:proximity_candidates",
           "src/aguayluz/hydro_inventory.py:read_claims",
           "src/aguayluz/hydro_inventory.py:read_jsonl",
           "src/aguayluz/hydro_inventory.py:seeded_conflicts",
@@ -2046,9 +2051,11 @@
         "files": [
           "scripts/build_hydro_inventory.py",
           "scripts/ingest_hydro_aquifers.py",
+          "scripts/ingest_hydro_infrastructure.py",
           "scripts/ingest_hydro_names.py",
           "scripts/ingest_hydro_nhd.py",
-          "scripts/ingest_hydro_sites.py"
+          "scripts/ingest_hydro_sites.py",
+          "scripts/ingest_hydro_wetlands.py"
         ],
         "symbols": [
           "scripts/build_hydro_inventory.py:asset_ids_by_site",
@@ -2067,6 +2074,15 @@
           "scripts/ingest_hydro_aquifers.py:process_polygons",
           "scripts/ingest_hydro_aquifers.py:text_claims",
           "scripts/ingest_hydro_aquifers.py:write_geojson",
+          "scripts/ingest_hydro_infrastructure.py:AcquisitionError",
+          "scripts/ingest_hydro_infrastructure.py:acquire",
+          "scripts/ingest_hydro_infrastructure.py:clean_nid_name",
+          "scripts/ingest_hydro_infrastructure.py:echo_claims",
+          "scripts/ingest_hydro_infrastructure.py:fema_claims",
+          "scripts/ingest_hydro_infrastructure.py:main",
+          "scripts/ingest_hydro_infrastructure.py:nid_claims",
+          "scripts/ingest_hydro_infrastructure.py:prasa_claims",
+          "scripts/ingest_hydro_infrastructure.py:sdwis_claims",
           "scripts/ingest_hydro_names.py:AcquisitionError",
           "scripts/ingest_hydro_names.py:claims_from",
           "scripts/ingest_hydro_names.py:main",
@@ -2087,7 +2103,12 @@
           "scripts/ingest_hydro_sites.py:parse_rdb",
           "scripts/ingest_hydro_sites.py:sdwis_claims",
           "scripts/ingest_hydro_sites.py:usgs_claims",
-          "scripts/ingest_hydro_sites.py:wqp_claims"
+          "scripts/ingest_hydro_sites.py:wqp_claims",
+          "scripts/ingest_hydro_wetlands.py:AcquisitionError",
+          "scripts/ingest_hydro_wetlands.py:acquire",
+          "scripts/ingest_hydro_wetlands.py:main",
+          "scripts/ingest_hydro_wetlands.py:nwi_claims",
+          "scripts/ingest_hydro_wetlands.py:write_tiles"
         ]
       },
       "frontend": {
@@ -2120,9 +2141,11 @@
           "tests/test_gui_parity.py",
           "tests/test_hydro_inventory.py",
           "tests/test_ingest_hydro_aquifers.py",
+          "tests/test_ingest_hydro_infrastructure.py",
           "tests/test_ingest_hydro_names.py",
           "tests/test_ingest_hydro_nhd.py",
-          "tests/test_ingest_hydro_sites.py"
+          "tests/test_ingest_hydro_sites.py",
+          "tests/test_ingest_hydro_wetlands.py"
         ],
         "unit": [
           "dashboard/src/components/AquiferSeriesChart.test.jsx",

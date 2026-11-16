@@ -153,7 +153,11 @@ Atentamente,
 - **Por qué empieza en julio de 2016.** Es el año fiscal 2017, el primero de los datos
   que el USGS recibió. Documentos de más de tres años caen en el término de 30 días.
 - **Lo que esta carta no cubre.** Los registros de franquicias de agua del DRNA (volumen
-  permitido frente a volumen real) requieren una solicitud aparte a esa agencia.
+  permitido frente a volumen real) requieren una solicitud aparte a esa agencia. El
+  inventario de instalaciones con coordenadas y los documentos de cierre de los proyectos
+  FAASt van en una solicitud separada,
+  [`solicitud_inventario_instalaciones_v0.1.md`](solicitud_inventario_instalaciones_v0.1.md),
+  para que una objeción sobre ubicaciones no demore esta.
 - **Verificado y no verificado.** Las citas legales se tomaron del texto certificado de
   la Ley 156-2025 que la propia AAA publica. No se verificó quién preside hoy la AAA ni
   si existe reglamento interno de la AAA sobre estas solicitudes. Esto no es asesoría

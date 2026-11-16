@@ -44,6 +44,9 @@ def test_reaches_are_claimed_coastline_is_excluded_and_gnis_ids_are_unpadded(tmp
     assert len(flows) == 10
     coast = [c for c in flows if c["disposition"] == "EXCLUDED"]
     assert len(coast) == 2 and {c["exclusion_reason"] for c in coast} == {"coastline, not a watercourse"}
+    # canal/ditch reaches (FType 336) are claimed as canals, every other retained reach as a stream
+    assert {c["feature_type"] for c in flows if c["attributes"]["ftype"] == "336"} == {"canal"}
+    assert {c["feature_type"] for c in flows if c["attributes"]["ftype"] != "336"} == {"stream"}
     named = [c for c in flows if c["attributes"].get("gnis_id")]
     assert named and all(not c["attributes"]["gnis_id"].startswith("0") for c in named)
     receipt = json.loads((data / hi.HYDRO_DIR / "ingest_surface_receipt.json").read_text())

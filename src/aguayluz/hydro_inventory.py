@@ -46,8 +46,9 @@ RECEIPT_FILE = "inventory_receipt.json"
 AQUIFER_GEOJSON = "pr_aquifers.geojson"
 RECEIPT_SCHEMA = "aguayluz.hydro-inventory-receipt/v1"
 
-FEATURE_TYPES: tuple[str, ...] = ("aquifer", "well", "spring", "stream", "watercourse", "waterfall", "waterbody",
-                                  "reservoir", "intake", "gauge", "watershed")
+FEATURE_TYPES: tuple[str, ...] = ("aquifer", "well", "spring", "stream", "canal", "watercourse", "waterfall",
+                                  "waterbody", "wetland", "reservoir", "dam", "intake", "treatment_plant",
+                                  "wastewater_plant", "pump_station", "tank", "water_system", "gauge", "watershed")
 PHASE_ENUMERATED: tuple[str, ...] = FEATURE_TYPES
 MONITORING_STATES: tuple[str, ...] = ("MONITORED_NOW", "HISTORICAL_ONLY", "NO_DATA", "READINGS_ABSENT_ON_SERVER")
 #: A discrete-measurement well is visited a few times a year; a year plus a month is one cycle.
@@ -477,8 +478,9 @@ def build_surface(claims_by_source: Mapping[str, list[dict[str, Any]]]
         if c["disposition"] != "RETAINED":
             continue
         a = c["attributes"]
-        fid = f"STREAM:NHD:{c['source_feature_id']}"
-        features.append(_feature(fid, "stream", [c], [], huc8=a.get("huc8"), flow_type=a.get("flow_type"),
+        kind = "canal" if c["feature_type"] == "canal" else "stream"
+        fid = f"{kind.upper()}:NHD:{c['source_feature_id']}"
+        features.append(_feature(fid, kind, [c], [], huc8=a.get("huc8"), flow_type=a.get("flow_type"),
                                  lengthkm=a.get("lengthkm"), gnis_id=a.get("gnis_id"), located=c["lat"] is not None))
         if a.get("gnis_id"):
             reach_gnis.setdefault(a["gnis_id"], []).append(fid)
@@ -561,11 +563,250 @@ def build_surface(claims_by_source: Mapping[str, list[dict[str, Any]]]
     return features, links, conflicts, notes
 
 
+INFRA_PREFIX = {"well": "WELL", "intake": "INTAKE", "reservoir": "RESERVOIR", "treatment_plant": "PLANT",
+                "wastewater_plant": "WWTP", "pump_station": "PUMP", "tank": "TANK", "spring": "SPRING", "dam": "DAM",
+                "water_system": "SYSTEM", "wetland": "WETLAND", "waterbody": "WATERBODY"}
+#: Proximity radius for candidate links between facility points from different publishers.
+FACILITY_PROXIMITY_M = {"well": WELL_PROXIMITY_M, "intake": 300.0, "wastewater_plant": 500.0, "reservoir": 500.0}
+DAM_RESERVOIR_M = 500.0
+
+
+def build_infrastructure(claims_by_source: Mapping[str, list[dict[str, Any]]]
+                         ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """PRASA facilities, NID dams, NPDES wastewater plants, SDWIS facilities and non-PRASA systems.
+
+    Each publisher's id is its own namespace (I1). Nothing here merges across publishers: the
+    PRASA layer and EPA SDWIS publish no shared id, so they are compared later as candidates.
+    FEMA/EPA non-PRASA sites merge on the PWSID they publish, one feature per water system.
+    Returns (features, conflicts).
+    """
+    features: list[dict[str, Any]] = []
+    for c in claims_by_source.get("prasa_facilities", []):
+        if c["disposition"] != "RETAINED":
+            continue
+        a, kind = c["attributes"], c["feature_type"]
+        features.append(_feature(f"{INFRA_PREFIX[kind]}:PRASA:{c['source_feature_id']}", kind, [c], [],
+                                 prasa_tipo=a.get("tipo"), status=a.get("status"), capacity=a.get("capacity"),
+                                 water_kind=a.get("water_kind"), municipio=a.get("municipio"),
+                                 located=c["lat"] is not None))
+    for c in claims_by_source.get("usace_nid", []):
+        a = c["attributes"]
+        f = _feature(f"DAM:NID:{c['source_feature_id']}", "dam", [c], [], nid_id=c["source_feature_id"],
+                     owner=a.get("owner"), purpose=a.get("purpose"), river=a.get("river"), municipio=a.get("municipio"),
+                     year_completed=a.get("year_completed"), height_ft=a.get("height_ft"),
+                     storage_acre_ft=a.get("storage_acre_ft"), hazard=a.get("hazard"), located=c["lat"] is not None)
+        f["display_name"] = a.get("name_clean") or f["display_name"]
+        features.append(f)
+    for c in claims_by_source.get("epa_echo_potw", []):
+        a = c["attributes"]
+        features.append(_feature(f"WWTP:NPDES:{c['source_feature_id']}", "wastewater_plant", [c], [],
+                                 npdes_id=a.get("npdes_id"), permit_status=a.get("permit_status"),
+                                 # the permit's address city, not necessarily the plant's municipio
+                                 major_minor=a.get("major_minor"), city=a.get("city"),
+                                 located=c["lat"] is not None))
+    for c in claims_by_source.get("epa_sdwis_facilities", []):
+        kind = c["feature_type"]
+        features.append(_feature(f"{INFRA_PREFIX[kind]}:SDWIS:{c['source_feature_id']}", kind, [c], [],
+                                 activity=c["attributes"].get("facility_activity_code"), located=False))
+    systems: dict[str, list[dict[str, Any]]] = {}
+    for c in claims_by_source.get("fema_nonprasa_sites", []):
+        systems.setdefault(c["attributes"]["pwsid"], []).append(c)
+    for pws in sorted(systems):
+        members = systems[pws]
+        ev = [{"tier": "I1", "key": f"PWSID:{pws}", "claim_ids": sorted(c["claim_id"] for c in members)}] \
+            if len(members) > 1 else []
+        first = members[0]["attributes"]
+        features.append(_feature(f"SYSTEM:PWS:{pws}", "water_system", members, ev, pwsid=pws,
+                                 municipio=first.get("municipio"), status_2017=first.get("status_2017"),
+                                 location_meaning=first.get("location_meaning"),
+                                 located=any(c["lat"] is not None for c in members)))
+
+    def count(source: str, kind: str | None = None, tipo: str | None = None) -> int:
+        return sum(1 for c in claims_by_source.get(source, []) if c["disposition"] == "RETAINED"
+                   and (kind is None or c["feature_type"] == kind) and (tipo is None or c["attributes"].get("tipo") == tipo))
+
+    conflicts = []
+    if claims_by_source.get("prasa_facilities") and claims_by_source.get("epa_echo_potw"):
+        conflicts.append(conflict("wastewater_plant_count", [], "wastewater_plant_count", "count", [
+            {"source_key": "prasa_facilities", "value": count("prasa_facilities", "wastewater_plant"),
+             "basis": "PRASA layer, Tipo 'Planta Tratamiento Sanitario' (May 2020)"},
+            {"source_key": "epa_echo_potw", "value": count("epa_echo_potw"),
+             "basis": "NPDES permits of publicly owned treatment works, any permit status"}],
+            note="Permits and plants are not one-to-one: terminated permits remain in ECHO and a plant can hold more than one."))
+    if claims_by_source.get("prasa_facilities") and claims_by_source.get("epa_sdwis_facilities"):
+        conflicts.append(conflict("treatment_plant_count", [], "treatment_plant_count", "count", [
+            {"source_key": "prasa_facilities", "value": count("prasa_facilities", "treatment_plant"),
+             "basis": "PRASA layer, Tipo 'Planta Filtración' (May 2020)"},
+            {"source_key": "epa_sdwis_facilities", "value": count("epa_sdwis_facilities", "treatment_plant"),
+             "basis": "SDWIS facilities of type TP, every system and activity status"}],
+            note="SDWIS lists treatment steps of every public system, including non-PRASA systems and inactive entries."))
+        abrv = sum(1 for c in claims_by_source.get("prasa_facilities", [])
+                   if c["attributes"].get("tipo") == "Tanque" and c["attributes"].get("abrv") == "WTP")
+        if abrv:
+            conflicts.append(conflict("prasa_tank_abbreviation", [], "prasa_facility_class", "classification", [
+                {"source_key": "prasa_facilities", "value": f"{abrv} rows typed 'Tanque' carry the abbreviation 'WTP'"}],
+                note="Listed as tanks, as the Tipo field says; the abbreviation is kept on the claim."))
+    if claims_by_source.get("usace_nid"):
+        conflicts.append(conflict("reservoir_and_dam_count", [], "reservoir_count", "count", [
+            {"source_key": "usace_nid", "value": count("usace_nid"), "basis": "dams in the National Inventory of Dams"},
+            {"source_key": "prasa_facilities", "value": count("prasa_facilities", "reservoir"),
+             "basis": "PRASA layer, Tipo 'Embalse'"},
+            {"source_key": "usgs_nhd_waterbodies", "value": count("usgs_nhd_waterbodies", "reservoir"),
+             "basis": "NHD waterbody polygons of FType 436 (reservoir), including small impoundments"}],
+            note="The three count different things: regulated dams, PRASA-operated reservoirs and mapped impoundments."))
+    return features, conflicts
+
+
+def build_wetlands(claims_by_source: Mapping[str, list[dict[str, Any]]]) -> list[dict[str, Any]]:
+    """NWI wetlands and NWI ponds/lakes, one feature per NWI polygon."""
+    out = []
+    for c in claims_by_source.get("usfws_nwi", []):
+        if c["disposition"] != "RETAINED":
+            continue
+        a, kind = c["attributes"], c["feature_type"]
+        f = _feature(f"{INFRA_PREFIX[kind]}:NWI:{c['source_feature_id']}", kind, [c], [],
+                     wetland_type=a.get("wetland_type"), nwi_code=a.get("nwi_code"), acres=a.get("acres"),
+                     huc8=a.get("huc8"), located=True)
+        # NWI names no polygon; label it by its class, flagged the way unnamed aquifer polygons are
+        f["display_name"] = a.get("wetland_type")
+        f["name_is_source_class_only"] = True
+        out.append(f)
+    return out
+
+
+def proximity_candidates(left: list[dict[str, Any]], right: list[dict[str, Any]], radius_m: float
+                         ) -> list[dict[str, Any]]:
+    """Candidate same-feature links between two sets of located points: I4 with a compatible name, else I5."""
+    stop = frozenset(t for f in left + right for t in normalize_name(f.get("municipio")).split()) | GENERIC_NAME_TOKENS
+    cell = radius_m / 111_000.0
+    grid: dict[tuple[int, int], list[dict[str, Any]]] = {}
+    for b in right:
+        if b["lat"] is not None:
+            grid.setdefault((int(b["lat"] // cell), int(b["lon"] // cell)), []).append(b)
+    out = []
+    for a in sorted((f for f in left if f["lat"] is not None), key=lambda f: f["feature_id"]):
+        ci, cj = int(a["lat"] // cell), int(a["lon"] // cell)
+        for di in (-1, 0, 1):
+            for dj in (-1, 0, 1):
+                for b in grid.get((ci + di, cj + dj), []):
+                    if b["feature_id"] == a["feature_id"]:
+                        continue
+                    d = haversine_m(a["lat"], a["lon"], b["lat"], b["lon"])
+                    if d > radius_m:
+                        continue
+                    named = names_compatible(a["display_name"], b["display_name"], stop)
+                    out.append(link("CANDIDATE_SAME_FEATURE", a["feature_id"], b["feature_id"], "CANDIDATE",
+                                    ["NORMALIZED_NAME", "PROXIMITY"] if named else ["PROXIMITY_ONLY"],
+                                    tier="I4" if named else "I5", distance_m=round(d, 1)))
+    return out
+
+
+def name_only_candidates(unlocated: list[dict[str, Any]], located: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Exact normalised-name matches between facilities with no coordinates and placed ones: I5, name only."""
+    by_name: dict[str, list[dict[str, Any]]] = {}
+    for f in located:
+        key = normalize_name(f["display_name"])
+        if key and name_tokens(f["display_name"], GENERIC_NAME_TOKENS):
+            by_name.setdefault(key, []).append(f)
+    out = []
+    for a in sorted(unlocated, key=lambda f: f["feature_id"]):
+        for b in by_name.get(normalize_name(a["display_name"]), []):
+            out.append(link("CANDIDATE_SAME_FEATURE", a["feature_id"], b["feature_id"], "CANDIDATE",
+                            ["NORMALIZED_NAME_ONLY"], tier="I5"))
+    return out
+
+
+def _near_polygon_m(lon: float, lat: float, polys: list[list[list[list[float]]]]) -> float:
+    """Distance to the nearest vertex of a polygon set (0 inside). Vertices of simplified rings, so approximate."""
+    if any(_ring_contains(lon, lat, poly[0]) for poly in polys):
+        return 0.0
+    return min(haversine_m(lat, lon, pt[1], pt[0]) for poly in polys for ring in poly for pt in ring)
+
+
+def infrastructure_links(features: list[dict[str, Any]], waterbody_geojson: Mapping[str, Any]
+                         ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Candidates between publishers, dams near reservoirs, and facilities of non-PRASA systems."""
+    by_type: dict[str, list[dict[str, Any]]] = {}
+    for f in features:
+        by_type.setdefault(f["feature_type"], []).append(f)
+
+    def ns(f: Mapping[str, Any], name: str) -> bool:
+        return f["feature_id"].split(":")[1] == name
+
+    names = {f["feature_id"]: f["display_name"] for f in features}
+    links: list[dict[str, Any]] = []
+    for kind in ("well", "intake", "wastewater_plant"):
+        items = by_type.get(kind, [])
+        prasa = [f for f in items if ns(f, "PRASA")]
+        others = [f for f in items if not ns(f, "PRASA") and f["lat"] is not None]
+        links += proximity_candidates(prasa, others, FACILITY_PROXIMITY_M[kind])
+    for kind in ("well", "intake", "treatment_plant", "tank", "spring"):
+        items = by_type.get(kind, [])
+        links += name_only_candidates([f for f in items if ns(f, "SDWIS")], [f for f in items if ns(f, "PRASA")])
+
+    # PRASA reservoirs and NWI ponds inside an NHD polygon; dams near an NHD reservoir polygon
+    polys: list[tuple[tuple[float, float, float, float], list[Any], str]] = []
+    nhd_feature: dict[str, str] = {}
+    for f in by_type.get("reservoir", []) + by_type.get("waterbody", []):
+        for pid in f.get("_nhd_ids", []):
+            nhd_feature[pid] = f["feature_id"]
+    for g in waterbody_geojson.get("features", []):
+        props = g.get("properties") or {}
+        target = nhd_feature.get(str(props.get("id")))
+        rings = _polygons(g.get("geometry") or {})
+        if not target or not rings:
+            continue
+        xs = [p[0] for poly in rings for p in poly[0]]
+        ys = [p[1] for poly in rings for p in poly[0]]
+        polys.append(((min(xs), min(ys), max(xs), max(ys)), rings, target))
+    pad = DAM_RESERVOIR_M / 111_000.0
+    counts = {"dams_near_reservoir": 0, "prasa_reservoirs_in_nhd_polygon": 0, "nwi_waterbodies_in_nhd_polygon": 0,
+              "facilities_of_nonprasa_systems": 0}
+    seen: set[tuple[str, str]] = set()
+    for f in by_type.get("dam", []) + by_type.get("reservoir", []) + by_type.get("waterbody", []):
+        if f["lat"] is None or not (ns(f, "NID") or ns(f, "PRASA") or ns(f, "NWI")):
+            continue
+        is_dam = f["feature_type"] == "dam"
+        for (x0, y0, x1, y1), rings, target in polys:
+            # NHD types several Puerto Rico reservoirs as LakePond, so a dam is tested against every polygon
+            if target == f["feature_id"]:
+                continue
+            margin = pad if is_dam else 0.0
+            if not (x0 - margin <= f["lon"] <= x1 + margin and y0 - margin <= f["lat"] <= y1 + margin):
+                continue
+            if (f["feature_id"], target) in seen:
+                continue
+            if is_dam:
+                d = _near_polygon_m(f["lon"], f["lat"], rings)
+                if d > DAM_RESERVOIR_M:
+                    continue
+                seen.add((f["feature_id"], target))
+                links.append(link("DAM_ON_RESERVOIR", f["feature_id"], target, "CANDIDATE",
+                                  ["DAM_WITHIN_500M_OF_MAPPED_WATERBODY"], tier="I5", distance_m=round(d, 1)))
+                counts["dams_near_reservoir"] += 1
+            elif any(_ring_contains(f["lon"], f["lat"], poly[0]) for poly in rings):
+                seen.add((f["feature_id"], target))
+                named = names_compatible(f["display_name"], names.get(target))
+                links.append(link("CANDIDATE_SAME_FEATURE", f["feature_id"], target, "CANDIDATE",
+                                  ["INSIDE_MAPPED_POLYGON"], tier="I4" if named else "I5"))
+                counts["nwi_waterbodies_in_nhd_polygon" if ns(f, "NWI") else "prasa_reservoirs_in_nhd_polygon"] += 1
+
+    systems = {f["pwsid"]: f["feature_id"] for f in by_type.get("water_system", []) if f.get("pwsid")}
+    for f in features:
+        parts = f["feature_id"].split(":")
+        if len(parts) >= 4 and parts[1] == "SDWIS" and parts[2] in systems:
+            links.append(link("FACILITY_OF_SYSTEM", f["feature_id"], systems[parts[2]], "AUTHORITATIVE",
+                              ["SDWIS_PWSID_MATCHES_PUBLISHED_PWSID"], tier="I1"))
+            counts["facilities_of_nonprasa_systems"] += 1
+    return links, counts
+
+
 def conflict(key: str, feature_ids: list[str], attribute: str, kind: str, values: list[dict[str, Any]],
              note: str | None = None, resolution: str = "UNRESOLVED_SHOWN") -> dict[str, Any]:
-    return _clean({"conflict_id": "HYC_" + canonical_sha256(key)[:16], "feature_ids": sorted(feature_ids),
-                   "attribute": attribute, "kind": kind, "values_by_claim": values, "resolution": resolution,
-                   "note": note})
+    # feature_ids stays even when empty: a count disagreement between sources names no single feature
+    return {"conflict_id": "HYC_" + canonical_sha256(key)[:16], "feature_ids": sorted(feature_ids),
+            **_clean({"attribute": attribute, "kind": kind, "values_by_claim": values, "resolution": resolution,
+                      "note": note})}
 
 
 def link(link_type: str, source: str, target: str, edge_class: str, evidence: list[str],
@@ -763,7 +1004,7 @@ def surface_links(features: list[dict[str, Any]], waterbody_geojson: Mapping[str
         if f["feature_type"] in ("waterbody", "reservoir") and f.get("nhd_polygons"):
             polygon_feature.update({pid: f["feature_id"] for pid in f.get("_nhd_ids", [])})
     for f in features:
-        if f["lat"] is None or f["feature_type"] in ("stream", "watershed", "aquifer"):
+        if f["lat"] is None or f["feature_type"] in ("stream", "canal", "wetland", "watershed", "aquifer"):
             continue
         sheds = [h.get("id") for h in huc10.containing(f["lon"], f["lat"])]
         if sheds:
@@ -805,10 +1046,15 @@ def build_inventory(*, claims: list[dict[str, Any]], aquifer_geojson: Mapping[st
                          or (f.get("properties") or {}).get("exclusion_reason", "").startswith(("confining", "'other'")))
     springs = build_springs(by_source.get("usgs_monitoring_locations", []), by_source.get("wqp_springs", []),
                             by_source.get("usgs_gnis_names", []))
-    wl, spatial = well_aquifer_links(wells, aquifers, index)
-    sl, spring_spatial = well_aquifer_links(springs, aquifers, index, "SPRING_IN_AQUIFER")
+    infra, infra_conflicts = build_infrastructure(by_source)
+    wetlands = build_wetlands(by_source)
+    # PRASA and SDWIS wells and springs are wells and springs: they take the same aquifer tests
+    wells_all = wells + [f for f in infra if f["feature_type"] == "well"]
+    springs_all = springs + [f for f in infra if f["feature_type"] == "spring"]
+    wl, spatial = well_aquifer_links(wells_all, aquifers, index)
+    sl, spring_spatial = well_aquifer_links(springs_all, aquifers, index, "SPRING_IN_AQUIFER")
     spatial["springs"] = spring_spatial
-    al = aquifer_links(aquifer_claims, aquifers, wells, wl, equivalences)
+    al = aquifer_links(aquifer_claims, aquifers, wells_all, wl, equivalences)
     wc = well_candidates(wells)
     sc = point_candidates(springs)
     surface, surf_links, surf_conflicts, surface_notes = build_surface(by_source)
@@ -816,18 +1062,20 @@ def build_inventory(*, claims: list[dict[str, Any]], aquifer_geojson: Mapping[st
         if f["feature_type"] in ("waterbody", "reservoir") and f.get("nhd_polygons"):
             f["_nhd_ids"] = [c["source_feature_id"] for c in by_source.get("usgs_nhd_waterbodies", [])
                              if c["claim_id"] in set(f["claim_ids"])]
-    loc_links, loc_counts = surface_links(wells + springs + surface, waterbody_geojson or {}, watershed_geojson or {})
+    loc_links, loc_counts = surface_links(wells + springs + surface + infra + wetlands, waterbody_geojson or {},
+                                          watershed_geojson or {})
+    infra_links, infra_counts = infrastructure_links(wells + surface + infra + wetlands, waterbody_geojson or {})
     for f in surface:
         f.pop("_nhd_ids", None)
-    links = sorted(wl + sl + al + wc + sc + surf_links + loc_links, key=lambda x: x["link_id"])
+    links = sorted(wl + sl + al + wc + sc + surf_links + loc_links + infra_links, key=lambda x: x["link_id"])
     ids = [x["link_id"] for x in links]
     if len(ids) != len(set(ids)):
         raise ValueError("duplicate link ids")
     claims_by_sfid = {c["source_feature_id"]: c for c in aquifer_claims}
     conflicts = sorted(seeded_conflicts(claims_by_sfid, aquifers, (stage_receipts.get("aquifers") or {}).get("datum"))
-                       + coord_conflicts + surf_conflicts, key=lambda x: x["conflict_id"])
+                       + coord_conflicts + surf_conflicts + infra_conflicts, key=lambda x: x["conflict_id"])
 
-    features = aquifers + wells + springs + surface
+    features = aquifers + wells + springs + surface + infra + wetlands
     assigned = {cid for f in features for cid in f["claim_ids"]}
     retained = {c["claim_id"] for c in claims if c["disposition"] == "RETAINED" and c["feature_type"] in PHASE_ENUMERATED}
     if retained - assigned:
@@ -899,18 +1147,30 @@ def build_inventory(*, claims: list[dict[str, Any]], aquifer_geojson: Mapping[st
         "source_ledgers": source_ledgers,
         "spatial": spatial,
         "surface": {**surface_notes, **loc_counts},
+        "infrastructure": infra_counts,
         "conflicts": len(conflicts),
         "stage_receipts": {k: {kk: vv for kk, vv in v.items() if kk != "manifestations"}
                            for k, v in stage_receipts.items()},
         "manifestations": [m for v in stage_receipts.values() for m in v.get("manifestations", [])],
         "open_residue": [
-            "PRASA production wells: EPA SDWIS lists them without coordinates, so they are not placed or bound to an aquifer",
+            "PRASA production wells: EPA SDWIS lists them without coordinates; PRASA's public facility layer places "
+            "260 wells, but it is a May 2020 snapshot and publishes no SDWIS id, so the two are linked only by name "
+            "(candidates, never merges)",
+            "PRASA facility layer: the public ArcGIS copy is dated May 2020; facilities built, retired or renamed "
+            "since then are not reflected",
+            "drinking-water treatment plants: EPA SDWIS lists them without coordinates; only PRASA's own plants are placed",
+            "wetlands: the National Wetlands Inventory mapping for Puerto Rico is largely from 1980s imagery",
+            "irrigation canals: the Junta de Planificación canal layer (sige.pr.gov) is unreachable from the build "
+            "environment; NHD canal/ditch reaches stand in at coarser detail",
+            "Gobierno de PR geoserver (geoserver2.pr.gov, workspace pr_geodata) with PRASA and DRNA layers: "
+            "connection reset from the build environment",
             "DRNA water-franchise registry of permitted wells: no public registry found",
             "DRNA and Junta de Planificación aquifer layers: sige.pr.gov and gis.otg.pr.gov unreachable from the build environment",
             "names of the HA 730-N alluvial-valley polygons: the release labels them only by class",
             "springs known only from speleological or local records: GNIS names 2 springs in Puerto Rico and USGS "
             "monitors 221; no public spring registry was found",
-            "PRASA intakes: EPA SDWIS lists 690 intake facilities without coordinates; they are listed, not placed",
+            "intakes: EPA SDWIS lists its intake facilities without coordinates; PRASA's 2020 layer places 138 PRASA "
+            "intakes, linked to SDWIS only by name",
             "stream gauges are attributed to watersheds by location; their reach on the stream network is not "
             "computed (that needs network navigation, not distance)",
             "DRNA reservoir and embalse lists: sige.pr.gov unreachable from the build environment",
@@ -1163,7 +1423,8 @@ __all__ = [
     "SOURCES_CONFIG", "WELL_PROXIMITY_M",
     "InventoryStore", "PolygonIndex",
     "aquifer_feature_id", "aquifer_links", "atomic_write", "build_aquifers", "build_inventory", "build_springs",
-    "build_surface", "build_wells", "point_candidates", "surface_links", "aquifer_series", "series_members",
+    "build_infrastructure", "build_surface", "build_wells", "build_wetlands", "infrastructure_links",
+    "name_only_candidates", "proximity_candidates", "point_candidates", "surface_links", "aquifer_series", "series_members",
     "monthly_by_well", "iter_groundwater_rows", "SERIES_LIMITS", "SERIES_MIN_WELLS", "SERIES_MIN_YEARS", "SERIES_PARAMETER", "canonical_sha256",
     "claim", "close_ledger", "component_count", "conflict", "haversine_m", "link", "monitoring_state",
     "name_tokens", "names_compatible", "well_names", "normalize_name", "read_claims", "read_jsonl", "seeded_conflicts", "well_aquifer_links",

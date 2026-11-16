@@ -29,15 +29,21 @@ export const MAP_LAYERS = [
   { key: 'aquifers', label: 'Aquifers (HA 730-N)', on: true },
   { key: 'watersheds', label: 'Watersheds (HUC10)', on: false },
   { key: 'waterbodies', label: 'Waterbodies', on: true },
-  { key: 'streams', label: 'Stream reaches', on: false },
+  { key: 'streams', label: 'Stream reaches and canals', on: false },
+  { key: 'wetlands', label: 'Wetlands (NWI)', on: false },
   { key: 'wells', label: 'Wells', on: true },
   { key: 'springs', label: 'Springs', on: true },
   { key: 'gauges', label: 'Gauges', on: false },
+  { key: 'dams', label: 'Dams (NID)', on: true },
+  { key: 'plants', label: 'Treatment plants', on: false },
+  { key: 'network', label: 'Pump stations and tanks', on: false },
 ]
 const LAYER_IDS = {
   aquifers: ['aquifers-fill', 'aquifers-line'], watersheds: ['watersheds-line'], waterbodies: ['waterbodies-fill'],
-  streams: [], wells: ['wells'], springs: ['springs'], gauges: ['gauges'],
+  streams: [], wetlands: [], wells: ['wells'], springs: ['springs'], gauges: ['gauges'], dams: ['dams'],
+  plants: ['treatment_plants', 'wastewater_plants'], network: ['pump_stations', 'tanks'],
 }
+const HIDDEN_AT_START = ['gauges', 'treatment_plants', 'wastewater_plants', 'pump_stations', 'tanks']
 
 export default function HydroMapWorkspace() {
   const containerRef = useRef(null)
@@ -72,13 +78,22 @@ export default function HydroMapWorkspace() {
       map.addSource('wells', { type: 'geojson', data: hydroPointsUrl('well') })
       map.addSource('springs', { type: 'geojson', data: hydroPointsUrl('spring') })
       map.addSource('gauges', { type: 'geojson', data: hydroPointsUrl('gauge') })
+      for (const [id, type] of [['dams', 'dam'], ['treatment_plants', 'treatment_plant'], ['wastewater_plants', 'wastewater_plant'], ['pump_stations', 'pump_station'], ['tanks', 'tank']]) {
+        map.addSource(id, { type: 'geojson', data: hydroPointsUrl(type) })
+      }
       map.addLayer({ id: 'aquifers-fill', type: 'fill', source: 'aquifers', filter: ['==', ['get', 'disposition'], 'RETAINED'], paint: { 'fill-color': AQUIFER_COLOR, 'fill-opacity': 0.28 } })
       map.addLayer({ id: 'aquifers-line', type: 'line', source: 'aquifers', filter: ['==', ['get', 'disposition'], 'RETAINED'], paint: { 'line-color': AQUIFER_COLOR, 'line-width': 0.6 } })
       map.addLayer({ id: 'watersheds-line', type: 'line', source: 'watersheds', filter: ['==', ['get', 'level'], 'huc10'], paint: { 'line-color': '#e2e8f0', 'line-width': 0.8, 'line-dasharray': [2, 2] } })
       map.addLayer({ id: 'waterbodies-fill', type: 'fill', source: 'waterbodies', paint: { 'fill-color': ['match', ['get', 'kind'], 'reservoir', '#2563eb', '#0ea5e9'], 'fill-opacity': 0.7 } })
       map.addLayer({ id: 'wells', type: 'circle', source: 'wells', paint: { 'circle-radius': ['interpolate', ['linear'], ['zoom'], 7, 1.6, 12, 4], 'circle-color': WELL_STATE_COLOR, 'circle-stroke-width': ['case', ['get', 'coded'], 0.8, 0], 'circle-stroke-color': '#f8fafc' } })
       map.addLayer({ id: 'springs', type: 'circle', source: 'springs', paint: { 'circle-radius': 3.2, 'circle-color': '#06b6d4', 'circle-stroke-width': 1, 'circle-stroke-color': '#020617' } })
-      map.addLayer({ id: 'gauges', type: 'circle', source: 'gauges', layout: { visibility: 'none' }, paint: { 'circle-radius': 2.4, 'circle-color': '#e879f9' } })
+      map.addLayer({ id: 'gauges', type: 'circle', source: 'gauges', paint: { 'circle-radius': 2.4, 'circle-color': '#e879f9' } })
+      map.addLayer({ id: 'tanks', type: 'circle', source: 'tanks', paint: { 'circle-radius': 1.8, 'circle-color': '#a3a3a3' } })
+      map.addLayer({ id: 'pump_stations', type: 'circle', source: 'pump_stations', paint: { 'circle-radius': 1.8, 'circle-color': '#fb923c' } })
+      map.addLayer({ id: 'treatment_plants', type: 'circle', source: 'treatment_plants', paint: { 'circle-radius': 3.2, 'circle-color': '#facc15', 'circle-stroke-width': 1, 'circle-stroke-color': '#020617' } })
+      map.addLayer({ id: 'wastewater_plants', type: 'circle', source: 'wastewater_plants', paint: { 'circle-radius': 3.2, 'circle-color': '#a16207', 'circle-stroke-width': 1, 'circle-stroke-color': '#020617' } })
+      map.addLayer({ id: 'dams', type: 'symbol', source: 'dams', layout: { 'text-field': '▲', 'text-size': 11, 'text-allow-overlap': true }, paint: { 'text-color': '#f43f5e' } })
+      for (const id of HIDDEN_AT_START) map.setLayoutProperty(id, 'visibility', 'none')
       setReady(true)
     })
     return () => { map.remove(); mapRef.current = null }
@@ -96,6 +111,19 @@ export default function HydroMapWorkspace() {
       LAYER_IDS.streams.push(id)
     }
   }, [ready, visible.streams, tiles.data])
+
+  // NWI wetland polygons are tiled by HUC8 the same way, under the waterbodies.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !ready || !visible.wetlands) return
+    for (const tile of tiles.data?.wetland_tiles ?? []) {
+      const id = `wetlands-${tile}`
+      if (map.getSource(id)) continue
+      map.addSource(id, { type: 'geojson', data: hydroGeoUrl(id) })
+      map.addLayer({ id, type: 'fill', source: id, paint: { 'fill-color': ['match', ['get', 'kind'], 'waterbody', '#0ea5e9', '#4d7c0f'], 'fill-opacity': 0.45 } }, 'waterbodies-fill')
+      LAYER_IDS.wetlands.push(id)
+    }
+  }, [ready, visible.wetlands, tiles.data])
 
   useEffect(() => {
     const map = mapRef.current
@@ -133,7 +161,7 @@ export default function HydroMapWorkspace() {
         </div>
       )}
       <p className="mt-2 text-[10px] leading-relaxed text-slate-500">
-        Only geometry published by the sources is drawn (USGS HA 730-N aquifers, NHD streams and waterbodies, WBD watersheds, located wells, springs and gauges). Wells: green monitored now, amber historical only, grey no readings; a white ring means USGS assigns the well to an aquifer. Features whose source publishes no location, such as SDWIS wells and intakes, are listed on the Hydro Inventory page and never placed.
+        Only geometry published by the sources is drawn (USGS HA 730-N aquifers, NHD streams, canals (grey) and waterbodies, WBD watersheds, USFWS NWI wetlands, located wells, springs and gauges, USACE NID dams, PRASA facilities and EPA-permitted wastewater plants). Wells: green monitored now, amber historical only, grey no readings; a white ring means USGS assigns the well to an aquifer. PRASA facility points come from PRASA's public May 2020 layer; NWI wetland mapping is largely from 1980s imagery. Features whose source publishes no location, such as SDWIS wells, intakes and treatment plants, are listed on the Hydro Inventory page and never placed.
       </p>
     </div>
   )

@@ -29,7 +29,9 @@ _STORE = hi.InventoryStore()
 _CLAIMS: dict[str, Any] = {"key": None, "by_id": {}}
 
 SCOPE_STATEMENT = (
-    "Every aquifer, well, spring, stream reach, watercourse, waterbody, reservoir, intake, gauge and watershed that the enumerated public sources describe for Puerto Rico, Vieques, Culebra and "
+    "Every aquifer, well, spring, stream reach, canal, watercourse, waterbody, wetland, reservoir, dam, intake, "
+    "treatment plant, wastewater plant, pump station, tank, community water system, gauge and watershed that the "
+    "enumerated public sources describe for Puerto Rico, Vieques, Culebra and "
     "Mona, reconciled across sources. Claims are merged only when a source publishes another source's "
     "identifier; name or distance matches are listed as candidates, so counts are a range. Source "
     "disagreements are shown, not resolved. This inventory makes no claim of completeness beyond its sources."
@@ -39,7 +41,9 @@ ROW_FIELDS = ("feature_id", "feature_type", "display_name", "sources", "lat", "l
               "authority", "aq_code", "system", "member_wells", "located", "well_depth_ft", "activity",
               "name_is_source_class_only", "utility_asset_ids", "member_springs", "flow_type", "lengthkm",
               "huc8", "huc10", "gnis_id", "reaches", "water_type", "areasqkm", "nhd_polygons", "nws_lid", "level",
-              "huc", "gnis_class")
+              "huc", "gnis_class", "prasa_tipo", "status", "capacity", "water_kind", "nid_id", "owner", "purpose",
+              "river", "year_completed", "height_ft", "storage_acre_ft", "hazard", "npdes_id", "permit_status",
+              "major_minor", "city", "pwsid", "status_2017", "location_meaning", "wetland_type", "nwi_code", "acres")
 
 
 def _now() -> datetime:
@@ -188,7 +192,7 @@ def hydro_feature(feature_id: str) -> JSONResponse:
         "member_wells": {"authoritative": sum(1 for lk in wells if lk["edge_class"] == "AUTHORITATIVE"),
                          "polygon_only": sum(1 for lk in wells if lk["edge_class"] == "DERIVED_TOPOLOGICAL")},
         "member_springs": len(springs),
-        "conflicts": [c for c in data["conflicts"] if feature_id in c["feature_ids"]],
+        "conflicts": [c for c in data["conflicts"] if feature_id in c.get("feature_ids", [])],
     })
 
 
@@ -210,14 +214,17 @@ def hydro_candidates(type: str | None = Query(None, alias="type"), tier: str | N
 
 
 _GEO_FILES = {"waterbodies": "pr_waterbodies.geojson", "watersheds": "pr_watersheds.geojson"}
-_POINT_TYPES = ("well", "spring", "gauge", "reservoir", "waterfall")
+_POINT_TYPES = ("well", "spring", "gauge", "reservoir", "waterfall", "dam", "intake", "treatment_plant",
+                "wastewater_plant", "pump_station", "tank", "water_system")
 
 
 @router.get("/hydro/geo/{name}.geojson")
 def hydro_geo(name: str) -> Response:
-    """Committed surface-water geometry: ``waterbodies``, ``watersheds`` or ``streams-<HUC8>``."""
+    """Committed geometry: ``waterbodies``, ``watersheds``, ``streams-<HUC8>`` or ``wetlands-<HUC8>``."""
     if name.startswith("streams-") and name[8:].isdigit():
         path = DATA_DIR / "geo" / "streams" / f"{name[8:]}.geojson"
+    elif name.startswith("wetlands-") and name[9:].isdigit():
+        path = DATA_DIR / "geo" / "wetlands" / f"{name[9:]}.geojson"
     elif name in _GEO_FILES:
         path = DATA_DIR / "geo" / _GEO_FILES[name]
     else:
@@ -229,9 +236,12 @@ def hydro_geo(name: str) -> Response:
 
 @router.get("/hydro/stream-tiles")
 def hydro_stream_tiles() -> JSONResponse:
-    folder = DATA_DIR / "geo" / "streams"
-    tiles = sorted(p.stem for p in folder.glob("*.geojson")) if folder.is_dir() else []
-    return JSONResponse({"tiles": tiles})
+    """HUC8 tiles of committed line and polygon geometry: stream reaches and NWI wetlands."""
+    def listing(name: str) -> list[str]:
+        folder = DATA_DIR / "geo" / name
+        return sorted(p.stem for p in folder.glob("*.geojson")) if folder.is_dir() else []
+
+    return JSONResponse({"tiles": listing("streams"), "wetland_tiles": listing("wetlands")})
 
 
 @router.get("/hydro/points.geojson")
