@@ -9,7 +9,6 @@ maplibregl.setWorkerUrl(maplibreWorkerUrl)
 
 const OFFLINE = import.meta.env.VITE_OFFLINE === '1'
 const PR_CENTER = [-66.45, 18.22]
-const EMPTY = { type: 'FeatureCollection', features: [] }
 
 // Dark basemap only; every hydrologic layer comes from committed source geometry served by the
 // backend. Nothing is drawn for a feature whose source publishes no location.
