@@ -34,10 +34,12 @@ const NAV_GROUPS = [
       { to: '/assets', icon: Database, label: 'Assets',
         desc: 'Infrastructure registry with filters and detail.' },
       { to: '/water-disruption', icon: Droplets, label: 'Water & Weather',
-        desc: 'Water service validation, National Weather Service hydromet and aquifer condition bands.',
+        desc: 'Water service validation, National Weather Service hydromet, aquifer condition bands, USGS water-use estimates and the reconciled inventory of aquifers and wells.',
         links: [
           { to: '/hydromet', label: 'NWS Hydromet' },
           { to: '/aquifer-bands', label: 'Aquifer Bands' },
+          { to: '/water-use', label: 'Water Use' },
+          { to: '/hydro-inventory', label: 'Hydro Inventory' },
         ] },
       { to: '/environmental-exposure', icon: Leaf, label: 'Environment',
         desc: 'Exposure graph and environmental sources.',

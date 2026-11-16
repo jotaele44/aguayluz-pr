@@ -15,6 +15,7 @@ from server.backend import main as legacy
 from server.backend.aquifer_api import router as aquifer_router
 from server.backend.cave_karst_api import router as cave_karst_router
 from server.backend.environmental_exposure_api import router as environmental_exposure_router
+from server.backend.hydro_inventory_api import router as hydro_inventory_router
 from server.backend.hydromet_api import router as hydromet_router
 from server.backend.monitoring_alert_operations import federation_alert_export, lifecycle_alerts
 from server.backend.monitoring_incident_ledger import (
@@ -38,6 +39,7 @@ from server.backend.monitoring_quality import (
 from server.backend.regulatory_api import router as regulatory_router
 from server.backend.source_intelligence_api import router as source_intelligence_router
 from server.backend.water_disruption_api import router as water_disruption_router
+from server.backend.water_use_api import router as water_use_router
 
 
 def _is_legacy_readings(route: Any) -> bool:
@@ -72,6 +74,8 @@ app.include_router(source_intelligence_router)
 app.include_router(environmental_exposure_router)
 app.include_router(hydromet_router)
 app.include_router(aquifer_router)
+app.include_router(water_use_router)
+app.include_router(hydro_inventory_router)
 
 # Single source of truth: server.backend.main.READING_VECTOR_REGISTRY (see its definition
 # for the full reasoning). Referencing it here rather than keeping a second hand-maintained
