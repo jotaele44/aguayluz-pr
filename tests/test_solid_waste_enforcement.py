@@ -225,10 +225,12 @@ def test_committed_enforcement_ledger_matches_the_frozen_pull_and_closes():
     cases = enf["cases"]
     assert cases == {
         "pulled": 3788, "landfill_context": 51, "bound_by_name_to_lmop_sites": 43,
+        "linked_by_id_only_to_echo_record": 0,
         "named_municipality_without_lmop_site": 3, "bound_to_no_municipality": 5, "undated": 0,
     }
     assert cases["landfill_context"] == (
         cases["bound_by_name_to_lmop_sites"]
+        + cases["linked_by_id_only_to_echo_record"]
         + cases["named_municipality_without_lmop_site"]
         + cases["bound_to_no_municipality"]
     )
@@ -238,8 +240,11 @@ def test_committed_enforcement_ledger_matches_the_frozen_pull_and_closes():
     assert enf["facility_reports"] == {"reports": 16, "with_formal_action_in_window": 1, "formal_actions_in_window": 4}
     # still bounded and open: enforcement coverage is partial and says so
     assert RECEIPTS["result"] == "OPEN" and ledger["completeness_claimed"] is False
-    assert not any("not yet acquired" in r for r in ledger["open_residue"])
-    assert any("partial" in r for r in ledger["open_residue"])
+    residue = ledger["open_residue"]
+    assert not any("not yet acquired" in r for r in residue)
+    assert len(residue) == 4 and "partial" in residue[1]  # only the enforcement line changed ...
+    assert residue[0].startswith("Puerto Rico solid-waste authority") and residue[2].startswith("unauthorized dumps")
+    assert residue[3].startswith("cross-source identity")  # ... the others kept their place and text
 
 
 def test_committed_manifestations_pin_the_pull_and_carry_effective_controls():
@@ -252,6 +257,7 @@ def test_committed_manifestations_pin_the_pull_and_carry_effective_controls():
     reports = m[sw.DFR_SOURCE]
     assert reports["row_count"] == 16 and len(reports["registry_ids"]) == 16
     assert reports["registry_ids"] == sorted(e["authority_id"] for e in ECHO)
+    assert cases["full_response_committed"] is False and reports["full_response_committed"] is False
     assert {x["evidence_tier"] for x in RECEIPTS["manifestations"]} == {"T1"}
     # the receipt never claims to predate its own data
     assert RECEIPTS["generated_at"] >= max(x["retrieved_at"] for x in RECEIPTS["manifestations"])
@@ -270,9 +276,15 @@ def test_committed_enforcement_bindings_are_candidates_and_only_two_are_id_evide
 
 
 def test_enforcement_creates_no_entity_geometry_or_event():
-    assert len(ENTITIES) == 48 and {e["authority"] for e in ENTITIES} == {sw.LMOP_AUTHORITY, sw.ECHO_AUTHORITY}
-    assert len(db.load("environmental_geometry", DATA / "environmental_geometries.jsonl")) == 48
-    events = db.load("environmental_exposure_event", DATA / "environmental_exposure_events.jsonl")
+    # Scoped to this registry's authorities: other environmental sources may share these files later.
+    owned = [e for e in ENTITIES if e["authority"] in (sw.LMOP_AUTHORITY, sw.ECHO_AUTHORITY)]
+    owned_ids = {e["entity_id"] for e in owned}
+    assert len(owned) == 48
+    assert not any(e["authority"] in (sw.CASES_SOURCE, sw.DFR_SOURCE) for e in ENTITIES)
+    geometries = db.load("environmental_geometry", DATA / "environmental_geometries.jsonl")
+    assert sum(1 for g in geometries if g["entity_id"] in owned_ids) == 48
+    events = [e for e in db.load("environmental_exposure_event", DATA / "environmental_exposure_events.jsonl")
+              if set(e["entity_ids"]) & owned_ids]
     assert {e["event_type"] for e in events} == {"SHUTDOWN"}
     assert len(events) == RECEIPTS["coverage_ledger"]["lmop"]["shutdown_events"]
 
@@ -281,7 +293,8 @@ def test_committed_raw_rows_hold_51_cases_and_16_reports_with_matching_hashes():
     cases = [r for r in RAW if r["source"] == sw.CASES_SOURCE]
     reports = [r for r in RAW if r["source"] == sw.DFR_SOURCE]
     assert len(cases) == 51 and len(reports) == 16
-    assert {r["disposition"] for r in cases + reports} == {"RAW_ONLY"}
+    assert {r["disposition"] for r in cases} == {"RAW_ONLY"}  # the full case row, as served
+    assert {r["disposition"] for r in reports} == {"DERIVED_SUMMARY"}  # a reduction of the report, not the report
     assert all(r["row_sha256"] == sw.canonical_sha256(r["raw"]) for r in RAW)
     assert sum(1 for r in RAW if r["source"] in (sw.LMOP_AUTHORITY, "EPA_ECHO")) == 48  # nothing else moved
 
@@ -298,3 +311,100 @@ def test_the_pins_are_recorded_with_the_tier_their_provenance_supports():
     origin = RECEIPTS["seed_candidates"]["spiderweb_pins"]
     assert origin["evidence_tier"] == "T4" and origin["origin_label_tier"] == "T2"
     assert origin["source_package"].startswith("Spiderweb_Package") and "no upstream" in origin["note"]
+
+
+# ---------------------------------------------------------------------------
+# Corrections found by the independent review of this change
+# ---------------------------------------------------------------------------
+
+
+def test_a_case_linked_only_by_id_is_its_own_bucket_never_reported_unbound():
+    # a landfill case with no municipality in its name, but listed by an ECHO facility report
+    case = CASES["PR000A200142975"]
+    report = {**TOA_ALTA_DFR, "InspectionEnforcementSummary": {
+        **TOA_ALTA_DFR["InspectionEnforcementSummary"],
+        "Source": [{"Statute": "CAA", "SourceID": case["CaseNumber"], "InspectionCount": "0",
+                    "FormalEnfActCount": "0", "TotalPenalties": "$0"}],
+    }}
+    summary = sw.summarize_dfr(TOA_ALTA_ECHO_ID, report)
+    names = [m["name"] for m in json.loads(GEO.read_text(encoding="utf-8"))["municipios"]]
+    bindings = sw.case_bindings([], [case], [summary])
+    assert [sw.ID_EVIDENCE in b["evidence_classes"] for b in bindings] == [True]
+    ledger, notes = sw.enforcement_ledger(
+        cases_pulled=1, context=[case], bindings=bindings, lmop_cands=[], municipalities=names,
+        echo=sw.RegistryRecords(entities=ECHO), dfr_summaries=[summary],
+    )
+    c = ledger["cases"]
+    assert c["linked_by_id_only_to_echo_record"] == 1 and c["bound_to_no_municipality"] == 0
+    assert notes == []  # EPA's own report ties it to an ECHO record, so it is not "unbound"
+    assert ledger["unbound"]["bound_to_no_municipality"] == []
+
+
+@pytest.mark.parametrize(
+    "text, expected",
+    [("$50,000", "50000"), ("$0", "0"), ("$0.10", "0.10"), ("", "0"), (None, "0"),
+     ("($500.00)", "-500.00"), ("-$5", "-5"), ("1,234.56", "1234.56")],
+)
+def test_money_is_parsed_exactly(text, expected):
+    from decimal import Decimal
+
+    assert sw._money(text) == Decimal(expected)
+
+
+@pytest.mark.parametrize("text", ["abc", "$5 USD", "(5", "5)", "$", "N/A"])
+def test_money_that_is_not_an_amount_fails_instead_of_reading_as_zero(text):
+    with pytest.raises(ValueError):
+        sw._money(text)
+
+
+def test_penalties_sum_exactly_without_float_noise():
+    report = {**TOA_ALTA_DFR, "InspectionEnforcementSummary": {
+        **TOA_ALTA_DFR["InspectionEnforcementSummary"],
+        "Source": [{"Statute": "CWA", "SourceID": f"X{i}", "InspectionCount": "0", "FormalEnfActCount": "1",
+                    "TotalPenalties": amount} for i, amount in enumerate(["$0.10", "$0.20", "$1,234.46"])],
+    }}
+    assert sw.summarize_dfr(TOA_ALTA_ECHO_ID, report)["by_statute"]["CWA"]["penalties_usd"] == 1234.76
+
+
+def test_a_penalty_that_is_not_an_amount_fails_the_whole_summary():
+    report = {**TOA_ALTA_DFR, "InspectionEnforcementSummary": {
+        **TOA_ALTA_DFR["InspectionEnforcementSummary"],
+        "Source": [{"Statute": "CWA", "SourceID": "X", "InspectionCount": "0", "FormalEnfActCount": "1",
+                    "TotalPenalties": "pending"}],
+    }}
+    with pytest.raises(ValueError):
+        sw.summarize_dfr(TOA_ALTA_ECHO_ID, report)
+
+
+def test_the_latest_stamp_is_compared_as_an_instant_not_as_text():
+    # 23:00 at -05:00 is 04:00Z the next day, later than 01:00Z, though it sorts earlier as text
+    assert sw.latest_utc(["2026-11-13T23:00:00-05:00", "2026-11-14T01:00:00Z"]) == "2026-11-14T04:00:00Z"
+    assert sw.latest_utc(["2026-11-05", "2026-11-05T08:12:36Z"]) == "2026-11-05T08:12:36Z"
+    with pytest.raises(ValueError):
+        sw.latest_utc(["2026-11-05T08:12:36Z", "last Tuesday"])
+
+
+def test_generated_at_is_never_earlier_than_the_data_whatever_the_stamp_format():
+    manifestations = [{"source_id": "A", "retrieved_at": "2026-11-13T23:00:00-05:00"}]
+    receipts = sw.build_receipts(manifestations=manifestations, bindings=[], ledger={}, notes=[],
+                                 now="2026-11-14T01:00:00Z")
+    assert receipts["generated_at"] == "2026-11-14T04:00:00Z"
+    with pytest.raises(ValueError):
+        sw.build_receipts(manifestations=[{"source_id": "A", "retrieved_at": "soon"}], bindings=[],
+                          ledger={}, notes=[], now="2026-11-14T01:00:00Z")
+
+
+@pytest.mark.parametrize(
+    "naics, expected",
+    [("562212", True), ("221320 562212", True), ("221320,562212", True), ("5622129", False),
+     ("1562212", False), ("562213", False), ("", False), (None, False)],
+)
+def test_landfill_naics_matches_whole_codes_not_prefixes(naics, expected):
+    assert sw.is_landfill_context_case({"PrimaryNAICSCode": naics, "CaseName": "A Plant"}) is expected
+
+
+def test_facility_report_rows_are_labelled_as_summaries_and_keep_only_what_was_summarised():
+    summaries, rows = sw.build_dfr_rows({TOA_ALTA_ECHO_ID: TOA_ALTA_DFR}, [TOA_ALTA_ECHO_ID])
+    (row,) = rows
+    assert row["disposition"] == "DERIVED_SUMMARY" and row["raw"] == summaries[0]
+    assert "InspectionEnforcementSummary" not in row["raw"]  # the report itself is not stored here

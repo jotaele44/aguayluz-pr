@@ -68,7 +68,7 @@
         "EPA ECHO p_st=PR p_sic=4953: 16 of 16 ingested (12 landfill-kind, 4 other); filtered-versus-unfiltered control passed (16 of 15256)",
         "EPA ECHO silently ignores the p_naics filter (562212 and 999999 both returned 15256 rows): recorded as a service defect and defended by the control",
         "EPA ECHO enforcement case service, Puerto Rico (p_state=PR): 3788 of 3788 cases pulled on 2026-11-13; state-filter control passed (a nonsense state returned 0 rows; 3788 of 313712); 51 landfill-context cases kept as RAW rows and linked to LMOP sites as candidates only (43 by name), 2 case numbers confirmed by an ECHO facility report (Toa Alta)",
-        "EPA ECHO detailed facility reports: 16 of 16 ECHO registry records read; 4 formal actions in the five-year window, all at Toa Alta",
+        "EPA ECHO detailed facility reports: 16 of 16 ECHO registry records read; 4 formal actions in the five-year window, all at Toa Alta (stored as per-statute summaries labelled derived; the full reports are frozen by hash, not committed)",
         "EPA ECHO case service silently drops every filter except p_state, p_region and p_case_number: recorded as a service defect and defended by local filtering plus the state-filter control"
       ],
       "remaining_open": [

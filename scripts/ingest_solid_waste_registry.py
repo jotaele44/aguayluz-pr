@@ -15,6 +15,8 @@ apart, and records every cross-source match as a candidate that is never merged:
   pulled for the whole state and filtered locally; only the landfill-context cases are kept as
   RAW rows and they are linked to sites as candidates (by name, or by id where an ECHO facility
   report lists the case number), never merged. No entity, geometry or event is created from them.
+  The facility reports are stored as per-statute summaries labelled ``DERIVED_SUMMARY`` (not raw);
+  the full responses are frozen by hash in the manifestations and are not committed.
   Fail-closed controls: the state filter must be shown to work (a nonsense state returns 0 rows
   and the filtered count is below the unfiltered total).
 
@@ -122,8 +124,11 @@ def _unfiltered_case_total(results: dict[str, Any]) -> int:
     return int(found.group(1))
 
 
-def fetch_cases() -> dict[str, Any]:
-    """Whole-state ECHO case pull plus the controls that show the state filter works."""
+def fetch_cases(retrieved_at: str) -> dict[str, Any]:
+    """Whole-state ECHO case pull plus the controls that show the state filter works.
+
+    ``retrieved_at`` is the run's stamp (``--retrieved-at`` or now), as for the LMOP and ECHO pulls.
+    """
     state = _case_results("get_cases", p_state=sw.PR_STATE)
     nonsense = _case_results("get_cases", p_state=NONSENSE_STATE)
     unfiltered = _unfiltered_case_total(_case_results("get_cases"))
@@ -136,7 +141,7 @@ def fetch_cases() -> dict[str, Any]:
             break
     return {
         "query": {"p_state": sw.PR_STATE},
-        "retrieved_at": _utc_now(),
+        "retrieved_at": retrieved_at,
         "filtered_rows": expected,
         # strict: a missing QueryRows must fail the run, never read as "0 rows" and pass the control
         "nonsense_rows": int(nonsense["QueryRows"]),
@@ -145,13 +150,31 @@ def fetch_cases() -> dict[str, Any]:
     }
 
 
-def fetch_dfr(registry_ids: list[str]) -> dict[str, Any]:
+def accepted_registry_ids(echo: dict[str, Any]) -> list[str]:
+    """RegistryIDs of the ECHO rows that become registry entities.
+
+    The facility reports must match these one to one, so a row the builder rejects (a duplicate,
+    a non-Puerto-Rico state, a blank name) must not have its report fetched.
+    """
+    records = sw.build_echo_records(list(echo["facilities"]), f"p_sic={sw.ECHO_SIC}")
+    return sorted(e["authority_id"] for e in records.entities)
+
+
+def fetch_dfr(registry_ids: list[str], retrieved_at: str) -> dict[str, Any]:
     """One ECHO detailed facility report per RegistryID."""
     reports = {
         rid: dict(_get(DFR_URL, {"output": "JSON", "p_id": rid}).json()["Results"])
         for rid in sorted(registry_ids)
     }
-    return {"retrieved_at": _utc_now(), "reports": reports}
+    return {"retrieved_at": retrieved_at, "reports": reports}
+
+
+def _committed_enforcement(receipts_path: Path) -> bool:
+    """Does the existing receipts file already hold the enforcement subscope?"""
+    if not receipts_path.is_file():
+        return False
+    manifests = json.loads(receipts_path.read_text(encoding="utf-8")).get("manifestations", [])
+    return any(m.get("source_id") in (sw.CASES_SOURCE, sw.DFR_SOURCE) for m in manifests)
 
 
 def _load_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -215,6 +238,7 @@ def build_enforcement(
             "response_sha256": sw.canonical_sha256(case_list),
             "row_count": len(case_list),
             "landfill_context_rows": len(context),
+            "full_response_committed": False,  # frozen by hash; only the landfill-context rows are stored
             "filter_control": control,
             "evidence_tier": "T1",
         },
@@ -227,6 +251,7 @@ def build_enforcement(
             "retrieved_at": dfr["retrieved_at"],
             "response_sha256": sw.canonical_sha256({rid: reports[rid] for rid in expected_ids}),
             "row_count": len(expected_ids),
+            "full_response_committed": False,  # the stored rows are per-statute summaries, not the reports
             "system_extract_dates": {k: sorted(v) for k, v in sorted(extract_dates.items())},
             "evidence_tier": "T1",
         },
@@ -416,9 +441,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--dry-run", action="store_true", help="build and print the ledger; write nothing")
     args = ap.parse_args(argv)
 
-    now = args.retrieved_at or datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace(
-        "+00:00", "Z"
-    )
+    now = args.retrieved_at or _utc_now()
     if args.lmop_src and not args.lmop_url:
         print(
             "FAIL-CLOSED: --lmop-src needs --lmop-url naming the release that file belongs to; "
@@ -438,12 +461,13 @@ def main(argv: list[str] | None = None) -> int:
         echo = json.loads(Path(args.echo_src).read_text(encoding="utf-8")) if args.echo_src else fetch_echo()
         cases = dfr = municipios = None
         if with_enforcement:
-            cases = json.loads(Path(args.cases_src).read_text(encoding="utf-8")) if args.cases_src else fetch_cases()
+            cases = (
+                json.loads(Path(args.cases_src).read_text(encoding="utf-8")) if args.cases_src else fetch_cases(now)
+            )
             if args.dfr_src:
                 dfr = json.loads(Path(args.dfr_src).read_text(encoding="utf-8"))
             else:
-                ids = {str(f.get("RegistryID") or "").strip() for f in echo["facilities"]} - {""}
-                dfr = fetch_dfr(sorted(ids))
+                dfr = fetch_dfr(accepted_registry_ids(echo), now)
             municipios = [
                 str(m["name"]) for m in json.loads(Path(args.municipios).read_text(encoding="utf-8"))["municipios"]
             ]
@@ -453,6 +477,15 @@ def main(argv: list[str] | None = None) -> int:
             lmop_bytes, lmop_url, echo, _load_jsonl(Path(args.assets)), now,
             cases=cases, dfr=dfr, municipios=municipios,
         )
+        # The outputs are rewritten whole, so a run without the enforcement inputs would erase
+        # the enforcement rows, manifestations, bindings and ledger already committed there.
+        if not with_enforcement and not args.dry_run and _committed_enforcement(
+            Path(args.data_dir) / "solid_waste_receipts.json"
+        ):
+            raise ValueError(
+                "a registry-only run would drop the enforcement data already in the data directory; "
+                "pass --cases-src and --dfr-src, or write to a fresh --data-dir"
+            )
     # OSError covers a missing file and every ``requests`` failure (RequestException is an IOError).
     except (sw.FilterIgnoredError, ValueError, KeyError, OSError) as exc:
         print(f"FAIL-CLOSED: {exc}", file=sys.stderr)

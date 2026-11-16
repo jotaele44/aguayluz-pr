@@ -737,6 +737,8 @@ def test_script_builds_the_enforcement_subscope_and_a_second_run_changes_nothing
         "EPA_LMOP", "EPA_ECHO", sw.CASES_SOURCE, sw.DFR_SOURCE}
     cases = next(m for m in receipts["manifestations"] if m["source_id"] == sw.CASES_SOURCE)
     assert cases["retrieved_at"] == "2026-11-13T17:14:30Z"  # each source keeps its own retrieval time
+    reports = next(m for m in receipts["manifestations"] if m["source_id"] == sw.DFR_SOURCE)
+    assert cases["full_response_committed"] is False and reports["full_response_committed"] is False
     assert receipts["generated_at"] == "2026-11-13T17:17:32Z"  # and the receipt is never older than its data
     enf = receipts["coverage_ledger"]["enforcement"]
     assert enf["cases"]["landfill_context"] == 8 and enf["id_confirmed_links"] == 1
@@ -825,12 +827,86 @@ def _fake_case_service(nonsense: dict[str, Any]):
 
 def test_fetch_cases_collects_the_pull_and_the_controls(monkeypatch):
     monkeypatch.setattr(script, "_get", _fake_case_service({"QueryRows": "0"}))
-    pull = script.fetch_cases()
+    pull = script.fetch_cases("2026-11-05T00:00:00Z")
     assert (pull["filtered_rows"], pull["nonsense_rows"], pull["unfiltered_total"]) == (2, 0, 313712)
-    assert len(pull["cases"]) == 2 and pull["query"] == {"p_state": "PR"} and pull["retrieved_at"].endswith("Z")
+    assert len(pull["cases"]) == 2 and pull["query"] == {"p_state": "PR"}
+    # the run's stamp (--retrieved-at, or now), as for the LMOP and ECHO pulls; never the wall clock
+    assert pull["retrieved_at"] == "2026-11-05T00:00:00Z"
 
 
 def test_fetch_cases_never_reads_a_missing_nonsense_count_as_zero(monkeypatch):
     monkeypatch.setattr(script, "_get", _fake_case_service({"Message": "Success"}))  # no QueryRows at all
     with pytest.raises(KeyError):
-        script.fetch_cases()
+        script.fetch_cases("2026-11-05T00:00:00Z")
+
+
+def _live_echo() -> dict[str, Any]:
+    """An ECHO pull with one accepted Puerto Rico row and one the builder rejects (a New York facility)."""
+    facilities = [
+        echo_row("PONCE LANDFILL", "10", "PONCE", "562212", FacLat="18.0", FacLong="-66.61"),
+        echo_row("OLD LANDFILL", "20", "ALBANY", "562212", FacState="NY"),
+    ]
+    return {"query": {"p_sic": "4953"}, "filtered_rows": 2, "unfiltered_rows": 500, "facilities": facilities}
+
+
+def test_accepted_registry_ids_skip_rows_the_builder_rejects():
+    echo = _live_echo()
+    echo["facilities"] += [
+        echo_row("PONCE AGAIN", "10", "PONCE"),  # a duplicate RegistryID
+        echo_row("", "30", "PONCE"),  # no name
+    ]
+    assert script.accepted_registry_ids(echo) == ["10"]
+
+
+def test_a_live_run_fetches_reports_only_for_accepted_records_and_stamps_them_with_the_run(
+    offline, monkeypatch, capsys
+):
+    seen: dict[str, Any] = {}
+
+    def fake_cases(retrieved_at: str) -> dict[str, Any]:
+        seen["cases_stamp"] = retrieved_at
+        return {**_case_pull(), "retrieved_at": retrieved_at}
+
+    def fake_dfr(ids: list[str], retrieved_at: str) -> dict[str, Any]:
+        seen["ids"], seen["dfr_stamp"] = ids, retrieved_at
+        return {"retrieved_at": retrieved_at, "reports": {rid: _report(rid) for rid in ids}}
+
+    monkeypatch.setattr(script, "fetch_lmop_bytes", lambda url: workbook(SITE_ROWS))
+    monkeypatch.setattr(script, "fetch_echo", _live_echo)
+    monkeypatch.setattr(script, "fetch_cases", fake_cases)
+    monkeypatch.setattr(script, "fetch_dfr", fake_dfr)
+    rc = script.main(["--assets", str(offline["assets"]), "--data-dir", str(offline["data"]),
+                      "--municipios", str(GEO), "--retrieved-at", NOW])
+    assert rc == 0
+    assert seen["ids"] == ["10"]  # the rejected New York row's report is never requested
+    assert seen["cases_stamp"] == seen["dfr_stamp"] == NOW
+    receipts = json.loads((offline["data"] / "solid_waste_receipts.json").read_text())
+    stamps = {m["source_id"]: m["retrieved_at"] for m in receipts["manifestations"]}
+    assert stamps[sw.CASES_SOURCE] == stamps[sw.DFR_SOURCE] == stamps["EPA_LMOP"] == NOW
+    capsys.readouterr()
+
+
+def test_a_registry_only_run_refuses_to_erase_committed_enforcement_data(enforcement, capsys):
+    assert run_enforcement(enforcement) == 0
+    data = enforcement["data"]
+    before = {p.name: p.read_bytes() for p in data.iterdir()}
+    capsys.readouterr()
+    assert run(enforcement) == 2  # the same offline registry inputs, without the enforcement inputs
+    assert "would drop the enforcement data" in capsys.readouterr().err
+    assert {p.name: p.read_bytes() for p in data.iterdir()} == before
+    assert run(enforcement, "--dry-run") == 0  # a dry run writes nothing, so it is allowed
+    assert run_enforcement(enforcement) == 0  # and the full run still works
+    capsys.readouterr()
+
+
+def test_fetch_dfr_asks_for_each_id_in_order_and_stamps_with_the_run(monkeypatch):
+    asked: list[str] = []
+
+    def fake_get(url: str, params: dict[str, Any] | None = None) -> _Response:
+        asked.append(str((params or {})["p_id"]))
+        return _Response({"Results": _report(asked[-1])})
+
+    monkeypatch.setattr(script, "_get", fake_get)
+    out = script.fetch_dfr(["20", "10"], "2026-11-05T00:00:00Z")
+    assert asked == ["10", "20"] and set(out["reports"]) == {"10", "20"}
+    assert out["retrieved_at"] == "2026-11-05T00:00:00Z"  # the run's stamp, not the wall clock

@@ -23,6 +23,8 @@ import unicodedata
 import xml.etree.ElementTree as ET
 import zipfile
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from decimal import Decimal
 from math import asin, cos, radians, sin, sqrt
 from typing import Any
 
@@ -597,7 +599,8 @@ def is_landfill_context_case(case: dict[str, Any]) -> bool:
 
     Most case rows carry no NAICS code at all, so the name test is not optional.
     """
-    if str(case.get("PrimaryNAICSCode") or "").startswith(LANDFILL_NAICS):
+    # The field can in principle hold several codes, so match whole 6-digit codes, not a prefix.
+    if LANDFILL_NAICS in re.findall(r"(?<!\d)\d{6}(?!\d)", str(case.get("PrimaryNAICSCode") or "")):
         return True
     return bool(_LANDFILL_WORDS.search(str(case.get("CaseName") or "")))
 
@@ -612,9 +615,38 @@ def _has_phrase(haystack: str | None, needle: str | None) -> bool:
     return bool(pin) and any(hay[i : i + len(pin)] == pin for i in range(len(hay) - len(pin) + 1))
 
 
-def _money(value: Any) -> float:
-    text = re.sub(r"[^0-9.\-]", "", str(value or ""))
-    return float(text) if text not in ("", "-", ".") else 0.0
+_MONEY = re.compile(r"(\()?\s*(-)?\s*\$?\s*(-)?([\d,]+(?:\.\d{1,2})?)\s*(\))?")
+
+
+def _money(value: Any) -> Decimal:
+    """Parse a penalty amount exactly. An empty value is zero; anything else that is not an amount fails.
+
+    Parentheses or a minus sign mean negative. Coercing unparseable text to zero would let a
+    format change in the source read as "no penalty".
+    """
+    text = "" if value is None else str(value).strip()
+    if not text:
+        return Decimal(0)
+    found = _MONEY.fullmatch(text)
+    if not found or bool(found.group(1)) != bool(found.group(5)):
+        raise ValueError(f"unparseable penalty amount: {value!r}")
+    amount = Decimal(found.group(4).replace(",", ""))
+    return -amount if found.group(1) or found.group(2) or found.group(3) else amount
+
+
+def _utc(stamp: Any) -> datetime:
+    """Parse an ISO-8601 stamp (Z, an offset, or a bare date) to UTC; anything else fails closed."""
+    text = str(stamp).strip()
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise ValueError(f"unparseable timestamp: {stamp!r}") from exc
+    return (parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)).astimezone(timezone.utc)
+
+
+def latest_utc(stamps: list[Any]) -> str:
+    """The latest of several timestamps, compared as instants and written as ``...Z``."""
+    return max(_utc(s) for s in stamps).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def build_case_rows(cases: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
@@ -635,7 +667,7 @@ def summarize_dfr(registry_id: str, report: dict[str, Any]) -> dict[str, Any]:
     for src in summary.get("Source") or []:
         entry = by_statute.setdefault(
             str(src["Statute"]),
-            {"inspections": 0, "formal_actions": 0, "penalties_usd": 0.0, "source_ids": []},
+            {"inspections": 0, "formal_actions": 0, "penalties_usd": Decimal(0), "source_ids": []},
         )
         entry["inspections"] += int(src.get("InspectionCount") or 0)
         entry["formal_actions"] += int(src.get("FormalEnfActCount") or 0)
@@ -643,6 +675,8 @@ def summarize_dfr(registry_id: str, report: dict[str, Any]) -> dict[str, Any]:
         entry["source_ids"].append(str(src["SourceID"]))
     for entry in by_statute.values():
         entry["source_ids"] = sorted(entry["source_ids"])
+        # exact decimal sum, written once as a float: the frozen rows never carry 0.1 + 0.2 noise
+        entry["penalties_usd"] = float(entry["penalties_usd"].quantize(Decimal("0.01")))
     return {
         "registry_id": registry_id,
         "by_statute": {k: by_statute[k] for k in sorted(by_statute)},
@@ -660,11 +694,15 @@ def summarize_dfr(registry_id: str, report: dict[str, Any]) -> dict[str, Any]:
 def build_dfr_rows(
     reports: dict[str, dict[str, Any]], expected_ids: list[str]
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """One facility report per ECHO registry record, no more and no fewer."""
+    """One facility report per ECHO registry record, no more and no fewer.
+
+    The rows hold a per-statute summary, not the report itself, so they are labelled
+    ``DERIVED_SUMMARY``; the full responses are frozen by hash in the manifestation only.
+    """
     if set(reports) != set(expected_ids):
         raise ValueError("ECHO facility reports do not match the ECHO registry records one to one")
     summaries = [summarize_dfr(rid, reports[rid]) for rid in sorted(expected_ids)]
-    rows = [_raw_row(f"{DFR_SOURCE}:{s['registry_id']}", DFR_SOURCE, s, "RAW_ONLY") for s in summaries]
+    rows = [_raw_row(f"{DFR_SOURCE}:{s['registry_id']}", DFR_SOURCE, s, "DERIVED_SUMMARY") for s in summaries]
     return summaries, rows
 
 
@@ -725,26 +763,28 @@ def enforcement_ledger(
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """Arithmetic closure for the enforcement subscope, plus the review notes it implies.
 
-    Every landfill-context case lands in exactly one bucket: bound by name to an LMOP site, naming
-    a municipality that has no LMOP site (a registry-gap lead, never an entity), or naming no
-    municipality at all (spelling variants and unnamed rows cannot be bound).
+    Every landfill-context case lands in exactly one bucket: bound by name to an LMOP site, linked
+    only by id to an ECHO record (EPA's own facility report lists it), naming a municipality that
+    has no LMOP site (a registry-gap lead, never an entity), or naming no municipality at all
+    (spelling variants and unnamed rows cannot be bound).
     """
     name_bound = {b["right_id"] for b in bindings if ID_EVIDENCE not in b["evidence_classes"]}
+    id_only = {b["right_id"] for b in bindings if ID_EVIDENCE in b["evidence_classes"]} - name_bound
     lmop_munis = {normalize_name(c.municipality) for c in lmop_cands}
     other_munis = [m for m in municipalities if normalize_name(m) not in lmop_munis]
     non_lmop: dict[str, str] = {}
     no_municipality: list[str] = []
     for case in context:
         ref = case_ref(case)
-        if ref in name_bound:
+        if ref in name_bound or ref in id_only:
             continue
         hit = next((m for m in other_munis if _has_phrase(case.get("CaseName"), m)), None)
         if hit:
             non_lmop[ref] = hit
         else:
             no_municipality.append(ref)
-    if len(context) != len(name_bound) + len(non_lmop) + len(no_municipality):
-        raise ValueError("enforcement cases do not close: context != bound + other municipality + unbound")
+    if len(context) != len(name_bound) + len(id_only) + len(non_lmop) + len(no_municipality):
+        raise ValueError("enforcement cases do not close: context != bound + id-only + other municipality + unbound")
     sites_with = {b["left_id"] for b in bindings if b["left_authority"] == LMOP_AUTHORITY}
     undated = sorted(case_ref(c) for c in context if not any(c.get(k) for k in _CASE_DATES))
     notes: list[dict[str, Any]] = []
@@ -771,6 +811,7 @@ def enforcement_ledger(
             "pulled": cases_pulled,
             "landfill_context": len(context),
             "bound_by_name_to_lmop_sites": len(name_bound),
+            "linked_by_id_only_to_echo_record": len(id_only),
             "named_municipality_without_lmop_site": len(non_lmop),
             "bound_to_no_municipality": len(no_municipality),
             "undated": len(undated),
@@ -938,19 +979,20 @@ def coverage_ledger(
     by_cardinality: dict[str, int] = {}
     for b in bindings:
         by_cardinality[b["cardinality"]] = by_cardinality.get(b["cardinality"], 0) + 1
+    enforcement_residue = (
+        "EPA Region 2 landfill enforcement records (not yet acquired)"
+        if enforcement is None
+        else "EPA enforcement coverage is partial: ECHO case records link to LMOP sites by name only "
+        "(the ECHO facility reports confirm by id just the links under id_confirmed_links), "
+        "spelling variants and unnamed rows stay unbound, and state-agency enforcement appears only "
+        "where ECHO carries it as a state-led case (the agency's own records are not covered)"
+    )
     residue = [
         "Puerto Rico solid-waste authority site list (no structured source located)",
-        "EPA Region 2 landfill enforcement records (not yet acquired)",
+        enforcement_residue,
         "unauthorized dumps (no source acquired)",
         "cross-source identity between LMOP and ECHO rows (hub adjudication)",
     ]
-    if enforcement is not None:
-        residue[1] = (
-            "EPA enforcement coverage is partial: ECHO case records link to LMOP sites by name only "
-            "(the ECHO facility reports confirm by id just the links under id_confirmed_links), "
-            "spelling variants and unnamed rows stay unbound, and state-agency enforcement appears only "
-            "where ECHO carries it as a state-led case (the agency's own records are not covered)"
-        )
     out = {
         "lmop": {
             "total_rows_all_states": lmop_total_rows,
@@ -995,7 +1037,7 @@ def build_receipts(
     return {
         "schema_version": "aguayluz_solid_waste_receipts_v1",
         # Never earlier than the data it describes: sources can be retrieved at different times.
-        "generated_at": max([now, *(str(m["retrieved_at"]) for m in manifestations)]),
+        "generated_at": latest_utc([now, *(m["retrieved_at"] for m in manifestations)]),
         "result": "OPEN",
         "manifestations": manifestations,
         "source_service_notes": [dict(n) for n in ECHO_SERVICE_NOTES],
