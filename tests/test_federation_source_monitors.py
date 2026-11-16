@@ -7,6 +7,7 @@ last succeeded and how that is known: the committed hydromet run receipts
 """
 from __future__ import annotations
 
+import ast
 import json
 import sys
 from pathlib import Path
@@ -21,6 +22,10 @@ import federation_export as fe  # noqa: E402
 import prii_export_utils  # noqa: E402
 
 NOW = "2026-11-11T16:00:00Z"
+
+
+def _hydromet_sources() -> list[dict]:
+    return json.loads((REPO / "config/hydromet_sources.v1.json").read_text())["sources"]
 
 
 def _registry_ids() -> list[str]:
@@ -40,8 +45,27 @@ def test_one_row_per_registered_source_on_committed_data():
         assert by_ref[sid]["last_success_basis"] in {"RUN_RECEIPT", "OUTPUT_DERIVED"}
         assert by_ref[sid]["last_success_at"]
         assert by_ref[sid]["registry_path"] == "config/hydromet_sources.v1.json"
-    others = [r for r in rows if r["source_ref"] not in {"nwps_gauges", "stage_iv_pr"}]
+    # Hazard-advisory and exposure families have no run receipt and no manifestation to read.
+    hydro_ids = {s["source_id"] for s in _hydromet_sources()}
+    others = [r for r in rows if r["source_ref"] not in hydro_ids]
     assert others and all(r["last_success_basis"] == "NOT_RECORDED" and r["last_success_at"] is None for r in others)
+    # A hydromet source is recorded exactly as far as the committed receipts say, whichever
+    # of them have run so far (the refresh bot adds a receipt when a source first succeeds).
+    receipts = json.loads((REPO / "data" / fe.HYDROMET_RECEIPTS).read_text())["sources"]
+    for sid in sorted(hydro_ids):
+        row = by_ref[sid]
+        receipt_at = (receipts.get(sid) or {}).get("last_success_utc")
+        if receipt_at:
+            # The more recent of receipt and output wins; a tie goes to the receipt.
+            assert row["last_success_basis"] in {"RUN_RECEIPT", "OUTPUT_DERIVED"}, sid
+            assert row["last_success_at"], sid
+            assert fe._parse_utc(row["last_success_at"]) >= fe._parse_utc(receipt_at), sid
+            if row["last_success_basis"] == "RUN_RECEIPT":
+                assert row["last_success_at"] == receipt_at, sid
+        else:
+            # No receipt: only a mapped manifestation can say it succeeded, otherwise nothing is guessed.
+            assert row["last_success_basis"] in {"NOT_RECORDED", "OUTPUT_DERIVED"}, sid
+            assert (row["last_success_at"] is None) == (row["last_success_basis"] == "NOT_RECORDED"), sid
 
 
 def test_every_committed_manifestation_system_is_mapped():
@@ -50,6 +74,24 @@ def test_every_committed_manifestation_system_is_mapped():
     assert systems <= set(fe.HYDROMET_SOURCE_SYSTEMS), systems - set(fe.HYDROMET_SOURCE_SYSTEMS)
     hydro_ids = {s["source_id"] for s in json.loads((REPO / "config/hydromet_sources.v1.json").read_text())["sources"]}
     assert set(fe.HYDROMET_SOURCE_SYSTEMS.values()) <= hydro_ids
+
+
+def test_hydromet_source_systems_match_the_ingest_scripts():
+    # The mapping is pinned by hand; each registered source's refresh_script declares the
+    # SOURCE_SYSTEM string its manifestation rows carry. Read it with ast (no import side
+    # effects) so a source with no committed rows yet, such as nws_marine_alerts or airnow,
+    # is covered too, and so are extra, missing and misattributed entries.
+    declared: dict[str, str] = {}
+    for src in _hydromet_sources():
+        tree = ast.parse((REPO / src["refresh_script"]).read_text(encoding="utf-8"))
+        values = [n.value.value for n in tree.body
+                  if isinstance(n, ast.Assign) and isinstance(n.value, ast.Constant)
+                  and isinstance(n.value.value, str)
+                  and any(isinstance(t, ast.Name) and t.id == "SOURCE_SYSTEM" for t in n.targets)]
+        assert len(values) == 1, f"{src['refresh_script']} must define one module-level SOURCE_SYSTEM string"
+        declared[src["source_id"]] = values[0]
+    assert len(set(declared.values())) == len(declared), "two sources share a source_system"
+    assert fe.HYDROMET_SOURCE_SYSTEMS == {system: sid for sid, system in declared.items()}
 
 
 def _data(tmp_path: Path, receipts: dict | None, manifestations: list[dict]) -> Path:
