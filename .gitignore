@@ -133,6 +133,8 @@ celerybeat.pid
 
 # Redis
 *.rdb
+# USGS NWIS RDB tables used as test fixtures are text, not Redis dumps
+!tests/fixtures/**/*.rdb
 *.aof
 *.pid
 
