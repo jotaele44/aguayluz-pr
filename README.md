@@ -96,6 +96,18 @@ corpus is real public data, with some sources external or point-in-time.
   normal). Heavy-rain days (municipio mean ≥ 3 in, or any cell ≥ 6 in) become sub-critical
   `WEATHER_HAZARD` follow-up alerts; the **NWS Hydromet** page lists rainfall by municipio and the
   map has a **Rainfall** municipio fill.
+- An **outdoor-conditions layer**: one current-conditions row per municipio in
+  `data/outdoor_conditions.jsonl` (`scripts/build_outdoor_conditions.py`), exported to the hub as
+  `outdoor_condition` entities. Six sources feed it on the hydromet plane: the NWS San Juan **Surf
+  Zone Forecast** (rip current risk, surf height; `scripts/ingest_nws_surf_zone.py`), NWS
+  **marine-zone alerts** for PR waters (`scripts/ingest_nws_marine_alerts.py`), the five
+  **NDBC/CARICOOS buoys** (`scripts/ingest_ndbc_buoys.py`), the EPA **UV index** per municipio
+  (`scripts/ingest_epa_uv.py`), the NWS **gridded heat index** per municipio
+  (`scripts/ingest_nws_gridpoint_heat.py`) — all keyless — and **AirNow** air quality
+  (`scripts/ingest_airnow.py`), which needs `AIRNOW_API_KEY` and skips without it. It also folds in
+  the NWPS, Stage IV, NWS, NHC, USGS quake, DRNA beach and El Yunque data above. Rip current risk
+  High and PR marine alerts promote to `WEATHER_HAZARD`. Conditions are context, not safety advice;
+  see [`docs/OUTDOOR_CONDITIONS.md`](docs/OUTDOOR_CONDITIONS.md).
 - Puerto Rico **solid-waste (landfill) site registry** (`scripts/ingest_solid_waste_registry.py`,
   keyless, run on demand) — the 32 Puerto Rico landfills in EPA's LMOP database, 2024-09 release
   (22 open, 10 closed; coordinates, years opened and closed) as `LANDFILL` entities with a
@@ -109,8 +121,12 @@ corpus is real public data, with some sources external or point-in-time.
   entity or event, and the state agency's own records are not covered. ECHO silently ignores its
   `p_naics` filter and its case service drops filters it does not know, so every ECHO query
   carries a filtered-versus-unfiltered control. Accepted sites export as `landfill_site`
-  entities. The Environmental Exposure page counts the new entities; the records themselves are
-  served by `GET /environmental-exposure/entities`, and the page has no per-site list yet. See
+  entities. The records are served by `GET /environmental-exposure/entities`, and the
+  Environmental Exposure page lists every site read-only (name, kind, municipality, source record,
+  opened year, closure, review state). A missing closure reads "No closure recorded" or "Not
+  stated by source", never "Open", and a list that disagrees with the graph summary is shown as
+  incomplete, with a retry button that reloads the list and the summary together. The list has no
+  coordinates yet. See
   [`docs/adr/ADR-0004-solid-waste-registry-ownership.md`](docs/adr/ADR-0004-solid-waste-registry-ownership.md)
   (Proposed).
 - Operational alert events (`docs/ALERT_SYSTEM.md`) and the 78-municipio /
