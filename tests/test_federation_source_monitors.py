@@ -91,7 +91,8 @@ def test_hydromet_source_systems_match_the_ingest_scripts():
         assert len(values) == 1, f"{src['refresh_script']} must define one module-level SOURCE_SYSTEM string"
         declared[src["source_id"]] = values[0]
     assert len(set(declared.values())) == len(declared), "two sources share a source_system"
-    assert fe.HYDROMET_SOURCE_SYSTEMS == {system: sid for sid, system in declared.items()}
+    from_ingests = {system: sid for sid, system in declared.items()}
+    assert from_ingests == fe.HYDROMET_SOURCE_SYSTEMS
 
 
 def _data(tmp_path: Path, receipts: dict | None, manifestations: list[dict]) -> Path:
