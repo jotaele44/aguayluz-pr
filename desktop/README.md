@@ -22,6 +22,33 @@ overwriting user-generated files. Reopen Setup & Diagnostics anytime from the
 gear button in the app to change the workspace, run local checks, or repair
 generated configuration — repair is idempotent and never deletes user data.
 
+## The Launch Pad
+
+`desktop/config.py` declares a **Launch Pad**: a screen the shared desktop
+runtime shows after setup and before AguaYLuz starts. On it you choose:
+
+- **Guest or Operator.** Guest is read-only: you can browse every page, and the
+  app refuses review decisions, edits, incident transitions, data refreshes,
+  exports, notifications and AI queries. Operator allows them from this
+  computer. Operator can be protected with a passphrase. Neither mode sets
+  `API_SECRET_KEY`; if you use that key, enter it on the System page as before.
+- **Open on**: any page from the sidebar.
+- **Launch options** (Operator only): an Anthropic API key for the AI query
+  box, a Slack webhook URL, and an ntfy push topic for Notify. The two secrets
+  are used for that session and never saved.
+
+It also reports readiness: how many utility assets and alert events are in the
+selected workspace, and whether the federation export has been built. Use the
+**Launch Pad** button beside the gear to come back and change the mode or
+options; the app restarts on the page.
+
+Guest mode keeps a shared desktop tidy. It does not stop someone who can already
+run programs under your account.
+
+The Launch Pad appears once `requirements-desktop.txt` pins a `prii-desktop`
+that includes it (0.3.0 or later). With an older runtime the declaration is
+ignored and the app opens directly, as before.
+
 Offline caveat: map tiles and live refresh sources (USGS/EPA feeds) still need
 a network connection; bundled data and dashboard views keep working offline.
 
@@ -30,7 +57,8 @@ a network connection; bundled data and dashboard views keep working offline.
 - `desktop/config.py` — the only per-repo file: app title/branding, the
   FastAPI import path (`server.backend.app:app`), the frontend directory
   (`dashboard/`), the requirement files installed into the private `.venv`,
-  and the workspace data-home env var (`AGUAYLUZ_DATA_HOME`).
+  the workspace data-home env var (`AGUAYLUZ_DATA_HOME`), and the `LAUNCHPAD`
+  declaration.
 - `desktop/setup_actions.py` — the workspace-preparation action Setup &
   Diagnostics runs on first launch (copies bundled `data/`/`outputs/` into the
   chosen workspace without touching existing files).
