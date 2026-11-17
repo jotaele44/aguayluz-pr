@@ -43,7 +43,7 @@ Basis: hub ADR 0009 limits the hub's authority to cross-producer identity equiva
 
 ## Seeds and identity
 
-Three landfill-named pins in `spiderweb-pr`'s pin registry, two GNIS "Vertedero" place names, and three USGS water-quality wells with VERTEDERO or LANDFILL in their names are **discovery candidates only**. They enter as `CANDIDATE_NOT_IDENTITY` through a frozen, hash-pinned import; there is no cross-repo code import. Equivalence between a `spiderweb-pr` pin and an `aguayluz-pr` site is adjudicated by the hub (hub ADR 0009); names, coordinates and proximity create candidates only.
+Three landfill-named pins in `spiderweb-pr`'s pin registry, two GNIS "Vertedero" place names, and three USGS water-quality wells with VERTEDERO or LANDFILL in their names are **discovery candidates only**. The three pins come from one local compilation package (`Spiderweb_Package+GapClosure`, layer `Normalized_Master`; records SW002520, SW002523 and SW003453). Their coordinates are already stated at two to three decimals in that source, and the source records no upstream agency, URL or date, so a pin is a name and an approximate location, nothing more. The pin registry labels them evidence tier T2; the recorded provenance supports no more than a compiled secondary dataset (T4). They enter as `CANDIDATE_NOT_IDENTITY` through a frozen, hash-pinned import; there is no cross-repo code import. Equivalence between a `spiderweb-pr` pin and an `aguayluz-pr` site is adjudicated by the hub (hub ADR 0009); names, coordinates and proximity create candidates only.
 
 ## Export
 
@@ -58,7 +58,7 @@ Hub ADR 0006 (Accepted) moves satellite-provider access, credentials and imagery
 ## Consequences
 
 - The `PR_SOLID_WASTE` denominator still has to be discovered and frozen; family presence is not exhaustion and `completeness_claimed` stays `false`.
-- The `PR_DRNA` authority label on that family needs confirmation against the actual solid-waste authority.
+- The `PR_DRNA` authority label on that family is supported. The Inspector General's examination OIG-E-22-018 (21 June 2022) records that Ley Núm. 171-2018 transfers and consolidates the powers and functions of the Junta de Calidad Ambiental, the Autoridad de Desperdicios Sólidos and the national parks program into DRNA, and that any reference to the Junta is read as a reference to DRNA as its successor. DRNA's 2025 proposed Title V permit for El Coquí Landfill is issued by DRNA. Not established: that DRNA's landfill-facility permit records sit in one office (the permit read is an air permit), or whether the Autoridad persists as a separate entity.
 - Adding a data ingest script later triggers the README docs-sync coupling.
 
 ## Open items
