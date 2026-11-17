@@ -352,7 +352,12 @@ def test_receipts_are_open_and_keep_the_rejected_name_only_seeds():
     assert set(rejected) == {"Vertedero", "Hacienda Vertedero"}
     assert all("Populated Place" in reason for reason in rejected.values())
     notes = receipts["source_service_notes"]
-    assert len(notes) == 1 and "p_naics" in notes[0]["note"] and "15256" in notes[0]["note"]
+    facility = [n for n in notes if n["source"] == "EPA_ECHO"]
+    assert len(facility) == 1 and "p_naics" in facility[0]["note"] and "15256" in facility[0]["note"]
+    # the case service's own silent-ignore behaviour is recorded the same way
+    cases = [n for n in notes if n["source"] == sw.CASES_SOURCE]
+    assert len(cases) == 2 and any("p_case_name" in n["note"] for n in cases)
+    assert {n["source"] for n in notes} == {"EPA_ECHO", sw.CASES_SOURCE}
 
 
 def test_echo_entity_id_does_not_depend_on_the_inferred_kind():
@@ -681,3 +686,227 @@ def test_denominator_v2_delta_stays_open_and_points_at_real_evidence():
     receipts = json.loads((DATA / "solid_waste_receipts.json").read_text(encoding="utf-8"))
     echo_only = {names[i] for i in receipts["coverage_ledger"]["unbound"]["lmop_vs_echo"]["right"]}
     assert "CALABAZA LANDFILL" in echo_only
+
+
+# ---------------------------------------------------------------------------
+# Enforcement subscope through the ingest script (offline)
+# ---------------------------------------------------------------------------
+
+FIXTURES = REPO / "tests" / "fixtures"
+
+
+def _case_pull(**override: Any) -> dict[str, Any]:
+    sample = json.loads((FIXTURES / "solid_waste_enforcement_cases_sample.json").read_text(encoding="utf-8"))
+    pull = {"query": {"p_state": "PR"}, "retrieved_at": "2026-11-13T17:14:30Z", "filtered_rows": len(sample["cases"]),
+            "nonsense_rows": 0, "unfiltered_total": 3000, "cases": sample["cases"]}
+    pull.update(override)
+    return pull
+
+
+def _report(registry_id: str = "10") -> dict[str, Any]:
+    """A minimal synthetic facility report that lists the Arroyo case number as one of its source ids."""
+    return {
+        "Message": "Success", "RegistryID": registry_id,
+        "InspectionEnforcementSummary": {
+            "ProgramDates": [{"Program": "RCRA", "StartDate": "11/07/2021", "EndDate": "12/31/2026"}],
+            "Source": [{"Statute": "RCRA", "SourceID": "02-2016-7303", "InspectionCount": "1",
+                        "FormalEnfActCount": "1", "TotalPenalties": "$0"}],
+        },
+        "SystemExtractDates": {"Dates": [{"EPASystem": "RCRAInfo", "SystemExtractDate": "11/06/2026"}]},
+    }
+
+
+@pytest.fixture
+def enforcement(offline: dict[str, Path], tmp_path: Path) -> dict[str, Path]:
+    cases, dfr = tmp_path / "cases.json", tmp_path / "dfr.json"
+    cases.write_text(json.dumps(_case_pull()))
+    dfr.write_text(json.dumps({"retrieved_at": "2026-11-13T17:17:32Z", "reports": {"10": _report()}}))
+    return {**offline, "cases": cases, "dfr": dfr}
+
+
+def run_enforcement(paths: dict[str, Path], *extra: str) -> int:
+    return run(paths, "--cases-src", str(paths["cases"]), "--dfr-src", str(paths["dfr"]),
+               "--municipios", str(GEO), *extra)
+
+
+def test_script_builds_the_enforcement_subscope_and_a_second_run_changes_nothing(enforcement, capsys):
+    assert run_enforcement(enforcement) == 0
+    data = enforcement["data"]
+    receipts = json.loads((data / "solid_waste_receipts.json").read_text())
+    assert {m["source_id"] for m in receipts["manifestations"]} == {
+        "EPA_LMOP", "EPA_ECHO", sw.CASES_SOURCE, sw.DFR_SOURCE}
+    cases = next(m for m in receipts["manifestations"] if m["source_id"] == sw.CASES_SOURCE)
+    assert cases["retrieved_at"] == "2026-11-13T17:14:30Z"  # each source keeps its own retrieval time
+    reports = next(m for m in receipts["manifestations"] if m["source_id"] == sw.DFR_SOURCE)
+    assert cases["full_response_committed"] is False and reports["full_response_committed"] is False
+    assert receipts["generated_at"] == "2026-11-13T17:17:32Z"  # and the receipt is never older than its data
+    enf = receipts["coverage_ledger"]["enforcement"]
+    assert enf["cases"]["landfill_context"] == 8 and enf["id_confirmed_links"] == 1
+    residue = receipts["coverage_ledger"]["open_residue"]  # no longer claims the records are unacquired
+    assert not any("not yet acquired" in r for r in residue) and any("partial" in r for r in residue)
+    rows = [json.loads(line) for line in (data / "solid_waste_source_rows.jsonl").read_text().splitlines()]
+    assert sum(1 for r in rows if r["source"] == sw.CASES_SOURCE) == 8
+    assert sum(1 for r in rows if r["source"] == sw.DFR_SOURCE) == 1
+    assert {b["adjudication_state"] for b in receipts["candidate_bindings"]} == {"CANDIDATE_NOT_IDENTITY"}
+    # enforcement adds no entity, geometry or event
+    assert len(db.load("environmental_entity", data / "environmental_entities.jsonl")) == len(SITE_ROWS) + 1
+    before = {p.name: p.read_bytes() for p in data.iterdir()}
+    assert run_enforcement(enforcement) == 0
+    assert {p.name: p.read_bytes() for p in data.iterdir()} == before
+    capsys.readouterr()
+
+
+def test_the_registry_alone_is_built_and_says_so_when_no_enforcement_input_is_given(offline, capsys):
+    assert run(offline) == 0
+    receipts = json.loads((offline["data"] / "solid_waste_receipts.json").read_text())
+    assert "enforcement" not in receipts["coverage_ledger"]
+    assert any("not yet acquired" in r for r in receipts["coverage_ledger"]["open_residue"])
+    assert "enforcement subscope not built" in capsys.readouterr().out
+
+
+def test_half_an_enforcement_input_is_refused_and_nothing_is_written(enforcement, capsys):
+    assert run(enforcement, "--cases-src", str(enforcement["cases"])) == 2
+    assert "go together" in capsys.readouterr().err
+    assert not list(enforcement["data"].iterdir())
+
+
+def test_script_fails_closed_when_the_case_state_filter_was_ignored(enforcement, capsys):
+    enforcement["cases"].write_text(json.dumps(_case_pull(nonsense_rows=312)))
+    assert run_enforcement(enforcement) == 2
+    assert "FAIL-CLOSED" in capsys.readouterr().err
+    assert not list(enforcement["data"].iterdir())
+
+
+def test_script_fails_closed_when_the_case_count_does_not_match_the_query(enforcement, capsys):
+    enforcement["cases"].write_text(json.dumps(_case_pull(filtered_rows=99)))
+    assert run_enforcement(enforcement) == 2
+    assert "FAIL-CLOSED" in capsys.readouterr().err
+    assert not list(enforcement["data"].iterdir())
+
+
+def test_script_fails_closed_when_a_facility_report_is_missing_or_extra(enforcement, capsys):
+    enforcement["dfr"].write_text(json.dumps({"retrieved_at": "2026-11-13T17:17:32Z", "reports": {}}))
+    assert run_enforcement(enforcement) == 2
+    enforcement["dfr"].write_text(json.dumps(
+        {"retrieved_at": "2026-11-13T17:17:32Z", "reports": {"10": _report(), "99": _report("99")}}))
+    assert run_enforcement(enforcement) == 2
+    assert "FAIL-CLOSED" in capsys.readouterr().err
+    assert not list(enforcement["data"].iterdir())
+
+
+def test_unfiltered_total_is_read_from_the_services_refusal_and_never_guessed():
+    msg = {"Error": {"ErrorMessage": "Rows Returned would be 313712. Queryset Limit would be exceeded"}}
+    assert script._unfiltered_case_total(msg) == 313712
+    with pytest.raises(ValueError):
+        script._unfiltered_case_total({"Message": "Success", "QueryRows": "5"})
+
+
+class _Response:
+    def __init__(self, payload: dict[str, Any]):
+        self.payload = payload
+
+    def json(self) -> dict[str, Any]:
+        return self.payload
+
+
+def _fake_case_service(nonsense: dict[str, Any]):
+    refusal = {"Error": {"ErrorMessage": "Rows Returned would be 313712. Queryset Limit would be exceeded"}}
+
+    def fake_get(url: str, params: dict[str, Any] | None = None) -> _Response:
+        params = params or {}
+        if url.endswith(".get_qid"):
+            return _Response({"Results": {"Cases": _case_pull()["cases"][:2]}})
+        if params.get("p_state") == "PR":
+            return _Response({"Results": {"QueryRows": "2", "QueryID": "7"}})
+        if params.get("p_state") == "ZZ":
+            return _Response({"Results": nonsense})
+        return _Response({"Results": refusal})  # no honoured filter: refused, with the total in the message
+
+    return fake_get
+
+
+def test_fetch_cases_collects_the_pull_and_the_controls(monkeypatch):
+    monkeypatch.setattr(script, "_get", _fake_case_service({"QueryRows": "0"}))
+    pull = script.fetch_cases("2026-11-05T00:00:00Z")
+    assert (pull["filtered_rows"], pull["nonsense_rows"], pull["unfiltered_total"]) == (2, 0, 313712)
+    assert len(pull["cases"]) == 2 and pull["query"] == {"p_state": "PR"}
+    # the run's stamp (--retrieved-at, or now), as for the LMOP and ECHO pulls; never the wall clock
+    assert pull["retrieved_at"] == "2026-11-05T00:00:00Z"
+
+
+def test_fetch_cases_never_reads_a_missing_nonsense_count_as_zero(monkeypatch):
+    monkeypatch.setattr(script, "_get", _fake_case_service({"Message": "Success"}))  # no QueryRows at all
+    with pytest.raises(KeyError):
+        script.fetch_cases("2026-11-05T00:00:00Z")
+
+
+def _live_echo() -> dict[str, Any]:
+    """An ECHO pull with one accepted Puerto Rico row and one the builder rejects (a New York facility)."""
+    facilities = [
+        echo_row("PONCE LANDFILL", "10", "PONCE", "562212", FacLat="18.0", FacLong="-66.61"),
+        echo_row("OLD LANDFILL", "20", "ALBANY", "562212", FacState="NY"),
+    ]
+    return {"query": {"p_sic": "4953"}, "filtered_rows": 2, "unfiltered_rows": 500, "facilities": facilities}
+
+
+def test_accepted_registry_ids_skip_rows_the_builder_rejects():
+    echo = _live_echo()
+    echo["facilities"] += [
+        echo_row("PONCE AGAIN", "10", "PONCE"),  # a duplicate RegistryID
+        echo_row("", "30", "PONCE"),  # no name
+    ]
+    assert script.accepted_registry_ids(echo) == ["10"]
+
+
+def test_a_live_run_fetches_reports_only_for_accepted_records_and_stamps_them_with_the_run(
+    offline, monkeypatch, capsys
+):
+    seen: dict[str, Any] = {}
+
+    def fake_cases(retrieved_at: str) -> dict[str, Any]:
+        seen["cases_stamp"] = retrieved_at
+        return {**_case_pull(), "retrieved_at": retrieved_at}
+
+    def fake_dfr(ids: list[str], retrieved_at: str) -> dict[str, Any]:
+        seen["ids"], seen["dfr_stamp"] = ids, retrieved_at
+        return {"retrieved_at": retrieved_at, "reports": {rid: _report(rid) for rid in ids}}
+
+    monkeypatch.setattr(script, "fetch_lmop_bytes", lambda url: workbook(SITE_ROWS))
+    monkeypatch.setattr(script, "fetch_echo", _live_echo)
+    monkeypatch.setattr(script, "fetch_cases", fake_cases)
+    monkeypatch.setattr(script, "fetch_dfr", fake_dfr)
+    rc = script.main(["--assets", str(offline["assets"]), "--data-dir", str(offline["data"]),
+                      "--municipios", str(GEO), "--retrieved-at", NOW])
+    assert rc == 0
+    assert seen["ids"] == ["10"]  # the rejected New York row's report is never requested
+    assert seen["cases_stamp"] == seen["dfr_stamp"] == NOW
+    receipts = json.loads((offline["data"] / "solid_waste_receipts.json").read_text())
+    stamps = {m["source_id"]: m["retrieved_at"] for m in receipts["manifestations"]}
+    assert stamps[sw.CASES_SOURCE] == stamps[sw.DFR_SOURCE] == stamps["EPA_LMOP"] == NOW
+    capsys.readouterr()
+
+
+def test_a_registry_only_run_refuses_to_erase_committed_enforcement_data(enforcement, capsys):
+    assert run_enforcement(enforcement) == 0
+    data = enforcement["data"]
+    before = {p.name: p.read_bytes() for p in data.iterdir()}
+    capsys.readouterr()
+    assert run(enforcement) == 2  # the same offline registry inputs, without the enforcement inputs
+    assert "would drop the enforcement data" in capsys.readouterr().err
+    assert {p.name: p.read_bytes() for p in data.iterdir()} == before
+    assert run(enforcement, "--dry-run") == 0  # a dry run writes nothing, so it is allowed
+    assert run_enforcement(enforcement) == 0  # and the full run still works
+    capsys.readouterr()
+
+
+def test_fetch_dfr_asks_for_each_id_in_order_and_stamps_with_the_run(monkeypatch):
+    asked: list[str] = []
+
+    def fake_get(url: str, params: dict[str, Any] | None = None) -> _Response:
+        asked.append(str((params or {})["p_id"]))
+        return _Response({"Results": _report(asked[-1])})
+
+    monkeypatch.setattr(script, "_get", fake_get)
+    out = script.fetch_dfr(["20", "10"], "2026-11-05T00:00:00Z")
+    assert asked == ["10", "20"] and set(out["reports"]) == {"10", "20"}
+    assert out["retrieved_at"] == "2026-11-05T00:00:00Z"  # the run's stamp, not the wall clock

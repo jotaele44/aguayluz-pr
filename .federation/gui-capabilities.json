@@ -1332,7 +1332,7 @@
       "classification": "internal",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Bounded keyless EPA LMOP and ECHO ingestion that freezes the Puerto Rico solid-waste (landfill) site registry (ADR-0004) and feeds the existing Environmental Exposure graph. It is an internal producer workflow run on demand to refresh a hash-pinned snapshot, not a second user control surface: the records are read through the existing GET /environmental-exposure/entities endpoint and listed, read-only, in the Solid-waste sites section of the Environmental Exposure page (covered by the environmental-exposure-graph capability). RAW source rows stay apart from canonical records, cross-source matches stay CANDIDATE_NOT_IDENTITY, a filter the source silently ignores fails closed, and the result is always OPEN.",
+      "rationale": "Bounded keyless EPA LMOP and ECHO ingestion that freezes the Puerto Rico solid-waste (landfill) site registry (ADR-0004), with ECHO enforcement cases and facility reports kept as RAW rows and candidate bindings only and feeds the existing Environmental Exposure graph. It is an internal producer workflow run on demand to refresh a hash-pinned snapshot, not a second user control surface: the records are read through the existing GET /environmental-exposure/entities endpoint and listed, read-only, in the Solid-waste sites section of the Environmental Exposure page (covered by the environmental-exposure-graph capability). RAW source rows stay apart from canonical records, cross-source matches stay CANDIDATE_NOT_IDENTITY, a filter the source silently ignores fails closed, and the result is always OPEN.",
       "backend": {
         "files": [
           "src/aguayluz/solid_waste.py"
@@ -1343,22 +1343,31 @@
           "src/aguayluz/solid_waste.py:FilterIgnoredError",
           "src/aguayluz/solid_waste.py:LmopTable",
           "src/aguayluz/solid_waste.py:RegistryRecords",
+          "src/aguayluz/solid_waste.py:build_case_rows",
+          "src/aguayluz/solid_waste.py:build_dfr_rows",
           "src/aguayluz/solid_waste.py:build_echo_records",
           "src/aguayluz/solid_waste.py:build_lmop_records",
           "src/aguayluz/solid_waste.py:build_receipts",
           "src/aguayluz/solid_waste.py:candidate_bindings",
           "src/aguayluz/solid_waste.py:candidates_from_records",
           "src/aguayluz/solid_waste.py:canonical_sha256",
+          "src/aguayluz/solid_waste.py:case_bindings",
+          "src/aguayluz/solid_waste.py:case_ref",
+          "src/aguayluz/solid_waste.py:case_service_control",
           "src/aguayluz/solid_waste.py:classify_echo",
           "src/aguayluz/solid_waste.py:coverage_ledger",
           "src/aguayluz/solid_waste.py:echo_entity_id",
           "src/aguayluz/solid_waste.py:echo_filter_control",
+          "src/aguayluz/solid_waste.py:enforcement_ledger",
           "src/aguayluz/solid_waste.py:haversine_m",
+          "src/aguayluz/solid_waste.py:is_landfill_context_case",
+          "src/aguayluz/solid_waste.py:latest_utc",
           "src/aguayluz/solid_waste.py:lmop_release_from_url",
           "src/aguayluz/solid_waste.py:normalize_name",
           "src/aguayluz/solid_waste.py:read_lmop_workbook",
           "src/aguayluz/solid_waste.py:seed_candidates",
-          "src/aguayluz/solid_waste.py:select_state"
+          "src/aguayluz/solid_waste.py:select_state",
+          "src/aguayluz/solid_waste.py:summarize_dfr"
         ]
       },
       "analysis": {
@@ -1366,7 +1375,11 @@
           "scripts/ingest_solid_waste_registry.py"
         ],
         "symbols": [
+          "scripts/ingest_solid_waste_registry.py:accepted_registry_ids",
           "scripts/ingest_solid_waste_registry.py:build",
+          "scripts/ingest_solid_waste_registry.py:build_enforcement",
+          "scripts/ingest_solid_waste_registry.py:fetch_cases",
+          "scripts/ingest_solid_waste_registry.py:fetch_dfr",
           "scripts/ingest_solid_waste_registry.py:fetch_echo",
           "scripts/ingest_solid_waste_registry.py:fetch_lmop_bytes",
           "scripts/ingest_solid_waste_registry.py:main",
@@ -1375,6 +1388,7 @@
       },
       "tests": {
         "contract": [
+          "tests/test_solid_waste_enforcement.py",
           "tests/test_solid_waste_registry.py"
         ]
       }
