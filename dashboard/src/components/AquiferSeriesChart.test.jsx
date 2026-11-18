@@ -21,7 +21,14 @@ function renderChart(props = {}) {
 beforeEach(() => {
   vi.clearAllMocks()
   // recharts' ResponsiveContainer measures its parent; jsdom has no ResizeObserver.
-  globalThis.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} }
+  // The stub takes the callback the real constructor takes, so code that
+  // constructs an observer is checked against the right signature.
+  globalThis.ResizeObserver = class {
+    constructor(callback) { this.callback = callback }
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
 })
 
 describe('AquiferSeriesChart', () => {
