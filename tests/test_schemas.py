@@ -246,9 +246,11 @@ def test_every_schema_loads_and_validates_itself(schemas_dir):
     schemas = list(schemas_dir.glob("*.schema.json"))
     # The GIS sidecar adds six contracts: feature, layer, runtime, package,
     # impact report, and manifest; the vendored thehub-pr epistemic-state
-    # contract (candidate) adds one more, and the outdoor-conditions layer
-    # (outdoor_condition.v1) one more. Root schema count is an explicit gate.
-    assert len(schemas) == 41, f"expected 41 schemas, found {len(schemas)}"
+    # contract (candidate) adds one more, the outdoor-conditions layer
+    # (outdoor_condition.v1) one more, and the GIS viewer contracts mirrored from
+    # spiderweb-pr (gis_layer_catalog_v1, gis_query_v1, gis_scenario_result_v1)
+    # three. Root schema count is an explicit gate.
+    assert len(schemas) == 44, f"expected 44 schemas, found {len(schemas)}"
     for p in schemas:
         s = json.loads(p.read_text(encoding="utf-8"))
         Draft202012Validator.check_schema(s)
