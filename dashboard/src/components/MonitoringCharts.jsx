@@ -1,5 +1,8 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
+import AquiferSeriesChart from '@/components/AquiferSeriesChart'
 import { useReadingsEnvelope } from '@/lib/hooks'
+import { useAquiferWells, useHydroFeatures } from '@/lib/hydro-inventory-hooks'
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select'
@@ -16,6 +19,8 @@ import {
 import { Activity, AlertCircle, Database } from 'lucide-react'
 
 const axis = { fill: '#94a3b8', fontSize: 11 }
+// Series whose readings are wells, and so can be filtered by the aquifer the inventory binds them to.
+const GROUNDWATER_KINDS = new Set(['groundwater', 'usgs_field_measurements'])
 
 function QualityBadge({ quality }) {
   if (!quality) return null
@@ -42,7 +47,15 @@ export default function MonitoringCharts() {
   const [seriesKey, setSeriesKey] = useState('reservoir_elevation')
   const [range, setRange] = useState('all')
   const [site, setSite] = useState(null)
+  const [aquifer, setAquifer] = useState('')
+  const [includePolygon, setIncludePolygon] = useState(false)
   const series = requireMonitoringSeries(seriesKey)
+  const groundwater = GROUNDWATER_KINDS.has(series.sourceKind)
+  const aquiferList = useHydroFeatures({ type: 'aquifer', limit: 1000 }, groundwater)
+  const aquiferOptions = useMemo(() => (aquiferList.data?.items ?? [])
+    .filter((f) => (f.member_wells?.AUTHORITATIVE ?? 0) + (f.member_wells?.DERIVED_TOPOLOGICAL ?? 0) > 0)
+    .sort((a, b) => (b.member_wells?.AUTHORITATIVE ?? 0) - (a.member_wells?.AUTHORITATIVE ?? 0)), [aquiferList.data])
+  const aquiferWells = useAquiferWells(groundwater ? aquifer : '', includePolygon)
 
   const sinceParam = range === 'all' ? undefined : (() => {
     const d = new Date()
@@ -59,9 +72,14 @@ export default function MonitoringCharts() {
   const sourceReadings = envelope?.items ?? []
   const quality = envelope?.quality
   const provenance = envelope?.provenance
+  const aquiferSites = useMemo(
+    () => (groundwater && aquifer ? new Set(aquiferWells.data?.site_nos ?? []) : null),
+    [groundwater, aquifer, aquiferWells.data],
+  )
   const readings = useMemo(
-    () => filterSeriesReadings(sourceReadings, series),
-    [sourceReadings, series],
+    () => filterSeriesReadings(sourceReadings, series)
+      .filter((r) => !aquiferSites || aquiferSites.has(String(r.site_no ?? ''))),
+    [sourceReadings, series, aquiferSites],
   )
 
   const sites = useMemo(() => {
@@ -145,6 +163,31 @@ export default function MonitoringCharts() {
           )}
         </div>
       </div>
+
+      {groundwater && (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/60 p-2 text-[11px] text-slate-400" data-testid="aquifer-filter">
+          <span className="font-medium text-slate-300">Aquifer</span>
+          <Select value={aquifer || 'all'} onValueChange={(value) => { setAquifer(value === 'all' ? '' : value); setSite(null) }}>
+            <SelectTrigger className="h-8 w-[300px] border-slate-800 bg-slate-950 text-xs" aria-label="Aquifer filter"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all" className="text-xs">All wells</SelectItem>
+              {aquiferOptions.map((f) => <SelectItem key={f.feature_id} value={f.feature_id} className="text-xs">{f.display_name} · {f.member_wells?.AUTHORITATIVE ?? 0} coded</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <label className="flex items-center gap-1.5">
+            <input type="checkbox" checked={includePolygon} onChange={(e) => setIncludePolygon(e.target.checked)} />
+            include wells only inside the mapped outline
+          </label>
+          {aquifer && aquiferWells.data && (
+            <span>{aquiferWells.data.authoritative} assigned by a USGS aquifer code{includePolygon ? `, ${aquiferWells.data.polygon_only} by location only (the map says nothing about screen depth)` : ''}</span>
+          )}
+          <Link to="/hydro-inventory" className="text-sky-300 hover:underline">Hydro Inventory</Link>
+        </div>
+      )}
+      {groundwater && aquifer && (
+        <AquiferSeriesChart aquifer={aquifer} includePolygon={includePolygon}
+          aquiferName={aquiferOptions.find((f) => f.feature_id === aquifer)?.display_name ?? aquifer} />
+      )}
 
       <div className="rounded-lg border border-slate-800 bg-slate-900 p-3 shadow-xs">
         <div className="mb-3 flex items-start justify-between gap-3">

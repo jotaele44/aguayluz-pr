@@ -37,6 +37,50 @@ STEP_STAGE_IV = (
     ["scripts/ingest_stage_iv_pr.py"],
     True,
 )
+# Outdoor-conditions sources (aguayluz.outdoor) → hydromet plane. All optional: a source
+# outage writes a FAIL receipt (NWS Hydromet page) and the run continues. The NWS products,
+# buoys and AirNow move on a minutes-to-hours timescale and run in the 15-minute cadence;
+# the UV and gridded heat-index forecasts are daily products (78 requests each).
+STEP_SURF_ZONE = (
+    "NWS Surf Zone Forecast → outdoor conditions (hydromet plane)",
+    ["scripts/ingest_nws_surf_zone.py"],
+    True,
+)
+STEP_MARINE_ALERTS = (
+    "NWS marine-zone alerts (PR waters) → outdoor conditions",
+    ["scripts/ingest_nws_marine_alerts.py"],
+    True,
+)
+STEP_BUOYS = (
+    "NDBC/CARICOOS buoys → outdoor conditions",
+    ["scripts/ingest_ndbc_buoys.py"],
+    True,
+)
+# Skips (exit 0, no receipt) without AIRNOW_API_KEY in the environment; the scheduled
+# refresh workflow passes no credentials, so it skips there.
+STEP_AIRNOW = (
+    "AirNow air quality → outdoor conditions (needs AIRNOW_API_KEY)",
+    ["scripts/ingest_airnow.py"],
+    True,
+)
+STEP_EPA_UV = (
+    "EPA UV index forecast per municipio → outdoor conditions",
+    ["scripts/ingest_epa_uv.py"],
+    True,
+)
+STEP_NWS_HEAT = (
+    "NWS gridded heat index per municipio → outdoor conditions",
+    ["scripts/ingest_nws_gridpoint_heat.py"],
+    True,
+)
+# Composes data/outdoor_conditions.jsonl from everything above plus NWPS, Stage IV, NWS
+# land alerts, NHC, quakes, DRNA and El Yunque. Runs after every ingest and before the
+# derived alert layers; optional so a composition bug never blocks the hazard refresh.
+STEP_OUTDOOR_COMPOSE = (
+    "outdoor conditions per municipio → data/outdoor_conditions.jsonl",
+    ["scripts/build_outdoor_conditions.py"],
+    True,
+)
 STEP_USGS_QUAKES = (
     "USGS earthquakes → service_events",
     ["scripts/ingest_usgs_quakes.py"],
@@ -87,6 +131,15 @@ STEP_USGS_WATER_QUALITY = (
 STEP_USGS_STATISTICS = (
     "USGS statistics baselines",
     ["scripts/ingest_usgs_statistics.py"],
+    True,
+)
+# PRDNER condition bands for the five south-coast wells, read from a USGS page's inline JS.
+# Constants on a static page: weekly/all only. Optional, so a page change or outage writes a
+# FAIL receipt (shown on the dashboard) and the run continues. Must follow STEP_USGS_GW,
+# which creates the USGSGW_ assets this step binds to by stable id.
+STEP_AQUIFER_BANDS = (
+    "PRDNER aquifer bands (USGS page) → aquifer_band_registry",
+    ["scripts/ingest_prdner_well_bands.py"],
     True,
 )
 STEP_USGS_RTFI = (
@@ -245,6 +298,8 @@ STEP_EXPORT = (
 )
 
 _DERIVE = [STEP_WATER_POWER, STEP_ALERTS, STEP_ALERT_SYSTEM]
+_OUTDOOR_FAST = [STEP_SURF_ZONE, STEP_MARINE_ALERTS, STEP_BUOYS, STEP_AIRNOW]
+_OUTDOOR_DAILY = [*_OUTDOOR_FAST, STEP_EPA_UV, STEP_NWS_HEAT]
 
 PLANS: dict[str, list[tuple]] = {
     "fast": [
@@ -264,7 +319,9 @@ PLANS: dict[str, list[tuple]] = {
         STEP_LUMA_STATUS_INGEST,
         STEP_LUMA_STATUS_CHANGES,
         STEP_AEE_INGEST,
+        *_OUTDOOR_FAST,
         STEP_USGS_COVERAGE_GATE,
+        STEP_OUTDOOR_COMPOSE,
         *_DERIVE,
     ],
     "daily": [
@@ -283,7 +340,9 @@ PLANS: dict[str, list[tuple]] = {
         STEP_NOAA_TIDES,
         STEP_NEON,
         STEP_USGS_SAMPLES,
+        *_OUTDOOR_DAILY,
         STEP_USGS_COVERAGE_GATE,
+        STEP_OUTDOOR_COMPOSE,
         *_DERIVE,
     ],
     "weekly": [
@@ -301,6 +360,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_USGS_METADATA,
         STEP_USGS_WATER_QUALITY,
         STEP_USGS_STATISTICS,
+        STEP_AQUIFER_BANDS,
         STEP_USGS_RTFI,
         STEP_USGS_NIMS,
         STEP_NOAA_TIDES,
@@ -320,7 +380,9 @@ PLANS: dict[str, list[tuple]] = {
         STEP_FEMA,
         STEP_OSHA,
         STEP_WATERS_ENRICH,
+        *_OUTDOOR_DAILY,
         STEP_USGS_COVERAGE_GATE,
+        STEP_OUTDOOR_COMPOSE,
         *_DERIVE,
     ],
     "all": [
@@ -338,6 +400,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_USGS_METADATA,
         STEP_USGS_WATER_QUALITY,
         STEP_USGS_STATISTICS,
+        STEP_AQUIFER_BANDS,
         STEP_USGS_RTFI,
         STEP_USGS_NIMS,
         STEP_NOAA_TIDES,
@@ -361,7 +424,9 @@ PLANS: dict[str, list[tuple]] = {
         STEP_LUMA_STATUS_CHANGES,
         STEP_AEE_INGEST,
         STEP_WATERS_ENRICH,
+        *_OUTDOOR_DAILY,
         STEP_USGS_COVERAGE_GATE,
+        STEP_OUTDOOR_COMPOSE,
         *_DERIVE,
     ],
 }

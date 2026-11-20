@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { Layers3, Map, ShieldCheck, Waves } from 'lucide-react'
+import { Layers3, ShieldCheck, Waves } from 'lucide-react'
+import HydroMapWorkspace from '@/components/HydroMapWorkspace'
 import MonitoringCharts from '@/components/MonitoringCharts'
 import IncidentOperationsConsole from '@/components/IncidentOperationsConsole'
 import { WATER_MONITORING_LAYERS, isCertifiableLayer } from '@/lib/water-monitoring'
@@ -56,14 +57,9 @@ function MonitoringWorkspace({ layer }) {
       </div>
 
       <div className="grid gap-3 p-3 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="min-h-[360px] rounded-lg border border-slate-800 bg-slate-900/40 p-4">
-          <div className="flex items-center gap-2 text-xs font-semibold text-slate-200">
-            <Map className="h-4 w-4 text-sky-300" /> Hydrologic map workspace
-          </div>
-          <p className="mt-2 max-w-2xl text-[11px] leading-relaxed text-slate-500">
-            This workspace is reserved for authoritative station, reservoir, watershed, rainfall, groundwater, coastal, and extraction geometry. Geometry is not synthesized from names or nearest-neighbor guesses. Until each adapter supplies certified geometry, the layer remains explicitly partial or planned.
-          </p>
-          <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-3">
+          <HydroMapWorkspace />
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {layer.series.length ? layer.series.map((series) => (
               <div key={series} className="rounded border border-slate-800 bg-slate-950 p-2.5">
                 <div className="text-[10px] uppercase tracking-wide text-slate-500">Bound series</div>

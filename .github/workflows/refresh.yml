@@ -69,23 +69,15 @@ jobs:
         if: >
           (github.event_name == 'schedule' && github.event.schedule == '0 7 * * 1') ||
           (github.event_name == 'workflow_dispatch' && github.event.inputs.cadence == 'weekly')
-        # OSHA_API_KEY (optional) lets the weekly cadence's STEP_OSHA fetch live
-        # DOL v4 enforcement data; absent, that step is a best-effort no-op.
-        # NEON_API_TOKEN (optional) unlocks STEP_NEON_PRODUCTS — NEON's
-        # /api/v0/data endpoint returns 403 without it, so the step skips and exits 0.
-        # NEON *availability* tracking (STEP_NEON, daily) needs no credential.
-        env:
-          OSHA_API_KEY: ${{ secrets.OSHA_API_KEY }}
-          NEON_API_TOKEN: ${{ secrets.NEON_API_TOKEN }}
+        # No credentials are configured: STEP_OSHA is a best-effort no-op and
+        # STEP_NEON_PRODUCTS skips and exits 0 (NEON's /api/v0/data returns 403
+        # without a token). NEON availability tracking (STEP_NEON) needs none.
         run: python scripts/refresh.py --weekly
 
       - name: Full refresh (includes optional MiLUMA)
         if: >
           github.event_name == 'workflow_dispatch' &&
           github.event.inputs.cadence == 'all'
-        env:
-          OSHA_API_KEY: ${{ secrets.OSHA_API_KEY }}
-          NEON_API_TOKEN: ${{ secrets.NEON_API_TOKEN }}
         run: python scripts/refresh.py --all
 
       - name: Commit updated data
@@ -103,46 +95,5 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      # The refresh commit itself carries [skip ci], so dispatch Floot from this
-      # already-running producer workflow instead of relying on a second push workflow.
-      # The Floot endpoint is commit-gated and idempotent: retries cannot roll back
-      # the current snapshot or duplicate a completed promotion.
-      - name: Promote refreshed snapshot to Floot
-        if: steps.commit.outputs.changed == 'true'
-        env:
-          AGUAYLUZ_SYNC_TOKEN: ${{ secrets.AGUAYLUZ_SYNC_TOKEN }}
-        run: |
-          if [ -z "${AGUAYLUZ_SYNC_TOKEN:-}" ]; then
-            echo "::error::AGUAYLUZ_SYNC_TOKEN repository secret is not configured."
-            exit 1
-          fi
-          SYNC_COMMIT="$(git rev-parse HEAD)"
-          curl --fail-with-body --show-error --silent \
-            --retry 3 --retry-all-errors --retry-delay 2 \
-            -X POST \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer $AGUAYLUZ_SYNC_TOKEN" \
-            https://aguayluz-pr.floot.app/_api/sync/github \
-            --data "{\"commitSha\":\"${SYNC_COMMIT}\",\"trigger\":\"github_action\"}"
-
-      # Producer -> Hub push: tell thehub-pr to re-aggregate as soon as a new export
-      # lands, instead of waiting for the Hub's own schedule. No-op unless the
-      # FEDERATION_DISPATCH_TOKEN secret (contents:write on thehub-pr) is configured,
-      # so forks and unprivileged runs stay quiet. This is the event-driven
-      # federation hop that closes the "Hub is not triggered by aguayluz" gap.
-      - name: Notify Hub of new export (repository_dispatch)
-        if: ${{ always() && steps.commit.outputs.changed == 'true' }}
-        env:
-          FEDERATION_DISPATCH_TOKEN: ${{ secrets.FEDERATION_DISPATCH_TOKEN }}
-        run: |
-          if [ -z "${FEDERATION_DISPATCH_TOKEN:-}" ]; then
-            echo "FEDERATION_DISPATCH_TOKEN is not configured; Hub dispatch is BLOCKED but does not erase the producer commit."
-            exit 0
-          fi
-          curl -sSf -X POST \
-            -H "Authorization: Bearer $FEDERATION_DISPATCH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/jotaele44/thehub-pr/dispatches \
-            -d '{"event_type":"aguayluz-export","client_payload":{"producer":"aguayluz-pr"}}' \
-            && echo "Dispatched aguayluz-export to thehub-pr." \
-            || echo "Hub dispatch failed (non-fatal)."
+      # No push-style hand-offs: this repo stores no tokens. The commit above is the
+      # hand-off. Floot and thehub-pr pull `main` on their own schedule.

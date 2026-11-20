@@ -20,6 +20,7 @@ sys.path.insert(0, str(REPO / "src"))
 from aguayluz.usgs_water_api import (  # noqa: E402
     OGC_COLLECTIONS,
     PR_BBOX,
+    asset_prefix_for_parameter,
     bare_site,
     flatten_features,
     iter_ogc_pages,
@@ -59,6 +60,8 @@ def rows_from_documents(documents: list[dict]) -> tuple[list[dict], dict[str, in
             source_ref=f"USGS Water Data API continuous, site {site}, parameter {pcode}",
             provisional=provisional,
             id_namespace="usgscv",
+            # Wells (72019/62610) are USGSGW_ assets, never USGS_: see usgs_water_api.
+            asset_prefix=asset_prefix_for_parameter(pcode),
         )
         if row is None:
             if not site or not observed_at or not unit:
