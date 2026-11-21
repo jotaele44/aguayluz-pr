@@ -1,0 +1,362 @@
+{
+  "schema_version": "1.0.0",
+  "registry_id": "aguayluz-master-gis-layer-registry",
+  "certification_state": "OPEN",
+  "completeness_claimed": false,
+  "scope": {
+    "land": [
+      "Puerto Rico main island",
+      "Vieques",
+      "Culebra"
+    ],
+    "marine": "Puerto Rico coastal and offshore areas where jurisdiction and source geometry are explicitly established",
+    "coverage_rule": "Unknown data is not absence of hazard"
+  },
+  "evidence_planes": [
+    "OBSERVED",
+    "COMPUTED",
+    "HYPOTHETICAL",
+    "UNRESOLVED"
+  ],
+  "groups": [
+    {
+      "group_id": "administrative",
+      "label": "Administrative and jurisdiction",
+      "planned_sublayers": [
+        "municipalities",
+        "barrios",
+        "coastlines",
+        "land ownership",
+        "marine jurisdictions"
+      ],
+      "candidate_authorities": [
+        "US Census",
+        "NOAA"
+      ],
+      "source_enumeration_state": "OPEN",
+      "implementation_state": "NOT_CERTIFIED"
+    },
+    {
+      "group_id": "hydrography",
+      "label": "Hydrography",
+      "planned_sublayers": [
+        "rivers",
+        "watersheds",
+        "reservoirs",
+        "aquifers",
+        "wetlands"
+      ],
+      "candidate_authorities": [
+        "USGS",
+        "NOAA"
+      ],
+      "source_enumeration_state": "OPEN",
+      "implementation_state": "NOT_CERTIFIED"
+    },
+    {
+      "group_id": "water_assets",
+      "label": "Water and wastewater assets",
+      "planned_sublayers": [
+        "intakes",
+        "wells",
+        "treatment plants",
+        "pumping",
+        "pipelines",
+        "storage",
+        "outfalls"
+      ],
+      "candidate_authorities": [
+        "PRASA",
+        "USGS"
+      ],
+      "source_enumeration_state": "OPEN",
+      "implementation_state": "NOT_CERTIFIED"
+    },
+    {
+      "group_id": "power_assets",
+      "label": "Power assets",
+      "planned_sublayers": [
+        "generation",
+        "substations",
+        "transmission",
+        "distribution",
+        "fuel"
+      ],
+      "candidate_authorities": [
+        "LUMA",
+        "PREPA",
+        "EIA"
+      ],
+      "source_enumeration_state": "OPEN",
+      "implementation_state": "NOT_CERTIFIED"
+    },
+    {
+      "group_id": "operations",
+      "label": "Service operations",
+      "planned_sublayers": [
+        "outages",
+        "restoration",
+        "rationing",
+        "service advisories"
+      ],
+      "candidate_authorities": [],
+      "source_enumeration_state": "OPEN",
+      "implementation_state": "NOT_CERTIFIED"
+    },
+    {
+      "group_id": "water_quality",
+      "label": "Water contamination",
+      "planned_sublayers": [
+        "microbial",
+        "chemical",
+        "PFAS",
+        "metals",
+        "radionuclides",
+        "emerging contaminants"
+      ],
+      "candidate_authorities": [
+        "EPA",
+        "PRDOH",
+        "PRDNER",
+        "USGS"
+      ],
+      "source_enumeration_state": "OPEN",
+      "implementation_state": "NOT_CERTIFIED"
+    },
+    {
+      "group_id": "land_contamination",
+      "label": "Land contamination",
+      "planned_sublayers": [
+        "superfund",
+        "brownfields",
+        "industrial releases",
+        "agricultural runoff",
+        "landfills"
+      ],
+      "candidate_authorities": [
+        "EPA",
+        "PRDNER"
+      ],
+      "source_enumeration_state": "OPEN",
+      "implementation_state": "NOT_CERTIFIED"
+    },
+    {
+      "group_id": "marine_contamination",
+      "label": "Marine contamination",
+      "planned_sublayers": [
+        "spills",
+        "discharges",
+        "sediment",
+        "coastal water quality"
+      ],
+      "candidate_authorities": [
+        "USCG",
+        "NOAA",
+        "EPA",
+        "PRDNER"
+      ],
+      "source_enumeration_state": "OPEN",
+      "implementation_state": "NOT_CERTIFIED"
+    },
+    {
+      "group_id": "air_contamination",
+      "label": "Air contamination",
+      "planned_sublayers": [
+        "PM2.5",
+        "ozone",
+        "smoke",
+        "industrial emissions"
+      ],
+      "candidate_authorities": [
+        "EPA",
+        "PRDNER"
+      ],
+      "source_enumeration_state": "OPEN",
+      "implementation_state": "NOT_CERTIFIED"
+    },
+    {
+      "group_id": "military_legacy",
+      "label": "Military legacy hazards",
+      "planned_sublayers": [
+        "UXO",
+        "munitions constituents",
+        "former ranges",
+        "remediation"
+      ],
+      "candidate_authorities": [
+        "US Navy",
+        "EPA",
+        "USFWS"
+      ],
+      "source_enumeration_state": "OPEN",
+      "implementation_state": "NOT_CERTIFIED"
+    },
+    {
+      "group_id": "restrictions",
+      "label": "Access restrictions",
+      "planned_sublayers": [
+        "land closures",
+        "marine safety zones",
+        "navigation notices",
+        "protected access"
+      ],
+      "candidate_authorities": [
+        "USCG",
+        "USFWS",
+        "US Navy",
+        "PRDNER"
+      ],
+      "source_enumeration_state": "OPEN",
+      "implementation_state": "NOT_CERTIFIED"
+    },
+    {
+      "group_id": "hydromet",
+      "label": "Hydrometeorology",
+      "planned_sublayers": [
+        "rainfall",
+        "drought",
+        "flooding",
+        "storm surge",
+        "tropical cyclones"
+      ],
+      "candidate_authorities": [
+        "NOAA",
+        "NWS",
+        "USGS"
+      ],
+      "source_enumeration_state": "OPEN",
+      "implementation_state": "NOT_CERTIFIED"
+    },
+    {
+      "group_id": "geologic",
+      "label": "Geological hazards",
+      "planned_sublayers": [
+        "earthquakes",
+        "landslides",
+        "erosion"
+      ],
+      "candidate_authorities": [
+        "USGS"
+      ],
+      "source_enumeration_state": "OPEN",
+      "implementation_state": "NOT_CERTIFIED"
+    },
+    {
+      "group_id": "ecology",
+      "label": "Ecological sensitivity",
+      "planned_sublayers": [
+        "wetlands",
+        "protected habitats",
+        "conservation areas"
+      ],
+      "candidate_authorities": [
+        "USFWS",
+        "NOAA"
+      ],
+      "source_enumeration_state": "OPEN",
+      "implementation_state": "NOT_CERTIFIED"
+    },
+    {
+      "group_id": "population",
+      "label": "Public exposure receptors",
+      "planned_sublayers": [
+        "population",
+        "schools",
+        "hospitals",
+        "water dependencies"
+      ],
+      "candidate_authorities": [],
+      "source_enumeration_state": "OPEN",
+      "implementation_state": "NOT_CERTIFIED"
+    },
+    {
+      "group_id": "exposure",
+      "label": "Computed infrastructure exposure",
+      "planned_sublayers": [
+        "asset intersection",
+        "network dependencies",
+        "buffer screening"
+      ],
+      "candidate_authorities": [],
+      "source_enumeration_state": "OPEN",
+      "implementation_state": "NOT_CERTIFIED"
+    },
+    {
+      "group_id": "history",
+      "label": "Historical intelligence",
+      "planned_sublayers": [
+        "sampling history",
+        "remediation milestones",
+        "past incidents"
+      ],
+      "candidate_authorities": [],
+      "source_enumeration_state": "OPEN",
+      "implementation_state": "NOT_CERTIFIED"
+    },
+    {
+      "group_id": "scenario",
+      "label": "Hypothetical simulations",
+      "planned_sublayers": [
+        "runoff",
+        "plume",
+        "outage",
+        "flood scenarios"
+      ],
+      "candidate_authorities": [],
+      "source_enumeration_state": "OPEN",
+      "implementation_state": "NOT_CERTIFIED"
+    },
+    {
+      "group_id": "evidence",
+      "label": "Evidence and quality",
+      "planned_sublayers": [
+        "source coverage",
+        "freshness",
+        "uncertainty",
+        "unresolved"
+      ],
+      "candidate_authorities": [],
+      "source_enumeration_state": "OPEN",
+      "implementation_state": "NOT_CERTIFIED"
+    }
+  ],
+  "required_atomic_layer_fields": [
+    "layer_id",
+    "group_id",
+    "source_authority",
+    "source_url",
+    "source_record_id",
+    "manifestation_sha256",
+    "geometry_type",
+    "crs",
+    "coverage_scope",
+    "valid_from",
+    "valid_to",
+    "retrieved_at_utc",
+    "evidence_class",
+    "refresh_policy",
+    "render_style",
+    "interaction_contract",
+    "certification_state"
+  ],
+  "release_gates": [
+    "frozen_scope_and_baseline",
+    "bounded_source_denominator_and_exclusion_arithmetic",
+    "source_manifestations_and_sha256",
+    "geometry_and_crs_validity",
+    "temporal_and_restriction_expiry",
+    "identity_and_duplicate_checks",
+    "observed_computed_hypothetical_firewall",
+    "negative_and_positive_regressions",
+    "map_rendered_qa_and_accessibility",
+    "federation_and_thehub_compatibility",
+    "independent_validation_on_exact_commit"
+  ],
+  "unresolved": [
+    "atomic_layer_source_enumeration",
+    "source_geometries_and_freshness",
+    "coverage_denominators",
+    "runtime_validation",
+    "consumer_tests"
+  ]
+}
