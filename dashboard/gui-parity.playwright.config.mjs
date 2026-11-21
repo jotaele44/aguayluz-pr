@@ -1,4 +1,6 @@
 import fs from "node:fs";
+import os from "node:os";
+import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig, devices } from "@playwright/test";
@@ -19,6 +21,11 @@ const repositoryRoot = findRepositoryRoot(frontendRoot);
 const frontendUrl = "http://127.0.0.1:5173";
 const backendUrl = "http://127.0.0.1:8000";
 const seedScript = path.join(repositoryRoot, "server", "ingestion", "seed_demo.py");
+// Allocate a dedicated per-run workspace; never seed the operator's outputs/.
+// The teardown inherits the same environment from the Playwright runner.
+const parityWorkspace = fs.mkdtempSync(path.join(os.tmpdir(), "aguayluz-gui-parity-"));
+process.env.AGUAYLUZ_DATA_HOME = parityWorkspace;
+process.env.AGUAYLUZ_GUI_PARITY_RUN_ID = randomUUID();
 const backendCommand = fs.existsSync(seedScript)
   ? "python server/ingestion/seed_demo.py && python -m uvicorn server.backend.app:app --host 127.0.0.1 --port 8000"
   : "python -m uvicorn server.backend.app:app --host 127.0.0.1 --port 8000";
