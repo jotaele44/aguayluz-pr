@@ -6,7 +6,11 @@ Supported envelope kinds:
 - access_condition -> access_conditions.jsonl
 
 Receipts remain content-addressed by idempotency_key. Duplicate deliveries are
-acknowledged without re-promoting. Access conditions preserve T1 evidence and
+acknowledged without re-promoting. An access condition whose meaning
+(``semantic_hash``) matches the stored row is also acknowledged without a write,
+unless the stored observation is older than ``HEARTBEAT_INTERVAL``: Centinelas
+re-sends unchanged conditions under a fresh key, and recording each one only
+repeated the same state. Access conditions preserve T1 evidence and
 cannot carry geometry; exact geometry binding is registry-controlled downstream.
 """
 from __future__ import annotations
@@ -16,6 +20,7 @@ import hashlib
 import json
 import os
 import sys
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from jsonschema import validate
@@ -29,6 +34,9 @@ RECEIPTS_DEFAULT = REPO / "data" / "centinelas_handoffs"
 ACCESS_OUT_DEFAULT = REPO / "data" / "access_conditions.jsonl"
 _ACCESS_SCHEMA = REPO / "schemas" / "access_condition.v1.schema.json"
 _ACCESS_BINDINGS = REPO / "data" / "reference" / "el_yunque_access_asset_bindings.json"
+# An unchanged access condition is re-recorded at most this often, so the stored
+# observed_at says when the condition was last confirmed to within a day.
+HEARTBEAT_INTERVAL = timedelta(hours=24)
 _FORBIDDEN_GEOMETRY_KEYS = {
     "geometry", "coordinates", "latitude", "longitude", "bbox", "bounding_box",
     "polygon", "polyline", "centroid", "geojson",
@@ -60,6 +68,44 @@ def _write_access_jsonl(path: Path, rows: list[dict]) -> None:
         "".join(json.dumps(row, sort_keys=True, ensure_ascii=False) + "\n" for row in rows),
         encoding="utf-8",
     )
+
+
+def _parse_time(value: object) -> datetime | None:
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+
+
+def unchanged_access_condition(payload: dict, access_out: Path) -> bool:
+    """True when this access condition only re-confirms the stored row.
+
+    The stored row must carry the same ``condition_id`` and ``semantic_hash``, and
+    its ``observed_at`` must be less than ``HEARTBEAT_INTERVAL`` older than the new
+    observation. Anything unparseable falls through to a normal write.
+    """
+    signal = payload.get("signal")
+    kind = payload.get("kind") or (signal or {}).get("kind")
+    if kind != "access_condition" or not isinstance(signal, dict):
+        return False
+    condition_id = signal.get("condition_id")
+    semantic_hash = signal.get("semantic_hash")
+    if not condition_id or not semantic_hash:
+        return False
+    stored = next(
+        (row for row in _read_access_jsonl(access_out) if row.get("condition_id") == condition_id),
+        None,
+    )
+    if stored is None or stored.get("semantic_hash") != semantic_hash:
+        return False
+    stored_at = _parse_time(stored.get("observed_at"))
+    new_at = _parse_time(signal.get("observed_at"))
+    if stored_at is None or new_at is None:
+        return False
+    return new_at - stored_at < HEARTBEAT_INTERVAL
 
 
 def _access_binding(asset_key: str | None) -> tuple[str | None, str]:
@@ -131,7 +177,11 @@ def main() -> int:
     if payload["target"] != os.environ["EXPECTED_TARGET"]:
         raise SystemExit("handoff target mismatch")
 
-    out, duplicate = write_receipt(payload, Path(args.receipts_dir))
+    unchanged = unchanged_access_condition(payload, Path(args.access_out))
+    if unchanged:
+        out, duplicate = receipt_path(payload["idempotency_key"], Path(args.receipts_dir)), True
+    else:
+        out, duplicate = write_receipt(payload, Path(args.receipts_dir))
     promoted_event = None
     promoted_condition = None
     if not duplicate:
@@ -139,7 +189,13 @@ def main() -> int:
             payload, Path(args.events_out), Path(args.access_out)
         )
 
-    print(f"receipt {'exists' if duplicate else 'written'}: {out}")
+    if unchanged:
+        print(
+            "access condition unchanged and confirmed within "
+            f"{HEARTBEAT_INTERVAL}: {payload['signal']['condition_id']} — nothing written"
+        )
+    else:
+        print(f"receipt {'exists' if duplicate else 'written'}: {out}")
     if promoted_condition:
         print(f"promoted to access_conditions: {promoted_condition}")
     elif promoted_event:
@@ -151,6 +207,7 @@ def main() -> int:
         with open(github_output, "a", encoding="utf-8") as handle:
             handle.write(
                 f"duplicate={str(duplicate).lower()}\n"
+                f"unchanged={str(unchanged).lower()}\n"
                 f"receipt_path={out}\n"
                 f"promoted_event_id={promoted_event or ''}\n"
                 f"promoted_condition_id={promoted_condition or ''}\n"

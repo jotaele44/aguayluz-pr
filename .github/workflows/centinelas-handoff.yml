@@ -4,8 +4,13 @@ on:
     types: [centinelas-handoff]
 permissions:
   contents: write
+# One group per handoff, not per ref. With a single group GitHub keeps only one
+# pending run and cancels the rest, and a cancelled run's payload exists nowhere
+# else, so a burst of dispatches silently lost all but two. Distinct handoffs now
+# run in parallel and serialise at the push below; redeliveries of the same
+# handoff still queue behind each other.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.client_payload.idempotency_key || github.run_id }}
   cancel-in-progress: false
 
 jobs:
@@ -14,15 +19,18 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # Enough history to rebase over the 15-minute refresh commits that can
-          # land on main while this job runs.
-          fetch-depth: 50
+          # The push step re-applies the handoff on a fresh main rather than
+          # rebasing, so only the tip is needed.
+          fetch-depth: 1
       - id: ingest
         env:
           CENTINELAS_CLIENT_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
           EXPECTED_TARGET: aguayluz-pr
         run: python3 scripts/ingest_centinelas_handoff.py
       - name: Persist receipt + promoted record
+        env:
+          CENTINELAS_CLIENT_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
+          EXPECTED_TARGET: aguayluz-pr
         run: |
           git config user.name centinelas-handoff-bot
           git config user.email actions@users.noreply.github.com
@@ -30,9 +38,12 @@ jobs:
           # write access_conditions. The receipt is committed atomically with either.
           # Add only the paths this handoff produced. A failed add or push fails the
           # job visibly instead of reporting a handoff that was never persisted.
-          for path in data/centinelas_handoffs data/service_events.jsonl data/access_conditions.jsonl; do
-            if [ -e "$path" ]; then git add -- "$path"; fi
-          done
+          stage() {
+            for path in data/centinelas_handoffs data/service_events.jsonl data/access_conditions.jsonl; do
+              if [ -e "$path" ]; then git add -- "$path"; fi
+            done
+          }
+          stage
           if git diff --cached --quiet -- data/centinelas_handoffs; then
             if [ "${{ steps.ingest.outputs.duplicate }}" != "true" ]; then
               echo "::error::no new handoff receipt was staged for a non-duplicate handoff"
@@ -41,10 +52,18 @@ jobs:
           fi
           git diff --cached --quiet || git commit -m "data: ingest Centinelas handoff [skip ci]"
           branch="${{ github.event.repository.default_branch }}"
-          for attempt in 1 2 3 4; do
+          for attempt in 1 2 3 4 5 6; do
+            if git diff --quiet "origin/$branch" HEAD -- data/; then exit 0; fi
             if git push origin "HEAD:$branch"; then exit 0; fi
             sleep $((2 ** attempt))
-            git pull --rebase origin "$branch"
+            # Re-apply on top of the new main instead of rebasing. A rebase
+            # conflicts whenever two handoffs rewrite access_conditions.jsonl;
+            # re-running the idempotent ingest against the new main cannot.
+            git fetch origin "$branch"
+            git reset --hard "origin/$branch"
+            python3 scripts/ingest_centinelas_handoff.py
+            stage
+            git diff --cached --quiet || git commit -m "data: ingest Centinelas handoff [skip ci]"
           done
           echo "::error::could not push the handoff receipt"
           exit 1
