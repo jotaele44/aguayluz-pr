@@ -10,6 +10,7 @@ import { tierBadge, fmtDate, eventTone, EVENT_TYPES } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { AlertTriangle, Zap } from 'lucide-react'
 import PanelState from '@/components/common/PanelState'
+import { scrollRegion } from '@/lib/scrollRegion';
 
 function eventLabel(event) {
   return (event.event_type || 'event').replace(/_/g, ' ')
@@ -65,11 +66,11 @@ export default function OutagesPanel() {
       <div className="flex items-center gap-2 px-2 py-1.5 shrink-0 border-b border-slate-800">
         <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search area / municipio…" className="h-7 flex-1 text-xs bg-slate-950 border-slate-800" />
         <Select value={type} onValueChange={setType}>
-          <SelectTrigger className="h-7 w-[130px] text-xs"><SelectValue /></SelectTrigger>
+          <SelectTrigger aria-label="Filter by event type" className="h-7 w-[130px] text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>{EVENT_TYPES.map((t) => <SelectItem key={t} value={t} className="text-xs capitalize">{t.replace(/_/g, ' ')}</SelectItem>)}</SelectContent>
         </Select>
       </div>
-      <div className="h-full overflow-auto p-2 space-y-2">
+      <div {...scrollRegion("Outages")} className="h-full overflow-auto p-2 space-y-2">
         <div className="rounded-md border border-amber-500/20 bg-amber-500/10 p-2 text-[11px] leading-relaxed text-amber-200/90">
           <div className="mb-1 flex items-center gap-1.5 font-semibold"><AlertTriangle className="h-3.5 w-3.5" /> Snapshot caveat</div>
           Service-event records are shown as reported/snapshot-grade. Do not infer live utility attribution unless the source record explicitly supports it.
@@ -83,10 +84,10 @@ export default function OutagesPanel() {
             <p className="mt-1 text-slate-400">
               Preserved independently from municipio/zone events. No regional aggregate is expanded into a municipality or restoration event.
             </p>
-            <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded bg-slate-950 p-2 text-[10px] text-slate-300">
+            <pre {...scrollRegion("Outage details")} className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded bg-slate-950 p-2 text-[10px] text-slate-300">
               {JSON.stringify(lumaStatus.latest.raw_payload, null, 2)}
             </pre>
-            <p className="mt-1 text-slate-500">
+            <p className="mt-1 text-slate-400">
               history snapshots: {lumaStatus.total ?? 0} · schema state: {lumaStatus.schema_state ?? 'RAW_UNFROZEN'}
             </p>
           </details>
@@ -107,7 +108,7 @@ export default function OutagesPanel() {
                     <Zap className={cn('h-3.5 w-3.5 shrink-0', eventTone(e.event_type))} />
                     <span className="text-xs font-medium capitalize text-slate-200">{eventLabel(e)}</span>
                     {e.evidence_tier && <Badge variant="outline" className={cn('text-[10px]', tierBadge(e.evidence_tier))}>{e.evidence_tier}</Badge>}
-                    <span className="ml-auto text-[11px] text-slate-500">{fmtDate(e.start_time)}</span>
+                    <span className="ml-auto text-[11px] text-slate-400">{fmtDate(e.start_time)}</span>
                   </div>
                   <p className="mt-1 text-xs text-slate-300">{e.affected_area || e.municipality || 'Area unavailable'}{e.zone ? ` (${e.zone})` : ''}</p>
                   {e.reported_customers_or_users != null && (
@@ -119,7 +120,7 @@ export default function OutagesPanel() {
           </section>
         ))}
 
-        {filtered.length === 0 && <p className="py-8 text-center text-sm text-slate-500">No events match filters.</p>}
+        {filtered.length === 0 && <p className="py-8 text-center text-sm text-slate-400">No events match filters.</p>}
       </div>
     </div>
   )

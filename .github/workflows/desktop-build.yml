@@ -33,7 +33,7 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     env:
-      PRII_TOOLING_REF: f2b81769924689b4d959554928810b1d7b7ef3d6
+      PRII_TOOLING_REF: 10bca45d145fd1994f77f406f6b2a39c7824e762
       PRII_FORBIDDEN_SIBLING: thehub-pr
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1

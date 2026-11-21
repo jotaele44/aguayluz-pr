@@ -71,6 +71,7 @@ a = Analysis(
         "prii_desktop.appserver",
         "prii_desktop.config",
         "prii_desktop.setup_center",
+        "prii_desktop.launchpad",
         "desktop.setup_actions",
         # Loaded by the in-app federation export action from bundled source.
         "prii_export_utils",

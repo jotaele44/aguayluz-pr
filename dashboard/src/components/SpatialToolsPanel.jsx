@@ -429,7 +429,7 @@ export function useSpatialTools({ mapRef, mapReady, targets, interactionLockRef,
 function QueryEvidence({ result }) {
   if (!result) return null
   return (
-    <div className="mt-1 rounded border border-slate-800 bg-slate-950/60 p-1.5 text-[10px] leading-relaxed text-slate-500">
+    <div className="mt-1 rounded border border-slate-800 bg-slate-950/60 p-1.5 text-[10px] leading-relaxed text-slate-400">
       <div>Target: <span className="text-slate-300">{result.targetKey}</span> · valid candidates {result.candidateCount} · excluded malformed {result.excludedCount}</div>
       <div>Query: {result.origin.map((value) => value.toFixed(5)).join(', ')}</div>
       <div>Evidence: discovery only · identity effect <span className="text-amber-300">{result.identityEffect}</span> · state <span className="text-slate-300">{result.state}</span></div>
@@ -571,9 +571,9 @@ export function SpatialToolsPanel(state) {
   return (
     <div className="w-full rounded-xl border border-slate-700/70 bg-slate-950/85 p-3 shadow-xl backdrop-blur text-[11px]">
       <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
-        <span className="text-[10px] uppercase tracking-wide text-slate-500">Spatial tools</span>
+        <span className="text-[10px] uppercase tracking-wide text-slate-400">Spatial tools</span>
         {mode !== 'off' && (
-          <button type="button" onClick={clearAll} className="ml-auto text-[10px] text-slate-500 underline hover:text-slate-300">
+          <button type="button" onClick={clearAll} className="ml-auto text-[10px] text-slate-400 underline hover:text-slate-300">
             Clear
           </button>
         )}
@@ -586,7 +586,7 @@ export function SpatialToolsPanel(state) {
             onClick={() => setMode(candidateMode)}
             aria-pressed={mode === candidateMode}
             className={`rounded border px-2 py-1 text-[11px] transition ${
-              mode === candidateMode ? 'border-sky-500/40 bg-sky-500/10 text-sky-300' : 'border-slate-800 bg-slate-950/70 text-slate-500 hover:text-slate-300'
+              mode === candidateMode ? 'border-sky-500/40 bg-sky-500/10 text-sky-300' : 'border-slate-800 bg-slate-950/70 text-slate-400 hover:text-slate-300'
             }`}
           >
             {MODE_LABEL[candidateMode]}
@@ -650,7 +650,7 @@ export function SpatialToolsPanel(state) {
             {BUFFER_RADII_KM.map((radiusKm) => (
               <button
                 key={radiusKm} type="button" onClick={() => setBufferRadiusKm(radiusKm)} aria-pressed={bufferRadiusKm === radiusKm}
-                className={`rounded border px-1.5 py-0.5 text-[10px] ${bufferRadiusKm === radiusKm ? 'border-sky-500/40 bg-sky-500/10 text-sky-300' : 'border-slate-800 text-slate-500'}`}
+                className={`rounded border px-1.5 py-0.5 text-[10px] ${bufferRadiusKm === radiusKm ? 'border-sky-500/40 bg-sky-500/10 text-sky-300' : 'border-slate-800 text-slate-400'}`}
               >
                 {radiusKm} km
               </button>

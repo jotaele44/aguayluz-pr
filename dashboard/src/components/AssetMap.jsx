@@ -279,7 +279,7 @@ function ControlButton({ active, children, onClick, tone }) {
       type="button"
       aria-pressed={Boolean(active)}
       onClick={onClick}
-      className={`rounded border px-2 py-1 text-[11px] transition ${active ? `${tone} bg-slate-900` : 'border-slate-800 bg-slate-950/70 text-slate-500 hover:text-slate-300'}`}
+      className={`rounded border px-2 py-1 text-[11px] transition ${active ? `${tone} bg-slate-900` : 'border-slate-800 bg-slate-950/70 text-slate-400 hover:text-slate-300'}`}
     >
       {children}
     </button>
@@ -806,7 +806,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
       <div className="absolute left-3 top-3 w-[250px] rounded-xl border border-slate-700/70 bg-slate-950/85 p-3 shadow-xl backdrop-blur">
         <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs font-semibold text-slate-100"><Layers className="h-3.5 w-3.5 text-sky-300" /> Layers</div>
-          <div className="text-[10px] text-slate-500">{visibleAssets.features.length}/{assetFeatures.length}</div>
+          <div className="text-[10px] text-slate-400">{visibleAssets.features.length}/{assetFeatures.length}</div>
         </div>
         <div className="grid grid-cols-2 gap-1.5">
           <ControlButton active={layers.power} tone="border-amber-500/40 text-amber-300" onClick={() => setLayers((s) => ({ ...s, power: !s.power }))}>Power {counts.power}</ControlButton>
@@ -822,7 +822,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
           <ControlButton active={showTools} tone="border-pink-500/40 text-pink-300" onClick={() => setShowTools((v) => !v)}>Spatial tools</ControlButton>
         </div>
         <div className="mt-1.5">
-          <div className="mb-1 text-[10px] uppercase tracking-wide text-slate-500">Municipio fill</div>
+          <div className="mb-1 text-[10px] uppercase tracking-wide text-slate-400">Municipio fill</div>
           <div className="grid grid-cols-4 gap-1.5">
             <ControlButton active={layers.muniFillMode === 'off'} tone="border-slate-500/40 text-slate-300" onClick={() => setLayers((s) => ({ ...s, muniFillMode: 'off' }))}>Off</ControlButton>
             <ControlButton active={layers.muniFillMode === 'drought'} tone="border-amber-500/40 text-amber-300" onClick={() => setLayers((s) => ({ ...s, muniFillMode: 'drought' }))}>Drought</ControlButton>
@@ -830,7 +830,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
             <ControlButton active={layers.muniFillMode === 'rainfall'} tone="border-pink-500/40 text-pink-300" onClick={() => setLayers((s) => ({ ...s, muniFillMode: 'rainfall' }))}>Rainfall</ControlButton>
           </div>
           {layers.muniFillMode === 'rainfall' && (
-            <div aria-live="polite" className="mt-1.5 rounded border border-slate-800 bg-slate-950/60 p-1.5 text-[10px] leading-relaxed text-slate-500">
+            <div aria-live="polite" className="mt-1.5 rounded border border-slate-800 bg-slate-950/60 p-1.5 text-[10px] leading-relaxed text-slate-400">
               {rainfallError
                 ? <span className="text-red-300">Rainfall unavailable ({rainfallError}); no fill is shown.</span>
                 : rainfallDate && Object.keys(rainByGeoid || {}).length > 0
@@ -839,7 +839,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
             </div>
           )}
           {layers.muniFillMode === 'event_density' && (
-            <div aria-live="polite" className="mt-1.5 rounded border border-slate-800 bg-slate-950/60 p-1.5 text-[10px] leading-relaxed text-slate-500">
+            <div aria-live="polite" className="mt-1.5 rounded border border-slate-800 bg-slate-950/60 p-1.5 text-[10px] leading-relaxed text-slate-400">
               {(eventDensityState?.isLoading || eventDensityState?.isFetching) && <div className="text-blue-300">Loading full-corpus density…</div>}
               {eventDensityState?.isError && (
                 <div>
@@ -864,7 +864,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
             type="button"
             aria-pressed={layers.criticalAlertsOnly}
             onClick={() => setLayers((s) => ({ ...s, criticalAlertsOnly: !s.criticalAlertsOnly }))}
-            className={`mt-1.5 w-full rounded border px-2 py-1.5 text-[11px] transition ${layers.criticalAlertsOnly ? 'border-red-500/40 bg-red-500/10 text-red-300' : 'border-slate-800 bg-slate-950/70 text-slate-500 hover:text-slate-300'}`}
+            className={`mt-1.5 w-full rounded border px-2 py-1.5 text-[11px] transition ${layers.criticalAlertsOnly ? 'border-red-500/40 bg-red-500/10 text-red-300' : 'border-slate-800 bg-slate-950/70 text-slate-400 hover:text-slate-300'}`}
           >
             Life-safety critical alerts only
           </button>
@@ -873,7 +873,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
           type="button"
           aria-pressed={layers.review}
           onClick={() => setLayers((s) => ({ ...s, review: !s.review }))}
-          className={`mt-2 w-full rounded border px-2 py-1.5 text-[11px] transition ${layers.review ? 'border-amber-500/40 bg-amber-500/10 text-amber-300' : 'border-slate-800 bg-slate-950/70 text-slate-500 hover:text-slate-300'}`}
+          className={`mt-2 w-full rounded border px-2 py-1.5 text-[11px] transition ${layers.review ? 'border-amber-500/40 bg-amber-500/10 text-amber-300' : 'border-slate-800 bg-slate-950/70 text-slate-400 hover:text-slate-300'}`}
         >
           Review-needed assets only
         </button>
@@ -881,14 +881,14 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
           <button
             type="button"
             onClick={() => setBasemap('osm')}
-            className={`flex-1 flex items-center justify-center gap-1 rounded border px-2 py-1.5 text-[11px] transition ${basemap === 'osm' ? 'border-sky-500/40 bg-sky-500/10 text-sky-300' : 'border-slate-800 bg-slate-950/70 text-slate-500 hover:text-slate-300'}`}
+            className={`flex-1 flex items-center justify-center gap-1 rounded border px-2 py-1.5 text-[11px] transition ${basemap === 'osm' ? 'border-sky-500/40 bg-sky-500/10 text-sky-300' : 'border-slate-800 bg-slate-950/70 text-slate-400 hover:text-slate-300'}`}
           >
             <Layers className="h-3 w-3" /> Map
           </button>
           <button
             type="button"
             onClick={() => setBasemap('satellite')}
-            className={`flex-1 flex items-center justify-center gap-1 rounded border px-2 py-1.5 text-[11px] transition ${basemap === 'satellite' ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300' : 'border-slate-800 bg-slate-950/70 text-slate-500 hover:text-slate-300'}`}
+            className={`flex-1 flex items-center justify-center gap-1 rounded border px-2 py-1.5 text-[11px] transition ${basemap === 'satellite' ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300' : 'border-slate-800 bg-slate-950/70 text-slate-400 hover:text-slate-300'}`}
           >
             <Satellite className="h-3 w-3" /> Satellite
           </button>
@@ -897,7 +897,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
 
       {/* bottom-9 clears MapPage's "N of M assets mapped" footer, which sits on top of the map. */}
       <div className="absolute bottom-9 left-3 rounded-lg border border-slate-700/70 bg-slate-950/85 px-2.5 py-2 shadow-xl backdrop-blur">
-        <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-1.5">Asset type</div>
+        <div className="text-[10px] uppercase tracking-wide text-slate-400 mb-1.5">Asset type</div>
         {[
           { type: 'power', label: 'Power', color: '#f59e0b' },
           { type: 'water', label: 'Water', color: '#38bdf8' },
@@ -912,7 +912,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
         ))}
         {layers.alerts && (
           <>
-            <div className="mb-1.5 mt-2 border-t border-slate-800 pt-2 text-[10px] uppercase tracking-wide text-slate-500">Alert severity</div>
+            <div className="mb-1.5 mt-2 border-t border-slate-800 pt-2 text-[10px] uppercase tracking-wide text-slate-400">Alert severity</div>
             {[
               { sev: '4–5', label: 'Severe / extreme', color: '#ef4444' },
               { sev: '3', label: 'Elevated', color: '#fb923c' },
@@ -928,7 +928,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
         )}
         {layers.gauges && (
           <>
-            <div className="mb-1.5 mt-2 border-t border-slate-800 pt-2 text-[10px] uppercase tracking-wide text-slate-500">River gauges (NWS NWPS)</div>
+            <div className="mb-1.5 mt-2 border-t border-slate-800 pt-2 text-[10px] uppercase tracking-wide text-slate-400">River gauges (NWS NWPS)</div>
             {GAUGE_LEGEND.map(({ label, color }) => (
               <div key={label} className="mb-0.5 flex items-center gap-1.5 text-[11px] text-slate-300 last:mb-0">
                 <span style={{ background: color }} className="inline-block h-2 w-2 shrink-0 rounded-full" />
@@ -941,7 +941,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
           <>
             {/* Only rendered once real drought readings exist — an empty-but-present
                 legend would imply coverage the corpus doesn't have yet. */}
-            <div className="mb-1.5 mt-2 border-t border-slate-800 pt-2 text-[10px] uppercase tracking-wide text-slate-500">Drought (USDM)</div>
+            <div className="mb-1.5 mt-2 border-t border-slate-800 pt-2 text-[10px] uppercase tracking-wide text-slate-400">Drought (USDM)</div>
             {[
               { label: 'D4 · Exceptional', color: '#730000' },
               { label: 'D3 · Extreme', color: '#e60000' },
@@ -959,7 +959,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
         )}
         {layers.muniFillMode === 'rainfall' && rainByGeoid && Object.keys(rainByGeoid).length > 0 && (
           <>
-            <div className="mb-1.5 mt-2 border-t border-slate-800 pt-2 text-[10px] uppercase tracking-wide text-slate-500">Rainfall · Stage IV 1-day mean</div>
+            <div className="mb-1.5 mt-2 border-t border-slate-800 pt-2 text-[10px] uppercase tracking-wide text-slate-400">Rainfall · Stage IV 1-day mean</div>
             {RAINFALL_LEGEND.map(({ label, color }) => (
               <div key={label} className="mb-0.5 flex items-center gap-1.5 text-[11px] text-slate-300 last:mb-0">
                 <span style={{ background: color }} className="inline-block h-2 w-2 rounded-full shrink-0" />
@@ -970,7 +970,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
         )}
         {layers.muniFillMode === 'event_density' && eventDensityByGeoid && Object.keys(eventDensityByGeoid).length > 0 && (
           <>
-            <div className="mb-1.5 mt-2 border-t border-slate-800 pt-2 text-[10px] uppercase tracking-wide text-slate-500">Event density (full corpus)</div>
+            <div className="mb-1.5 mt-2 border-t border-slate-800 pt-2 text-[10px] uppercase tracking-wide text-slate-400">Event density (full corpus)</div>
             {[
               { label: '450+ events', color: '#dc2626' },
               { label: '200–449', color: '#f59e0b' },
