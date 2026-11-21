@@ -80,7 +80,7 @@ def _parse_time(value: object) -> datetime | None:
     return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
 
 
-def unchanged_access_condition(payload: dict, access_out: Path) -> bool:
+def _unchanged_access_condition(payload: dict, access_out: Path) -> bool:
     """True when this access condition only re-confirms the stored row.
 
     The stored row must carry the same ``condition_id`` and ``semantic_hash``, and
@@ -177,7 +177,7 @@ def main() -> int:
     if payload["target"] != os.environ["EXPECTED_TARGET"]:
         raise SystemExit("handoff target mismatch")
 
-    unchanged = unchanged_access_condition(payload, Path(args.access_out))
+    unchanged = _unchanged_access_condition(payload, Path(args.access_out))
     if unchanged:
         out, duplicate = receipt_path(payload["idempotency_key"], Path(args.receipts_dir)), True
     else:
