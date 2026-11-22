@@ -17,6 +17,7 @@ import PanelState from '@/components/common/PanelState'
 import { cn } from '@/lib/utils'
 import { downloadCSV } from '@/lib/csv'
 import { AlertTriangle, Download, FilterX, ShieldAlert } from 'lucide-react'
+import { scrollRegion } from '@/lib/scrollRegion';
 
 const DEFAULTS = { module: 'all', status: 'all', review: 'all', tier: 'all', critical: false, q: '' }
 
@@ -110,14 +111,14 @@ function AlertRow({ alert }) {
         <p className="mt-1 truncate text-xs font-medium text-slate-200">
           {alert.source_title || alert.alert_id}
         </p>
-        <p className="mt-0.5 truncate text-[11px] text-slate-500">
+        <p className="mt-0.5 truncate text-[11px] text-slate-400">
           {(alert.municipalities ?? []).join(', ') || 'municipio unavailable'}
           {alert.asset_name ? ` · ${alert.asset_name}` : ''}
         </p>
       </div>
       <div className="shrink-0 text-right">
-        <div className="font-mono text-[10px] text-slate-500">{fmtDate(alert.start_at)}</div>
-        <div className="mt-1 text-[10px] capitalize text-slate-600">{alert.status}</div>
+        <div className="font-mono text-[10px] text-slate-400">{fmtDate(alert.start_at)}</div>
+        <div className="mt-1 text-[10px] capitalize text-slate-400">{alert.status}</div>
       </div>
     </Link>
   )
@@ -261,7 +262,7 @@ export default function AlertsPage() {
         </div>
       )}
 
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto">
+      <div {...scrollRegion("Alerts list", scrollRef)} className="min-h-0 flex-1 overflow-auto">
         <PanelState
           isLoading={isLoading}
           isError={healthError}
@@ -286,7 +287,7 @@ export default function AlertsPage() {
         <div
           // The AI launcher is fixed at bottom-right (z-40), so the control sits next
           // to the count rather than pinned right, where the launcher would cover it.
-          className="flex shrink-0 items-center gap-3 border-t border-slate-800 py-2 pl-4 pr-44 text-[11px] text-slate-500"
+          className="flex shrink-0 items-center gap-3 border-t border-slate-800 py-2 pl-4 pr-44 text-[11px] text-slate-400"
         >
           <span>Showing the {items.length.toLocaleString()} most recent of {total.toLocaleString()} matching alert(s).</span>
           <Button

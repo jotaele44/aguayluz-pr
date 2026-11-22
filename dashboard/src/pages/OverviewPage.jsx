@@ -149,7 +149,7 @@ export default function OverviewPage() {
         />
       </div>
       {cov && (
-        <p className="-mt-3 text-[11px] text-slate-500">
+        <p className="-mt-3 text-[11px] text-slate-400">
           {cov.unmapped.toLocaleString()} asset(s) carry no coordinates and never appear on the
           map — mostly <span className="text-slate-400">{topUnmappedSubtype}</span> records.{' '}
           <Link to="/assets?unmapped=1" className="text-sky-400 hover:text-sky-300">Review them in the assets table</Link>.
@@ -219,13 +219,13 @@ export default function OverviewPage() {
                 </div>
                 {untracked ? (
                   <>
-                    <p className="font-mono text-2xl font-semibold text-slate-500">—</p>
-                    <p className="mt-1 text-[11px] text-slate-500">No assets tracked in this sector</p>
+                    <p className="font-mono text-2xl font-semibold text-slate-400">—</p>
+                    <p className="mt-1 text-[11px] text-slate-400">No assets tracked in this sector</p>
                   </>
                 ) : (
                   <>
                     <p className="text-2xl font-semibold font-mono text-slate-100">{s.total ?? '–'}</p>
-                    <p className="text-[11px] text-slate-500 font-mono mt-1">
+                    <p className="text-[11px] text-slate-400 font-mono mt-1">
                       {s.active ?? '–'} active · {s.pct_active ?? 0}% nominal
                     </p>
                   </>
@@ -250,13 +250,13 @@ export default function OverviewPage() {
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <p className="text-sm text-slate-500 text-center py-12">No reservoir data available</p>
+            <p className="text-sm text-slate-400 text-center py-12">No reservoir data available</p>
           )}
         </Panel>
 
         <Panel title="Recent Events">
           {recentEvents.length === 0 ? (
-            <p className="text-xs text-slate-500 text-center py-8">No events</p>
+            <p className="text-xs text-slate-400 text-center py-8">No events</p>
           ) : (
             <div className="space-y-2">
               {recentEvents.map((e) => (
@@ -264,8 +264,8 @@ export default function OverviewPage() {
                   <AlertTriangle className={`h-3.5 w-3.5 shrink-0 mt-0.5 ${e.event_type === 'outage' ? 'text-red-400' : 'text-amber-400'}`} />
                   <div className="min-w-0">
                     <p className="text-xs font-medium text-slate-200 truncate capitalize">{(e.event_type || '').replace(/_/g, ' ')}</p>
-                    <p className="text-[11px] text-slate-500 truncate">{e.affected_area}</p>
-                    <p className="text-[10px] text-slate-600 font-mono">{fmtDate(e.start_time)}</p>
+                    <p className="text-[11px] text-slate-400 truncate">{e.affected_area}</p>
+                    <p className="text-[10px] text-slate-400 font-mono">{fmtDate(e.start_time)}</p>
                   </div>
                 </div>
               ))}

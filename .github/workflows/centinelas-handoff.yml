@@ -4,6 +4,7 @@ on:
     types: [centinelas-handoff]
 permissions:
   contents: write
+  statuses: write   # record the docs-sync verdict on the commit it pushes to main
 # One group per handoff, not per ref. With a single group GitHub keeps only one
 # pending run and cancels the rest, and a cancelled run's payload exists nowhere
 # else, so a burst of dispatches silently lost all but two. Distinct handoffs now
@@ -19,8 +20,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # The push step re-applies the handoff on a fresh main rather than
-          # rebasing, so only the tip is needed.
+          # push_to_main.sh replays the data commit onto the current main and only
+          # needs that commit's parent, which is the checkout itself.
           fetch-depth: 1
       - id: ingest
         env:
@@ -29,6 +30,7 @@ jobs:
         run: python3 scripts/ingest_centinelas_handoff.py
       - name: Persist receipt + promoted record
         env:
+          GH_TOKEN: ${{ github.token }}
           CENTINELAS_CLIENT_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
           EXPECTED_TARGET: aguayluz-pr
         run: |
@@ -51,16 +53,23 @@ jobs:
             fi
           fi
           git diff --cached --quiet || git commit -m "data: ingest Centinelas handoff [skip ci]"
-          branch="${{ github.event.repository.default_branch }}"
-          for attempt in 1 2 3 4 5 6; do
-            if git diff --quiet "origin/$branch" HEAD -- data/; then exit 0; fi
-            if git push origin "HEAD:$branch"; then exit 0; fi
-            sleep $((2 ** attempt))
-            # Re-apply on top of the new main instead of rebasing. A rebase
-            # conflicts whenever two handoffs rewrite access_conditions.jsonl;
-            # re-running the idempotent ingest against the new main cannot.
-            git fetch origin "$branch"
-            git reset --hard "origin/$branch"
+          # Push through scripts/push_to_main.sh: it replays the commit over whatever
+          # landed on main meanwhile (the 15-minute refresh commits), runs docs-sync on
+          # it and records the verdict as the `docs-sync` commit status a required check
+          # on main expects. It exits 0 when there is nothing to push (a duplicate
+          # handoff) and fails the job, visibly, if the commit cannot be pushed.
+          #
+          # Its replay is a cherry-pick, which conflicts when another handoff
+          # rewrote access_conditions.jsonl in the meantime. On failure, start
+          # again from the new main: re-run the idempotent ingest there, commit,
+          # and push that commit instead (push_to_main.sh expects HEAD to be one
+          # commit on top of GITHUB_SHA, so GITHUB_SHA moves with the reset).
+          for round in 1 2 3; do
+            if scripts/push_to_main.sh centinelas-handoff; then exit 0; fi
+            echo "Push round $round failed; re-applying the handoff on the current main."
+            git fetch --quiet origin "${GITHUB_REF_NAME:-main}"
+            git checkout --quiet --detach FETCH_HEAD
+            export GITHUB_SHA="$(git rev-parse HEAD)"
             python3 scripts/ingest_centinelas_handoff.py
             stage
             git diff --cached --quiet || git commit -m "data: ingest Centinelas handoff [skip ci]"

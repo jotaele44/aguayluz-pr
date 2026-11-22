@@ -17,6 +17,7 @@ import {
   getSourceIntelligenceSummary,
 } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { scrollRegion } from '@/lib/scrollRegion';
 
 const titleCase = (value) => String(value || 'unknown')
   .replaceAll('_', ' ')
@@ -42,19 +43,19 @@ function Badge({ state }) {
 function Metric({ label, value, detail, icon: Icon }) {
   return (
     <div className="rounded-lg border border-slate-800 bg-slate-900/70 p-4">
-      <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-slate-500">
+      <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-slate-400">
         <Icon className="h-4 w-4" aria-hidden="true" />
         {label}
       </div>
       <div className="mt-2 text-2xl font-semibold text-slate-100">{value}</div>
-      <div className="mt-1 text-xs text-slate-500">{detail}</div>
+      <div className="mt-1 text-xs text-slate-400">{detail}</div>
     </div>
   )
 }
 
 function SelectField({ label, value, onChange, children }) {
   return (
-    <label className="flex min-w-[180px] flex-col gap-1 text-[10px] uppercase tracking-wide text-slate-500">
+    <label className="flex min-w-[180px] flex-col gap-1 text-[10px] uppercase tracking-wide text-slate-400">
       {label}
       <select
         value={value}
@@ -127,7 +128,7 @@ export default function SourceIntelligencePage() {
         title="Source Intelligence"
         subtitle="Governed source coverage, runtime health, route provenance, and fail-closed certification boundaries"
       />
-      <div className="flex-1 min-h-0 overflow-auto p-6">
+      <div {...scrollRegion("Source Intelligence page content")} className="flex-1 min-h-0 overflow-auto p-6">
         <ErrorBoundary label="Source Intelligence">
           {query.isLoading ? (
             <Empty>Loading governed source-intelligence state…</Empty>
@@ -197,15 +198,15 @@ export default function SourceIntelligencePage() {
                     {selectedDomain && (
                       <div className="mb-4 rounded-md border border-slate-800 bg-slate-950/40 p-3">
                         <div className="text-sm font-medium text-slate-200">{selectedDomain.label}</div>
-                        <div className="mt-1 text-xs text-slate-500">{selectedDomain.scope}</div>
-                        <div className="mt-2 text-[10px] uppercase tracking-wide text-slate-600">
+                        <div className="mt-1 text-xs text-slate-400">{selectedDomain.scope}</div>
+                        <div className="mt-2 text-[10px] uppercase tracking-wide text-slate-400">
                           Certification: {selectedDomain.certification_rule}
                         </div>
                       </div>
                     )}
-                    <div className="overflow-x-auto">
+                    <div {...scrollRegion("Source coverage by domain table")} className="overflow-x-auto">
                       <table className="w-full text-left text-xs">
-                        <thead className="border-b border-slate-800 text-[10px] uppercase tracking-wide text-slate-500">
+                        <thead className="border-b border-slate-800 text-[10px] uppercase tracking-wide text-slate-400">
                           <tr>
                             <th className="px-2 py-2">Source family</th>
                             <th className="px-2 py-2">Role</th>
@@ -247,17 +248,17 @@ export default function SourceIntelligencePage() {
                             ['Runtime health', selectedSource.runtime_health?.state ?? selectedSource.runtime_health_reason],
                           ].map(([label, value]) => (
                             <div key={label} className="rounded-md border border-slate-800 bg-slate-950/40 p-3">
-                              <div className="text-[10px] uppercase tracking-wide text-slate-500">{label}</div>
+                              <div className="text-[10px] uppercase tracking-wide text-slate-400">{label}</div>
                               <div className="mt-1 break-words text-sm text-slate-200">{value || 'Unknown'}</div>
                             </div>
                           ))}
                         </div>
                         <div>
-                          <div className="text-[10px] uppercase tracking-wide text-slate-500">Canonical locator</div>
+                          <div className="text-[10px] uppercase tracking-wide text-slate-400">Canonical locator</div>
                           <div className="mt-1 break-all font-mono text-xs text-slate-300">{selectedSource.canonical_locator}</div>
                         </div>
                         <div>
-                          <div className="mb-2 text-[10px] uppercase tracking-wide text-slate-500">Requirements</div>
+                          <div className="mb-2 text-[10px] uppercase tracking-wide text-slate-400">Requirements</div>
                           <div className="flex flex-wrap gap-2">
                             {(selectedSource.requirements ?? []).map((row) => (
                               <span key={`${row.domain_id}:${row.role}`} className="rounded-md border border-slate-800 bg-slate-950 px-2 py-1 text-[10px] text-slate-300">
@@ -297,10 +298,10 @@ export default function SourceIntelligencePage() {
                     </div>
                     {openFamilies.length > 0 && (
                       <div className="mt-4 border-t border-slate-800 pt-4">
-                        <div className="mb-2 text-[10px] uppercase tracking-wide text-slate-500">
+                        <div className="mb-2 text-[10px] uppercase tracking-wide text-slate-400">
                           Open payload-product denominator families ({openFamilies.length})
                         </div>
-                        <div className="max-h-64 space-y-1 overflow-auto">
+                        <div {...scrollRegion("Source route list")} className="max-h-64 space-y-1 overflow-auto">
                           {openFamilies.map((id) => (
                             <button
                               key={id}
@@ -320,11 +321,11 @@ export default function SourceIntelligencePage() {
                     {selectedSource ? (
                       <div className="space-y-4">
                         <div>
-                          <div className="text-[10px] uppercase tracking-wide text-slate-500">Source family</div>
+                          <div className="text-[10px] uppercase tracking-wide text-slate-400">Source family</div>
                           <div className="mt-1 font-mono text-sm text-sky-300">{selectedSource.source_family_id}</div>
                         </div>
                         <div>
-                          <div className="mb-2 text-[10px] uppercase tracking-wide text-slate-500">
+                          <div className="mb-2 text-[10px] uppercase tracking-wide text-slate-400">
                             Products ({sourceProducts.length})
                           </div>
                           <div className="space-y-2">
@@ -340,17 +341,17 @@ export default function SourceIntelligencePage() {
                           </div>
                         </div>
                         <div>
-                          <div className="mb-2 text-[10px] uppercase tracking-wide text-slate-500">
+                          <div className="mb-2 text-[10px] uppercase tracking-wide text-slate-400">
                             Acquisition routes ({sourceRoutes.length})
                           </div>
-                          <div className="max-h-80 space-y-2 overflow-auto">
+                          <div {...scrollRegion("Source detail list")} className="max-h-80 space-y-2 overflow-auto">
                             {sourceRoutes.map((row) => (
                               <div key={row.route_id} className="rounded-md border border-slate-800 bg-slate-950/40 p-2">
                                 <div className="font-mono text-[11px] text-violet-300">{row.route_id}</div>
-                                <div className="mt-1 text-[10px] text-slate-500">
+                                <div className="mt-1 text-[10px] text-slate-400">
                                   {row.role} · {row.representation} · priority {row.priority}
                                 </div>
-                                <div className="mt-1 break-all font-mono text-[10px] text-slate-600">{row.locator}</div>
+                                <div className="mt-1 break-all font-mono text-[10px] text-slate-400">{row.locator}</div>
                               </div>
                             ))}
                           </div>

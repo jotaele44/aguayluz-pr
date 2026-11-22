@@ -17,6 +17,7 @@ import {
   seriesIdentity,
 } from '@/lib/monitoring'
 import { Activity, AlertCircle, Database } from 'lucide-react'
+import { scrollRegion } from '@/lib/scrollRegion';
 
 const axis = { fill: '#94a3b8', fontSize: 11 }
 // Series whose readings are wells, and so can be filtered by the aquifer the inventory binds them to.
@@ -135,20 +136,20 @@ export default function MonitoringCharts() {
   }, [chart, mixedIdentity])
 
   return (
-    <div className="h-full overflow-auto p-3 space-y-3">
+    <div {...scrollRegion("Monitoring charts")} className="h-full overflow-auto p-3 space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h4 className="flex items-center gap-2 text-sm font-medium text-slate-200">
             <Activity className="h-4 w-4 text-sky-300" /> Monitoring
           </h4>
-          <p className="mt-1 text-[11px] leading-relaxed text-slate-500">
+          <p className="mt-1 text-[11px] leading-relaxed text-slate-400">
             Metric-safe observations with freshness, datum, and certification status.
           </p>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1 rounded-md border border-slate-800 bg-slate-950 p-0.5">
             {['7d', '30d', '90d', 'all'].map((r) => (
-              <button key={r} onClick={() => setRange(r)} className={`rounded px-2 py-1 text-[10px] uppercase tracking-wide transition ${range === r ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>{r}</button>
+              <button key={r} type="button" aria-pressed={range === r} onClick={() => setRange(r)} className={`rounded px-2 py-1 text-[10px] uppercase tracking-wide transition ${range === r ? 'bg-sky-700 text-white' : 'text-slate-400 hover:text-slate-200'}`}>{r}</button>
             ))}
           </div>
           <Select value={seriesKey} onValueChange={(value) => { setSeriesKey(value); setSite(null) }}>
@@ -193,8 +194,8 @@ export default function MonitoringCharts() {
         <div className="mb-3 flex items-start justify-between gap-3">
           <div>
             <div className="text-xs uppercase tracking-wide text-slate-400">{series.label}{activeSite ? ` · site ${activeSite}` : ''} · {readings.length} readings ({series.unit})</div>
-            <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{series.note}</p>
-            <p className="mt-1 text-[10px] text-slate-600">{provenance?.threshold
+            <p className="mt-1 text-[11px] leading-relaxed text-slate-400">{series.note}</p>
+            <p className="mt-1 text-[10px] text-slate-400">{provenance?.threshold
               ? `Threshold source: ${provenance.threshold.provenance}`
               : provenance
                 ? 'Reference series — no alert threshold by design; inspect only.'
@@ -209,7 +210,7 @@ export default function MonitoringCharts() {
 
         <div className="h-60">
           {chart.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center gap-2 rounded border border-dashed border-slate-800 text-sm text-slate-500"><Database className="h-5 w-5 text-slate-600" />{isLoading ? 'Loading readings…' : 'No readings available for this exact metric and unit.'}</div>
+            <div className="flex h-full flex-col items-center justify-center gap-2 rounded border border-dashed border-slate-800 text-sm text-slate-400"><Database className="h-5 w-5 text-slate-400" />{isLoading ? 'Loading readings…' : 'No readings available for this exact metric and unit.'}</div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chart} margin={{ top: 4, right: 8, bottom: 4, left: -12 }}>
@@ -227,7 +228,7 @@ export default function MonitoringCharts() {
         {(anomalies.length > 0 || gapBands.length > 0) && (
           <div className="mt-3 space-y-2 border-t border-slate-800 pt-3">
             {anomalies.length > 0 && <div className="rounded border border-red-900/40 bg-red-950/20 p-2.5"><p className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-red-400"><AlertCircle className="h-3 w-3" /> {anomalies.length} certified anomaly signal{anomalies.length > 1 ? 's' : ''}</p>{anomalies.map((a) => <div key={`${a.fullDate}-${a.identity}`} className="flex items-center justify-between text-[11px]"><span className="font-mono text-slate-400">{a.name}</span><span className="font-mono text-red-300">{a.value.toFixed(2)} {series.unit} ({a.sigma}σ)</span></div>)}</div>}
-            {gapBands.length > 0 && <div className="rounded border border-slate-700/50 bg-slate-900/50 p-2.5"><p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Data gaps</p>{gapBands.map((gap) => <p key={`${gap.x1}-${gap.x2}`} className="font-mono text-[11px] text-slate-500">{gap.x1} → {gap.x2} <span className="text-slate-600">({gap.days}d gap)</span></p>)}</div>}
+            {gapBands.length > 0 && <div className="rounded border border-slate-700/50 bg-slate-900/50 p-2.5"><p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Data gaps</p>{gapBands.map((gap) => <p key={`${gap.x1}-${gap.x2}`} className="font-mono text-[11px] text-slate-400">{gap.x1} → {gap.x2} <span className="text-slate-400">({gap.days}d gap)</span></p>)}</div>}
           </div>
         )}
       </div>

@@ -13,6 +13,7 @@ import {
   getSolidWasteSites,
   SOLID_WASTE_KINDS,
 } from '@/lib/environmental-exposure-api'
+import { scrollRegion } from '@/lib/scrollRegion';
 
 const pretty = (value) => String(value || 'unknown').replaceAll('_', ' ').toLowerCase()
 
@@ -59,7 +60,7 @@ function SolidWasteSites({ summary, onRetry }) {
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-800 px-4 py-3">
         <div className="min-w-0 flex-1 basis-96">
           <h2 className="text-sm font-semibold text-slate-100">Solid-waste sites (vertedero registry)</h2>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-slate-400">
             Bounded registry from EPA LMOP and EPA ECHO only. It is not a complete inventory: unauthorized
             dumps, the Puerto Rico solid-waste authority list and EPA Region 2 enforcement records are not
             covered. ECHO rows are classified from facility names and need review. Listing a site says
@@ -92,12 +93,12 @@ function SolidWasteSites({ summary, onRetry }) {
         <div className="p-5 text-sm text-slate-400">No solid-waste site records are materialized.</div>
       ) : (
         <>
-          <div className="px-4 pt-3 text-xs text-slate-500">
+          <div className="px-4 pt-3 text-xs text-slate-400">
             {sites.length} records · {needsReview} need review
           </div>
-          <div className="overflow-x-auto">
+          <div {...scrollRegion("Exposure summary table")} className="overflow-x-auto">
             <table className="mt-2 w-full text-left text-xs">
-              <thead className="border-y border-slate-800 text-slate-500">
+              <thead className="border-y border-slate-800 text-slate-400">
                 <tr>
                   <th className="px-4 py-2 font-medium">Site</th>
                   <th className="px-4 py-2 font-medium">Kind</th>
@@ -134,12 +135,12 @@ function SolidWasteSites({ summary, onRetry }) {
 function MetricCard({ label, value, detail, icon: Icon }) {
   return (
     <div className="rounded-lg border border-slate-800 bg-slate-900/70 p-4">
-      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
+      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-400">
         <Icon className="h-4 w-4" aria-hidden="true" />
         {label}
       </div>
       <div className="mt-2 text-2xl font-semibold text-slate-100">{value}</div>
-      {detail && <div className="mt-1 text-xs text-slate-500">{detail}</div>}
+      {detail && <div className="mt-1 text-xs text-slate-400">{detail}</div>}
     </div>
   )
 }
@@ -186,7 +187,7 @@ export default function EnvironmentalExposurePage() {
         title="Environmental Exposure"
         subtitle="Temporal source → pathway → receptor graph with fail-closed causal promotion"
       />
-      <div className="flex-1 min-h-0 overflow-auto p-6">
+      <div {...scrollRegion("Environmental Exposure page content")} className="flex-1 min-h-0 overflow-auto p-6">
         <ErrorBoundary label="Environmental exposure graph">
           <div
             role="note"
@@ -208,7 +209,7 @@ export default function EnvironmentalExposurePage() {
             <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-800 px-4 py-3">
               <div>
                 <h2 className="text-sm font-semibold text-slate-100">Puerto Rico Hazard & Advisory Plane</h2>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-slate-400">
                   Food recalls, water-health advisories, agriculture/animal health, infectious disease and wastewater surveillance.
                 </p>
               </div>
@@ -234,17 +235,17 @@ export default function EnvironmentalExposurePage() {
 
                 <div className="grid gap-4 border-t border-slate-800 p-4 lg:grid-cols-2">
                   <div>
-                    <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Current family counts</div>
+                    <div className="text-xs font-medium uppercase tracking-wide text-slate-400">Current family counts</div>
                     <div className="mt-2 grid gap-1 text-xs text-slate-300">
                       {Object.keys(hazardSummary.family || {}).length ? Object.entries(hazardSummary.family).map(([family, count]) => (
                         <div key={family} className="flex justify-between gap-4 border-b border-slate-800/60 py-1">
                           <span>{pretty(family)}</span><span className="font-mono">{count}</span>
                         </div>
-                      )) : <div className="text-slate-500">No hazard records have been materialized yet.</div>}
+                      )) : <div className="text-slate-400">No hazard records have been materialized yet.</div>}
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Open source-universe residue</div>
+                    <div className="text-xs font-medium uppercase tracking-wide text-slate-400">Open source-universe residue</div>
                     <ul className="mt-2 grid gap-1 text-xs text-slate-400">
                       {(hazardSummary.source_universe.unresolved_material || []).map((item) => (
                         <li key={item} className="font-mono">{item}</li>
@@ -255,16 +256,16 @@ export default function EnvironmentalExposurePage() {
 
                 <div className="border-t border-slate-800">
                   <div className="px-4 py-3">
-                    <h3 className="text-xs font-medium uppercase tracking-wide text-slate-500">Current hazard records</h3>
+                    <h3 className="text-xs font-medium uppercase tracking-wide text-slate-400">Current hazard records</h3>
                   </div>
                   {hazardEvents.length === 0 ? (
                     <div className="px-4 pb-4 text-sm text-slate-400">
                       Source contracts are wired, but no production hazard records are materialized yet. This is intentionally fail-closed.
                     </div>
                   ) : (
-                    <div className="overflow-x-auto">
+                    <div {...scrollRegion("Current hazard records table")} className="overflow-x-auto">
                       <table className="w-full text-left text-xs">
-                        <thead className="border-y border-slate-800 text-slate-500">
+                        <thead className="border-y border-slate-800 text-slate-400">
                           <tr><th className="px-4 py-2 font-medium">Family</th><th className="px-4 py-2 font-medium">Hazard</th><th className="px-4 py-2 font-medium">Status</th><th className="px-4 py-2 font-medium">Authority</th><th className="px-4 py-2 font-medium">Municipality</th></tr>
                         </thead>
                         <tbody>
@@ -333,7 +334,7 @@ export default function EnvironmentalExposurePage() {
                       <h2 className="text-sm font-semibold text-slate-100">
                         Puerto Rico PFAS evidence plane
                       </h2>
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-1 text-xs text-slate-400">
                         Final EPA UCMR5 occurrence denominator plus regulatory, site, and legal evidence.
                       </p>
                     </div>
@@ -370,7 +371,7 @@ export default function EnvironmentalExposurePage() {
                   </div>
 
                   <div className="border-t border-slate-800 px-4 py-3">
-                    <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                    <div className="text-xs font-medium uppercase tracking-wide text-slate-400">
                       Material residue
                     </div>
                     {pfas.unresolved_material?.length ? (
@@ -391,7 +392,7 @@ export default function EnvironmentalExposurePage() {
               <section className="rounded-lg border border-slate-800 bg-slate-900/60">
                 <div className="border-b border-slate-800 px-4 py-3">
                   <h2 className="text-sm font-semibold text-slate-100">Temporal relationships</h2>
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="mt-1 text-xs text-slate-400">
                     Empty is a valid state: structural integrity is not a claim that the public-source corpus is complete.
                   </p>
                 </div>
@@ -400,9 +401,9 @@ export default function EnvironmentalExposurePage() {
                     No adjudicated or candidate exposure relationships are currently materialized.
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <div {...scrollRegion("Temporal relationships table")} className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
-                      <thead className="border-b border-slate-800 text-slate-500">
+                      <thead className="border-b border-slate-800 text-slate-400">
                         <tr>
                           <th className="px-4 py-2 font-medium">Predicate</th>
                           <th className="px-4 py-2 font-medium">Causal state</th>
