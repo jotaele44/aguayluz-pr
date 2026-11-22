@@ -148,7 +148,7 @@ export default function HydroMapWorkspace() {
         </div>
       </div>
       {OFFLINE || failed ? (
-        <div className="flex h-[300px] items-center justify-center rounded border border-dashed border-slate-700 text-[11px] text-slate-500">
+        <div className="flex h-[300px] items-center justify-center rounded border border-dashed border-slate-700 text-[11px] text-slate-400">
           {OFFLINE ? 'The map needs the backend; the offline export has no hydrologic geometry.' : `Map unavailable: ${failed}`}
         </div>
       ) : (
@@ -159,7 +159,7 @@ export default function HydroMapWorkspace() {
           Some map layers did not load: {layerErrors.join('; ')}
         </div>
       )}
-      <p className="mt-2 text-[10px] leading-relaxed text-slate-500">
+      <p className="mt-2 text-[10px] leading-relaxed text-slate-400">
         Only geometry published by the sources is drawn (USGS HA 730-N aquifers, NHD streams, canals (grey) and waterbodies, WBD watersheds, USFWS NWI wetlands, located wells, springs and gauges, USACE NID dams, PRASA facilities and EPA-permitted wastewater plants). Wells: green monitored now, amber historical only, grey no readings; a white ring means USGS assigns the well to an aquifer. PRASA facility points come from PRASA's public May 2020 layer; NWI wetland mapping is largely from 1980s imagery. Features whose source publishes no location, such as SDWIS wells, intakes and treatment plants, are listed on the Hydro Inventory page and never placed.
       </p>
     </div>

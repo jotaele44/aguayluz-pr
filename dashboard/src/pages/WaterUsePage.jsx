@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { fmtDate } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { useWaterUseEstimates } from '@/lib/water-use-hooks'
+import { scrollRegion } from '@/lib/scrollRegion';
 
 const FALLBACK_SCOPE = 'U.S. Geological Survey estimates of freshwater withdrawals in Puerto Rico, published every five years. They are not measurements of current production.'
 
@@ -41,7 +42,7 @@ function TierBadge({ figure }) {
 function SplitBar({ year, figure }) {
   const { surface_pct: surface, groundwater_pct: ground } = figure
   if (surface == null || ground == null) {
-    return <span className="text-slate-500">split by source not published</span>
+    return <span className="text-slate-400">split by source not published</span>
   }
   return (
     <div
@@ -67,9 +68,9 @@ function Legend() {
 
 function PublicSupplyTable({ years }) {
   return (
-    <div className="overflow-x-auto">
+    <div {...scrollRegion("Public supply table")} className="overflow-x-auto">
       <table className="w-full min-w-[900px] text-left text-xs" aria-label="Public-supply withdrawals by source">
-        <thead className="text-[11px] uppercase tracking-wide text-slate-500">
+        <thead className="text-[11px] uppercase tracking-wide text-slate-400">
           <tr className="border-b border-slate-800">
             <th className="py-2 pr-3 font-medium">Year</th>
             <th className="py-2 pr-3 text-right font-medium">Surface water</th>
@@ -89,11 +90,11 @@ function PublicSupplyTable({ years }) {
                 <th scope="row" className="py-2 pr-3 text-sm font-semibold text-slate-100">{year.year}</th>
                 <td className="py-2 pr-3 text-right text-slate-200">
                   {mgd(figure.surface_water_mgd)}
-                  <div className="text-[11px] text-slate-500">{pct(figure.surface_pct)}</div>
+                  <div className="text-[11px] text-slate-400">{pct(figure.surface_pct)}</div>
                 </td>
                 <td className="py-2 pr-3 text-right text-slate-200">
                   {mgd(figure.groundwater_mgd)}
-                  <div className="text-[11px] text-slate-500">{pct(figure.groundwater_pct)}</div>
+                  <div className="text-[11px] text-slate-400">{pct(figure.groundwater_pct)}</div>
                 </td>
                 <td className="py-2 pr-3 text-right font-semibold text-slate-100">{mgd(figure.total_mgd)}</td>
                 <td className="py-2 pr-3"><SplitBar year={year.year} figure={figure} /></td>
@@ -105,7 +106,7 @@ function PublicSupplyTable({ years }) {
                     </div>
                   )}
                   {figure.notes.map((note) => (
-                    <div key={note} className="mt-1 max-w-xs text-[11px] text-slate-500">{note}</div>
+                    <div key={note} className="mt-1 max-w-xs text-[11px] text-slate-400">{note}</div>
                   ))}
                 </td>
               </tr>
@@ -140,9 +141,9 @@ function CategoryTable({ year, categories }) {
     .map((c) => ({ ...c, figure: year.categories[c.id]?.published }))
     .filter((c) => c.figure)
   return (
-    <div className="overflow-x-auto">
+    <div {...scrollRegion("Water use by category table")} className="overflow-x-auto">
       <table className="w-full min-w-[640px] text-left text-xs" aria-label={`Freshwater withdrawals by category, ${year.year}`}>
-        <thead className="text-[11px] uppercase tracking-wide text-slate-500">
+        <thead className="text-[11px] uppercase tracking-wide text-slate-400">
           <tr className="border-b border-slate-800">
             <th className="py-2 pr-3 font-medium">Category</th>
             <th className="py-2 pr-3 text-right font-medium">Surface water</th>
@@ -189,11 +190,11 @@ function MunicipioTable({ tables }) {
             {y}
           </Button>
         ))}
-        <span className="text-[11px] text-slate-500">Sorted by groundwater withdrawal, largest first. The 2010 report is not broken out by municipality here.</span>
+        <span className="text-[11px] text-slate-400">Sorted by groundwater withdrawal, largest first. The 2010 report is not broken out by municipality here.</span>
       </div>
-      <div className="max-h-[28rem] overflow-auto">
+      <div {...scrollRegion("Water use records")} className="max-h-[28rem] overflow-auto">
         <table className="w-full min-w-[520px] text-left text-xs" aria-label={`Public-supply withdrawals by municipality, ${year}`}>
-          <thead className="sticky top-0 bg-slate-900 text-[11px] uppercase tracking-wide text-slate-500">
+          <thead className="sticky top-0 bg-slate-900 text-[11px] uppercase tracking-wide text-slate-400">
             <tr className="border-b border-slate-800">
               <th className="py-2 pr-3 font-medium">Municipality of intake</th>
               <th className="py-2 pr-3 text-right font-medium">Surface water</th>
@@ -241,14 +242,14 @@ function SourcePanel({ source }) {
           {source.sources.map((s) => (
             <li key={s.source_key} className="border-t border-slate-800 pt-2">
               <div className="text-slate-200">{s.title}</div>
-              <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
+              <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
                 <span>Data year {s.year}</span>
                 <span>{s.evidence_tier} · {s.extraction_method === 'manual_transcription' ? 'transcribed from PDF' : 'read from xlsx'}</span>
                 {String(s.url || '').startsWith('https://') && (
                   <a className="text-sky-300 hover:underline" href={s.url} target="_blank" rel="noopener noreferrer">doi:{s.doi}</a>
                 )}
               </div>
-              <div className="mt-0.5 break-all font-mono text-[11px] text-slate-500">SHA-256 {s.sha256}</div>
+              <div className="mt-0.5 break-all font-mono text-[11px] text-slate-400">SHA-256 {s.sha256}</div>
             </li>
           ))}
         </ul>
@@ -273,7 +274,7 @@ export default function WaterUsePage() {
         title="Water Use"
         subtitle="USGS estimates of public-supply withdrawals in Puerto Rico by source: surface water and groundwater"
       />
-      <div className="min-h-0 flex-1 space-y-5 overflow-auto p-6">
+      <div {...scrollRegion("Water Use page content")} className="min-h-0 flex-1 space-y-5 overflow-auto p-6">
         <ErrorBoundary label="Water-use estimates">
           <div role="note" aria-label="Water use scope" className="flex items-start gap-3 rounded-lg border border-sky-500/30 bg-sky-500/10 p-4">
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-sky-300" aria-hidden="true" />
@@ -294,7 +295,7 @@ export default function WaterUsePage() {
               { label: 'From groundwater', value: latestSupply ? pct(latestSupply.groundwater_pct) : '—', icon: Database },
             ].map(({ label, value, icon: Icon }) => (
               <div key={label} className="rounded-lg border border-slate-800 bg-slate-900/70 p-4">
-                <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500"><Icon className="h-4 w-4" aria-hidden="true" />{label}</div>
+                <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-400"><Icon className="h-4 w-4" aria-hidden="true" />{label}</div>
                 <div className="mt-2 text-2xl font-semibold text-slate-100">{value}</div>
               </div>
             ))}
@@ -302,7 +303,7 @@ export default function WaterUsePage() {
 
           <Panel>
             <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-slate-400">Public supply by source</h2>
-            <p className="mb-3 max-w-3xl text-xs text-slate-500">
+            <p className="mb-3 max-w-3xl text-xs text-slate-400">
               Million gallons per day withdrawn by PRASA and non-PRASA community water systems. Shares are of surface water
               plus groundwater.
             </p>
@@ -329,7 +330,7 @@ export default function WaterUsePage() {
           {detailed && (
             <Panel>
               <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-slate-400">All freshwater categories, {detailed.year}</h2>
-              <p className="mb-3 max-w-3xl text-xs text-slate-500">
+              <p className="mb-3 max-w-3xl text-xs text-slate-400">
                 Public supply is one category. The last row is every category together; its split by source is not the
                 public-supply split, and the two are often confused.
               </p>
@@ -340,7 +341,7 @@ export default function WaterUsePage() {
           {Object.keys(municipios).length > 0 && (
             <Panel>
               <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-slate-400">Public supply by municipality</h2>
-              <p className="mb-3 max-w-3xl text-xs text-slate-500">
+              <p className="mb-3 max-w-3xl text-xs text-slate-400">
                 Withdrawals are counted where the intake is, not where the water is used: a municipality with no intake
                 shows zero and is still served.
               </p>
