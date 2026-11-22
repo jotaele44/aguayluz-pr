@@ -19,6 +19,7 @@ on:
 
 permissions:
   contents: write   # commit the updated service_events.jsonl
+  statuses: write   # record the docs-sync verdict on the commit it pushes to main
 
 # Serialise runs on the same ref without cancelling. This workflow can
 # publish, write data, or hand off to another repo, and killing it
@@ -50,6 +51,8 @@ jobs:
           fi
 
       - name: Commit updated corpus
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name  "aguayluz-bot"
           git config user.email "noreply@github.com"
@@ -60,12 +63,8 @@ jobs:
           fi
           git commit -m "data: ingest Centinelas water/utility signal [skip ci]"
           # A failed push used to be reported as "nothing to push" and the signal
-          # was silently lost. Retry over concurrent refresh commits, then fail.
-          branch="${{ github.event.repository.default_branch }}"
-          for attempt in 1 2 3 4; do
-            if git push origin "HEAD:$branch"; then exit 0; fi
-            sleep $((2 ** attempt))
-            git pull --rebase origin "$branch"
-          done
-          echo "::error::could not push the ingested Centinelas signal"
-          exit 1
+          # was silently lost. scripts/push_to_main.sh replays the commit over
+          # concurrent refresh commits, runs docs-sync on it and records the verdict
+          # as the `docs-sync` commit status a required check on main expects, then
+          # pushes; if it cannot, it fails the job instead of dropping the signal.
+          scripts/push_to_main.sh centinelas-intake

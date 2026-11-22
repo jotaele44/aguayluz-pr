@@ -9,3 +9,5 @@ Shared invariants: WGS84/CRS84 interchange; explicit projected CRS for computati
 Current deficits under this branch: MoneySweep no-fabrication point/flow materialization; Skywatcher geodesic meters replacing planar degrees as production proximity; AguaYLuz deterministic hydro-network/raster interfaces; Spiderweb typed auditable cross-domain spatial relations.
 
 `FOUR-REPO GIS CERTIFIED` requires schema + geometry + tests + security + performance + federation + desktop + iOS gates; passing code tests alone is not certification.
+
+Viewer API: AguaYLuz mirrors Spiderweb's `gis-layer-catalog/1.0`, `gis-query/1.0` and `gis-scenario-result/1.0` contracts and serves `/gis/*`, including dependency tracing and out-of-service scenarios over proximity-proxy links (always `HYPOTHESIS`, never persisted); see `docs/GIS_VIEWER_API.md`.
