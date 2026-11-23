@@ -7,6 +7,9 @@ import { Skeleton } from '@/components/ui/skeleton'
 import DashboardLayout from './components/layout/DashboardLayout'
 import ScrollToTop from './components/ScrollToTop'
 
+const IONOSPHERE_PREVIEW = import.meta.env.VITE_IONOSPHERE_PREVIEW === '1'
+const IonospherePage = lazy(() => import('./pages/IonospherePage'))
+
 const OFFLINE = import.meta.env.VITE_OFFLINE === '1'
 const Router = OFFLINE ? HashRouter : BrowserRouter
 
@@ -70,6 +73,7 @@ function App() {
               <Route path="/regulatory/review" element={<RegulatoryReviewPage />} />
               <Route path="/environmental-exposure" element={<EnvironmentalExposurePage />} />
               <Route path="/hydromet" element={<HydrometPage />} />
+              {IONOSPHERE_PREVIEW && <Route path="/ionosphere" element={<IonospherePage />} />}
               <Route path="/aquifer-bands" element={<AquiferBandsPage />} />
               <Route path="/water-use" element={<WaterUsePage />} />
               <Route path="/hydro-inventory" element={<HydroInventoryPage />} />
