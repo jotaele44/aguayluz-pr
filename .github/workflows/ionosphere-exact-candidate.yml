@@ -1,0 +1,150 @@
+# Exact immutable candidate acceptance; does not certify unresolved ROTI or deploy.
+name: Ionosphere exact candidate acceptance
+'on':
+  pull_request: {}
+  workflow_dispatch: {}
+permissions:
+  contents: read
+concurrency:
+  group: ionosphere-exact-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+        - '3.10'
+        - '3.12'
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        ref: ${{ env.EXPECTED_SHA }}
+    - name: Attest exact candidate checkout
+      working-directory: ${{ github.workspace }}
+      run: |
+        test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+        git rev-parse HEAD
+        git rev-parse HEAD^{tree}
+    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: pip
+    - name: Assert isolated checkout
+      run: test ! -e "$GITHUB_WORKSPACE/../thehub-pr"
+    - name: Install uv
+      run: python -m pip install uv
+    - name: Install
+      run: uv pip install --system -e .[dev] -r server/backend/requirements.txt
+    - name: Federation manifest gate
+      run: |
+        python - <<'PY'
+        import json
+        from pathlib import Path
+        manifest = json.loads(Path("federation.json").read_text())
+        required = {
+            "schema_version", "program_id", "repository_full_name",
+            "federation_role", "hub_parent", "hub_callable_commands",
+            "canonical_outputs", "federation_readiness_gate",
+        }
+        missing = sorted(required - set(manifest))
+        assert not missing, f"federation.json missing required keys: {missing}"
+        assert manifest["schema_version"] == "repo_federation_manifest_v1"
+        assert manifest["program_id"] == "aguayluz-pr"
+        assert manifest["hub_parent"] == "thehub-pr"
+        assert "setup" in manifest["hub_callable_commands"]
+        assert "test_suite" in manifest["hub_callable_commands"]
+        gate = manifest["federation_readiness_gate"]
+        assert isinstance(gate.get("ready_for_hub_discovery"), bool)
+        assert isinstance(gate.get("ready_for_hub_live_execution"), bool)
+        assert isinstance(gate.get("blocking_conditions"), list)
+        print("federation manifest gate passed")
+        PY
+    - name: Lint
+      run: ruff check .
+    - name: Tests
+      run: pytest -q --cov --cov-report=term-missing:skip-covered
+    - name: Validation gates
+      run: python scripts/validate_repo.py
+    - name: Frozen reference topology
+      run: |-
+        python -m pip install 'shapely>=2.0,<3'
+        python scripts/audit_ionosphere_reference_coverage.py --check
+    - name: Reassert isolated checkout
+      run: test ! -e "$GITHUB_WORKSPACE/../thehub-pr"
+    timeout-minutes: 20
+    env:
+      EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  browser:
+    name: GUI Reachability E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: dashboard
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        ref: ${{ env.EXPECTED_SHA }}
+    - name: Attest exact candidate checkout
+      working-directory: ${{ github.workspace }}
+      run: |
+        test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+        git rev-parse HEAD
+        git rev-parse HEAD^{tree}
+    - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+      with:
+        node-version: '20'
+        cache: npm
+        cache-dependency-path: dashboard/package-lock.json
+    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+      with:
+        python-version: '3.12'
+    - name: Install production backend runtime
+      working-directory: ${{ github.workspace }}
+      shell: bash
+      run: |
+        if [[ -f server/backend/requirements.txt ]]; then
+          python -m pip install -r server/backend/requirements.txt
+        else
+          python -m pip install -e ".[server]"
+        fi
+    - run: npm ci
+    - run: npx playwright install --with-deps chromium
+    - run: npm run test:gui-parity
+    - name: Test enabled ionosphere preview
+      env:
+        VITE_IONOSPHERE_PREVIEW: '1'
+        AGUAYLUZ_IONOSPHERE_PREVIEW: '1'
+      run: npx playwright test -c gui-parity.playwright.config.mjs tests/ionosphere.spec.mjs
+    - name: Upload browser evidence
+      if: always()
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      with:
+        name: gui-parity-browser-evidence
+        path: |
+          dashboard/playwright-report/gui-parity
+          dashboard/test-results
+        if-no-files-found: ignore
+        retention-days: 14
+    env:
+      EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  producer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        repository: jotaele44/skywatcher-pr
+        ref: 5794c5cb7f97c37de8f210570a657d8bfb690aa5
+    - name: Attest frozen producer
+      run: |-
+        test "$(git rev-parse HEAD)" = "5794c5cb7f97c37de8f210570a657d8bfb690aa5"
+        git rev-parse HEAD^{tree}
+    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+      with:
+        python-version: '3.12'
+    - run: |-
+        python -m pip install pytest jsonschema
+        python -m pytest tests/test_ionosphere_transport.py tests/test_pitirre_observation.py -q
