@@ -25,6 +25,7 @@ import {
   getCaveKarstSummary,
 } from '@/lib/cave-karst-api'
 import { cn } from '@/lib/utils'
+import { scrollRegion } from '@/lib/scrollRegion';
 
 const titleCase = (value) => String(value || 'unknown')
   .replaceAll('_', ' ')
@@ -62,12 +63,12 @@ function StatusBadge({ status }) {
 function MetricCard({ label, value, detail, icon: Icon }) {
   return (
     <div className="rounded-lg border border-slate-800 bg-slate-900/70 p-4">
-      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
+      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-400">
         <Icon className="h-4 w-4" aria-hidden="true" />
         {label}
       </div>
       <div className="mt-2 text-2xl font-semibold text-slate-100">{value}</div>
-      {detail && <div className="mt-1 text-xs text-slate-500">{detail}</div>}
+      {detail && <div className="mt-1 text-xs text-slate-400">{detail}</div>}
     </div>
   )
 }
@@ -77,7 +78,7 @@ function DetailList({ items }) {
     <dl className="grid gap-3 sm:grid-cols-2">
       {items.map(({ term, value }) => (
         <div key={term} className="rounded-md border border-slate-800 bg-slate-950/40 p-3">
-          <dt className="text-[11px] uppercase tracking-wide text-slate-500">{term}</dt>
+          <dt className="text-[11px] uppercase tracking-wide text-slate-400">{term}</dt>
           <dd className="mt-1 text-sm text-slate-200">{value || 'Unknown'}</dd>
         </div>
       ))}
@@ -150,7 +151,7 @@ export default function CaveKarstPage() {
         title="Cave & Karst Monitor"
         subtitle="Read-only Río Camuy pilot registry — not a statewide cave census"
       />
-      <div className="flex-1 min-h-0 overflow-auto p-6">
+      <div {...scrollRegion("Cave and Karst page content")} className="flex-1 min-h-0 overflow-auto p-6">
         <ErrorBoundary label="Cave and karst monitor">
           <div
             role="note"
@@ -195,7 +196,7 @@ export default function CaveKarstPage() {
                 <section aria-labelledby="cave-karst-assets">
                   <div className="mb-3 flex items-center justify-between">
                     <h2 id="cave-karst-assets" className="text-sm font-semibold text-slate-100">Pilot assets</h2>
-                    <span className="text-xs text-slate-500">{assets.length} records</span>
+                    <span className="text-xs text-slate-400">{assets.length} records</span>
                   </div>
                   <div className="space-y-2">
                     {assets.map((asset) => (
@@ -214,11 +215,11 @@ export default function CaveKarstPage() {
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <div className="truncate text-sm font-medium text-slate-100">{asset.canonical_name}</div>
-                            <div className="mt-1 text-xs text-slate-500">{titleCase(asset.asset_kind)}</div>
+                            <div className="mt-1 text-xs text-slate-400">{titleCase(asset.asset_kind)}</div>
                           </div>
                           <StatusBadge status={asset.current_status} />
                         </div>
-                        <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+                        <div className="mt-3 flex items-center justify-between text-xs text-slate-400">
                           <span>{asset.evidence_tier} · {asset.confidence}% confidence</span>
                           <span>{asset.unresolved_gaps.length} gaps</span>
                         </div>
@@ -240,7 +241,7 @@ export default function CaveKarstPage() {
                       <article className="rounded-lg border border-slate-800 bg-slate-900/70 p-5">
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div>
-                            <p className="text-xs uppercase tracking-wide text-slate-500">{detail.asset_id}</p>
+                            <p className="text-xs uppercase tracking-wide text-slate-400">{detail.asset_id}</p>
                             <h3 className="mt-1 text-xl font-semibold text-slate-100">{detail.canonical_name}</h3>
                             <p className="mt-1 text-sm text-slate-400">{detail.municipalities?.join(', ') || 'Municipality unknown'}</p>
                           </div>
@@ -294,7 +295,7 @@ export default function CaveKarstPage() {
                             ? 'Precise coordinates are withheld by the registry disclosure policy.'
                             : 'This asset is explicitly classified for public exact-coordinate display.'}
                         </p>
-                        <p className="mt-1 text-xs text-slate-500">Policy: {titleCase(detail.location_disclosure)}</p>
+                        <p className="mt-1 text-xs text-slate-400">Policy: {titleCase(detail.location_disclosure)}</p>
                       </section>
 
                       <section aria-labelledby="unresolved-gaps" className="rounded-lg border border-slate-800 bg-slate-900/70 p-5">
@@ -342,7 +343,7 @@ export default function CaveKarstPage() {
                                 <li key={event.event_id} className="border-l border-slate-700 pl-3">
                                   <div className="flex flex-wrap items-center gap-2">
                                     <StatusBadge status={event.to_status} />
-                                    <span className="text-xs text-slate-500">{formatDate(event.effective_from || event.observed_at)}</span>
+                                    <span className="text-xs text-slate-400">{formatDate(event.effective_from || event.observed_at)}</span>
                                   </div>
                                   <p className="mt-1 text-xs text-slate-400">{titleCase(event.event_type)} · {event.evidence_tier} · {titleCase(event.review_status)}</p>
                                 </li>
@@ -360,7 +361,7 @@ export default function CaveKarstPage() {
                               {(edgesQuery.data?.items ?? []).map((edge) => (
                                 <li key={edge.edge_id} className="rounded-md border border-slate-800 bg-slate-950/40 p-3">
                                   <div className="text-sm text-slate-200">{titleCase(edge.relation)}</div>
-                                  <div className="mt-1 text-xs text-slate-500">{titleCase(edge.direction)} · {edge.to_node_id} · {edge.confidence}%</div>
+                                  <div className="mt-1 text-xs text-slate-400">{titleCase(edge.direction)} · {edge.to_node_id} · {edge.confidence}%</div>
                                 </li>
                               ))}
                             </ul>
@@ -370,7 +371,7 @@ export default function CaveKarstPage() {
 
                       <section aria-labelledby="provenance" className="rounded-lg border border-slate-800 bg-slate-900/70 p-5">
                         <h3 id="provenance" className="font-semibold text-slate-100">Provenance</h3>
-                        <p className="mt-1 text-xs text-slate-500">{provenanceQuery.data?.evidence_policy}</p>
+                        <p className="mt-1 text-xs text-slate-400">{provenanceQuery.data?.evidence_policy}</p>
                         {provenanceQuery.isLoading ? <LoadingBlock label="provenance" /> : (
                           <ul className="mt-3 space-y-3">
                             {(provenanceQuery.data?.items ?? []).map((source) => (
@@ -378,7 +379,7 @@ export default function CaveKarstPage() {
                                 <div className="flex flex-wrap items-start justify-between gap-3">
                                   <div>
                                     <div className="text-sm font-medium text-slate-100">{source.title}</div>
-                                    <div className="mt-1 text-xs text-slate-500">{source.publisher} · {source.evidence_tier} · {titleCase(source.review_status)}</div>
+                                    <div className="mt-1 text-xs text-slate-400">{source.publisher} · {source.evidence_tier} · {titleCase(source.review_status)}</div>
                                   </div>
                                   {source.url && (
                                     <a
