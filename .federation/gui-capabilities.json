@@ -2357,6 +2357,16 @@
           "scripts/adjudicate_ucmr5_pr_subset.py:read_tsv",
           "scripts/adjudicate_ucmr5_pr_subset.py:adjudicate",
           "scripts/adjudicate_ucmr5_pr_subset.py:main"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_adjudicate_zip_manifestations.py",
+          "tests/test_adjudicate_ucmr5_pr_subset.py"
+        ]
+      }
+    },
+    {
       "id": "ionosphere-preview",
       "classification": "analysis",
       "status": "staged",
@@ -2383,6 +2393,37 @@
           "src/aguayluz/ionosphere_transport.py:consume_glotec_package",
           "src/aguayluz/ionosphere_transport.py:load_frozen_transport",
           "src/aguayluz/ionosphere_transport.py:load_reference_coverage"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/ionosphere"
+        ],
+        "e2e_routes": [
+          "/ionosphere"
+        ],
+        "components": [
+          "dashboard/src/pages/IonospherePage.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_ionosphere.py",
+          "tests/test_ionosphere_snapshot.py",
+          "tests/test_ionosphere_transport.py"
+        ],
+        "unit": [
+          "dashboard/src/pages/IonospherePage.test.jsx"
+        ],
+        "e2e": [
+          "dashboard/tests/ionosphere.spec.mjs"
+        ]
+      }
+    },
+    {
       "id": "luma-monthly-generation-source-freeze",
       "classification": "internal",
       "status": "active",
@@ -2438,6 +2479,15 @@
           "scripts/luma_monthly_generation_adapter.py:run_replay",
           "scripts/luma_monthly_generation_adapter.py:parser",
           "scripts/luma_monthly_generation_adapter.py:main"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_luma_monthly_generation_adapter.py"
+        ]
+      }
+    },
+    {
       "id": "gis-viewer-and-dependency-analysis",
       "classification": "analysis",
       "status": "active",
@@ -2515,13 +2565,6 @@
       },
       "frontend": {
         "routes": [
-          "/ionosphere"
-        ],
-        "e2e_routes": [
-          "/ionosphere"
-        ],
-        "components": [
-          "dashboard/src/pages/IonospherePage.jsx"
           "/map"
         ],
         "e2e_routes": [
@@ -2546,36 +2589,6 @@
       },
       "tests": {
         "backend": [
-          "tests/test_ionosphere.py",
-          "tests/test_ionosphere_snapshot.py",
-          "tests/test_ionosphere_transport.py"
-        ],
-        "unit": [
-          "dashboard/src/pages/IonospherePage.test.jsx"
-        ],
-        "e2e": [
-          "dashboard/tests/ionosphere.spec.mjs"
-        ]
-      }
-    },
-    {
-      "id": "ionosphere-ci-acquisition-evidence",
-      "classification": "internal",
-      "status": "active",
-      "requires_terminal": false,
-      "rationale": "Development-only CI evidence capture experiment. It freezes fixed NOAA public endpoint responses into isolated build artifacts and inventories schema without ingestion, scheduling, user-facing production operations, or geographic certification. It is not a production acquisition capability.",
-      "analysis": {
-        "files": [
-          "scripts/capture_ionosphere_evidence.py",
-          "scripts/audit_ionosphere_reference_coverage.py"
-        ],
-        "symbols": [
-          "scripts/capture_ionosphere_evidence.py:freeze",
-          "scripts/capture_ionosphere_evidence.py:request_bytes",
-          "scripts/capture_ionosphere_evidence.py:inspect_capture",
-          "scripts/capture_ionosphere_evidence.py:capture",
-          "scripts/audit_ionosphere_reference_coverage.py:classify",
-          "scripts/audit_ionosphere_reference_coverage.py:audit"
           "tests/test_gis_api.py",
           "tests/test_gis_network.py",
           "tests/test_gis_query.py",
@@ -2604,6 +2617,32 @@
           "src/aguayluz/gis_network.py:edges_from_rows",
           "src/aguayluz/gis_network.py:scenario_out_of_service",
           "src/aguayluz/gis_network.py:trace"
+        ]
+      }
+    },
+    {
+      "id": "ionosphere-ci-acquisition-evidence",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Development-only CI evidence capture experiment. It freezes fixed NOAA public endpoint responses into isolated build artifacts and inventories schema without ingestion, scheduling, user-facing production operations, or geographic certification. It is not a production acquisition capability.",
+      "analysis": {
+        "files": [
+          "scripts/capture_ionosphere_evidence.py",
+          "scripts/audit_ionosphere_reference_coverage.py"
+        ],
+        "symbols": [
+          "scripts/capture_ionosphere_evidence.py:freeze",
+          "scripts/capture_ionosphere_evidence.py:request_bytes",
+          "scripts/capture_ionosphere_evidence.py:inspect_capture",
+          "scripts/capture_ionosphere_evidence.py:capture",
+          "scripts/audit_ionosphere_reference_coverage.py:classify",
+          "scripts/audit_ionosphere_reference_coverage.py:audit"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_capture_ionosphere_evidence.py"
         ]
       }
     },
@@ -2834,7 +2873,8 @@
       },
       "tests": {
         "contract": [
-          "tests/test_capture_ionosphere_evidence.py"
+          "tests/test_federation_source_monitors.py",
+          "tests/test_gui_parity.py"
         ]
       }
     },
@@ -2854,8 +2894,11 @@
           "scripts/verify_frozen_pfas_pr_scope.py:table",
           "scripts/verify_frozen_pfas_pr_scope.py:verify_bundle",
           "scripts/verify_frozen_pfas_pr_scope.py:select_pr_source"
-          "tests/test_federation_source_monitors.py",
-          "tests/test_gui_parity.py"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_frozen_pfas_pr_scope.py"
         ]
       }
     },
@@ -2910,10 +2953,6 @@
       },
       "tests": {
         "contract": [
-          "tests/test_adjudicate_zip_manifestations.py",
-          "tests/test_adjudicate_ucmr5_pr_subset.py"
-          "tests/test_frozen_pfas_pr_scope.py"
-          "tests/test_luma_monthly_generation_adapter.py"
           "tests/test_outdoor_compose.py",
           "tests/test_ingest_outdoor_sources.py",
           "tests/test_refresh_plans.py",

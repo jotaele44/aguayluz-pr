@@ -249,8 +249,9 @@ def test_every_schema_loads_and_validates_itself(schemas_dir):
     # contract (candidate) adds one more, the outdoor-conditions layer
     # (outdoor_condition.v1) one more, and the GIS viewer contracts mirrored from
     # spiderweb-pr (gis_layer_catalog_v1, gis_query_v1, gis_scenario_result_v1)
-    # three. Root schema count is an explicit gate.
-    assert len(schemas) == 44, f"expected 44 schemas, found {len(schemas)}"
+    # three, and the hydro-to-financial-authority link (hydro_financial_link.v1)
+    # one. Root schema count is an explicit gate.
+    assert len(schemas) == 45, f"expected 45 schemas, found {len(schemas)}"
     for p in schemas:
         s = json.loads(p.read_text(encoding="utf-8"))
         Draft202012Validator.check_schema(s)
