@@ -9,24 +9,6 @@ import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
 import brandMark from "@/assets/icon-64.png?inline";
 
-const NAV = [
-  { to: '/', icon: LayoutDashboard, label: 'Overview', end: true },
-  { to: '/map', icon: Map, label: 'Map' },
-  { to: '/assets', icon: Database, label: 'Assets' },
-  { to: '/alerts', icon: ShieldAlert, label: 'Alerts' },
-  { to: '/outages', icon: Zap, label: 'Outages' },
-  { to: '/water-disruption', icon: Droplets, label: 'Water Validation' },
-  { to: '/monitoring', icon: Activity, label: 'Monitoring' },
-  { to: '/hydromet', icon: CloudRain, label: 'NWS Hydromet' },
-  ...(import.meta.env.VITE_IONOSPHERE_PREVIEW === '1' ? [{ to: '/ionosphere', icon: Activity, label: 'Space weather / Clima espacial' }] : []),
-  { to: '/cave-karst', icon: Mountain, label: 'Cave & Karst' },
-  { to: '/regulatory', icon: Landmark, label: 'Regulatory', end: true },
-  { to: '/regulatory/review', icon: ClipboardCheck, label: 'Regulatory Review' },
-  { to: '/environmental-exposure', icon: Activity, label: 'Exposure Graph' },
-  { to: '/review', icon: ClipboardList, label: 'Review Queue' },
-  { to: '/analytics', icon: BarChart3, label: 'Analytics' },
-  { to: '/logs', icon: ScrollText, label: 'Live Logs' },
-  { to: '/system', icon: SlidersHorizontal, label: 'System & Tools' },
 // Tabs -> rows -> sub-links. Every routed page appears exactly once.
 const NAV_GROUPS = [
   {
@@ -55,6 +37,8 @@ const NAV_GROUPS = [
         desc: 'Water service validation, National Weather Service hydromet, aquifer condition bands, USGS water-use estimates and the reconciled inventory of aquifers and wells.',
         links: [
           { to: '/hydromet', label: 'NWS Hydromet' },
+          // Staged preview (ionosphere-preview capability): listed only when the flag is on.
+          ...(import.meta.env.VITE_IONOSPHERE_PREVIEW === '1' ? [{ to: '/ionosphere', label: 'Space weather / Clima espacial' }] : []),
           { to: '/aquifer-bands', label: 'Aquifer Bands' },
           { to: '/water-use', label: 'Water Use' },
           { to: '/hydro-inventory', label: 'Hydro Inventory' },

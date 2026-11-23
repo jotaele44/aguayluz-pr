@@ -328,6 +328,9 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
   const [showTerrain, setShowTerrain] = useState(false)
   const [showTools, setShowTools] = useState(false)
   const [mapReady, setMapReady] = useState(false)
+  // Set when the browser cannot create the map (e.g. no WebGL2); the page then
+  // shows why instead of going blank.
+  const [mapFailed, setMapFailed] = useState(null)
 
   const assetFeatures = assets?.features ?? []
   const visibleAssets = useMemo(() => {
@@ -377,7 +380,13 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
 
   useEffect(() => {
     if (!containerRef.current) return undefined
-    const map = new maplibregl.Map({ container: containerRef.current, style: BASE_STYLE, center: PR_CENTER, zoom: 8.25, minZoom: 7.2 })
+    let map
+    try {
+      map = new maplibregl.Map({ container: containerRef.current, style: BASE_STYLE, center: PR_CENTER, zoom: 8.25, minZoom: 7.2 })
+    } catch (error) {
+      setMapFailed(String(error?.message ?? error))
+      return undefined
+    }
     mapRef.current = map
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
 
@@ -577,7 +586,13 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
         onMunicipioSelectRef.current?.({ name: props.name || props.NAME || props.municipio || props.MUNICIPIO, properties: props })
       })
     })
-    return () => { readyRef.current = false; map.remove() }
+    return () => {
+      readyRef.current = false
+      mapRef.current = null
+      // A map that lost its WebGL context can throw while tearing down; the
+      // page is being left, so that must not take the app down with it.
+      try { map.remove() } catch { /* already unusable */ }
+    }
   }, [])
 
   useEffect(() => {
@@ -798,6 +813,14 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
     exportable: (layerId) => gisCatalog?.layers.find((layer) => layer.layer_id === layerId)?.exportable ?? false,
   }), [activeCatalogLayers, gisCatalog, gisClient, networkClient])
   const spatialTools = useSpatialTools({ mapRef, mapReady, targets: spatialToolTargets, interactionLockRef: spatialToolActiveRef, gis: spatialToolsGis })
+
+  if (mapFailed) {
+    return (
+      <div role="status" className="flex h-full w-full items-center justify-center p-6 text-center text-sm text-slate-400">
+        Map unavailable: {mapFailed}
+      </div>
+    )
+  }
 
   return (
     <div className="relative h-full w-full">
