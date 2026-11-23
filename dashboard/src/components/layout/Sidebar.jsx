@@ -27,6 +27,7 @@ const NAV = [
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
   { to: '/logs', icon: ScrollText, label: 'Live Logs' },
   { to: '/system', icon: SlidersHorizontal, label: 'System & Tools' },
+]
 // Tabs -> rows -> sub-links. Every routed page appears exactly once.
 const NAV_GROUPS = [
   {
