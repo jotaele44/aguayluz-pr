@@ -1332,7 +1332,7 @@
       "classification": "internal",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Bounded keyless EPA LMOP and ECHO ingestion that freezes the Puerto Rico solid-waste (landfill) site registry (ADR-0004) and feeds the existing Environmental Exposure graph. It is an internal producer workflow run on demand to refresh a hash-pinned snapshot, not a second user control surface: the records are read through the existing GET /environmental-exposure/entities endpoint and listed, read-only, in the Solid-waste sites section of the Environmental Exposure page (covered by the environmental-exposure-graph capability). RAW source rows stay apart from canonical records, cross-source matches stay CANDIDATE_NOT_IDENTITY, a filter the source silently ignores fails closed, and the result is always OPEN.",
+      "rationale": "Bounded keyless EPA LMOP and ECHO ingestion that freezes the Puerto Rico solid-waste (landfill) site registry (ADR-0004), with ECHO enforcement cases and facility reports kept as RAW rows and candidate bindings only and feeds the existing Environmental Exposure graph. It is an internal producer workflow run on demand to refresh a hash-pinned snapshot, not a second user control surface: the records are read through the existing GET /environmental-exposure/entities endpoint and listed, read-only, in the Solid-waste sites section of the Environmental Exposure page (covered by the environmental-exposure-graph capability). RAW source rows stay apart from canonical records, cross-source matches stay CANDIDATE_NOT_IDENTITY, a filter the source silently ignores fails closed, and the result is always OPEN.",
       "backend": {
         "files": [
           "src/aguayluz/solid_waste.py"
@@ -1343,22 +1343,31 @@
           "src/aguayluz/solid_waste.py:FilterIgnoredError",
           "src/aguayluz/solid_waste.py:LmopTable",
           "src/aguayluz/solid_waste.py:RegistryRecords",
+          "src/aguayluz/solid_waste.py:build_case_rows",
+          "src/aguayluz/solid_waste.py:build_dfr_rows",
           "src/aguayluz/solid_waste.py:build_echo_records",
           "src/aguayluz/solid_waste.py:build_lmop_records",
           "src/aguayluz/solid_waste.py:build_receipts",
           "src/aguayluz/solid_waste.py:candidate_bindings",
           "src/aguayluz/solid_waste.py:candidates_from_records",
           "src/aguayluz/solid_waste.py:canonical_sha256",
+          "src/aguayluz/solid_waste.py:case_bindings",
+          "src/aguayluz/solid_waste.py:case_ref",
+          "src/aguayluz/solid_waste.py:case_service_control",
           "src/aguayluz/solid_waste.py:classify_echo",
           "src/aguayluz/solid_waste.py:coverage_ledger",
           "src/aguayluz/solid_waste.py:echo_entity_id",
           "src/aguayluz/solid_waste.py:echo_filter_control",
+          "src/aguayluz/solid_waste.py:enforcement_ledger",
           "src/aguayluz/solid_waste.py:haversine_m",
+          "src/aguayluz/solid_waste.py:is_landfill_context_case",
+          "src/aguayluz/solid_waste.py:latest_utc",
           "src/aguayluz/solid_waste.py:lmop_release_from_url",
           "src/aguayluz/solid_waste.py:normalize_name",
           "src/aguayluz/solid_waste.py:read_lmop_workbook",
           "src/aguayluz/solid_waste.py:seed_candidates",
-          "src/aguayluz/solid_waste.py:select_state"
+          "src/aguayluz/solid_waste.py:select_state",
+          "src/aguayluz/solid_waste.py:summarize_dfr"
         ]
       },
       "analysis": {
@@ -1366,7 +1375,11 @@
           "scripts/ingest_solid_waste_registry.py"
         ],
         "symbols": [
+          "scripts/ingest_solid_waste_registry.py:accepted_registry_ids",
           "scripts/ingest_solid_waste_registry.py:build",
+          "scripts/ingest_solid_waste_registry.py:build_enforcement",
+          "scripts/ingest_solid_waste_registry.py:fetch_cases",
+          "scripts/ingest_solid_waste_registry.py:fetch_dfr",
           "scripts/ingest_solid_waste_registry.py:fetch_echo",
           "scripts/ingest_solid_waste_registry.py:fetch_lmop_bytes",
           "scripts/ingest_solid_waste_registry.py:main",
@@ -1375,6 +1388,7 @@
       },
       "tests": {
         "contract": [
+          "tests/test_solid_waste_enforcement.py",
           "tests/test_solid_waste_registry.py"
         ]
       }
@@ -1965,6 +1979,285 @@
       }
     },
     {
+      "id": "usgs-water-use-estimates",
+      "classification": "analysis",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "USGS estimates of freshwater withdrawals in Puerto Rico for 2010, 2015 and 2020, shown on the Water Use page: public supply by source (surface water, groundwater) per year with shares, a bar with a text alternative, the evidence tier and extraction method of each year, the other freshwater categories for the year that publishes them, public supply by municipality of intake with a year toggle, and each source's DOI and pinned SHA-256. Read-only by design: GET /water-use/estimates serves the committed rows, computes shares per request, persists nothing and has no refresh route. The sources are static five-yearly publications, so scripts/ingest_usgs_water_use.py is run on demand by a maintainer when USGS publishes a new release, and is deliberately absent from scripts/refresh.py; a user never needs it to see the figures, which are committed, so no normal user path requires a terminal. The only controls are Retry, which re-requests the same endpoint after a failed load, and the year toggle. Nothing is alerted on: these are historical estimates, which the page states. Where USGS published two values for one year the page shows both and offers no reason, because the source gives none. Loading, error-with-retry, empty, no-published-split and failed-source states are rendered and unit-tested.",
+      "backend": {
+        "files": [
+          "server/backend/water_use_api.py",
+          "server/backend/app.py",
+          "src/aguayluz/water_use.py"
+        ],
+        "endpoints": [
+          "GET /water-use/estimates"
+        ],
+        "symbols": [
+          "server/backend/water_use_api.py:water_use_estimates",
+          "src/aguayluz/water_use.py:ParsedTable",
+          "src/aguayluz/water_use.py:SheetRow",
+          "src/aguayluz/water_use.py:WaterUseSourceError",
+          "src/aguayluz/water_use.py:fold",
+          "src/aguayluz/water_use.py:island_summary",
+          "src/aguayluz/water_use.py:load_estimates",
+          "src/aguayluz/water_use.py:load_municipios",
+          "src/aguayluz/water_use.py:load_receipt",
+          "src/aguayluz/water_use.py:load_sources",
+          "src/aguayluz/water_use.py:municipio_table",
+          "src/aguayluz/water_use.py:parse_category",
+          "src/aguayluz/water_use.py:parse_irrigation_municipio",
+          "src/aguayluz/water_use.py:parse_public_supply_municipio",
+          "src/aguayluz/water_use.py:parse_source",
+          "src/aguayluz/water_use.py:parse_trends_restated",
+          "src/aguayluz/water_use.py:read_xlsx_rows",
+          "src/aguayluz/water_use.py:restatements",
+          "src/aguayluz/water_use.py:slug",
+          "src/aguayluz/water_use.py:transcription_records"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/ingest_usgs_water_use.py"
+        ],
+        "symbols": [
+          "scripts/ingest_usgs_water_use.py:AcquisitionError",
+          "scripts/ingest_usgs_water_use.py:arithmetic",
+          "scripts/ingest_usgs_water_use.py:fetch_xlsx",
+          "scripts/ingest_usgs_water_use.py:main",
+          "scripts/ingest_usgs_water_use.py:receipt_entry"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/water-use"
+        ],
+        "e2e_routes": [
+          "/water-use"
+        ],
+        "components": [
+          "dashboard/src/pages/WaterUsePage.jsx",
+          "dashboard/src/lib/water-use-api.js",
+          "dashboard/src/lib/water-use-hooks.js",
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_water_use_api.py"
+        ],
+        "contract": [
+          "tests/test_water_use.py",
+          "tests/test_ingest_usgs_water_use.py",
+          "tests/test_gui_parity.py"
+        ],
+        "unit": [
+          "dashboard/src/pages/WaterUsePage.test.jsx",
+          "dashboard/src/lib/water-use-api.test.js"
+        ],
+        "e2e": [
+          "dashboard/tests/water-use.spec.mjs",
+          "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "hydro-feature-inventory",
+      "classification": "analysis",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "The reconciled inventory of Puerto Rico's aquifers, wells, springs, stream reaches, canals, watercourses, waterbodies, wetlands, reservoirs, dams, intakes, treatment and wastewater plants, pump stations, tanks, non-PRASA community water systems, gauges and watersheds, shown on the Hydro Inventory page and used by the Monitoring page's groundwater series. Every source statement (USGS HA 730-N polygons and text, USGS aquifer codes, USGS monitoring locations, the Water Quality Portal, EPA SDWIS, USGS GNIS, USGS NHD and WBD, NOAA NWPS, DRNA PIRA 2016, PRASA's public May 2020 facility layer, the USACE National Inventory of Dams, EPA ECHO NPDES permits, FEMA Region 2's non-PRASA sites and the USFWS National Wetlands Inventory) is kept as a claim; claims merge into one feature only on a published identifier, and name or distance matches are listed as candidates, so counts are shown as a range. Source disagreements are listed unresolved. Each well's monitoring state is computed per request from the reading files on the server, and a server without them says so. Read-only by design: the ingests (scripts/ingest_hydro_aquifers.py, scripts/ingest_hydro_sites.py, scripts/ingest_hydro_names.py, scripts/ingest_hydro_nhd.py, scripts/ingest_hydro_infrastructure.py, scripts/ingest_hydro_wetlands.py) and scripts/build_hydro_inventory.py are run by a maintainer, and their outputs are committed, so no normal user path requires a terminal. Controls: section buttons, a well search and source filter with paging, opening a feature's detail, Retry after a failed load, and on Monitoring an aquifer filter with an opt-in toggle for wells that are only inside the mapped outline. Loading, error-with-retry, empty, readings-absent, unlocated-well and unnamed-polygon states are rendered and unit-tested. On Monitoring, choosing an aquifer also shows the aquifer depth anomaly: the median of each contributing well's monthly departure from its own calendar-month median, parameter 72019 only, at least five years per baseline and three wells per point, with membership changes marked; wells USGS assigns to another aquifer are never pooled in, it is labelled as not a water-table elevation or storage estimate, and nothing alerts on it. Monitoring's map workspace draws only source geometry (aquifers, watersheds, waterbodies, stream reaches and canals and NWI wetlands loaded per HUC8, located wells, springs, gauges, NID dams, treatment plants, pump stations and tanks) with per-layer toggles, and reports a layer that fails to load.",
+      "backend": {
+        "files": [
+          "server/backend/hydro_inventory_api.py",
+          "server/backend/app.py",
+          "src/aguayluz/hydro_inventory.py"
+        ],
+        "endpoints": [
+          "GET /hydro/aquifer-series",
+          "GET /hydro/aquifer-wells",
+          "GET /hydro/aquifers.geojson",
+          "GET /hydro/candidates",
+          "GET /hydro/conflicts",
+          "GET /hydro/features",
+          "GET /hydro/features/{feature_id:path}",
+          "GET /hydro/geo/{name}.geojson",
+          "GET /hydro/inventory/summary",
+          "GET /hydro/points.geojson",
+          "GET /hydro/stream-tiles"
+        ],
+        "symbols": [
+          "server/backend/hydro_inventory_api.py:hydro_aquifer_series",
+          "server/backend/hydro_inventory_api.py:hydro_aquifer_wells",
+          "server/backend/hydro_inventory_api.py:hydro_aquifers_geojson",
+          "server/backend/hydro_inventory_api.py:hydro_candidates",
+          "server/backend/hydro_inventory_api.py:hydro_conflicts",
+          "server/backend/hydro_inventory_api.py:hydro_feature",
+          "server/backend/hydro_inventory_api.py:hydro_features",
+          "server/backend/hydro_inventory_api.py:hydro_geo",
+          "server/backend/hydro_inventory_api.py:hydro_points",
+          "server/backend/hydro_inventory_api.py:hydro_stream_tiles",
+          "server/backend/hydro_inventory_api.py:hydro_summary",
+          "src/aguayluz/hydro_inventory.py:InventoryStore",
+          "src/aguayluz/hydro_inventory.py:PolygonIndex",
+          "src/aguayluz/hydro_inventory.py:aquifer_feature_id",
+          "src/aguayluz/hydro_inventory.py:aquifer_links",
+          "src/aguayluz/hydro_inventory.py:aquifer_series",
+          "src/aguayluz/hydro_inventory.py:atomic_write",
+          "src/aguayluz/hydro_inventory.py:build_aquifers",
+          "src/aguayluz/hydro_inventory.py:build_infrastructure",
+          "src/aguayluz/hydro_inventory.py:build_inventory",
+          "src/aguayluz/hydro_inventory.py:build_springs",
+          "src/aguayluz/hydro_inventory.py:build_surface",
+          "src/aguayluz/hydro_inventory.py:build_wells",
+          "src/aguayluz/hydro_inventory.py:build_wetlands",
+          "src/aguayluz/hydro_inventory.py:canonical_sha256",
+          "src/aguayluz/hydro_inventory.py:claim",
+          "src/aguayluz/hydro_inventory.py:close_ledger",
+          "src/aguayluz/hydro_inventory.py:component_count",
+          "src/aguayluz/hydro_inventory.py:conflict",
+          "src/aguayluz/hydro_inventory.py:haversine_m",
+          "src/aguayluz/hydro_inventory.py:infrastructure_links",
+          "src/aguayluz/hydro_inventory.py:iter_groundwater_rows",
+          "src/aguayluz/hydro_inventory.py:link",
+          "src/aguayluz/hydro_inventory.py:monitoring_state",
+          "src/aguayluz/hydro_inventory.py:monthly_by_well",
+          "src/aguayluz/hydro_inventory.py:name_only_candidates",
+          "src/aguayluz/hydro_inventory.py:name_tokens",
+          "src/aguayluz/hydro_inventory.py:names_compatible",
+          "src/aguayluz/hydro_inventory.py:normalize_name",
+          "src/aguayluz/hydro_inventory.py:point_candidates",
+          "src/aguayluz/hydro_inventory.py:proximity_candidates",
+          "src/aguayluz/hydro_inventory.py:read_claims",
+          "src/aguayluz/hydro_inventory.py:read_jsonl",
+          "src/aguayluz/hydro_inventory.py:seeded_conflicts",
+          "src/aguayluz/hydro_inventory.py:series_members",
+          "src/aguayluz/hydro_inventory.py:surface_links",
+          "src/aguayluz/hydro_inventory.py:well_aquifer_links",
+          "src/aguayluz/hydro_inventory.py:well_candidates",
+          "src/aguayluz/hydro_inventory.py:well_names",
+          "src/aguayluz/hydro_inventory.py:wells_in_aquifer",
+          "src/aguayluz/hydro_inventory.py:write_claims",
+          "src/aguayluz/hydro_inventory.py:write_fail_receipt",
+          "src/aguayluz/hydro_inventory.py:write_jsonl"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "scripts/build_hydro_inventory.py",
+          "scripts/ingest_hydro_aquifers.py",
+          "scripts/ingest_hydro_infrastructure.py",
+          "scripts/ingest_hydro_names.py",
+          "scripts/ingest_hydro_nhd.py",
+          "scripts/ingest_hydro_sites.py",
+          "scripts/ingest_hydro_wetlands.py"
+        ],
+        "symbols": [
+          "scripts/build_hydro_inventory.py:asset_ids_by_site",
+          "scripts/build_hydro_inventory.py:build",
+          "scripts/build_hydro_inventory.py:main",
+          "scripts/build_hydro_inventory.py:render",
+          "scripts/ingest_hydro_aquifers.py:AcquisitionError",
+          "scripts/ingest_hydro_aquifers.py:acquire",
+          "scripts/ingest_hydro_aquifers.py:choose_transformer",
+          "scripts/ingest_hydro_aquifers.py:coastline_offsets",
+          "scripts/ingest_hydro_aquifers.py:code_claims",
+          "scripts/ingest_hydro_aquifers.py:group_features",
+          "scripts/ingest_hydro_aquifers.py:island_of",
+          "scripts/ingest_hydro_aquifers.py:main",
+          "scripts/ingest_hydro_aquifers.py:pira_claims",
+          "scripts/ingest_hydro_aquifers.py:process_polygons",
+          "scripts/ingest_hydro_aquifers.py:text_claims",
+          "scripts/ingest_hydro_aquifers.py:write_geojson",
+          "scripts/ingest_hydro_infrastructure.py:AcquisitionError",
+          "scripts/ingest_hydro_infrastructure.py:acquire",
+          "scripts/ingest_hydro_infrastructure.py:clean_nid_name",
+          "scripts/ingest_hydro_infrastructure.py:echo_claims",
+          "scripts/ingest_hydro_infrastructure.py:fema_claims",
+          "scripts/ingest_hydro_infrastructure.py:main",
+          "scripts/ingest_hydro_infrastructure.py:nid_claims",
+          "scripts/ingest_hydro_infrastructure.py:prasa_claims",
+          "scripts/ingest_hydro_infrastructure.py:sdwis_claims",
+          "scripts/ingest_hydro_names.py:AcquisitionError",
+          "scripts/ingest_hydro_names.py:claims_from",
+          "scripts/ingest_hydro_names.py:main",
+          "scripts/ingest_hydro_names.py:parse",
+          "scripts/ingest_hydro_nhd.py:AcquisitionError",
+          "scripts/ingest_hydro_nhd.py:acquire",
+          "scripts/ingest_hydro_nhd.py:flowline_claims",
+          "scripts/ingest_hydro_nhd.py:intake_claims",
+          "scripts/ingest_hydro_nhd.py:main",
+          "scripts/ingest_hydro_nhd.py:nwps_claims",
+          "scripts/ingest_hydro_nhd.py:repo_asset_claims",
+          "scripts/ingest_hydro_nhd.py:waterbody_claims",
+          "scripts/ingest_hydro_nhd.py:watershed_claims",
+          "scripts/ingest_hydro_nhd.py:write_geometry",
+          "scripts/ingest_hydro_sites.py:AcquisitionError",
+          "scripts/ingest_hydro_sites.py:acquire",
+          "scripts/ingest_hydro_sites.py:main",
+          "scripts/ingest_hydro_sites.py:parse_rdb",
+          "scripts/ingest_hydro_sites.py:sdwis_claims",
+          "scripts/ingest_hydro_sites.py:usgs_claims",
+          "scripts/ingest_hydro_sites.py:wqp_claims",
+          "scripts/ingest_hydro_wetlands.py:AcquisitionError",
+          "scripts/ingest_hydro_wetlands.py:acquire",
+          "scripts/ingest_hydro_wetlands.py:main",
+          "scripts/ingest_hydro_wetlands.py:nwi_claims",
+          "scripts/ingest_hydro_wetlands.py:write_tiles"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/hydro-inventory",
+          "/monitoring"
+        ],
+        "e2e_routes": [
+          "/hydro-inventory"
+        ],
+        "components": [
+          "dashboard/src/components/AquiferSeriesChart.jsx",
+          "dashboard/src/components/HydroMapWorkspace.jsx",
+          "dashboard/src/components/MonitoringCharts.jsx",
+          "dashboard/src/components/WaterMonitoringConsole.jsx",
+          "dashboard/src/components/layout/Sidebar.jsx",
+          "dashboard/src/lib/hydro-inventory-api.js",
+          "dashboard/src/lib/hydro-inventory-hooks.js",
+          "dashboard/src/pages/HydroInventoryPage.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_hydro_inventory_api.py"
+        ],
+        "contract": [
+          "tests/test_gui_parity.py",
+          "tests/test_hydro_inventory.py",
+          "tests/test_ingest_hydro_aquifers.py",
+          "tests/test_ingest_hydro_infrastructure.py",
+          "tests/test_ingest_hydro_names.py",
+          "tests/test_ingest_hydro_nhd.py",
+          "tests/test_ingest_hydro_sites.py",
+          "tests/test_ingest_hydro_wetlands.py"
+        ],
+        "unit": [
+          "dashboard/src/components/AquiferSeriesChart.test.jsx",
+          "dashboard/src/components/HydroMapWorkspace.test.jsx",
+          "dashboard/src/lib/hydro-inventory-api.test.js",
+          "dashboard/src/pages/HydroInventoryPage.test.jsx"
+        ],
+        "e2e": [
+          "dashboard/tests/hydro-inventory.spec.mjs",
+          "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
+    },
+    {
       "id": "nws-cloudgis-map-overlays",
       "classification": "client_only",
       "status": "active",
@@ -1993,6 +2286,139 @@
         "e2e": [
           "dashboard/tests/nws-hydromet.spec.mjs",
           "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "gis-viewer-and-dependency-analysis",
+      "classification": "analysis",
+      "status": "active",
+      "requires_terminal": false,
+      "backend": {
+        "files": [
+          "server/backend/gis_api.py",
+          "server/backend/gis_wiring.py",
+          "src/aguayluz/gis_query.py",
+          "src/aguayluz/gis_geodesy.py",
+          "src/aguayluz/gis_catalog.py",
+          "src/aguayluz/gis_network.py",
+          "config/gis_layer_catalog.yaml"
+        ],
+        "endpoints": [
+          "GET /catalog",
+          "GET /features/{layer_id}/{feature_id}/documents",
+          "GET /features/{layer_id}/{feature_id}/history",
+          "GET /identify",
+          "GET /layers/{layer_id}.geojson",
+          "GET /search",
+          "GET /trace",
+          "POST /export",
+          "POST /query",
+          "POST /scenario"
+        ],
+        "symbols": [
+          "server/backend/gis_api.py:GisExportRequest",
+          "server/backend/gis_api.py:GisQueryRequest",
+          "server/backend/gis_api.py:build_gis_router",
+          "server/backend/gis_api.py:default_summary",
+          "server/backend/gis_wiring.py:ScenarioFeature",
+          "server/backend/gis_wiring.py:ScenarioRequest",
+          "server/backend/gis_wiring.py:feature_loader",
+          "server/backend/gis_wiring.py:gis_catalog",
+          "server/backend/gis_wiring.py:gis_feature_documents",
+          "server/backend/gis_wiring.py:gis_feature_history",
+          "server/backend/gis_wiring.py:gis_layer_geojson",
+          "server/backend/gis_wiring.py:gis_scenario",
+          "server/backend/gis_wiring.py:gis_trace",
+          "server/backend/gis_wiring.py:location_context",
+          "src/aguayluz/gis_catalog.py:GisCatalogError",
+          "src/aguayluz/gis_catalog.py:build_gis_catalog",
+          "src/aguayluz/gis_geodesy.py:geodesic_distance_m",
+          "src/aguayluz/gis_geodesy.py:validate_lon_lat",
+          "src/aguayluz/gis_network.py:NetworkEdge",
+          "src/aguayluz/gis_network.py:TraceHit",
+          "src/aguayluz/gis_network.py:edge_set_sha256",
+          "src/aguayluz/gis_network.py:edges_from_rows",
+          "src/aguayluz/gis_network.py:scenario_out_of_service",
+          "src/aguayluz/gis_network.py:trace",
+          "src/aguayluz/gis_query.py:FeatureParts",
+          "src/aguayluz/gis_query.py:GisQueryError",
+          "src/aguayluz/gis_query.py:QueryArea",
+          "src/aguayluz/gis_query.py:circle_ring",
+          "src/aguayluz/gis_query.py:distance_to_parts_m",
+          "src/aguayluz/gis_query.py:feature_anchor",
+          "src/aguayluz/gis_query.py:feature_bbox",
+          "src/aguayluz/gis_query.py:feature_identifier",
+          "src/aguayluz/gis_query.py:feature_parts",
+          "src/aguayluz/gis_query.py:features_to_csv",
+          "src/aguayluz/gis_query.py:fold_text",
+          "src/aguayluz/gis_query.py:identify",
+          "src/aguayluz/gis_query.py:intersects",
+          "src/aguayluz/gis_query.py:normalize_time",
+          "src/aguayluz/gis_query.py:parse_coordinate_text",
+          "src/aguayluz/gis_query.py:parse_geometry",
+          "src/aguayluz/gis_query.py:parse_time_range",
+          "src/aguayluz/gis_query.py:point_in_polygon",
+          "src/aguayluz/gis_query.py:query_layer",
+          "src/aguayluz/gis_query.py:search_features",
+          "src/aguayluz/gis_query.py:segments_intersect",
+          "src/aguayluz/gis_query.py:summarize"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/map"
+        ],
+        "e2e_routes": [
+          "/map"
+        ],
+        "components": [
+          "dashboard/src/components/AssetMap.jsx",
+          "dashboard/src/components/SpatialToolsPanel.jsx",
+          "dashboard/src/components/GisViewerControls.jsx",
+          "dashboard/src/lib/gis/gisApi.js",
+          "dashboard/src/lib/gis/networkApi.js",
+          "dashboard/src/lib/gis/mapState.js",
+          "dashboard/src/lib/gis/extentHistory.js",
+          "dashboard/src/lib/gis/measure.js",
+          "dashboard/src/lib/gis/opacity.js",
+          "dashboard/src/lib/gis/printMap.js",
+          "dashboard/src/lib/gis/externalLinks.js"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_gis_api.py",
+          "tests/test_gis_network.py",
+          "tests/test_gis_query.py",
+          "tests/test_gis_catalog.py"
+        ],
+        "contract": [
+          "tests/test_gui_parity.py"
+        ],
+        "unit": [
+          "dashboard/src/lib/gis/gis.test.js",
+          "dashboard/src/lib/gis/networkApi.test.js",
+          "dashboard/src/components/SpatialToolsPanel.gis.test.jsx"
+        ],
+        "e2e": [
+          "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "src/aguayluz/gis_network.py"
+        ],
+        "symbols": [
+          "src/aguayluz/gis_network.py:NetworkEdge",
+          "src/aguayluz/gis_network.py:TraceHit",
+          "src/aguayluz/gis_network.py:edge_set_sha256",
+          "src/aguayluz/gis_network.py:edges_from_rows",
+          "src/aguayluz/gis_network.py:scenario_out_of_service",
+          "src/aguayluz/gis_network.py:trace"
         ]
       }
     },

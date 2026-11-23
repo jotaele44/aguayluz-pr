@@ -19,6 +19,7 @@ import {
   useRiverGauges,
 } from '@/lib/hydromet-hooks'
 import { cn } from '@/lib/utils'
+import { scrollRegion } from '@/lib/scrollRegion';
 
 // FRESH: last success within the source's max age. STALE: older. FAILED: the latest
 // attempt failed (the last success, if any, is still shown). NEVER: no receipt yet.
@@ -87,24 +88,24 @@ function SourceCard({ source, refreshReady, refreshHint, refreshing, onRefresh }
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="text-sm font-semibold text-slate-100">{source.label}</div>
-          <div className="text-xs text-slate-500">{source.authority}</div>
+          <div className="text-xs text-slate-400">{source.authority}</div>
         </div>
         <Badge className={FRESHNESS_STYLE[state]}>{state}</Badge>
       </div>
       <dl className="mt-3 grid grid-cols-1 gap-x-6 gap-y-1.5 text-xs sm:grid-cols-2">
-        <div><dt className="inline text-slate-500">Last success: </dt><dd className="inline text-slate-300">{receipt?.last_success_utc ? `${fmtDate(receipt.last_success_utc)} (${ageText(source.freshness?.age_seconds)})` : 'never'}</dd></div>
-        <div><dt className="inline text-slate-500">Last attempt: </dt><dd className="inline text-slate-300">{receipt?.last_attempt_utc ? `${fmtDate(receipt.last_attempt_utc)} — ${receipt.last_status}` : 'never'}</dd></div>
-        <div><dt className="inline text-slate-500">Arithmetic: </dt><dd className="inline text-slate-300">{arithmetic ? `${arithmetic.source} source = ${arithmetic.retained} retained + ${arithmetic.excluded} excluded + ${arithmetic.unresolved} unresolved (${arithmetic.state})` : '—'}</dd></div>
-        <div><dt className="inline text-slate-500">Expected cadence: </dt><dd className="inline text-slate-300">every {cadenceText(source.cadence_seconds)}, stale after {Math.round((source.max_age_seconds ?? 0) / 3600)} h</dd></div>
-        <div className="sm:col-span-2"><dt className="inline text-slate-500">Source bytes SHA-256: </dt><dd className="inline break-all font-mono text-[11px] text-slate-400">{success?.byte_sha256 ?? '—'}</dd></div>
-        <div className="sm:col-span-2"><dt className="inline text-slate-500">Endpoint: </dt><dd className="inline break-all font-mono text-[11px] text-slate-400">{success?.source_url ?? source.endpoints?.gauges ?? source.endpoints?.grid ?? '—'}</dd></div>
+        <div><dt className="inline text-slate-400">Last success: </dt><dd className="inline text-slate-300">{receipt?.last_success_utc ? `${fmtDate(receipt.last_success_utc)} (${ageText(source.freshness?.age_seconds)})` : 'never'}</dd></div>
+        <div><dt className="inline text-slate-400">Last attempt: </dt><dd className="inline text-slate-300">{receipt?.last_attempt_utc ? `${fmtDate(receipt.last_attempt_utc)} — ${receipt.last_status}` : 'never'}</dd></div>
+        <div><dt className="inline text-slate-400">Arithmetic: </dt><dd className="inline text-slate-300">{arithmetic ? `${arithmetic.source} source = ${arithmetic.retained} retained + ${arithmetic.excluded} excluded + ${arithmetic.unresolved} unresolved (${arithmetic.state})` : '—'}</dd></div>
+        <div><dt className="inline text-slate-400">Expected cadence: </dt><dd className="inline text-slate-300">every {cadenceText(source.cadence_seconds)}, stale after {Math.round((source.max_age_seconds ?? 0) / 3600)} h</dd></div>
+        <div className="sm:col-span-2"><dt className="inline text-slate-400">Source bytes SHA-256: </dt><dd className="inline break-all font-mono text-[11px] text-slate-400">{success?.byte_sha256 ?? '—'}</dd></div>
+        <div className="sm:col-span-2"><dt className="inline text-slate-400">Endpoint: </dt><dd className="inline break-all font-mono text-[11px] text-slate-400">{success?.source_url ?? source.endpoints?.gauges ?? source.endpoints?.grid ?? '—'}</dd></div>
       </dl>
       {receipt?.last_status === 'FAIL' && (
         <div role="alert" className="mt-3 rounded border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-200">
           Latest attempt failed: {receipt.last_error}
         </div>
       )}
-      {source.known_limits && <p className="mt-3 text-[11px] leading-relaxed text-slate-500">{source.known_limits}</p>}
+      {source.known_limits && <p className="mt-3 text-[11px] leading-relaxed text-slate-400">{source.known_limits}</p>}
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <Button
           size="sm"
@@ -116,7 +117,7 @@ function SourceCard({ source, refreshReady, refreshHint, refreshing, onRefresh }
           {refreshing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="mr-1.5 h-3.5 w-3.5" />}
           {refreshing ? 'Refreshing…' : 'Refresh now'}
         </Button>
-        <span className="text-[11px] text-slate-500">{refreshHint}</span>
+        <span className="text-[11px] text-slate-400">{refreshHint}</span>
       </div>
     </div>
   )
@@ -124,7 +125,7 @@ function SourceCard({ source, refreshReady, refreshHint, refreshing, onRefresh }
 
 function ThresholdCell({ thresholds, unit }) {
   const defined = THRESHOLD_ORDER.filter((name) => thresholds?.[name]?.stage != null)
-  if (!defined.length) return <span className="text-slate-600">none published</span>
+  if (!defined.length) return <span className="text-slate-400">none published</span>
   return (
     <span className="text-slate-400">
       {defined.map((name) => `${name} ${thresholds[name].stage}`).join(' · ')} {unit || ''}
@@ -134,9 +135,9 @@ function ThresholdCell({ thresholds, unit }) {
 
 function GaugeTable({ gauges }) {
   return (
-    <div className="overflow-x-auto">
+    <div {...scrollRegion("Gauges table")} className="overflow-x-auto">
       <table className="w-full min-w-[860px] text-left text-xs" aria-label="NWPS river gauges">
-        <thead className="text-[11px] uppercase tracking-wide text-slate-500">
+        <thead className="text-[11px] uppercase tracking-wide text-slate-400">
           <tr className="border-b border-slate-800">
             <th className="py-2 pr-3 font-medium">Gauge</th>
             <th className="py-2 pr-3 font-medium">Municipio</th>
@@ -151,18 +152,18 @@ function GaugeTable({ gauges }) {
             <tr key={g.lid} className="border-b border-slate-900 align-top">
               <td className="py-2 pr-3">
                 <div className="font-medium text-slate-200">{g.name}</div>
-                <div className="font-mono text-[11px] text-slate-500">{g.lid}{g.usgs_id ? ` · USGS ${g.usgs_id}` : ''}</div>
+                <div className="font-mono text-[11px] text-slate-400">{g.lid}{g.usgs_id ? ` · USGS ${g.usgs_id}` : ''}</div>
               </td>
               <td className="py-2 pr-3 text-slate-300">
                 {g.municipio ?? <span className="text-amber-300">unresolved{g.county_raw ? ` (NWPS: ${g.county_raw})` : ''}</span>}
-                <div className="text-[11px] text-slate-500">{pretty(g.binding_evidence)}</div>
+                <div className="text-[11px] text-slate-400">{pretty(g.binding_evidence)}</div>
               </td>
               <td className="py-2 pr-3">
                 <Badge className={FLOOD_CATEGORY_STYLE[g.flood_category] ?? FLOOD_CATEGORY_STYLE.not_defined}>{pretty(g.flood_category)}</Badge>
               </td>
               <td className="py-2 pr-3 text-slate-300">
                 {g.observed?.stage != null ? `${g.observed.stage} ${g.observed.stage_unit ?? ''}` : '—'}
-                <div className={cn('text-[11px]', g.observation_stale ? 'text-amber-300' : 'text-slate-500')}>
+                <div className={cn('text-[11px]', g.observation_stale ? 'text-amber-300' : 'text-slate-400')}>
                   {g.observed?.valid_time ? fmtDate(g.observed.valid_time) : 'no observation'}{g.observation_stale ? ' · stale' : ''}
                 </div>
               </td>
@@ -170,7 +171,7 @@ function GaugeTable({ gauges }) {
               <td className="py-2 pr-3">
                 {g.asset_id
                   ? <Link className="text-sky-300 hover:underline" to={`/map?flyTo=${encodeURIComponent(g.asset_id)}&lat=${g.latitude}&lon=${g.longitude}`}>{g.asset_id}</Link>
-                  : <span className="text-slate-600">—</span>}
+                  : <span className="text-slate-400">—</span>}
               </td>
             </tr>
           ))}
@@ -182,9 +183,9 @@ function GaugeTable({ gauges }) {
 
 function RainfallTable({ rows, windowDays }) {
   return (
-    <div className="overflow-x-auto">
+    <div {...scrollRegion("Rainfall table")} className="overflow-x-auto">
       <table className="w-full min-w-[760px] text-left text-xs" aria-label="Stage IV rainfall by municipio">
-        <thead className="text-[11px] uppercase tracking-wide text-slate-500">
+        <thead className="text-[11px] uppercase tracking-wide text-slate-400">
           <tr className="border-b border-slate-800">
             <th className="py-2 pr-3 font-medium">Municipio</th>
             <th className="py-2 pr-3 font-medium">Mean ({windowDays} d)</th>
@@ -200,7 +201,7 @@ function RainfallTable({ rows, windowDays }) {
             <tr key={r.record_id} className="border-b border-slate-900 align-top">
               <td className="py-2 pr-3">
                 <Link className="font-medium text-sky-300 hover:underline" to={`/municipios/${encodeURIComponent(r.municipio)}`}>{r.municipio}</Link>
-                <div className="font-mono text-[11px] text-slate-500">{r.geoid}</div>
+                <div className="font-mono text-[11px] text-slate-400">{r.geoid}</div>
               </td>
               <td className="py-2 pr-3 text-slate-200">{inches(r.obs_mean_in)}</td>
               <td className="py-2 pr-3 text-slate-300">{inches(r.obs_max_in)}</td>
@@ -213,7 +214,7 @@ function RainfallTable({ rows, windowDays }) {
               <td className="py-2 pr-3">
                 {r.heavy_rain_severity
                   ? <Badge className={HEAVY_RAIN_STYLE[r.heavy_rain_severity]}>severity {r.heavy_rain_severity}</Badge>
-                  : <span className="text-slate-600">—</span>}
+                  : <span className="text-slate-400">—</span>}
               </td>
             </tr>
           ))}
@@ -235,7 +236,7 @@ function RainfallPanel({ up }) {
     <Panel>
       <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-slate-400">Rainfall by municipio (Stage IV)</h2>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-2xl text-xs text-slate-500">
+        <p className="max-w-2xl text-xs text-slate-400">
           NWS Stage IV radar + gauge analysis, 12Z to 12Z, summarised over the 4.76 km HRAP cells whose centres fall
           inside each municipio. Normal and % of normal compare only the cells that carry a PRISM normal (land).
           Published after the day closes: use it for follow-up, not warning.
@@ -270,7 +271,7 @@ function RainfallPanel({ up }) {
         </div>
       </div>
       {rainfall?.data_date && (
-        <div className="mb-3 text-[11px] text-slate-500" data-testid="rainfall-provenance">
+        <div className="mb-3 text-[11px] text-slate-400" data-testid="rainfall-provenance">
           {rows.length} municipios · {rainWindow === '1day' ? `${heavy} at a heavy-rain threshold` : 'heavy-rain flags apply to the 1-day window'}
           {(rainfall.files ?? []).map((f) => (
             <div key={f.manifestation_id} className="mt-1 break-all font-mono">
@@ -339,7 +340,7 @@ export default function HydrometPage() {
         title="NWS Hydromet"
         subtitle="Puerto Rico river and reservoir flood status and rainfall from NOAA/NWS, with source freshness and provenance"
       />
-      <div className="min-h-0 flex-1 space-y-5 overflow-auto p-6">
+      <div {...scrollRegion("NWS Hydromet page content")} className="min-h-0 flex-1 space-y-5 overflow-auto p-6">
         <ErrorBoundary label="NWS hydromet plane">
           <div role="note" aria-label="Hydromet scope" className="flex items-start gap-3 rounded-lg border border-sky-500/30 bg-sky-500/10 p-4">
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-sky-300" aria-hidden="true" />
@@ -357,7 +358,7 @@ export default function HydrometPage() {
               { label: 'Integrity', value: summary?.integrity?.state ?? '—', icon: ShieldCheck },
             ].map(({ label, value, icon: Icon }) => (
               <div key={label} className="rounded-lg border border-slate-800 bg-slate-900/70 p-4">
-                <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500"><Icon className="h-4 w-4" aria-hidden="true" />{label}</div>
+                <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-400"><Icon className="h-4 w-4" aria-hidden="true" />{label}</div>
                 <div className="mt-2 text-2xl font-semibold text-slate-100">{value}</div>
               </div>
             ))}
@@ -384,7 +385,7 @@ export default function HydrometPage() {
           <Panel>
             <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-slate-400">River and reservoir gauges (NWPS)</h2>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-400">
                 Observed stage against NWS-published flood thresholds. NWS issues no stage forecasts for Puerto Rico points.
               </p>
               <Button

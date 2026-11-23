@@ -74,6 +74,30 @@ corpus is real public data, with some sources external or point-in-time.
   the page bytes' SHA-256, and bound by stable id to the existing `USGSGW_` wells. A depth is
   classified against them at read time. Band state is displayed, never alerted on, while the
   readings are provisional; see [`docs/AQUIFER_BANDS_INTEGRATION.md`](docs/AQUIFER_BANDS_INTEGRATION.md).
+- USGS **water-use estimates** for 2010, 2015 and 2020 (`scripts/ingest_usgs_water_use.py`,
+  keyless, run on demand) — public-supply withdrawals by source, island-wide and for all 78
+  municipalities: 601.74 Mgal/d in 2020, of which 536.64 surface water (89.2%) and 65.10
+  groundwater (10.8%). 2015 and 2020 are read from USGS data-release tables (tier T1), each
+  file pinned by SHA-256; 2010 exists only as a PDF and is a manual transcription bound to
+  that PDF's hash (tier T2). These are five-yearly estimates, not current production; see
+  [`docs/WATER_USE_INTEGRATION.md`](docs/WATER_USE_INTEGRATION.md).
+- **Hydrologic feature inventory: aquifers, wells, springs, surface water, water infrastructure and wetlands**
+  (`scripts/ingest_hydro_aquifers.py`, `scripts/ingest_hydro_sites.py`, `scripts/ingest_hydro_names.py`,
+  `scripts/ingest_hydro_nhd.py`, `scripts/ingest_hydro_infrastructure.py`, `scripts/ingest_hydro_wetlands.py`,
+  `scripts/build_hydro_inventory.py`, keyless, run on demand). Every aquifer and well described by
+  USGS (HA 730-N polygons and text, aquifer codes, 5,437 monitoring wells), the Water Quality
+  Portal, EPA SDWIS (1,384 wells, no coordinates) and DRNA PIRA 2016, reconciled across sources.
+  Claims merge only on a published identifier, name and distance matches stay candidates, so
+  counts are ranges (159 aquifer features, range 141–159; 7,321 wells, range 7,240–7,321; 228
+  springs; 13,373 NHD stream reaches and 2,508 canal reaches grouped into 324 named watercourses;
+  4,949 waterbodies; 806 reservoirs; 1,670 gauges; 835 intakes). Phase 5 adds, from official
+  registries only, 36 USACE NID dams, PRASA's public facility layer (a May 2020 snapshot:
+  wells, intakes, plants, pump stations, tanks), EPA NPDES wastewater plants, EPA SDWIS treatment
+  plants (no coordinates), FEMA/EPA non-PRASA community systems and 7,960 NWI wetlands.
+  Source disagreements are kept unresolved. The USGS polygons declare NAD27 but fit the coastline
+  only as Puerto Rico 1940, which the ingest re-checks every run. Shown on the Hydro Inventory page
+  and as an aquifer filter on Monitoring; see
+  [`docs/HYDRO_FEATURE_INVENTORY.md`](docs/HYDRO_FEATURE_INVENTORY.md).
 - USGS **annual peak streamflow** (`scripts/ingest_usgs_peaks.py`, keyless) — 8,317 peaks
   across 244 sites, water years **1899–2025**, giving a flood baseline the 14-day and
   1-year windows elsewhere in the corpus cannot supply. The record maximum is
@@ -114,8 +138,12 @@ corpus is real public data, with some sources external or point-in-time.
   `SHUTDOWN` event per closed site, plus 16 EPA ECHO facilities (SIC 4953) held as `needs_review`
   source records. A closure year on an *open* site is a projection and stays in the RAW rows.
   Cross-source matches stay `CANDIDATE_NOT_IDENTITY`, and the result is **OPEN**: no structured
-  Puerto Rico solid-waste authority list, EPA Region 2 enforcement records or unauthorized-dump
-  source has been acquired, and ECHO silently ignores its `p_naics` filter, so every ECHO query
+  Puerto Rico solid-waste authority list or unauthorized-dump source has been acquired. EPA
+  enforcement context is partial: of the 3,788 Puerto Rico ECHO enforcement cases pulled on
+  2026-11-13, the 51 that concern landfills are kept as RAW rows and linked to sites as candidates
+  (by name; two by case number in an ECHO facility report), nothing is created from them as an
+  entity or event, and the state agency's own records are not covered. ECHO silently ignores its
+  `p_naics` filter and its case service drops filters it does not know, so every ECHO query
   carries a filtered-versus-unfiltered control. Accepted sites export as `landfill_site`
   entities. The records are served by `GET /environmental-exposure/entities`, and the
   Environmental Exposure page lists every site read-only (name, kind, municipality, source record,
@@ -152,6 +180,13 @@ installs dependencies, later runs work offline):
 - `PRII-AGUAYLUZ.bat` (Windows)
 - `PRII-AGUAYLUZ.sh` (Linux)
 
+## GIS viewer API
+
+The Map page's GIS tools (layer catalog, identify, search, polygon query and export, saved
+views, print, dependency tracing and outage scenarios) are served by `/gis/*`. See
+[`docs/GIS_VIEWER_API.md`](docs/GIS_VIEWER_API.md). Dependency results that use
+proximity-inferred links are labelled as proxies, and scenarios are always `HYPOTHESIS`.
+
 ## Federation contract
 
 `federation.json` is this producer's manifest, conformant to
@@ -165,9 +200,12 @@ plus a `manifest.json` validated against the vendored hub schema
 `source_monitors.jsonl` (thehub-pr ADR 0013) has one row per source in
 `config/hydromet_sources.v1.json`, `config/hazard_advisory_sources.v1.json` and
 `config/environmental_exposure_sources.v1.json`, with when it last succeeded and
-how that is known: the hydromet run receipts (`data/hydromet_receipts.json`) or the
-latest retrieval in `data/hydromet_manifestations.jsonl`, whichever is more recent;
-every other source is reported as not recorded (`tests/test_federation_source_monitors.py`).
+how that is known. For a hydromet source that is its run receipt
+(`data/hydromet_receipts.json`) or the latest retrieval in
+`data/hydromet_manifestations.jsonl`, whichever is more recent; a hydromet source with
+neither (for example AirNow before an API key exists) is reported as not recorded. Every
+hazard-advisory and environmental-exposure source is reported as not recorded
+(`tests/test_federation_source_monitors.py`).
 
 Every exported row also carries an additive `evidence_state` declaration.
 It conforms to thehub-pr's candidate epistemic-state contract, vendored
