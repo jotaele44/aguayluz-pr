@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { AlertTriangle, Database, Droplets, Gauge, ShieldAlert } from 'lucide-react'
 
 import ErrorBoundary from '@/components/ErrorBoundary'
@@ -8,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { useAquiferBands } from '@/lib/aquifer-hooks'
 import { fmtDate } from '@/lib/format'
 import { cn } from '@/lib/utils'
+import { scrollRegion } from '@/lib/scrollRegion';
 
 // FRESH: last successful read of the source page is within the max age. STALE: older.
 // FAILED: the latest attempt failed (the last success is still shown). NEVER: no receipt yet.
@@ -89,7 +91,7 @@ function BandBar({ item, classes }) {
 
 function BandEdges({ item, classes }) {
   return (
-    <details className="mt-1 text-[11px] text-slate-500">
+    <details className="mt-1 text-[11px] text-slate-400">
       <summary className="cursor-pointer select-none text-slate-400">Band edges</summary>
       <ul className="mt-1 space-y-0.5">
         {item.bands.map((b) => (
@@ -104,9 +106,9 @@ function BandEdges({ item, classes }) {
 
 function WellTable({ items, classes }) {
   return (
-    <div className="overflow-x-auto">
+    <div {...scrollRegion("Observation wells table")} className="overflow-x-auto">
       <table className="w-full min-w-[980px] text-left text-xs" aria-label="Aquifer observation wells">
-        <thead className="text-[11px] uppercase tracking-wide text-slate-500">
+        <thead className="text-[11px] uppercase tracking-wide text-slate-400">
           <tr className="border-b border-slate-800">
             <th className="py-2 pr-3 font-medium">Well</th>
             <th className="py-2 pr-3 font-medium">Depth to water</th>
@@ -122,14 +124,14 @@ function WellTable({ items, classes }) {
               <tr key={item.site_no} className="border-b border-slate-900 align-top" data-testid={`aquifer-well-${item.site_no}`}>
                 <td className="py-2 pr-3">
                   <div className="font-medium text-slate-200">{item.name}</div>
-                  <div className="font-mono text-[11px] text-slate-500">{item.asset_id}</div>
-                  <div className="text-[11px] text-slate-500">{item.municipality ?? 'municipio unknown'}</div>
+                  <div className="font-mono text-[11px] text-slate-400">{item.asset_id}</div>
+                  <div className="text-[11px] text-slate-400">{item.municipality ?? 'municipio unknown'}</div>
                 </td>
                 <td className="py-2 pr-3 text-slate-300">
                   {r ? (
                     <>
                       <div className="text-sm font-semibold text-slate-100">{feet(r.value_ft)}</div>
-                      <div className={cn('text-[11px]', r.stale ? 'text-amber-300' : 'text-slate-500')}>
+                      <div className={cn('text-[11px]', r.stale ? 'text-amber-300' : 'text-slate-400')}>
                         {r.observed_date}{r.stale ? ' · stale' : ''}
                       </div>
                       <Badge className={r.provisional ? 'mt-1 border-amber-500/40 bg-amber-500/10 text-amber-300' : 'mt-1 border-slate-600 bg-slate-800/60 text-slate-300'}>
@@ -137,19 +139,19 @@ function WellTable({ items, classes }) {
                       </Badge>
                     </>
                   ) : (
-                    <span className="text-slate-500">no reading</span>
+                    <span className="text-slate-400">no reading</span>
                   )}
                 </td>
                 <td className="py-2 pr-3">
                   {item.class ? (
                     <Badge className={cn('whitespace-normal', CLASS_STYLE[item.class]?.badge)}>{item.class_label}</Badge>
                   ) : (
-                    <span className="text-slate-500">No current reading, so no condition is claimed</span>
+                    <span className="text-slate-400">No current reading, so no condition is claimed</span>
                   )}
                 </td>
                 <td className={cn('py-2 pr-3', item.margin_to_critical_ft != null && item.margin_to_critical_ft < 0 ? 'font-medium text-red-300' : 'text-slate-300')}>
                   {marginText(item.margin_to_critical_ft)}
-                  <div className="text-[11px] font-normal text-slate-500">Critical from {feet(item.critical_onset_ft)}</div>
+                  <div className="text-[11px] font-normal text-slate-400">Critical from {feet(item.critical_onset_ft)}</div>
                 </td>
                 <td className="py-2 pr-3">
                   <BandBar item={item} classes={classes} />
@@ -191,21 +193,21 @@ function SourcePanel({ data }) {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="text-sm font-semibold text-slate-100">USGS: groundwater levels at selected observation wells, south coast</div>
-            <div className="text-xs text-slate-500">{data.scope?.authority_claim}</div>
+            <div className="text-xs text-slate-400">{data.scope?.authority_claim}</div>
           </div>
           <Badge className={FRESHNESS_STYLE[state]}>{state}</Badge>
         </div>
         <dl className="mt-3 grid grid-cols-1 gap-x-6 gap-y-1.5 text-xs sm:grid-cols-2">
-          <div><dt className="inline text-slate-500">Last read: </dt><dd className="inline text-slate-300">{receipt?.last_success_utc ? `${fmtDate(receipt.last_success_utc)} (${ageText(source.freshness?.age_seconds)})` : 'never'}</dd></div>
-          <div><dt className="inline text-slate-500">Last attempt: </dt><dd className="inline text-slate-300">{receipt?.last_attempt_utc ? `${fmtDate(receipt.last_attempt_utc)} — ${receipt.last_status}` : 'never'}</dd></div>
-          <div><dt className="inline text-slate-500">Wells accounted: </dt><dd className="inline text-slate-300">{arithmetic ? `${arithmetic.source} source = ${arithmetic.retained} retained + ${arithmetic.excluded} excluded + ${arithmetic.unresolved} unresolved (${arithmetic.state})` : '—'}</dd></div>
-          <div><dt className="inline text-slate-500">Evidence tier: </dt><dd className="inline text-slate-300">{data.scope?.evidence_tier ?? '—'} · effective date {data.scope?.effective_date ?? 'not published by the source'}</dd></div>
-          <div className="sm:col-span-2"><dt className="inline text-slate-500">Page: </dt><dd className="inline break-all font-mono text-[11px] text-slate-400">
+          <div><dt className="inline text-slate-400">Last read: </dt><dd className="inline text-slate-300">{receipt?.last_success_utc ? `${fmtDate(receipt.last_success_utc)} (${ageText(source.freshness?.age_seconds)})` : 'never'}</dd></div>
+          <div><dt className="inline text-slate-400">Last attempt: </dt><dd className="inline text-slate-300">{receipt?.last_attempt_utc ? `${fmtDate(receipt.last_attempt_utc)} — ${receipt.last_status}` : 'never'}</dd></div>
+          <div><dt className="inline text-slate-400">Wells accounted: </dt><dd className="inline text-slate-300">{arithmetic ? `${arithmetic.source} source = ${arithmetic.retained} retained + ${arithmetic.excluded} excluded + ${arithmetic.unresolved} unresolved (${arithmetic.state})` : '—'}</dd></div>
+          <div><dt className="inline text-slate-400">Evidence tier: </dt><dd className="inline text-slate-300">{data.scope?.evidence_tier ?? '—'} · effective date {data.scope?.effective_date ?? 'not published by the source'}</dd></div>
+          <div className="sm:col-span-2"><dt className="inline text-slate-400">Page: </dt><dd className="inline break-all font-mono text-[11px] text-slate-400">
             {String(source?.url || '').startsWith('https://')
               ? <a className="text-sky-300 hover:underline" href={source.url} target="_blank" rel="noopener noreferrer">{source.url}</a>
               : '—'}
           </dd></div>
-          <div className="sm:col-span-2"><dt className="inline text-slate-500">Fetched bytes SHA-256: </dt><dd className="inline break-all font-mono text-[11px] text-slate-400">{success?.byte_sha256 ?? '—'}</dd></div>
+          <div className="sm:col-span-2"><dt className="inline text-slate-400">Fetched bytes SHA-256: </dt><dd className="inline break-all font-mono text-[11px] text-slate-400">{success?.byte_sha256 ?? '—'}</dd></div>
         </dl>
         {receipt?.last_status === 'FAIL' && (
           <div role="alert" className="mt-3 rounded border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-200">
@@ -217,18 +219,18 @@ function SourcePanel({ data }) {
             The source page has not been read successfully within {Math.round((source.freshness?.max_age_seconds ?? 0) / 86400)} days. The bands may have changed.
           </div>
         )}
-        <p className="mt-3 text-[11px] leading-relaxed text-slate-500">
+        <p className="mt-3 text-[11px] leading-relaxed text-slate-400">
           The hash identifies the exact bytes fetched. It differs on every fetch of identical content, because the page&apos;s CDN
           injects a per-request script, so it is evidence of what was read rather than a sign that the bands changed.
           Bands are versioned by registry revision.
         </p>
         {discrepancies.length > 0 && (
-          <div className="mt-3 text-[11px] text-slate-500">
+          <div className="mt-3 text-[11px] text-slate-400">
             <div className="font-medium text-slate-400">Differences within the source page itself (chart ranges are used):</div>
             <ul className="mt-1 list-disc pl-5">{discrepancies.map((d) => <li key={d}>{d}</li>)}</ul>
           </div>
         )}
-        <div className="mt-3 text-[11px] text-slate-500">
+        <div className="mt-3 text-[11px] text-slate-400">
           <div className="font-medium text-slate-400">Reference pages named by the source (recorded; this app does not fetch or verify them):</div>
           <ul className="mt-1 space-y-0.5">
             {data.items.filter((i) => String(i.reference_url || '').startsWith('https://')).map((i) => (
@@ -256,13 +258,17 @@ export default function AquiferBandsPage() {
         title="Aquifer Bands"
         subtitle="South-coast observation wells against the condition bands a USGS page attributes to PRDNER"
       />
-      <div className="min-h-0 flex-1 space-y-5 overflow-auto p-6">
+      <div {...scrollRegion("Aquifer Bands page content")} className="min-h-0 flex-1 space-y-5 overflow-auto p-6">
         <ErrorBoundary label="Aquifer condition bands">
           <div role="note" aria-label="Aquifer bands scope" className="flex items-start gap-3 rounded-lg border border-sky-500/30 bg-sky-500/10 p-4">
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-sky-300" aria-hidden="true" />
             <div className="space-y-1 text-sm text-sky-100/90">
               <p>{data?.scope?.statement ?? FALLBACK_SCOPE}</p>
               {data?.scope?.alerting_reason && <p className="text-xs text-sky-200/80">{data.scope.alerting_reason}</p>}
+              <p className="text-xs text-sky-200/80">
+                For how much of Puerto Rico&apos;s public supply comes from groundwater, see{' '}
+                <Link className="underline hover:text-sky-100" to="/water-use">Water Use</Link>.
+              </p>
             </div>
           </div>
 
@@ -274,7 +280,7 @@ export default function AquiferBandsPage() {
               { label: 'Provisional readings', value: counts?.provisional_readings ?? '—', icon: Database },
             ].map(({ label, value, icon: Icon }) => (
               <div key={label} className="rounded-lg border border-slate-800 bg-slate-900/70 p-4">
-                <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500"><Icon className="h-4 w-4" aria-hidden="true" />{label}</div>
+                <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-400"><Icon className="h-4 w-4" aria-hidden="true" />{label}</div>
                 <div className="mt-2 text-2xl font-semibold text-slate-100">{value}</div>
               </div>
             ))}
@@ -282,7 +288,7 @@ export default function AquiferBandsPage() {
 
           <Panel>
             <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-slate-400">Observation wells</h2>
-            <p className="mb-3 max-w-3xl text-xs text-slate-500">
+            <p className="mb-3 max-w-3xl text-xs text-slate-400">
               Depth to water in feet below land surface: a larger number is a deeper water table. The latest local reading of each
               well is placed against its own bands; the marker on each bar is clamped at the end of the chart axis.
             </p>

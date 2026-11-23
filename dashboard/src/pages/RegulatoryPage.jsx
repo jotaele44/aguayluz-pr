@@ -20,6 +20,7 @@ import {
   getRegulatorySummary,
 } from '@/lib/regulatory-api'
 import { cn } from '@/lib/utils'
+import { scrollRegion } from '@/lib/scrollRegion';
 
 const titleCase = (value) => String(value || 'unknown')
   .replaceAll('_', ' ')
@@ -57,12 +58,12 @@ function FreshnessBadge({ state }) {
 function MetricCard({ label, value, detail, icon: Icon }) {
   return (
     <div className="rounded-lg border border-slate-800 bg-slate-900/70 p-4">
-      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
+      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-400">
         <Icon className="h-4 w-4" aria-hidden="true" />
         {label}
       </div>
       <div className="mt-2 text-2xl font-semibold text-slate-100">{value}</div>
-      {detail && <div className="mt-1 text-xs text-slate-500">{detail}</div>}
+      {detail && <div className="mt-1 text-xs text-slate-400">{detail}</div>}
     </div>
   )
 }
@@ -72,7 +73,7 @@ function DetailList({ items }) {
     <dl className="grid gap-3 sm:grid-cols-2">
       {items.map(({ term, value }) => (
         <div key={term} className="rounded-md border border-slate-800 bg-slate-950/40 p-3">
-          <dt className="text-[11px] uppercase tracking-wide text-slate-500">{term}</dt>
+          <dt className="text-[11px] uppercase tracking-wide text-slate-400">{term}</dt>
           <dd className="mt-1 text-sm text-slate-200 break-words">{value || 'Unknown'}</dd>
         </div>
       ))}
@@ -132,7 +133,7 @@ export default function RegulatoryPage() {
         title="Regulatory Observations"
         subtitle="Read-only provider observations — no entity linkage or facility identity is asserted"
       />
-      <div className="flex-1 min-h-0 overflow-auto p-6">
+      <div {...scrollRegion("Regulatory Observations page content")} className="flex-1 min-h-0 overflow-auto p-6">
         <ErrorBoundary label="Regulatory observations">
           <div
             role="note"
@@ -212,7 +213,7 @@ export default function RegulatoryPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <span className="text-xs text-slate-500">{observations.length} of {observationsQuery.data?.total ?? 0} shown</span>
+                <span className="text-xs text-slate-400">{observations.length} of {observationsQuery.data?.total ?? 0} shown</span>
               </div>
 
               <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
@@ -238,11 +239,11 @@ export default function RegulatoryPage() {
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
                               <div className="truncate text-sm font-medium text-slate-100">{obs.provider} · {obs.provider_record_id}</div>
-                              <div className="mt-1 text-xs text-slate-500">{titleCase(obs.record_family)}</div>
+                              <div className="mt-1 text-xs text-slate-400">{titleCase(obs.record_family)}</div>
                             </div>
                             <FreshnessBadge state={obs.freshness_state} />
                           </div>
-                          <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+                          <div className="mt-3 flex items-center justify-between text-xs text-slate-400">
                             <span>{obs.evidence_tier}</span>
                             <span>{formatDate(obs.observed_at)}</span>
                           </div>
@@ -265,7 +266,7 @@ export default function RegulatoryPage() {
                       <article className="rounded-lg border border-slate-800 bg-slate-900/70 p-5">
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div>
-                            <p className="text-xs uppercase tracking-wide text-slate-500">{detail.observation_id}</p>
+                            <p className="text-xs uppercase tracking-wide text-slate-400">{detail.observation_id}</p>
                             <h3 className="mt-1 text-xl font-semibold text-slate-100">{detail.provider} · {detail.provider_record_id}</h3>
                           </div>
                           <FreshnessBadge state={detail.freshness_state} />
@@ -291,7 +292,7 @@ export default function RegulatoryPage() {
                           <ul className="mt-3 space-y-2">
                             {detail.identifiers.map((id) => (
                               <li key={`${id.scheme}-${id.value}`} className="rounded-md border border-slate-800 bg-slate-950/40 p-3 text-sm">
-                                <span className="text-slate-500">{id.scheme}:</span>{' '}
+                                <span className="text-slate-400">{id.scheme}:</span>{' '}
                                 <span className="text-slate-200">{id.value}</span>
                               </li>
                             ))}
@@ -301,7 +302,7 @@ export default function RegulatoryPage() {
 
                       <section aria-labelledby="observation-payload" className="rounded-lg border border-slate-800 bg-slate-900/70 p-5">
                         <h3 id="observation-payload" className="font-semibold text-slate-100">Payload</h3>
-                        <pre className="mt-3 overflow-auto rounded-md border border-slate-800 bg-slate-950/60 p-3 text-xs text-slate-300">
+                        <pre {...scrollRegion("Observation payload")} className="mt-3 overflow-auto rounded-md border border-slate-800 bg-slate-950/60 p-3 text-xs text-slate-300">
                           {JSON.stringify(detail.payload ?? {}, null, 2)}
                         </pre>
                       </section>

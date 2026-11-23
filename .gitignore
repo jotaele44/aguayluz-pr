@@ -133,6 +133,8 @@ celerybeat.pid
 
 # Redis
 *.rdb
+# USGS NWIS RDB tables used as test fixtures are text, not Redis dumps
+!tests/fixtures/**/*.rdb
 *.aof
 *.pid
 
@@ -290,6 +292,17 @@ exports/federation/
 !data/hydromet_manifestations.jsonl
 !data/hydromet_receipts.json
 !data/nwps_gauge_state.jsonl
+# Outdoor-conditions layer (aguayluz.outdoor), committed for the same reason: the hub's
+# export command runs against a checkout, so the composed per-municipio file (and the
+# per-source state it is composed from) must be in the tree, not only in the refresh job.
+!data/outdoor_surf_state.jsonl
+!data/outdoor_buoy_state.jsonl
+!data/outdoor_uv_state.jsonl
+!data/outdoor_heat_state.jsonl
+!data/outdoor_aqi_state.jsonl
+!data/outdoor_conditions.jsonl
+# Frozen reference bindings (scripts/freeze_outdoor_reference.py, El Yunque access assets).
+!data/reference/
 # PRDNER aquifer condition bands for the five south-coast wells
 # (scripts/ingest_prdner_well_bands.py). Committed on purpose: the append-only registry is
 # the revision base each run diffs against (an ignored registry would make every CI runner
@@ -298,6 +311,19 @@ exports/federation/
 # SHA-256 is recorded in every registry row.
 !data/aquifer_band_registry.jsonl
 !data/aquifer_band_receipt.json
+# USGS water-use estimates, 2010 / 2015 / 2020 (scripts/ingest_usgs_water_use.py). Committed on
+# purpose: the releases are static, the producer runs on demand rather than on a schedule, and
+# the gui-parity job boots the backend with no network, so the page needs the rows in the tree.
+# Raw bytes stay out (data/water_use_snapshots/ falls under data/*); the xlsx files the rows
+# were read from are committed byte-identical under tests/fixtures/usgs_water_use/.
+!data/water_use_estimates.jsonl
+!data/water_use_receipt.json
+# Puerto Rico hydrologic feature inventory (scripts/ingest_hydro_*.py, scripts/build_hydro_inventory.py).
+# Committed on purpose: the claims are the evidence base the builder rebuilds from (CI runs
+# build_hydro_inventory.py --check against them), and the gui-parity job boots the backend with no
+# network. Raw downloaded bytes are not committed; their SHA-256 is in every claim block and receipt.
+!data/hydro/
+!data/geo/pr_aquifers.geojson
 # Centinelas federation ingress (.github/workflows/centinelas-handoff.yml). The
 # per-handoff receipts are the durable proof that a handoff was received, and the
 # workflow acknowledges back to centinelas-pr only after they are pushed. Ignoring them

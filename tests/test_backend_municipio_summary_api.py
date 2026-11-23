@@ -76,6 +76,7 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setitem(backend.READING_VECTOR_REGISTRY["usgs_peaks"], "path", peaks)
     monkeypatch.setattr(backend.legacy, "_assets", MUN_ASSETS)
     monkeypatch.setattr(backend.legacy, "_events", [])
+    monkeypatch.setattr(backend.legacy, "_current_events", lambda: [])
 
     flood_raw = tmp_path / "jp_flood_documents" / "raw"
     flood_raw.mkdir(parents=True)
@@ -167,3 +168,51 @@ def test_unknown_flood_document_file_fails_closed(client):
     response = client.get("/municipios/Florida/flood-document/file")
     assert response.status_code == 404
     assert response.json()["detail"]["error"] == "flood_document_not_found"
+
+
+def test_municipios_dashboard_summary_is_geoid_bound_and_closes_78_denominator(client):
+    response = client.get("/municipios/summary")
+    assert response.status_code == 200
+    body = response.json()
+
+    assert body["municipality_denominator"] == 78
+    assert body["geometry_feature_count"] == 78
+    assert body["unique_geoid_count"] == 78
+    assert len(body["items"]) == 78
+    assert len({row["geoid"] for row in body["items"]}) == 78
+    assert body["scope"]["binding_key"] == "municipio GeoJSON properties.geoid"
+    assert body["scope"]["normalization"] == "NONE"
+
+    adjuntas = next(row for row in body["items"] if row["geoid"] == "72001")
+    assert adjuntas["name"] == "Adjuntas"
+    assert adjuntas["asset_count"] == 3
+    assert adjuntas["active_asset_count"] == 3
+    assert body["unmatched_asset_count"] == 0
+    assert body["unmatched_event_count"] == 0
+    assert body["join_state"] == "PASS"
+
+
+def test_municipios_dashboard_summary_fails_closed_on_duplicate_geoid(client, monkeypatch):
+    original = backend.legacy._municipios_geojson
+    features = [dict(feature) for feature in original["features"]]
+    first = dict(features[0])
+    second = dict(features[1])
+    first_props = dict(first["properties"])
+    second_props = dict(second["properties"])
+    second_props["geoid"] = first_props["geoid"]
+    first["properties"] = first_props
+    second["properties"] = second_props
+    features[0] = first
+    features[1] = second
+    monkeypatch.setattr(
+        backend.legacy,
+        "_municipios_geojson",
+        {"type": "FeatureCollection", "features": features},
+    )
+
+    response = client.get("/municipios/summary")
+    assert response.status_code == 503
+    detail = response.json()["detail"]
+    assert detail["error"] == "municipio_denominator_contract_failed"
+    assert first_props["geoid"] in detail["duplicate_geoids"]
+    assert detail["valid_unique_geoid_count"] == 77

@@ -15,6 +15,7 @@ import { tierBadge, typeMeta, statusTone } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { AlertTriangle, ChevronsUpDown, ChevronUp, ChevronDown, Download, FilterX, MapPinOff } from 'lucide-react'
 import { downloadCSV } from '@/lib/csv'
+import { scrollRegion } from '@/lib/scrollRegion';
 
 function normalized(value) {
   return `${value ?? ''}`.toLowerCase()
@@ -67,7 +68,7 @@ function useAssetFilters(syncUrl) {
 }
 
 function SortIcon({ col, sort }) {
-  if (sort.col !== col) return <ChevronsUpDown className="inline h-3 w-3 ml-0.5 text-slate-600" />
+  if (sort.col !== col) return <ChevronsUpDown className="inline h-3 w-3 ml-0.5 text-slate-400" />
   return sort.dir === 'asc'
     ? <ChevronUp className="inline h-3 w-3 ml-0.5 text-sky-400" />
     : <ChevronDown className="inline h-3 w-3 ml-0.5 text-sky-400" />
@@ -240,7 +241,7 @@ export default function AssetsTable({ assets = [], isLoading, selectedId, onSele
         </div>
       </div>
 
-      <div ref={scrollRef} className="flex-1 overflow-auto">
+      <div {...scrollRegion("Assets table", scrollRef)} className="flex-1 overflow-auto">
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-slate-900 shadow-xs shadow-slate-950">
             <TableRow className="border-slate-800 hover:bg-transparent">
@@ -275,12 +276,12 @@ export default function AssetsTable({ assets = [], isLoading, selectedId, onSele
                 >
                   <TableCell className="max-w-[190px] align-top">
                     <div className="truncate text-xs font-medium text-slate-200">{a.asset_name}</div>
-                    <div className="mt-1 truncate text-[10px] text-slate-500">{a.operator || a.asset_id}</div>
+                    <div className="mt-1 truncate text-[10px] text-slate-400">{a.operator || a.asset_id}</div>
                   </TableCell>
                   <TableCell className="align-top">
                     <Badge variant="outline" className={cn('text-[10px]', typeMeta(a.asset_type).badge)}>{typeMeta(a.asset_type).label}</Badge>
                     {a.asset_subtype && (
-                      <div className="mt-1 truncate text-[10px] text-slate-500">{a.asset_subtype.replace(/_/g, ' ')}</div>
+                      <div className="mt-1 truncate text-[10px] text-slate-400">{a.asset_subtype.replace(/_/g, ' ')}</div>
                     )}
                   </TableCell>
                   <TableCell className="align-top text-xs text-slate-400">
@@ -305,7 +306,7 @@ export default function AssetsTable({ assets = [], isLoading, selectedId, onSele
           </TableBody>
         </Table>
         {rows.length === 0 && (
-          <div className="flex h-40 items-center justify-center text-sm text-slate-500">No assets match the active filters.</div>
+          <div className="flex h-40 items-center justify-center text-sm text-slate-400">No assets match the active filters.</div>
         )}
       </div>
     </div>
