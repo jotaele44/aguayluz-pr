@@ -6,6 +6,7 @@ import { SidebarProvider, useSidebar } from '@/contexts/SidebarContext'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { Menu } from 'lucide-react'
 import brandMark from "@/assets/icon-64.png?inline";
+import { scrollRegion } from '@/lib/scrollRegion';
 
 function Inner() {
   const { setOpen } = useSidebar()
@@ -37,7 +38,7 @@ function Inner() {
         )}
 
         <StatsBar />
-        <main className="flex-1 min-h-0 overflow-auto">
+        <main {...scrollRegion()} className="flex-1 min-h-0 overflow-auto">
           <Outlet />
         </main>
       </div>
