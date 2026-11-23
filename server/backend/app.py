@@ -20,6 +20,7 @@ from server.backend.gis_wiring import core_router as gis_core_router
 from server.backend.gis_wiring import domain_router as gis_domain_router
 from server.backend.hydro_inventory_api import router as hydro_inventory_router
 from server.backend.hydromet_api import router as hydromet_router
+from server.backend.ionosphere_api import router as ionosphere_router
 from server.backend.monitoring_alert_operations import federation_alert_export, lifecycle_alerts
 from server.backend.monitoring_incident_ledger import (
     ALLOWED_EVENTS,
@@ -76,6 +77,7 @@ app.include_router(regulatory_router)
 app.include_router(source_intelligence_router)
 app.include_router(environmental_exposure_router)
 app.include_router(hydromet_router)
+app.include_router(ionosphere_router)
 app.include_router(aquifer_router)
 app.include_router(water_use_router)
 app.include_router(hydro_inventory_router)

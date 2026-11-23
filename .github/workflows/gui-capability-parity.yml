@@ -86,6 +86,11 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run test:gui-parity
+      - name: Test enabled ionosphere preview
+        env:
+          VITE_IONOSPHERE_PREVIEW: "1"
+          AGUAYLUZ_IONOSPHERE_PREVIEW: "1"
+        run: npx playwright test -c gui-parity.playwright.config.mjs tests/ionosphere.spec.mjs
       - name: Upload browser evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
