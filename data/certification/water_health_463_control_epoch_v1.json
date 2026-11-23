@@ -1,0 +1,69 @@
+{
+  "schema_version": "aguayluz.water_health.control_463_epoch/v1",
+  "epoch_id": "WATER_HEALTH_463_CONTROL_V1",
+  "upstream_gate": {
+    "qualification_path": "data/certification/prdoh_sdwis_reconciliation_qualification_v1.json",
+    "state": "WATER_HEALTH_PRDOH_SDWIS_RECONCILIATION_CERTIFIED"
+  },
+  "authoritative_control": {
+    "authority": "Puerto Rico Department of Health — Programa de Supervisión de Sistemas Públicos de Agua Potable",
+    "locator": "https://www.salud.pr.gov/CMS/612",
+    "observed_control": {
+      "total_systems": 463,
+      "prasa_systems": 160,
+      "non_prasa_systems": 303,
+      "non_prasa_communal": 241,
+      "non_prasa_private": 62
+    },
+    "arithmetic": {
+      "prasa_plus_non_prasa": 463,
+      "non_prasa_subclasses": 303,
+      "delta": 0
+    },
+    "state": "CONTROL_COUNT_AND_BREAKDOWN_PASS_MEMBER_LIST_NOT_EXPOSED_IN_MANIFESTATION"
+  },
+  "epa_current_context": {
+    "authority": "EPA SDWIS",
+    "snapshot": "2026Q3",
+    "active_systems": 464,
+    "inactive_systems": 539,
+    "latest_rows": 1003,
+    "active_csv_sha256": "bc45ce15fca9f42a1d4ef7743fdfa23209944b149fdc808faccd4b95f549c1fb",
+    "workflow_artifact_id": 12525837409,
+    "workflow_artifact_digest": "sha256:ad460a7178c48801ec3741bbea848df2803fbddc30a01d095bde24b2be01ecba",
+    "current_vs_prdoh_count_delta": 1,
+    "state": "CROSS_PERIOD_AND_CROSS_AUTHORITY_CONTEXT_NOT_ADJUDICATIVE"
+  },
+  "diagnostic_only_not_identity": {
+    "active_pwsid_prefix_counts": {
+      "PR000_prefix": 163,
+      "other_pr_prefix": 301
+    },
+    "rule": "PWSID prefix, owner type, phone, organization name, and count arithmetic are not sufficient to assign PRASA/Non-PRASA authority identity.",
+    "canonical_bindings_asserted": 0
+  },
+  "membership_control": {
+    "source_members_required": 463,
+    "source_members_enumerated": 0,
+    "reconciled": 0,
+    "explained_difference": 0,
+    "unresolved": 463,
+    "delta": 0,
+    "state": "BLOCKED_AUTHORITATIVE_PRDOH_MEMBER_INVENTORY_NOT_ACQUIRED"
+  },
+  "hard_guardrails": [
+    "Do not select 463 of EPA's 464 active systems by deletion or nearest-match logic.",
+    "Do not equate PR000 PWSID prefix with PRASA ownership without authoritative binding.",
+    "Do not use phone number, owner code, organization name, normalized name, or count equality as identity.",
+    "Current EPA 2026Q3 active count 464 is context only and does not supersede PRDOH's 463 control.",
+    "Certification requires an authoritative PRDOH member inventory or authoritative per-member crosswalk sufficient to enumerate all 463 control members."
+  ],
+  "required_next_evidence": [
+    "Authoritative PRDOH 463-member system inventory with stable identifiers, or equivalent authoritative crosswalk",
+    "Manifestation bytes or reproducible API/export receipt",
+    "Per-member PRASA/Non-PRASA classification sufficient to reproduce 160+303",
+    "Per-member reconciliation against EPA SDWIS with accepted/rejected/falsifier states"
+  ],
+  "control_state": "OPEN_BLOCKED_MEMBERSHIP_ENUMERATION",
+  "certification_state": "OPEN"
+}

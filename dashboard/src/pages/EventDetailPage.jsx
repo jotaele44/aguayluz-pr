@@ -19,7 +19,7 @@ function Field({ label, children }) {
   if (!children) return null
   return (
     <div>
-      <dt className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-0.5">{label}</dt>
+      <dt className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-0.5">{label}</dt>
       <dd className="text-sm text-slate-200">{children}</dd>
     </div>
   )
@@ -63,10 +63,10 @@ export default function EventDetailPage() {
   return (
     <div className="p-6 space-y-6 max-w-3xl">
       <div className="flex items-center gap-3">
-        <Link to="/outages" className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition">
+        <Link to="/outages" className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-300 transition">
           <ArrowLeft className="h-3.5 w-3.5" /> Outages
         </Link>
-        <span className="text-slate-700">/</span>
+        <span className="text-slate-400">/</span>
         <span className="text-xs font-mono text-slate-400 truncate">{id}</span>
       </div>
 
@@ -122,20 +122,20 @@ export default function EventDetailPage() {
           <Field label="Sector">{event.sector}</Field>
           <Field label="Start Time">
             <span className="flex items-center gap-1.5">
-              <Calendar className="h-3.5 w-3.5 text-slate-500" />
+              <Calendar className="h-3.5 w-3.5 text-slate-400" />
               {fmtDate(event.start_time) || '–'}
             </span>
           </Field>
           <Field label="End Time">
             <span className="flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5 text-slate-500" />
+              <Clock className="h-3.5 w-3.5 text-slate-400" />
               {fmtDate(event.end_time) || 'Ongoing'}
             </span>
           </Field>
           {event.affected_customers != null && (
             <Field label="Affected Customers">
               <span className="flex items-center gap-1.5">
-                <Users className="h-3.5 w-3.5 text-slate-500" />
+                <Users className="h-3.5 w-3.5 text-slate-400" />
                 {event.affected_customers.toLocaleString()}
               </span>
             </Field>
@@ -152,7 +152,7 @@ export default function EventDetailPage() {
 
         {event.description && (
           <div className="mt-4 pt-4 border-t border-slate-800">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Description</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Description</p>
             <p className="text-sm text-slate-300 leading-relaxed">{event.description}</p>
           </div>
         )}
@@ -176,7 +176,7 @@ export default function EventDetailPage() {
               >
                 <div>
                   <p className="text-sm font-medium text-slate-200">{a.asset_name}</p>
-                  <p className="text-xs text-slate-500">{a.asset_type} · {a.municipality}</p>
+                  <p className="text-xs text-slate-400">{a.asset_type} · {a.municipality}</p>
                 </div>
                 <Badge variant="outline" className="text-xs capitalize">{a.status}</Badge>
               </Link>
