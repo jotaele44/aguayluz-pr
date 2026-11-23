@@ -468,12 +468,12 @@ function IdentifyReadout({ state }) {
           <summary>{hit.layer_id} · {hit.feature_id ?? 'unidentified'} · {hit.distance_m} m</summary>
           <dl>
             {Object.entries(hit.properties).map(([key, value]) => (
-              <div key={key}><dt className="inline text-slate-500">{key}: </dt><dd className="inline text-slate-200">{formatValue(value)}</dd></div>
+              <div key={key}><dt className="inline text-slate-400">{key}: </dt><dd className="inline text-slate-200">{formatValue(value)}</dd></div>
             ))}
           </dl>
         </details>
       ))}
-      <p className="text-[10px] text-slate-500">Spatial relation only · evidence {state.data.evidence_state} · identity effect NONE</p>
+      <p className="text-[10px] text-slate-400">Spatial relation only · evidence {state.data.evidence_state} · identity effect NONE</p>
     </div>
   )
 }
@@ -494,7 +494,7 @@ function QueryReadout({ state, exportable, onExport, exportError }) {
           {exportable(layer.layer_id) ? '' : ' · not exportable'}
         </p>
       ))}
-      <p className="text-[10px] text-slate-500">Evidence {state.data.evidence_state} · identity effect NONE</p>
+      <p className="text-[10px] text-slate-400">Evidence {state.data.evidence_state} · identity effect NONE</p>
       {anyExportable && (
         <div className="flex gap-1">
           <button type="button" className="rounded border border-slate-800 px-1.5 py-0.5" onClick={() => onExport('geojson')}>Export GeoJSON</button>
@@ -527,7 +527,7 @@ function TraceReadout({ state }) {
       {data.hits.map((hit) => (
         <p key={hit.feature_id}>{hit.hops}× {hit.layer_id ?? hit.node_type ?? 'node'} · {hit.feature_id} — {evidenceText(hit)}</p>
       ))}
-      <p className="text-[10px] text-slate-500">Recorded links only · evidence {data.evidence_state}</p>
+      <p className="text-[10px] text-slate-400">Recorded links only · evidence {data.evidence_state}</p>
     </div>
   )
 }
@@ -551,7 +551,7 @@ function ScenarioReadout({ selection, state, onRun }) {
             <p key={item.feature_id}>{item.hops}× {item.layer_id ?? 'node'} · {item.feature_id} — {evidenceText(item)}</p>
           ))}
           <p>Affected areas: {state.data.affected_areas.length ? state.data.affected_areas.map((a) => a.name ?? a.area_id).join(', ') : 'none resolved'}</p>
-          {state.data.notes.map((note) => <p key={note} className="text-[10px] text-slate-500">{note}</p>)}
+          {state.data.notes.map((note) => <p key={note} className="text-[10px] text-slate-400">{note}</p>)}
         </>
       )}
     </div>
@@ -633,7 +633,7 @@ export function SpatialToolsPanel(state) {
             {['upstream', 'downstream'].map((direction) => (
               <button
                 key={direction} type="button" onClick={() => setTraceDirection(direction)} aria-pressed={traceDirection === direction}
-                className={`rounded border px-1.5 py-0.5 text-[10px] ${traceDirection === direction ? 'border-sky-500/40 bg-sky-500/10 text-sky-300' : 'border-slate-800 text-slate-500'}`}
+                className={`rounded border px-1.5 py-0.5 text-[10px] ${traceDirection === direction ? 'border-sky-500/40 bg-sky-500/10 text-sky-300' : 'border-slate-800 text-slate-400'}`}
               >
                 {direction === 'upstream' ? 'What it depends on' : 'What depends on it'}
               </button>
