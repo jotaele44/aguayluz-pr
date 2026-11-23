@@ -29,6 +29,7 @@ export default defineConfig({
   // teardown refuses to delete anything that seed_demo.py did not create.
   globalTeardown: path.join(repositoryRoot, "server", "ingestion", "playwright.teardown.mjs"),
   testMatch: ["gui-parity.spec.mjs", "mobile-navigation.spec.mjs", "hazard-advisory.spec.mjs", "nws-hydromet.spec.mjs", "hydro-intelligence.spec.mjs"],
+  testMatch: ["gui-parity.spec.mjs", "mobile-navigation.spec.mjs", "hazard-advisory.spec.mjs", "solid-waste-registry.spec.mjs", "nws-hydromet.spec.mjs", "aquifer-bands.spec.mjs", "water-use.spec.mjs", "hydro-inventory.spec.mjs"],
   fullyParallel: false,
   retries: process.env.CI ? 1 : 0,
   workers: 1,
