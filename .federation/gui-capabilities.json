@@ -1230,7 +1230,7 @@
       "classification": "analysis",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Read-only, fail-closed environmental source→pathway→receptor graph. It preserves existing utility/regulatory identities, exposes provenance and causal state, and prohibits proximity/name-only evidence from becoming causal attribution.",
+      "rationale": "Read-only, fail-closed environmental source\u2192pathway\u2192receptor graph. It preserves existing utility/regulatory identities, exposes provenance and causal state, and prohibits proximity/name-only evidence from becoming causal attribution.",
       "backend": {
         "files": [
           "server/backend/environmental_exposure_api.py",
@@ -2292,6 +2292,87 @@
       }
     },
     {
+      "id": "ionosphere-preview",
+      "classification": "analysis",
+      "status": "staged",
+      "requires_terminal": false,
+      "feature_flag": "AGUAYLUZ_IONOSPHERE_PREVIEW=1 + VITE_IONOSPHERE_PREVIEW=1",
+      "tracking": "docs/IONOSPHERE_RC0.md",
+      "expires_on": "2026-11-23",
+      "backend": {
+        "files": [
+          "server/backend/ionosphere_api.py",
+          "src/aguayluz/ionosphere.py",
+          "src/aguayluz/ionosphere_snapshot.py",
+          "src/aguayluz/ionosphere_transport.py"
+        ],
+        "endpoints": [
+          "GET /ionosphere/status"
+        ],
+        "symbols": [
+          "server/backend/ionosphere_api.py:ionosphere_status",
+          "src/aguayluz/ionosphere.py:audit_status",
+          "src/aguayluz/ionosphere.py:validate_record",
+          "src/aguayluz/ionosphere.py:validate_batch",
+          "src/aguayluz/ionosphere_snapshot.py:snapshot_context",
+          "src/aguayluz/ionosphere_transport.py:consume_glotec_package",
+          "src/aguayluz/ionosphere_transport.py:load_frozen_transport",
+          "src/aguayluz/ionosphere_transport.py:load_reference_coverage"
+      "id": "luma-monthly-generation-source-freeze",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Isolated CI source-acquisition and provenance infrastructure. Freezes official LUMA monthly index, landing and PDF bytes and emits candidate observations for independent review. It does not publish claims or expose a new operator workflow. User-facing hydro ingestion controls and results remain an unimplemented integration scope; this internal adapter does not establish shipped GUI capability.",
+      "analysis": {
+        "files": [
+          "scripts/luma_monthly_generation_adapter.py"
+        ],
+        "symbols": [
+          "scripts/luma_monthly_generation_adapter.py:AdapterError",
+          "scripts/luma_monthly_generation_adapter.py:Period",
+          "scripts/luma_monthly_generation_adapter.py:DiscoveryEntry",
+          "scripts/luma_monthly_generation_adapter.py:FetchResult",
+          "scripts/luma_monthly_generation_adapter.py:ManifestRow",
+          "scripts/luma_monthly_generation_adapter.py:AnchorParser",
+          "scripts/luma_monthly_generation_adapter.py:ReportRowParser",
+          "scripts/luma_monthly_generation_adapter.py:utc_now",
+          "scripts/luma_monthly_generation_adapter.py:sha256_bytes",
+          "scripts/luma_monthly_generation_adapter.py:sha256_file",
+          "scripts/luma_monthly_generation_adapter.py:canonical_json",
+          "scripts/luma_monthly_generation_adapter.py:write_json",
+          "scripts/luma_monthly_generation_adapter.py:write_jsonl",
+          "scripts/luma_monthly_generation_adapter.py:read_jsonl",
+          "scripts/luma_monthly_generation_adapter.py:iter_periods",
+          "scripts/luma_monthly_generation_adapter.py:synthesized_landing_url",
+          "scripts/luma_monthly_generation_adapter.py:parse_index_entries",
+          "scripts/luma_monthly_generation_adapter.py:index_period_map",
+          "scripts/luma_monthly_generation_adapter.py:expected_periods_from_index",
+          "scripts/luma_monthly_generation_adapter.py:request_bytes",
+          "scripts/luma_monthly_generation_adapter.py:freeze_fetch",
+          "scripts/luma_monthly_generation_adapter.py:looks_like_pdf",
+          "scripts/luma_monthly_generation_adapter.py:landing_publication_date",
+          "scripts/luma_monthly_generation_adapter.py:landing_pdf_links",
+          "scripts/luma_monthly_generation_adapter.py:classify_units",
+          "scripts/luma_monthly_generation_adapter.py:classify_hydro_text",
+          "scripts/luma_monthly_generation_adapter.py:hydro_context_lines",
+          "scripts/luma_monthly_generation_adapter.py:typed_observations",
+          "scripts/luma_monthly_generation_adapter.py:extract_pdf_pages",
+          "scripts/luma_monthly_generation_adapter.py:render_pages",
+          "scripts/luma_monthly_generation_adapter.py:relation_to_prior",
+          "scripts/luma_monthly_generation_adapter.py:select_incremental_periods",
+          "scripts/luma_monthly_generation_adapter.py:acquire_manifestation",
+          "scripts/luma_monthly_generation_adapter.py:reconcile_manifest_rows",
+          "scripts/luma_monthly_generation_adapter.py:duplicate_period_state",
+          "scripts/luma_monthly_generation_adapter.py:manifest_csv",
+          "scripts/luma_monthly_generation_adapter.py:build_canonical_candidates",
+          "scripts/luma_monthly_generation_adapter.py:replay_snapshot",
+          "scripts/luma_monthly_generation_adapter.py:deterministic_archive",
+          "scripts/luma_monthly_generation_adapter.py:index_denominator",
+          "scripts/luma_monthly_generation_adapter.py:acquire_index",
+          "scripts/luma_monthly_generation_adapter.py:run_acquisition",
+          "scripts/luma_monthly_generation_adapter.py:run_replay",
+          "scripts/luma_monthly_generation_adapter.py:parser",
+          "scripts/luma_monthly_generation_adapter.py:main"
       "id": "gis-viewer-and-dependency-analysis",
       "classification": "analysis",
       "status": "active",
@@ -2369,6 +2450,13 @@
       },
       "frontend": {
         "routes": [
+          "/ionosphere"
+        ],
+        "e2e_routes": [
+          "/ionosphere"
+        ],
+        "components": [
+          "dashboard/src/pages/IonospherePage.jsx"
           "/map"
         ],
         "e2e_routes": [
@@ -2393,6 +2481,36 @@
       },
       "tests": {
         "backend": [
+          "tests/test_ionosphere.py",
+          "tests/test_ionosphere_snapshot.py",
+          "tests/test_ionosphere_transport.py"
+        ],
+        "unit": [
+          "dashboard/src/pages/IonospherePage.test.jsx"
+        ],
+        "e2e": [
+          "dashboard/tests/ionosphere.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "ionosphere-ci-acquisition-evidence",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Development-only CI evidence capture experiment. It freezes fixed NOAA public endpoint responses into isolated build artifacts and inventories schema without ingestion, scheduling, user-facing production operations, or geographic certification. It is not a production acquisition capability.",
+      "analysis": {
+        "files": [
+          "scripts/capture_ionosphere_evidence.py",
+          "scripts/audit_ionosphere_reference_coverage.py"
+        ],
+        "symbols": [
+          "scripts/capture_ionosphere_evidence.py:freeze",
+          "scripts/capture_ionosphere_evidence.py:request_bytes",
+          "scripts/capture_ionosphere_evidence.py:inspect_capture",
+          "scripts/capture_ionosphere_evidence.py:capture",
+          "scripts/audit_ionosphere_reference_coverage.py:classify",
+          "scripts/audit_ionosphere_reference_coverage.py:audit"
           "tests/test_gis_api.py",
           "tests/test_gis_network.py",
           "tests/test_gis_query.py",
@@ -2651,6 +2769,26 @@
       },
       "tests": {
         "contract": [
+          "tests/test_capture_ionosphere_evidence.py"
+        ]
+      }
+    },
+    {
+      "id": "frozen-pfas-pr-scope-ci-adjudication",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "CI-only evidence gate over a fixed passing artifact, distinguishing national archive payload changes from the exact PR row multiset. It neither acquires a mutable EPA source nor mutates operational/canonical rows. Existing Exposure Graph workflows display the retained PR data; no standalone operator control is introduced.",
+      "analysis": {
+        "files": [
+          "scripts/verify_frozen_pfas_pr_scope.py"
+        ],
+        "symbols": [
+          "scripts/verify_frozen_pfas_pr_scope.py:zip_manifest",
+          "scripts/verify_frozen_pfas_pr_scope.py:compare_archives",
+          "scripts/verify_frozen_pfas_pr_scope.py:table",
+          "scripts/verify_frozen_pfas_pr_scope.py:verify_bundle",
+          "scripts/verify_frozen_pfas_pr_scope.py:select_pr_source"
           "tests/test_federation_source_monitors.py",
           "tests/test_gui_parity.py"
         ]
@@ -2707,6 +2845,8 @@
       },
       "tests": {
         "contract": [
+          "tests/test_frozen_pfas_pr_scope.py"
+          "tests/test_luma_monthly_generation_adapter.py"
           "tests/test_outdoor_compose.py",
           "tests/test_ingest_outdoor_sources.py",
           "tests/test_refresh_plans.py",

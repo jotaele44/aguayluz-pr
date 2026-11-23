@@ -1,25 +1,36 @@
 name: PFAS Evidence Freeze
-
 on:
   pull_request:
     branches: [main]
   workflow_dispatch:
-
 permissions:
-  contents: write
-
+  contents: read
+  actions: read
 jobs:
   freeze-ucmr5-pr:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
-          ref: ${{ github.head_ref || github.ref_name }}
-
-      - name: Download exact EPA UCMR5 state archive
+          python-version: '3.12'
+      - name: Reuse exact passing artifact (no mutable EPA redownload)
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
+          mkdir -p artifacts/pfas_frozen_scope
+          curl --fail --location --proto '=https' --tlsv1.2 --retry 3 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            -o artifacts/pfas_frozen_scope/passed-bundle.zip \
+            'https://api.github.com/repos/jotaele44/aguayluz-pr/actions/artifacts/12508351665/zip'
+      - name: Verify national distinction and exact Puerto Rico row equivalence
+        run: python scripts/verify_frozen_pfas_pr_scope.py artifacts/pfas_frozen_scope/passed-bundle.zip artifacts/pfas_frozen_scope/receipt.json
+      - name: Preserve source and scope evidence
+        if: always()
           mkdir -p artifacts/pfas_ucmr5/raw artifacts/pfas_ucmr5/derived
           url='https://www.epa.gov/system/files/other-files/2023-08/ucmr5-occurrence-data-by-state.zip'
           # EPA republished the archive on 2026-10-16 (Sept manifestation 4845eb3a...).
@@ -168,8 +179,8 @@ jobs:
       - name: Upload frozen EPA evidence bundle
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: pfas-ucmr5-pr-evidence
-          path: artifacts/pfas_ucmr5
+          name: pfas-frozen-pr-scope-${{ github.sha }}
+          path: artifacts/pfas_frozen_scope
           if-no-files-found: error
           retention-days: 90
 
