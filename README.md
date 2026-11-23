@@ -120,6 +120,18 @@ corpus is real public data, with some sources external or point-in-time.
   normal). Heavy-rain days (municipio mean ≥ 3 in, or any cell ≥ 6 in) become sub-critical
   `WEATHER_HAZARD` follow-up alerts; the **NWS Hydromet** page lists rainfall by municipio and the
   map has a **Rainfall** municipio fill.
+- **Hydroelectric Intelligence Release A (DRAFT / NOT CERTIFIED):**
+  `scripts/ingest_hydro_intelligence.py` is a **manual, bounded**
+  source-discovery and raw-byte acquisition runner for the configured EIA-860M,
+  EIA-923 and LUMA indexes. Discovery candidates are **not acquired evidence**;
+  acquisition receipts preserve original bytes and SHA-256 but do **not**
+  establish canonical generator identity, measured MWh, or verified LUMA unit
+  status. `GET /hydro-intelligence/sources` and the **Hydro Intelligence**
+  dashboard expose fail-closed source readiness, including invalid or orphaned
+  receipts. EIA/LUMA parsers remain candidate-only until actual original-source
+  schemas, pages and cells are independently verified. The runner is not a
+  deployed scheduler; Release A / Hydroelectric Master certification and
+  automatic canonical promotion remain **WITHHELD**.
 - An **outdoor-conditions layer**: one current-conditions row per municipio in
   `data/outdoor_conditions.jsonl` (`scripts/build_outdoor_conditions.py`), exported to the hub as
   `outdoor_condition` entities. Six sources feed it on the hydromet plane: the NWS San Juan **Surf

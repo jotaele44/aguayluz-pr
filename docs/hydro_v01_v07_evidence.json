@@ -1,0 +1,262 @@
+{
+  "schema_version": "hydro-remediation-evidence/v1",
+  "baseline_feature_sha": "62e9704dc3c2838fffaf2c5132a66e27920c0700",
+  "acceptance_source": "docs/HYDRO_AUTONOMOUS_ACQUISITION.md",
+  "claim_scope": "Bounded offline regression and historical CI evidence; not certification",
+  "v01_state": "PROVISIONAL",
+  "independent_approval": false,
+  "requirements": [
+    {
+      "id": "A1",
+      "raw_label": "original-byte integrity",
+      "evidence_tests": [
+        "test_byte_exact_idempotency",
+        "test_detect_mutated_existing_content"
+      ],
+      "state": "PROVISIONAL",
+      "residue": "Offline byte integrity covered; authoritative Hydro originals and production durability remain open."
+    },
+    {
+      "id": "A2",
+      "raw_label": "no name-only binding",
+      "evidence_tests": [
+        "test_eia_plant_level_raw_preserved_without_name_binding"
+      ],
+      "state": "PROVISIONAL",
+      "residue": "Parser candidates do not prove canonical identities; authoritative bindings remain open."
+    },
+    {
+      "id": "A3",
+      "raw_label": "no inference from missing source data",
+      "evidence_tests": [
+        "test_missing_history_does_not_imply_source_absence"
+      ],
+      "state": "PROVISIONAL",
+      "residue": "Bounded classifier behavior covered; no source absence certification."
+    },
+    {
+      "id": "A4",
+      "raw_label": "no silent NULL-to-zero",
+      "evidence_tests": [
+        "test_eia923_explicit_header_preserves_zero_and_missing_values"
+      ],
+      "state": "PROVISIONAL",
+      "residue": "Synthetic workbook zero/null distinction covered; native source and formula/cell semantics require review."
+    },
+    {
+      "id": "A5",
+      "raw_label": "no unauthorized promotion",
+      "evidence_tests": [
+        "test_receipt_remains_raw_not_certified",
+        "test_registry_declares_bounded_nonoperational_coverage"
+      ],
+      "state": "PROVISIONAL",
+      "residue": "Offline RAW/candidate state preserved; A1/A2 not granted."
+    },
+    {
+      "id": "A6",
+      "raw_label": "no SSRF or unreviewed redirect",
+      "evidence_tests": [
+        "test_reject_unsafe_urls",
+        "test_https_redirect_status_is_refused",
+        "test_mixed_public_private_dns_fails_closed"
+      ],
+      "state": "PROVISIONAL",
+      "residue": "Offline boundary covered; independent live security review open."
+    },
+    {
+      "id": "A7",
+      "raw_label": "no loss of publication revisions",
+      "evidence_tests": [
+        "test_revision_is_new_artifact",
+        "test_index_manifestation_revision_preserves_both_originals"
+      ],
+      "state": "PROVISIONAL",
+      "residue": "Stored bytes preserved; complete manifestation ledger remains open."
+    },
+    {
+      "id": "B1",
+      "raw_label": "repeated URL/new bytes",
+      "evidence_tests": [
+        "test_same_url_modified_bytes_has_distinct_revision",
+        "test_revision_is_new_artifact"
+      ],
+      "state": "PROVISIONAL",
+      "residue": "Offline revision behavior covered."
+    },
+    {
+      "id": "B2",
+      "raw_label": "multiple URLs/same bytes",
+      "evidence_tests": [
+        "test_same_bytes_new_url_not_conflated_with_original"
+      ],
+      "state": "PROVISIONAL",
+      "residue": "Classifier covered; first payload receipt does not itself retain every URL/time."
+    },
+    {
+      "id": "B3",
+      "raw_label": "link-less JavaScript/redirector publication",
+      "evidence_tests": [],
+      "state": "OPEN",
+      "residue": "No source-specific implementation or original fixture evidence."
+    },
+    {
+      "id": "B4",
+      "raw_label": "index pagination",
+      "evidence_tests": [],
+      "state": "OPEN",
+      "residue": "Generic single-page link discovery does not demonstrate exhaustive pagination."
+    },
+    {
+      "id": "B5",
+      "raw_label": "failed source HTTP",
+      "evidence_tests": [
+        "test_access_denied_does_not_retry_or_emit_zero",
+        "test_failed_discovery_has_immutable_failure_receipt"
+      ],
+      "state": "PROVISIONAL",
+      "residue": "Offline quarantine plus historical source-freeze logs retained."
+    },
+    {
+      "id": "B6",
+      "raw_label": "mixed private/public DNS",
+      "evidence_tests": [
+        "test_mixed_public_private_dns_fails_closed"
+      ],
+      "state": "PROVISIONAL",
+      "residue": "Offline mixed-answer rejection; live independent proof remains open."
+    },
+    {
+      "id": "B7",
+      "raw_label": "storage crash",
+      "evidence_tests": [
+        "test_receipt_publication_failure_leaves_no_partial_receipt",
+        "test_receipt_concurrent_winner_is_validated"
+      ],
+      "state": "PROVISIONAL",
+      "residue": "Injected publication failure tested; process kill/power loss/production durable-volume recovery unverified."
+    },
+    {
+      "id": "B8",
+      "raw_label": "ZIP member collision",
+      "evidence_tests": [
+        "test_zip_duplicate_case_insensitive_path_rejected",
+        "test_zip_equivalent_member_paths_fail_closed"
+      ],
+      "state": "PROVISIONAL",
+      "residue": "Case, separator and dot-path collision regressions; broad archive adversarial review remains open."
+    },
+    {
+      "id": "B9",
+      "raw_label": "temporal source conflicts",
+      "evidence_tests": [
+        "test_luma_conflicting_dates_never_promote_units"
+      ],
+      "state": "PROVISIONAL",
+      "residue": "Synthetic metadata conflict covered; original rendered cells and native dates not independently bound."
+    },
+    {
+      "id": "B10",
+      "raw_label": "stale branch approval",
+      "evidence_tests": [],
+      "state": "OPEN",
+      "residue": "Independent approval absent; no authorization transferred between commits."
+    },
+    {
+      "id": "B11",
+      "raw_label": "live-scheduler persistence",
+      "evidence_tests": [],
+      "state": "OPEN",
+      "residue": "No deployed durable scheduler; owner/storage binding requested."
+    }
+  ],
+  "literal_set_comparison": {
+    "granularity": "literal raw requirement label, not semantic identity",
+    "INTERSECTION": [],
+    "A_ONLY": [
+      "original-byte integrity",
+      "no name-only binding",
+      "no inference from missing source data",
+      "no silent NULL-to-zero",
+      "no unauthorized promotion",
+      "no SSRF or unreviewed redirect",
+      "no loss of publication revisions"
+    ],
+    "B_ONLY": [
+      "repeated URL/new bytes",
+      "multiple URLs/same bytes",
+      "link-less JavaScript/redirector publication",
+      "index pagination",
+      "failed source HTTP",
+      "mixed private/public DNS",
+      "storage crash",
+      "ZIP member collision",
+      "temporal source conflicts",
+      "stale branch approval",
+      "live-scheduler persistence"
+    ],
+    "UNION": [
+      "original-byte integrity",
+      "no name-only binding",
+      "no inference from missing source data",
+      "no silent NULL-to-zero",
+      "no unauthorized promotion",
+      "no SSRF or unreviewed redirect",
+      "no loss of publication revisions",
+      "repeated URL/new bytes",
+      "multiple URLs/same bytes",
+      "link-less JavaScript/redirector publication",
+      "index pagination",
+      "failed source HTTP",
+      "mixed private/public DNS",
+      "storage crash",
+      "ZIP member collision",
+      "temporal source conflicts",
+      "stale branch approval",
+      "live-scheduler persistence"
+    ],
+    "SYMMETRIC_DIFFERENCE": [
+      "original-byte integrity",
+      "no name-only binding",
+      "no inference from missing source data",
+      "no silent NULL-to-zero",
+      "no unauthorized promotion",
+      "no SSRF or unreviewed redirect",
+      "no loss of publication revisions",
+      "repeated URL/new bytes",
+      "multiple URLs/same bytes",
+      "link-less JavaScript/redirector publication",
+      "index pagination",
+      "failed source HTTP",
+      "mixed private/public DNS",
+      "storage crash",
+      "ZIP member collision",
+      "temporal source conflicts",
+      "stale branch approval",
+      "live-scheduler persistence"
+    ],
+    "arithmetic": {
+      "A": 7,
+      "B": 11,
+      "intersection": 0,
+      "union": 18,
+      "symmetric_difference": 18
+    }
+  },
+  "gates": {
+    "V03": "OPEN",
+    "V04": "OPEN",
+    "V05": "OPEN",
+    "V06": "OPEN",
+    "V07": "OPEN"
+  },
+  "withheld": [
+    "A1",
+    "A2",
+    "MERGE",
+    "RELEASE_A",
+    "HYDRO_MASTER",
+    "THEHUB_LOCKSTEP",
+    "SKILL_PROMOTION"
+  ]
+}

@@ -34,6 +34,9 @@ const NAV_GROUPS = [
       { to: '/assets', icon: Database, label: 'Assets',
         desc: 'Infrastructure registry with filters and detail.' },
       { to: '/water-disruption', icon: Droplets, label: 'Water & Weather',
+        desc: 'Water service validation and National Weather Service hydromet.',
+        links: [{ to: '/hydromet', label: 'NWS Hydromet' },
+                { to: '/hydro-intelligence', label: 'Hydro Intelligence' }] },
         desc: 'Water service validation, National Weather Service hydromet, aquifer condition bands, USGS water-use estimates and the reconciled inventory of aquifers and wells.',
         links: [
           { to: '/hydromet', label: 'NWS Hydromet' },
