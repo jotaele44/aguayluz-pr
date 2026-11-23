@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { postAiQuery } from '@/lib/api'
 import { Bot, Loader2, MessageCircle, Send, X } from 'lucide-react'
+import { scrollRegion } from '@/lib/scrollRegion';
 
 export default function AiQueryPanel() {
   const [open, setOpen] = useState(false)
@@ -47,15 +48,15 @@ export default function AiQueryPanel() {
               <Bot className="h-4 w-4 text-sky-400" />
               Ask about this data
             </div>
-            <button onClick={() => setOpen(false)} className="text-slate-500 hover:text-slate-300 transition">
+            <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-slate-300 transition">
               <X className="h-4 w-4" />
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[180px]">
+          <div {...scrollRegion("Assistant conversation")} className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[180px]">
             {messages.length === 0 && (
               <div className="space-y-2">
-                <p className="text-xs text-slate-500 text-center">Try asking:</p>
+                <p className="text-xs text-slate-400 text-center">Try asking:</p>
                 {[
                   'How many assets are tracked?',
                   'What sectors have the most events?',
@@ -99,7 +100,7 @@ export default function AiQueryPanel() {
               onKeyDown={handleKey}
               placeholder="Ask about the data…"
               disabled={loading}
-              className="flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-hidden focus:border-sky-600 disabled:opacity-50"
+              className="flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-400 focus:outline-hidden focus:border-sky-600 disabled:opacity-50"
             />
             <button
               type="submit"

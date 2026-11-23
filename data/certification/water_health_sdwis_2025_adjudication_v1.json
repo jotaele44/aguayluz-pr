@@ -1,0 +1,55 @@
+{
+  "schema_version": "aguayluz.water_health.sdwis_2025_adjudication_checkpoint/v1",
+  "scope": "Exact replay of the immutable unresolved-row manifestation from WATER_HEALTH predecessor PR #363",
+  "implementation_merge_sha": "82ef700a6f42d2d70e33fcce6a45a89d007f5a69",
+  "predecessor": {
+    "merge_sha": "9b9b7e96065956d16ae3e9b57165e9d3dba3a302",
+    "workflow_run_id": 39878843903,
+    "artifact_id": 12470315205,
+    "artifact_digest": "sha256:c3d7627ddc28e1a018bf8cba106b71ee94841e49c6d4f747c4d8c9cd92785595",
+    "unresolved_jsonl_sha256": "d6b92f75c530b05fb37836a128a132b4a5e24e58047206c99fa0bf05ce0451e8",
+    "unresolved_rows": 15342
+  },
+  "exact_replay": {
+    "full_row_level_receipt_sha256": "5d1304d4ef05f1291202b99908cf20de6d76a811c733c4450c2b785d149e0570",
+    "predecessor_reason_counts": {
+      "MISSING_PWSID_OR_VIOLATION_ID": 14170,
+      "INVALID_END_DATE": 1172
+    },
+    "terminally_resolved_excluded": 14174,
+    "terminal_reason_counts": {
+      "ENFORCEMENT_ONLY_WITHOUT_VIOLATION_ID": 14170,
+      "NONCOMPLIANCE_BEGINS_AFTER_TARGET_YEAR": 4
+    },
+    "preserved_unresolved": 1168,
+    "unresolved_reason_counts": {
+      "UNVERIFIED_LITERAL_END_DATE_SENTINEL": 1168
+    },
+    "unresolved_unique_pwsid_violation_keys": 868,
+    "unresolved_key_multiplicity": {
+      "1": 589,
+      "2": 260,
+      "3": 17,
+      "4": 2
+    },
+    "row_conservation_delta": 0
+  },
+  "revised_source_arithmetic": {
+    "source": 15550611,
+    "retained": 3023,
+    "excluded": 15546420,
+    "unresolved": 1168,
+    "accounted": 15550611,
+    "delta": 0,
+    "state": "PASS"
+  },
+  "bounded_adjudication_state": "PASS",
+  "sdwis_closure_state": "OPEN",
+  "global_water_health_state": "OPEN",
+  "guardrails": [
+    "The predecessor JSONL remains immutable.",
+    "ENFORCEMENT_ID is not substituted for VIOLATION_ID.",
+    "The literal '--->' is not coerced to NULL without authoritative token semantics.",
+    "Bounded adjudication PASS does not imply SDWIS closure or WATER_HEALTH global certification."
+  ]
+}

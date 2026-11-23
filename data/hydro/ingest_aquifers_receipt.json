@@ -1,0 +1,183 @@
+{
+  "datum": {
+    "checks": {
+      "declared_nad27": {
+        "accuracy_m": 16.0,
+        "median_m": 241.0,
+        "median_north_offset_m": 209.5,
+        "operation": "Inverse of unnamed + NAD27 to WGS 84 (1) (with axis order normalized for visualization)",
+        "p90_m": 322.0,
+        "unavailable_better_operations": []
+      },
+      "puerto_rico_1940": {
+        "accuracy_m": 6.0,
+        "median_m": 25.9,
+        "median_north_offset_m": 1.9,
+        "operation": "Inverse of unnamed + Puerto Rico to WGS 84 (3) (with axis order normalized for visualization)",
+        "p90_m": 92.3,
+        "unavailable_better_operations": [
+          "Inverse of unnamed + Puerto Rico to NAD83 (1) + NAD83 to WGS 84 (35)",
+          "Inverse of unnamed + Puerto Rico to WGS 84 (4)"
+        ]
+      }
+    },
+    "declared_wkt_sha256": "1f3a904211e1a5016a57c98f0fee4fc10d8ce8a6af75b0e67c596ad1939ea4b3",
+    "gate_m": 100.0,
+    "used": "EPSG:4139 Puerto Rico 1940"
+  },
+  "ledgers": {
+    "aquifer_codes": {
+      "codes_assigned_in_pr": 26,
+      "codes_named_for_pr_unassigned": 9,
+      "excluded": {
+        "122ALMS": "stratigraphic unit ('Almirante Sur Sand Lentil of Cibao Formation') with no Puerto Rico location assigned",
+        "122CMUY": "stratigraphic unit ('Camuy Limestone') with no Puerto Rico location assigned",
+        "122GJTC": "stratigraphic unit ('Guajataca Member of Cibao Formation') with no Puerto Rico location assigned",
+        "122JNDZ": "stratigraphic unit ('Juana Diaz Formation') with no Puerto Rico location assigned",
+        "122MCRB": "stratigraphic unit ('Mucarabones Sand') with no Puerto Rico location assigned",
+        "122QBDA": "stratigraphic unit ('Quebrada Arenas Limestone Member of Cibao Formation') with no Puerto Rico location assigned",
+        "122UPPR": "stratigraphic unit ('Upper Member of Cibao Formation') with no Puerto Rico location assigned",
+        "123LRES": "stratigraphic unit ('Lares Limestone of Rio Guatemala Group') with no Puerto Rico location assigned",
+        "123SSBS": "stratigraphic unit ('San Sabastian Formation of Rio Guatemala Group') with no Puerto Rico location assigned",
+        "124RPDR": "stratigraphic unit ('Rio Piedras Siltstone') with no Puerto Rico location assigned",
+        "N9999OTHER": "catch-all national code ('Other aquifers'), not an aquifer unit"
+      },
+      "national_codes_assigned_in_pr": 3
+    },
+    "claims": 159,
+    "ha730_groups": 104,
+    "ha730_polygons": {
+      "accounted": 473,
+      "delta": 0,
+      "excluded": 263,
+      "excluded_by_reason": {
+        "'other' in the source, not an aquifer": 43,
+        "confining unit in the source, not an aquifer": 69,
+        "outside Puerto Rico (U.S. Virgin Islands)": 151
+      },
+      "retained": 210,
+      "source": 473,
+      "state": "PASS",
+      "unresolved": 0
+    }
+  },
+  "manifestations": [
+    {
+      "byte_sha256": "31a29b9b8cd1bd385b332b899b18f78027ee67dce48923056feb3ac28066a5c4",
+      "bytes": 486949,
+      "pin_matches": true,
+      "source_key": "usgs_ha730_aquifers_pr",
+      "url": "https://doi.org/10.5066/P98YGFVN"
+    },
+    {
+      "byte_sha256": "20a1a02fba79685722d0d539efdffa74d0806d4ff7ab9afdf2c7655ce979f6bb",
+      "bytes": 1708617,
+      "pin_matches": null,
+      "source_key": "usgs_aquifer_codes",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/aquifer-codes/items?limit=10000&f=json"
+    },
+    {
+      "byte_sha256": "819bedc9e64d21e4d8dd1d9bb770960b2c8085a36042ccf40abe46359934e7d5",
+      "bytes": 15531,
+      "pin_matches": null,
+      "source_key": "usgs_national_aquifer_codes",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/national-aquifer-codes/items?limit=10000&f=json"
+    },
+    {
+      "byte_sha256": "76d3417a0f738f0ebc4173f66f7506440b5b186d35e33a1d9a7531da1509ce3e",
+      "bytes": 4171549,
+      "pin_matches": null,
+      "source_key": "usgs_monitoring_locations",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items?state_code=72&limit=2000&f=json"
+    },
+    {
+      "byte_sha256": "50c14cc6db9a634e5d72fbd72fafe32cb99ec46f4c56de401fab9b0478cd9c4a",
+      "bytes": 4181216,
+      "pin_matches": null,
+      "source_key": "usgs_monitoring_locations",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items?state_code=72&limit=2000&f=json"
+    },
+    {
+      "byte_sha256": "85304c625ac0edaf882320fb8a7b4b31eac97df07361a2e64ed009140bf3820d",
+      "bytes": 4173758,
+      "pin_matches": null,
+      "source_key": "usgs_monitoring_locations",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items?state_code=72&limit=2000&f=json"
+    },
+    {
+      "byte_sha256": "b7fa4d5bbcfbbcda86992d667b4baf88b8856951621e9fd7f2a3418890d7468e",
+      "bytes": 2758910,
+      "pin_matches": null,
+      "source_key": "usgs_monitoring_locations",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items?state_code=72&limit=2000&f=json"
+    },
+    {
+      "byte_sha256": "3d35ac2a9409e863a6a6bde655316c732dacf1cfb5dbd1c17a12dc1fa7537bf7",
+      "bytes": 44626,
+      "pin_matches": null,
+      "source_key": "usgs_ha730_text",
+      "url": "https://pubs.usgs.gov/ha/ha730/ch_n/N-PR_VItext1.html"
+    },
+    {
+      "byte_sha256": "9eae700699e53f62e529e42474ef95d1608aa31b35d1da50139383cc5346d24e",
+      "bytes": 30642,
+      "pin_matches": null,
+      "source_key": "usgs_ha730_text",
+      "url": "https://pubs.usgs.gov/ha/ha730/ch_n/N-PR_VItext4.html"
+    }
+  ],
+  "run_utc": "2026-11-15T02:00:00Z",
+  "simplification": {
+    "area_check": {
+      "114": {
+        "relative_change": 0.0013,
+        "simplified_km2": 374.943,
+        "source_km2": 374.44
+      },
+      "115": {
+        "relative_change": 0.0007,
+        "simplified_km2": 1167.46,
+        "source_km2": 1166.693
+      },
+      "4191": {
+        "relative_change": -0.0001,
+        "simplified_km2": 711.771,
+        "source_km2": 711.828
+      },
+      "4192": {
+        "relative_change": -0.0001,
+        "simplified_km2": 561.124,
+        "source_km2": 561.178
+      },
+      "420": {
+        "relative_change": -0.0047,
+        "simplified_km2": 49.656,
+        "source_km2": 49.888
+      },
+      "907": {
+        "relative_change": -0.0066,
+        "simplified_km2": 30.193,
+        "source_km2": 30.392
+      },
+      "908": {
+        "relative_change": 0.0,
+        "simplified_km2": 5442.692,
+        "source_km2": 5442.679
+      },
+      "997": {
+        "relative_change": -0.0007,
+        "simplified_km2": 494.209,
+        "source_km2": 494.565
+      },
+      "999": {
+        "relative_change": -0.0003,
+        "simplified_km2": 446.744,
+        "source_km2": 446.858
+      }
+    },
+    "decimals": 5,
+    "tolerance_deg": 0.0003
+  },
+  "stage": "aquifers",
+  "status": "PASS"
+}

@@ -1,0 +1,144 @@
+{
+  "last_attempt_utc": "2026-11-14T07:00:00Z",
+  "last_error": null,
+  "last_status": "PASS",
+  "last_success": {
+    "cross_source_agreements": [
+      {
+        "agrees": "category_2015",
+        "kept": "ps_municipio_2015",
+        "record_id": "WU:2015:public_supply:island:all"
+      }
+    ],
+    "mode": "offline",
+    "records_written": 207,
+    "sources": [
+      {
+        "arithmetic": {
+          "accounted": 83,
+          "delta": 0,
+          "excluded": 4,
+          "retained": 79,
+          "source": 83,
+          "state": "PASS",
+          "unresolved": 0
+        },
+        "byte_sha256": "6d5eaa839908074beb38dc632e765c064b5c940c04d9648470c8055918a28375",
+        "excluded_by_reason": {
+          "header": 2,
+          "title_or_note": 2
+        },
+        "md5_verified": false,
+        "pin_matches": true,
+        "records": 81,
+        "source_key": "ps_municipio_2020"
+      },
+      {
+        "arithmetic": {
+          "accounted": 83,
+          "delta": 0,
+          "excluded": 4,
+          "retained": 79,
+          "source": 83,
+          "state": "PASS",
+          "unresolved": 0
+        },
+        "byte_sha256": "b176fcf5629b07fcaa9dc4bcbd74a2a3ba9d89c8ad067b9aa97a39bfaec5379a",
+        "excluded_by_reason": {
+          "header": 2,
+          "title_or_note": 2
+        },
+        "md5_verified": false,
+        "pin_matches": true,
+        "records": 81,
+        "source_key": "ps_municipio_2015"
+      },
+      {
+        "arithmetic": {
+          "accounted": 12,
+          "delta": 0,
+          "excluded": 4,
+          "retained": 8,
+          "source": 12,
+          "state": "PASS",
+          "unresolved": 0
+        },
+        "byte_sha256": "eb94cb748155cef7c95bb6ecb48ed337502c8ed64144458524d08c84a2f80d92",
+        "excluded_by_reason": {
+          "header": 2,
+          "title_or_note": 2
+        },
+        "md5_verified": false,
+        "pin_matches": true,
+        "records": 8,
+        "source_key": "category_2015"
+      },
+      {
+        "arithmetic": {
+          "accounted": 37,
+          "delta": 0,
+          "excluded": 5,
+          "retained": 32,
+          "source": 37,
+          "state": "PASS",
+          "unresolved": 0
+        },
+        "byte_sha256": "29dd9b1cde6c43a91b1d89a244d08439e6d8a9bc84f700a91ec476bcb43b4b54",
+        "excluded_by_reason": {
+          "header": 2,
+          "title_or_note": 2,
+          "total_row_used_for_validation": 1
+        },
+        "md5_verified": false,
+        "pin_matches": true,
+        "records": 32,
+        "source_key": "irrigation_2015"
+      },
+      {
+        "arithmetic": {
+          "accounted": 38,
+          "delta": 0,
+          "excluded": 35,
+          "retained": 3,
+          "source": 38,
+          "state": "PASS",
+          "unresolved": 0
+        },
+        "byte_sha256": "5ecd9b0d17762b7435ea612b08bf1c3418fdeb3660f4c865dacbd0b5c0e818e4",
+        "excluded_by_reason": {
+          "not_a_tracked_row": 35
+        },
+        "md5_verified": false,
+        "pin_matches": true,
+        "records": 3,
+        "source_key": "trends_2015"
+      },
+      {
+        "arithmetic": {
+          "accounted": 3,
+          "delta": 0,
+          "excluded": 0,
+          "retained": 3,
+          "source": 3,
+          "state": "PASS",
+          "unresolved": 0
+        },
+        "byte_sha256": "39f78c12387c71bfcf800d120c38856f84d7604f8723b1f737a6c3b475f77b8c",
+        "excluded_by_reason": {},
+        "md5_verified": false,
+        "pdf_hash_verified_this_run": false,
+        "pin_matches": true,
+        "records": 3,
+        "source_key": "ofr_2014_1117"
+      }
+    ],
+    "years": [
+      2010,
+      2015,
+      2020
+    ]
+  },
+  "last_success_utc": "2026-11-14T07:00:00Z",
+  "schema_version": "aguayluz.water-use-receipt/v1",
+  "source_id": "usgs_pr_water_use"
+}
