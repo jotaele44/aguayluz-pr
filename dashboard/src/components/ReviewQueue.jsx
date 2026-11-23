@@ -9,6 +9,7 @@ import { SEVERITIES, TIERS } from '@/lib/format'
 import { AlertTriangle, Search } from 'lucide-react'
 import ReviewRecordCard from '@/components/ReviewRecordCard'
 import { lookup } from '@/lib/utils'
+import { scrollRegion } from '@/lib/scrollRegion';
 
 const SEVERITY_RANK = { block: 0, warn: 1, info: 2 }
 
@@ -53,35 +54,35 @@ export default function ReviewQueue() {
         <div className="flex items-center gap-2">
           <div className="flex w-10 shrink-0 items-center gap-1 text-xs text-slate-400"><AlertTriangle className="h-3.5 w-3.5 text-amber-300" />{rows.length}</div>
           <Select value={sev} onValueChange={setSev}>
-            <SelectTrigger className="h-7 w-[90px] text-xs"><SelectValue /></SelectTrigger>
+            <SelectTrigger aria-label="Filter by severity" className="h-7 w-[90px] text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>{SEVERITIES.map((s) => <SelectItem key={s} value={s} className="text-xs capitalize">{s}</SelectItem>)}</SelectContent>
           </Select>
           <Select value={tier} onValueChange={setTier}>
-            <SelectTrigger className="h-7 w-[75px] text-xs"><SelectValue /></SelectTrigger>
+            <SelectTrigger aria-label="Filter by tier" className="h-7 w-[75px] text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>{TIERS.map((t) => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}</SelectContent>
           </Select>
           <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-2 top-2 h-3.5 w-3.5 text-slate-500" />
+            <Search className="pointer-events-none absolute left-2 top-2 h-3.5 w-3.5 text-slate-400" />
             <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search reason/source…" className="h-8 border-slate-800 bg-slate-950 pl-7 text-xs" />
           </div>
         </div>
       </div>
 
-      <div className="h-full overflow-auto p-2 space-y-1.5">
+      <div {...scrollRegion("Review queue")} className="h-full overflow-auto p-2 space-y-1.5">
         {rows.map((r, i) => (
           <ReviewRecordCard
             key={r.record_ref ?? i}
             record={r}
             compact
             footer={(r.record_type || r.source_ref) && (
-              <div className="mt-2 flex flex-wrap gap-2 text-[10px] text-slate-500">
+              <div className="mt-2 flex flex-wrap gap-2 text-[10px] text-slate-400">
                 {r.record_type && <span>type: {r.record_type}</span>}
                 {r.source_ref && <span className="truncate">source: {r.source_ref}</span>}
               </div>
             )}
           />
         ))}
-        {rows.length === 0 && <p className="py-8 text-center text-sm text-slate-500">No review records match the active filters.</p>}
+        {rows.length === 0 && <p className="py-8 text-center text-sm text-slate-400">No review records match the active filters.</p>}
       </div>
     </div>
   )

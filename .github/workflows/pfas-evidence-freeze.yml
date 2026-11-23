@@ -1,23 +1,29 @@
 name: PFAS Evidence Freeze
-
 on:
   pull_request:
     branches: [main]
   workflow_dispatch:
-
 permissions:
   contents: write
   actions: read
 
+  contents: read
+  actions: read
 jobs:
   freeze-ucmr5-pr:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Download current and historical EPA UCMR5 manifestations
+          python-version: '3.12'
+      - name: Reuse exact passing artifact (no mutable EPA redownload)
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -25,6 +31,20 @@ jobs:
           set -euo pipefail
           mkdir -p artifacts/pfas_ucmr5/raw artifacts/pfas_ucmr5/derived artifacts/pfas_ucmr5/historical
           url='https://www.epa.gov/system/files/other-files/2023-08/ucmr5-occurrence-data-by-state.zip'
+          mkdir -p artifacts/pfas_frozen_scope
+          curl --fail --location --proto '=https' --tlsv1.2 --retry 3 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            -o artifacts/pfas_frozen_scope/passed-bundle.zip \
+            'https://api.github.com/repos/jotaele44/aguayluz-pr/actions/artifacts/12508351665/zip'
+      - name: Verify national distinction and exact Puerto Rico row equivalence
+        run: python scripts/verify_frozen_pfas_pr_scope.py artifacts/pfas_frozen_scope/passed-bundle.zip artifacts/pfas_frozen_scope/receipt.json
+      - name: Preserve source and scope evidence
+        if: always()
+          mkdir -p artifacts/pfas_ucmr5/raw artifacts/pfas_ucmr5/derived
+          url='https://www.epa.gov/system/files/other-files/2023-08/ucmr5-occurrence-data-by-state.zip'
+          # EPA republished the archive on 2026-10-16 (Sept manifestation 4845eb3a...).
+          expected_archive_sha='007ee5f6a19dd8f1dac682ded23bcd3de72c8c5f49487dbf181334091bd35d96'
           curl --fail --location --proto '=https' --tlsv1.2 \
             --retry 3 --retry-all-errors \
             --output artifacts/pfas_ucmr5/raw/ucmr5-occurrence-data-by-state.zip \
@@ -72,6 +92,12 @@ jobs:
           url = 'https://www.epa.gov/system/files/other-files/2023-08/ucmr5-occurrence-data-by-state.zip'
           historical_member_sha = '4d72703e4fece5d5fb7b243c1bcd5a72e65c09bf79efbbc05b548c9fb19e7391'
           historical_derived_sha = 'ac40d8d67f7343832e0b11d78c892e3a6cdd44fe4d0b0892407347d4400b80c5'
+          expected_member_sha = '3255b3cc6041b110f507a531f67c3368364e3bdbd79304ae544c967d9526ffe4'
+          # The committed Puerto Rico denominator. EPA's 2026-10-16 republication lists
+          # the same rows in a different order, so the check below compares row
+          # multisets against this file rather than the derived TSV's bytes.
+          canonical_tsv = pathlib.Path('data/pfas_ucmr5_pr.tsv')
+          canonical_sha = 'ac40d8d67f7343832e0b11d78c892e3a6cdd44fe4d0b0892407347d4400b80c5'
 
           def sha256_bytes(payload: bytes) -> str:
               return hashlib.sha256(payload).hexdigest()
@@ -118,6 +144,16 @@ jobs:
               writer.writerows(rows)
 
           derived_sha = sha256_bytes(out_tsv.read_bytes())
+          if sha256_bytes(canonical_tsv.read_bytes()) != canonical_sha:
+              raise SystemExit('canonical Puerto Rico denominator data/pfas_ucmr5_pr.tsv changed')
+          canonical = csv.DictReader(
+              canonical_tsv.read_text(encoding='utf-8').splitlines(), delimiter='\t'
+          )
+          if canonical.fieldnames != headers:
+              raise SystemExit(f'Puerto Rico header drift: {headers} != {canonical.fieldnames}')
+          row_key = lambda row: tuple(str(row.get(h) or '') for h in headers)
+          if Counter(map(row_key, rows)) != Counter(map(row_key, canonical)):
+              raise SystemExit('Puerto Rico denominator drift: rows differ from data/pfas_ucmr5_pr.tsv')
 
           contaminant_field = next((h for h in headers if h.lower() == 'contaminant'), None)
           sign_field = next((h for h in headers if h.lower() == 'analyticalresultssign'), None)
@@ -176,8 +212,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: pfas-ucmr5-pr-evidence
-          path: artifacts/pfas_ucmr5
+          name: pfas-frozen-pr-scope-${{ github.sha }}
+          path: artifacts/pfas_frozen_scope
           if-no-files-found: error
           retention-days: 90
 
@@ -215,6 +251,8 @@ jobs:
         run: |
           set -euo pipefail
           cp artifacts/pfas_ucmr5/derived/ucmr5_pr.tsv data/pfas_ucmr5_pr.tsv
+          # The previous step proved the source rows equal the committed denominator,
+          # so its byte order is kept; this only stages it if it was never committed.
           git add -f data/pfas_ucmr5_pr.tsv
           if git diff --cached --quiet; then
             echo 'Canonical UCMR5 Puerto Rico denominator already materialized.'
