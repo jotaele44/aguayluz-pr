@@ -1,0 +1,192 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/water-use/v1/water_use_receipt.schema.json",
+  "title": "USGS water-use run receipt",
+  "description": "Latest attempt and latest success of the water-use producer. A failed run keeps the previous success.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "source_id",
+    "last_attempt_utc",
+    "last_status",
+    "last_error",
+    "last_success_utc",
+    "last_success"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "aguayluz.water-use-receipt/v1"
+    },
+    "source_id": {
+      "const": "usgs_pr_water_use"
+    },
+    "last_attempt_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_status": {
+      "enum": [
+        "PASS",
+        "FAIL"
+      ]
+    },
+    "last_error": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "last_success_utc": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "last_success": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "sources",
+        "records_written",
+        "cross_source_agreements",
+        "years"
+      ],
+      "properties": {
+        "mode": {
+          "enum": [
+            "offline",
+            "fetch"
+          ]
+        },
+        "records_written": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "years": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "cross_source_agreements": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "record_id",
+              "kept",
+              "agrees"
+            ],
+            "properties": {
+              "record_id": {
+                "type": "string"
+              },
+              "kept": {
+                "type": "string"
+              },
+              "agrees": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "source_key",
+              "byte_sha256",
+              "pin_matches",
+              "md5_verified",
+              "arithmetic",
+              "excluded_by_reason",
+              "records"
+            ],
+            "properties": {
+              "source_key": {
+                "type": "string"
+              },
+              "byte_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "pin_matches": {
+                "type": "boolean"
+              },
+              "md5_verified": {
+                "type": "boolean"
+              },
+              "pdf_hash_verified_this_run": {
+                "type": "boolean"
+              },
+              "arithmetic": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "source",
+                  "retained",
+                  "excluded",
+                  "unresolved",
+                  "accounted",
+                  "delta",
+                  "state"
+                ],
+                "properties": {
+                  "source": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "retained": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "excluded": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "unresolved": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "accounted": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "delta": {
+                    "type": "integer"
+                  },
+                  "state": {
+                    "enum": [
+                      "PASS",
+                      "FAIL"
+                    ]
+                  }
+                }
+              },
+              "excluded_by_reason": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "records": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

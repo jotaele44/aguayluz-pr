@@ -214,3 +214,28 @@ def test_no_row_declares_an_observation_state():
         for row in rows:
             assert "observation_state" not in row["evidence_state"]
             assert "observation_absence_basis" not in row["evidence_state"]
+
+
+def _outdoor_row(geoid="72127", municipio="San Juan"):
+    return {
+        "schema_version": "aguayluz.outdoor-condition/v1", "condition_id": f"AYL_OUTDOOR_{geoid}",
+        "geoid": geoid, "municipio": municipio, "lat": 18.39, "lon": -66.06,
+        "geometry_precision": "REPRESENTATIVE_POINT", "coastal": True,
+        "composed_at": "2026-10-18T16:00:00Z", "as_of": "2026-10-18T15:30:00Z",
+        "summary": {"level": "CAUTION", "drivers": [{"component": "uv", "level": "CAUTION", "reason": "UV 10"}],
+                    "components_with_data": ["uv"], "stale_components": [], "unavailable_components": ["air_quality"]},
+        "components": {"uv": {"state": "REPORTED", "source_ids": ["epa_uv"], "uv_index": 10.0},
+                       "air_quality": {"state": "NOT_CONFIGURED", "source_ids": ["airnow"]}},
+        "scope_note": "context, not safety advice",
+    }
+
+
+def test_outdoor_condition_is_computed_at_a_representative_point():
+    streams = build_streams([], [], NOW, outdoor=[_outdoor_row()])
+    [entity] = [e for e in streams["entities"] if e["entity_type"] == "outdoor_condition"]
+    declaration = entity["evidence_state"]
+    assert declaration["epistemic_class"] == "COMPUTED" and declaration["data_stage"] == "COMPUTATION"
+    assert declaration["geometry_precision"] == "REPRESENTATIVE_POINT"  # never OBSERVED_POINT
+    assert declaration["coordinate_method"] == "CENSUS_INTERNAL_POINT"
+    assert declaration["temporal_precision"] == "EXACT_TIMESTAMP"
+    assert list(_validator().iter_errors(declaration)) == []
