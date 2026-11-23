@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/select'
 import { useToast } from '@/components/ui/use-toast'
 import PageHeader from '@/components/common/PageHeader'
+import { scrollRegion } from '@/lib/scrollRegion';
 
 const PAGE_SIZE = 25
 
@@ -156,7 +157,7 @@ export default function ReviewPage() {
               {batchPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <X className="h-3.5 w-3.5 mr-1" />}
               Reject all
             </Button>
-            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-slate-500" disabled={batchPending} onClick={() => handleBatchDecision('skip')}>
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-slate-400" disabled={batchPending} onClick={() => handleBatchDecision('skip')}>
               Skip all
             </Button>
           </>
@@ -165,11 +166,11 @@ export default function ReviewPage() {
           <Download className="h-3.5 w-3.5" />
         </Button>
         <Select value={sev} onValueChange={(v) => setFilter({ sev: v, offset: 0 })}>
-          <SelectTrigger className="h-7 w-[110px] text-xs"><SelectValue /></SelectTrigger>
+          <SelectTrigger aria-label="Filter by severity" className="h-7 w-[110px] text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>{SEVERITIES.map((s) => <SelectItem key={s} value={s} className="text-xs capitalize">{s}</SelectItem>)}</SelectContent>
         </Select>
         <Select value={tier} onValueChange={(v) => setFilter({ tier: v, offset: 0 })}>
-          <SelectTrigger className="h-7 w-[90px] text-xs"><SelectValue /></SelectTrigger>
+          <SelectTrigger aria-label="Filter by tier" className="h-7 w-[90px] text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>{TIERS.map((t) => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}</SelectContent>
         </Select>
       </PageHeader>
@@ -180,14 +181,14 @@ export default function ReviewPage() {
             {allSelected
               ? <CheckSquare className="h-4 w-4 text-sky-400" />
               : someSelected
-                ? <CheckSquare className="h-4 w-4 text-slate-500" />
+                ? <CheckSquare className="h-4 w-4 text-slate-400" />
                 : <Square className="h-4 w-4" />}
             {allSelected ? 'Deselect all' : 'Select all on page'}
           </button>
         </div>
       )}
 
-      <div className="flex-1 overflow-auto p-6 space-y-2">
+      <div {...scrollRegion("Review page content")} className="flex-1 overflow-auto p-6 space-y-2">
         {isLoading
           ? Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-md" />)
           : items.map((r, i) => (
@@ -206,7 +207,7 @@ export default function ReviewPage() {
                 <button
                   onClick={(e) => { e.stopPropagation(); toggleOne(r.record_ref) }}
                   aria-label={selected.has(r.record_ref) ? 'Deselect record' : 'Select record'}
-                  className="mt-0.5 shrink-0 text-slate-500 hover:text-sky-400"
+                  className="mt-0.5 shrink-0 text-slate-400 hover:text-sky-400"
                 >
                   {selected.has(r.record_ref)
                     ? <CheckSquare className="h-4 w-4 text-sky-400" />
@@ -217,8 +218,8 @@ export default function ReviewPage() {
                   <div className="flex items-center gap-2 flex-wrap mb-1">
                     <span className={cn('text-xs uppercase tracking-wide font-semibold', severityTone(r.severity))}>{r.severity}</span>
                     {r.evidence_tier && <Badge variant="outline" className={cn('text-[10px]', tierBadge(r.evidence_tier))}>{r.evidence_tier}</Badge>}
-                    {r.confidence != null && <span className="text-[11px] text-slate-500">conf {r.confidence}</span>}
-                    <span className="text-[11px] font-mono text-slate-500 ml-auto truncate max-w-[200px]">{r.record_ref}</span>
+                    {r.confidence != null && <span className="text-[11px] text-slate-400">conf {r.confidence}</span>}
+                    <span className="text-[11px] font-mono text-slate-400 ml-auto truncate max-w-[200px]">{r.record_ref}</span>
                   </div>
                   <p className="text-sm text-slate-300">{r.reason}</p>
                 </div>
@@ -241,7 +242,7 @@ export default function ReviewPage() {
                   <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-red-400 border-red-900 hover:bg-red-950" disabled={isPending} onClick={(e) => { e.stopPropagation(); handleDecision(r.record_ref, 'reject') }}>
                     <X className="h-3.5 w-3.5 mr-1" />Reject
                   </Button>
-                  <Button size="sm" variant="ghost" aria-label="Skip" title="Skip" className="h-7 px-2 text-xs text-slate-500" disabled={isPending} onClick={(e) => { e.stopPropagation(); handleDecision(r.record_ref, 'skip') }}>
+                  <Button size="sm" variant="ghost" aria-label="Skip" title="Skip" className="h-7 px-2 text-xs text-slate-400" disabled={isPending} onClick={(e) => { e.stopPropagation(); handleDecision(r.record_ref, 'skip') }}>
                     <SkipForward className="h-3.5 w-3.5" />
                   </Button>
                 </div>
@@ -255,13 +256,13 @@ export default function ReviewPage() {
             </div>
           ))}
         {!isLoading && items.length === 0 && (
-          <p className="text-center text-sm text-slate-500 py-16">No items match filters</p>
+          <p className="text-center text-sm text-slate-400 py-16">No items match filters</p>
         )}
       </div>
 
       {total > PAGE_SIZE && (
         <div className="flex items-center justify-between px-6 py-3 border-t border-slate-800 shrink-0">
-          <span className="text-xs text-slate-500">{offset + 1}–{Math.min(offset + PAGE_SIZE, total)} of {total.toLocaleString()}</span>
+          <span className="text-xs text-slate-400">{offset + 1}–{Math.min(offset + PAGE_SIZE, total)} of {total.toLocaleString()}</span>
           <div className="flex gap-2">
             <Button size="sm" variant="outline" aria-label="Previous page" className="h-7" disabled={offset === 0} onClick={() => setFilter({ offset: Math.max(0, offset - PAGE_SIZE) })}>
               <ChevronLeft className="h-3.5 w-3.5" />

@@ -42,9 +42,7 @@ jobs:
       - name: Run Codacy Analysis CLI
         uses: codacy/codacy-analysis-cli-action@d840f886c4bd4edc059706d09c6a1586111c540b
         with:
-          # Check https://github.com/codacy/codacy-analysis-cli#project-token to get your project token from your Codacy repository
-          # You can also omit the token and run the tools that support default configurations
-          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+          # No project token: the tokenless run uses the tool's default configuration.
           # Security gate: restrict the classic Codacy action to Bandit for this
           # Python-centric repository. Running every auto-detected analyzer pulled
           # the unrelated PMD Legacy Java plugin, whose tool crash prevented SARIF
