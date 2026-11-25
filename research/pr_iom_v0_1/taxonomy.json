@@ -1,0 +1,218 @@
+{
+  "schema_version": "aguayluz.pr-iom-taxonomy/v0.1",
+  "investigation": "PR-IOM",
+  "captured_at": "2026-11-25",
+  "note": "Classes are investigation categories, not findings. asset_subtypes are the strings present in data/utility_assets.jsonl on the capture date; an empty list means the repository holds no asset rows for that class.",
+  "infrastructure_classes": [
+    {
+      "class_id": "thermoelectric_generation",
+      "label": "Thermoelectric generation",
+      "components_to_investigate": "Turbine components, bearings, boiler components, motors",
+      "asset_types": [
+        "power"
+      ],
+      "asset_subtypes": [
+        "Generation (Fuel Oil)",
+        "Generation (Fuel Oil/Gas)",
+        "Generation (Natural Gas)",
+        "Generation (Coal)"
+      ]
+    },
+    {
+      "class_id": "hydroelectric_generation",
+      "label": "Hydroelectric generation",
+      "components_to_investigate": "Turbines, generators, bearings, hydraulic assemblies",
+      "asset_types": [
+        "power"
+      ],
+      "asset_subtypes": [
+        "Generation (Water)"
+      ]
+    },
+    {
+      "class_id": "electrical_transmission",
+      "label": "Electrical transmission",
+      "components_to_investigate": "Transformers, switchgear, circuit breakers",
+      "asset_types": [
+        "power"
+      ],
+      "asset_subtypes": [
+        "Substation",
+        "Transmission Corridor"
+      ]
+    },
+    {
+      "class_id": "electrical_distribution",
+      "label": "Electrical distribution",
+      "components_to_investigate": "Transformers, switches, insulators",
+      "asset_types": [
+        "power"
+      ],
+      "asset_subtypes": []
+    },
+    {
+      "class_id": "drinking_water_treatment",
+      "label": "Drinking water treatment",
+      "components_to_investigate": "Pumps, valves, filtration equipment",
+      "asset_types": [
+        "water"
+      ],
+      "asset_subtypes": [
+        "treatment",
+        "waterworks"
+      ]
+    },
+    {
+      "class_id": "water_distribution",
+      "label": "Water distribution",
+      "components_to_investigate": "Pumping equipment, pipe fittings, meters",
+      "asset_types": [
+        "water"
+      ],
+      "asset_subtypes": [
+        "pumping_station"
+      ]
+    },
+    {
+      "class_id": "wastewater_treatment",
+      "label": "Wastewater treatment",
+      "components_to_investigate": "Aerators, blowers, pumps, mechanical assemblies",
+      "asset_types": [
+        "wastewater"
+      ],
+      "asset_subtypes": [
+        "wastewater_treatment"
+      ]
+    },
+    {
+      "class_id": "reservoirs_and_dams",
+      "label": "Reservoirs and dams",
+      "components_to_investigate": "Mechanical gates, actuators, hydraulic equipment",
+      "asset_types": [
+        "water"
+      ],
+      "asset_subtypes": [
+        "reservoir",
+        "lake"
+      ]
+    },
+    {
+      "class_id": "industrial_instrumentation",
+      "label": "Industrial instrumentation",
+      "components_to_investigate": "Sensors, flow meters, control systems, discontinued electronic assemblies",
+      "asset_types": [
+        "power",
+        "water",
+        "wastewater"
+      ],
+      "asset_subtypes": []
+    }
+  ],
+  "obsolescence_statuses": [
+    {
+      "code": "O0_UNVERIFIED",
+      "label": "Claim recorded, nothing verified",
+      "requires_receipt": true
+    },
+    {
+      "code": "O1_OEM_DISCONTINUED",
+      "label": "The original manufacturer no longer produces the component",
+      "requires_receipt": true
+    },
+    {
+      "code": "O2_OEM_DEFUNCT",
+      "label": "The original manufacturer no longer exists",
+      "requires_receipt": true
+    },
+    {
+      "code": "O3_UNQUALIFIED_EQUIVALENT",
+      "label": "Compatible replacement components exist but have not been qualified",
+      "requires_receipt": true
+    },
+    {
+      "code": "O4_REMANUFACTURABLE",
+      "label": "The component can be remanufactured or reverse-engineered",
+      "requires_receipt": true
+    },
+    {
+      "code": "O5_RETROFIT",
+      "label": "Modern components can be integrated through an engineered retrofit",
+      "requires_receipt": true
+    },
+    {
+      "code": "O6_ASSEMBLY_REPLACEMENT",
+      "label": "Replacement of the entire equipment assembly is technically or economically necessary",
+      "requires_receipt": true
+    },
+    {
+      "code": "SCARCITY_NOT_OBSOLESCENCE",
+      "label": "Still manufactured; the constraint is lead time, stock, funding or procurement",
+      "requires_receipt": true
+    }
+  ],
+  "operator_condition_claims": [
+    {
+      "code": "obsolete",
+      "meaning": "The operator calls the item obsolete. Not evidence that production stopped."
+    },
+    {
+      "code": "end_of_life",
+      "meaning": "The operator says the installed item is worn out. A wear condition, not obsolescence."
+    },
+    {
+      "code": "unrepairable",
+      "meaning": "The operator says the installed item cannot be repaired."
+    },
+    {
+      "code": "part_needed",
+      "meaning": "A part was needed to return a unit to service. Says nothing about availability."
+    },
+    {
+      "code": "none",
+      "meaning": "No condition statement in the source."
+    }
+  ],
+  "replacement_strategies": [
+    {
+      "code": "R1",
+      "label": "Original OEM replacement"
+    },
+    {
+      "code": "R2",
+      "label": "Manufacturer-approved successor component"
+    },
+    {
+      "code": "R3",
+      "label": "Qualified third-party equivalent"
+    },
+    {
+      "code": "R4",
+      "label": "Refurbishment of existing equipment"
+    },
+    {
+      "code": "R5",
+      "label": "Reverse engineering and remanufacturing"
+    },
+    {
+      "code": "R6",
+      "label": "Modern engineered retrofit"
+    },
+    {
+      "code": "R7",
+      "label": "Complete equipment replacement"
+    }
+  ],
+  "evaluation_criteria": [
+    "engineering_compatibility",
+    "safety",
+    "expected_service_life",
+    "regulatory_compliance",
+    "procurement_lead_time",
+    "lifecycle_cost"
+  ],
+  "definition_precedent": {
+    "source_id": "TVA-OIG-2015-15265",
+    "text": "obsolete equipment is defined as any working or in-service piece of Hydro Generation equipment that the manufacturer is no longer making",
+    "page": 2
+  }
+}
