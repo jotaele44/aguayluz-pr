@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAssetsGeojson, useEvents, useHealth, useReviewQueue, useSummary } from '@/lib/hooks'
 import { Activity, AlertTriangle, Database, Droplets, MapPinned, ShieldAlert, ShieldCheck, SlidersHorizontal, TrendingDown, TrendingUp, WifiOff, X } from 'lucide-react'
+import { scrollRegion } from '@/lib/scrollRegion';
 
 function Kpi({ icon: Icon, label, value, hint, tone = 'text-slate-300', emphasis = false, trend }) {
   return (
@@ -13,7 +14,7 @@ function Kpi({ icon: Icon, label, value, hint, tone = 'text-slate-300', emphasis
           {trend === 'up' && <TrendingUp className="h-3 w-3 text-emerald-400" />}
           {trend === 'down' && <TrendingDown className="h-3 w-3 text-red-400" />}
         </div>
-        <div className="mt-1 text-[10px] uppercase tracking-wide text-slate-500">{label}</div>
+        <div className="mt-1 text-[10px] uppercase tracking-wide text-slate-400">{label}</div>
         {hint && <div className="mt-1 truncate text-[10px] text-slate-400">{hint}</div>}
       </div>
     </div>
@@ -67,12 +68,12 @@ export default function StatsBar() {
           </button>
         </div>
       )}
-      <div className="flex items-center gap-2 px-4 py-2 overflow-x-auto">
+      <div {...scrollRegion("Summary statistics")} className="flex items-center gap-2 px-4 py-2 overflow-x-auto">
         <div className="flex items-center gap-2 shrink-0 pr-1">
           <span className={`inline-flex h-2.5 w-2.5 rounded-full ${up ? 'bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,.65)]' : 'bg-red-400'}`} />
           <div className="leading-none">
             <div className="text-sm font-medium text-slate-100">Backend {up ? 'online' : 'down'}</div>
-            <div className="mt-1 text-[10px] text-slate-500">FastAPI read layer · repo data</div>
+            <div className="mt-1 text-[10px] text-slate-400">FastAPI read layer · repo data</div>
           </div>
         </div>
         <div className="h-8 w-px bg-slate-800 shrink-0" />
@@ -90,7 +91,7 @@ export default function StatsBar() {
         <Kpi icon={ShieldCheck} label="Coverage" value={coverage} hint={r.module_status ? `readiness ${r.module_status}` : 'summary'} tone="text-emerald-300" trend={coverageTrend} />
         <Kpi icon={AlertTriangle} label="Review" value={reviewCount} hint="human adjudication" tone={reviewTone} trend={reviewTrend} />
         {summary?.sanitized_summary && (
-          <span className="text-[11px] text-slate-500 shrink-0 max-w-xs truncate ml-2" title={summary.sanitized_summary}>
+          <span className="text-[11px] text-slate-400 shrink-0 max-w-xs truncate ml-2" title={summary.sanitized_summary}>
             {summary.sanitized_summary}
           </span>
         )}

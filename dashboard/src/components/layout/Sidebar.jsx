@@ -34,8 +34,15 @@ const NAV_GROUPS = [
       { to: '/assets', icon: Database, label: 'Assets',
         desc: 'Infrastructure registry with filters and detail.' },
       { to: '/water-disruption', icon: Droplets, label: 'Water & Weather',
-        desc: 'Water service validation and National Weather Service hydromet.',
-        links: [{ to: '/hydromet', label: 'NWS Hydromet' }] },
+        desc: 'Water service validation, National Weather Service hydromet, aquifer condition bands, USGS water-use estimates and the reconciled inventory of aquifers and wells.',
+        links: [
+          { to: '/hydromet', label: 'NWS Hydromet' },
+          // Staged preview (ionosphere-preview capability): listed only when the flag is on.
+          ...(import.meta.env.VITE_IONOSPHERE_PREVIEW === '1' ? [{ to: '/ionosphere', label: 'Space weather / Clima espacial' }] : []),
+          { to: '/aquifer-bands', label: 'Aquifer Bands' },
+          { to: '/water-use', label: 'Water Use' },
+          { to: '/hydro-inventory', label: 'Hydro Inventory' },
+        ] },
       { to: '/environmental-exposure', icon: Leaf, label: 'Environment',
         desc: 'Exposure graph and environmental sources.',
         links: [{ to: '/cave-karst', label: 'Cave & Karst' }] },
@@ -52,6 +59,8 @@ const NAV_GROUPS = [
         desc: 'Accept, reject or skip records awaiting review.' },
       { to: '/analytics', icon: BarChart3, label: 'Analytics',
         desc: 'Trends and summaries across sectors.' },
+      { to: '/source-intelligence', icon: Database, label: 'Source Intelligence',
+        desc: 'Source coverage, health, provenance and certification gaps.' },
       { to: '/logs', icon: ScrollText, label: 'Live Logs',
         desc: 'Streaming backend and ingest logs.' },
       { to: '/system', icon: SlidersHorizontal, label: 'System & Tools',
@@ -93,7 +102,7 @@ function Row({ item, mobile, onNavigate }) {
           <span className="truncate">{label}</span>
           {mobile && <ChevronRight className="h-4 w-4 shrink-0" />}
         </NavLink>
-        {mobile && <p className="mt-1 text-base text-slate-500">{desc}</p>}
+        {mobile && <p className="mt-1 text-base text-slate-400">{desc}</p>}
         {links.length > 0 && (
           <ul className={cn(mobile ? 'mt-3 list-disc space-y-2 pl-5 marker:text-slate-800' : 'ml-6 mt-0.5 space-y-0.5')}>
             {links.map(link => (
@@ -183,13 +192,13 @@ export default function Sidebar() {
         <img src={brandMark} alt="" aria-hidden="true" className="h-6 w-6 shrink-0 rounded-md" />
         <div className="min-w-0">
           <span className="block truncate text-sm font-semibold text-slate-100">AguaYLuz-PR</span>
-          <span className="block font-mono text-[10px] uppercase tracking-wider text-slate-500">PR Monitor</span>
+          <span className="block font-mono text-[10px] uppercase tracking-wider text-slate-400">PR Monitor</span>
         </div>
       </div>
       <nav aria-label="Main" className="flex-1 space-y-4 overflow-y-auto px-2 py-3">
         {NAV_GROUPS.map(g => (
           <section key={g.id}>
-            <h2 className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">{g.label}</h2>
+            <h2 className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">{g.label}</h2>
             <ul>{g.items.map(item => <Row key={item.to} item={item} />)}</ul>
           </section>
         ))}
