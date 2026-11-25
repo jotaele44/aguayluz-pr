@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -64,6 +65,24 @@ def write(kind: str, rows: list[dict], path: Path | None = None) -> None:
     default_path, _ = _SPECS[kind]
     target = path or default_path
     _write(target, merge(kind, load(kind, target), rows))
+
+
+def replace_where(
+    kind: str,
+    rows: list[dict],
+    *,
+    drop: Callable[[dict[str, Any]], bool],
+    path: Path | None = None,
+) -> None:
+    """Snapshot refresh: drop every existing row for which ``drop`` is true, then merge ``rows``.
+
+    Lets a source that is re-ingested replace its own earlier rows (so a record that left the
+    source does not linger) without touching rows that other ingests own.
+    """
+    default_path, _ = _SPECS[kind]
+    target = path or default_path
+    kept = [row for row in load(kind, target) if not drop(row)]
+    _write(target, merge(kind, kept, rows))
 
 
 def graph_integrity(

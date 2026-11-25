@@ -1,0 +1,78 @@
+{
+  "expected_pass_count": 14,
+  "material_unresolved": 0,
+  "schema_version": "aguayluz.water_health.prdoh_sdwis_falsifier_replay/v1",
+  "state": "PASS_SPECIFIED_PENDING_EXECUTABLE_CI",
+  "tests": [
+    {
+      "case": "same name + different stable ID",
+      "expected": "DENY",
+      "id": "F01"
+    },
+    {
+      "case": "normalized name only",
+      "expected": "DENY",
+      "id": "F02"
+    },
+    {
+      "case": "count equality only",
+      "expected": "DENY",
+      "id": "F03"
+    },
+    {
+      "case": "4-digit suffix/padding without authoritative crosswalk",
+      "expected": "DENY",
+      "id": "F04"
+    },
+    {
+      "case": "stable 9-char PWSID exact equality",
+      "expected": "ALLOW_SYSTEM_IDENTITY",
+      "id": "F05"
+    },
+    {
+      "case": "PRDOH row lacks stable violation ID",
+      "expected": "DENY_CANONICAL_VIOLATION_BINDING",
+      "id": "F06"
+    },
+    {
+      "case": "one composite candidate from OCR-assisted fields",
+      "expected": "DISCOVERY_ONLY_NO_BIND",
+      "id": "F07"
+    },
+    {
+      "case": "multiple composite candidates",
+      "expected": "REVIEW_TIE_NO_BIND",
+      "id": "F08"
+    },
+    {
+      "case": "EPA arrow token treated as calendar date",
+      "expected": "DENY",
+      "id": "F09"
+    },
+    {
+      "case": "EPA arrow token with no end date, no RTC, begin <= 2025",
+      "expected": "RETAIN_OPEN_ENDED_2025_OVERLAP",
+      "id": "F10"
+    },
+    {
+      "case": "ENFORCEMENT_ID substituted for VIOLATION_ID",
+      "expected": "DENY",
+      "id": "F11"
+    },
+    {
+      "case": "unexpected join multiplication",
+      "expected": "FAIL",
+      "id": "F12"
+    },
+    {
+      "case": "unexpected row disappearance",
+      "expected": "FAIL",
+      "id": "F13"
+    },
+    {
+      "case": "source-only record with explicit falsifier",
+      "expected": "ALLOW_TERMINAL_SOURCE_ONLY",
+      "id": "F14"
+    }
+  ]
+}
