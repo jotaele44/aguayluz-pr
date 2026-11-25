@@ -11,7 +11,7 @@ concurrency:
 jobs:
   acquire:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 20
     steps:
       - name: Bounded source freeze and replay
         shell: python
@@ -21,9 +21,21 @@ jobs:
           root = pathlib.Path('evidence')
           root.mkdir(exist_ok=True)
           sources = [
-              ('IOM-S014', 'https://www.gao.gov/assets/gao-26-107772.pdf', 'pdf'),
-              ('IOM-S015', 'https://www.nist.gov/mep/supply-chain/supplier-scouting', 'html'),
-              ('IOM-S019', 'https://www.energy.gov/cmei/ito/pump-systems', 'html'),
+              ("IOM-S001", "https://files.gao.gov/reports/GAO-26-107772/index.html", "html"),
+              ("IOM-S003", "https://quicksearch.dla.mil/qsDocDetails.aspx?ident_number=275490", "html"),
+              ("IOM-S004", "https://quicksearch.dla.mil/qsDocDetails.aspx?ident_number=283456", "html"),
+              ("IOM-S007", "https://www.nist.gov/mep/centers/puerto-rico-manufacturing-extension-inc-primex", "html"),
+              ("IOM-S009", "https://www.energy.gov/cmei/water/articles/report-identifies-opportunities-hydropower-capitalize-advanced-manufacturing", "html"),
+              ("IOM-S012", "https://www.energy.gov/cmei/water/us-hydropower-supply-chain", "html"),
+              ("IOM-S016", "https://www.energy.gov/cmei/water/hydropower-supply-chain-deep-dive-assessment", "html"),
+              ("IOM-S020", "https://www.energy.gov/projectmanagement/project-management-lexicon-terms", "html"),
+              ("IOM-S021", "https://www.energy.gov/cmei/water/hydropower-market-reports", "html"),
+              ("IOM-S031", "https://www.energy.gov/cmei/femp/articles/take-five-life-cycle-costs-acquisition", "html"),
+              ("IOM-S005", "https://www.acueductos.pr.gov/infraestructura/aaa-subastas", "html"),
+              ("IOM-S022", "https://energia.pr.gov/wp-content/uploads/sites/7/2023/06/20230630-MI20210014-Resolution-and-Order.pdf", "pdf"),
+              ("IOM-S023", "https://energia.pr.gov/wp-content/uploads/sites/7/2023/11/20231129-MI20210014-Resolution-and-Order.pdf", "pdf"),
+              ("IOM-S024", "https://energia.pr.gov/wp-content/uploads/sites/7/2024/02/20240226-MI20210014-Resolution-and-Order.pdf", "pdf"),
+              ("IOM-S032", "https://energia.pr.gov/wp-content/uploads/sites/7/2024/06/20240605-MI20210014-Resolution-and-Order.pdf", "pdf"),
           ]
           def valid(data, kind, mime):
               if kind == 'pdf':
@@ -74,7 +86,7 @@ jobs:
           for row in rows:
               if row['status']=='FROZEN_FORMAT_VERIFIED':
                   assert hashlib.sha256((root/row['file']).read_bytes()).hexdigest()==row['sha256']
-          receipt = dict(program='PR-IOM-001',mode='BOUNDED_PUBLIC_FEDERAL_PILOT',
+          receipt = dict(program='PR-IOM-001',mode='BOUNDED_PUBLIC_DOCUMENT_BATCH_002',
                          github_sha=os.environ['GITHUB_SHA'],run_id=os.environ['GITHUB_RUN_ID'],
                          run_attempt=os.environ['GITHUB_RUN_ATTEMPT'],rows=rows,
                          engineering_qualification='WITHHELD',durability_certification='WITHHELD')
@@ -86,7 +98,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
-          name: pr-iom-public-pilot
+          name: pr-iom-public-batch-002
           path: evidence/
           if-no-files-found: error
           retention-days: 30
