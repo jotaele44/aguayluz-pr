@@ -48,6 +48,12 @@ Edges must preserve provenance and may be `AUTHORITATIVE`, `CERTIFIED_GEOMETRIC`
 
 No nearest-neighbor edge is promoted beyond discovery without independent evidence.
 
+The `aquifer → well` edge is implemented by the hydrologic feature inventory
+([`HYDRO_FEATURE_INVENTORY.md`](HYDRO_FEATURE_INVENTORY.md)): a USGS aquifer code gives an
+`AUTHORITATIVE` edge, location inside a mapped aquifer polygon gives a `DERIVED_TOPOLOGICAL` one,
+and name or distance matches between sources stay `CANDIDATE`. Recharge zones and withdrawals
+are not implemented yet.
+
 ## Required regression gates
 
 - source and retained/excluded counts close arithmetically

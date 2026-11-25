@@ -4,9 +4,9 @@ Keeps the AguaYLuz corpus live: USGS reservoir levels daily, USGS site network +
 EPA SDWIS violations weekly, each followed by a federation/outputs rebuild.
 
 > **Network:** the ingests call `waterservices.usgs.gov` and `data.epa.gov`. Run
-> on a networked Mac — NOT inside the sandbox (its proxy blocks both). EPA needs a
-> free `EPA_WATERS_API_KEY` / `API_DATA_GOV_KEY` for higher rate limits (the
-> SDWIS efservice endpoints work key-less but are throttled).
+> on a networked Mac — NOT inside the sandbox (its proxy blocks both). The
+> SDWIS efservice endpoints work key-less but are throttled. No credentials are
+> stored in the plists or the repo.
 
 ## Manual run (verify before scheduling)
 
@@ -20,8 +20,7 @@ python scripts/refresh.py --weekly          # full: assets + levels + SDWIS + ex
 ## Install the launchd jobs
 
 1. Edit both plists in this folder — replace every `__ABSOLUTE_PATH_TO_REPO__`
-   with the repo's absolute path (e.g. `/path/to/your/aguayluz-pr`)
-   and set `EPA_WATERS_API_KEY` if you have one.
+   with the repo's absolute path (e.g. `/path/to/your/aguayluz-pr`).
 2. Create the log dir and install:
 
    ```bash

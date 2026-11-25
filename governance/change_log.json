@@ -34,6 +34,18 @@
         ".federation/docs-sync.json",
         "governance/change_log.json"
       ]
+    },
+    {
+      "date": "2026-11-22",
+      "summary": "The three workflows that commit data straight to main (refresh.yml, centinelas-handoff.yml, centinelas-intake.yml) now push through the new scripts/push_to_main.sh instead of a bare git push. The script replays the job's data commit on the current tip of main, runs this repo's own tools/check_docs_sync.py on it, records the verdict as the docs-sync commit status, and pushes only when it passes; the workflows gain statuses: write for that. Without it a required docs-sync check on main rejects every bot push, because docs-sync.yml only runs on pull requests, and that is what has kept aguayluz-pr off the required-check list. Same mechanism as centinelas-pr#182, with tests/test_push_to_main.py. Behaviour changes: a data commit the checker would fail is no longer pushed (the run fails with the verdict); the push is retried three times without a sleep instead of four with backoff; a manual centinelas-intake dispatch from a non-default branch now pushes to that branch instead of to main. Workflow and tooling change only: no data, schema, contract or dependency edge changed. This change does not itself make docs-sync required on main.",
+      "files": [
+        "scripts/push_to_main.sh",
+        "tests/test_push_to_main.py",
+        ".github/workflows/refresh.yml",
+        ".github/workflows/centinelas-handoff.yml",
+        ".github/workflows/centinelas-intake.yml",
+        "governance/change_log.json"
+      ]
     }
   ]
 }
