@@ -2,9 +2,16 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from ingest_usgs_levels import merge, reservoir_site_nos, rows_from_doc  # noqa: E402
+from ingest_usgs_levels import (  # noqa: E402
+    _rows_from_modern_docs,
+    merge,
+    reservoir_site_nos,
+    rows_from_doc,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 DV_FIXTURE = ROOT / "tests" / "fixtures" / "usgs_dv_sample.json"
@@ -81,3 +88,126 @@ def test_reservoir_site_nos_from_assets(tmp_path):
         + json.dumps({"asset_id": "WTR_9", "asset_type": "water"}) + "\n"
     )
     assert reservoir_site_nos(assets) == ["50059000"]  # only USGS_ water rows
+
+
+def _modern_feature(
+    *,
+    statistic_id: str = "00003",
+    value: str = "42.5",
+    approval_status: str | None = "Approved",
+) -> dict:
+    return {
+        "type": "Feature",
+        "properties": {
+            "monitoring_location_id": "USGS-50059000",
+            "parameter_code": "00060",
+            "statistic_id": statistic_id,
+            "time": "2026-10-01",
+            "value": value,
+            "unit_of_measure": "ft^3/s",
+            "approvals_status": approval_status,
+            "qualifier": None,
+        },
+    }
+
+
+def test_modern_daily_prefers_exactly_one_daily_mean_without_identity_change():
+    doc = {
+        "features": [
+            _modern_feature(statistic_id="00001", value="55.0"),
+            _modern_feature(statistic_id="00003", value="42.5"),
+        ]
+    }
+    rows = _rows_from_modern_docs([doc])
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["reading_id"] == "AYL_RDG_20261001_50059000_00060"
+    assert row["asset_id"] == "USGS_50059000"
+    assert row["metric"] == "streamflow"
+    assert row["value"] == 42.5
+    assert row["unit"] == "ft^3/s"
+    assert row["provisional"] is False
+    assert "stat 00003" in row["source_ref"]
+
+
+def test_modern_daily_fails_closed_on_ambiguous_nonmean_statistics():
+    doc = {
+        "features": [
+            _modern_feature(statistic_id="00001", value="55.0"),
+            _modern_feature(statistic_id="00002", value="30.0"),
+        ]
+    }
+    with pytest.raises(ValueError, match="ambiguous_daily_statistic"):
+        _rows_from_modern_docs([doc])
+
+
+def test_modern_daily_treats_unknown_or_provisional_approval_as_provisional():
+    provisional = _rows_from_modern_docs(
+        [{"features": [_modern_feature(approval_status="Provisional")]}]
+    )[0]
+    unknown = _rows_from_modern_docs(
+        [{"features": [_modern_feature(approval_status=None)]}]
+    )[0]
+    assert provisional["provisional"] is True
+    assert unknown["provisional"] is True
+    assert provisional["confidence"] == 75
+    assert unknown["confidence"] == 75
+
+    singular = _modern_feature(approval_status=None)
+    singular["properties"].pop("approvals_status")
+    singular["properties"]["approval_status"] = "Approved"
+    row = _rows_from_modern_docs([{"features": [singular]}])[0]
+    assert row["provisional"] is False
+
+
+def test_modern_daily_rejects_non_usgs_monitoring_location():
+    feature = _modern_feature()
+    feature["properties"]["monitoring_location_id"] = "OTHER-50059000"
+    with pytest.raises(ValueError, match="unexpected_monitoring_location_id"):
+        _rows_from_modern_docs([{"features": [feature]}])
+
+
+def test_modern_daily_rows_remain_monitoring_schema_valid():
+    import re
+
+    row = _rows_from_modern_docs([{"features": [_modern_feature()]}])[0]
+    required = set(SCHEMA["required"])
+    allowed = set(SCHEMA["properties"])
+    enums = {
+        key: set(value["enum"])
+        for key, value in SCHEMA["properties"].items()
+        if "enum" in value
+    }
+    assert required <= set(row)
+    assert set(row) <= allowed
+    assert re.compile(SCHEMA["properties"]["reading_id"]["pattern"]).match(
+        row["reading_id"]
+    )
+    for key, choices in enums.items():
+        if key in row:
+            assert row[key] in choices
+
+
+def test_modern_daily_detects_statistic_ambiguity_across_pages():
+    docs = [
+        {"features": [_modern_feature(statistic_id="00001", value="55.0")]},
+        {"features": [_modern_feature(statistic_id="00002", value="30.0")]},
+    ]
+    with pytest.raises(ValueError, match="ambiguous_daily_statistic"):
+        _rows_from_modern_docs(docs)
+
+
+def test_modern_daily_rejects_usgs_site_outside_requested_candidate_set():
+    with pytest.raises(ValueError, match="unexpected_monitoring_location"):
+        _rows_from_modern_docs(
+            [{"features": [_modern_feature()]}],
+            allowed_sites={"50027100"},
+        )
+
+
+def test_modern_daily_accepts_requested_candidate_set():
+    rows = _rows_from_modern_docs(
+        [{"features": [_modern_feature()]}],
+        allowed_sites={"50059000"},
+    )
+    assert [row["site_no"] for row in rows] == ["50059000"]

@@ -1,0 +1,762 @@
+{
+  "schema_version": "aguayluz.prasa-production-osint-receipts/v0.1",
+  "captured_at": "2026-11-14",
+  "origin_main_sha": "703e65255828b4ec34e2060e39c2a3c85ac01df3",
+  "scope": "Open-source information on PRASA (AAA) drinking-water production by source and by facility, swept before any public-records request.",
+  "records_requests_sent": false,
+  "completeness_claimed": false,
+  "terminal_states": [
+    "EXHAUSTED",
+    "ZERO",
+    "UNAVAILABLE",
+    "BLOCKED",
+    "SUPERSEDED"
+  ],
+  "terminal_state_meaning": {
+    "EXHAUSTED": "reached and read; nothing further to extract for this question",
+    "ZERO": "reached; holds nothing on production by facility",
+    "UNAVAILABLE": "known to exist or be referenced, not publicly obtainable",
+    "BLOCKED": "could not be reached from the analysis environment",
+    "SUPERSEDED": "replaced by a later source in this list"
+  },
+  "sources": [
+    {
+      "source_id": "PRASA-CER-FY2024",
+      "publisher": "PRASA (Arcadis Caribe, consulting engineer)",
+      "url": "https://docs.pr.gov/files/AAA/Nuestra%20AAA/Documentos/FY2024%20CER_Final.pdf",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:35:48Z",
+      "sha256": "c07a004100fce2b3757ec84180f0742b1831cbc804b06a8402fec24cd8663a44",
+      "bytes": 3577630,
+      "pages": 225,
+      "public_machine_readable": false,
+      "evidence_tier": "T2",
+      "supports": [
+        "FY2024 production 513 MGD; 'approximately 88% or 453 MGD are from WTPs' (PDF p. 63-64, printed 4-4/4-5)",
+        "Table 4-16 production FY2020-FY2024: 541, 551, 519, 513, 513 MGD (PDF p. 86)",
+        "112 WTPs, design capacity ~570 MGD; 244 wells; 136 active intakes; ~168 systems, 109 surface / 59 groundwater"
+      ],
+      "quality_note": "Island-wide annual only. No per-facility production.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "PRASA-CER-FY2023",
+      "publisher": "PRASA (Arcadis Caribe)",
+      "url": "https://docs.pr.gov/files/AAA/Nuestra%20AAA/Documentos/FY2023%20CER_Final.pdf",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:35:49Z",
+      "sha256": "3c5e3880f6231f64fb9ebb436bad1e3b985cecee9ca44d9508a7e44b569d8372",
+      "bytes": 3095880,
+      "pages": 204,
+      "public_machine_readable": false,
+      "evidence_tier": "T2",
+      "supports": [
+        "FY2023 production 513 MGD, 'approximately 88% or 454 MGD are from WTPs' (PDF p. 56)"
+      ],
+      "quality_note": "WTP design capacity stated as ~625 MGD here and ~570 MGD a year later; no explanation.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "PRASA-CER-FY2025",
+      "publisher": "PRASA (Arcadis Caribe)",
+      "url": "https://docs.pr.gov/files/AAA/Nuestra%20AAA/Documentos/FY2025%20Consulting%20Engineer%E2%80%99s%20Report.pdf",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:35:54Z",
+      "sha256": "5e0ba258062ec78198d106103802de16bb3cea2eae1ccdd71cf4513ab541c698",
+      "bytes": 3803219,
+      "pages": 295,
+      "public_machine_readable": false,
+      "evidence_tier": "T2",
+      "supports": [
+        "Table 4-14: FY2025 production 507 MGD (PDF p. 93); executive summary 507.10 MGD (PDF p. 28)",
+        "Section 4.2.2.2: 'FY2025 ... total water production of 496 MGD, of which approximately 88% or 437 MGD are from WTPs' (PDF p. 63)",
+        "Table 5-3 telemetry share by facility type and region (PDF p. 114)"
+      ],
+      "quality_note": "Internally inconsistent: 507.10 vs 496 MGD for the same year.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "PRASA-CER-FY2018",
+      "publisher": "PRASA (Arcadis Caribe)",
+      "url": "https://docs.pr.gov/files/AAA/Nuestra%20AAA/Documentos/FY2018%20CER_Final.pdf",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:35:53Z",
+      "sha256": "21f92f7b2db2def843f12340246666c07fdddf06f43fc692f2a00b0ec35b5ff3",
+      "bytes": 2398327,
+      "pages": 230,
+      "public_machine_readable": false,
+      "evidence_tier": "T2",
+      "supports": [
+        "WTP production FY2017 ~455 MGD, FY2018 ~466 MGD (PDF p. 23)",
+        "FY2018 total 507 MGD produced, NRW 314 MGD (62.1%) (PDF p. 25)"
+      ],
+      "quality_note": "Post-Maria year; plants not assessed by the usual method.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "PRASA-CFP-2024",
+      "publisher": "Financial Oversight and Management Board (copy hosted by PRASA)",
+      "url": "https://docs.pr.gov/files/AAA/Nuestra%20AAA/Documentos/Appendix%20D%20-%202024%20PRASA%20Certified%20Fiscal%20Plan%20(June%2011_%202024).pdf",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:35:55Z",
+      "sha256": "dfea32c67838c5cbdb6171b8ca6bb0f068d7111dff20fca857fd3d7090ecc429",
+      "bytes": 5451958,
+      "pages": 129,
+      "public_machine_readable": false,
+      "evidence_tier": "T1",
+      "supports": [
+        "Water balance FY2023: annual production 513.09 MGD (PDF p. 31)"
+      ],
+      "quality_note": "This 513.09 is FY2023, not FY2024.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "PRASA-CFP-2025",
+      "publisher": "Financial Oversight and Management Board (copy hosted by PRASA)",
+      "url": "https://docs.pr.gov/files/AAA/Nuestra%20AAA/Documentos/Appendix%20B%20-%202025%20PRASA%20Certified%20Fiscal%20Plan%20(June%2027,%202025).pdf",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:35:56Z",
+      "sha256": "86705aac9b88bb8ff4a9a6111677de31826e820000c2496a20b8f10078115cd4",
+      "bytes": 4680893,
+      "pages": 119,
+      "public_machine_readable": false,
+      "evidence_tier": "T1",
+      "supports": [
+        "Annual production FY2019 541.7, FY2024 513.2 MGD (PDF p. 37)",
+        "Surface sources 'supply nearly 90% of PRASA's treated water, with the remaining 10% provided by approximately 250 active wells' (PDF p. 88)",
+        "Plant tiers: 104 WTPs up to 10 MGD averaging 165 MGD in total; 4 WTPs of 10-20 MGD, 58 MGD (PDF p. 75)"
+      ],
+      "quality_note": "Tiers are the finest public breakdown of plant production; no plant is named.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "PRASA-STRATEGIC-PLAN-2026-2029",
+      "publisher": "PRASA",
+      "url": "https://docs.pr.gov/files/AAA/Nuestra%20AAA/Documentos/PRASA%20STRATEGIC%20PLAN%202026-2029%20FIRMADO%20APROBADO.pdf",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:35:57Z",
+      "sha256": "5322dc2a439689ff7c21f1fe397bf206b249117a3cbfbda7be76565395336fc6",
+      "bytes": 8130971,
+      "pages": 67,
+      "public_machine_readable": false,
+      "evidence_tier": "T1",
+      "supports": [
+        "'In fiscal year 2020, only 58% of the island's production was being measured' (PDF p. 33)"
+      ],
+      "quality_note": "Bears on how far back metered per-facility records can exist.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "EPA-PRASA-CONSENT-DECREE-2015",
+      "publisher": "U.S. EPA / U.S. DOJ (copy hosted by PRASA)",
+      "url": "https://docs.pr.gov/files/AAA/Nuestra%20AAA/Documentos/EPA_PRASA%20Consent%20Decree.pdf",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:35:57Z",
+      "sha256": "1a23526836235d3d84c520d2135518262207f5ee88e7bc588dd80a6d903616db",
+      "bytes": 12261508,
+      "pages": 388,
+      "public_machine_readable": false,
+      "evidence_tier": "T2",
+      "supports": [
+        "Appendix listing water treatment plants by name (e.g. 111 Sergio Cuevas, 112 Superacueducto; PDF p. 111)"
+      ],
+      "quality_note": "Names only; no drinking-water flows.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "DRNA-PIRA-2016",
+      "publisher": "Puerto Rico DRNA",
+      "url": "https://www.drna.pr.gov/wp-content/uploads/formidable/PIRA-2016.pdf",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:36:06Z",
+      "sha256": "74a5a40655ec66971ea148445a1a38a360eb28a9d7e1929d083c56cdef35c99d",
+      "bytes": 11333620,
+      "pages": 378,
+      "public_machine_readable": false,
+      "evidence_tier": "T1",
+      "supports": [
+        "PRASA-reported 2013 production 617.0 MGD vs PIRA estimate 588.7 MGD (PDF p. 179)",
+        "PRASA wells: Salinas 3.96 mgd, Santa Isabel 6.47 mgd; all PRASA south-coast wells 21.57 mgd in 2014 (PDF p. 282)"
+      ],
+      "quality_note": "Latest figures are 2013-2015.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "PR-LEY-141-2019",
+      "publisher": "Government of Puerto Rico (copy hosted by PRASA)",
+      "url": "https://docs.pr.gov/files/AAA/Ambiente%20Cumplimiento/Documentos/Ley-141-2019.pdf",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:36:07Z",
+      "sha256": "fca9207f08b75df4a6053b42517be38a8975d2f24088b032d289b33774719b12",
+      "bytes": 368632,
+      "pages": 10,
+      "public_machine_readable": false,
+      "evidence_tier": "T1",
+      "supports": [
+        "Original text of the transparency act"
+      ],
+      "quality_note": "Superseded in Articles 4-9 by Ley 156-2025.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "PR-LEY-156-2025",
+      "publisher": "Government of Puerto Rico, Department of State certified copy (hosted by PRASA)",
+      "url": "https://docs.pr.gov/files/AAA/Ambiente%20Cumplimiento/Documentos/Ley-0156-2025-Segun-enmendada.pdf",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:36:08Z",
+      "sha256": "732a893e2625db79c823a22d705c32d373433184109d7c42728dbf07a5449786",
+      "bytes": 7400077,
+      "pages": 8,
+      "public_machine_readable": false,
+      "evidence_tier": "T1",
+      "supports": [
+        "Art. 6: request notified to the agency head with copy to the Oficial de Informacion, else defective; must give postal and email address",
+        "Art. 7: 20 business days (<=300 folios or <3 years old), 30 otherwise; one 20-day extension; silence is denial; denial must state legal grounds in writing",
+        "Art. 4: information already published free on official sites is outside the request process",
+        "Art. 2.1 / 8: no duty to create a document that does not exist; formats are paper, PDF, URL or inspection",
+        "Art. 9: Recurso Especial in the Tribunal de Primera Instancia, San Juan, within 30 days, no filing fees"
+      ],
+      "quality_note": "Scanned PDF read through its OCR text layer; certified 15 Dec 2025.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "PRASA-TRANSITION-STATEMENT-2024",
+      "publisher": "PRASA",
+      "url": "https://transicion2024.pr.gov/Agencias/163/Ponencias/Ponencia%20Vista%202024-2025%20vFINAL.pdf",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:36:09Z",
+      "sha256": "561317c8f7e25aa4c27fca4482310ef7f4568936ad4d272fe44c256fc6acb93d",
+      "bytes": 338375,
+      "pages": 21,
+      "public_machine_readable": false,
+      "evidence_tier": "T1",
+      "supports": [
+        "Production 551.5 MGD in 2021, 513.17 MGD in fiscal year 2024 (PDF p. 20)"
+      ],
+      "quality_note": "",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "AAFAF-METRO-SUPPLY-PLAN-2025",
+      "publisher": "AAFAF / La Fortaleza",
+      "url": "https://docs.pr.gov/files/Fortaleza/Comunicados%20de%20Prensa%202025/Plan_de_Estabilizacio%CC%81n_y_Resiliencia_para_el_Suministro_de_Agua.pdf",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:36:10Z",
+      "sha256": "2f0e634a897f6c82f3c1b7286dd95777c925f3da416ebdbd9d85bba59c1241c5",
+      "bytes": 6359330,
+      "pages": 130,
+      "public_machine_readable": false,
+      "evidence_tier": "T2",
+      "supports": [
+        "Per-facility supply diagram for the Metro region"
+      ],
+      "quality_note": "Not verified by me whether the diagram's figures are capacity or output; treat as unresolved.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "PRASA-INVESTOR-DOC:2011-02-28 Final Report FY2010 CER.pdf",
+      "publisher": "PRASA investor page",
+      "url": "https://docs.pr.gov/files/AAA/Nuestra%20AAA/Documentos/2011-02-28%20Final%20Report%20FY2010%20CER.pdf",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:37:48Z",
+      "sha256": "cfe54999dc85b61e35be2931b2a17da64cbad2360bbc46919edd1d27e556350b",
+      "pages": 174,
+      "public_machine_readable": false,
+      "evidence_tier": "T2",
+      "supports": [],
+      "quality_note": "Text-scanned for per-facility production tables: none found. Quotes are regex matches, read in context only where the ledger cites them.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "PRASA-INVESTOR-DOC:2012-02-21 Final Consulting Engineers Supplement",
+      "publisher": "PRASA investor page",
+      "url": "https://docs.pr.gov/files/AAA/Nuestra%20AAA/Documentos/2012-02-21%20Final%20Consulting%20Engineers%20Supplemental%20Report.pdf",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:37:51Z",
+      "sha256": "daf424a0919d0fe45c1beef39e8457b9e7ed414bc1646c9dc641aebc448bd410",
+      "pages": 105,
+      "public_machine_readable": false,
+      "evidence_tier": "T2",
+      "supports": [],
+      "quality_note": "Text-scanned for per-facility production tables: none found. Quotes are regex matches, read in context only where the ledger cites them.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "PRASA-INVESTOR-DOC:2012-12-17 Final 2012 CER_FOA.pdf",
+      "publisher": "PRASA investor page",
+      "url": "https://docs.pr.gov/files/AAA/Nuestra%20AAA/Documentos/2012-12-17%20Final%202012%20CER_FOA.pdf",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:37:52Z",
+      "sha256": "0601868ff892bf831b0b5b3f41ff585f6055b5f8f273b647b41cfc539f1fd71d",
+      "pages": 109,
+      "public_machine_readable": false,
+      "evidence_tier": "T2",
+      "supports": [],
+      "quality_note": "Text-scanned for per-facility production tables: none found. Quotes are regex matches, read in context only where the ledger cites them.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "PRASA-INVESTOR-DOC:2015 Consulting Engineer Supplemental Report-PRA",
+      "publisher": "PRASA investor page",
+      "url": "https://docs.pr.gov/files/AAA/Nuestra%20AAA/Documentos/2015%20Consulting%20Engineer%20Supplemental%20Report-PRASA.pdf",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:37:53Z",
+      "sha256": "63a3940058d08d91edf1ebe3cb90434bd9bb093b2c770d68b8fddec3bd6705dc",
+      "pages": 69,
+      "public_machine_readable": false,
+      "evidence_tier": "T2",
+      "supports": [],
+      "quality_note": "Text-scanned for per-facility production tables: none found. Quotes are regex matches, read in context only where the ledger cites them.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "PRASA-INVESTOR-DOC:FY2013 Consulting Engineers Report for PRASA_Fin",
+      "publisher": "PRASA investor page",
+      "url": "https://docs.pr.gov/files/AAA/Nuestra%20AAA/Documentos/FY2013%20Consulting%20Engineers%20Report%20for%20PRASA_Final.pdf",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:37:59Z",
+      "sha256": "e7acfe8436bc5f3f6716ece40265389ca51e2e2ce0f3d056128d212a3ccc9935",
+      "pages": 152,
+      "public_machine_readable": false,
+      "evidence_tier": "T2",
+      "supports": [],
+      "quality_note": "Text-scanned for per-facility production tables: none found. Quotes are regex matches, read in context only where the ledger cites them.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "PRASA-INVESTOR-DOC:FY2014 Consulting Engineers Report for PRASA_Fin",
+      "publisher": "PRASA investor page",
+      "url": "https://docs.pr.gov/files/AAA/Nuestra%20AAA/Documentos/FY2014%20Consulting%20Engineers%20Report%20for%20PRASA_Final%20Report_March%202015.pdf",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:38:00Z",
+      "sha256": "810e82bd5d3e7e9027a1b652bb996b311e73e9303f6c43e97ea37dc30a3834c8",
+      "pages": 187,
+      "public_machine_readable": false,
+      "evidence_tier": "T2",
+      "supports": [
+        "PDF p. 65: of the total 598 MGD produced"
+      ],
+      "quality_note": "Text-scanned for per-facility production tables: none found. Quotes are regex matches, read in context only where the ledger cites them.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "PRASA-INVESTOR-DOC:FY2015_Consulting_Engineers_Report.pdf",
+      "publisher": "PRASA investor page",
+      "url": "https://docs.pr.gov/files/AAA/Nuestra%20AAA/Documentos/FY2015_Consulting_Engineers_Report.pdf",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:38:01Z",
+      "sha256": "8b447527489362e1054059fec823dae1d7ced18a211580ecc225b898e9af4c0d",
+      "pages": 225,
+      "public_machine_readable": false,
+      "evidence_tier": "T2",
+      "supports": [
+        "PDF p. 18: of the total 557 million gallons per day (MGD) produced",
+        "PDF p. 79: of the total 557 MGD produced"
+      ],
+      "quality_note": "Text-scanned for per-facility production tables: none found. Quotes are regex matches, read in context only where the ledger cites them.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "PRASA-INVESTOR-DOC:FY2016_Consulting_Engineers_Report.pdf",
+      "publisher": "PRASA investor page",
+      "url": "https://docs.pr.gov/files/AAA/Nuestra%20AAA/Documentos/FY2016_Consulting_Engineers_Report.pdf",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:38:03Z",
+      "sha256": "d0d120ecc0d96a1091db05e66f6323badb497bc585cabe1c1bc4b352da0ed428",
+      "pages": 232,
+      "public_machine_readable": false,
+      "evidence_tier": "T2",
+      "supports": [
+        "PDF p. 25: of the total 508 MGD produced",
+        "PDF p. 25: total water production per year down to 450 MGD",
+        "PDF p. 95: of the total 508 MGD produced",
+        "PDF p. 97: total water production per year down to 450 MGD"
+      ],
+      "quality_note": "Text-scanned for per-facility production tables: none found. Quotes are regex matches, read in context only where the ledger cites them.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "PRASA-INVESTOR-DOC:FY2019 CER_Final.pdf",
+      "publisher": "PRASA investor page",
+      "url": "https://docs.pr.gov/files/AAA/Nuestra%20AAA/Documentos/FY2019%20CER_Final.pdf",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:38:04Z",
+      "sha256": "4758d78f8a1ccd3651f45ad26c9988a2e780e4c4307b19df0e38aea4bba52781",
+      "pages": 222,
+      "public_machine_readable": false,
+      "evidence_tier": "T2",
+      "supports": [
+        "PDF p. 21: total potable water production from WTPs for FY2019 was approximately 542 MGD",
+        "PDF p. 22: total water production at approximately 542 MGD and NRW at approximately 349 MGD",
+        "PDF p. 59: total water production of 542 MGD of which approximately 487 MGD",
+        "PDF p. 89: total water production at approximately 542 MGD and NRW at approximately 349 MGD"
+      ],
+      "quality_note": "Text-scanned for per-facility production tables: none found. Quotes are regex matches, read in context only where the ledger cites them.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "PRASA-INVESTOR-DOC:FY2020 CER_Final-v2.pdf",
+      "publisher": "PRASA investor page",
+      "url": "https://docs.pr.gov/files/AAA/Nuestra%20AAA/Documentos/FY2020%20CER_Final-v2.pdf",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:38:05Z",
+      "sha256": "2d453541ab3bc9c07c1c11a407ff05eeeb993732e212898f5257614373373968",
+      "pages": 226,
+      "public_machine_readable": false,
+      "evidence_tier": "T2",
+      "supports": [
+        "PDF p. 19: total potable water production from WTPs for FY2020 was approximately 485 MGD",
+        "PDF p. 58: total water production of 539 MGD of which approximately 485 MGD",
+        "PDF p. 83: Total Water Production Water Losses Non-Revenue Water Fiscal Year (MGD)1 (MGD",
+        "PDF p. 84: of the total 539 MGD produced"
+      ],
+      "quality_note": "Text-scanned for per-facility production tables: none found. Quotes are regex matches, read in context only where the ledger cites them.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "PRASA-INVESTOR-DOC:FY2021 CER_Final.pdf",
+      "publisher": "PRASA investor page",
+      "url": "https://docs.pr.gov/files/AAA/Nuestra%20AAA/Documentos/FY2021%20CER_Final.pdf",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:38:06Z",
+      "sha256": "2b4b8521d17a3285f1a46f631b5e487f3bf41cf62cad3a6ff55abe42212599f5",
+      "pages": 214,
+      "public_machine_readable": false,
+      "evidence_tier": "T2",
+      "supports": [
+        "PDF p. 21: total potable water production from WTPs for FY2021 was approximately 494 MGD",
+        "PDF p. 59: total water production of 551 MGD, of which approximately 494 MGD",
+        "PDF p. 83: Total Water Production Fiscal Year (MGD",
+        "PDF p. 83: of the total 551 MGD produced"
+      ],
+      "quality_note": "Text-scanned for per-facility production tables: none found. Quotes are regex matches, read in context only where the ledger cites them.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "PRASA-INVESTOR-DOC:FY2022 CER_Final.pdf",
+      "publisher": "PRASA investor page",
+      "url": "https://docs.pr.gov/files/AAA/Nuestra%20AAA/Documentos/FY2022%20CER_Final.pdf",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:38:09Z",
+      "sha256": "0c08eb2d1bdb91c607e50d6ae47a60554120ead557cd9fd1152c21db03504596",
+      "pages": 218,
+      "public_machine_readable": false,
+      "evidence_tier": "T2",
+      "supports": [
+        "PDF p. 27: of the total 519 MGD produced",
+        "PDF p. 91: Total Water Production Water Losses Non-Revenue Water Fiscal Year (MGD",
+        "PDF p. 91: of the total 519 MGD produced",
+        "PDF p. 99: total water production and distribution of approximately 519 MGD"
+      ],
+      "quality_note": "Text-scanned for per-facility production tables: none found. Quotes are regex matches, read in context only where the ledger cites them.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "PRASA-INVESTOR-DOC:Limited Offering Memorandum dated December 9, 20",
+      "publisher": "PRASA investor page",
+      "url": "https://docs.pr.gov/files/AAA/Nuestra%20AAA/Documentos/Limited%20Offering%20Memorandum%20dated%20December%209,%202020.pdf",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:38:11Z",
+      "sha256": "56875c6a0d75dea645b2c8f5ee3e1264c914d8c4c1cd48677f758ffc0899ee36",
+      "pages": 763,
+      "public_machine_readable": false,
+      "evidence_tier": "T2",
+      "supports": [
+        "PDF p. 32: total water production was approximately 542 million gallons per day (“MGD”) and NRW was approximately 349 MGD",
+        "PDF p. 175: total potable water production from WTPs for FY2019 was approximately 542 MGD",
+        "PDF p. 176: total water production at approximately 542 MGD and NRW at approximately 349 MGD",
+        "PDF p. 213: total water production of 542 MGD of which approximately 487 MGD"
+      ],
+      "quality_note": "Text-scanned for per-facility production tables: none found. Quotes are regex matches, read in context only where the ledger cites them.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "USGS-P9HWON2W-2020-LANDING",
+      "publisher": "U.S. Geological Survey",
+      "url": "https://www.sciencebase.gov/catalog/item/6408d23bd34e76f5f75e4a76",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:40:00Z",
+      "sha256": null,
+      "public_machine_readable": true,
+      "evidence_tier": "T1",
+      "supports": [
+        "'Daily raw-water inflow volume to each PRASA water-treatment plant and water pumped from PRASA public-supply wells on the island in 2020, as well as coordinate information for these facilities were provided by PRASA. The raw data are not publicly available owing to restrictions (sensitivity concern). Contact PRASA directly for more information.'"
+      ],
+      "quality_note": "Item metadata read as JSON; the bytes are regenerated per request, so no stable hash is recorded.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "EPA-SDWIS-ENVIROFACTS-PR",
+      "publisher": "U.S. EPA",
+      "url": "https://data.epa.gov/efservice/WATER_SYSTEM/PRIMACY_AGENCY_CODE/PR/ROWS/0:1999/JSON",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:40:00Z",
+      "sha256": null,
+      "public_machine_readable": true,
+      "evidence_tier": "T2",
+      "supports": [
+        "1,003 Puerto Rico systems, 464 active",
+        "155 active systems carry PRASA's switchboard number (110 surface, 45 groundwater) - a heuristic, not an owner field",
+        "Active facilities in those systems: 692 treatment points, 268 wells, 160 intakes",
+        "No field for production volume, design capacity or coordinates in WATER_SYSTEM or WATER_SYSTEM_FACILITY"
+      ],
+      "quality_note": "Live API; content changes over time, so no hash is recorded.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "PRASA-TRANSPARENCY-PAGE",
+      "publisher": "PRASA",
+      "url": "https://acueductos.pr.gov/ley-de-transparencia",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:40:00Z",
+      "sha256": "18d83ef7c1101f75ee743a7fb603cff4a214eec6b2881d94b024cb040c88aeda",
+      "public_machine_readable": false,
+      "evidence_tier": "T1",
+      "supports": [
+        "Designated Oficiales de Informacion: Jhondee Canales Lora, Aida Marquez Ibanez, Angel Gutierrez Acosta",
+        "Requests in writing, physical or electronic, or through the pr.gov portal",
+        "Postal: PO Box 7066, San Juan, PR 00916-7066. Physical: 604 Avenida Barbosa, Edif. Sergio Cuevas Bustamante, Hato Rey"
+      ],
+      "quality_note": "No email address for the officers and no monthly request report (Art. 5) found on the page.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "IEPR-EXTRACCIONES-AGUA-CRUDA",
+      "publisher": "Instituto de Estadisticas de Puerto Rico (product of AAA)",
+      "url": "https://www.estadisticas.pr.gov/productos/extracciones-de-agua-cruda-y-produccion",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:40:00Z",
+      "sha256": "30fbcccf416cb2ecbe21dc491d0639150c958f4d7541b5dbd088167e89eaf531",
+      "public_machine_readable": false,
+      "evidence_tier": "T2",
+      "supports": [
+        "Catalog entry only. 'Este producto no contiene historial.' Contact: Mariam Rivera Rodriguez, Ayudante Especial, (787) 620-2277 ext. 5311"
+      ],
+      "quality_note": "Its single data link, acueductos.pr.gov/INFORMESESTADISTICOS/index.html, returned HTTP 404 on 2026-11-14.",
+      "terminal_state": "UNAVAILABLE"
+    },
+    {
+      "source_id": "IEPR-BALANCE-DE-AGUA",
+      "publisher": "Instituto de Estadisticas de Puerto Rico (product of AAA)",
+      "url": "https://www.estadisticas.pr.gov/productos/balance-de-agua",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:40:00Z",
+      "sha256": "5119b71177829576236bf43d18461fbbe15acec9a68e34c6a0749607d3ca9b27",
+      "public_machine_readable": true,
+      "evidence_tier": "T1",
+      "supports": [
+        "xlsx 'Volumen Consumo por Tipo de Cliente 2017-2019': monthly billed consumption in cubic metres by account class"
+      ],
+      "quality_note": "Consumption, not production. Hash is of the xlsx.",
+      "terminal_state": "ZERO"
+    },
+    {
+      "source_id": "USGS-WATER-DATA-API",
+      "publisher": "U.S. Geological Survey",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:40:00Z",
+      "sha256": null,
+      "public_machine_readable": true,
+      "evidence_tier": "T1",
+      "supports": [
+        "No water-use collection (reported by the sweep; not re-run by the analyst)"
+      ],
+      "quality_note": "Second-hand within this ledger.",
+      "terminal_state": "ZERO"
+    },
+    {
+      "source_id": "WAYBACK-AAA-INFORMES-ESTADISTICOS",
+      "publisher": "Internet Archive",
+      "url": "https://web.archive.org/cdx/search/cdx?url=acueductospr.com/INFORMESESTADISTICOS*",
+      "reached": false,
+      "retrieved_utc": "2026-11-14T08:40:00Z",
+      "sha256": null,
+      "public_machine_readable": false,
+      "evidence_tier": null,
+      "supports": [],
+      "quality_note": "Connection failed from this environment on three attempts. An archived copy of the statistics page may exist; unchecked.",
+      "terminal_state": "BLOCKED"
+    },
+    {
+      "source_id": "MSRB-EMMA-PRASA",
+      "publisher": "MSRB",
+      "url": "https://emma.msrb.org/",
+      "reached": false,
+      "retrieved_utc": "2026-11-14T08:40:00Z",
+      "sha256": null,
+      "public_machine_readable": false,
+      "evidence_tier": null,
+      "supports": [],
+      "quality_note": "Issuer search not usable from this environment. Mitigated: the 2020 Limited Offering Memorandum hosted by PRASA was read and repeats the engineer's report.",
+      "terminal_state": "BLOCKED"
+    },
+    {
+      "source_id": "DRNA-WATER-FRANCHISES",
+      "publisher": "Puerto Rico DRNA",
+      "url": "https://www.drna.pr.gov/?s=franquicia",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:40:00Z",
+      "sha256": "4d0853a26e350a3e44f255ca8823a0c8a62379a774cc8feed5b7eb0e93d18110",
+      "public_machine_readable": false,
+      "evidence_tier": "T2",
+      "supports": [
+        "Application form FA-09 and enforcement news only"
+      ],
+      "quality_note": "No public registry of franchises or of permitted versus actual volumes found.",
+      "terminal_state": "ZERO"
+    },
+    {
+      "source_id": "OCPR-AUDITS-AAA",
+      "publisher": "Oficina del Contralor de Puerto Rico",
+      "url": "https://www.ocpr.gov.pr/?s=acueductos",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:40:00Z",
+      "sha256": "30507e0189037cab7b43d5920135d1567884eb67f1b2b9d0f36e7c83e2444847",
+      "public_machine_readable": false,
+      "evidence_tier": null,
+      "supports": [],
+      "quality_note": "Site search returned no results; the audit-report database was not queried separately.",
+      "terminal_state": "ZERO"
+    },
+    {
+      "source_id": "PRASA-MASTER-PLAN-2024",
+      "publisher": "PRASA",
+      "url": null,
+      "reached": false,
+      "retrieved_utc": "2026-11-14T08:40:00Z",
+      "sha256": null,
+      "public_machine_readable": false,
+      "evidence_tier": null,
+      "supports": [],
+      "quality_note": "Referred to in the 2025 fiscal plan; no public copy located. Included in the request.",
+      "terminal_state": "UNAVAILABLE"
+    },
+    {
+      "source_id": "USGS-P9HWON2W-2016-TABLE1",
+      "publisher": "U.S. Geological Survey",
+      "url": "https://www.sciencebase.gov/catalog/item/5bb64dcee4b0fc368e8934e6",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:45:00Z",
+      "sha256": "a8bee29d43ddd2936c6962fca37fa817991700b68d393ac8a87a69aaf09e472a",
+      "public_machine_readable": true,
+      "evidence_tier": "T1",
+      "supports": [
+        "Table 1. Estimated public-supply water withdrawals by water source and municipality in Puerto Rico, 2016",
+        "TOTAL row: surface 492.2, groundwater 58.67, total 550.87 Mgal/d"
+      ],
+      "quality_note": "Raw-water withdrawals by system, not finished-water production. Not ingested.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "USGS-P9HWON2W-2016-TABLE4",
+      "publisher": "U.S. Geological Survey",
+      "url": "https://www.sciencebase.gov/catalog/item/5bb6536de4b0fc368e8939bc",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:45:00Z",
+      "sha256": "b4b9aa63ed191b3356dd35bc688d381239243d78084924a58b64a77f34aba87a",
+      "public_machine_readable": true,
+      "evidence_tier": "T1",
+      "supports": [
+        "Table 4. Estimated domestic deliveries, self-supplied withdrawals, population served and domestic per capita use by PRASA water service area, 2016"
+      ],
+      "quality_note": "Raw-water withdrawals by system, not finished-water production. Not ingested. Workbook not parsed by the analyst (expected exactly one worksheet, found 3); title taken from the ScienceBase item.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "USGS-P9HWON2W-2016-TABLE2",
+      "publisher": "U.S. Geological Survey",
+      "url": "https://www.sciencebase.gov/catalog/item/5bb6518be4b0fc368e89397d",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:45:00Z",
+      "sha256": "4c5f305afac966a74a1b4797cb010db28dda0a41c906f7715b45050c6ff7da3b",
+      "public_machine_readable": true,
+      "evidence_tier": "T1",
+      "supports": [
+        "Table 2. Estimated public-supply water withdrawals by water source and PRASA water service area in Puerto Rico, 2016",
+        "TOTAL row: surface 492.2, groundwater 58.669999999999995, total 550.87 Mgal/d"
+      ],
+      "quality_note": "Raw-water withdrawals by system, not finished-water production. Not ingested.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "USGS-P9HWON2W-2016-TABLE3",
+      "publisher": "U.S. Geological Survey",
+      "url": "https://www.sciencebase.gov/catalog/item/5bb652aee4b0fc368e8939a2",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:45:00Z",
+      "sha256": "78111a35e9ac444df1344f76eeda56b623edf77d4a8bfbe81376964fff459b0c",
+      "public_machine_readable": true,
+      "evidence_tier": "T1",
+      "supports": [
+        "Table 3. Estimated domestic deliveries, self-supplied withdrawals, population served and domestic per capita use by municipality in Puerto Rico, 2016"
+      ],
+      "quality_note": "Raw-water withdrawals by system, not finished-water production. Not ingested. Workbook not parsed by the analyst (expected exactly one worksheet, found 3); title taken from the ScienceBase item.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "USGS-P9HWON2W-2017-TABLE2",
+      "publisher": "U.S. Geological Survey",
+      "url": "https://www.sciencebase.gov/catalog/item/6408d082d34e76f5f75e4a4f",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:45:00Z",
+      "sha256": "9db839cc070bb92ceb8e7558fa815551c5b58967e40f5437909dc23b904ef15d",
+      "public_machine_readable": true,
+      "evidence_tier": "T1",
+      "supports": [
+        "Table 2. Estimated public-supply water withdrawals by water source and PRASA public water system in Puerto Rico, 2017",
+        "TOTAL row: surface 488.23, groundwater 56.83, total 545.06 Mgal/d"
+      ],
+      "quality_note": "Raw-water withdrawals by system, not finished-water production. Not ingested.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "USGS-P9HWON2W-2018-TABLE2",
+      "publisher": "U.S. Geological Survey",
+      "url": "https://www.sciencebase.gov/catalog/item/6408d169d34e76f5f75e4a5c",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:45:00Z",
+      "sha256": "32835e0faafc1a392c472d74c04adf39c2307ccd8646b6ce15e972760b6d49ea",
+      "public_machine_readable": true,
+      "evidence_tier": "T1",
+      "supports": [
+        "Table 2. Estimated public-supply water withdrawals by water source and PRASA public water system in Puerto Rico, 2018",
+        "TOTAL row: surface 532.83, groundwater 60.385425535926736, total 593.21 Mgal/d"
+      ],
+      "quality_note": "Raw-water withdrawals by system, not finished-water production. Not ingested.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "USGS-P9HWON2W-2019-TABLE2",
+      "publisher": "U.S. Geological Survey",
+      "url": "https://www.sciencebase.gov/catalog/item/6408d20cd34e76f5f75e4a73",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:45:00Z",
+      "sha256": "450f4fc7c1ca0b047b01b4705739f03ea19d5da4964b7e0ef71174e9100bec7f",
+      "public_machine_readable": true,
+      "evidence_tier": "T1",
+      "supports": [
+        "Table 2. Estimated public-supply water withdrawals by water source and PRASA public water system in Puerto Rico, 2019",
+        "TOTAL row: surface 527.18, groundwater 62.81, total 589.99 Mgal/d"
+      ],
+      "quality_note": "Raw-water withdrawals by system, not finished-water production. Not ingested.",
+      "terminal_state": "EXHAUSTED"
+    },
+    {
+      "source_id": "USGS-P9HWON2W-2020-TABLE2",
+      "publisher": "U.S. Geological Survey",
+      "url": "https://www.sciencebase.gov/catalog/item/6408d28dd34e76f5f75e4a7c",
+      "reached": true,
+      "retrieved_utc": "2026-11-14T08:45:00Z",
+      "sha256": "ff0eb6120f4983d6881c3d80cd9e9c5944b5a3d3dde8479b921dd937eb33467d",
+      "public_machine_readable": true,
+      "evidence_tier": "T1",
+      "supports": [
+        "Table 2. Estimated public-supply water withdrawals by water source and PRASA public water system in Puerto Rico, 2020",
+        "TOTAL row: surface 536.64, groundwater 65.1, total 601.74 Mgal/d"
+      ],
+      "quality_note": "Raw-water withdrawals by system, not finished-water production. Not ingested.",
+      "terminal_state": "EXHAUSTED"
+    }
+  ]
+}

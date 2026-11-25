@@ -30,6 +30,22 @@ export const getEnvironmentalExposureEntities = (filters = {}) => getJSON(
   { total: 0, items: [] },
 )
 
+// Entity kinds that make up the solid-waste site registry (ADR-0004).
+export const SOLID_WASTE_KINDS = ['LANDFILL', 'SOLID_WASTE_FACILITY', 'DISPOSAL_SITE']
+
+// One request per kind because the endpoint filters on a single entity_kind.
+// `total` is the sum of the server-reported totals, not items.length, so the
+// caller can tell a truncated or failed list from a complete one.
+export async function getSolidWasteSites() {
+  const pages = await Promise.all(
+    SOLID_WASTE_KINDS.map((kind) => getEnvironmentalExposureEntities({ entity_kind: kind, limit: 500 })),
+  )
+  return {
+    total: pages.reduce((sum, page) => sum + (page?.total ?? 0), 0),
+    items: pages.flatMap((page) => page?.items ?? []),
+  }
+}
+
 export const getEnvironmentalExposureRelationships = (filters = {}) => getJSON(
   `/environmental-exposure/relationships${qs(filters)}`,
   { total: 0, items: [] },

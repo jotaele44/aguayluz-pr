@@ -1,0 +1,1749 @@
+{
+  "completeness_claimed": false,
+  "conflicts": 36,
+  "coverage": {
+    "aquifer": {
+      "by_authority": {
+        "PR_DRNA": 17,
+        "USGS": 142
+      },
+      "by_source_combination": {
+        "drna_pira_2016": 17,
+        "usgs_aquifer_codes": 35,
+        "usgs_ha730_aquifers_pr": 104,
+        "usgs_ha730_text": 1,
+        "usgs_national_aquifer_codes": 2
+      },
+      "candidate_links_i4": 20,
+      "candidate_links_i5": 0,
+      "features_lower": 141,
+      "features_upper": 159
+    },
+    "canal": {
+      "by_source_combination": {
+        "usgs_nhd_flowlines": 2508
+      },
+      "candidate_links_i4": 0,
+      "candidate_links_i5": 0,
+      "features_lower": 2508,
+      "features_upper": 2508,
+      "located": 2508,
+      "unlocated": 0
+    },
+    "dam": {
+      "by_source_combination": {
+        "usace_nid": 36
+      },
+      "candidate_links_i4": 0,
+      "candidate_links_i5": 0,
+      "features_lower": 36,
+      "features_upper": 36,
+      "located": 36,
+      "unlocated": 0
+    },
+    "gauge": {
+      "by_source_combination": {
+        "noaa_nwps_gauges": 10,
+        "noaa_nwps_gauges+usgs_monitoring_locations": 108,
+        "usgs_monitoring_locations": 1552
+      },
+      "candidate_links_i4": 0,
+      "candidate_links_i5": 0,
+      "features_lower": 1670,
+      "features_upper": 1670,
+      "located": 1585,
+      "unlocated": 85
+    },
+    "intake": {
+      "by_source_combination": {
+        "epa_sdwis_intakes": 690,
+        "prasa_facilities": 138,
+        "repo_utility_assets": 7
+      },
+      "candidate_links_i4": 0,
+      "candidate_links_i5": 26,
+      "features_lower": 835,
+      "features_upper": 835,
+      "located": 138,
+      "unlocated": 697
+    },
+    "pump_station": {
+      "by_source_combination": {
+        "prasa_facilities": 2112
+      },
+      "candidate_links_i4": 0,
+      "candidate_links_i5": 0,
+      "features_lower": 2112,
+      "features_upper": 2112,
+      "located": 2112,
+      "unlocated": 0
+    },
+    "reservoir": {
+      "by_source_combination": {
+        "prasa_facilities": 8,
+        "repo_utility_assets": 124,
+        "usgs_gnis_names": 21,
+        "usgs_nhd_waterbodies": 653
+      },
+      "candidate_links_i4": 10,
+      "candidate_links_i5": 47,
+      "features_lower": 806,
+      "features_upper": 806,
+      "located": 806,
+      "unlocated": 0
+    },
+    "spring": {
+      "bound_authoritative": 0,
+      "bound_by_polygon_only": 132,
+      "by_source_combination": {
+        "epa_sdwis_facilities": 5,
+        "usgs_gnis_names": 2,
+        "usgs_monitoring_locations+wqp_springs": 221
+      },
+      "candidate_links_i4": 0,
+      "candidate_links_i5": 0,
+      "features_lower": 228,
+      "features_upper": 228,
+      "located": 223,
+      "unlocated": 5,
+      "with_usgs_aquifer_code": 0
+    },
+    "stream": {
+      "by_source_combination": {
+        "usgs_nhd_flowlines": 13373
+      },
+      "candidate_links_i4": 0,
+      "candidate_links_i5": 0,
+      "features_lower": 13373,
+      "features_upper": 13373,
+      "located": 13373,
+      "unlocated": 0
+    },
+    "tank": {
+      "by_source_combination": {
+        "epa_sdwis_facilities": 2,
+        "prasa_facilities": 1571
+      },
+      "candidate_links_i4": 0,
+      "candidate_links_i5": 0,
+      "features_lower": 1573,
+      "features_upper": 1573,
+      "located": 1571,
+      "unlocated": 2
+    },
+    "treatment_plant": {
+      "by_source_combination": {
+        "epa_sdwis_facilities": 1648,
+        "prasa_facilities": 114
+      },
+      "candidate_links_i4": 0,
+      "candidate_links_i5": 73,
+      "features_lower": 1762,
+      "features_upper": 1762,
+      "located": 114,
+      "unlocated": 1648
+    },
+    "wastewater_plant": {
+      "by_source_combination": {
+        "epa_echo_potw": 63,
+        "prasa_facilities": 51
+      },
+      "candidate_links_i4": 25,
+      "candidate_links_i5": 18,
+      "features_lower": 89,
+      "features_upper": 114,
+      "located": 114,
+      "unlocated": 0
+    },
+    "water_system": {
+      "by_source_combination": {
+        "fema_nonprasa_sites": 233
+      },
+      "candidate_links_i4": 0,
+      "candidate_links_i5": 0,
+      "features_lower": 233,
+      "features_upper": 233,
+      "located": 233,
+      "unlocated": 0
+    },
+    "waterbody": {
+      "by_source_combination": {
+        "usfws_nwi": 1673,
+        "usgs_gnis_names": 60,
+        "usgs_gnis_names+usgs_nhd_waterbodies": 22,
+        "usgs_nhd_waterbodies": 3194
+      },
+      "candidate_links_i4": 0,
+      "candidate_links_i5": 534,
+      "features_lower": 4949,
+      "features_upper": 4949,
+      "located": 4949,
+      "unlocated": 0
+    },
+    "watercourse": {
+      "by_source_combination": {
+        "usgs_gnis_names": 324
+      },
+      "candidate_links_i4": 0,
+      "candidate_links_i5": 0,
+      "features_lower": 324,
+      "features_upper": 324,
+      "located": 324,
+      "unlocated": 0
+    },
+    "waterfall": {
+      "by_source_combination": {
+        "usgs_gnis_names": 5
+      },
+      "candidate_links_i4": 0,
+      "candidate_links_i5": 0,
+      "features_lower": 5,
+      "features_upper": 5,
+      "located": 5,
+      "unlocated": 0
+    },
+    "watershed": {
+      "by_source_combination": {
+        "usgs_wbd": 35
+      },
+      "candidate_links_i4": 0,
+      "candidate_links_i5": 0,
+      "features_lower": 35,
+      "features_upper": 35
+    },
+    "well": {
+      "bound_authoritative": 351,
+      "bound_by_polygon_only": 5096,
+      "by_source_combination": {
+        "epa_sdwis_wells": 1384,
+        "prasa_facilities": 260,
+        "usgs_monitoring_locations": 3,
+        "usgs_monitoring_locations+wqp_wells": 5434,
+        "wqp_wells": 240
+      },
+      "candidate_links_i4": 81,
+      "candidate_links_i5": 290,
+      "features_lower": 7240,
+      "features_upper": 7321,
+      "located": 5937,
+      "unlocated": 1384,
+      "with_usgs_aquifer_code": 347
+    },
+    "wetland": {
+      "by_source_combination": {
+        "usfws_nwi": 7960
+      },
+      "candidate_links_i4": 0,
+      "candidate_links_i5": 0,
+      "features_lower": 7960,
+      "features_upper": 7960,
+      "located": 7960,
+      "unlocated": 0
+    }
+  },
+  "denominator_definition": "the union of the enumerated sources; every retained claim is assigned to exactly one feature and every excluded claim carries a reason",
+  "generated_at": "2026-11-15T14:30:00Z",
+  "infrastructure": {
+    "dams_near_reservoir": 47,
+    "facilities_of_nonprasa_systems": 498,
+    "nwi_waterbodies_in_nhd_polygon": 534,
+    "prasa_reservoirs_in_nhd_polygon": 3
+  },
+  "manifestations": [
+    {
+      "byte_sha256": "31a29b9b8cd1bd385b332b899b18f78027ee67dce48923056feb3ac28066a5c4",
+      "bytes": 486949,
+      "pin_matches": true,
+      "source_key": "usgs_ha730_aquifers_pr",
+      "url": "https://doi.org/10.5066/P98YGFVN"
+    },
+    {
+      "byte_sha256": "20a1a02fba79685722d0d539efdffa74d0806d4ff7ab9afdf2c7655ce979f6bb",
+      "bytes": 1708617,
+      "pin_matches": null,
+      "source_key": "usgs_aquifer_codes",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/aquifer-codes/items?limit=10000&f=json"
+    },
+    {
+      "byte_sha256": "819bedc9e64d21e4d8dd1d9bb770960b2c8085a36042ccf40abe46359934e7d5",
+      "bytes": 15531,
+      "pin_matches": null,
+      "source_key": "usgs_national_aquifer_codes",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/national-aquifer-codes/items?limit=10000&f=json"
+    },
+    {
+      "byte_sha256": "76d3417a0f738f0ebc4173f66f7506440b5b186d35e33a1d9a7531da1509ce3e",
+      "bytes": 4171549,
+      "pin_matches": null,
+      "source_key": "usgs_monitoring_locations",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items?state_code=72&limit=2000&f=json"
+    },
+    {
+      "byte_sha256": "50c14cc6db9a634e5d72fbd72fafe32cb99ec46f4c56de401fab9b0478cd9c4a",
+      "bytes": 4181216,
+      "pin_matches": null,
+      "source_key": "usgs_monitoring_locations",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items?state_code=72&limit=2000&f=json"
+    },
+    {
+      "byte_sha256": "85304c625ac0edaf882320fb8a7b4b31eac97df07361a2e64ed009140bf3820d",
+      "bytes": 4173758,
+      "pin_matches": null,
+      "source_key": "usgs_monitoring_locations",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items?state_code=72&limit=2000&f=json"
+    },
+    {
+      "byte_sha256": "b7fa4d5bbcfbbcda86992d667b4baf88b8856951621e9fd7f2a3418890d7468e",
+      "bytes": 2758910,
+      "pin_matches": null,
+      "source_key": "usgs_monitoring_locations",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items?state_code=72&limit=2000&f=json"
+    },
+    {
+      "byte_sha256": "3d35ac2a9409e863a6a6bde655316c732dacf1cfb5dbd1c17a12dc1fa7537bf7",
+      "bytes": 44626,
+      "pin_matches": null,
+      "source_key": "usgs_ha730_text",
+      "url": "https://pubs.usgs.gov/ha/ha730/ch_n/N-PR_VItext1.html"
+    },
+    {
+      "byte_sha256": "9eae700699e53f62e529e42474ef95d1608aa31b35d1da50139383cc5346d24e",
+      "bytes": 30642,
+      "pin_matches": null,
+      "source_key": "usgs_ha730_text",
+      "url": "https://pubs.usgs.gov/ha/ha730/ch_n/N-PR_VItext4.html"
+    },
+    {
+      "byte_sha256": "76d3417a0f738f0ebc4173f66f7506440b5b186d35e33a1d9a7531da1509ce3e",
+      "bytes": 4171549,
+      "pin_matches": null,
+      "source_key": "usgs_monitoring_locations",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items?state_code=72&limit=2000&f=json"
+    },
+    {
+      "byte_sha256": "50c14cc6db9a634e5d72fbd72fafe32cb99ec46f4c56de401fab9b0478cd9c4a",
+      "bytes": 4181216,
+      "pin_matches": null,
+      "source_key": "usgs_monitoring_locations",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items?state_code=72&limit=2000&f=json"
+    },
+    {
+      "byte_sha256": "85304c625ac0edaf882320fb8a7b4b31eac97df07361a2e64ed009140bf3820d",
+      "bytes": 4173758,
+      "pin_matches": null,
+      "source_key": "usgs_monitoring_locations",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items?state_code=72&limit=2000&f=json"
+    },
+    {
+      "byte_sha256": "b7fa4d5bbcfbbcda86992d667b4baf88b8856951621e9fd7f2a3418890d7468e",
+      "bytes": 2758910,
+      "pin_matches": null,
+      "source_key": "usgs_monitoring_locations",
+      "url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items?state_code=72&limit=2000&f=json"
+    },
+    {
+      "byte_sha256": "b4de25a57e42efdfed92b484e8358d04d88bff8a675450d9ac28a3ab88a573fb",
+      "bytes": 1413887,
+      "pin_matches": null,
+      "source_key": "usgs_nwis_site_gw",
+      "url": "https://waterservices.usgs.gov/nwis/site/?format=rdb&stateCd=pr&siteType=GW&siteOutput=expanded&siteStatus=all"
+    },
+    {
+      "byte_sha256": "7cbdc6858e6ba0066ceb139e8254d429d90073873b6b24a6cab4103062e32711",
+      "bytes": 1746632,
+      "pin_matches": null,
+      "source_key": "wqp_wells",
+      "url": "https://www.waterqualitydata.us/data/Station/search?statecode=US%3A72&siteType=Well&mimeType=csv&zip=no&providers=NWIS&providers=STORET"
+    },
+    {
+      "byte_sha256": "0112326db9cc9382d5b3637f47eaa6bb76a3b99a92c7b01ba34b253155bda383",
+      "bytes": 64720,
+      "pin_matches": null,
+      "source_key": "wqp_springs",
+      "url": "https://www.waterqualitydata.us/data/Station/search?statecode=US%3A72&siteType=Spring&mimeType=csv&zip=no&providers=NWIS&providers=STORET"
+    },
+    {
+      "byte_sha256": "fe47fd05bf8b518c96566924ee00571138830df4c12f02e0f369312fa8ba73f6",
+      "bytes": 878451,
+      "pin_matches": null,
+      "source_key": "epa_sdwis_wells",
+      "url": "https://data.epa.gov/efservice/WATER_SYSTEM_FACILITY/PRIMACY_AGENCY_CODE/PR/FACILITY_TYPE_CODE/WL/ROWS/0:9999/JSON"
+    },
+    {
+      "byte_sha256": "af033ff1f30c562ca115578be25904ecf0438359667636d7de85dfdedf5c6fbe",
+      "bytes": 1334475,
+      "pin_matches": null,
+      "source_key": "epa_sdwis_systems",
+      "url": "https://data.epa.gov/efservice/WATER_SYSTEM/PRIMACY_AGENCY_CODE/PR/ROWS/0:1999/JSON"
+    },
+    {
+      "byte_sha256": "34353139cded2a943b063fae7bbeef7ef00db5c1d5b33ef311318cc4b5e32d71",
+      "bytes": 268776,
+      "pin_matches": null,
+      "source_key": "usgs_gnis_names",
+      "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/GeographicNames/DomesticNames/DomesticNames_PR_Text.zip"
+    },
+    {
+      "byte_sha256": "791f57fa3e0187f5d2117057afdc6efc4a90386b911a456cb9992c85d8b348ff",
+      "bytes": 2129070,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "a63f7565dbc8d79c5d293d6ea674869dbdb908c2fce4ebc13471ea897b3ce9e9",
+      "bytes": 2326157,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "f896294d786366408d17b7b1289d0e73630fdef97182ad50c07cc41f5d485665",
+      "bytes": 2058262,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "79a00325058d800f3f04cc4ba5e1e42c45d272b7052bfe7c4ff333ddff80e752",
+      "bytes": 2172309,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "e5251febd9b93afca5908cc96304cea1c9d72a156238ff63e20563d52c2f1c1b",
+      "bytes": 2284601,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "1325737e19aafe91c00898a7174a0402d863fb6604339a55d272f3ef7a292d1e",
+      "bytes": 2131320,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "81345049fa2e7f7f9cf6419eb6b47dc5ed469ab3a6b393a0c851cbb352087bc2",
+      "bytes": 2199940,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "71920859f6330bb3f4673b359a1759fef09e26d095e39340604383d190fd7bc0",
+      "bytes": 2265511,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "e91a1066630ee50a2cc6fd63e879bb5fc50957788f0108f5da42f9f8137c45a3",
+      "bytes": 2195626,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "66be88caa0064cf65f627751f8d7aea392379ada55c85a5c52fbb35edd966323",
+      "bytes": 2300374,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "0e4e9f40f2b99a20493ad4e17edc89270a348bcea26745d777918fd22275584d",
+      "bytes": 2278467,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "58942c8a6c8c40e7466a4c8910d8a96789cf19149942b6f4c48aaff518ad4902",
+      "bytes": 2305611,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "39e0513d80460a81b87b6d5e747053e48804c5573ecbb668768852f63e6abde7",
+      "bytes": 2278074,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "df0ab3eda826ce4f91f6ef6c4281b5798995b0afdc50886184870ba2106fa23d",
+      "bytes": 2219274,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "1d6adeed740f158254b0fdfa2c97c3064e4d019781f32a944b9ed6b377a14663",
+      "bytes": 2239637,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "5677ef30c40f3fd5221494222c36a4eb2f7094d5d21181fca5ea99f09763b6a5",
+      "bytes": 2283938,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "755d933ef0d7abe76131630efe4f41a56e433d1c67cf2cf4cb3fceaa6cb4dcc1",
+      "bytes": 2288086,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "c50353d7b0c41a0c1376b8d6f55b88dbbf711a82ec42db84577ec5fde8495503",
+      "bytes": 250408,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "ed778c73ea51338d6576fb5992b189f2b94d9f3d5e199f46c1af520d6b0b3e6c",
+      "bytes": 42,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_flowlines",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "99f1a0c8a7e9b537c8dc728f6b75ce6e846545371e61383532653ea08f365883",
+      "bytes": 3316844,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_waterbodies",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/12/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "0f619d73fed6aef4fdbba273c8b15a16f38bb84ec0faf050726cf382e8ad1b96",
+      "bytes": 2857762,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_waterbodies",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/12/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "873b79c1e222923712dfa4a7138f376941d7ff281194e54f286857ec45eef239",
+      "bytes": 1906948,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_waterbodies",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/12/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "9e5a36e817df835695106d8bf77bb3411008a8eef9a204dcce94e8b459feedc7",
+      "bytes": 1519272,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_waterbodies",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/12/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "ed778c73ea51338d6576fb5992b189f2b94d9f3d5e199f46c1af520d6b0b3e6c",
+      "bytes": 42,
+      "pin_matches": null,
+      "source_key": "usgs_nhd_waterbodies",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/12/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&returnGeometry=true&f=geojson&orderByFields=objectid"
+    },
+    {
+      "byte_sha256": "3aa65f59a80a5a2faab4de15373751672f67f4d85e4711a943d0bb6ebeb5f834",
+      "bytes": 1559088,
+      "pin_matches": null,
+      "source_key": "usgs_wbd",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/wbd/MapServer/4/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&f=geojson"
+    },
+    {
+      "byte_sha256": "8c6e1c15cfe6280e13e46bb509895aca0aed9b37414c59236e210d9191e65ae7",
+      "bytes": 7253927,
+      "pin_matches": null,
+      "source_key": "usgs_wbd",
+      "url": "https://hydro.nationalmap.gov/arcgis/rest/services/wbd/MapServer/5/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&f=geojson"
+    },
+    {
+      "byte_sha256": "2d35d9ae98cff26d2a03776357d3be8107d66ac15aa8bcb8c96a23e95377bcd4",
+      "bytes": 439369,
+      "pin_matches": null,
+      "source_key": "epa_sdwis_intakes",
+      "url": "https://data.epa.gov/efservice/WATER_SYSTEM_FACILITY/PRIMACY_AGENCY_CODE/PR/FACILITY_TYPE_CODE/IN/ROWS/0:9999/JSON"
+    },
+    {
+      "byte_sha256": "91b62e5f5d6437b0f0101daa4822d6093183edf689a8193ada744e40a407f8fc",
+      "bytes": 1066831,
+      "pin_matches": null,
+      "source_key": "prasa_facilities",
+      "url": "https://services8.arcgis.com/RdbQZfEkeO8qG89L/arcgis/rest/services/PR_PRASA_Facilities/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&orderByFields=OBJECTID&f=json"
+    },
+    {
+      "byte_sha256": "3fc9e1f3fde33541b32666573924a8889d822ddfbaa0dea83e06d4c097e9cfd1",
+      "bytes": 1030990,
+      "pin_matches": null,
+      "source_key": "prasa_facilities",
+      "url": "https://services8.arcgis.com/RdbQZfEkeO8qG89L/arcgis/rest/services/PR_PRASA_Facilities/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&orderByFields=OBJECTID&f=json"
+    },
+    {
+      "byte_sha256": "16fe406dd93e52b0434d98346c7e4f11588c153349e02c2c31e5698fbbb3ee89",
+      "bytes": 166775,
+      "pin_matches": null,
+      "source_key": "prasa_facilities",
+      "url": "https://services8.arcgis.com/RdbQZfEkeO8qG89L/arcgis/rest/services/PR_PRASA_Facilities/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&orderByFields=OBJECTID&f=json"
+    },
+    {
+      "byte_sha256": "8cb54b5e8421684fc55cd2c50efa3386c70b4b1e5db9b774379f6a063849d52d",
+      "bytes": 69429811,
+      "pin_matches": null,
+      "source_key": "usace_nid",
+      "url": "https://nid.sec.usace.army.mil/api/nation/csv"
+    },
+    {
+      "byte_sha256": "d59b8fc8b27e8a78603f54830daa3f36cf1c66c494115e1d833295a1aaaab038",
+      "bytes": 344,
+      "pin_matches": null,
+      "source_key": "epa_echo_potw",
+      "url": "https://echodata.epa.gov/echo/cwa_rest_services.get_facilities?output=JSON&p_st=PR&qcolumns=1,2,4,22,26,27,29,30,53,56,62"
+    },
+    {
+      "byte_sha256": "52ac47493ecb53eb3ad51ac6d66175a0473682662543fa2e7a8f299e17526728",
+      "bytes": 1304741,
+      "pin_matches": null,
+      "source_key": "epa_echo_potw",
+      "url": "https://echodata.epa.gov/echo/cwa_rest_services.get_qid?output=JSON&qcolumns=1,2,4,22,26,27,29,30,53,56,62"
+    },
+    {
+      "byte_sha256": "4c8fc057f7880afb9520ae7eff0804243dfa32d51e47d8b759b967a0804bfc95",
+      "bytes": 107,
+      "pin_matches": null,
+      "source_key": "epa_echo_potw",
+      "url": "https://echodata.epa.gov/echo/cwa_rest_services.get_qid?output=JSON&qcolumns=1,2,4,22,26,27,29,30,53,56,62"
+    },
+    {
+      "byte_sha256": "ff621d4c1262a3a5abed239668e0c22d5775c1cf3270e77882ac6cdab88f91a8",
+      "bytes": 1042065,
+      "pin_matches": null,
+      "source_key": "epa_sdwis_facilities",
+      "url": "https://data.epa.gov/efservice/WATER_SYSTEM_FACILITY/PRIMACY_AGENCY_CODE/PR/FACILITY_TYPE_CODE/TP/ROWS/0:9999/JSON"
+    },
+    {
+      "byte_sha256": "ab7d848f4c01a5b5e140f4858426f406895b110d5f5f3457f5c2153261355eeb",
+      "bytes": 3164,
+      "pin_matches": null,
+      "source_key": "epa_sdwis_facilities",
+      "url": "https://data.epa.gov/efservice/WATER_SYSTEM_FACILITY/PRIMACY_AGENCY_CODE/PR/FACILITY_TYPE_CODE/SP/ROWS/0:9999/JSON"
+    },
+    {
+      "byte_sha256": "e93367d34b028f40275df7419b1eae09a15b4a9967db1739707a8af5eff7d025",
+      "bytes": 1282,
+      "pin_matches": null,
+      "source_key": "epa_sdwis_facilities",
+      "url": "https://data.epa.gov/efservice/WATER_SYSTEM_FACILITY/PRIMACY_AGENCY_CODE/PR/FACILITY_TYPE_CODE/ST/ROWS/0:9999/JSON"
+    },
+    {
+      "byte_sha256": "8bdcc67f1f0fc530b0f29358b44f4a7bcf1cbbbf40157656a9a5ad9c78ce4550",
+      "bytes": 114545,
+      "pin_matches": null,
+      "source_key": "fema_nonprasa_sites",
+      "url": "https://services.arcgis.com/XG15cJAlne2vxtgt/arcgis/rest/services/CriticalFacilitiesAssessment_withNonPRASA_PR/FeatureServer/1/query?where=1%3D1&outFields=*&outSR=4326&orderByFields=OBJECTID&resultRecordCount=2000&f=json"
+    },
+    {
+      "byte_sha256": "807987e7d1f2788dceeb7ca1bd19c4580247205d465c6707b59174699dd04432",
+      "bytes": 2819940,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "9afc1bf969b796a97b6abbedb24a9033254c6ca28ccf97b12ac153cc72251017",
+      "bytes": 3029144,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "fdf5ca96cadb8ef93775649ffa1f1c7fd59a5267759d9408f41a49f3d596fead",
+      "bytes": 2836486,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "911fd950a93759598231a513d1ad2ba96e5556a16de73df94bd32b13ab64c670",
+      "bytes": 2947352,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "8688b56a2c48d639b2005776bd6a0fb41d47ce29196603169bab24e1c2eb3a6d",
+      "bytes": 1997932,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "f0f6a86a972af63c62e93ed7166ba0f37ddc060f2a3dfba32eec6bfd4d3949ac",
+      "bytes": 2792252,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "876ae7e803a5bfc3055033a6ebdd2c06cf6cefd96f45399db6011e9d1ceb8541",
+      "bytes": 3370666,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "f66a6275e7a6f49340d929b1587ca97c605e8aedb0468c159f9e8aa1aac8dc8b",
+      "bytes": 2340986,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "aba2d2102ec6dcc501af291df4b3cb0c626b0f028b720d3af45092886827e62c",
+      "bytes": 1631306,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "c401330b396c2288b12cbbbeb7baba4a87586d4ef164b3c6bcfe9aa42d5da3ea",
+      "bytes": 2622043,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "e21bbd161bdd43154b8da5e2852cc5a493a644f70ea2ae91d4529c5cc8a4ef61",
+      "bytes": 2531984,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "17b7aa37c32b85c74cc0f5c999283f657a98cf672b71299aec92386efe5dd64e",
+      "bytes": 2669793,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "164d9b2e765f88597589a8661478de31e60940f01eb048b0dbe16aef2ba9ee45",
+      "bytes": 3486107,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "3bbcf76acf53dac9132a6731115b311e96fcee3e3cba988e78bb0497a12efa13",
+      "bytes": 4559973,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "215f778a58836f2c1ba2a73dfc2ed1819d6c2d7cbad95e7ab7f5d7abda9a6d67",
+      "bytes": 1845179,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "118dbef48fd3d00e92383b8ccc402309e21e7e6d0fe9a03c02c5dc079ba21dba",
+      "bytes": 3412854,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "3c7090e3579f19fd099596636060c2350c7e06e6ed10e8265e4bfbcaab5001ba",
+      "bytes": 1966849,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "77eade7ee9e9563711fbdddf1912fce1f62536fcbe794e5afc690b74f8065b29",
+      "bytes": 705535,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "f96334c7bcc738f7ebbc9d551d9e81cdf18dcf2eeae8076b401545a2dce2b8f5",
+      "bytes": 2279547,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "b337a2863d8a35d699d48e74b205b90b439e0bac5d2f7b62a9852311595b10c6",
+      "bytes": 2135421,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "2c34160df90aa2448a2de7bdccac2fc3c6b7e1250f811a47f4336dd03d0ce8f7",
+      "bytes": 2216687,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "2af8044a432a9f5a4d22c208db3e46523c6a635d062c740a83af2028240a9c62",
+      "bytes": 1467632,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "edd9aafdfd4bbb717c1461ee97788dc4c0ee8482cbfda6a33d9def44ff8542cc",
+      "bytes": 1714800,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "19a33fd14f75fa069f64cbb9e2242bb5bc1e102c2a976318de7f349920905de8",
+      "bytes": 1926838,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "2bc46320b81ed6062babe9ae6109f351ce66c94bbddb9d85add6a69014ceb840",
+      "bytes": 7339594,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "dd16f2792be54d95823f3eaa703ea51645db04e3475f911b50b533acd3337f68",
+      "bytes": 6913564,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "c5101a5bc5e708572e9201d0716a818d7878b057a13daf22eb7bed6755775aa9",
+      "bytes": 752604,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "946174521b177ee246adaf449105d768bf30fdce9a983a0a4944e77a365ee0da",
+      "bytes": 4840033,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "605d5b92799234647c3c0b740fc214631950905178cb8833efd5ba50900ae8e0",
+      "bytes": 9550934,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "c6e21edce9953b7c56a36ec213932d6c318e085c27f3883d0890429a33497201",
+      "bytes": 6458073,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "e70ae91908553ccaed1eac315e66f3b172255661b2438e88f6bc3fd24b63520f",
+      "bytes": 1254515,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "c5e8430d4561d7b1346cdd35e3a1e62db772ba38862e45c42ecf6617e744d8d7",
+      "bytes": 1219773,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "0171610c9d5e560495d6b55491913716918866667b055e6e6b936fd2b465a991",
+      "bytes": 9018385,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "1840fd0a5f923b1610e291ff7292bed76f5899cc1ac9f28a46855430c5a35cb6",
+      "bytes": 14239605,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "90c1af18bc1cc26da4efaedc294eceace7051366807f084058a0cb225d21dfed",
+      "bytes": 14641700,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "96ca9d65d80c31e14be988ef6efa04cf9ff7818261d6d558b372beb2964ecb92",
+      "bytes": 33822137,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    },
+    {
+      "byte_sha256": "508de1b1dcc1b28c142ffc93c3736b99b0b0ca3617293cc9c2b644d3fb7dba45",
+      "bytes": 25324049,
+      "pin_matches": null,
+      "source_key": "usfws_nwi",
+      "url": "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?where=1%3D1&geometry=-68.0%2C17.8%2C-65.2%2C18.6&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&outFields=*&orderByFields=OBJECTID&f=geojson"
+    }
+  ],
+  "open_residue": [
+    "PRASA production wells: EPA SDWIS lists them without coordinates; PRASA's public facility layer places 260 wells, but it is a May 2020 snapshot and publishes no SDWIS id, so the two are linked only by name (candidates, never merges)",
+    "PRASA facility layer: the public ArcGIS copy is dated May 2020; facilities built, retired or renamed since then are not reflected",
+    "drinking-water treatment plants: EPA SDWIS lists them without coordinates; only PRASA's own plants are placed",
+    "wetlands: the National Wetlands Inventory mapping for Puerto Rico is largely from 1980s imagery",
+    "irrigation canals: the Junta de Planificación canal layer (sige.pr.gov) is unreachable from the build environment; NHD canal/ditch reaches stand in at coarser detail",
+    "Gobierno de PR geoserver (geoserver2.pr.gov, workspace pr_geodata) with PRASA and DRNA layers: connection reset from the build environment",
+    "DRNA water-franchise registry of permitted wells: no public registry found",
+    "DRNA and Junta de Planificación aquifer layers: sige.pr.gov and gis.otg.pr.gov unreachable from the build environment",
+    "names of the HA 730-N alluvial-valley polygons: the release labels them only by class",
+    "springs known only from speleological or local records: GNIS names 2 springs in Puerto Rico and USGS monitors 221; no public spring registry was found",
+    "intakes: EPA SDWIS lists its intake facilities without coordinates; PRASA's 2020 layer places 138 PRASA intakes, linked to SDWIS only by name",
+    "stream gauges are attributed to watersheds by location; their reach on the stream network is not computed (that needs network navigation, not distance)",
+    "DRNA reservoir and embalse lists: sige.pr.gov unreachable from the build environment"
+  ],
+  "phase_scope": {
+    "feature_types_enumerated": [
+      "aquifer",
+      "well",
+      "spring",
+      "stream",
+      "canal",
+      "watercourse",
+      "waterfall",
+      "waterbody",
+      "wetland",
+      "reservoir",
+      "dam",
+      "intake",
+      "treatment_plant",
+      "wastewater_plant",
+      "pump_station",
+      "tank",
+      "water_system",
+      "gauge",
+      "watershed"
+    ],
+    "feature_types_not_enumerated": []
+  },
+  "schema_version": "aguayluz.hydro-inventory-receipt/v1",
+  "source_ledgers": {
+    "drna_pira_2016": {
+      "accounted": 17,
+      "assigned_to_features": 17,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 17,
+      "source": 17,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "epa_echo_potw": {
+      "accounted": 63,
+      "assigned_to_features": 63,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 63,
+      "source": 63,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "epa_sdwis_facilities": {
+      "accounted": 1655,
+      "assigned_to_features": 1655,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 1655,
+      "source": 1655,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "epa_sdwis_intakes": {
+      "accounted": 690,
+      "assigned_to_features": 690,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 690,
+      "source": 690,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "epa_sdwis_wells": {
+      "accounted": 1384,
+      "assigned_to_features": 1384,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 1384,
+      "source": 1384,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "fema_nonprasa_sites": {
+      "accounted": 233,
+      "assigned_to_features": 233,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 233,
+      "source": 233,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "noaa_nwps_gauges": {
+      "accounted": 118,
+      "assigned_to_features": 118,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 118,
+      "source": 118,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "prasa_facilities": {
+      "accounted": 4254,
+      "assigned_to_features": 4254,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 4254,
+      "source": 4254,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "repo_utility_assets": {
+      "accounted": 131,
+      "assigned_to_features": 131,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 131,
+      "source": 131,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "usace_nid": {
+      "accounted": 36,
+      "assigned_to_features": 36,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 36,
+      "source": 36,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "usfws_nwi": {
+      "accounted": 16357,
+      "assigned_to_features": 9633,
+      "delta": 0,
+      "excluded": 6724,
+      "excluded_by_reason": {
+        "no wetland type in the source": 21,
+        "open estuarine or marine water, not a wetland or waterbody feature": 1068,
+        "outside the Puerto Rico watersheds (U.S. Virgin Islands or open sea)": 14,
+        "riverine channel: represented by the NHD stream reaches": 5621
+      },
+      "retained": 9633,
+      "source": 16357,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "usgs_aquifer_codes": {
+      "accounted": 35,
+      "assigned_to_features": 35,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 35,
+      "source": 35,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "usgs_gnis_names": {
+      "accounted": 434,
+      "assigned_to_features": 434,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 434,
+      "source": 434,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "usgs_ha730_aquifers_pr": {
+      "accounted": 104,
+      "assigned_to_features": 104,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 104,
+      "source": 104,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "usgs_ha730_text": {
+      "accounted": 1,
+      "assigned_to_features": 1,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 1,
+      "source": 1,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "usgs_monitoring_locations": {
+      "accounted": 7318,
+      "assigned_to_features": 7318,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 7318,
+      "source": 7318,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "usgs_national_aquifer_codes": {
+      "accounted": 2,
+      "assigned_to_features": 2,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 2,
+      "source": 2,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "usgs_nhd_flowlines": {
+      "accounted": 17093,
+      "assigned_to_features": 15881,
+      "delta": 0,
+      "excluded": 1212,
+      "excluded_by_reason": {
+        "coastline, not a watercourse": 1212
+      },
+      "retained": 15881,
+      "source": 17093,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "usgs_nhd_waterbodies": {
+      "accounted": 3869,
+      "assigned_to_features": 3869,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 3869,
+      "source": 3869,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "usgs_wbd": {
+      "accounted": 35,
+      "assigned_to_features": 35,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 35,
+      "source": 35,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "wqp_springs": {
+      "accounted": 221,
+      "assigned_to_features": 221,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 221,
+      "source": 221,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "wqp_wells": {
+      "accounted": 5674,
+      "assigned_to_features": 5674,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 5674,
+      "source": 5674,
+      "state": "PASS",
+      "unresolved": 0
+    }
+  },
+  "spatial": {
+    "aquifer_code_by_polygon_class": {
+      "100ALVT": {
+        "997": 1
+      },
+      "110CGJV": {
+        "115": 3
+      },
+      "110EPRZ": {
+        "115": 1
+      },
+      "110GUNC": {
+        "115": 3,
+        "908": 1
+      },
+      "110GYNL": {
+        "115": 3,
+        "999": 1
+      },
+      "110HNGB": {
+        "115": 3
+      },
+      "110LJVL": {
+        "115": 5
+      },
+      "110QRNR": {
+        "114": 1,
+        "908": 11
+      },
+      "110RCBV": {
+        "115": 1
+      },
+      "110SCPL": {
+        "114": 138,
+        "908": 4,
+        "997": 3
+      },
+      "110TLLB": {
+        "115": 2,
+        "999": 1
+      },
+      "110YBCV": {
+        "115": 1
+      },
+      "110YCVL": {
+        "115": 2
+      },
+      "111AVMC": {
+        "114": 1,
+        "115": 3,
+        "908": 1,
+        "997": 1
+      },
+      "111AVMV": {
+        "114": 10,
+        "115": 1,
+        "908": 1,
+        "997": 2
+      },
+      "111HLCN": {
+        "115": 2
+      },
+      "111VLAV": {
+        "115": 37,
+        "908": 4,
+        "997": 1
+      },
+      "122AGUD": {
+        "4191": 2
+      },
+      "122AMMN": {
+        "4191": 3,
+        "999": 1
+      },
+      "122CIBO": {
+        "115": 2,
+        "4191": 1,
+        "4192": 1
+      },
+      "122MNBL": {
+        "4191": 1
+      },
+      "122NRCSL": {
+        "115": 2,
+        "4191": 9,
+        "4192": 2,
+        "997": 1,
+        "999": 1
+      },
+      "122NRCSU": {
+        "115": 12,
+        "4191": 40,
+        "4192": 3,
+        "997": 6
+      },
+      "122PONC": {
+        "114": 4
+      },
+      "122RIND": {
+        "997": 1
+      },
+      "210VLCC": {
+        "115": 1,
+        "908": 5
+      }
+    },
+    "located_wells_without_polygon": {
+      "in_non_aquifer_unit": 492,
+      "no_location": 1384,
+      "outside_all_polygons": 18
+    },
+    "springs": {
+      "aquifer_code_by_polygon_class": {},
+      "located_wells_without_polygon": {
+        "in_non_aquifer_unit": 90,
+        "no_location": 5,
+        "outside_all_polygons": 1
+      }
+    }
+  },
+  "stage_receipts": {
+    "aquifers": {
+      "datum": {
+        "checks": {
+          "declared_nad27": {
+            "accuracy_m": 16.0,
+            "median_m": 241.0,
+            "median_north_offset_m": 209.5,
+            "operation": "Inverse of unnamed + NAD27 to WGS 84 (1) (with axis order normalized for visualization)",
+            "p90_m": 322.0,
+            "unavailable_better_operations": []
+          },
+          "puerto_rico_1940": {
+            "accuracy_m": 6.0,
+            "median_m": 25.9,
+            "median_north_offset_m": 1.9,
+            "operation": "Inverse of unnamed + Puerto Rico to WGS 84 (3) (with axis order normalized for visualization)",
+            "p90_m": 92.3,
+            "unavailable_better_operations": [
+              "Inverse of unnamed + Puerto Rico to NAD83 (1) + NAD83 to WGS 84 (35)",
+              "Inverse of unnamed + Puerto Rico to WGS 84 (4)"
+            ]
+          }
+        },
+        "declared_wkt_sha256": "1f3a904211e1a5016a57c98f0fee4fc10d8ce8a6af75b0e67c596ad1939ea4b3",
+        "gate_m": 100.0,
+        "used": "EPSG:4139 Puerto Rico 1940"
+      },
+      "ledgers": {
+        "aquifer_codes": {
+          "codes_assigned_in_pr": 26,
+          "codes_named_for_pr_unassigned": 9,
+          "excluded": {
+            "122ALMS": "stratigraphic unit ('Almirante Sur Sand Lentil of Cibao Formation') with no Puerto Rico location assigned",
+            "122CMUY": "stratigraphic unit ('Camuy Limestone') with no Puerto Rico location assigned",
+            "122GJTC": "stratigraphic unit ('Guajataca Member of Cibao Formation') with no Puerto Rico location assigned",
+            "122JNDZ": "stratigraphic unit ('Juana Diaz Formation') with no Puerto Rico location assigned",
+            "122MCRB": "stratigraphic unit ('Mucarabones Sand') with no Puerto Rico location assigned",
+            "122QBDA": "stratigraphic unit ('Quebrada Arenas Limestone Member of Cibao Formation') with no Puerto Rico location assigned",
+            "122UPPR": "stratigraphic unit ('Upper Member of Cibao Formation') with no Puerto Rico location assigned",
+            "123LRES": "stratigraphic unit ('Lares Limestone of Rio Guatemala Group') with no Puerto Rico location assigned",
+            "123SSBS": "stratigraphic unit ('San Sabastian Formation of Rio Guatemala Group') with no Puerto Rico location assigned",
+            "124RPDR": "stratigraphic unit ('Rio Piedras Siltstone') with no Puerto Rico location assigned",
+            "N9999OTHER": "catch-all national code ('Other aquifers'), not an aquifer unit"
+          },
+          "national_codes_assigned_in_pr": 3
+        },
+        "claims": 159,
+        "ha730_groups": 104,
+        "ha730_polygons": {
+          "accounted": 473,
+          "delta": 0,
+          "excluded": 263,
+          "excluded_by_reason": {
+            "'other' in the source, not an aquifer": 43,
+            "confining unit in the source, not an aquifer": 69,
+            "outside Puerto Rico (U.S. Virgin Islands)": 151
+          },
+          "retained": 210,
+          "source": 473,
+          "state": "PASS",
+          "unresolved": 0
+        }
+      },
+      "run_utc": "2026-11-15T02:00:00Z",
+      "simplification": {
+        "area_check": {
+          "114": {
+            "relative_change": 0.0013,
+            "simplified_km2": 374.943,
+            "source_km2": 374.44
+          },
+          "115": {
+            "relative_change": 0.0007,
+            "simplified_km2": 1167.46,
+            "source_km2": 1166.693
+          },
+          "4191": {
+            "relative_change": -0.0001,
+            "simplified_km2": 711.771,
+            "source_km2": 711.828
+          },
+          "4192": {
+            "relative_change": -0.0001,
+            "simplified_km2": 561.124,
+            "source_km2": 561.178
+          },
+          "420": {
+            "relative_change": -0.0047,
+            "simplified_km2": 49.656,
+            "source_km2": 49.888
+          },
+          "907": {
+            "relative_change": -0.0066,
+            "simplified_km2": 30.193,
+            "source_km2": 30.392
+          },
+          "908": {
+            "relative_change": 0.0,
+            "simplified_km2": 5442.692,
+            "source_km2": 5442.679
+          },
+          "997": {
+            "relative_change": -0.0007,
+            "simplified_km2": 494.209,
+            "source_km2": 494.565
+          },
+          "999": {
+            "relative_change": -0.0003,
+            "simplified_km2": 446.744,
+            "source_km2": 446.858
+          }
+        },
+        "decimals": 5,
+        "tolerance_deg": 0.0003
+      },
+      "stage": "aquifers",
+      "status": "PASS"
+    },
+    "infrastructure": {
+      "ledgers": {
+        "epa_echo_potw": {
+          "accounted": 2820,
+          "delta": 0,
+          "excluded": 2757,
+          "excluded_by_reason": {
+            "NPDES permittee that is not a publicly owned treatment works": 2757
+          },
+          "retained": 63,
+          "source": 2820,
+          "state": "PASS",
+          "unresolved": 0
+        },
+        "epa_sdwis_facilities": {
+          "accounted": 1655,
+          "by_facility_type": {
+            "SP": 5,
+            "ST": 2,
+            "TP": 1648
+          },
+          "delta": 0,
+          "excluded": 0,
+          "excluded_by_reason": {},
+          "retained": 1655,
+          "source": 1655,
+          "state": "PASS",
+          "unresolved": 0
+        },
+        "fema_nonprasa_sites": {
+          "accounted": 235,
+          "delta": 0,
+          "excluded": 2,
+          "excluded_by_reason": {
+            "no site id or PWSID in the source row": 2
+          },
+          "retained": 233,
+          "source": 235,
+          "state": "PASS",
+          "unresolved": 0
+        },
+        "prasa_facilities": {
+          "accounted": 4325,
+          "delta": 0,
+          "excluded": 71,
+          "excluded_by_reason": {
+            "administrative office, not a water facility": 71
+          },
+          "retained": 4254,
+          "source": 4325,
+          "state": "PASS",
+          "unresolved": 0
+        },
+        "usace_nid": {
+          "accounted": 36,
+          "delta": 0,
+          "excluded": 0,
+          "excluded_by_reason": {},
+          "nation_rows_read": 92674,
+          "nid_data_updated": "2026-11-13",
+          "retained": 36,
+          "source": 36,
+          "state": "PASS",
+          "unresolved": 0
+        }
+      },
+      "not_ingested": {
+        "epa_sdwis_facilities": {
+          "DS": "distribution system entry: not a physical water feature",
+          "IN": "ingested as epa_sdwis_intakes",
+          "WL": "ingested as epa_sdwis_wells"
+        },
+        "prasa_facilities": "layers 1-5 (gravity, main, service and pumping pipe lines, about 335,000 segments): distribution network, outside the hydrologic scope"
+      },
+      "residue_sources": [
+        {
+          "detail": "the egress gateway could not connect to sige.pr.gov (2026-11-15); NHD canal/ditch reaches stand in, at coarser detail",
+          "source": "Junta de Planificación SIGE, MIPR/AgricolaPUT_v10_N layer 1 'Canal de Riego' (sige.pr.gov)",
+          "state": "UNREACHABLE_FROM_ENVIRONMENT"
+        },
+        {
+          "detail": "connection reset on every attempt from the build environment (2026-11-15)",
+          "source": "Gobierno de PR geoserver, workspace pr_geodata (geoserver2.pr.gov): PRASA and DRNA layers",
+          "state": "UNREACHABLE_FROM_ENVIRONMENT"
+        },
+        {
+          "detail": "its description says 'The locations DO NOT represent actual Non PRASA locations'",
+          "source": "EPA Region 2 'Non PRASA Pseudo Locations' (ArcGIS item 66f5627a461b4a64820f1c94237bc2a0)",
+          "state": "EXCLUDED_BY_SOURCE_STATEMENT"
+        },
+        {
+          "detail": "volunteer mapping (T3); not used to create features",
+          "source": "OpenStreetMap (Overpass API, Geofabrik extract)",
+          "state": "NOT_OFFICIAL"
+        }
+      ],
+      "run_utc": "2026-11-15T14:00:00Z",
+      "stage": "infrastructure",
+      "status": "PASS"
+    },
+    "names": {
+      "ledgers": {
+        "usgs_gnis_names": {
+          "accounted": 5818,
+          "delta": 0,
+          "excluded": 5384,
+          "excluded_by_reason": {
+            "GNIS class 'Area' is not hydrographic": 7,
+            "GNIS class 'Bar' is not hydrographic": 70,
+            "GNIS class 'Bay' is not hydrographic": 101,
+            "GNIS class 'Beach' is not hydrographic": 98,
+            "GNIS class 'Cape' is not hydrographic": 199,
+            "GNIS class 'Census' is not hydrographic": 5,
+            "GNIS class 'Civil' is not hydrographic": 1200,
+            "GNIS class 'Cliff' is not hydrographic": 1,
+            "GNIS class 'Flat' is not hydrographic": 4,
+            "GNIS class 'Gap' is not hydrographic": 3,
+            "GNIS class 'Island' is not hydrographic": 148,
+            "GNIS class 'Military' is not hydrographic": 44,
+            "GNIS class 'Plain' is not hydrographic": 1,
+            "GNIS class 'Populated Place' is not hydrographic": 2578,
+            "GNIS class 'Range' is not hydrographic": 20,
+            "GNIS class 'Ridge' is not hydrographic": 19,
+            "GNIS class 'Sea' is not hydrographic": 2,
+            "GNIS class 'Summit' is not hydrographic": 307,
+            "GNIS class 'Valley' is not hydrographic": 576,
+            "GNIS class 'Woods' is not hydrographic": 1
+          },
+          "retained": 434,
+          "retained_by_class": {
+            "Basin": 8,
+            "Canal": 37,
+            "Channel": 31,
+            "Falls": 5,
+            "Gut": 6,
+            "Lake": 49,
+            "Reservoir": 37,
+            "Spring": 2,
+            "Stream": 250,
+            "Swamp": 9
+          },
+          "source": 5818,
+          "state": "PASS",
+          "unresolved": 0
+        }
+      },
+      "run_utc": "2026-11-15T02:00:00Z",
+      "stage": "names",
+      "status": "PASS"
+    },
+    "sites": {
+      "ledgers": {
+        "epa_sdwis_wells": {
+          "active": 712,
+          "inactive": 672,
+          "rows": 1384
+        },
+        "usgs_monitoring_locations": {
+          "by_site_type": {
+            "AT": 80,
+            "ES": 80,
+            "FA-CS": 65,
+            "FA-DV": 17,
+            "FA-QC": 1,
+            "FA-STS": 7,
+            "FA-WDS": 82,
+            "FA-WWTP": 3,
+            "GW": 5197,
+            "GW-CR": 1,
+            "GW-MW": 78,
+            "GW-TH": 161,
+            "LA-OU": 1,
+            "LA-PLY": 1,
+            "LA-SNK": 1,
+            "LK": 121,
+            "OC": 2,
+            "OC-CO": 18,
+            "SB-TSM": 4,
+            "SP": 221,
+            "ST": 1083,
+            "ST-CA": 61,
+            "ST-DCH": 1,
+            "ST-TS": 1,
+            "WE": 31
+          },
+          "cross_check": {
+            "api_groundwater_sites": 5437,
+            "aquifer_code_differences": 0,
+            "legacy_groundwater_sites": 5437,
+            "note": "The legacy service's siteType=GW includes the GW-TH, GW-MW and GW-CR subtypes, which the API lists separately; that is why 5,437 and 5,197 both appear in earlier notes.",
+            "only_api": 0,
+            "only_legacy": 0
+          },
+          "sites": 7318
+        },
+        "wqp_springs": {
+          "rows": 221,
+          "usgs_rows": 221
+        },
+        "wqp_wells": {
+          "other_rows": 240,
+          "rows": 5674,
+          "usgs_rows": 5434
+        }
+      },
+      "run_utc": "2026-11-15T02:00:00Z",
+      "stage": "sites",
+      "status": "PASS"
+    },
+    "surface": {
+      "geometry_budget_bytes": 2000000,
+      "geometry_bytes": {
+        "pr_waterbodies.geojson": 1077575,
+        "pr_watersheds.geojson": 440422,
+        "streams/21010002.geojson": 757677,
+        "streams/21010003.geojson": 779643,
+        "streams/21010004.geojson": 871094,
+        "streams/21010005.geojson": 1379498,
+        "streams/21010008.geojson": 46378
+      },
+      "ledgers": {
+        "epa_sdwis_intakes": {
+          "rows": 690
+        },
+        "noaa_nwps_gauges": {
+          "rows": 118
+        },
+        "repo_utility_assets": {
+          "rows": 131
+        },
+        "usgs_nhd_flowlines": {
+          "accounted": 17093,
+          "delta": 0,
+          "excluded": 1212,
+          "excluded_by_reason": {
+            "coastline, not a watercourse": 1212
+          },
+          "retained": 15881,
+          "source": 17093,
+          "state": "PASS",
+          "unresolved": 0
+        },
+        "usgs_nhd_waterbodies": {
+          "rows": 3869
+        },
+        "usgs_wbd": {
+          "rows": 35
+        }
+      },
+      "run_utc": "2026-11-15T02:00:00Z",
+      "simplification": {
+        "decimals": 5,
+        "tolerance_deg": 0.0003
+      },
+      "stage": "surface",
+      "status": "PASS"
+    },
+    "wetlands": {
+      "geometry_budget_bytes": 2000000,
+      "geometry_bytes": {
+        "wetlands/21010002.geojson": 941947,
+        "wetlands/21010003.geojson": 444960,
+        "wetlands/21010004.geojson": 1178864,
+        "wetlands/21010005.geojson": 1311296,
+        "wetlands/21010007.geojson": 3142,
+        "wetlands/21010008.geojson": 252457
+      },
+      "ledgers": {
+        "usfws_nwi": {
+          "accounted": 16357,
+          "delta": 0,
+          "excluded": 6724,
+          "excluded_by_reason": {
+            "no wetland type in the source": 21,
+            "open estuarine or marine water, not a wetland or waterbody feature": 1068,
+            "outside the Puerto Rico watersheds (U.S. Virgin Islands or open sea)": 14,
+            "riverine channel: represented by the NHD stream reaches": 5621
+          },
+          "retained": 9633,
+          "retained_by_feature_type": {
+            "waterbody": 1673,
+            "wetland": 7960
+          },
+          "source": 16357,
+          "state": "PASS",
+          "unresolved": 0
+        }
+      },
+      "run_utc": "2026-11-15T14:30:00Z",
+      "simplification": {
+        "decimals": 5,
+        "tolerance_deg": 0.0003
+      },
+      "stage": "wetlands",
+      "status": "PASS",
+      "vintage": "Puerto Rico NWI mapping is largely from 1980s imagery; the service is current, the mapping is not"
+    }
+  },
+  "surface": {
+    "examples": [
+      "1611971"
+    ],
+    "gauges_on_waterbodies": 73,
+    "nhd_gnis_ids_without_gnis_record": 1,
+    "osm_reservoir_candidates": 54,
+    "with_huc10": 18141
+  }
+}

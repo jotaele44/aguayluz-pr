@@ -1,0 +1,44 @@
+{
+ "_capture": {
+  "source": "https://api.water.noaa.gov/nwps/v1/gauges/AIBP4",
+  "retrieved_utc": "2026-10-07T19:40:00Z",
+  "trimmed": "real response reduced to the fields the adapter reads; crests, impacts, images and datums removed"
+ },
+ "lid": "AIBP4",
+ "name": "Rio De La Plata at Proyecto La Plata",
+ "latitude": 18.15801429,
+ "longitude": -66.22850099,
+ "usgsId": "50043000",
+ "reachId": "800027269",
+ "county": "Aibonito",
+ "state": {
+  "abbreviation": "PR",
+  "name": "Puerto Rico"
+ },
+ "inService": {
+  "enabled": true,
+  "message": ""
+ },
+ "flood": {
+  "stageUnits": "ft",
+  "flowUnits": "cfs",
+  "categories": {
+   "major": {
+    "stage": 30,
+    "flow": 48358
+   },
+   "moderate": {
+    "stage": 25,
+    "flow": 27578
+   },
+   "minor": {
+    "stage": 20,
+    "flow": 12747
+   },
+   "action": {
+    "stage": 15,
+    "flow": 3880
+   }
+  }
+ }
+}
