@@ -100,7 +100,7 @@ export default function MunicipalOverviewMap({
 
   if (!projection) {
     return (
-      <div className="rounded-xl border border-slate-800 bg-slate-900 p-5 text-sm text-slate-500">
+      <div className="rounded-xl border border-slate-800 bg-slate-900 p-5 text-sm text-slate-400">
         Municipal geometry is unavailable.
       </div>
     )
@@ -114,7 +114,7 @@ export default function MunicipalOverviewMap({
             <MapPinned className="h-4 w-4 text-sky-400" />
             Puerto Rico Municipal Conditions
           </h2>
-          <p className="mt-1 text-[11px] text-slate-500">
+          <p className="mt-1 text-[11px] text-slate-400">
             Fixed island extent · select a municipio for its attached dashboard data
           </p>
         </div>
@@ -184,7 +184,7 @@ export default function MunicipalOverviewMap({
               )
             })}
           </svg>
-          <div className="mt-2 flex items-center justify-between gap-3 text-[10px] text-slate-500">
+          <div className="mt-2 flex items-center justify-between gap-3 text-[10px] text-slate-400">
             <span>{features.length} geometry features · {summary?.unique_geoid_count ?? 0} summary GEOIDs</span>
             <span>{metricMeta.label}: brighter → higher relative count</span>
           </div>
@@ -192,15 +192,15 @@ export default function MunicipalOverviewMap({
 
         <aside className="border-t border-slate-800 bg-slate-950/55 p-4 lg:border-l lg:border-t-0" aria-live="polite">
           {!selected ? (
-            <div className="flex min-h-48 items-center justify-center text-center text-sm text-slate-500">
+            <div className="flex min-h-48 items-center justify-center text-center text-sm text-slate-400">
               Select a municipio on the island to inspect its data.
             </div>
           ) : (
             <div className="space-y-4">
               <div>
-                <div className="text-[10px] uppercase tracking-widest text-slate-500">Selected municipio</div>
+                <div className="text-[10px] uppercase tracking-widest text-slate-400">Selected municipio</div>
                 <h3 className="mt-1 text-lg font-semibold text-slate-100">{selected.name}</h3>
-                <div className="font-mono text-[10px] text-slate-600">GEOID {selected.geoid}</div>
+                <div className="font-mono text-[10px] text-slate-400">GEOID {selected.geoid}</div>
               </div>
 
               <dl className="grid grid-cols-2 gap-2 text-xs">
@@ -211,7 +211,7 @@ export default function MunicipalOverviewMap({
                   ['Active outages', selected.active_outage_count],
                 ].map(([label, value]) => (
                   <div key={label} className="rounded-md border border-slate-800 bg-slate-900/70 p-2.5">
-                    <dt className="text-[10px] text-slate-500">{label}</dt>
+                    <dt className="text-[10px] text-slate-400">{label}</dt>
                     <dd className="mt-1 font-mono text-base text-slate-100">{value ?? 0}</dd>
                   </div>
                 ))}
@@ -219,7 +219,7 @@ export default function MunicipalOverviewMap({
 
               <div className="border-t border-slate-800 pt-3 text-xs">
                 {detailLoading ? (
-                  <p className="text-slate-500">Loading attached municipal detail…</p>
+                  <p className="text-slate-400">Loading attached municipal detail…</p>
                 ) : detail ? (
                   <div className="space-y-1.5 text-slate-400">
                     <p>Monitoring readings: <span className="text-slate-200">{detail.monitoring?.length ?? 0}</span></p>
@@ -231,7 +231,7 @@ export default function MunicipalOverviewMap({
                     </p>
                   </div>
                 ) : (
-                  <p className="text-slate-600">No additional municipal detail returned.</p>
+                  <p className="text-slate-400">No additional municipal detail returned.</p>
                 )}
               </div>
 

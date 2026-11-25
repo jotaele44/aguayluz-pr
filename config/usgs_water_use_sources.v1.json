@@ -1,0 +1,128 @@
+{
+  "schema_version": "aguayluz.usgs-water-use-sources/v1",
+  "source_id": "usgs_pr_water_use",
+  "unit": "Mgal/d",
+  "notes": [
+    "Every file is pinned by SHA-256. The xlsx files are committed byte-identical under tests/fixtures/usgs_water_use/<source_key>.xlsx.",
+    "The 2010 report exists only as a PDF. Its island-wide values are a manual transcription bound to the PDF's SHA-256; the PDF is never parsed and never committed.",
+    "retrieved_utc is the moment the pinned bytes were downloaded, not the moment a run re-read them."
+  ],
+  "sources": [
+    {
+      "source_key": "ps_municipio_2020",
+      "year": 2020,
+      "parser": "public_supply_municipio",
+      "evidence_tier": "T1",
+      "title": "Table 1. Estimated public-supply water withdrawals by water source and municipality in Puerto Rico, 2020",
+      "release_title": "Estimated public-supply water withdrawals and domestic water use in Puerto Rico (ver. 2.0, March 2023)",
+      "doi": "10.5066/P9HWON2W",
+      "source_url": "https://doi.org/10.5066/P9HWON2W",
+      "sciencebase_item_id": "6408d25ed34e76f5f75e4a79",
+      "file_name": "Table1.xlsx",
+      "expected_md5": "80327e77063188208b365d5c500991c5",
+      "pinned_sha256": "6d5eaa839908074beb38dc632e765c064b5c940c04d9648470c8055918a28375",
+      "retrieved_utc": "2026-11-14T06:30:00Z"
+    },
+    {
+      "source_key": "ps_municipio_2015",
+      "year": 2015,
+      "parser": "public_supply_municipio",
+      "evidence_tier": "T1",
+      "title": "Table 6. Estimated public-supply water withdrawals in Puerto Rico by source of water and municipality, 2015",
+      "release_title": "Spatial and tabular datasets of water withdrawals and use in Puerto Rico, 2015",
+      "doi": "10.5066/P9POVNC6",
+      "source_url": "https://doi.org/10.5066/P9POVNC6",
+      "sciencebase_item_id": "600aec34d34e162231fb26d9",
+      "file_name": "Table 6.xlsx",
+      "expected_md5": "990147067ebb7e02875139bffe56d685",
+      "pinned_sha256": "b176fcf5629b07fcaa9dc4bcbd74a2a3ba9d89c8ad067b9aa97a39bfaec5379a",
+      "retrieved_utc": "2026-11-14T06:30:00Z"
+    },
+    {
+      "source_key": "category_2015",
+      "year": 2015,
+      "parser": "category",
+      "evidence_tier": "T1",
+      "title": "Table 4. Water withdrawals by category in Puerto Rico, 2015",
+      "release_title": "Spatial and tabular datasets of water withdrawals and use in Puerto Rico, 2015",
+      "doi": "10.5066/P9POVNC6",
+      "source_url": "https://doi.org/10.5066/P9POVNC6",
+      "sciencebase_item_id": "600aec34d34e162231fb26d9",
+      "file_name": "Table 4.xlsx",
+      "expected_md5": "5bfffefc521f02784020b833a06a84b5",
+      "pinned_sha256": "eb94cb748155cef7c95bb6ecb48ed337502c8ed64144458524d08c84a2f80d92",
+      "retrieved_utc": "2026-11-14T06:30:00Z"
+    },
+    {
+      "source_key": "irrigation_2015",
+      "year": 2015,
+      "parser": "irrigation_municipio",
+      "evidence_tier": "T1",
+      "title": "Table 9. Estimated irrigation water use, consumptive use, cultivated and (or) irrigated acres, principal type of crop, and irrigation methods in Puerto Rico by source of water and municipality, 2015",
+      "release_title": "Spatial and tabular datasets of water withdrawals and use in Puerto Rico, 2015",
+      "doi": "10.5066/P9POVNC6",
+      "source_url": "https://doi.org/10.5066/P9POVNC6",
+      "sciencebase_item_id": "600aec34d34e162231fb26d9",
+      "file_name": "Table 9.xlsx",
+      "expected_md5": "56d1ea84c6286e1f9c8164f71033edde",
+      "pinned_sha256": "29dd9b1cde6c43a91b1d89a244d08439e6d8a9bc84f700a91ec476bcb43b4b54",
+      "retrieved_utc": "2026-11-14T06:30:00Z"
+    },
+    {
+      "source_key": "trends_2015",
+      "year": 2010,
+      "parser": "trends_restated",
+      "evidence_tier": "T1",
+      "title": "Table 14. Trends in estimated water withdrawals in Puerto Rico, 1990-2015",
+      "release_title": "Spatial and tabular datasets of water withdrawals and use in Puerto Rico, 2015",
+      "doi": "10.5066/P9POVNC6",
+      "source_url": "https://doi.org/10.5066/P9POVNC6",
+      "sciencebase_item_id": "600aec34d34e162231fb26d9",
+      "file_name": "Table 14.xlsx",
+      "expected_md5": "327047a36c3a8d171d37579dbc03fb60",
+      "pinned_sha256": "5ecd9b0d17762b7435ea612b08bf1c3418fdeb3660f4c865dacbd0b5c0e818e4",
+      "retrieved_utc": "2026-11-14T06:30:00Z"
+    }
+  ],
+  "transcription_2010": {
+    "source_key": "ofr_2014_1117",
+    "year": 2010,
+    "evidence_tier": "T2",
+    "title": "Molina-Rivera, W.L., 2014, Estimated water use in Puerto Rico, 2010: U.S. Geological Survey Open-File Report 2014-1117",
+    "doi": "10.3133/ofr20141117",
+    "source_url": "https://doi.org/10.3133/ofr20141117",
+    "download_url": "https://pubs.usgs.gov/of/2014/1117/pdf/ofr2014-1117.pdf",
+    "pinned_sha256": "39f78c12387c71bfcf800d120c38856f84d7604f8723b1f737a6c3b475f77b8c",
+    "retrieved_utc": "2026-11-14T06:30:00Z",
+    "values": [
+      {
+        "category": "public_supply",
+        "surface_water_mgd": 590,
+        "groundwater_mgd": 87,
+        "total_mgd": 677.21,
+        "locator": { "table": "Table 8 (total); body text (split)", "page": "PDF p. 39 (total); PDF p. 14 (split)" },
+        "notes": [
+          "Total 677.21 is from Table 8. The surface/groundwater split is published only in the body text, rounded to whole Mgal/d (590 + 87 = 677)."
+        ]
+      },
+      {
+        "category": "irrigation",
+        "surface_water_mgd": null,
+        "groundwater_mgd": null,
+        "total_mgd": 38.16,
+        "locator": { "table": "Table 8", "page": "PDF p. 39" },
+        "notes": ["Table 8 gives crop irrigation as a total only; the split by source was not transcribed."]
+      },
+      {
+        "category": "total_freshwater",
+        "surface_water_mgd": 606.14,
+        "groundwater_mgd": 117.61,
+        "total_mgd": 723.75,
+        "locator": { "table": "Table 8", "page": "PDF p. 39" },
+        "notes": [
+          "Total offstream freshwater withdrawals across all categories. This is not public supply: 606 and 118 are sometimes misquoted as the public-supply split."
+        ]
+      }
+    ]
+  }
+}

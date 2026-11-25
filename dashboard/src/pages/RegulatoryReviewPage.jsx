@@ -15,6 +15,7 @@ import {
   postRegulatoryLinkDecision,
 } from '@/lib/regulatory-api'
 import { cn } from '@/lib/utils'
+import { scrollRegion } from '@/lib/scrollRegion';
 
 const titleCase = (value) => String(value || 'unknown')
   .replaceAll('_', ' ')
@@ -111,7 +112,7 @@ export default function RegulatoryReviewPage() {
         title="Regulatory Link Review"
         subtitle="Adjudicate candidate links between provider observations and AguaLuz assets"
       />
-      <div className="flex-1 min-h-0 overflow-auto p-6">
+      <div {...scrollRegion("Regulatory Link Review page content")} className="flex-1 min-h-0 overflow-auto p-6">
         <ErrorBoundary label="Regulatory link review">
           <div
             role="note"
@@ -137,7 +138,7 @@ export default function RegulatoryReviewPage() {
                 ))}
               </SelectContent>
             </Select>
-            <span className="text-xs text-slate-500">{candidates.length} of {linksQuery.data?.total ?? 0} shown</span>
+            <span className="text-xs text-slate-400">{candidates.length} of {linksQuery.data?.total ?? 0} shown</span>
           </div>
 
           {linksQuery.isLoading ? (
@@ -170,11 +171,11 @@ export default function RegulatoryReviewPage() {
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <div className="truncate text-sm font-medium text-slate-100">{c.candidate_asset_id}</div>
-                            <div className="mt-1 text-xs text-slate-500">{titleCase(c.match_strength)}</div>
+                            <div className="mt-1 text-xs text-slate-400">{titleCase(c.match_strength)}</div>
                           </div>
                           <DecisionBadge state={c.decision_state} />
                         </div>
-                        <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+                        <div className="mt-3 flex items-center justify-between text-xs text-slate-400">
                           <span>{c.contradictions?.length ?? 0} contradiction(s)</span>
                           <span>{formatDate(c.created_at)}</span>
                         </div>
@@ -197,7 +198,7 @@ export default function RegulatoryReviewPage() {
                     <article className="rounded-lg border border-slate-800 bg-slate-900/70 p-5">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
-                          <p className="text-xs uppercase tracking-wide text-slate-500">{detail.candidate_id}</p>
+                          <p className="text-xs uppercase tracking-wide text-slate-400">{detail.candidate_id}</p>
                           <h3 className="mt-1 text-xl font-semibold text-slate-100">{detail.candidate_asset_id}</h3>
                           <p className="mt-1 text-sm text-slate-400">
                             Observation: {detail.observation?.provider} · {detail.observation?.provider_record_id}
@@ -207,7 +208,7 @@ export default function RegulatoryReviewPage() {
                       </div>
 
                       {detail.decided_by && (
-                        <p className="mt-3 text-xs text-slate-500">
+                        <p className="mt-3 text-xs text-slate-400">
                           Decided by {detail.decided_by} on {formatDate(detail.decided_at)} — {detail.decision_rationale}
                         </p>
                       )}
@@ -217,11 +218,11 @@ export default function RegulatoryReviewPage() {
                       <h3 id="match-features" className="flex items-center gap-2 font-semibold text-slate-100">
                         <Hash className="h-4 w-4 text-sky-400" aria-hidden="true" /> Match evidence
                       </h3>
-                      <p className="mt-1 text-xs text-slate-500">Match strength: {titleCase(detail.match_strength)}</p>
+                      <p className="mt-1 text-xs text-slate-400">Match strength: {titleCase(detail.match_strength)}</p>
                       <ul className="mt-3 space-y-2">
                         {(detail.match_features ?? []).map((f, i) => (
                           <li key={`${f.feature}-${i}`} className="rounded-md border border-slate-800 bg-slate-950/40 p-3 text-sm">
-                            <span className="text-slate-500">{titleCase(f.feature)}:</span>{' '}
+                            <span className="text-slate-400">{titleCase(f.feature)}:</span>{' '}
                             <span className="text-slate-200">{f.value}</span>
                           </li>
                         ))}
@@ -249,25 +250,25 @@ export default function RegulatoryReviewPage() {
                       <h3 id="decision-form" className="font-semibold text-slate-100">Record a decision</h3>
                       <div className="mt-3 space-y-3">
                         <div>
-                          <label htmlFor="actor-input" className="text-[11px] uppercase tracking-wide text-slate-500">Actor</label>
+                          <label htmlFor="actor-input" className="text-[11px] uppercase tracking-wide text-slate-400">Actor</label>
                           <input
                             id="actor-input"
                             type="text"
                             value={actor}
                             onChange={(e) => setActor(e.target.value)}
                             placeholder="Your name or identifier"
-                            className="mt-1 flex h-9 w-full rounded-md border border-slate-800 bg-slate-950/60 px-3 py-1 text-sm text-slate-200 placeholder:text-slate-600 focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-sky-500"
+                            className="mt-1 flex h-9 w-full rounded-md border border-slate-800 bg-slate-950/60 px-3 py-1 text-sm text-slate-200 placeholder:text-slate-400 focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-sky-500"
                           />
                         </div>
                         <div>
-                          <label htmlFor="rationale-input" className="text-[11px] uppercase tracking-wide text-slate-500">Rationale</label>
+                          <label htmlFor="rationale-input" className="text-[11px] uppercase tracking-wide text-slate-400">Rationale</label>
                           <textarea
                             id="rationale-input"
                             value={rationale}
                             onChange={(e) => setRationale(e.target.value)}
                             rows={3}
                             placeholder="Why this decision is correct"
-                            className="mt-1 flex w-full rounded-md border border-slate-800 bg-slate-950/60 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-600 focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-sky-500"
+                            className="mt-1 flex w-full rounded-md border border-slate-800 bg-slate-950/60 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-400 focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-sky-500"
                           />
                         </div>
                         <div className="flex flex-wrap gap-2">

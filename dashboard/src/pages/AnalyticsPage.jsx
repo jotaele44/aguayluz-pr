@@ -66,7 +66,7 @@ export default function AnalyticsPage() {
     <div className="p-6 space-y-6 max-w-[1400px]">
       <div>
         <h1 className="text-lg font-semibold text-slate-100">Analytics</h1>
-        <p className="text-xs text-slate-500 mt-0.5">
+        <p className="text-xs text-slate-400 mt-0.5">
           {assets.length.toLocaleString()} assets · {events.length.toLocaleString()} events
         </p>
       </div>

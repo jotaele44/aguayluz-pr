@@ -7,6 +7,9 @@ import { Skeleton } from '@/components/ui/skeleton'
 import DashboardLayout from './components/layout/DashboardLayout'
 import ScrollToTop from './components/ScrollToTop'
 
+const IONOSPHERE_PREVIEW = import.meta.env.VITE_IONOSPHERE_PREVIEW === '1'
+const IonospherePage = lazy(() => import('./pages/IonospherePage'))
+
 const OFFLINE = import.meta.env.VITE_OFFLINE === '1'
 const Router = OFFLINE ? HashRouter : BrowserRouter
 
@@ -28,6 +31,8 @@ const RegulatoryReviewPage = lazy(() => import('./pages/RegulatoryReviewPage'))
 const EnvironmentalExposurePage = lazy(() => import('./pages/EnvironmentalExposurePage'))
 const HydrometPage = lazy(() => import('./pages/HydrometPage'))
 const AquiferBandsPage = lazy(() => import('./pages/AquiferBandsPage'))
+const WaterUsePage = lazy(() => import('./pages/WaterUsePage'))
+const HydroInventoryPage = lazy(() => import('./pages/HydroInventoryPage'))
 const ReviewPage = lazy(() => import('./pages/ReviewPage'))
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'))
 const LiveLogsPage = lazy(() => import('./pages/LiveLogsPage'))
@@ -68,7 +73,10 @@ function App() {
               <Route path="/regulatory/review" element={<RegulatoryReviewPage />} />
               <Route path="/environmental-exposure" element={<EnvironmentalExposurePage />} />
               <Route path="/hydromet" element={<HydrometPage />} />
+              {IONOSPHERE_PREVIEW && <Route path="/ionosphere" element={<IonospherePage />} />}
               <Route path="/aquifer-bands" element={<AquiferBandsPage />} />
+              <Route path="/water-use" element={<WaterUsePage />} />
+              <Route path="/hydro-inventory" element={<HydroInventoryPage />} />
               <Route path="/review" element={<ReviewPage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/logs" element={<LiveLogsPage />} />
