@@ -1,0 +1,92 @@
+name: PR-IOM public evidence acquisition pilot
+on:
+  push:
+    branches: [research/pr-iom-001-acquisition-pilot]
+    paths: ['.github/workflows/pr-iom-acquisition-pilot.yml']
+permissions:
+  contents: read
+concurrency:
+  group: pr-iom-acquisition-pilot
+  cancel-in-progress: false
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Bounded source freeze and replay
+        shell: python
+        run: |
+          import hashlib, json, pathlib, subprocess, os
+          from datetime import datetime, timezone
+          root = pathlib.Path('evidence')
+          root.mkdir(exist_ok=True)
+          sources = [
+              ('IOM-S014', 'https://www.gao.gov/assets/gao-26-107772.pdf', 'pdf'),
+              ('IOM-S015', 'https://www.nist.gov/mep/supply-chain/supplier-scouting', 'html'),
+              ('IOM-S019', 'https://www.energy.gov/cmei/ito/pump-systems', 'html'),
+          ]
+          def valid(data, kind, mime):
+              if kind == 'pdf':
+                  return mime == 'application/pdf' and data.startswith(b'%PDF-') and b'%%EOF' in data[-4096:]
+              return mime == 'text/html' and b'<html' in data[:8192].lower()
+          assert valid(b'%PDF-1.7\n%%EOF', 'pdf', 'application/pdf')
+          assert not valid(b'<html>error</html>', 'pdf', 'application/pdf')
+          assert not valid(b'%PDF-1.7', 'pdf', 'application/pdf')
+          assert valid(b'<html>test</html>', 'html', 'text/html')
+          rows = []
+          for ident, url, kind in sources:
+              row = dict(id=ident, url=url, expected_kind=kind, status='FAILED',
+                         time_utc=datetime.now(timezone.utc).isoformat(), sha256=None)
+              path = root / (ident + '.partial')
+              try:
+                  proc = subprocess.run(['curl','--fail','--silent','--show-error',
+                      '--proto','=https','--tlsv1.2','--connect-timeout','12',
+                      '--max-time','60','--max-filesize','15000000',
+                      '--output',str(path),'--write-out','%{http_code}\n%{content_type}',url],
+                      capture_output=True,text=True,timeout=70)
+                  row['returncode'] = proc.returncode
+                  fields = proc.stdout.splitlines()
+                  row['http_status'] = fields[0] if fields else None
+                  mime = fields[1].split(';')[0].strip().lower() if len(fields)>1 else ''
+                  row['mime'] = mime
+                  if proc.returncode or row['http_status'] != '200':
+                      raise ValueError('HTTP or transport failure')
+                  data = path.read_bytes()
+                  if not 0 < len(data) <= 15000000 or not valid(data,kind,mime):
+                      raise ValueError('size or format rejected')
+                  sha = hashlib.sha256(data).hexdigest()
+                  dest = root / (sha + '.' + kind)
+                  if dest.exists():
+                      if dest.read_bytes() != data:
+                          raise ValueError('content collision')
+                      path.unlink()
+                  else:
+                      path.rename(dest)
+                  if hashlib.sha256(dest.read_bytes()).hexdigest() != sha:
+                      raise ValueError('replay mismatch')
+                  row.update(status='FROZEN_FORMAT_VERIFIED',sha256=sha,bytes=len(data),file=dest.name)
+              except Exception as exc:
+                  row['error'] = str(exc)[:300]
+              finally:
+                  path.unlink(missing_ok=True)
+                  rows.append(row)
+          assert len(rows)==len(sources)==len({r['id'] for r in rows})
+          for row in rows:
+              if row['status']=='FROZEN_FORMAT_VERIFIED':
+                  assert hashlib.sha256((root/row['file']).read_bytes()).hexdigest()==row['sha256']
+          receipt = dict(program='PR-IOM-001',mode='BOUNDED_PUBLIC_FEDERAL_PILOT',
+                         github_sha=os.environ['GITHUB_SHA'],run_id=os.environ['GITHUB_RUN_ID'],
+                         run_attempt=os.environ['GITHUB_RUN_ATTEMPT'],rows=rows,
+                         engineering_qualification='WITHHELD',durability_certification='WITHHELD')
+          (root/'receipt.json').write_text(json.dumps(receipt,sort_keys=True,indent=2)+'\n')
+          print(json.dumps(receipt,indent=2))
+          if any(r['status']!='FROZEN_FORMAT_VERIFIED' for r in rows):
+              raise SystemExit(1)
+      - name: Preserve evidence and failure receipts
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: pr-iom-public-pilot
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 30
