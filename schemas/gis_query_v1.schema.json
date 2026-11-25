@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/spiderweb-pr/schemas/gis_query_v1.schema.json",
+  "title": "PRII GIS feature query v1",
+  "description": "Request and response for POST /gis/query: which features of a producer's catalogued layers fall inside a point/radius/bbox/polygon area of interest. The geometry vocabulary is copied from schemas/location_query.schema.json so both endpoints speak the same AOI language; location_query plans source acquisition for an AOI, gis_query reads features the producer already holds. Results are COMPUTED, never identity claims.",
+  "oneOf": [
+    {"$ref": "#/$defs/request"},
+    {"$ref": "#/$defs/response"}
+  ],
+  "$defs": {
+    "producer_repo": {
+      "enum": ["spiderweb-pr", "moneysweep-pr", "aguayluz-pr", "skywatcher-pr", "ovnis-pr"]
+    },
+    "geometry": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["type", "lat", "lon"],
+          "properties": {
+            "type": {"const": "point"},
+            "lat": {"type": "number", "minimum": -90, "maximum": 90},
+            "lon": {"type": "number", "minimum": -180, "maximum": 180}
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["type", "lat", "lon", "radius_m"],
+          "properties": {
+            "type": {"const": "radius"},
+            "lat": {"type": "number", "minimum": -90, "maximum": 90},
+            "lon": {"type": "number", "minimum": -180, "maximum": 180},
+            "radius_m": {"type": "number", "exclusiveMinimum": 0}
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["type", "west", "south", "east", "north"],
+          "properties": {
+            "type": {"const": "bbox"},
+            "west": {"type": "number", "minimum": -180, "maximum": 180},
+            "south": {"type": "number", "minimum": -90, "maximum": 90},
+            "east": {"type": "number", "minimum": -180, "maximum": 180},
+            "north": {"type": "number", "minimum": -90, "maximum": 90},
+            "crs": {"type": "string", "enum": ["EPSG:4326", "CRS84", "OGC:CRS84"], "default": "EPSG:4326"}
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["type", "geojson"],
+          "properties": {
+            "type": {"enum": ["polygon", "geojson"]},
+            "geojson": {"type": "object"}
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "time_range": {
+      "type": "object",
+      "properties": {
+        "start": {"type": ["string", "null"], "minLength": 4},
+        "end": {"type": ["string", "null"], "minLength": 4}
+      },
+      "additionalProperties": false
+    },
+    "request": {
+      "type": "object",
+      "required": ["geometry", "layers"],
+      "additionalProperties": false,
+      "properties": {
+        "contract_version": {"const": "gis-query/1.0"},
+        "geometry": {"$ref": "#/$defs/geometry"},
+        "layers": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "^[a-z0-9_]+$"},
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "time_range": {"$ref": "#/$defs/time_range"},
+        "tolerance_m": {
+          "description": "Point mode only: how far from the clicked point a feature may be and still match.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 5000
+        },
+        "limit_per_layer": {"type": "integer", "minimum": 1, "maximum": 5000}
+      }
+    },
+    "layer_result": {
+      "type": "object",
+      "required": ["layer_id", "matched_count", "returned_count", "excluded_count", "truncated", "features"],
+      "additionalProperties": false,
+      "properties": {
+        "layer_id": {"type": "string"},
+        "matched_count": {"type": "integer", "minimum": 0},
+        "returned_count": {"type": "integer", "minimum": 0},
+        "excluded_count": {
+          "description": "Features skipped because they had no usable geometry (or no parseable time when a time_range was given). Reported, never silently dropped.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "truncated": {"type": "boolean"},
+        "error": {"type": ["string", "null"]},
+        "features": {"type": "array", "items": {"type": "object"}}
+      }
+    },
+    "response": {
+      "type": "object",
+      "required": ["contract_version", "producer_repo", "geometry", "layers", "total_matched", "summary", "evidence_state"],
+      "additionalProperties": false,
+      "properties": {
+        "contract_version": {"const": "gis-query/1.0"},
+        "producer_repo": {"$ref": "#/$defs/producer_repo"},
+        "geometry": {"$ref": "#/$defs/geometry"},
+        "time_range": {"$ref": "#/$defs/time_range"},
+        "layers": {"type": "array", "items": {"$ref": "#/$defs/layer_result"}},
+        "total_matched": {"type": "integer", "minimum": 0},
+        "summary": {
+          "description": "Producer-specific aggregation of the matched features (counts by class, municipio, etc.).",
+          "type": "object"
+        },
+        "evidence_state": {"const": "COMPUTED"}
+      }
+    }
+  }
+}
