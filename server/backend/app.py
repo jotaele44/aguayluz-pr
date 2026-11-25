@@ -1,18 +1,26 @@
 """Canonical AguaYLuz ASGI application with metric-safe monitoring contracts."""
 from __future__ import annotations
 
+import json
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from fastapi import Depends, FastAPI, HTTPException, Query
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 
+from server.backend import gis_wiring
 from server.backend import main as legacy
+from server.backend.aquifer_api import router as aquifer_router
 from server.backend.cave_karst_api import router as cave_karst_router
 from server.backend.environmental_exposure_api import router as environmental_exposure_router
+from server.backend.gis_wiring import core_router as gis_core_router
+from server.backend.gis_wiring import domain_router as gis_domain_router
+from server.backend.hydro_inventory_api import router as hydro_inventory_router
+from server.backend.hydromet_api import router as hydromet_router
+from server.backend.ionosphere_api import router as ionosphere_router
 from server.backend.monitoring_alert_operations import federation_alert_export, lifecycle_alerts
 from server.backend.monitoring_incident_ledger import (
     ALLOWED_EVENTS,
@@ -33,7 +41,9 @@ from server.backend.monitoring_quality import (
     series_quality,
 )
 from server.backend.regulatory_api import router as regulatory_router
+from server.backend.source_intelligence_api import router as source_intelligence_router
 from server.backend.water_disruption_api import router as water_disruption_router
+from server.backend.water_use_api import router as water_use_router
 
 
 def _is_legacy_readings(route: Any) -> bool:
@@ -44,10 +54,18 @@ def _is_legacy_municipio_summary(route: Any) -> bool:
     return getattr(route, "path", None) == "/municipios/{name}/summary" and "GET" in getattr(route, "methods", set())
 
 
+def _is_legacy_source_intelligence(route: Any) -> bool:
+    path = getattr(route, "path", None)
+    return isinstance(path, str) and path.startswith("/source-intelligence/")
+
+
 app = FastAPI(title=legacy.app.title)
 app.router.routes.extend(
-    route for route in legacy.app.router.routes
-    if not _is_legacy_readings(route) and not _is_legacy_municipio_summary(route)
+    route
+    for route in legacy.app.router.routes
+    if not _is_legacy_readings(route)
+    and not _is_legacy_municipio_summary(route)
+    and not _is_legacy_source_intelligence(route)
 )
 app.exception_handlers.update(legacy.app.exception_handlers)
 app.dependency_overrides.update(legacy.app.dependency_overrides)
@@ -56,7 +74,17 @@ for middleware in reversed(legacy.app.user_middleware):
 app.include_router(water_disruption_router)
 app.include_router(cave_karst_router)
 app.include_router(regulatory_router)
+app.include_router(source_intelligence_router)
 app.include_router(environmental_exposure_router)
+app.include_router(hydromet_router)
+app.include_router(ionosphere_router)
+app.include_router(aquifer_router)
+app.include_router(water_use_router)
+app.include_router(hydro_inventory_router)
+# GIS viewer API: catalog/identify/search/query/export plus trace, scenario,
+# history, documents and per-layer GeoJSON (docs/GIS_VIEWER_API.md).
+app.include_router(gis_core_router)
+app.include_router(gis_domain_router)
 
 # Single source of truth: server.backend.main.READING_VECTOR_REGISTRY (see its definition
 # for the full reasoning). Referencing it here rather than keeping a second hand-maintained
@@ -64,6 +92,37 @@ app.include_router(environmental_exposure_router)
 # while it stayed in `legacy.READINGS_FILES` — GET /readings?kind=neon 400'd on this app
 # (the one desktop/config.py actually serves) even though the data existed.
 READING_VECTOR_REGISTRY: dict[str, dict[str, Any]] = legacy.READING_VECTOR_REGISTRY
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+JP_FLOOD_LOOKUP_PATH = REPO_ROOT / "data" / "jp_flood_documents.json"
+JP_FLOOD_RAW_DIR = REPO_ROOT / "data" / "jp_flood_documents" / "raw"
+
+
+def _jp_flood_document_for_municipio(name: str) -> dict[str, Any] | None:
+    """Return one municipality flood-document binding without inventing absent data."""
+    if not JP_FLOOD_LOOKUP_PATH.is_file():
+        return None
+    try:
+        payload = json.loads(JP_FLOOD_LOOKUP_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    rows = payload.get("by_municipality")
+    if not isinstance(rows, dict):
+        return None
+    target = name.casefold()
+    for municipality, row in rows.items():
+        if isinstance(municipality, str) and municipality.casefold() == target and isinstance(row, dict):
+            result = dict(row)
+            certification = payload.get("byte_certification")
+            if isinstance(certification, dict):
+                result["byte_certification"] = certification
+            return result
+    return None
+
+
+# The GIS documents route reads flood documents through this hook (no back-import).
+gis_wiring.flood_document_lookup = _jp_flood_document_for_municipio
+
 
 # `utility_asset.asset_id` prefix -> the reading `kind`(s) whose `site_no` it identifies.
 # One physical USGS stream gage backs both the daily-values `reservoir` vector
@@ -168,7 +227,23 @@ def municipio_summary(name: str) -> JSONResponse:
         "event_count": len(mun_events),
         "asset_types": list({a.get("asset_type") for a in mun_assets if a.get("asset_type")}),
         "monitoring": _monitoring_readings_for_assets(mun_assets),
+        "flood_document": _jp_flood_document_for_municipio(name),
     })
+
+
+@app.get("/municipios/{name}/flood-document/file")
+def municipio_flood_document_file(name: str):
+    """Serve a cached/frozen flood document by manifest filename; never trust arbitrary local_path."""
+    row = _jp_flood_document_for_municipio(name)
+    if row is None:
+        raise HTTPException(status_code=404, detail={"error": "flood_document_not_found", "municipality": name})
+    filename = row.get("filename")
+    if not isinstance(filename, str) or not filename:
+        raise HTTPException(status_code=404, detail={"error": "flood_document_file_not_available", "municipality": name})
+    candidate = JP_FLOOD_RAW_DIR / Path(filename).name
+    if not candidate.is_file():
+        raise HTTPException(status_code=404, detail={"error": "flood_document_file_not_available", "municipality": name})
+    return FileResponse(candidate, media_type="application/pdf", filename=Path(filename).name)
 
 
 class IncidentTransition(BaseModel):

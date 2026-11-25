@@ -76,6 +76,50 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setitem(backend.READING_VECTOR_REGISTRY["usgs_peaks"], "path", peaks)
     monkeypatch.setattr(backend.legacy, "_assets", MUN_ASSETS)
     monkeypatch.setattr(backend.legacy, "_events", [])
+    monkeypatch.setattr(backend.legacy, "_current_events", lambda: [])
+
+    flood_raw = tmp_path / "jp_flood_documents" / "raw"
+    flood_raw.mkdir(parents=True)
+    q_pdf = flood_raw / "Quebradillas.pdf"
+    q_pdf.write_bytes(b"%PDF-1.4 fixture")
+    flood_lookup = tmp_path / "jp_flood_documents.json"
+    flood_lookup.write_text(
+        json.dumps({
+            "byte_certification": {
+                "schema_version": "spiderweb.jp-flood-byte-certification/v1",
+                "certification_state": "PASS",
+                "source_main_sha": "edf35847cd3e031ed9be4b733083e4b7c0c18dbf",
+                "sha256": "fixture-cert",
+                "counts": {
+                    "municipality_denominator": 78,
+                    "byte_verified_count": 78,
+                    "failure_count": 0,
+                },
+            },
+            "by_municipality": {
+                "Adjuntas": {
+                    "municipality": "Adjuntas",
+                    "source_state": "AVAILABLE",
+                    "operational_document_class": "flood_risk_zone_map",
+                    "operational_source_url": "https://example.test/adjuntas.pdf",
+                    "filename": None,
+                },
+                "Quebradillas": {
+                    "municipality": "Quebradillas",
+                    "source_state": "LISTED_BUT_MISSING",
+                    "operational_document_class": "hazard_mitigation_plan",
+                    "operational_access_mode": "frozen_local_manifestation",
+                    "operational_source_url": None,
+                    "filename": "Quebradillas.pdf",
+                    "sha256": "fixture",
+                    "byte_size": 16,
+                },
+            }
+        }),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(backend, "JP_FLOOD_LOOKUP_PATH", flood_lookup)
+    monkeypatch.setattr(backend, "JP_FLOOD_RAW_DIR", flood_raw)
     with TestClient(backend.app) as test_client:
         yield test_client
 
@@ -99,6 +143,10 @@ def test_monitoring_join_picks_latest_reading_per_site(client):
     assert ("reservoir", "50038290") in kinds
     assert ("usgs_peaks", "50038290") in kinds
     assert len(monitoring) == 3  # drought + reservoir + usgs_peaks; no entry for PWR00099
+    assert body["flood_document"]["source_state"] == "AVAILABLE"
+    assert body["flood_document"]["operational_document_class"] == "flood_risk_zone_map"
+    assert body["flood_document"]["byte_certification"]["certification_state"] == "PASS"
+    assert body["flood_document"]["byte_certification"]["counts"]["byte_verified_count"] == 78
 
 
 def test_municipio_with_no_monitoring_stations_returns_empty_list_not_error(client):
@@ -107,3 +155,64 @@ def test_municipio_with_no_monitoring_stations_returns_empty_list_not_error(clie
     body = response.json()
     assert body["asset_count"] == 0
     assert body["monitoring"] == []
+
+
+def test_frozen_flood_document_file_is_served_from_bounded_cache(client):
+    response = client.get("/municipios/Quebradillas/flood-document/file")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("application/pdf")
+    assert response.content == b"%PDF-1.4 fixture"
+
+
+def test_unknown_flood_document_file_fails_closed(client):
+    response = client.get("/municipios/Florida/flood-document/file")
+    assert response.status_code == 404
+    assert response.json()["detail"]["error"] == "flood_document_not_found"
+
+
+def test_municipios_dashboard_summary_is_geoid_bound_and_closes_78_denominator(client):
+    response = client.get("/municipios/summary")
+    assert response.status_code == 200
+    body = response.json()
+
+    assert body["municipality_denominator"] == 78
+    assert body["geometry_feature_count"] == 78
+    assert body["unique_geoid_count"] == 78
+    assert len(body["items"]) == 78
+    assert len({row["geoid"] for row in body["items"]}) == 78
+    assert body["scope"]["binding_key"] == "municipio GeoJSON properties.geoid"
+    assert body["scope"]["normalization"] == "NONE"
+
+    adjuntas = next(row for row in body["items"] if row["geoid"] == "72001")
+    assert adjuntas["name"] == "Adjuntas"
+    assert adjuntas["asset_count"] == 3
+    assert adjuntas["active_asset_count"] == 3
+    assert body["unmatched_asset_count"] == 0
+    assert body["unmatched_event_count"] == 0
+    assert body["join_state"] == "PASS"
+
+
+def test_municipios_dashboard_summary_fails_closed_on_duplicate_geoid(client, monkeypatch):
+    original = backend.legacy._municipios_geojson
+    features = [dict(feature) for feature in original["features"]]
+    first = dict(features[0])
+    second = dict(features[1])
+    first_props = dict(first["properties"])
+    second_props = dict(second["properties"])
+    second_props["geoid"] = first_props["geoid"]
+    first["properties"] = first_props
+    second["properties"] = second_props
+    features[0] = first
+    features[1] = second
+    monkeypatch.setattr(
+        backend.legacy,
+        "_municipios_geojson",
+        {"type": "FeatureCollection", "features": features},
+    )
+
+    response = client.get("/municipios/summary")
+    assert response.status_code == 503
+    detail = response.json()["detail"]
+    assert detail["error"] == "municipio_denominator_contract_failed"
+    assert first_props["geoid"] in detail["duplicate_geoids"]
+    assert detail["valid_unique_geoid_count"] == 77

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useHealth, useAssets, useEvents, useReadings, useSummarySectors, useCoverage } from '@/lib/hooks'
+import { useHealth, useAssets, useEvents, useReadings, useSummarySectors, useCoverage, useMunicipiosGeojson, useMunicipiosSummary, useMunicipioSummary } from '@/lib/hooks'
 import { postAiQuery, postNotify } from '@/lib/api'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/use-toast'
@@ -14,6 +14,16 @@ import { fmtDate, CHART_TOOLTIP_STYLE } from '@/lib/format'
 import { SECTOR_META } from '@/lib/sectors'
 import Panel from '@/components/common/Panel'
 import StatTile from '@/components/common/StatTile'
+import ProgramTimeline from '@/components/ProgramTimeline'
+import MunicipalOverviewMap from '@/components/MunicipalOverviewMap'
+
+const PROGRAM_TIMELINE = [
+  { id:'agua-water', phase:'NOW', title:'Water disruption state', detail:'Track bounded water-system disruptions, infrastructure context, and recovery evidence.', category:'Water', href:'/water-disruption' },
+  { id:'agua-energy', phase:'NEXT', title:'Energy and utility status', detail:'Reconcile generation, grid, outage, and infrastructure observations against dated authoritative sources.', category:'Energy', href:'/' },
+  { id:'agua-hydro', phase:'NEXT', title:'Hydrology source closure', detail:'Bind reservoirs, watersheds, routes, pumps, and environmental context to validated spatial identities.', category:'Hydrology', href:'/environmental-exposure' },
+  { id:'agua-map', phase:'QUEUED', title:'Infrastructure map reconciliation', detail:'Refresh map relationships only after identity and geometry gates close.', category:'GIS', href:'/map' },
+  { id:'agua-cert', phase:'BLOCKED', title:'Production source certification', detail:'Final certification waits on current authoritative source closure, credentials, and rendered QA.', category:'Certification', href:'/system' },
+]
 
 export default function OverviewPage() {
   const { data: health, isLoading: healthLoading } = useHealth()
@@ -21,6 +31,15 @@ export default function OverviewPage() {
   const { data: events = [], isLoading: eventsLoading } = useEvents()
   const { data: sectors } = useSummarySectors()
   const { data: coverage } = useCoverage()
+  const { data: municipiosGeojson } = useMunicipiosGeojson()
+  const { data: municipiosSummary } = useMunicipiosSummary()
+  const [municipalMetric, setMunicipalMetric] = useState('assets')
+  const [selectedMunicipioGeoid, setSelectedMunicipioGeoid] = useState(null)
+  const selectedMunicipio = useMemo(
+    () => municipiosSummary?.items?.find((row) => String(row.geoid) === String(selectedMunicipioGeoid)) ?? null,
+    [municipiosSummary, selectedMunicipioGeoid],
+  )
+  const { data: selectedMunicipioDetail, isLoading: selectedMunicipioDetailLoading } = useMunicipioSummary(selectedMunicipio?.name)
   const { data: readings = [] } = useReadings({ kind: 'reservoir' })
   const [aiSummary, setAiSummary] = useState(null)
   const [aiLoading, setAiLoading] = useState(false)
@@ -130,7 +149,7 @@ export default function OverviewPage() {
         />
       </div>
       {cov && (
-        <p className="-mt-3 text-[11px] text-slate-500">
+        <p className="-mt-3 text-[11px] text-slate-400">
           {cov.unmapped.toLocaleString()} asset(s) carry no coordinates and never appear on the
           map — mostly <span className="text-slate-400">{topUnmappedSubtype}</span> records.{' '}
           <Link to="/assets?unmapped=1" className="text-sky-400 hover:text-sky-300">Review them in the assets table</Link>.
@@ -143,6 +162,19 @@ export default function OverviewPage() {
           )}
         </p>
       )}
+
+      <MunicipalOverviewMap
+        geojson={municipiosGeojson}
+        summary={municipiosSummary}
+        metric={municipalMetric}
+        onMetricChange={setMunicipalMetric}
+        selectedGeoid={selectedMunicipioGeoid}
+        onSelect={(row) => setSelectedMunicipioGeoid(row.geoid)}
+        detail={selectedMunicipioDetail}
+        detailLoading={selectedMunicipioDetailLoading}
+      />
+
+      <ProgramTimeline producerId="aguayluz-pr" items={PROGRAM_TIMELINE} />
 
       {/* AI status recap + notifications */}
       <div className="flex items-start gap-3 flex-wrap">
@@ -187,13 +219,13 @@ export default function OverviewPage() {
                 </div>
                 {untracked ? (
                   <>
-                    <p className="font-mono text-2xl font-semibold text-slate-500">—</p>
-                    <p className="mt-1 text-[11px] text-slate-500">No assets tracked in this sector</p>
+                    <p className="font-mono text-2xl font-semibold text-slate-400">—</p>
+                    <p className="mt-1 text-[11px] text-slate-400">No assets tracked in this sector</p>
                   </>
                 ) : (
                   <>
                     <p className="text-2xl font-semibold font-mono text-slate-100">{s.total ?? '–'}</p>
-                    <p className="text-[11px] text-slate-500 font-mono mt-1">
+                    <p className="text-[11px] text-slate-400 font-mono mt-1">
                       {s.active ?? '–'} active · {s.pct_active ?? 0}% nominal
                     </p>
                   </>
@@ -218,13 +250,13 @@ export default function OverviewPage() {
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <p className="text-sm text-slate-500 text-center py-12">No reservoir data available</p>
+            <p className="text-sm text-slate-400 text-center py-12">No reservoir data available</p>
           )}
         </Panel>
 
         <Panel title="Recent Events">
           {recentEvents.length === 0 ? (
-            <p className="text-xs text-slate-500 text-center py-8">No events</p>
+            <p className="text-xs text-slate-400 text-center py-8">No events</p>
           ) : (
             <div className="space-y-2">
               {recentEvents.map((e) => (
@@ -232,8 +264,8 @@ export default function OverviewPage() {
                   <AlertTriangle className={`h-3.5 w-3.5 shrink-0 mt-0.5 ${e.event_type === 'outage' ? 'text-red-400' : 'text-amber-400'}`} />
                   <div className="min-w-0">
                     <p className="text-xs font-medium text-slate-200 truncate capitalize">{(e.event_type || '').replace(/_/g, ' ')}</p>
-                    <p className="text-[11px] text-slate-500 truncate">{e.affected_area}</p>
-                    <p className="text-[10px] text-slate-600 font-mono">{fmtDate(e.start_time)}</p>
+                    <p className="text-[11px] text-slate-400 truncate">{e.affected_area}</p>
+                    <p className="text-[10px] text-slate-400 font-mono">{fmtDate(e.start_time)}</p>
                   </div>
                 </div>
               ))}

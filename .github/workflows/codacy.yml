@@ -42,9 +42,7 @@ jobs:
       - name: Run Codacy Analysis CLI
         uses: codacy/codacy-analysis-cli-action@562ee3e92b8e92df8b67e0a5ff8aa8e261919c08
         with:
-          # Check https://github.com/codacy/codacy-analysis-cli#project-token to get your project token from your Codacy repository
-          # You can also omit the token and run the tools that support default configurations
-          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+          # No project token: the tokenless run uses the tool's default configuration.
           # Security gate: restrict the classic Codacy action to Bandit for this
           # Python-centric repository. Running every auto-detected analyzer pulled
           # the unrelated PMD Legacy Java plugin, whose tool crash prevented SARIF
@@ -61,7 +59,7 @@ jobs:
       # SARIF formatter, which crashes after successful Bandit analysis in this
       # repository. CodeQL remains the GitHub code-scanning authority.
       - name: Upload Codacy Bandit evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: codacy-bandit-results
           path: results.json

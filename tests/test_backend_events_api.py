@@ -34,7 +34,10 @@ def client(monkeypatch):
         }
         for i in range(1200)
     ]
-    monkeypatch.setattr(backend, "_events", events)
+    # GET /events reads the request-time `_current_events()` helper (not the
+    # frozen `_events` global) so the live-incident window stays fresh across
+    # a long-running process — see server/backend/main.py's `_current_events`.
+    monkeypatch.setattr(backend, "_current_events", lambda: events)
     with TestClient(backend.app) as c:
         yield c
 
@@ -74,10 +77,12 @@ def test_offset_paginates(client):
 
 
 def test_event_density_closes_arithmetic_and_preserves_unresolved(monkeypatch):
+    # GET /municipios/event_density also reads `_current_events()` (see the
+    # `client` fixture above for why).
     monkeypatch.setattr(
         backend,
-        "_events",
-        [
+        "_current_events",
+        lambda: [
             {
                 "event_id": "matched",
                 "municipality": "San Juan",

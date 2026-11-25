@@ -1,0 +1,56 @@
+{
+  "schema_version": "aguayluz.water_health.prdoh_10747_qualification/v1",
+  "source_record_id": "10747",
+  "source_sha256": "748529762de1b6661b5484957a7662bd233a37aaf371482cdc14bbf5ac584772",
+  "structural_ledger": {
+    "path": "data/certification/prdoh_10747_structural_v1.json.gz.b64",
+    "decoded_json_sha256": "6f4d7ffd53399ed21be12009e50bcc190bff5f3f71e37db43e54962c2ffd9b26",
+    "deterministic_gzip_sha256": "f744c59090f58bc4b387c048ba728becd1aeaffee46c3b9502d40cf9784468db"
+  },
+  "semantic_adjudication_path": "data/certification/prdoh_10747_semantic_adjudication_v1.json",
+  "qualifying_pr": 366,
+  "qualifying_base_sha": "7d8b6bdb121670578977ac761529c1a6d4627c00",
+  "qualifying_head_sha": "b668e8877c208dacbc2fcb1ba73972f0e7f407ff",
+  "workflow_denominator": 16,
+  "workflow_conclusions": {
+    "CodeQL": "success",
+    "validate": "success",
+    "GUI capability parity": "success",
+    "Salud SDWIS Water Contract": "success",
+    "Federation template drift": "success",
+    "HAF Contract Gate": "success",
+    "Admin Control Plane Boundary": "success",
+    "JP flood consumer V3": "success",
+    "PFAS Public Source Freeze": "success",
+    "Secret scan": "success",
+    "Codacy Security Scan": "success",
+    "PFAS Evidence Freeze": "success",
+    "SDWIS Puerto Rico PWS Inventory Freeze": "success",
+    "docs-sync": "success",
+    "Federation Compatibility": "success",
+    "Salud SDWIS 2025 Source Freeze": "success"
+  },
+  "structural_denominator": {
+    "source_pages": 40,
+    "classified_pages": 40,
+    "unresolved_pages": 0,
+    "logical_table_regions": 29,
+    "data_rows": 221,
+    "explicit_total_rows": 2,
+    "continuation_fragments": 1,
+    "violation_metric_records": 346,
+    "unresolved_metric_records": 0
+  },
+  "preserved_source_states": {
+    "source_internal_contradictions": 2,
+    "explained_nonadditive_representation": 1,
+    "unresolved_material": 0
+  },
+  "certification_state": "PRDOH_10747_STRUCTURAL_CERTIFIED",
+  "qualification_state": "PASS_EXACT_HEAD",
+  "guardrails": [
+    "The exact qualifying head is frozen independently from later receipt-only commits.",
+    "Source-internal contradictions remain preserved and are not treated as unresolved structural residue.",
+    "The semantic PRASA correction supersedes only an extraction label and changes no source row or metric arithmetic."
+  ]
+}

@@ -3,10 +3,12 @@ import { Link, useParams } from 'react-router-dom'
 import { useMunicipioSummary, useAssets, useEventsPaged } from '@/lib/hooks'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, AlertTriangle, Database, MapPin, Activity } from 'lucide-react'
+import { ArrowLeft, AlertTriangle, Database, MapPin, Activity, FileText, ExternalLink } from 'lucide-react'
 import { FederationStatCard } from '@pr-federation/react'
 import { fmtDate, droughtCategoryMeta, CONTAMINATION_EVENT_TYPES } from '@/lib/format'
 import { MONITORING_SERIES, filterSeriesReadings } from '@/lib/monitoring'
+import { API_BASE } from '@/lib/api'
+import { scrollRegion } from '@/lib/scrollRegion';
 
 // Thin wrapper over the shared metric tile so the call sites below keep reading
 // the same. `tone` is now a canonical federation status role rather than a
@@ -61,10 +63,10 @@ export default function MunicipioDetailPage() {
   return (
     <div className="p-6 space-y-6 max-w-4xl">
       <div className="flex items-center gap-3">
-        <Link to="/map" className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition">
+        <Link to="/map" className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-300 transition">
           <ArrowLeft className="h-3.5 w-3.5" /> Map
         </Link>
-        <span className="text-slate-700">/</span>
+        <span className="text-slate-400">/</span>
         <span className="text-sm font-semibold text-slate-200">{decoded}</span>
       </div>
 
@@ -87,13 +89,89 @@ export default function MunicipioDetailPage() {
           tone="danger" />
       </div>
 
+      {summary?.flood_document && (() => {
+        const flood = summary.flood_document
+        const localUrl = flood.filename
+          ? `${API_BASE}/municipios/${encodeURIComponent(decoded)}/flood-document/file`
+          : null
+        const openUrl = localUrl || flood.operational_source_url
+        const stateLabel = flood.source_state === 'AVAILABLE'
+          ? 'Available'
+          : flood.source_state === 'LISTED_BUT_MISSING'
+            ? 'Listed · source file missing'
+            : 'Not listed in source series'
+        return (
+          <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+            <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
+              <FileText className="h-3.5 w-3.5" /> Flood Risk Document
+              {flood.byte_certification?.certification_state === 'PASS' ? (
+                <Badge variant="outline" className="ml-auto text-[10px] border-emerald-800 text-emerald-300">
+                  Byte certified {flood.byte_certification?.counts?.byte_verified_count ?? 78}/
+                  {flood.byte_certification?.counts?.municipality_denominator ?? 78}
+                </Badge>
+              ) : null}
+              <Badge variant="outline" className={flood.byte_certification?.certification_state === 'PASS'
+                ? 'text-[10px] border-slate-700'
+                : 'ml-auto text-[10px] border-slate-700'}>{stateLabel}</Badge>
+            </h2>
+            <div className="grid sm:grid-cols-2 gap-3 text-xs">
+              <div>
+                <div className="text-slate-400">Operational document</div>
+                <div className="mt-1 text-slate-200">
+                  {(flood.operational_document_class || 'unknown').replace(/_/g, ' ')}
+                </div>
+                <div className="mt-1 text-[10px] text-slate-400">
+                  {(flood.operational_access_mode || 'unknown').replace(/_/g, ' ')}
+                </div>
+              </div>
+              <div>
+                <div className="text-slate-400">Provenance</div>
+                <div className="mt-1 text-slate-300 break-all">
+                  {flood.sha256 ? `SHA256 ${flood.sha256.slice(0, 16)}…` : 'No local hash recorded'}
+                </div>
+                {flood.byte_size ? (
+                  <div className="mt-1 text-[10px] text-slate-400">{Number(flood.byte_size).toLocaleString()} bytes</div>
+                ) : null}
+              </div>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {openUrl ? (
+                <a
+                  href={openUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-sky-800 px-3 py-1.5 text-xs text-sky-300 hover:bg-sky-950/50"
+                >
+                  <ExternalLink className="h-3 w-3" /> Open document
+                </a>
+              ) : null}
+              {flood.provenance_fallback_source_url ? (
+                <a
+                  href={flood.provenance_fallback_source_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-slate-700 px-3 py-1.5 text-xs text-slate-400 hover:bg-slate-800/50"
+                >
+                  Source provenance
+                </a>
+              ) : null}
+            </div>
+            {flood.fallback_relationship ? (
+              <p className="mt-3 text-[10px] text-slate-400">
+                {flood.fallback_relationship.replace(/_/g, ' ')}
+              </p>
+            ) : null}
+          </div>
+        )
+      })()}
+
       <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
         <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
           <Activity className="h-3.5 w-3.5" /> Monitoring
-          <span className="ml-auto text-slate-600 font-normal">Water, drought &amp; precipitation conditions</span>
+          <span className="ml-auto text-slate-400 font-normal">Water, drought &amp; precipitation conditions</span>
         </h2>
         {monitoringTiles.length === 0
-          ? <p className="text-sm text-slate-500 text-center py-8">No monitoring stations in this municipio</p>
+          ? <p className="text-sm text-slate-400 text-center py-8">No monitoring stations in this municipio</p>
           : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {monitoringTiles.map(({ series, latest, siteCount }) => {
@@ -101,11 +179,11 @@ export default function MunicipioDetailPage() {
                 const meta = isDrought ? droughtCategoryMeta(latest.value) : null
                 return (
                   <div key={series.key} className="rounded-lg border border-slate-800 bg-slate-950/50 p-3">
-                    <div className="text-[10px] uppercase tracking-wide text-slate-500">{series.label}</div>
+                    <div className="text-[10px] uppercase tracking-wide text-slate-400">{series.label}</div>
                     <div className={`mt-1 text-lg font-semibold ${meta ? meta.tone : 'text-slate-100'}`}>
                       {isDrought ? meta.label : `${latest.value} ${series.unit}`}
                     </div>
-                    <div className="mt-1 text-[10px] text-slate-600">
+                    <div className="mt-1 text-[10px] text-slate-400">
                       {fmtDate(latest.observed_date)}{siteCount > 1 ? ` · ${siteCount} stations` : ''}
                       {latest.provisional ? ' · provisional' : ''}
                     </div>
@@ -120,12 +198,12 @@ export default function MunicipioDetailPage() {
         <div className="lg:col-span-3 rounded-xl border border-slate-800 bg-slate-900 p-5">
           <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
             <AlertTriangle className="h-3.5 w-3.5" /> Recent Events
-            <span className="ml-auto text-slate-600 font-normal">{totalEvents.toLocaleString()} total</span>
+            <span className="ml-auto text-slate-400 font-normal">{totalEvents.toLocaleString()} total</span>
           </h2>
           {eventsLoading
             ? Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 mb-2 rounded" />)
             : events.length === 0
-              ? <p className="text-sm text-slate-500 text-center py-8">No events recorded</p>
+              ? <p className="text-sm text-slate-400 text-center py-8">No events recorded</p>
               : (
                 <div className="space-y-2">
                   {events.map((e, i) => (
@@ -137,9 +215,9 @@ export default function MunicipioDetailPage() {
                       <AlertTriangle className={`h-3.5 w-3.5 shrink-0 mt-0.5 ${e.event_type === 'outage' ? 'text-red-400' : 'text-amber-400'}`} />
                       <div className="min-w-0">
                         <p className="text-xs font-medium text-slate-300 capitalize">{(e.event_type || '').replace(/_/g, ' ')}</p>
-                        <p className="text-[11px] text-slate-500 truncate">{e.affected_area || e.municipality}</p>
+                        <p className="text-[11px] text-slate-400 truncate">{e.affected_area || e.municipality}</p>
                       </div>
-                      <span className="text-[10px] font-mono text-slate-600 shrink-0">{fmtDate(e.start_time)}</span>
+                      <span className="text-[10px] font-mono text-slate-400 shrink-0">{fmtDate(e.start_time)}</span>
                     </Link>
                   ))}
                 </div>
@@ -151,9 +229,9 @@ export default function MunicipioDetailPage() {
             <Database className="h-3.5 w-3.5" /> Assets
           </h2>
           {assets.length === 0
-            ? <p className="text-sm text-slate-500 text-center py-8">No assets found</p>
+            ? <p className="text-sm text-slate-400 text-center py-8">No assets found</p>
             : (
-              <div className="space-y-1.5 max-h-[400px] overflow-y-auto pr-1">
+              <div {...scrollRegion("Municipio records")} className="space-y-1.5 max-h-[400px] overflow-y-auto pr-1">
                 {assets.map((a) => (
                   <Link
                     key={a.asset_id}
@@ -162,11 +240,11 @@ export default function MunicipioDetailPage() {
                   >
                     <div className="min-w-0">
                       <p className="text-xs font-medium text-slate-200 truncate">{a.asset_name}</p>
-                      <p className="text-[10px] text-slate-500 capitalize">{(a.asset_type || '').replace(/_/g, ' ')}</p>
+                      <p className="text-[10px] text-slate-400 capitalize">{(a.asset_type || '').replace(/_/g, ' ')}</p>
                     </div>
                     <Badge
                       variant="outline"
-                      className={`text-[10px] shrink-0 ml-2 ${a.status === 'active' || a.status === 'operational' ? 'border-emerald-800 text-emerald-400' : 'border-slate-700 text-slate-500'}`}
+                      className={`text-[10px] shrink-0 ml-2 ${a.status === 'active' || a.status === 'operational' ? 'border-emerald-800 text-emerald-400' : 'border-slate-700 text-slate-400'}`}
                     >
                       {a.status ?? 'unknown'}
                     </Badge>

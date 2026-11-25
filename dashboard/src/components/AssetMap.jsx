@@ -1,7 +1,23 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import maplibregl from 'maplibre-gl'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import * as maplibregl from 'maplibre-gl'
+import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { Activity, Layers, MapPinned, Satellite } from 'lucide-react'
 import { useSpatialTools, SpatialToolsPanel } from './SpatialToolsPanel'
+import { GisViewerControls, useGisViewer } from './GisViewerControls'
+import { createGisClient } from '../lib/gis/gisApi'
+import { createNetworkClient } from '../lib/gis/networkApi'
+import { API_BASE } from '../lib/api'
+import NwsOverlayToggles from './NwsOverlayToggles'
+import {
+  NWS_CLOUDGIS_OVERLAYS, OVERLAY_ATTRIBUTION, OVERLAY_REFRESH_MS,
+  overlayForEvent, overlayLayerId, overlaySourceId, overlayTileUrl,
+} from '@/lib/nws-cloudgis-overlays'
+
+// maplibre-gl 6 is ESM-only and loads its worker from a separate module that
+// it locates through `import.meta.url`, which a bundle does not preserve. Hand
+// it the self-contained worker chunk that Vite's worker pipeline emits instead
+// (plain `?url` would ship the worker without the shared chunk it imports).
+maplibregl.setWorkerUrl(maplibreWorkerUrl)
 
 // Resolve against the configured base so it works in the normal build
 // (served from '/') and the VITE_OFFLINE single-file file:// export (base './').
@@ -53,6 +69,28 @@ const BASE_STYLE = {
 }
 
 const EMPTY = { type: 'FeatureCollection', features: [] }
+
+// NWS flood category colours for NWPS river/reservoir gauges (aligned with the
+// NWS Hydromet page badges). Categories without a published threshold stay grey.
+const GAUGE_CATEGORY_COLOR = [
+  'match', ['get', 'flood_category'],
+  'major', '#d946ef',
+  'moderate', '#ef4444',
+  'minor', '#f97316',
+  'action', '#facc15',
+  'no_flooding', '#22c55e',
+  'low_threshold', '#38bdf8',
+  '#64748b',
+]
+const GAUGE_LEGEND = [
+  { label: 'Major flood', color: '#d946ef' },
+  { label: 'Moderate flood', color: '#ef4444' },
+  { label: 'Minor flood', color: '#f97316' },
+  { label: 'Action stage', color: '#facc15' },
+  { label: 'Below flood stage', color: '#22c55e' },
+  { label: 'Low water', color: '#38bdf8' },
+  { label: 'No thresholds / stale', color: '#64748b' },
+]
 const PR_CENTER = [-66.4, 18.22]
 const TYPE_HEX = {
   power: '#f59e0b',
@@ -127,6 +165,33 @@ const EVENT_DENSITY_FILL_COLOR = [
 const EVENT_DENSITY_FILL_OPACITY = [
   'case', ['==', ['feature-state', 'event_count'], null], 0.08,
   0.55,
+]
+
+// Stage IV 1-day municipio mean rainfall (inches) for the "Rainfall" fill. The top break
+// is the heavy-rain alert threshold (stage_iv_qpe.HEAVY_RAIN_MEAN_IN); feature-state is
+// only set for municipios the latest Stage IV day actually summarised.
+const RAINFALL_FILL_COLOR = [
+  'case', ['==', ['feature-state', 'rain_in'], null], NO_DROUGHT_DATA_FILL,
+  ['step', ['feature-state', 'rain_in'],
+    '#334155',
+    0.1, '#7dd3fc',
+    0.5, '#38bdf8',
+    1, '#2563eb',
+    2, '#7c3aed',
+    3, '#db2777',
+  ],
+]
+const RAINFALL_FILL_OPACITY = [
+  'case', ['==', ['feature-state', 'rain_in'], null], 0.08,
+  0.6,
+]
+const RAINFALL_LEGEND = [
+  { label: '≥ 3 in · heavy-rain alert', color: '#db2777' },
+  { label: '2–3 in', color: '#7c3aed' },
+  { label: '1–2 in', color: '#2563eb' },
+  { label: '0.5–1 in', color: '#38bdf8' },
+  { label: '0.1–0.5 in', color: '#7dd3fc' },
+  { label: '< 0.1 in', color: '#334155' },
 ]
 
 // MapLibre's setHTML parses its argument as HTML, and popup content comes from
@@ -212,20 +277,34 @@ function ControlButton({ active, children, onClick, tone }) {
   return (
     <button
       type="button"
+      aria-pressed={Boolean(active)}
       onClick={onClick}
-      className={`rounded border px-2 py-1 text-[11px] transition ${active ? `${tone} bg-slate-900` : 'border-slate-800 bg-slate-950/70 text-slate-500 hover:text-slate-300'}`}
+      className={`rounded border px-2 py-1 text-[11px] transition ${active ? `${tone} bg-slate-900` : 'border-slate-800 bg-slate-950/70 text-slate-400 hover:text-slate-300'}`}
     >
       {children}
     </button>
   )
 }
 
-export default function AssetMap({ assets, assetRows = [], municipios, barrios, events = [], alerts, droughtByGeoid, eventDensityByGeoid, eventDensityState, selectedAssetId, selectedMunicipio, onSelect, onMunicipioSelect, onAlertSelect, flyTo }) {
+// Map layer toggles -> gis-layer-catalog/1.0 layer ids (config/gis_layer_catalog.yaml).
+const CATALOG_LAYER_BY_TOGGLE = {
+  power: 'power_assets', water: 'water_assets', wastewater: 'wastewater_assets',
+  municipios: 'municipios', barrios: 'barrios', alerts: 'alerts', gauges: 'river_gauges',
+}
+const TOGGLE_BY_CATALOG_LAYER = Object.fromEntries(Object.entries(CATALOG_LAYER_BY_TOGGLE).map(([t, id]) => [id, t]))
+// Style sources that render exactly one catalog layer, so opacity and saved views can
+// address them. The three asset layers share one clustered source, so they get no
+// per-layer opacity (changing it would silently change the other two).
+const SOURCE_BY_CATALOG_LAYER = { municipios: 'municipios', barrios: 'barrios', alerts: 'alert-events', river_gauges: 'river-gauges' }
+const PR_HOME_VIEW = { center: [-66.45, 18.22], zoom: 8.2 }
+
+export default function AssetMap({ assets, assetRows = [], municipios, barrios, events = [], alerts, gauges, droughtByGeoid, rainByGeoid, rainfallDate, rainfallError, eventDensityByGeoid, eventDensityState, selectedAssetId, selectedMunicipio, onSelect, onMunicipioSelect, onAlertSelect, flyTo }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const readyRef = useRef(false)
   const spatialToolActiveRef = useRef(false)
   const droughtGeoidsRef = useRef(new Set())
+  const rainGeoidsRef = useRef(new Set())
   const eventDensityGeoidsRef = useRef(new Set())
   const onSelectRef = useRef(onSelect); onSelectRef.current = onSelect
   const onMunicipioSelectRef = useRef(onMunicipioSelect); onMunicipioSelectRef.current = onMunicipioSelect
@@ -238,11 +317,20 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
   // pre-existing default). Barrios (sub-municipal boundaries) start off: event-density
   // data is only aggregated at municipio granularity today (see MapPage.jsx), so a
   // barrio outline alone would only add visual noise, not more signal.
-  const [layers, setLayers] = useState({ power: true, water: true, wastewater: true, other: true, municipios: true, barrios: false, events: true, review: false, alerts: false, criticalAlertsOnly: false, muniFillMode: 'drought' })
+  const [layers, setLayers] = useState({ power: true, water: true, wastewater: true, other: true, municipios: true, barrios: false, events: true, review: false, alerts: false, gauges: false, criticalAlertsOnly: false, muniFillMode: 'drought' })
   const [basemap, setBasemap] = useState('osm')
+  // Display-only NWS CloudGIS overlays: off by default so the map makes no request to
+  // the NWS host until someone asks for it.
+  const [nwsOverlays, setNwsOverlays] = useState({})
+  // Per active overlay: { state: 'loading' | 'live' | 'error', at, message } — from the
+  // map's own tile events, so a recovered overlay reads live again and a hung one never does.
+  const [nwsOverlayStatus, setNwsOverlayStatus] = useState({})
   const [showTerrain, setShowTerrain] = useState(false)
   const [showTools, setShowTools] = useState(false)
   const [mapReady, setMapReady] = useState(false)
+  // Set when the browser cannot create the map (e.g. no WebGL2); the page then
+  // shows why instead of going blank.
+  const [mapFailed, setMapFailed] = useState(null)
 
   const assetFeatures = assets?.features ?? []
   const visibleAssets = useMemo(() => {
@@ -292,7 +380,13 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
 
   useEffect(() => {
     if (!containerRef.current) return undefined
-    const map = new maplibregl.Map({ container: containerRef.current, style: BASE_STYLE, center: PR_CENTER, zoom: 8.25, minZoom: 7.2 })
+    let map
+    try {
+      map = new maplibregl.Map({ container: containerRef.current, style: BASE_STYLE, center: PR_CENTER, zoom: 8.25, minZoom: 7.2 })
+    } catch (error) {
+      setMapFailed(String(error?.message ?? error))
+      return undefined
+    }
     mapRef.current = map
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
 
@@ -307,6 +401,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
       map.addSource('selected-asset', { type: 'geojson', data: selectedAsset })
       map.addSource('service-events', { type: 'geojson', data: eventGeo })
       map.addSource('alert-events', { type: 'geojson', data: alertGeo })
+      map.addSource('river-gauges', { type: 'geojson', data: gauges || EMPTY })
 
       map.addLayer({
         id: 'muni-fill', type: 'fill', source: 'municipios',
@@ -369,6 +464,18 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
           'circle-stroke-width': ['case', ['get', 'is_critical'], 2.2, 1.2],
         },
       })
+      // NWPS gauges: filled by NWS flood category; a thick ring marks a gauge in flood.
+      map.addLayer({
+        id: 'gauges-dot', type: 'circle', source: 'river-gauges',
+        layout: { visibility: 'none' },
+        paint: {
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 7, 4, 10, 6, 13, 9],
+          'circle-color': GAUGE_CATEGORY_COLOR,
+          'circle-opacity': ['case', ['get', 'observation_stale'], 0.35, 0.9],
+          'circle-stroke-color': ['case', ['get', 'flooding'], '#fef3c7', '#020617'],
+          'circle-stroke-width': ['case', ['get', 'flooding'], 2.4, 1],
+        },
+      })
       map.addLayer({
         id: 'selected-ring', type: 'circle', source: 'selected-asset',
         paint: {
@@ -377,6 +484,32 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
           'circle-stroke-color': '#e0f2fe',
           'circle-stroke-width': 2.4,
         },
+      })
+
+      // NWS CloudGIS overlays sit above the basemap and below every data layer.
+      for (const overlay of NWS_CLOUDGIS_OVERLAYS) {
+        map.addSource(overlaySourceId(overlay.id), {
+          type: 'raster', tiles: [overlayTileUrl(overlay)], tileSize: 256, attribution: OVERLAY_ATTRIBUTION,
+        })
+        map.addLayer(
+          {
+            id: overlayLayerId(overlay.id), type: 'raster', source: overlaySourceId(overlay.id),
+            layout: { visibility: 'none' }, paint: { 'raster-opacity': overlay.opacity },
+          },
+          'muni-fill',
+        )
+      }
+      map.on('error', (e) => {
+        const overlayId = overlayForEvent(e)
+        if (overlayId) {
+          setNwsOverlayStatus((prev) => ({
+            ...prev, [overlayId]: { state: 'error', at: Date.now(), message: e?.error?.message || 'tile request failed' },
+          }))
+        }
+      })
+      map.on('sourcedata', (e) => {
+        const overlayId = e?.tile ? overlayForEvent(e) : null
+        if (overlayId) setNwsOverlayStatus((prev) => ({ ...prev, [overlayId]: { state: 'live', at: Date.now() } }))
       })
 
       map.addSource('terrain-dem', {
@@ -417,6 +550,22 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
         map.getCanvas().style.cursor = ''
         popup.remove()
       })
+      map.on('mouseenter', 'gauges-dot', (e) => {
+        map.getCanvas().style.cursor = 'pointer'
+        const p = e.features[0]?.properties || {}
+        const stage = p.stage == null || p.stage === 'null' ? '—' : `${p.stage} ${p.stage_unit || ''}`
+        popup.setLngLat(e.features[0].geometry.coordinates)
+          .setHTML(`<div style="font:12px/1.5 system-ui,sans-serif;color:#e2e8f0;background:#0f172a;padding:6px 8px;border-radius:6px;max-width:230px"><strong>${esc(p.name || p.lid || 'Gauge')}</strong><br/><span style="color:#94a3b8;font-size:11px">NWPS ${esc(p.lid || '')} · ${esc(String(p.flood_category || 'unknown').replace(/_/g, ' '))}<br/>stage ${esc(stage)} · ${esc(p.valid_time || 'no observation')}${p.observation_stale === true || p.observation_stale === 'true' ? ' (stale)' : ''}</span></div>`)
+          .addTo(map)
+      })
+      map.on('mouseleave', 'gauges-dot', () => {
+        map.getCanvas().style.cursor = ''
+        popup.remove()
+      })
+      map.on('click', 'gauges-dot', (e) => {
+        const p = e.features[0]?.properties || {}
+        if (!spatialToolActiveRef.current && p.asset_id && p.asset_id !== 'null') onSelectRef.current?.({ asset_id: p.asset_id })
+      })
       map.on('click', 'alerts-dot', (e) => {
         if (!spatialToolActiveRef.current) onAlertSelectRef.current?.(e.features[0].properties)
       })
@@ -437,7 +586,13 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
         onMunicipioSelectRef.current?.({ name: props.name || props.NAME || props.municipio || props.MUNICIPIO, properties: props })
       })
     })
-    return () => { readyRef.current = false; map.remove() }
+    return () => {
+      readyRef.current = false
+      mapRef.current = null
+      // A map that lost its WebGL context can throw while tearing down; the
+      // page is being left, so that must not take the app down with it.
+      try { map.remove() } catch { /* already unusable */ }
+    }
   }, [])
 
   useEffect(() => {
@@ -488,6 +643,29 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
     const map = mapRef.current
     const apply = () => {
       try {
+        for (const geoid of rainGeoidsRef.current) {
+          map.removeFeatureState({ source: 'municipios', id: geoid }, 'rain_in')
+        }
+        rainGeoidsRef.current.clear()
+        for (const [geoid, inches] of Object.entries(rainByGeoid || {})) {
+          map.setFeatureState({ source: 'municipios', id: geoid }, { rain_in: inches })
+          rainGeoidsRef.current.add(geoid)
+        }
+      } catch { /* source is still rebuilding; sourcedata retries below */ }
+    }
+    const onSourceData = (event) => {
+      if (event.sourceId === 'municipios' && event.isSourceLoaded) apply()
+    }
+    apply()
+    map.on('sourcedata', onSourceData)
+    return () => map.off('sourcedata', onSourceData)
+  }, [rainByGeoid, mapReady, municipios])
+
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return undefined
+    const map = mapRef.current
+    const apply = () => {
+      try {
         for (const geoid of eventDensityGeoidsRef.current) {
           map.removeFeatureState({ source: 'municipios', id: geoid }, 'event_count')
         }
@@ -525,19 +703,54 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
 
   useEffect(() => {
     if (!readyRef.current || !mapRef.current) return
+    mapRef.current.getSource('river-gauges')?.setData(gauges || EMPTY)
+  }, [gauges])
+
+  useEffect(() => {
+    if (!readyRef.current || !mapRef.current) return
     const visibility = layers.municipios ? 'visible' : 'none'
     for (const id of ['muni-fill', 'muni-line']) mapRef.current.setLayoutProperty(id, 'visibility', visibility)
     mapRef.current.setLayoutProperty('barrios-line', 'visibility', layers.barrios ? 'visible' : 'none')
     mapRef.current.setLayoutProperty('events-dot', 'visibility', layers.events ? 'visible' : 'none')
     mapRef.current.setLayoutProperty('alerts-dot', 'visibility', layers.alerts ? 'visible' : 'none')
+    mapRef.current.setLayoutProperty('gauges-dot', 'visibility', layers.gauges ? 'visible' : 'none')
     const [fillColor, fillOpacity] = {
       drought: [DROUGHT_FILL_COLOR, DROUGHT_FILL_OPACITY],
       event_density: [EVENT_DENSITY_FILL_COLOR, EVENT_DENSITY_FILL_OPACITY],
+      rainfall: [RAINFALL_FILL_COLOR, RAINFALL_FILL_OPACITY],
       off: [NO_DROUGHT_DATA_FILL, 0.08],
     }[layers.muniFillMode]
     mapRef.current.setPaintProperty('muni-fill', 'fill-color', fillColor)
     mapRef.current.setPaintProperty('muni-fill', 'fill-opacity', fillOpacity)
-  }, [layers.municipios, layers.barrios, layers.events, layers.alerts, layers.muniFillMode])
+  }, [layers.municipios, layers.barrios, layers.events, layers.alerts, layers.gauges, layers.muniFillMode])
+
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return undefined
+    const map = mapRef.current
+    const refreshTiles = () => {
+      const now = Date.now()
+      for (const overlay of NWS_CLOUDGIS_OVERLAYS) {
+        const on = Boolean(nwsOverlays[overlay.id])
+        map.setLayoutProperty(overlayLayerId(overlay.id), 'visibility', on ? 'visible' : 'none')
+        if (on) map.getSource(overlaySourceId(overlay.id))?.setTiles?.([overlayTileUrl(overlay, now)])
+      }
+    }
+    refreshTiles()
+    if (!Object.values(nwsOverlays).some(Boolean)) return undefined
+    const timer = setInterval(refreshTiles, OVERLAY_REFRESH_MS)
+    return () => clearInterval(timer)
+  }, [nwsOverlays, mapReady])
+
+  const toggleNwsOverlay = (id) => {
+    const on = !nwsOverlays[id]
+    setNwsOverlayStatus((prev) => {
+      const next = { ...prev }
+      if (on) next[id] = { state: 'loading', at: Date.now() }
+      else delete next[id]
+      return next
+    })
+    setNwsOverlays((prev) => ({ ...prev, [id]: on }))
+  }
 
   useEffect(() => {
     if (!readyRef.current || !mapRef.current) return
@@ -568,16 +781,55 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
     }),
     [visibleAssets, eventGeo, alertGeo],
   )
-  const spatialTools = useSpatialTools({ mapRef, mapReady, targets: spatialToolTargets, interactionLockRef: spatialToolActiveRef })
+  // Backend GIS API (/gis/*): identify, search, polygon query/export, dependency
+  // trace and outage scenarios run against exactly the layers switched on here.
+  const gisClient = useMemo(() => createGisClient(API_BASE), [])
+  const networkClient = useMemo(() => createNetworkClient(API_BASE), [])
+  const activeCatalogLayers = useMemo(
+    () => Object.entries(CATALOG_LAYER_BY_TOGGLE).filter(([toggle]) => layers[toggle]).map(([, id]) => id),
+    [layers],
+  )
+  const viewerLayers = useMemo(() => activeCatalogLayers.filter((id) => SOURCE_BY_CATALOG_LAYER[id]), [activeCatalogLayers])
+  const sourceIdFor = useCallback((layerId) => SOURCE_BY_CATALOG_LAYER[layerId] ?? null, [])
+  const applyLayerVisibility = useCallback((visible) => {
+    setLayers((current) => {
+      const next = { ...current }
+      for (const [layerId, on] of Object.entries(visible)) {
+        const toggle = TOGGLE_BY_CATALOG_LAYER[layerId]
+        if (toggle) next[toggle] = on
+      }
+      return next
+    })
+  }, [])
+  const gisViewer = useGisViewer({
+    mapRef, mapReady, client: gisClient, producerRepo: 'aguayluz-pr', homeView: PR_HOME_VIEW,
+    activeLayers: viewerLayers, sourceIdFor, applyLayerVisibility,
+  })
+  const gisCatalog = gisViewer.catalog
+  const spatialToolsGis = useMemo(() => ({
+    client: gisClient,
+    network: networkClient,
+    activeLayers: () => activeCatalogLayers,
+    exportable: (layerId) => gisCatalog?.layers.find((layer) => layer.layer_id === layerId)?.exportable ?? false,
+  }), [activeCatalogLayers, gisCatalog, gisClient, networkClient])
+  const spatialTools = useSpatialTools({ mapRef, mapReady, targets: spatialToolTargets, interactionLockRef: spatialToolActiveRef, gis: spatialToolsGis })
+
+  if (mapFailed) {
+    return (
+      <div role="status" className="flex h-full w-full items-center justify-center p-6 text-center text-sm text-slate-400">
+        Map unavailable: {mapFailed}
+      </div>
+    )
+  }
 
   return (
     <div className="relative h-full w-full">
-      <div ref={containerRef} className="h-full w-full" />
+      <div ref={containerRef} className="h-full w-full" data-map-ready={mapReady ? 'true' : 'false'} />
 
       <div className="absolute left-3 top-3 w-[250px] rounded-xl border border-slate-700/70 bg-slate-950/85 p-3 shadow-xl backdrop-blur">
         <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs font-semibold text-slate-100"><Layers className="h-3.5 w-3.5 text-sky-300" /> Layers</div>
-          <div className="text-[10px] text-slate-500">{visibleAssets.features.length}/{assetFeatures.length}</div>
+          <div className="text-[10px] text-slate-400">{visibleAssets.features.length}/{assetFeatures.length}</div>
         </div>
         <div className="grid grid-cols-2 gap-1.5">
           <ControlButton active={layers.power} tone="border-amber-500/40 text-amber-300" onClick={() => setLayers((s) => ({ ...s, power: !s.power }))}>Power {counts.power}</ControlButton>
@@ -588,18 +840,29 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
           <ControlButton active={layers.barrios} tone="border-violet-500/40 text-violet-300" onClick={() => setLayers((s) => ({ ...s, barrios: !s.barrios }))}>Barrios</ControlButton>
           <ControlButton active={layers.events} tone="border-red-500/40 text-red-300" onClick={() => setLayers((s) => ({ ...s, events: !s.events }))}>Events (sample) {eventGeo.features.length}</ControlButton>
           <ControlButton active={layers.alerts} tone="border-orange-500/40 text-orange-300" onClick={() => setLayers((s) => ({ ...s, alerts: !s.alerts }))}>Alerts {alertGeo.features.length}</ControlButton>
+          <ControlButton active={layers.gauges} tone="border-yellow-500/40 text-yellow-300" onClick={() => setLayers((s) => ({ ...s, gauges: !s.gauges }))}>River gauges {gauges?.features?.length ?? 0}</ControlButton>
           <ControlButton active={showTerrain} tone="border-teal-500/40 text-teal-300" onClick={() => setShowTerrain((v) => !v)}>Terrain</ControlButton>
           <ControlButton active={showTools} tone="border-pink-500/40 text-pink-300" onClick={() => setShowTools((v) => !v)}>Spatial tools</ControlButton>
         </div>
         <div className="mt-1.5">
-          <div className="mb-1 text-[10px] uppercase tracking-wide text-slate-500">Municipio fill</div>
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className="mb-1 text-[10px] uppercase tracking-wide text-slate-400">Municipio fill</div>
+          <div className="grid grid-cols-4 gap-1.5">
             <ControlButton active={layers.muniFillMode === 'off'} tone="border-slate-500/40 text-slate-300" onClick={() => setLayers((s) => ({ ...s, muniFillMode: 'off' }))}>Off</ControlButton>
             <ControlButton active={layers.muniFillMode === 'drought'} tone="border-amber-500/40 text-amber-300" onClick={() => setLayers((s) => ({ ...s, muniFillMode: 'drought' }))}>Drought</ControlButton>
             <ControlButton active={layers.muniFillMode === 'event_density'} tone="border-blue-500/40 text-blue-300" onClick={() => setLayers((s) => ({ ...s, muniFillMode: 'event_density' }))}>Density</ControlButton>
+            <ControlButton active={layers.muniFillMode === 'rainfall'} tone="border-pink-500/40 text-pink-300" onClick={() => setLayers((s) => ({ ...s, muniFillMode: 'rainfall' }))}>Rainfall</ControlButton>
           </div>
+          {layers.muniFillMode === 'rainfall' && (
+            <div aria-live="polite" className="mt-1.5 rounded border border-slate-800 bg-slate-950/60 p-1.5 text-[10px] leading-relaxed text-slate-400">
+              {rainfallError
+                ? <span className="text-red-300">Rainfall unavailable ({rainfallError}); no fill is shown.</span>
+                : rainfallDate && Object.keys(rainByGeoid || {}).length > 0
+                  ? <span>NWS Stage IV 1-day municipio mean, 12Z → <span className="text-slate-300">{rainfallDate} 12Z</span> · {Object.keys(rainByGeoid).length} municipios</span>
+                  : <span>No Stage IV rainfall ingested yet; refresh it from the NWS Hydromet page.</span>}
+            </div>
+          )}
           {layers.muniFillMode === 'event_density' && (
-            <div aria-live="polite" className="mt-1.5 rounded border border-slate-800 bg-slate-950/60 p-1.5 text-[10px] leading-relaxed text-slate-500">
+            <div aria-live="polite" className="mt-1.5 rounded border border-slate-800 bg-slate-950/60 p-1.5 text-[10px] leading-relaxed text-slate-400">
               {(eventDensityState?.isLoading || eventDensityState?.isFetching) && <div className="text-blue-300">Loading full-corpus density…</div>}
               {eventDensityState?.isError && (
                 <div>
@@ -617,12 +880,14 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
             </div>
           )}
         </div>
+        {/* After the density status so the retry control keeps its place above the legend. */}
+        <NwsOverlayToggles active={nwsOverlays} status={nwsOverlayStatus} onToggle={toggleNwsOverlay} />
         {layers.alerts && (
           <button
             type="button"
             aria-pressed={layers.criticalAlertsOnly}
             onClick={() => setLayers((s) => ({ ...s, criticalAlertsOnly: !s.criticalAlertsOnly }))}
-            className={`mt-1.5 w-full rounded border px-2 py-1.5 text-[11px] transition ${layers.criticalAlertsOnly ? 'border-red-500/40 bg-red-500/10 text-red-300' : 'border-slate-800 bg-slate-950/70 text-slate-500 hover:text-slate-300'}`}
+            className={`mt-1.5 w-full rounded border px-2 py-1.5 text-[11px] transition ${layers.criticalAlertsOnly ? 'border-red-500/40 bg-red-500/10 text-red-300' : 'border-slate-800 bg-slate-950/70 text-slate-400 hover:text-slate-300'}`}
           >
             Life-safety critical alerts only
           </button>
@@ -631,7 +896,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
           type="button"
           aria-pressed={layers.review}
           onClick={() => setLayers((s) => ({ ...s, review: !s.review }))}
-          className={`mt-2 w-full rounded border px-2 py-1.5 text-[11px] transition ${layers.review ? 'border-amber-500/40 bg-amber-500/10 text-amber-300' : 'border-slate-800 bg-slate-950/70 text-slate-500 hover:text-slate-300'}`}
+          className={`mt-2 w-full rounded border px-2 py-1.5 text-[11px] transition ${layers.review ? 'border-amber-500/40 bg-amber-500/10 text-amber-300' : 'border-slate-800 bg-slate-950/70 text-slate-400 hover:text-slate-300'}`}
         >
           Review-needed assets only
         </button>
@@ -639,22 +904,23 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
           <button
             type="button"
             onClick={() => setBasemap('osm')}
-            className={`flex-1 flex items-center justify-center gap-1 rounded border px-2 py-1.5 text-[11px] transition ${basemap === 'osm' ? 'border-sky-500/40 bg-sky-500/10 text-sky-300' : 'border-slate-800 bg-slate-950/70 text-slate-500 hover:text-slate-300'}`}
+            className={`flex-1 flex items-center justify-center gap-1 rounded border px-2 py-1.5 text-[11px] transition ${basemap === 'osm' ? 'border-sky-500/40 bg-sky-500/10 text-sky-300' : 'border-slate-800 bg-slate-950/70 text-slate-400 hover:text-slate-300'}`}
           >
             <Layers className="h-3 w-3" /> Map
           </button>
           <button
             type="button"
             onClick={() => setBasemap('satellite')}
-            className={`flex-1 flex items-center justify-center gap-1 rounded border px-2 py-1.5 text-[11px] transition ${basemap === 'satellite' ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300' : 'border-slate-800 bg-slate-950/70 text-slate-500 hover:text-slate-300'}`}
+            className={`flex-1 flex items-center justify-center gap-1 rounded border px-2 py-1.5 text-[11px] transition ${basemap === 'satellite' ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300' : 'border-slate-800 bg-slate-950/70 text-slate-400 hover:text-slate-300'}`}
           >
             <Satellite className="h-3 w-3" /> Satellite
           </button>
         </div>
       </div>
 
-      <div className="absolute bottom-3 left-3 rounded-lg border border-slate-700/70 bg-slate-950/85 px-2.5 py-2 shadow-xl backdrop-blur">
-        <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-1.5">Asset type</div>
+      {/* bottom-9 clears MapPage's "N of M assets mapped" footer, which sits on top of the map. */}
+      <div className="absolute bottom-9 left-3 rounded-lg border border-slate-700/70 bg-slate-950/85 px-2.5 py-2 shadow-xl backdrop-blur">
+        <div className="text-[10px] uppercase tracking-wide text-slate-400 mb-1.5">Asset type</div>
         {[
           { type: 'power', label: 'Power', color: '#f59e0b' },
           { type: 'water', label: 'Water', color: '#38bdf8' },
@@ -669,7 +935,7 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
         ))}
         {layers.alerts && (
           <>
-            <div className="mb-1.5 mt-2 border-t border-slate-800 pt-2 text-[10px] uppercase tracking-wide text-slate-500">Alert severity</div>
+            <div className="mb-1.5 mt-2 border-t border-slate-800 pt-2 text-[10px] uppercase tracking-wide text-slate-400">Alert severity</div>
             {[
               { sev: '4–5', label: 'Severe / extreme', color: '#ef4444' },
               { sev: '3', label: 'Elevated', color: '#fb923c' },
@@ -683,11 +949,22 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
             ))}
           </>
         )}
+        {layers.gauges && (
+          <>
+            <div className="mb-1.5 mt-2 border-t border-slate-800 pt-2 text-[10px] uppercase tracking-wide text-slate-400">River gauges (NWS NWPS)</div>
+            {GAUGE_LEGEND.map(({ label, color }) => (
+              <div key={label} className="mb-0.5 flex items-center gap-1.5 text-[11px] text-slate-300 last:mb-0">
+                <span style={{ background: color }} className="inline-block h-2 w-2 shrink-0 rounded-full" />
+                {label}
+              </div>
+            ))}
+          </>
+        )}
         {layers.muniFillMode === 'drought' && droughtByGeoid && Object.keys(droughtByGeoid).length > 0 && (
           <>
             {/* Only rendered once real drought readings exist — an empty-but-present
                 legend would imply coverage the corpus doesn't have yet. */}
-            <div className="mb-1.5 mt-2 border-t border-slate-800 pt-2 text-[10px] uppercase tracking-wide text-slate-500">Drought (USDM)</div>
+            <div className="mb-1.5 mt-2 border-t border-slate-800 pt-2 text-[10px] uppercase tracking-wide text-slate-400">Drought (USDM)</div>
             {[
               { label: 'D4 · Exceptional', color: '#730000' },
               { label: 'D3 · Extreme', color: '#e60000' },
@@ -703,9 +980,20 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
             ))}
           </>
         )}
+        {layers.muniFillMode === 'rainfall' && rainByGeoid && Object.keys(rainByGeoid).length > 0 && (
+          <>
+            <div className="mb-1.5 mt-2 border-t border-slate-800 pt-2 text-[10px] uppercase tracking-wide text-slate-400">Rainfall · Stage IV 1-day mean</div>
+            {RAINFALL_LEGEND.map(({ label, color }) => (
+              <div key={label} className="mb-0.5 flex items-center gap-1.5 text-[11px] text-slate-300 last:mb-0">
+                <span style={{ background: color }} className="inline-block h-2 w-2 rounded-full shrink-0" />
+                {label}
+              </div>
+            ))}
+          </>
+        )}
         {layers.muniFillMode === 'event_density' && eventDensityByGeoid && Object.keys(eventDensityByGeoid).length > 0 && (
           <>
-            <div className="mb-1.5 mt-2 border-t border-slate-800 pt-2 text-[10px] uppercase tracking-wide text-slate-500">Event density (full corpus)</div>
+            <div className="mb-1.5 mt-2 border-t border-slate-800 pt-2 text-[10px] uppercase tracking-wide text-slate-400">Event density (full corpus)</div>
             {[
               { label: '450+ events', color: '#dc2626' },
               { label: '200–449', color: '#f59e0b' },
@@ -735,7 +1023,14 @@ export default function AssetMap({ assets, assetRows = [], municipios, barrios, 
         )}
       </div>
 
-      {showTools && <SpatialToolsPanel {...spatialTools} />}
+      {showTools && (
+        <div className="absolute right-3 top-16 max-h-[80vh] w-[300px] space-y-2 overflow-y-auto">
+          <div className="rounded-xl border border-slate-700/70 bg-slate-950/85 p-3 text-[11px] text-slate-300">
+            <GisViewerControls {...gisViewer} />
+          </div>
+          <SpatialToolsPanel {...spatialTools} />
+        </div>
+      )}
     </div>
   )
 }

@@ -16,6 +16,7 @@ import io
 import json
 import logging
 import os as _os
+import secrets
 import smtplib as _smtplib
 import sys
 import urllib.request as _notify_urllib
@@ -29,6 +30,8 @@ from fastapi import Depends as _Depends
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+
+from server.backend.source_intelligence_api import router as source_intelligence_router
 
 logger = logging.getLogger(__name__)
 
@@ -141,6 +144,7 @@ SECTOR_TYPE_MAP: dict[str, set[str]] = {
 }
 
 app = FastAPI(title="AguaYLuz-PR")
+app.include_router(source_intelligence_router)
 
 # CORS: allow the Vite dev server and any configured ALLOWED_ORIGINS
 _cors_origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
@@ -166,20 +170,41 @@ async def _require_key(request: Request):
     if not _API_KEY:
         return  # auth disabled globally
     auth = request.headers.get("Authorization", "")
-    if not auth.startswith("Bearer ") or auth[7:] != _API_KEY:
+    if not auth.startswith("Bearer ") or not secrets.compare_digest(auth[7:], _API_KEY):
         raise HTTPException(status_code=401, detail="Invalid or missing API key")
+
+
+#: (resolved path) -> (mtime_ns, parsed value) for _load_jsonl/_load_json. The dashboard
+#: polls /health every 15s and /system/status every 30s (dashboard/src/lib/hooks.js),
+#: each of which re-parses several JSONL corpora; those files only change when the
+#: cron refresh job commits, so a request between commits is always a cache hit.
+_file_cache: dict[Path, tuple[int, Any]] = {}
 
 
 def _load_jsonl(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
+        _file_cache.pop(path, None)
         return []
-    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    mtime_ns = path.stat().st_mtime_ns
+    cached = _file_cache.get(path)
+    if cached is not None and cached[0] == mtime_ns:
+        return cached[1]
+    rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    _file_cache[path] = (mtime_ns, rows)
+    return rows
 
 
 def _load_json(path: Path, default: Any = None) -> Any:
     if not path.exists():
+        _file_cache.pop(path, None)
         return default
-    return json.loads(path.read_text(encoding="utf-8"))
+    mtime_ns = path.stat().st_mtime_ns
+    cached = _file_cache.get(path)
+    if cached is not None and cached[0] == mtime_ns:
+        return cached[1]
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    _file_cache[path] = (mtime_ns, doc)
+    return doc
 
 
 def _source_manifestation(path: Path, row_count: int | None = None) -> dict[str, Any]:
@@ -252,6 +277,28 @@ for _row in _load_jsonl(_live_event_path):
         _live_event_rows.append(_row)
 _event_sources.append((_live_event_path, _live_event_rows))
 _events: list[dict[str, Any]] = [row for _, rows in _event_sources for row in rows]
+
+
+def _current_events() -> list[dict[str, Any]]:
+    """Re-read event sources from disk, unlike the ``_events`` snapshot above
+    (built once at import time). The live-incident source is refreshed hourly
+    by cron and a live server can run for days, so a cutoff computed once at
+    import time goes stale; this recomputes it and re-filters on every call.
+    Used by the SSE ``/events/stream`` endpoint (whose whole point is to
+    reflect new data without a restart) and by GET /events and GET
+    /municipios/event_density, so their live-incident window doesn't go
+    stale either. Cheap because ``_load_jsonl`` caches on unchanged mtime.
+    """
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=1)
+    live_rows = [
+        row
+        for row in _load_jsonl(_live_event_path)
+        if (dt := _parse_dt(row.get("start_time"))) is not None and dt >= cutoff
+    ]
+    fixed_rows = [row for path in _EVENT_SOURCE_PATHS for row in _load_jsonl(path)]
+    return fixed_rows + live_rows
+
+
 _luma_status_snapshots: list[dict[str, Any]] = _load_jsonl(
     DATA / "luma_status_snapshots.jsonl"
 )
@@ -472,7 +519,7 @@ def municipios_event_density(
     accurate representation, not the client trying to plot every event as a
     fake-precise dot. Same filter semantics as GET /events, minus limit/offset/
     municipio (which would defeat the purpose of an aggregate)."""
-    result = _events
+    result = _current_events()
     if type:
         result = [e for e in result if e.get("event_type") == type]
     since_dt = _parse_dt(since)
@@ -532,6 +579,111 @@ def municipios_event_density(
     })
 
 
+@app.get("/municipios/summary")
+def municipios_summary() -> JSONResponse:
+    """Return one lightweight, GEOID-bound dashboard row per Puerto Rico municipio.
+
+    Geometry is the denominator authority. Asset/event municipality strings are
+    aggregated only when they exactly equal a canonical GeoJSON feature name;
+    there is no accent folding, fuzzy matching, nearest-neighbor assignment, or
+    other identity promotion in this endpoint.
+    """
+    features = _municipios_geojson.get("features", [])
+    if not isinstance(features, list):
+        raise HTTPException(status_code=503, detail={"error": "municipio_geometry_invalid"})
+
+    rows_by_geoid: dict[str, dict[str, Any]] = {}
+    name_to_geoid: dict[str, str] = {}
+    duplicate_geoids: list[str] = []
+    duplicate_names: list[str] = []
+    invalid_features: list[int] = []
+
+    for index, feature in enumerate(features):
+        props = feature.get("properties") if isinstance(feature, dict) else None
+        name = props.get("name") if isinstance(props, dict) else None
+        geoid = props.get("geoid") if isinstance(props, dict) else None
+        if not isinstance(name, str) or not name or not isinstance(geoid, str) or not geoid:
+            invalid_features.append(index)
+            continue
+        if geoid in rows_by_geoid:
+            duplicate_geoids.append(geoid)
+            continue
+        if name in name_to_geoid:
+            duplicate_names.append(name)
+            continue
+        name_to_geoid[name] = geoid
+        rows_by_geoid[geoid] = {
+            "geoid": geoid,
+            "name": name,
+            "asset_count": 0,
+            "active_asset_count": 0,
+            "event_count": 0,
+            "active_outage_count": 0,
+        }
+
+    if invalid_features or duplicate_geoids or duplicate_names or len(rows_by_geoid) != 78:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error": "municipio_denominator_contract_failed",
+                "expected": 78,
+                "feature_count": len(features),
+                "valid_unique_geoid_count": len(rows_by_geoid),
+                "invalid_feature_indexes": invalid_features,
+                "duplicate_geoids": sorted(set(duplicate_geoids)),
+                "duplicate_names": sorted(set(duplicate_names)),
+            },
+        )
+
+    unmatched_assets: Counter[str] = Counter()
+    for asset in _assets:
+        source_name = asset.get("municipality")
+        if not isinstance(source_name, str) or source_name not in name_to_geoid:
+            unmatched_assets[source_name if isinstance(source_name, str) and source_name else "__NULL__"] += 1
+            continue
+        row = rows_by_geoid[name_to_geoid[source_name]]
+        row["asset_count"] += 1
+        if asset.get("status") in {"active", "operational"}:
+            row["active_asset_count"] += 1
+
+    unmatched_events: Counter[str] = Counter()
+    for event in _current_events():
+        source_name = event.get("municipality")
+        if not isinstance(source_name, str) or source_name not in name_to_geoid:
+            unmatched_events[source_name if isinstance(source_name, str) and source_name else "__NULL__"] += 1
+            continue
+        row = rows_by_geoid[name_to_geoid[source_name]]
+        row["event_count"] += 1
+        if event.get("event_type") == "outage" and not event.get("end_time"):
+            row["active_outage_count"] += 1
+
+    unmatched_asset_count = sum(unmatched_assets.values())
+    unmatched_event_count = sum(unmatched_events.values())
+    return JSONResponse({
+        "municipality_denominator": 78,
+        "geometry_feature_count": len(features),
+        "unique_geoid_count": len(rows_by_geoid),
+        "join_state": "PASS" if not unmatched_asset_count and not unmatched_event_count else "PROVISIONAL",
+        "unmatched_asset_count": unmatched_asset_count,
+        "unmatched_event_count": unmatched_event_count,
+        "unmatched_assets_by_name": dict(unmatched_assets),
+        "unmatched_events_by_name": dict(unmatched_events),
+        "items": [rows_by_geoid[geoid] for geoid in sorted(rows_by_geoid)],
+        "scope": {
+            "binding_key": "municipio GeoJSON properties.geoid",
+            "aggregation_key": "exact source municipality string -> canonical GeoJSON name",
+            "normalization": "NONE",
+            "identity_effect": "NONE",
+            "geometry_effect": "NONE",
+        },
+        "provenance": {
+            "municipio_source": _MUNICIPIO_SOURCE_MANIFESTATION,
+            "event_sources": _EVENT_DENSITY_SOURCE_MANIFESTATIONS,
+            "loaded_at": "process_startup",
+        },
+    })
+
+
 @app.get("/municipios/{name}/summary")
 def municipio_summary(name: str) -> JSONResponse:
     name_lower = name.lower()
@@ -552,11 +704,20 @@ def municipio_summary(name: str) -> JSONResponse:
 
 
 @app.get("/events/stream")
-async def events_stream() -> StreamingResponse:
-    """SSE endpoint: pushes latest 20 events every 5 s."""
+async def events_stream(request: Request) -> StreamingResponse:
+    """SSE endpoint: pushes the latest 20 events every 5 s.
+
+    Re-reads from disk each tick via ``_current_events``, so a scheduled
+    refresh commit shows up here without a server restart. GET /events and
+    GET /municipios/event_density use the same helper for the same reason;
+    only endpoints that read the startup-frozen ``_events`` snapshot directly
+    stay fixed until restart.
+    """
     async def generator():
         while True:
-            payload = _events[-20:]
+            if await request.is_disconnected():
+                break
+            payload = _current_events()[-20:]
             yield f"data: {json.dumps(payload)}\n\n"
             await asyncio.sleep(5)
 
@@ -594,7 +755,7 @@ def events(
     limit: int | None = Query(default=None),
     offset: int = Query(default=0),
 ) -> JSONResponse:
-    result = _events
+    result = _current_events()
     since_dt = _parse_dt(since)
     until_dt = _parse_dt(until)
     if type:

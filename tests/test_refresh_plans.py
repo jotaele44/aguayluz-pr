@@ -7,6 +7,7 @@ plans here instead.
 """
 
 import importlib.util
+import sys
 from pathlib import Path
 
 import pytest
@@ -126,6 +127,12 @@ def test_nhc_runs_in_the_fast_cadence_alongside_the_other_hazard_feeds():
 
 def test_readings_producers_are_scheduled():
     """Every reading kind the backend serves has a producer in at least one cadence."""
+    # `server` is a top-level package and pyproject only puts `src` on pythonpath, so this
+    # import used to work only when an earlier-collected module had already added the repo
+    # root to sys.path. Do it here so the test passes alone, in any order.
+    pytest.importorskip("fastapi")  # server.backend.main needs it; the rest of this file doesn't
+    if str(REPO) not in sys.path:
+        sys.path.insert(0, str(REPO))
     from server.backend.main import READINGS_FILES  # noqa: PLC0415 — import cost
 
     producers = {
@@ -148,18 +155,32 @@ def test_readings_producers_are_scheduled():
 
 
 def test_luma_status_ingest_follows_live_fetch_and_precedes_aee_ingest():
-    scripts = [_script_of(s) for s in refresh.PLANS["all"]]
-    fetch_i = scripts.index("scripts/fetch_luma_live.py")
-    status_i = scripts.index("scripts/ingest_luma_status.py")
-    aee_i = scripts.index("scripts/ingest_aee.py")
-    assert fetch_i < status_i < aee_i
+    """Live outages ride the 15-min cadence (§ real-time audit) as well as --all."""
+    for cadence in ("fast", "all"):
+        scripts = [_script_of(s) for s in refresh.PLANS[cadence]]
+        fetch_i = scripts.index("scripts/fetch_luma_live.py")
+        status_i = scripts.index("scripts/ingest_luma_status.py")
+        aee_i = scripts.index("scripts/ingest_aee.py")
+        assert fetch_i < status_i < aee_i, cadence
 
 
-def test_luma_status_is_not_scheduled_without_live_fetch():
-    for cadence in ("fast", "daily", "weekly"):
-        scripts = {_script_of(s) for s in refresh.PLANS[cadence]}
-        assert "scripts/fetch_luma_live.py" not in scripts
-        assert "scripts/ingest_luma_status.py" not in scripts
+def test_luma_status_ingest_is_co_scheduled_with_live_fetch():
+    """ingest_luma_status.py reads the file fetch_luma_live.py writes — a cadence
+    scheduling one without the other would read a stale or missing snapshot."""
+    for cadence, plan in refresh.PLANS.items():
+        scripts = {_script_of(s) for s in plan}
+        has_fetch = "scripts/fetch_luma_live.py" in scripts
+        has_status = "scripts/ingest_luma_status.py" in scripts
+        assert has_fetch == has_status, cadence
+
+
+def test_luma_live_only_scheduled_in_fast_and_all():
+    """The 15-min cadence (most volatile source) and manual --all dispatch carry
+    live outages; daily/weekly don't need the added live-fetch WAF exposure."""
+    for cadence in ("daily", "weekly"):
+        assert "scripts/fetch_luma_live.py" not in {_script_of(s) for s in refresh.PLANS[cadence]}
+    for cadence in ("fast", "all"):
+        assert "scripts/fetch_luma_live.py" in {_script_of(s) for s in refresh.PLANS[cadence]}
 
 
 
@@ -176,14 +197,91 @@ def test_miluma_refresh_uses_one_receipt_for_both_ingests():
 
 
 def test_luma_change_derivation_follows_receipt_bound_snapshot_ingest():
-    scripts = [_script_of(s) for s in refresh.PLANS["all"]]
-    snapshot_i = scripts.index("scripts/ingest_luma_status.py")
-    change_i = scripts.index("scripts/derive_luma_status_changes.py")
-    aee_i = scripts.index("scripts/ingest_aee.py")
-    assert snapshot_i < change_i < aee_i
+    for cadence in ("fast", "all"):
+        scripts = [_script_of(s) for s in refresh.PLANS[cadence]]
+        snapshot_i = scripts.index("scripts/ingest_luma_status.py")
+        change_i = scripts.index("scripts/derive_luma_status_changes.py")
+        aee_i = scripts.index("scripts/ingest_aee.py")
+        assert snapshot_i < change_i < aee_i, cadence
 
 
-def test_luma_change_derivation_is_not_scheduled_without_live_fetch():
-    for cadence in ("fast", "daily", "weekly"):
-        scripts = {_script_of(s) for s in refresh.PLANS[cadence]}
-        assert "scripts/derive_luma_status_changes.py" not in scripts
+def test_luma_change_derivation_is_co_scheduled_with_status_ingest():
+    for cadence, plan in refresh.PLANS.items():
+        scripts = {_script_of(s) for s in plan}
+        has_status = "scripts/ingest_luma_status.py" in scripts
+        has_change = "scripts/derive_luma_status_changes.py" in scripts
+        assert has_status == has_change, cadence
+
+def test_drna_beach_monitoring_is_weekly_optional_and_not_fast():
+    """DRNA sampling notices are periodic, not a 15-minute operational feed."""
+    script = "scripts/ingest_drna_beach_monitoring.py"
+    assert refresh.STEP_DRNA_BEACH[2] is True
+    for cadence in ("weekly", "all"):
+        assert script in {_script_of(step) for step in refresh.PLANS[cadence]}, cadence
+    for cadence in ("fast", "daily"):
+        assert script not in {_script_of(step) for step in refresh.PLANS[cadence]}, cadence
+
+
+
+def test_nwps_gauges_run_every_cadence_optionally_before_alerts():
+    """The NWPS hydromet ingest feeds build_alerts.py (river-flood episodes); an NWPS
+    outage writes a FAIL receipt and must not abort the 15-minute run."""
+    assert refresh.STEP_NWPS_GAUGES[2] is True
+    for cadence, plan in refresh.PLANS.items():
+        scripts = [_script_of(s) for s in plan]
+        assert "scripts/ingest_nwps_gauges.py" in scripts, f"{cadence}: NWPS gauges missing"
+        assert scripts.index("scripts/ingest_nwps_gauges.py") < scripts.index("scripts/build_alerts.py")
+
+
+def test_stage_iv_runs_daily_and_up_optionally_before_alerts():
+    """Stage IV is a once-a-day 12Z product: daily/weekly/all only, before build_alerts.py
+    (heavy-rain alerts); a missing file writes a FAIL receipt without aborting the run."""
+    assert refresh.STEP_STAGE_IV[2] is True
+    assert "scripts/ingest_stage_iv_pr.py" not in [_script_of(s) for s in refresh.PLANS["fast"]]
+    for cadence in ("daily", "weekly", "all"):
+        scripts = [_script_of(s) for s in refresh.PLANS[cadence]]
+        assert "scripts/ingest_stage_iv_pr.py" in scripts, f"{cadence}: Stage IV missing"
+        assert scripts.index("scripts/ingest_stage_iv_pr.py") < scripts.index("scripts/build_alerts.py")
+
+
+OUTDOOR_FAST = {
+    "scripts/ingest_nws_surf_zone.py",
+    "scripts/ingest_nws_marine_alerts.py",
+    "scripts/ingest_ndbc_buoys.py",
+    "scripts/ingest_airnow.py",
+}
+OUTDOOR_DAILY = OUTDOOR_FAST | {"scripts/ingest_epa_uv.py", "scripts/ingest_nws_gridpoint_heat.py"}
+
+
+@pytest.mark.parametrize("cadence", sorted(refresh.PLANS))
+def test_outdoor_sources_are_scheduled_and_composed_after_every_ingest(cadence):
+    scripts = [_script_of(s) for s in refresh.PLANS[cadence]]
+    wanted = OUTDOOR_FAST if cadence == "fast" else OUTDOOR_DAILY
+    assert wanted <= set(scripts), cadence
+    if cadence == "fast":  # the daily forecasts are 78 requests each
+        assert not (OUTDOOR_DAILY - OUTDOOR_FAST) & set(scripts)
+    compose = scripts.index("scripts/build_outdoor_conditions.py")
+    assert all(scripts.index(s) < compose for s in wanted)
+    assert compose < scripts.index("scripts/build_water_power_crosswalk.py")
+
+
+def test_outdoor_steps_are_optional():
+    for step in (refresh.STEP_SURF_ZONE, refresh.STEP_MARINE_ALERTS, refresh.STEP_BUOYS,
+                 refresh.STEP_AIRNOW, refresh.STEP_EPA_UV, refresh.STEP_NWS_HEAT,
+                 refresh.STEP_OUTDOOR_COMPOSE):
+        assert step[2] is True, f"{_script_of(step)} must be optional"
+
+
+def test_aquifer_bands_are_weekly_optional_and_follow_the_groundwater_assets():
+    """The PRDNER bands are constants on a static USGS page: weekly/all only, never the
+    15-minute or daily plans. The step is optional (a page change writes a FAIL receipt and
+    the run continues) and must come after ingest_usgs_groundwater.py, which creates the
+    USGSGW_ assets it binds to by stable id -- ordered before it, a first run would fail."""
+    script = "scripts/ingest_prdner_well_bands.py"
+    assert refresh.STEP_AQUIFER_BANDS[2] is True
+    for cadence in ("fast", "daily"):
+        assert script not in [_script_of(s) for s in refresh.PLANS[cadence]], cadence
+    for cadence in ("weekly", "all"):
+        scripts = [_script_of(s) for s in refresh.PLANS[cadence]]
+        assert scripts.count(script) == 1, cadence
+        assert scripts.index("scripts/ingest_usgs_groundwater.py") < scripts.index(script), cadence

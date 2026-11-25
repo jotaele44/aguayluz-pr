@@ -118,9 +118,10 @@ def threatens_pr(storm: dict) -> bool:
 
 # ── source acquisition ────────────────────────────────────────────────────────
 def fetch_live() -> dict[str, Any]:
-    import httpx
+    sys.path.insert(0, str(REPO / "src"))
+    from aguayluz.http_retry import get_with_retry
 
-    r = httpx.get(
+    r = get_with_retry(
         NHC_URL,
         headers={"User-Agent": "aguayluz-pr/0.1 (github.com/jotaele44/aguayluz-pr)"},
         timeout=60,

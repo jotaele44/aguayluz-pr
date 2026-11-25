@@ -112,7 +112,7 @@ def validate_relationship(edge: dict[str, Any]) -> None:
     if geometry_relation is not None and geometry_relation not in ALLOWED_GEOMETRY_RELATIONS:
         raise ValueError(f"unsupported geometry relation: {geometry_relation}")
 
-    discovery_only = bool(evidence_classes) and evidence_classes <= DISCOVERY_ONLY_EVIDENCE
+    discovery_only = evidence_classes <= DISCOVERY_ONLY_EVIDENCE
     if predicate in CAUSAL_PREDICATES and causal_state in PROMOTED_CAUSAL_STATES and discovery_only:
         raise ValueError("causal promotion cannot be based solely on discovery/proximity evidence")
 
@@ -315,7 +315,6 @@ class _PFAS:
         evidence_classes = frozenset(str(v) for v in row.get("evidence_classes", []))
         if (
             state in {"ATTRIBUTED", "ADJUDICATED"}
-            and evidence_classes
             and evidence_classes <= cls.discovery_only
         ):
             raise ValueError("attribution cannot be established from discovery-only evidence")

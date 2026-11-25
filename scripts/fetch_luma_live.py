@@ -21,13 +21,22 @@ import contextlib
 import hashlib
 import json
 import sys
+import time
 import unicodedata
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 EXIT_SOURCE_UNAVAILABLE = 2
+
+#: Retries only cover transient failures (connection/timeout, 5xx). A 403 is the
+#: Incapsula WAF block, not transient, and a bad-JSON body won't fix itself either —
+#: both raise immediately, same as before this retry was added.
+DEFAULT_MAX_RETRIES = 2
+DEFAULT_RETRY_BACKOFF_S = 0.5
+_RETRYABLE_HTTP_CODES = frozenset({500, 502, 503, 504})
 
 
 class SourceUnavailable(Exception):
@@ -61,20 +70,33 @@ def municipio_keys(geo_path: Path) -> list[str]:
 def _request_json(
     req: urllib.request.Request,
     timeout: float,
+    *,
+    max_retries: int = DEFAULT_MAX_RETRIES,
+    backoff_s: float = DEFAULT_RETRY_BACKOFF_S,
+    sleep_fn: Any = time.sleep,
 ) -> tuple[object, bytes]:
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310
-            raw = resp.read()
-    except urllib.error.HTTPError as exc:
-        hint = (
-            " (Incapsula WAF block — needs a permissioned LUMA/PREB data path)"
-            if exc.code == 403
-            else ""
-        )
-        raise SourceUnavailable(f"HTTP {exc.code} from MiLUMA{hint}") from exc
-    except (urllib.error.URLError, TimeoutError) as exc:
-        reason = getattr(exc, "reason", None) or "connection timed out"
-        raise SourceUnavailable(f"cannot reach MiLUMA: {reason}") from exc
+    for attempt in range(max_retries + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310
+                raw = resp.read()
+        except urllib.error.HTTPError as exc:
+            if exc.code in _RETRYABLE_HTTP_CODES and attempt < max_retries:
+                sleep_fn(backoff_s * (attempt + 1))
+                continue
+            hint = (
+                " (Incapsula WAF block — needs a permissioned LUMA/PREB data path)"
+                if exc.code == 403
+                else ""
+            )
+            raise SourceUnavailable(f"HTTP {exc.code} from MiLUMA{hint}") from exc
+        except (urllib.error.URLError, TimeoutError) as exc:
+            if attempt < max_retries:
+                sleep_fn(backoff_s * (attempt + 1))
+                continue
+            reason = getattr(exc, "reason", None) or "connection timed out"
+            raise SourceUnavailable(f"cannot reach MiLUMA: {reason}") from exc
+        else:
+            break
 
     try:
         return json.loads(raw), raw
@@ -85,6 +107,10 @@ def _request_json(
 def fetch_towns(
     municipios: list[str],
     timeout: float,
+    *,
+    max_retries: int = DEFAULT_MAX_RETRIES,
+    backoff_s: float = DEFAULT_RETRY_BACKOFF_S,
+    sleep_fn: Any = time.sleep,
 ) -> dict:
     body = json.dumps(municipios).encode()
     req = urllib.request.Request(
@@ -93,7 +119,9 @@ def fetch_towns(
         method="POST",
         headers={**BROWSER_HEADERS, "Content-Type": "application/json"},
     )
-    result, _raw = _request_json(req, timeout)
+    result, _raw = _request_json(
+        req, timeout, max_retries=max_retries, backoff_s=backoff_s, sleep_fn=sleep_fn
+    )
     if not isinstance(result, dict):
         raise SourceUnavailable(
             f"unexpected municipality payload type: {type(result).__name__}"
