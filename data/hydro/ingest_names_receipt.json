@@ -1,0 +1,59 @@
+{
+  "ledgers": {
+    "usgs_gnis_names": {
+      "accounted": 5818,
+      "delta": 0,
+      "excluded": 5384,
+      "excluded_by_reason": {
+        "GNIS class 'Area' is not hydrographic": 7,
+        "GNIS class 'Bar' is not hydrographic": 70,
+        "GNIS class 'Bay' is not hydrographic": 101,
+        "GNIS class 'Beach' is not hydrographic": 98,
+        "GNIS class 'Cape' is not hydrographic": 199,
+        "GNIS class 'Census' is not hydrographic": 5,
+        "GNIS class 'Civil' is not hydrographic": 1200,
+        "GNIS class 'Cliff' is not hydrographic": 1,
+        "GNIS class 'Flat' is not hydrographic": 4,
+        "GNIS class 'Gap' is not hydrographic": 3,
+        "GNIS class 'Island' is not hydrographic": 148,
+        "GNIS class 'Military' is not hydrographic": 44,
+        "GNIS class 'Plain' is not hydrographic": 1,
+        "GNIS class 'Populated Place' is not hydrographic": 2578,
+        "GNIS class 'Range' is not hydrographic": 20,
+        "GNIS class 'Ridge' is not hydrographic": 19,
+        "GNIS class 'Sea' is not hydrographic": 2,
+        "GNIS class 'Summit' is not hydrographic": 307,
+        "GNIS class 'Valley' is not hydrographic": 576,
+        "GNIS class 'Woods' is not hydrographic": 1
+      },
+      "retained": 434,
+      "retained_by_class": {
+        "Basin": 8,
+        "Canal": 37,
+        "Channel": 31,
+        "Falls": 5,
+        "Gut": 6,
+        "Lake": 49,
+        "Reservoir": 37,
+        "Spring": 2,
+        "Stream": 250,
+        "Swamp": 9
+      },
+      "source": 5818,
+      "state": "PASS",
+      "unresolved": 0
+    }
+  },
+  "manifestations": [
+    {
+      "byte_sha256": "34353139cded2a943b063fae7bbeef7ef00db5c1d5b33ef311318cc4b5e32d71",
+      "bytes": 268776,
+      "pin_matches": null,
+      "source_key": "usgs_gnis_names",
+      "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/GeographicNames/DomesticNames/DomesticNames_PR_Text.zip"
+    }
+  ],
+  "run_utc": "2026-11-15T02:00:00Z",
+  "stage": "names",
+  "status": "PASS"
+}

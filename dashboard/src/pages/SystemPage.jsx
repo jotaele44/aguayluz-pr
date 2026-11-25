@@ -28,14 +28,14 @@ function Switch({ on, label, env, hint }) {
   const Icon = on ? CheckCircle2 : XCircle
   return (
     <div className="flex items-start gap-2.5 rounded-lg border border-slate-800 bg-slate-950/50 p-3">
-      <Icon className={cn('mt-0.5 h-4 w-4 shrink-0', on ? 'text-emerald-400' : 'text-slate-600')} />
+      <Icon className={cn('mt-0.5 h-4 w-4 shrink-0', on ? 'text-emerald-400' : 'text-slate-400')} />
       <div className="min-w-0">
         <div className="text-xs font-medium text-slate-200">{label}</div>
-        <div className="mt-0.5 truncate font-mono text-[10px] text-slate-500" title={env}>{env}</div>
-        {hint && <div className="mt-1 text-[10px] text-slate-500">{hint}</div>}
+        <div className="mt-0.5 truncate font-mono text-[10px] text-slate-400" title={env}>{env}</div>
+        {hint && <div className="mt-1 text-[10px] text-slate-400">{hint}</div>}
       </div>
       <span className={cn('ml-auto shrink-0 text-[10px] uppercase tracking-wide',
-        on ? 'text-emerald-400' : 'text-slate-600')}>
+        on ? 'text-emerald-400' : 'text-slate-400')}>
         {on ? 'on' : 'unset'}
       </span>
     </div>
@@ -49,16 +49,16 @@ function ArtifactRow({ name, entry }) {
         entry?.present ? 'bg-emerald-400' : 'bg-slate-700')} />
       <div className="min-w-0 flex-1">
         <div className="truncate text-xs text-slate-300">{name}</div>
-        <div className="truncate font-mono text-[10px] text-slate-600">{entry?.path}</div>
+        <div className="truncate font-mono text-[10px] text-slate-400">{entry?.path}</div>
       </div>
       <div className="shrink-0 text-right">
         {entry?.present ? (
           <>
             <div className="font-mono text-[10px] text-slate-400">{fmtDate(entry.modified_at)}</div>
-            <div className="text-[10px] text-slate-600">{Math.round((entry.bytes ?? 0) / 1024).toLocaleString()} KB</div>
+            <div className="text-[10px] text-slate-400">{Math.round((entry.bytes ?? 0) / 1024).toLocaleString()} KB</div>
           </>
         ) : (
-          <span className="text-[10px] text-slate-600">not generated</span>
+          <span className="text-[10px] text-slate-400">not generated</span>
         )}
       </div>
     </div>
@@ -140,7 +140,7 @@ export default function SystemPage() {
                 : <RefreshCw className="mr-1.5 h-3.5 w-3.5" />}
               {exporting ? 'Exporting…' : 'Run federation export'}
             </Button>
-            <p className="mt-1.5 text-[10px] text-slate-500">
+            <p className="mt-1.5 text-[10px] text-slate-400">
               {!up
                 ? 'Unavailable — the backend is unreachable.'
                 : authNeedsKey
@@ -162,7 +162,7 @@ export default function SystemPage() {
                 : <Bell className="mr-1.5 h-3.5 w-3.5" />}
               {notifying ? 'Sending…' : 'Send status alert'}
             </Button>
-            <p className="mt-1.5 text-[10px] text-slate-500">
+            <p className="mt-1.5 text-[10px] text-slate-400">
               {notifyReady
                 ? 'Pushes the current alert counts to every configured channel.'
                 : authNeedsKey
@@ -180,7 +180,7 @@ export default function SystemPage() {
             >
               <FileText className="h-3.5 w-3.5" /> Open status report
             </a>
-            <p className="mt-1.5 text-[10px] text-slate-500">
+            <p className="mt-1.5 text-[10px] text-slate-400">
               Printable HTML rollup — sectors, top municipios, recent events.
             </p>
           </div>
@@ -213,7 +213,7 @@ export default function SystemPage() {
               placeholder={apiKey ? 'Key set — enter a new one to replace' : 'Paste API_SECRET_KEY'}
               aria-label="API secret key"
               autoComplete="off"
-              className="h-8 min-w-[260px] flex-1 rounded-md border border-slate-700 bg-slate-950 px-2.5 font-mono text-xs text-slate-200 placeholder:text-slate-600"
+              className="h-8 min-w-[260px] flex-1 rounded-md border border-slate-700 bg-slate-950 px-2.5 font-mono text-xs text-slate-200 placeholder:text-slate-400"
             />
             <Button
               type="submit"
@@ -250,7 +250,7 @@ export default function SystemPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Panel title="Backend configuration">
           <div className="mb-3 flex items-center gap-2 text-xs">
-            <KeyRound className="h-3.5 w-3.5 text-slate-500" />
+            <KeyRound className="h-3.5 w-3.5 text-slate-400" />
             <span className={up ? 'text-emerald-300' : 'text-red-300'}>
               Backend {up ? 'online' : 'unreachable'}
             </span>
@@ -265,7 +265,7 @@ export default function SystemPage() {
         <div className="space-y-6">
           <Panel title="Canonical outputs">
             {isLoading || !status
-              ? <p className="text-xs text-slate-500">Loading…</p>
+              ? <p className="text-xs text-slate-400">Loading…</p>
               : Object.entries(ARTIFACT_LABELS).map(([key, label]) => (
                   <ArtifactRow key={key} name={label} entry={status.artifacts?.[key]} />
                 ))}
@@ -273,7 +273,7 @@ export default function SystemPage() {
 
           <Panel title="Source corpora">
             {isLoading || !status
-              ? <p className="text-xs text-slate-500">Loading…</p>
+              ? <p className="text-xs text-slate-400">Loading…</p>
               : Object.entries(CORPUS_LABELS).map(([key, label]) => (
                   <ArtifactRow key={key} name={label} entry={status.corpora?.[key]} />
                 ))}

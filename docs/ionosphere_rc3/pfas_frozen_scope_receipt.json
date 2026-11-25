@@ -1,0 +1,142 @@
+{
+  "state": "PASS_FROZEN_PR_SCOPE_NATIONAL_DISTINCT",
+  "scope": "Exact frozen PR row multiset and existing canonical TSV only; no live freshness or national equivalence claim",
+  "bundle_sha256": "312c47f198ed7b749a7acb50058878f06763ed680d0fb6e507d85f59fc86b797",
+  "baseline_archive_sha256": "4845eb3abf34d61d7d239e26a815c69b21e39d249840243d266274b5b5d73aaa",
+  "observed_archive_sha256": "007ee5f6a19dd8f1dac682ded23bcd3de72c8c5f49487dbf181334091bd35d96",
+  "archive": {
+    "classification": "DISTINCT_PAYLOADS",
+    "baseline_members": [
+      {
+        "path": "InstructionsforAccessingUCMRResults_Jan2025_508.pdf",
+        "size": 357942,
+        "sha256": "24af0823416b067188e0dac405baed925b4033a2a40942b75c41ef5c7b33715b"
+      },
+      {
+        "path": "UCMR5_AddtlDataElem.txt",
+        "size": 22160541,
+        "sha256": "605973aca542541f5037a3dea5f702a407f0430b2cea7b88895181c9fd1050cd"
+      },
+      {
+        "path": "UCMR5_All_MA_WY.txt",
+        "size": 190260685,
+        "sha256": "4d72703e4fece5d5fb7b243c1bcd5a72e65c09bf79efbbc05b548c9fb19e7391"
+      },
+      {
+        "path": "UCMR5_All_Tribes_AK_LA.txt",
+        "size": 129021281,
+        "sha256": "063c856dc797b6637569eb43fabda74cce8f6579c34e7203fec8dc0277d6d85a"
+      },
+      {
+        "path": "UCMR5_DataSummary_Jul2026_508.pdf",
+        "size": 526036,
+        "sha256": "fb1f0ea05822dcb99cd1cefab030f55f6295fe0409bc9a971a9a6572b2666e24"
+      },
+      {
+        "path": "UCMR5_ZIPCodes.txt",
+        "size": 534306,
+        "sha256": "98b4c21a9ec9cb2948d6dbdb78826a00699a12a247b4aa1b8314222605703ffe"
+      }
+    ],
+    "observed_members": [
+      {
+        "path": "InstructionsforAccessingUCMRResults_Jan2025_508.pdf",
+        "size": 357942,
+        "sha256": "24af0823416b067188e0dac405baed925b4033a2a40942b75c41ef5c7b33715b"
+      },
+      {
+        "path": "UCMR5_AddtlDataElem.txt",
+        "size": 22160541,
+        "sha256": "605973aca542541f5037a3dea5f702a407f0430b2cea7b88895181c9fd1050cd"
+      },
+      {
+        "path": "UCMR5_All_MA_WY.txt",
+        "size": 190257621,
+        "sha256": "3255b3cc6041b110f507a531f67c3368364e3bdbd79304ae544c967d9526ffe4"
+      },
+      {
+        "path": "UCMR5_All_Tribes_AK_LA.txt",
+        "size": 129021281,
+        "sha256": "5a2231ee669ac3c082ed07013020e3f991ff3f2aedb027ca5394fe224a86808d"
+      },
+      {
+        "path": "UCMR5_DataSummary_Jul2026_508.pdf",
+        "size": 527311,
+        "sha256": "e21b9c7224b0e60a3a1379633533ba61eb08495da5ed2d8f1a34291cfee3df80"
+      },
+      {
+        "path": "UCMR5_ZIPCodes.txt",
+        "size": 534306,
+        "sha256": "98b4c21a9ec9cb2948d6dbdb78826a00699a12a247b4aa1b8314222605703ffe"
+      }
+    ],
+    "payload_multisets_equal": false,
+    "intersection": 3,
+    "a_only": 3,
+    "b_only": 3,
+    "union": 9,
+    "symmetric_difference": 6
+  },
+  "source_accounting": {
+    "baseline": {
+      "source": 1191356,
+      "retained": 21771,
+      "excluded": 1169585,
+      "encoding": "cp1252",
+      "member": "UCMR5_All_MA_WY.txt"
+    },
+    "observed": {
+      "source": 1191331,
+      "retained": 21771,
+      "excluded": 1169560,
+      "encoding": "cp1252",
+      "member": "UCMR5_All_MA_WY.txt"
+    }
+  },
+  "headers": [
+    "PWSID",
+    "PWSName",
+    "Size",
+    "FacilityID",
+    "FacilityName",
+    "FacilityWaterType",
+    "SamplePointID",
+    "SamplePointName",
+    "SamplePointType",
+    "AssociatedFacilityID",
+    "AssociatedSamplePointID",
+    "CollectionDate",
+    "SampleID",
+    "Contaminant",
+    "MRL",
+    "Units",
+    "MethodID",
+    "AnalyticalResultsSign",
+    "AnalyticalResultValue",
+    "SampleEventCode",
+    "MonitoringRequirement",
+    "Region",
+    "State",
+    "UCMR1SampleType"
+  ],
+  "row_count": 21771,
+  "pwsid_count": 99,
+  "row_multiset": {
+    "intersection": 21771,
+    "a_only": 0,
+    "b_only": 0,
+    "union": 21771,
+    "symmetric_difference": 0
+  },
+  "pwsid_set": {
+    "intersection": 99,
+    "a_only": 0,
+    "b_only": 0,
+    "union": 99,
+    "symmetric_difference": 0
+  },
+  "canonical_sha256": "ac40d8d67f7343832e0b11d78c892e3a6cdd44fe4d0b0892407347d4400b80c5",
+  "canonical_replaced": false,
+  "source_run_id": 39968848835,
+  "source_artifact_id": 12508351665
+}

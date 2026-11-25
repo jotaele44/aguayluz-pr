@@ -1,0 +1,158 @@
+{
+  "schema_version": "aguayluz.prasa-production-osint-coverage/v0.1",
+  "captured_at": "2026-11-14",
+  "classifications": [
+    "public_machine_readable",
+    "public_document_only",
+    "proxy_only",
+    "operator_record_required"
+  ],
+  "metrics": [
+    {
+      "metric": "Island-wide finished-water production, annual",
+      "primary_classification": "public_document_only",
+      "coverage_status": "covered",
+      "best_public_source": [
+        "PRASA-CER-FY2024",
+        "PRASA-CER-FY2025",
+        "PRASA-CFP-2025"
+      ],
+      "blockers": [
+        "FY2025 is published as both 507.10 and 496 MGD"
+      ],
+      "included_in_request": false
+    },
+    {
+      "metric": "Share of production from filtration plants vs wells, annual",
+      "primary_classification": "public_document_only",
+      "coverage_status": "covered_low_confidence",
+      "best_public_source": [
+        "PRASA-CER-FY2024",
+        "PRASA-CFP-2025"
+      ],
+      "blockers": [
+        "Stated as 'approximately 88%' for FY2023, FY2024 and FY2025 and about 90% for FY2019-FY2021; no method published"
+      ],
+      "included_in_request": true
+    },
+    {
+      "metric": "Raw-water withdrawals by public water system (PWSID), surface vs groundwater, annual 2017-2020",
+      "primary_classification": "public_machine_readable",
+      "coverage_status": "covered",
+      "best_public_source": [
+        "USGS-P9HWON2W-2020-TABLE2",
+        "USGS-P9HWON2W-2019-TABLE2",
+        "USGS-P9HWON2W-2018-TABLE2",
+        "USGS-P9HWON2W-2017-TABLE2"
+      ],
+      "blockers": [
+        "Nothing after 2020",
+        "Withdrawals, not production"
+      ],
+      "included_in_request": false
+    },
+    {
+      "metric": "Registry of PRASA systems, wells, intakes and treatment points",
+      "primary_classification": "public_machine_readable",
+      "coverage_status": "covered",
+      "best_public_source": [
+        "EPA-SDWIS-ENVIROFACTS-PR"
+      ],
+      "blockers": [
+        "No volumes, capacities or coordinates",
+        "PRASA identified by a phone-number heuristic"
+      ],
+      "included_in_request": false
+    },
+    {
+      "metric": "Production per filtration plant, monthly",
+      "primary_classification": "operator_record_required",
+      "coverage_status": "not_published",
+      "best_public_source": [],
+      "blockers": [
+        "Catalogued by the Instituto de Estadisticas; the data link returns 404",
+        "USGS holds 2017-2020 daily inflows under a 'sensitivity' restriction"
+      ],
+      "included_in_request": true
+    },
+    {
+      "metric": "Extraction per well, monthly",
+      "primary_classification": "operator_record_required",
+      "coverage_status": "not_published",
+      "best_public_source": [],
+      "blockers": [
+        "Same as above",
+        "Only the well count (244) and a 100-1,200 gpm range are public"
+      ],
+      "included_in_request": true
+    },
+    {
+      "metric": "Production by operational region",
+      "primary_classification": "operator_record_required",
+      "coverage_status": "not_published",
+      "best_public_source": [],
+      "blockers": [
+        "Only telemetry coverage by region is public (CER FY2025 Table 5-3)"
+      ],
+      "included_in_request": true
+    },
+    {
+      "metric": "Design capacity per plant and per well",
+      "primary_classification": "proxy_only",
+      "coverage_status": "partial",
+      "best_public_source": [
+        "DRNA-PIRA-2016",
+        "PRASA-CFP-2025"
+      ],
+      "blockers": [
+        "Island total and size tiers only; a handful of plants in PIRA 2016"
+      ],
+      "included_in_request": true
+    },
+    {
+      "metric": "Raw-water source and intake-to-plant allocation",
+      "primary_classification": "operator_record_required",
+      "coverage_status": "not_published",
+      "best_public_source": [],
+      "blockers": [
+        "USGS used a PRASA allocation it did not publish"
+      ],
+      "included_in_request": true
+    },
+    {
+      "metric": "Production metering coverage and the metering-error adjustment",
+      "primary_classification": "operator_record_required",
+      "coverage_status": "not_published",
+      "best_public_source": [
+        "PRASA-STRATEGIC-PLAN-2026-2029"
+      ],
+      "blockers": [
+        "Only 58% of production was metered in FY2020; the adjustment is footnoted, not quantified"
+      ],
+      "included_in_request": true
+    },
+    {
+      "metric": "Annual water-balance audit worksheets",
+      "primary_classification": "operator_record_required",
+      "coverage_status": "not_published",
+      "best_public_source": [
+        "PRASA-CFP-2024",
+        "PRASA-CFP-2025"
+      ],
+      "blockers": [
+        "Summary table only"
+      ],
+      "included_in_request": true
+    },
+    {
+      "metric": "PRASA Master Plan (2024)",
+      "primary_classification": "operator_record_required",
+      "coverage_status": "not_published",
+      "best_public_source": [],
+      "blockers": [
+        "Referenced in the 2025 fiscal plan; no public copy located"
+      ],
+      "included_in_request": true
+    }
+  ]
+}

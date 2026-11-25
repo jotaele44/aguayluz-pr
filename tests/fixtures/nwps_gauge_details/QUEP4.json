@@ -1,0 +1,44 @@
+{
+ "_capture": {
+  "source": "https://api.water.noaa.gov/nwps/v1/gauges/QUEP4",
+  "retrieved_utc": "2026-10-07T19:40:00Z",
+  "trimmed": "real response reduced to the fields the adapter reads; crests, impacts, images and datums removed"
+ },
+ "lid": "QUEP4",
+ "name": "Lago Guajataca at Damsite",
+ "latitude": 18.3983643,
+ "longitude": -66.9226998,
+ "usgsId": "50010800",
+ "reachId": "",
+ "county": "Quebradillas",
+ "state": {
+  "abbreviation": "PR",
+  "name": "Puerto Rico"
+ },
+ "inService": {
+  "enabled": true,
+  "message": ""
+ },
+ "flood": {
+  "stageUnits": "ft",
+  "flowUnits": "cfs",
+  "categories": {
+   "major": {
+    "stage": -9999,
+    "flow": -9999
+   },
+   "moderate": {
+    "stage": -9999,
+    "flow": -9999
+   },
+   "minor": {
+    "stage": 644.6,
+    "flow": -9999
+   },
+   "action": {
+    "stage": 644,
+    "flow": -9999
+   }
+  }
+ }
+}
