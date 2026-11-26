@@ -120,6 +120,14 @@ corpus is real public data, with some sources external or point-in-time.
   normal). Heavy-rain days (municipio mean ≥ 3 in, or any cell ≥ 6 in) become sub-critical
   `WEATHER_HAZARD` follow-up alerts; the **NWS Hydromet** page lists rainfall by municipio and the
   map has a **Rainfall** municipio fill.
+- U.S. Drought Monitor **Puerto Rico native vector footprint + island-wide area statistics**
+  (`scripts/ingest_drought_usdm_footprint.py`, keyless) — the date-bound official USDM D0–D4
+  GeoJSON components for Puerto Rico plus cumulative "at or above category" percentages. The
+  dedicated **Drought Operations** page at `/drought` renders the official weekly footprint,
+  municipio boundaries, independent rainfall/gauge/water-asset/outage/alert overlays, per-layer
+  freshness, week-over-week history, SHA-256 source provenance and a PNG briefing export. It does
+  not interpolate drought boundaries or infer rationing/root cause; missing footprint data is
+  shown as unavailable rather than as no drought.
 - An **outdoor-conditions layer**: one current-conditions row per municipio in
   `data/outdoor_conditions.jsonl` (`scripts/build_outdoor_conditions.py`), exported to the hub as
   `outdoor_condition` entities. Six sources feed it on the hydromet plane: the NWS San Juan **Surf

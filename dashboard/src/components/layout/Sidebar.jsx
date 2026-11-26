@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
+  LayoutDashboard, Map, Database, Zap, Activity, ClipboardList, ClipboardCheck,
+  BarChart3, ScrollText, ShieldAlert, SlidersHorizontal, Droplets, Mountain, Landmark,
+  ChevronLeft, ChevronRight, X, CloudRain, Sun,
   LayoutDashboard, Map, Database, ShieldAlert, Droplets, Leaf, Landmark,
   ClipboardList, BarChart3, ScrollText, SlidersHorizontal, ChevronRight, X,
 } from 'lucide-react'
@@ -19,6 +22,7 @@ const NAV = [
   { to: '/monitoring', icon: Activity, label: 'Monitoring' },
   { to: '/electricity', icon: Activity, label: 'Electricity Intelligence' },
   { to: '/hydromet', icon: CloudRain, label: 'NWS Hydromet' },
+  { to: '/drought', icon: Sun, label: 'Drought Operations' },
   { to: '/cave-karst', icon: Mountain, label: 'Cave & Karst' },
   { to: '/regulatory', icon: Landmark, label: 'Regulatory', end: true },
   { to: '/regulatory/review', icon: ClipboardCheck, label: 'Regulatory Review' },

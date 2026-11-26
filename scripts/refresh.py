@@ -187,6 +187,11 @@ STEP_DROUGHT_USDM = (
     ["scripts/ingest_drought_usdm.py", "--weeks", "52"],
     True,
 )
+STEP_DROUGHT_USDM_FOOTPRINT = (
+    "USDM weekly vector footprint + PR statistics → drought_usdm_footprint",
+    ["scripts/ingest_drought_usdm_footprint.py", "--weeks", "12"],
+    True,
+)
 STEP_SOIL_ENRICH = (
     "NRCS Soil Data Access → drought-monitoring-area soil enrichment",
     ["scripts/enrich_drought_soil.py"],
@@ -372,6 +377,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_REGULATORY_RECHECK,
         STEP_REGULATORY_PROMOTE,
         STEP_DROUGHT_USDM,
+        STEP_DROUGHT_USDM_FOOTPRINT,
         STEP_PRECIP_NCEI,
         STEP_SOIL_ENRICH,
         STEP_SDWIS,
@@ -412,6 +418,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_REGULATORY_RECHECK,
         STEP_REGULATORY_PROMOTE,
         STEP_DROUGHT_USDM,
+        STEP_DROUGHT_USDM_FOOTPRINT,
         STEP_PRECIP_NCEI,
         STEP_SOIL_ENRICH,
         STEP_SDWIS,
