@@ -14,7 +14,7 @@ function Field({ label, children }) {
   if (children == null || children === '') return null
   return (
     <div>
-      <dt className="mb-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">{label}</dt>
+      <dt className="mb-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">{label}</dt>
       <dd className="text-sm text-slate-200">{children}</dd>
     </div>
   )
@@ -66,10 +66,10 @@ export default function AlertDetailPage() {
   return (
     <div className="max-w-3xl space-y-6 p-6">
       <div className="flex items-center gap-3">
-        <Link to="/alerts" className="flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-slate-300">
+        <Link to="/alerts" className="flex items-center gap-1.5 text-xs text-slate-400 transition hover:text-slate-300">
           <ArrowLeft className="h-3.5 w-3.5" /> Alerts
         </Link>
-        <span className="text-slate-700">/</span>
+        <span className="text-slate-400">/</span>
         <span className="truncate font-mono text-xs text-slate-400">{alert.alert_id}</span>
       </div>
 
@@ -113,12 +113,12 @@ export default function AlertDetailPage() {
           <Field label="Review status"><span className="capitalize">{(alert.review_status || '').replace(/_/g, ' ')}</span></Field>
           <Field label="Start">
             <span className="flex items-center gap-1.5">
-              <Calendar className="h-3.5 w-3.5 text-slate-500" />{fmtDate(alert.start_at) || '–'}
+              <Calendar className="h-3.5 w-3.5 text-slate-400" />{fmtDate(alert.start_at) || '–'}
             </span>
           </Field>
           <Field label="End">
             <span className="flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5 text-slate-500" />{fmtDate(alert.end_at) || 'Ongoing'}
+              <Clock className="h-3.5 w-3.5 text-slate-400" />{fmtDate(alert.end_at) || 'Ongoing'}
             </span>
           </Field>
           <Field label="Confidence">{alert.confidence != null ? `${alert.confidence}/100` : null}</Field>
@@ -133,7 +133,7 @@ export default function AlertDetailPage() {
                   {alert.latitude.toFixed(4)}, {alert.longitude.toFixed(4)}
                   {alert.coord_confidence ? ` (${alert.coord_confidence})` : ''}
                 </span>
-              : <span className="text-xs text-slate-500">not geolocated — absent from the map layer</span>}
+              : <span className="text-xs text-slate-400">not geolocated — absent from the map layer</span>}
           </Field>
           <Field label="Source">
             {/^https?:\/\//.test(alert.source_ref || '')
@@ -146,7 +146,7 @@ export default function AlertDetailPage() {
 
         {covertFlags.length > 0 && (
           <div className="mt-4 border-t border-slate-800 pt-4">
-            <p className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <p className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
               <Flag className="h-3.5 w-3.5" /> Structural flags
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -161,7 +161,7 @@ export default function AlertDetailPage() {
 
         {alert.validation_notes && (
           <div className="mt-4 border-t border-slate-800 pt-4">
-            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
               Validation notes (VAL-001..010)
             </p>
             <p className="text-sm leading-relaxed text-slate-300">{alert.validation_notes}</p>
@@ -185,7 +185,7 @@ export default function AlertDetailPage() {
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-slate-200">{asset?.asset_name || aid}</p>
-                    <p className="truncate text-xs text-slate-500">
+                    <p className="truncate text-xs text-slate-400">
                       {asset ? `${asset.asset_subtype || asset.asset_type} · ${asset.municipality}` : 'not in the loaded asset page'}
                     </p>
                   </div>
@@ -211,7 +211,7 @@ export default function AlertDetailPage() {
                   {e.from_asset_id || e.asset_id || '—'} → {e.to_asset_id || '—'}
                 </div>
                 {(e.dependency_type || e.relationship || e.notes) && (
-                  <div className="mt-1 text-slate-500">
+                  <div className="mt-1 text-slate-400">
                     {[e.dependency_type || e.relationship, e.notes].filter(Boolean).join(' · ')}
                   </div>
                 )}

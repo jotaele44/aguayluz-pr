@@ -1,0 +1,114 @@
+{
+  "schema_version": "aguayluz.water_health.prdoh_sdwis_reconciliation_qualification/v1",
+  "epoch_id": "WATER_HEALTH_PRDOH_SDWIS_RECONCILIATION_V1",
+  "qualifying_pr": 366,
+  "qualifying_base_sha": "7d8b6bdb121670578977ac761529c1a6d4627c00",
+  "qualifying_head_sha": "2fdd410bf6b334b7055fe758c0f38a0df9042957",
+  "workflow_denominator": 16,
+  "workflow_conclusions": {
+    "SDWIS Puerto Rico PWS Inventory Freeze": "success",
+    "Admin Control Plane Boundary": "success",
+    "docs-sync": "success",
+    "Federation template drift": "success",
+    "HAF Contract Gate": "success",
+    "JP flood consumer V3": "success",
+    "PFAS Public Source Freeze": "success",
+    "Federation Compatibility": "success",
+    "Secret scan": "success",
+    "Salud SDWIS Water Contract": "success",
+    "Codacy Security Scan": "success",
+    "PFAS Evidence Freeze": "success",
+    "CodeQL": "success",
+    "Salud SDWIS 2025 Source Freeze": "success",
+    "GUI capability parity": "success",
+    "validate": "success"
+  },
+  "frozen_sources": {
+    "prdoh_10747_sha256": "748529762de1b6661b5484957a7662bd233a37aaf371482cdc14bbf5ac584772",
+    "prdoh_10748_sha256": "9886fbed47e9f8a3564167034bedc6bc0a0d653c6f89d81d69f8101ccc3f2603",
+    "sdwis_national_zip_sha256": "4d92d5f46b423742d5fd608257dc63ef666a832d9211199c28434cd8f41dccb0",
+    "sdwis_violations_member_uncompressed_sha256": "74f6f7b45ec37c5a6e7660da97e77558d500f95a1ed97147066bc3698a27ad5b",
+    "sdwis_pr_2025_csv_sha256": "22b465f6f3824ce84f1b329d4a590d7de5963cf793e3534fb6e54d394359d3d2"
+  },
+  "frozen_graphs": {
+    "system": {
+      "path": "data/certification/prdoh_sdwis_system_candidates_v1.json.gz.b64",
+      "decoded_json_sha256": "3297fe0a6a114f7015f658b1101c78eb8ee0578b7f608db4386a0e9dfbc04265",
+      "deterministic_gzip_sha256": "0e8055876466aca45c556afd7e72b438f799eeeb560be112b0b9c8484f0f9b65"
+    },
+    "violation": {
+      "path": "data/certification/prdoh_sdwis_violation_candidates_v1.json.gz.b64",
+      "decoded_json_sha256": "df349b2bad7356cf757a36f2a4afc598119f7d871f1778c37383fe29d2293825",
+      "deterministic_gzip_sha256": "fe2a2e706d3f65e2b0e017dca408b360850f0be7a7a4cf81384c597df8bf97f4"
+    },
+    "revision": {
+      "path": "data/certification/prdoh_sdwis_revision_graph_v1.json.gz.b64",
+      "decoded_json_sha256": "a1e5724a7d793f43045559d077769568da8ca9e18e5daf69b5091b2866824185",
+      "deterministic_gzip_sha256": "fae9a0dbbe11fa95c2b3bad3d5a0d78b42fcc71fe668600ad5980ce1ffa1b2a1"
+    }
+  },
+  "sentinel_closure": {
+    "path": "data/certification/sdwis_sentinel_closure_v1.json",
+    "input_rows": 1168,
+    "input_unique_pwsid_violation_keys": 868,
+    "retained_open_ended_rows": 1168,
+    "remaining_unresolved_rows": 0,
+    "full_row_manifest_decoded_json_sha256": "07fe0274755e3bac10f25d290467074fab3c3693d9c586efbf3d6eb9a9363a11",
+    "full_row_manifest_deterministic_gzip_sha256": "0eb9931a5571b8f6dfd213631685aae27c167feba27e6e012850849f4ae56859",
+    "revised_sdwis_arithmetic": {
+      "source": 15550611,
+      "retained": 4191,
+      "excluded": 15546420,
+      "unresolved": 0,
+      "accounted": 15550611,
+      "delta": 0
+    },
+    "state": "SDWIS_SENTINEL_CLOSURE_PASS"
+  },
+  "identity_closure": {
+    "prdoh_system_representations": 169,
+    "authority_grade_prdoh_pwsids": 142,
+    "prasa_shorthand_tokens": 27,
+    "canonical_system_bindings": 140,
+    "strict_target_period_system_intersection": 138,
+    "canonical_cross_source_violation_bindings": 0,
+    "prdoh_violation_rows_terminally_classified": 129,
+    "unresolved_identity_edges": 0
+  },
+  "five_plane_set_algebra": {
+    "path": "data/certification/prdoh_sdwis_five_plane_set_algebra_v1.json",
+    "state": "FIVE_PLANE_SET_ALGEBRA_PASS",
+    "all_plane_deltas": 0,
+    "material_residue": {
+      "fail": 0,
+      "open": 0,
+      "blocked": 0,
+      "unresolved": 0
+    }
+  },
+  "falsifier_replay": {
+    "path": "data/certification/prdoh_sdwis_falsifier_replay_v1.json",
+    "executable_test_count": 14,
+    "state": "PASS_EXECUTABLE_CI"
+  },
+  "validator": {
+    "script": "scripts/validate_prdoh_sdwis_reconciliation.py",
+    "test": "tests/test_prdoh_sdwis_reconciliation.py",
+    "workflow": "Salud SDWIS Water Contract",
+    "state": "PASS"
+  },
+  "guardrails": [
+    "Canonical system identity is exact authority-grade 9-character PWSID only.",
+    "PRASA four-digit shorthand is not coerced to a 9-character SDWIS PWSID without an authoritative crosswalk.",
+    "PRDOH does not expose SDWIS VIOLATION_ID; zero canonical cross-source violation bindings are asserted.",
+    "OCR-assisted composite matches remain discovery-only or review ties and never become canonical identity.",
+    "RESOLVED_RETAINED in the sentinel adjudication means the adjudication is terminally resolved; the underlying violation remains open-ended/active where EPA semantics indicate no compliance-period end date.",
+    "This qualification unlocks 463-control adjudication but does not certify the 463-control universe."
+  ],
+  "qualification_state": "PASS_EXACT_HEAD",
+  "certification_state": "WATER_HEALTH_PRDOH_SDWIS_RECONCILIATION_CERTIFIED",
+  "downstream_authority": {
+    "control_463_closure": "UNLOCKED",
+    "rule": "463-control work may now enumerate and adjudicate the declared historical/report-period control universe; current 2026Q3 active count 464 is cross-period context and is not itself adjudicative of the 463 control."
+  }
+}

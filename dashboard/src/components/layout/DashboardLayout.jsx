@@ -6,6 +6,7 @@ import { SidebarProvider, useSidebar } from '@/contexts/SidebarContext'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { Menu } from 'lucide-react'
 import brandMark from "@/assets/icon-64.png?inline";
+import { scrollRegion } from '@/lib/scrollRegion';
 
 function Inner() {
   const { setOpen } = useSidebar()
@@ -25,6 +26,9 @@ function Inner() {
         {isMobile && (
           <div className="flex items-center gap-3 px-3 py-2 border-b border-slate-800 bg-slate-900/80 shrink-0 z-20">
             <button
+              onClick={() => setCollapsed(c => !c)}
+              aria-label="Toggle navigation"
+              aria-expanded={!collapsed}
               onClick={() => setOpen(true)}
               aria-label="Open navigation"
               className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200"
@@ -37,7 +41,7 @@ function Inner() {
         )}
 
         <StatsBar />
-        <main className="flex-1 min-h-0 overflow-auto">
+        <main {...scrollRegion()} className="flex-1 min-h-0 overflow-auto">
           <Outlet />
         </main>
       </div>
