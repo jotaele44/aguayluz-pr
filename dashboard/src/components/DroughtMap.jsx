@@ -447,13 +447,13 @@ const DroughtMap = forwardRef(function DroughtMap({
             </ControlButton>
           ))}
         </div>
-        <div className="mt-2 text-[10px] leading-relaxed text-slate-500">
+        <div className="mt-2 text-[10px] leading-relaxed text-slate-400">
           Outage markers require direct event coordinates. Rationing is not mapped until an authoritative geospatial feed is registered.
         </div>
       </div>
 
       <div className="absolute bottom-3 left-3 rounded-lg border border-slate-700/70 bg-slate-950/90 px-3 py-2 shadow-xl backdrop-blur">
-        <div className="mb-1 text-[10px] uppercase tracking-wide text-slate-500">USDM intensity</div>
+        <div className="mb-1 text-[10px] uppercase tracking-wide text-slate-400">USDM intensity</div>
         <div className="flex flex-wrap gap-x-3 gap-y-1">
           {Object.entries(CATEGORY_COLORS).map(([category, color]) => (
             <div key={category} className="flex items-center gap-1.5 text-[11px] text-slate-200">

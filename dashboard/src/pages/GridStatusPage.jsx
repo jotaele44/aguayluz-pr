@@ -20,7 +20,7 @@ function MetricCard({ field, name, unit, data }) {
   return <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4" data-testid={`grid-metric-${field}`}>
     <p className="text-xs font-medium text-slate-400">{name}</p>
     <p className="mt-2 text-xl font-semibold text-slate-100">{label(value)}</p>
-    <p className="mt-1 text-xs text-slate-500">{value == null ? 'No qualified measurement' : unit}</p>
+    <p className="mt-1 text-xs text-slate-400">{value == null ? 'No qualified measurement' : unit}</p>
   </div>
 }
 
