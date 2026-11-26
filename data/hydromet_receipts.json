@@ -121,20 +121,20 @@
       "source_id": "epa_uv"
     },
     "ndbc_buoys": {
-      "last_attempt_utc": "2026-11-26T01:05:51Z",
+      "last_attempt_utc": "2026-11-26T01:19:04Z",
       "last_error": null,
       "last_status": "PASS",
       "last_success": {
         "arithmetic": {
-          "accounted": 770,
+          "accounted": 773,
           "delta": 0,
-          "excluded": 765,
+          "excluded": 768,
           "retained": 5,
-          "source": 770,
+          "source": 773,
           "state": "PASS",
           "unresolved": 0
         },
-        "byte_sha256": "b9c0ad1676bc0e8ea8edbab31b266bf1172cdb89c6fc1fa110c14cb1fa9c555f",
+        "byte_sha256": "5a9bea174d191f57726211eec5092f29074d12ee47f5f7fe1520b3ef707d781d",
         "events_pruned": 0,
         "integrity": "PASS",
         "manifestations_added": 1,
@@ -143,9 +143,9 @@
         "relationships_added": 0,
         "responses": [
           {
-            "byte_sha256": "b9c0ad1676bc0e8ea8edbab31b266bf1172cdb89c6fc1fa110c14cb1fa9c555f",
+            "byte_sha256": "5a9bea174d191f57726211eec5092f29074d12ee47f5f7fe1520b3ef707d781d",
             "key": "ndbc_latest_obs.txt",
-            "manifestation_id": "HYDROMET:ndbc_buoys:b9c0ad1676bc0e8ea8edbab31b266bf1"
+            "manifestation_id": "HYDROMET:ndbc_buoys:5a9bea174d191f57726211eec5092f29"
           }
         ],
         "source_url": "https://www.ndbc.noaa.gov/data/latest_obs/latest_obs.txt",
@@ -163,14 +163,14 @@
           "41121"
         ]
       },
-      "last_success_utc": "2026-11-26T01:05:51Z",
+      "last_success_utc": "2026-11-26T01:19:04Z",
       "referenced_manifestation_ids": [
-        "HYDROMET:ndbc_buoys:b9c0ad1676bc0e8ea8edbab31b266bf1"
+        "HYDROMET:ndbc_buoys:5a9bea174d191f57726211eec5092f29"
       ],
       "source_id": "ndbc_buoys"
     },
     "nwps_gauges": {
-      "last_attempt_utc": "2026-11-26T01:05:33.640007Z",
+      "last_attempt_utc": "2026-11-26T01:18:48.268092Z",
       "last_error": null,
       "last_status": "PASS",
       "last_success": {
@@ -189,33 +189,33 @@
           "POINT_IN_POLYGON_WITH_ALIAS": 102,
           "UNRESOLVED": 12
         },
-        "bulk_manifestation_id": "HYDROMET:nwps_gauges:e73b5c729c130f48ce3623c4f6ea5153",
-        "byte_sha256": "e73b5c729c130f48ce3623c4f6ea5153ce8105d79e4f6c95e2eb1f23136dba4f",
+        "bulk_manifestation_id": "HYDROMET:nwps_gauges:fe03aec2f4d13ac876c7a588c37cafaf",
+        "byte_sha256": "fe03aec2f4d13ac876c7a588c37cafaf2dadf1157da164402f85c313980948c7",
         "detail_failures": [],
         "details_fetched": 0,
         "events_pruned": 0,
         "flood_categories": {
           "action": 1,
-          "low_threshold": 1,
-          "no_flooding": 80,
+          "low_threshold": 2,
+          "no_flooding": 79,
           "not_defined": 34,
           "obs_not_current": 2
         },
         "integrity": "PASS",
         "manifestations_added": 1,
         "manifestations_pruned": 1,
-        "new_revisions": 0,
+        "new_revisions": 1,
         "outcomes": {
           "retained": 118
         },
-        "records_added": 0,
-        "relationships_added": 0,
+        "records_added": 1,
+        "relationships_added": 2,
         "retrieval_query": "bbox.xmin=-67.95&bbox.ymin=17.85&bbox.xmax=-65.2&bbox.ymax=18.55&srid=EPSG_4326",
         "source_url": "https://api.water.noaa.gov/nwps/v1/gauges",
         "usgs_matched": 108,
         "usgs_unmatched": 0
       },
-      "last_success_utc": "2026-11-26T01:05:33.640007Z",
+      "last_success_utc": "2026-11-26T01:18:48.268092Z",
       "referenced_manifestation_ids": [
         "HYDROMET:nwps_gauges:009ca0384ac5a47d6969f06beb117272",
         "HYDROMET:nwps_gauges:02d8ece174b4a486a2097f658fbcaee9",
@@ -328,13 +328,13 @@
         "HYDROMET:nwps_gauges:e4d2abe01990d6fdd4086312d5ba3fa7",
         "HYDROMET:nwps_gauges:e54744178ac290b9a3fdc49c9c02f73c",
         "HYDROMET:nwps_gauges:e62b1d21096050f0d86468d723b12fde",
-        "HYDROMET:nwps_gauges:e73b5c729c130f48ce3623c4f6ea5153",
         "HYDROMET:nwps_gauges:e85eb74a6931e4441a02faf7d5389a2a",
         "HYDROMET:nwps_gauges:ead0c2d1389faccf1bba9b75d0dbc5e0",
         "HYDROMET:nwps_gauges:eb9a9553fe9104c3c6224c3c4f029b2a",
         "HYDROMET:nwps_gauges:ed5143a1a75671aef2214463e0aca08f",
         "HYDROMET:nwps_gauges:efa7943e2cbf5f1143b87a82847e266b",
         "HYDROMET:nwps_gauges:f8981bca5de2954c3a691c94856405ea",
+        "HYDROMET:nwps_gauges:fe03aec2f4d13ac876c7a588c37cafaf",
         "HYDROMET:nwps_gauges:fe4964938c320cbe94d0310c16cd4896"
       ],
       "source_id": "nwps_gauges"
@@ -457,7 +457,7 @@
       "source_id": "nws_gridpoint_heat"
     },
     "nws_marine_alerts": {
-      "last_attempt_utc": "2026-11-26T01:05:50Z",
+      "last_attempt_utc": "2026-11-26T01:19:03Z",
       "last_error": null,
       "last_status": "PASS",
       "last_success": {
@@ -471,7 +471,7 @@
           "state": "PASS",
           "unresolved": 0
         },
-        "byte_sha256": "298df5291d439ffc80476eedc3cf34793203bbf6620cb92964cb249581643ecd",
+        "byte_sha256": "27237225d4bbffb8c91612c9b1fd36e5952e7e1a0eefc775a149128278db0500",
         "closed": 0,
         "events_pruned": 0,
         "integrity": "PASS",
@@ -485,20 +485,20 @@
         "relationships_added": 0,
         "responses": [
           {
-            "byte_sha256": "298df5291d439ffc80476eedc3cf34793203bbf6620cb92964cb249581643ecd",
+            "byte_sha256": "27237225d4bbffb8c91612c9b1fd36e5952e7e1a0eefc775a149128278db0500",
             "key": "nws_marine_alerts.json",
-            "manifestation_id": "HYDROMET:nws_marine_alerts:298df5291d439ffc80476eedc3cf3479"
+            "manifestation_id": "HYDROMET:nws_marine_alerts:27237225d4bbffb8c91612c9b1fd36e5"
           }
         ],
         "source_url": "https://api.weather.gov/alerts/active?area=AM",
-        "updated": "2026-11-26T01:04:50+00:00"
+        "updated": "2026-11-26T01:17:18+00:00"
       },
-      "last_success_utc": "2026-11-26T01:05:50Z",
+      "last_success_utc": "2026-11-26T01:19:03Z",
       "referenced_manifestation_ids": [],
       "source_id": "nws_marine_alerts"
     },
     "nws_surf_zone": {
-      "last_attempt_utc": "2026-11-26T01:05:49Z",
+      "last_attempt_utc": "2026-11-26T01:19:02Z",
       "last_error": null,
       "last_status": "PASS",
       "last_success": {
@@ -543,7 +543,7 @@
         },
         "source_url": "https://api.weather.gov/products/b80e7b5a-2748-4b85-b7d9-fdf5cd8d9ceb"
       },
-      "last_success_utc": "2026-11-26T01:05:49Z",
+      "last_success_utc": "2026-11-26T01:19:02Z",
       "referenced_manifestation_ids": [
         "HYDROMET:nws_surf_zone:33fab7de26833826d233d6d3e9e3cc04"
       ],
