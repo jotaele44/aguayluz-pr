@@ -2705,6 +2705,27 @@
       }
     },
     {
+      "id": "miluma-schema-evidence-gate",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Fail-closed CI provenance gate for the bounded MiLUMA schema-evidence receipt (governance/miluma_schema_evidence.json). It keeps a third-party archival transform distinct from receipt-verified MiLUMA source bytes, so historical field observations may harden parser tests but cannot promote the live endpoint out of RAW_UNFROZEN. It publishes no claim and exposes no operator workflow.",
+      "analysis": {
+        "files": [
+          "scripts/validate_miluma_schema_evidence.py"
+        ],
+        "symbols": [
+          "scripts/validate_miluma_schema_evidence.py:validate",
+          "scripts/validate_miluma_schema_evidence.py:main"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_miluma_schema_evidence.py"
+        ]
+      }
+    },
+    {
       "id": "gis-viewer-and-dependency-analysis",
       "classification": "analysis",
       "status": "active",
