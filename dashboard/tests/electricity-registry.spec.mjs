@@ -4,9 +4,10 @@ import { expect, test } from '@playwright/test'
 const api = 'http://127.0.0.1:8000/electricity/v1/'
 async function open(page) {
   await page.goto('/')
-  const toggle = page.getByRole('button', { name: 'Toggle navigation', exact: true })
+  const toggle = page.getByRole('button', { name: 'Open navigation', exact: true })
   if (page.viewportSize().width < 768) await toggle.click()
-  await page.getByRole('link', { name: 'Electricity Intelligence', exact: true }).click()
+  // The mobile drawer appends ' ›' to sub-link names, so match the prefix.
+  await page.getByRole('link', { name: /^Electricity Intelligence/ }).click()
   await page.getByRole('button', { name: 'Plant & generator registry', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Temporal source registry' })).toBeVisible()
   await expect(page.getByRole('status', { name: 'Matching source identities' })).toContainText('25')

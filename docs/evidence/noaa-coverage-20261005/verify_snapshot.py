@@ -1,7 +1,7 @@
 """Offline audit verification only; no acquisition or production side effects."""
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -56,7 +56,7 @@ periods = forecast['properties']['periods']
 assert len({row['number'] for row in periods}) == len(periods)
 for row in periods:
     assert datetime.fromisoformat(row['startTime']) < datetime.fromisoformat(row['endTime'])
-for left, right in zip(periods, periods[1:]):
+for left, right in zip(periods, periods[1:], strict=False):
     assert datetime.fromisoformat(left['endTime']) == datetime.fromisoformat(right['startTime'])
 a, b = found['metar'], found['taf']
 result = {
