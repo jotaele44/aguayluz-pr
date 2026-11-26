@@ -70,6 +70,18 @@ for (const route of routes) {
       /(?:something broke while rendering|page\s+not\s+found|route\s+not\s+found|404\s*—?\s*not\s+found)/i,
     );
 
+    if (route === "/grid-status") {
+      await expect(page.getByRole("heading", { name: "Electric Grid Monitor" })).toBeVisible();
+      await expect(page.locator('[data-testid^="grid-metric-"]')).toHaveCount(5);
+      await expect(page.locator("body")).toContainText(/Production certification: WITHHELD/);
+      const gridResponse = await request.get(`${backendUrl}/grid/status`);
+      expect(gridResponse.status()).toBe(200);
+      const grid = await gridResponse.json();
+      expect(grid.release_certified).toBe(false);
+      expect(grid.source.verified_current).toBe(false);
+      expect(Object.values(grid.measurements).every((value) => value === null)).toBe(true);
+    }
+
     if (route === "/cave-karst") {
       await expect(page.getByRole("heading", { name: "Cave & Karst Monitor" })).toBeVisible();
       await expect(page.getByRole("note", { name: "Registry scope limitation" })).toContainText(/pilot/i);
