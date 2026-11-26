@@ -4,8 +4,11 @@ import { expect, test } from '@playwright/test'
 const api = 'http://127.0.0.1:8000/electricity/v1/'
 async function open(page) {
   await page.goto('/')
-  const toggle = page.getByRole('button', { name: 'Toggle navigation', exact: true })
-  if (page.viewportSize().width < 768) await toggle.click()
+  // Below 768px the link sits in the navigation drawer, under its Data tab.
+  if (page.viewportSize().width < 768) {
+    await page.getByRole('button', { name: 'Open navigation', exact: true }).click()
+    await page.getByRole('tab', { name: 'Data', exact: true }).click()
+  }
   await page.getByRole('link', { name: 'Electricity Intelligence', exact: true }).click()
   await page.getByRole('button', { name: 'Plant & generator registry', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Temporal source registry' })).toBeVisible()

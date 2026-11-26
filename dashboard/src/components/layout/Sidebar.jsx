@@ -1,10 +1,7 @@
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
-  LayoutDashboard, Map, Database, Zap, Activity, ClipboardList, ClipboardCheck,
-  BarChart3, ScrollText, ShieldAlert, SlidersHorizontal, Droplets, Mountain, Landmark,
-  ChevronLeft, ChevronRight, X, CloudRain, Sun,
-  LayoutDashboard, Map, Database, ShieldAlert, Droplets, Leaf, Landmark,
+  LayoutDashboard, Map, Database, ShieldAlert, Droplets, Leaf, Landmark, Activity,
   ClipboardList, BarChart3, ScrollText, SlidersHorizontal, ChevronRight, X,
 } from 'lucide-react'
 import { useSidebar } from '@/contexts/SidebarContext'
@@ -12,25 +9,6 @@ import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
 import brandMark from "@/assets/icon-64.png?inline";
 
-const NAV = [
-  { to: '/', icon: LayoutDashboard, label: 'Overview', end: true },
-  { to: '/map', icon: Map, label: 'Map' },
-  { to: '/assets', icon: Database, label: 'Assets' },
-  { to: '/alerts', icon: ShieldAlert, label: 'Alerts' },
-  { to: '/outages', icon: Zap, label: 'Outages' },
-  { to: '/water-disruption', icon: Droplets, label: 'Water Validation' },
-  { to: '/monitoring', icon: Activity, label: 'Monitoring' },
-  { to: '/electricity', icon: Activity, label: 'Electricity Intelligence' },
-  { to: '/hydromet', icon: CloudRain, label: 'NWS Hydromet' },
-  { to: '/drought', icon: Sun, label: 'Drought Operations' },
-  { to: '/cave-karst', icon: Mountain, label: 'Cave & Karst' },
-  { to: '/regulatory', icon: Landmark, label: 'Regulatory', end: true },
-  { to: '/regulatory/review', icon: ClipboardCheck, label: 'Regulatory Review' },
-  { to: '/environmental-exposure', icon: Activity, label: 'Exposure Graph' },
-  { to: '/review', icon: ClipboardList, label: 'Review Queue' },
-  { to: '/analytics', icon: BarChart3, label: 'Analytics' },
-  { to: '/logs', icon: ScrollText, label: 'Live Logs' },
-  { to: '/system', icon: SlidersHorizontal, label: 'System & Tools' },
 // Tabs -> rows -> sub-links. Every routed page appears exactly once.
 const NAV_GROUPS = [
   {
@@ -58,15 +36,18 @@ const NAV_GROUPS = [
       { to: '/assets', icon: Database, label: 'Assets',
         desc: 'Infrastructure registry with filters and detail.' },
       { to: '/water-disruption', icon: Droplets, label: 'Water & Weather',
-        desc: 'Water service validation, National Weather Service hydromet, aquifer condition bands, USGS water-use estimates and the reconciled inventory of aquifers and wells.',
+        desc: 'Water service validation, National Weather Service hydromet, drought operations, aquifer condition bands, USGS water-use estimates and the reconciled inventory of aquifers and wells.',
         links: [
           { to: '/hydromet', label: 'NWS Hydromet' },
+          { to: '/drought', label: 'Drought Operations' },
           // Staged preview (ionosphere-preview capability): listed only when the flag is on.
           ...(import.meta.env.VITE_IONOSPHERE_PREVIEW === '1' ? [{ to: '/ionosphere', label: 'Space weather / Clima espacial' }] : []),
           { to: '/aquifer-bands', label: 'Aquifer Bands' },
           { to: '/water-use', label: 'Water Use' },
           { to: '/hydro-inventory', label: 'Hydro Inventory' },
         ] },
+      { to: '/electricity', icon: Activity, label: 'Electricity Intelligence',
+        desc: 'Audit-only electricity source evidence: candidate reviews, monthly acquisition jobs and the plant and generator registry.' },
       { to: '/environmental-exposure', icon: Leaf, label: 'Environment',
         desc: 'Exposure graph and environmental sources.',
         links: [{ to: '/cave-karst', label: 'Cave & Karst' }] },

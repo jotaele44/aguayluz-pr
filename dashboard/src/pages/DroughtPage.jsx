@@ -51,7 +51,7 @@ function SourceRow({ label, value, detail, warning = false }) {
       <div className="text-[11px] font-medium text-slate-300">{label}</div>
       <div>
         <div className={`text-[11px] ${warning ? 'text-amber-300' : 'text-slate-200'}`}>{value || 'Unavailable'}</div>
-        {detail && <div className="mt-0.5 text-[10px] leading-relaxed text-slate-500">{detail}</div>}
+        {detail && <div className="mt-0.5 text-[10px] leading-relaxed text-slate-400">{detail}</div>}
       </div>
     </div>
   )
@@ -156,7 +156,7 @@ export default function DroughtPage() {
               {summary?.freshness?.state || 'UNKNOWN'}
             </span>
           </div>
-          <div className="mt-0.5 text-[11px] text-slate-500">
+          <div className="mt-0.5 text-[11px] text-slate-400">
             USDM weekly footprint + independent AguaYLuz operational layers · map date {summary?.map_date || 'unavailable'}
           </div>
         </div>
@@ -225,7 +225,7 @@ export default function DroughtPage() {
                   </div>
                 ))}
               </div>
-              <p className="mt-2 text-[10px] leading-relaxed text-slate-500">
+              <p className="mt-2 text-[10px] leading-relaxed text-slate-400">
                 Percentages are cumulative area shares: D2 includes land also classified D3/D4. They are not mutually exclusive bins and must not be summed.
               </p>
               {selectedFootprint?.category && (
@@ -264,7 +264,7 @@ export default function DroughtPage() {
                       const value = change.delta_percentage_points?.[category]
                       return (
                         <div key={category} className="rounded bg-slate-900 px-1 py-1.5">
-                          <div className="text-[9px] text-slate-500">{category}</div>
+                          <div className="text-[9px] text-slate-400">{category}</div>
                           <div className="text-[11px] text-slate-200">
                             {Number.isFinite(Number(value)) ? `${Number(value) > 0 ? '+' : ''}${Number(value).toFixed(1)} pp` : '—'}
                           </div>
@@ -272,10 +272,10 @@ export default function DroughtPage() {
                       )
                     })}
                   </div>
-                  <div className="mt-2 text-[10px] text-slate-500">{change.basis}</div>
+                  <div className="mt-2 text-[10px] text-slate-400">{change.basis}</div>
                 </>
               ) : (
-                <div className="text-[11px] text-slate-500">A previous official week is not available for comparison.</div>
+                <div className="text-[11px] text-slate-400">A previous official week is not available for comparison.</div>
               )}
             </Panel>
 
@@ -331,10 +331,10 @@ export default function DroughtPage() {
                     <div className="flex items-center gap-2 text-[10px]">
                       <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: CATEGORY_META[category].color }} />
                       <span className="font-semibold text-slate-300">{category}</span>
-                      <span className="text-slate-500">{groupedMunicipios[category].length} municipios</span>
+                      <span className="text-slate-400">{groupedMunicipios[category].length} municipios</span>
                     </div>
                     {groupedMunicipios[category].length > 0 && (
-                      <div className="mt-1 text-[10px] leading-relaxed text-slate-500">
+                      <div className="mt-1 text-[10px] leading-relaxed text-slate-400">
                         {groupedMunicipios[category].join(', ')}
                       </div>
                     )}
@@ -348,7 +348,7 @@ export default function DroughtPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-[10px]" aria-label="USDM Puerto Rico recent history">
                     <thead>
-                      <tr className="text-left text-slate-500">
+                      <tr className="text-left text-slate-400">
                         <th className="pb-1 font-medium">Map date</th>
                         {['D0', 'D1', 'D2', 'D3', 'D4'].map((category) => <th key={category} className="pb-1 text-right font-medium">{category}</th>)}
                       </tr>
@@ -365,21 +365,21 @@ export default function DroughtPage() {
                     </tbody>
                   </table>
                 </div>
-              ) : <div className="text-[11px] text-slate-500">No official history retained yet.</div>}
+              ) : <div className="text-[11px] text-slate-400">No official history retained yet.</div>}
             </Panel>
 
             <Panel title="Source & methodology">
-              <div className="space-y-2 text-[10px] leading-relaxed text-slate-500">
+              <div className="space-y-2 text-[10px] leading-relaxed text-slate-400">
                 <p>
                   Authority: <span className="text-slate-300">{summary?.authority || 'NDMC/USDM'}</span>. USDM is a weekly broad-scale analysis; local conditions can vary.
                 </p>
                 <div>
                   <div className="text-slate-400">Geometry SHA-256</div>
-                  <code className="break-all text-[9px] text-slate-500">{summary?.source_manifestations?.geometry?.sha256 || 'unavailable'}</code>
+                  <code className="break-all text-[9px] text-slate-400">{summary?.source_manifestations?.geometry?.sha256 || 'unavailable'}</code>
                 </div>
                 <div>
                   <div className="text-slate-400">Statistics SHA-256</div>
-                  <code className="break-all text-[9px] text-slate-500">{summary?.source_manifestations?.statistics?.sha256 || 'unavailable'}</code>
+                  <code className="break-all text-[9px] text-slate-400">{summary?.source_manifestations?.statistics?.sha256 || 'unavailable'}</code>
                 </div>
                 <p>
                   Native drought boundaries come only from the date-specific official USDM vector. AguaYLuz selects Puerto Rico multipart components; it does not draw, interpolate, smooth or infer drought boundaries.

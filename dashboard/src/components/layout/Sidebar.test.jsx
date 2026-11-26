@@ -20,8 +20,9 @@ const PREVIEW_LABEL = 'Space weather / Clima espacial'
 
 // Every page the navigation is expected to reach with the preview flag off.
 const CORE_ROUTES = [
-  '/', '/map', '/alerts', '/outages', '/monitoring', '/assets',
-  '/water-disruption', '/hydromet', '/aquifer-bands', '/water-use', '/hydro-inventory',
+  '/', '/grid-status', '/map', '/alerts', '/outages', '/monitoring', '/assets',
+  '/water-disruption', '/hydromet', '/drought', '/aquifer-bands', '/water-use', '/hydro-inventory',
+  '/electricity',
   '/environmental-exposure', '/cave-karst', '/regulatory', '/regulatory/review',
   '/review', '/analytics', '/source-intelligence', '/logs', '/system',
 ]
