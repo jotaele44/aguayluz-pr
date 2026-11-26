@@ -1,0 +1,179 @@
+{
+  "ledgers": {
+    "epa_echo_potw": {
+      "accounted": 2820,
+      "delta": 0,
+      "excluded": 2757,
+      "excluded_by_reason": {
+        "NPDES permittee that is not a publicly owned treatment works": 2757
+      },
+      "retained": 63,
+      "source": 2820,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "epa_sdwis_facilities": {
+      "accounted": 1655,
+      "by_facility_type": {
+        "SP": 5,
+        "ST": 2,
+        "TP": 1648
+      },
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "retained": 1655,
+      "source": 1655,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "fema_nonprasa_sites": {
+      "accounted": 235,
+      "delta": 0,
+      "excluded": 2,
+      "excluded_by_reason": {
+        "no site id or PWSID in the source row": 2
+      },
+      "retained": 233,
+      "source": 235,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "prasa_facilities": {
+      "accounted": 4325,
+      "delta": 0,
+      "excluded": 71,
+      "excluded_by_reason": {
+        "administrative office, not a water facility": 71
+      },
+      "retained": 4254,
+      "source": 4325,
+      "state": "PASS",
+      "unresolved": 0
+    },
+    "usace_nid": {
+      "accounted": 36,
+      "delta": 0,
+      "excluded": 0,
+      "excluded_by_reason": {},
+      "nation_rows_read": 92674,
+      "nid_data_updated": "2026-11-13",
+      "retained": 36,
+      "source": 36,
+      "state": "PASS",
+      "unresolved": 0
+    }
+  },
+  "manifestations": [
+    {
+      "byte_sha256": "91b62e5f5d6437b0f0101daa4822d6093183edf689a8193ada744e40a407f8fc",
+      "bytes": 1066831,
+      "pin_matches": null,
+      "source_key": "prasa_facilities",
+      "url": "https://services8.arcgis.com/RdbQZfEkeO8qG89L/arcgis/rest/services/PR_PRASA_Facilities/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&orderByFields=OBJECTID&f=json"
+    },
+    {
+      "byte_sha256": "3fc9e1f3fde33541b32666573924a8889d822ddfbaa0dea83e06d4c097e9cfd1",
+      "bytes": 1030990,
+      "pin_matches": null,
+      "source_key": "prasa_facilities",
+      "url": "https://services8.arcgis.com/RdbQZfEkeO8qG89L/arcgis/rest/services/PR_PRASA_Facilities/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&orderByFields=OBJECTID&f=json"
+    },
+    {
+      "byte_sha256": "16fe406dd93e52b0434d98346c7e4f11588c153349e02c2c31e5698fbbb3ee89",
+      "bytes": 166775,
+      "pin_matches": null,
+      "source_key": "prasa_facilities",
+      "url": "https://services8.arcgis.com/RdbQZfEkeO8qG89L/arcgis/rest/services/PR_PRASA_Facilities/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&orderByFields=OBJECTID&f=json"
+    },
+    {
+      "byte_sha256": "8cb54b5e8421684fc55cd2c50efa3386c70b4b1e5db9b774379f6a063849d52d",
+      "bytes": 69429811,
+      "pin_matches": null,
+      "source_key": "usace_nid",
+      "url": "https://nid.sec.usace.army.mil/api/nation/csv"
+    },
+    {
+      "byte_sha256": "d59b8fc8b27e8a78603f54830daa3f36cf1c66c494115e1d833295a1aaaab038",
+      "bytes": 344,
+      "pin_matches": null,
+      "source_key": "epa_echo_potw",
+      "url": "https://echodata.epa.gov/echo/cwa_rest_services.get_facilities?output=JSON&p_st=PR&qcolumns=1,2,4,22,26,27,29,30,53,56,62"
+    },
+    {
+      "byte_sha256": "52ac47493ecb53eb3ad51ac6d66175a0473682662543fa2e7a8f299e17526728",
+      "bytes": 1304741,
+      "pin_matches": null,
+      "source_key": "epa_echo_potw",
+      "url": "https://echodata.epa.gov/echo/cwa_rest_services.get_qid?output=JSON&qcolumns=1,2,4,22,26,27,29,30,53,56,62"
+    },
+    {
+      "byte_sha256": "4c8fc057f7880afb9520ae7eff0804243dfa32d51e47d8b759b967a0804bfc95",
+      "bytes": 107,
+      "pin_matches": null,
+      "source_key": "epa_echo_potw",
+      "url": "https://echodata.epa.gov/echo/cwa_rest_services.get_qid?output=JSON&qcolumns=1,2,4,22,26,27,29,30,53,56,62"
+    },
+    {
+      "byte_sha256": "ff621d4c1262a3a5abed239668e0c22d5775c1cf3270e77882ac6cdab88f91a8",
+      "bytes": 1042065,
+      "pin_matches": null,
+      "source_key": "epa_sdwis_facilities",
+      "url": "https://data.epa.gov/efservice/WATER_SYSTEM_FACILITY/PRIMACY_AGENCY_CODE/PR/FACILITY_TYPE_CODE/TP/ROWS/0:9999/JSON"
+    },
+    {
+      "byte_sha256": "ab7d848f4c01a5b5e140f4858426f406895b110d5f5f3457f5c2153261355eeb",
+      "bytes": 3164,
+      "pin_matches": null,
+      "source_key": "epa_sdwis_facilities",
+      "url": "https://data.epa.gov/efservice/WATER_SYSTEM_FACILITY/PRIMACY_AGENCY_CODE/PR/FACILITY_TYPE_CODE/SP/ROWS/0:9999/JSON"
+    },
+    {
+      "byte_sha256": "e93367d34b028f40275df7419b1eae09a15b4a9967db1739707a8af5eff7d025",
+      "bytes": 1282,
+      "pin_matches": null,
+      "source_key": "epa_sdwis_facilities",
+      "url": "https://data.epa.gov/efservice/WATER_SYSTEM_FACILITY/PRIMACY_AGENCY_CODE/PR/FACILITY_TYPE_CODE/ST/ROWS/0:9999/JSON"
+    },
+    {
+      "byte_sha256": "8bdcc67f1f0fc530b0f29358b44f4a7bcf1cbbbf40157656a9a5ad9c78ce4550",
+      "bytes": 114545,
+      "pin_matches": null,
+      "source_key": "fema_nonprasa_sites",
+      "url": "https://services.arcgis.com/XG15cJAlne2vxtgt/arcgis/rest/services/CriticalFacilitiesAssessment_withNonPRASA_PR/FeatureServer/1/query?where=1%3D1&outFields=*&outSR=4326&orderByFields=OBJECTID&resultRecordCount=2000&f=json"
+    }
+  ],
+  "not_ingested": {
+    "epa_sdwis_facilities": {
+      "DS": "distribution system entry: not a physical water feature",
+      "IN": "ingested as epa_sdwis_intakes",
+      "WL": "ingested as epa_sdwis_wells"
+    },
+    "prasa_facilities": "layers 1-5 (gravity, main, service and pumping pipe lines, about 335,000 segments): distribution network, outside the hydrologic scope"
+  },
+  "residue_sources": [
+    {
+      "detail": "the egress gateway could not connect to sige.pr.gov (2026-11-15); NHD canal/ditch reaches stand in, at coarser detail",
+      "source": "Junta de Planificación SIGE, MIPR/AgricolaPUT_v10_N layer 1 'Canal de Riego' (sige.pr.gov)",
+      "state": "UNREACHABLE_FROM_ENVIRONMENT"
+    },
+    {
+      "detail": "connection reset on every attempt from the build environment (2026-11-15)",
+      "source": "Gobierno de PR geoserver, workspace pr_geodata (geoserver2.pr.gov): PRASA and DRNA layers",
+      "state": "UNREACHABLE_FROM_ENVIRONMENT"
+    },
+    {
+      "detail": "its description says 'The locations DO NOT represent actual Non PRASA locations'",
+      "source": "EPA Region 2 'Non PRASA Pseudo Locations' (ArcGIS item 66f5627a461b4a64820f1c94237bc2a0)",
+      "state": "EXCLUDED_BY_SOURCE_STATEMENT"
+    },
+    {
+      "detail": "volunteer mapping (T3); not used to create features",
+      "source": "OpenStreetMap (Overpass API, Geofabrik extract)",
+      "state": "NOT_OFFICIAL"
+    }
+  ],
+  "run_utc": "2026-11-15T14:00:00Z",
+  "stage": "infrastructure",
+  "status": "PASS"
+}

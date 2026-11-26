@@ -101,7 +101,11 @@ Each carries a header saying so. Edit the template in
 
 Dependencies are pinned so builds are reproducible. When you change one, update
 the lockfile with the command in the table above and commit it alongside your
-change. Dependabot proposes updates weekly for pip, npm and GitHub Actions.
+change. Dependabot proposes updates weekly for pip, npm and GitHub Actions. The
+actions pinned in the rendered workflows listed above change only together with
+their template in `thehub-pr/federation-templates/`, and reach other repositories
+in a template sync pull request. A Dependabot pull request that edits a rendered
+copy on its own fails `template-drift.yml`: close it rather than fix it by hand.
 
 ## Security
 

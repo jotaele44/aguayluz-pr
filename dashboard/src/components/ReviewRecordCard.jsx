@@ -26,8 +26,8 @@ export default function ReviewRecordCard({ record: r, compact = false, actions, 
             {r.severity || 'review'}
           </span>
           {r.evidence_tier && <Badge variant="outline" className={cn('text-[10px]', tierBadge(r.evidence_tier))}>{r.evidence_tier}</Badge>}
-          {r.confidence != null && <span className="text-[11px] text-slate-500">conf {r.confidence}</span>}
-          <span className={cn('ml-auto truncate font-mono text-[11px] text-slate-500', compact ? 'max-w-[150px]' : 'max-w-[200px]')}>
+          {r.confidence != null && <span className="text-[11px] text-slate-400">conf {r.confidence}</span>}
+          <span className={cn('ml-auto truncate font-mono text-[11px] text-slate-400', compact ? 'max-w-[150px]' : 'max-w-[200px]')}>
             {r.record_ref}
           </span>
         </div>

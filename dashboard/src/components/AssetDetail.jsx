@@ -11,11 +11,12 @@ import { useAssetEvents, useFlagAsset } from '@/lib/hooks'
 import { useToast } from '@/components/ui/use-toast'
 import { cn } from '@/lib/utils'
 import { ChevronDown, ChevronRight, Database, ExternalLink, Flag, Map, MapPin, Zap } from 'lucide-react'
+import { scrollRegion } from '@/lib/scrollRegion';
 
 function RelatedEvents({ assetId }) {
   const { data: events = [], isLoading } = useAssetEvents(assetId)
   if (isLoading) return <Skeleton className="h-12 w-full" />
-  if (!events.length) return <p className="text-xs text-slate-500">No related events found</p>
+  if (!events.length) return <p className="text-xs text-slate-400">No related events found</p>
   return (
     <div className="space-y-2">
       {events.slice(0, 8).map((e, i) => (
@@ -24,12 +25,12 @@ function RelatedEvents({ assetId }) {
             <Zap className={cn('h-3 w-3 shrink-0', eventTone(e.event_type))} />
             <span className="text-xs font-medium capitalize text-slate-200">{(e.event_type || '').replace(/_/g, ' ')}</span>
             {e.evidence_tier && <Badge variant="outline" className={cn('text-[10px]', tierBadge(e.evidence_tier))}>{e.evidence_tier}</Badge>}
-            <span className="ml-auto text-[10px] text-slate-500">{fmtDate(e.start_time)}</span>
+            <span className="ml-auto text-[10px] text-slate-400">{fmtDate(e.start_time)}</span>
           </div>
           <p className="mt-1 text-[11px] text-slate-400">{e.affected_area || e.municipality || 'Area unavailable'}</p>
         </div>
       ))}
-      {events.length > 8 && <p className="text-[11px] text-slate-500">+ {events.length - 8} more events</p>}
+      {events.length > 8 && <p className="text-[11px] text-slate-400">+ {events.length - 8} more events</p>}
     </div>
   )
 }
@@ -147,7 +148,7 @@ export default function AssetDetail({ asset: a, onClose }) {
                   Raw record preview
                 </Button>
                 {rawOpen && (
-                  <pre className="max-h-72 overflow-auto border-t border-slate-800 p-3 text-[11px] leading-relaxed text-slate-300">
+                  <pre {...scrollRegion("Asset record details")} className="max-h-72 overflow-auto border-t border-slate-800 p-3 text-[11px] leading-relaxed text-slate-300">
                     {JSON.stringify(a, null, 2)}
                   </pre>
                 )}
@@ -175,7 +176,7 @@ function Section({ title, icon: Icon, children }) {
 function Row({ k, v, mono = false }) {
   return (
     <div className="flex justify-between gap-4 border-b border-slate-800/70 pb-1.5 last:border-b-0 last:pb-0">
-      <dt className="text-xs text-slate-500">{k}</dt>
+      <dt className="text-xs text-slate-400">{k}</dt>
       <dd className={cn('max-w-[65%] break-words text-right text-xs text-slate-200', mono && 'font-mono text-[11px]')}>{v ?? '—'}</dd>
     </div>
   )
@@ -185,7 +186,7 @@ function SourceRow({ sourceRef }) {
   const isUrl = typeof sourceRef === 'string' && (sourceRef.startsWith('http://') || sourceRef.startsWith('https://'))
   return (
     <div className="flex justify-between gap-4 border-b border-slate-800/70 pb-1.5 last:border-b-0 last:pb-0">
-      <dt className="text-xs text-slate-500">Source</dt>
+      <dt className="text-xs text-slate-400">Source</dt>
       <dd className="max-w-[65%] break-words text-right text-xs text-slate-200">
         {isUrl
           ? <a href={sourceRef} target="_blank" rel="noreferrer" className="text-sky-400 hover:underline flex items-center gap-1 justify-end">
