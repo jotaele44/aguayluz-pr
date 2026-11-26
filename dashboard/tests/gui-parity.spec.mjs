@@ -39,6 +39,24 @@ test("manifest exposes at least one active GUI route", () => {
   expect(routes.length).toBeGreaterThan(0);
 });
 
+test("expired weather evidence is inspectable without a critical badge", async ({ page }) => {
+  await page.route("**/alerts?*", async (route) => {
+    await route.fulfill({ json: { total: 1, offset: 0, items: [{
+      alert_id: "AYL_ALR_expiry_regression", module_id: "WEATHER_HAZARD",
+      source_title: "Expired weather lifecycle regression", severity: 5,
+      status: "closed", source_status: "active", is_critical: false,
+      start_at: "2020-01-01T00:00:00Z", end_at: "2020-01-02T00:00:00Z",
+      municipalities: ["Ponce"], evidence_tier: "T1",
+    }] } });
+  });
+  await page.goto("/");
+  await page.locator('a[href="/alerts"]').first().click();
+  const row = page.getByRole("link").filter({ hasText: "Expired weather lifecycle regression" });
+  await expect(row).toBeVisible();
+  await expect(row).toContainText("closed");
+  await expect(row.getByText("critical", { exact: true })).toHaveCount(0);
+});
+
 for (const route of routes) {
   test(`GUI route ${route} is rendered and discoverable`, async ({ page, request }) => {
     const runtimeFailures = [];
@@ -69,6 +87,18 @@ for (const route of routes) {
     await expect(page.locator("body")).not.toContainText(
       /(?:something broke while rendering|page\s+not\s+found|route\s+not\s+found|404\s*—?\s*not\s+found)/i,
     );
+
+    if (route === "/grid-status") {
+      await expect(page.getByRole("heading", { name: "Electric Grid Monitor" })).toBeVisible();
+      await expect(page.locator('[data-testid^="grid-metric-"]')).toHaveCount(5);
+      await expect(page.locator("body")).toContainText(/Production certification: WITHHELD/);
+      const gridResponse = await request.get(`${backendUrl}/grid/status`);
+      expect(gridResponse.status()).toBe(200);
+      const grid = await gridResponse.json();
+      expect(grid.release_certified).toBe(false);
+      expect(grid.source.verified_current).toBe(false);
+      expect(Object.values(grid.measurements).every((value) => value === null)).toBe(true);
+    }
 
     if (route === "/cave-karst") {
       await expect(page.getByRole("heading", { name: "Cave & Karst Monitor" })).toBeVisible();
@@ -161,6 +191,18 @@ test("water monitoring layer controls expose their fail-closed state", async ({ 
 });
 
 test("map spatial controls expose density failure, retry, and evidence state", async ({ page }) => {
+  // This gate tests density lifecycle and controls, not external basemap access.
+  // Keep network tile failures separate from the deliberately injected API 503.
+  await page.route("https://*.tile.openstreetmap.org/**", route => route.fulfill({
+    contentType: "image/png",
+    headers: { "access-control-allow-origin": "*" },
+    body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAABFUlEQVR4nO3BMQEAAADCoPVP7WsIoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeAMBPAABPO1TCQAAAABJRU5ErkJggg==", "base64"),
+  }));
+  await page.route("https://demotiles.maplibre.org/font/**", route => route.fulfill({
+    contentType: "application/x-protobuf",
+    headers: { "access-control-allow-origin": "*" },
+    body: Buffer.alloc(0),
+  }));
   const consoleErrors = [];
   page.on("console", (message) => {
     if (message.type() === "error") consoleErrors.push(message.text());

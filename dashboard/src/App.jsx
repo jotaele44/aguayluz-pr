@@ -18,18 +18,21 @@ const Router = OFFLINE ? HashRouter : BrowserRouter
 // single-file export inlines these async chunks back into one index.html.
 const OverviewPage = lazy(() => import('./pages/OverviewPage'))
 const MapPage = lazy(() => import('./pages/MapPage'))
+const DroughtPage = lazy(() => import('./pages/DroughtPage'))
 const AssetsPage = lazy(() => import('./pages/AssetsPage'))
 const AlertsPage = lazy(() => import('./pages/AlertsPage'))
 const AlertDetailPage = lazy(() => import('./pages/AlertDetailPage'))
 const SystemPage = lazy(() => import('./pages/SystemPage'))
 const SourceIntelligencePage = lazy(() => import('./pages/SourceIntelligencePage'))
 const OutagesPage = lazy(() => import('./pages/OutagesPage'))
+const GridStatusPage = lazy(() => import('./pages/GridStatusPage'))
 const MonitoringPage = lazy(() => import('./pages/MonitoringPage'))
 const CaveKarstPage = lazy(() => import('./pages/CaveKarstPage'))
 const RegulatoryPage = lazy(() => import('./pages/RegulatoryPage'))
 const RegulatoryReviewPage = lazy(() => import('./pages/RegulatoryReviewPage'))
 const EnvironmentalExposurePage = lazy(() => import('./pages/EnvironmentalExposurePage'))
 const HydrometPage = lazy(() => import('./pages/HydrometPage'))
+const ElectricityPage = lazy(() => import('./pages/ElectricityPage'))
 const AquiferBandsPage = lazy(() => import('./pages/AquiferBandsPage'))
 const WaterUsePage = lazy(() => import('./pages/WaterUsePage'))
 const HydroInventoryPage = lazy(() => import('./pages/HydroInventoryPage'))
@@ -63,16 +66,19 @@ function App() {
             <Route element={<DashboardLayout />}>
               <Route path="/" element={<OverviewPage />} />
               <Route path="/map" element={<MapPage />} />
+              <Route path="/drought" element={<DroughtPage />} />
               <Route path="/assets" element={<AssetsPage />} />
               <Route path="/alerts" element={<AlertsPage />} />
               <Route path="/alerts/:id" element={<AlertDetailPage />} />
               <Route path="/outages" element={<OutagesPage />} />
+              <Route path="/grid-status" element={<GridStatusPage />} />
               <Route path="/monitoring" element={<MonitoringPage />} />
               <Route path="/cave-karst" element={<CaveKarstPage />} />
               <Route path="/regulatory" element={<RegulatoryPage />} />
               <Route path="/regulatory/review" element={<RegulatoryReviewPage />} />
               <Route path="/environmental-exposure" element={<EnvironmentalExposurePage />} />
               <Route path="/hydromet" element={<HydrometPage />} />
+              <Route path="/electricity" element={<ElectricityPage />} />
               {IONOSPHERE_PREVIEW && <Route path="/ionosphere" element={<IonospherePage />} />}
               <Route path="/aquifer-bands" element={<AquiferBandsPage />} />
               <Route path="/water-use" element={<WaterUsePage />} />

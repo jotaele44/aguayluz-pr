@@ -120,6 +120,14 @@ corpus is real public data, with some sources external or point-in-time.
   normal). Heavy-rain days (municipio mean ≥ 3 in, or any cell ≥ 6 in) become sub-critical
   `WEATHER_HAZARD` follow-up alerts; the **NWS Hydromet** page lists rainfall by municipio and the
   map has a **Rainfall** municipio fill.
+- U.S. Drought Monitor **Puerto Rico native vector footprint + island-wide area statistics**
+  (`scripts/ingest_drought_usdm_footprint.py`, keyless) — the date-bound official USDM D0–D4
+  GeoJSON components for Puerto Rico plus cumulative "at or above category" percentages. The
+  dedicated **Drought Operations** page at `/drought` renders the official weekly footprint,
+  municipio boundaries, independent rainfall/gauge/water-asset/outage/alert overlays, per-layer
+  freshness, week-over-week history, SHA-256 source provenance and a PNG briefing export. It does
+  not interpolate drought boundaries or infer rationing/root cause; missing footprint data is
+  shown as unavailable rather than as no drought.
 - An **outdoor-conditions layer**: one current-conditions row per municipio in
   `data/outdoor_conditions.jsonl` (`scripts/build_outdoor_conditions.py`), exported to the hub as
   `outdoor_condition` entities. Six sources feed it on the hydromet plane: the NWS San Juan **Surf
@@ -170,6 +178,34 @@ python -m pytest -q                          # test_suite
 python scripts/validate_repo.py              # validation gates G01-G08
 python3 scripts/federation_export.py --mode test   # export_canonical
 ```
+
+## Native electricity evidence workspace
+
+The diagnostic app includes a discoverable **Electricity Intelligence** workspace
+at `/electricity`, served by `server.backend.app:app`. It exposes separate
+observed/reconstructed/forecast/source-candidate views, source receipts, generator
+claims, contradiction inspection, guarded EIA workbook acquisition and offline
+capture, and English/Spanish controls. Missing source data remain unavailable.
+The Evidence inspector also records reversible candidate recommendations with
+exact-claim hashes and immutable history. Recommendations preserve every source
+claim and contradiction; the shared operator role is disclosed. See the
+[review contract and limits](docs/electricity/ADR-0002-candidate-review-ledger.md).
+Source acquisition also exposes durable monthly PR research jobs with metadata
+and coverage discovery, recoverable page checkpoints, cancellation, retry and
+audit export. Complete jobs remain AUDIT ONLY and do not create measurements.
+See the [acquisition contract](docs/electricity/ADR-0003-durable-monthly-acquisition.md).
+The native plant/generator registry provides literal source identities, temporal
+filters, paginated assertion history, overlapping contradictions, source
+disclosures and revision-bound exports. Plant references are derived from source
+generator plant IDs; they are not independently verified plant records or
+cross-source identity matches. See the [registry contract](docs/electricity/ADR-0004-temporal-source-registry.md).
+
+This is an **AUDIT ONLY, NOT CERTIFIED** development tranche. No authoritative
+live grid feed, production forecast engine, RC8–RC14 canonical integration or
+new Federation-consumer acceptance is claimed. Existing exports and THEHUB's
+product role remain intact. See the [architecture](docs/electricity/ADR-0001-native-evidence-workspace.md),
+[requirement ledger](docs/electricity/requirements.v1.json) and
+[validation/recovery runbook](docs/electricity/OPERATIONS.md).
 
 ## Desktop app
 

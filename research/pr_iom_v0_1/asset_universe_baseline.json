@@ -1,0 +1,213 @@
+{
+  "schema_version": "aguayluz.pr-iom-asset-baseline/v0.1",
+  "investigation": "PR-IOM",
+  "captured_at": "2026-11-25",
+  "authoritative": false,
+  "note": "Counts of asset rows already in this repository. They are facilities and features, not equipment: the repository holds no equipment or component inventory. This is the denominator the component registry will bind to, not a count of obsolete items.",
+  "inputs": [
+    {
+      "path": "data/utility_assets.jsonl",
+      "sha256": "b0f1e7c8b454f4369fee6ef3bb5428b54e42c7bcf4bd203a22a65c6d578c0223",
+      "rows": 19757
+    },
+    {
+      "path": "data/hydro/features_pump_station.jsonl",
+      "sha256": "34f9a1b35f26e13e29932775305c12ee84cee4d4fd9ce3b90a6691c8b318998b",
+      "rows": 2112
+    },
+    {
+      "path": "data/hydro/features_dam.jsonl",
+      "sha256": "157cafc35dc40d965fc149a629147f2cf19f38b613f1c35493f7825bae68e610",
+      "rows": 36
+    }
+  ],
+  "utility_assets_by_class": {
+    "thermoelectric_generation": 9,
+    "hydroelectric_generation": 5,
+    "electrical_transmission": 22,
+    "electrical_distribution": 0,
+    "drinking_water_treatment": 3206,
+    "water_distribution": 11,
+    "wastewater_treatment": 95,
+    "reservoirs_and_dams": 245,
+    "industrial_instrumentation": 0
+  },
+  "power_generation_assets": [
+    {
+      "asset_id": "PWR00001",
+      "asset_name": "AES Guayama Coal Plant",
+      "asset_subtype": "Generation (Coal)",
+      "evidence_tier": "T1"
+    },
+    {
+      "asset_id": "PWR00002",
+      "asset_name": "EcoElectrica LNG Plant Peñuelas",
+      "asset_subtype": "Generation (Natural Gas)",
+      "evidence_tier": "T1"
+    },
+    {
+      "asset_id": "PWR00003",
+      "asset_name": "Costa Sur Combined Cycle (PREPA)",
+      "asset_subtype": "Generation (Fuel Oil/Gas)",
+      "evidence_tier": "T1"
+    },
+    {
+      "asset_id": "PWR00004",
+      "asset_name": "Palo Seco Power Plant (PREPA)",
+      "asset_subtype": "Generation (Fuel Oil)",
+      "evidence_tier": "T1"
+    },
+    {
+      "asset_id": "PWR00005",
+      "asset_name": "San Juan Combined Cycle (PREPA)",
+      "asset_subtype": "Generation (Natural Gas)",
+      "evidence_tier": "T1"
+    },
+    {
+      "asset_id": "PWR00006",
+      "asset_name": "Aguirre Steam Electric (PREPA)",
+      "asset_subtype": "Generation (Fuel Oil)",
+      "evidence_tier": "T1"
+    },
+    {
+      "asset_id": "PWR00007",
+      "asset_name": "Mayagüez Power Plant (PREPA)",
+      "asset_subtype": "Generation (Fuel Oil)",
+      "evidence_tier": "T2"
+    },
+    {
+      "asset_id": "PWR00008",
+      "asset_name": "Dos Bocas Hydroelectric",
+      "asset_subtype": "Generation (Water)",
+      "evidence_tier": "T1"
+    },
+    {
+      "asset_id": "PWR00009",
+      "asset_name": "Caonillas Hydroelectric",
+      "asset_subtype": "Generation (Water)",
+      "evidence_tier": "T1"
+    },
+    {
+      "asset_id": "PWR00010",
+      "asset_name": "Garzas Hydroelectric",
+      "asset_subtype": "Generation (Water)",
+      "evidence_tier": "T2"
+    },
+    {
+      "asset_id": "PWR00011",
+      "asset_name": "Guayo Hydroelectric",
+      "asset_subtype": "Generation (Water)",
+      "evidence_tier": "T2"
+    },
+    {
+      "asset_id": "PWR00012",
+      "asset_name": "Yauco Hydroelectric (Luchetti)",
+      "asset_subtype": "Generation (Water)",
+      "evidence_tier": "T2"
+    },
+    {
+      "asset_id": "PWR00013",
+      "asset_name": "Bayamón CT (PREPA)",
+      "asset_subtype": "Generation (Natural Gas)",
+      "evidence_tier": "T2"
+    },
+    {
+      "asset_id": "PWR00014",
+      "asset_name": "Cambalache CT",
+      "asset_subtype": "Generation (Natural Gas)",
+      "evidence_tier": "T2"
+    },
+    {
+      "asset_id": "PWR00015",
+      "asset_name": "Windmar Solar Farm Humacao",
+      "asset_subtype": "Generation (Solar PV)",
+      "evidence_tier": "T2"
+    },
+    {
+      "asset_id": "PWR00016",
+      "asset_name": "Windmar Solar Farm Salinas",
+      "asset_subtype": "Generation (Solar PV)",
+      "evidence_tier": "T2"
+    },
+    {
+      "asset_id": "PWR00017",
+      "asset_name": "Tesla/SunPower Isabela",
+      "asset_subtype": "Generation (Solar+Battery)",
+      "evidence_tier": "T2"
+    }
+  ],
+  "prasa_pump_stations": {
+    "total": 2112,
+    "by_type_and_status": [
+      {
+        "prasa_tipo": "Estación Bomas Potable",
+        "status": "En Uso",
+        "count": 1140
+      },
+      {
+        "prasa_tipo": "Estación Bomas Sanitaria",
+        "status": "En Uso",
+        "count": 962
+      },
+      {
+        "prasa_tipo": "Estación Bomas Potable",
+        "status": "Stand-by (Emergencia)",
+        "count": 4
+      },
+      {
+        "prasa_tipo": "Estación Bomas Sanitaria",
+        "status": "A Eliminarse",
+        "count": 4
+      },
+      {
+        "prasa_tipo": "Estación Bomas Potable",
+        "status": "A Eliminarse",
+        "count": 1
+      },
+      {
+        "prasa_tipo": "Estación Bomas Sanitaria",
+        "status": "Stand-by (Emergencia)",
+        "count": 1
+      }
+    ]
+  },
+  "dams": {
+    "total": 36,
+    "source": "data/hydro/features_dam.jsonl"
+  },
+  "priority_strata": [
+    {
+      "stratum": "hydroelectric_generation",
+      "assets": [
+        "PWR00008",
+        "PWR00009",
+        "PWR00010",
+        "PWR00011",
+        "PWR00012"
+      ],
+      "public_component_evidence_in_this_pass": "none"
+    },
+    {
+      "stratum": "prasa_pumping",
+      "assets_total": 2112,
+      "public_component_evidence_in_this_pass": "none"
+    }
+  ],
+  "gaps": [
+    "No asset rows for electrical distribution or for instrumentation.",
+    "The Aguirre combined-cycle plant, the peaker sites (Daguao, Jobos, Palo Seco MP, Mayagüez units) and Cambalache units appear in the PREB filings by unit; the repository has plant-level rows only, and none for Aguirre CC or the peakers other than Mayagüez and Cambalache.",
+    "pumping_station has 11 rows in utility_assets against 2,112 pump-station features in data/hydro; the two are not reconciled."
+  ],
+  "unresolved_dependencies": [
+    {
+      "name": "Hydroelectric Master",
+      "state": "NOT_IN_REPOSITORY",
+      "detail": "Referenced only as a workbook argument to scripts/assess_lake_documentation.py and in docs/HYDRO_INTELLIGENCE_V2_FINANCIAL_AUTHORITY.md gate 5."
+    },
+    {
+      "name": "Electrical infrastructure ownership and control investigation",
+      "state": "NOT_IN_REPOSITORY",
+      "detail": "No file found in this repository."
+    }
+  ]
+}
