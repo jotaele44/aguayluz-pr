@@ -22,6 +22,30 @@
         "requirements-desktop.txt",
         "governance/change_log.json"
       ]
+    },
+    {
+      "date": "2026-10-15",
+      "summary": "Re-pinned PRII_TEMPLATE_REF to thehub-pr 4258c3c, which hardens the shared docs-sync checker (thehub-pr#359): a pull request can no longer exempt itself through exempt_authors, manifest hygiene is judged on the head manifest so retiring a coupling or renaming a coupled doc no longer fails, a glob that matches nothing now fails when the change adds it, and a :symbol or :line locator is dropped from Markdown link targets. CONTRIBUTING.md now states what the gate enforces. The manifest comment now says a coupling fires on its on events, and exempt_docs now lists docs/adr/** as the comment already claimed. The shared eslint config also picked up one optional glob (src/zip-design, thehub-pr#358); that directory holds no JavaScript here, so lint coverage is unchanged. Tooling and documentation change only: no contract, schema or dependency edge changed.",
+      "files": [
+        ".github/workflows/template-drift.yml",
+        "tools/check_docs_sync.py",
+        "CONTRIBUTING.md",
+        "dashboard/eslint.config.js",
+        ".federation/docs-sync.json",
+        "governance/change_log.json"
+      ]
+    },
+    {
+      "date": "2026-11-22",
+      "summary": "The three workflows that commit data straight to main (refresh.yml, centinelas-handoff.yml, centinelas-intake.yml) now push through the new scripts/push_to_main.sh instead of a bare git push. The script replays the job's data commit on the current tip of main, runs this repo's own tools/check_docs_sync.py on it, records the verdict as the docs-sync commit status, and pushes only when it passes; the workflows gain statuses: write for that. Without it a required docs-sync check on main rejects every bot push, because docs-sync.yml only runs on pull requests, and that is what has kept aguayluz-pr off the required-check list. Same mechanism as centinelas-pr#182, with tests/test_push_to_main.py. Behaviour changes: a data commit the checker would fail is no longer pushed (the run fails with the verdict); the push is retried three times without a sleep instead of four with backoff; a manual centinelas-intake dispatch from a non-default branch now pushes to that branch instead of to main. Workflow and tooling change only: no data, schema, contract or dependency edge changed. This change does not itself make docs-sync required on main.",
+      "files": [
+        "scripts/push_to_main.sh",
+        "tests/test_push_to_main.py",
+        ".github/workflows/refresh.yml",
+        ".github/workflows/centinelas-handoff.yml",
+        ".github/workflows/centinelas-intake.yml",
+        "governance/change_log.json"
+      ]
     }
   ]
 }

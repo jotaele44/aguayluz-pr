@@ -1,3 +1,6 @@
 fastapi>=0.111.0
 uvicorn[standard]>=0.29.0
 jsonschema>=4.23.0
+# Electricity's EIA client is imported by the canonical ASGI app. Keep the
+# minimal GUI/desktop runtime install consistent with the core project dependency.
+httpx>=0.27

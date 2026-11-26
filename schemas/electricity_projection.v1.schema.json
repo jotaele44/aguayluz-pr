@@ -1,0 +1,536 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:aguayluz:electricity-projection:v1",
+  "title": "Audit-only electricity projection v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "producer",
+    "jurisdiction",
+    "revision",
+    "generated_at",
+    "certification",
+    "canonical_promotion",
+    "telemetry",
+    "states",
+    "sources",
+    "generator_claims",
+    "contradictions",
+    "gaps",
+    "acquisition_attempts"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "aguayluz.electricity-projection/v1"
+    },
+    "producer": {
+      "const": "aguayluz-pr"
+    },
+    "jurisdiction": {
+      "const": "PR"
+    },
+    "revision": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "certification": {
+      "const": "NOT_CERTIFIED"
+    },
+    "canonical_promotion": {
+      "const": "BLOCKED"
+    },
+    "telemetry": {
+      "const": "AUTHORITATIVE_FEED_UNAVAILABLE"
+    },
+    "states": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "OBSERVED",
+        "RECONSTRUCTED",
+        "FORECAST",
+        "SOURCE_CANDIDATE"
+      ],
+      "properties": {
+        "OBSERVED": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "availability",
+            "measurements"
+          ],
+          "properties": {
+            "availability": {
+              "enum": [
+                "UNAVAILABLE",
+                "AVAILABLE_AUDIT_ONLY"
+              ]
+            },
+            "measurements": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Measurement"
+              }
+            }
+          }
+        },
+        "RECONSTRUCTED": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "availability",
+            "measurements"
+          ],
+          "properties": {
+            "availability": {
+              "enum": [
+                "UNAVAILABLE",
+                "AVAILABLE_AUDIT_ONLY"
+              ]
+            },
+            "measurements": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Measurement"
+              }
+            }
+          }
+        },
+        "FORECAST": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "availability",
+            "measurements"
+          ],
+          "properties": {
+            "availability": {
+              "enum": [
+                "UNAVAILABLE",
+                "AVAILABLE_AUDIT_ONLY"
+              ]
+            },
+            "measurements": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Measurement"
+              }
+            }
+          }
+        },
+        "SOURCE_CANDIDATE": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "availability",
+            "measurements"
+          ],
+          "properties": {
+            "availability": {
+              "enum": [
+                "UNAVAILABLE",
+                "AVAILABLE_AUDIT_ONLY"
+              ]
+            },
+            "measurements": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Measurement"
+              }
+            }
+          }
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/SourceReceipt"
+      }
+    },
+    "generator_claims": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/GeneratorClaim"
+      }
+    },
+    "contradictions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "identity",
+          "left",
+          "right",
+          "state"
+        ],
+        "properties": {
+          "identity": {
+            "type": "string"
+          },
+          "left": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "right": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "state": {
+            "const": "UNRESOLVED"
+          }
+        }
+      }
+    },
+    "gaps": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "acquisition_attempts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source",
+          "code",
+          "recorded_at"
+        ],
+        "properties": {
+          "source": {
+            "const": "EIA_OFFICIAL_WORKBOOK"
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^EIA_[A-Z0-9_]{1,80}$"
+          },
+          "recorded_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "SourceReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "aguayluz.electricity-source/v1",
+          "default": "aguayluz.electricity-source/v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "byte_count": {
+          "minimum": 0,
+          "title": "Byte Count",
+          "type": "integer"
+        },
+        "source_url": {
+          "title": "Source Url",
+          "type": "string"
+        },
+        "authority": {
+          "minLength": 1,
+          "title": "Authority",
+          "type": "string"
+        },
+        "retrieved_at": {
+          "format": "date-time",
+          "title": "Retrieved At",
+          "type": "string"
+        },
+        "published_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Published At"
+        },
+        "license": {
+          "default": "UNRESOLVED",
+          "title": "License",
+          "type": "string"
+        },
+        "schema_signature": {
+          "minLength": 1,
+          "title": "Schema Signature",
+          "type": "string"
+        },
+        "request_parameters": {
+          "default": [],
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Request Parameters",
+          "type": "array"
+        }
+      },
+      "required": [
+        "sha256",
+        "byte_count",
+        "source_url",
+        "authority",
+        "retrieved_at",
+        "schema_signature"
+      ],
+      "title": "SourceReceipt",
+      "type": "object"
+    },
+    "EvidenceClass": {
+      "enum": [
+        "OBSERVED",
+        "RECONSTRUCTED",
+        "FORECAST",
+        "SOURCE_CANDIDATE"
+      ],
+      "title": "EvidenceClass",
+      "type": "string"
+    },
+    "Measurement": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "aguayluz.electricity-measurement/v1",
+          "default": "aguayluz.electricity-measurement/v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "entity_id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "metric": {
+          "minLength": 1,
+          "title": "Metric",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "number"
+        },
+        "unit": {
+          "enum": [
+            "MW",
+            "MWh",
+            "kWh",
+            "%",
+            "USD/kWh",
+            "m",
+            "m3",
+            "m3/s"
+          ],
+          "title": "Unit",
+          "type": "string"
+        },
+        "interval_start": {
+          "format": "date-time",
+          "title": "Interval Start",
+          "type": "string"
+        },
+        "interval_end": {
+          "format": "date-time",
+          "title": "Interval End",
+          "type": "string"
+        },
+        "evidence_class": {
+          "$ref": "#/$defs/EvidenceClass"
+        },
+        "receipt_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Receipt Sha256",
+          "type": "string"
+        },
+        "quality_flags": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Quality Flags",
+          "type": "array"
+        },
+        "method_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Method Version"
+        },
+        "uncertainty": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uncertainty"
+        },
+        "issued_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Issued At"
+        },
+        "review_state": {
+          "const": "AUDIT_ONLY",
+          "default": "AUDIT_ONLY",
+          "title": "Review State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "entity_id",
+        "metric",
+        "value",
+        "unit",
+        "interval_start",
+        "interval_end",
+        "evidence_class",
+        "receipt_sha256"
+      ],
+      "title": "Measurement",
+      "type": "object"
+    },
+    "GeneratorClaim": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "aguayluz.electricity-generator/v1",
+          "default": "aguayluz.electricity-generator/v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_system": {
+          "enum": [
+            "EIA-860M",
+            "EIA-860",
+            "EIA-923"
+          ],
+          "title": "Source System",
+          "type": "string"
+        },
+        "plant_id": {
+          "pattern": "^[1-9][0-9]*$",
+          "title": "Plant Id",
+          "type": "string"
+        },
+        "generator_id": {
+          "maxLength": 32,
+          "minLength": 1,
+          "title": "Generator Id",
+          "type": "string"
+        },
+        "valid_from": {
+          "format": "date-time",
+          "title": "Valid From",
+          "type": "string"
+        },
+        "valid_to": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Valid To"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "nameplate_mw": {
+          "minimum": 0,
+          "title": "Nameplate Mw",
+          "type": "number"
+        },
+        "status": {
+          "minLength": 1,
+          "title": "Status",
+          "type": "string"
+        },
+        "receipt_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Receipt Sha256",
+          "type": "string"
+        },
+        "review_state": {
+          "const": "AUDIT_ONLY",
+          "default": "AUDIT_ONLY",
+          "title": "Review State",
+          "type": "string"
+        },
+        "evidence_class": {
+          "const": "SOURCE_CANDIDATE",
+          "default": "SOURCE_CANDIDATE",
+          "title": "Evidence Class",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_system",
+        "plant_id",
+        "generator_id",
+        "valid_from",
+        "name",
+        "nameplate_mw",
+        "status",
+        "receipt_sha256"
+      ],
+      "title": "GeneratorClaim",
+      "type": "object"
+    }
+  }
+}

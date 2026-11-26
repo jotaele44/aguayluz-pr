@@ -1,0 +1,629 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aguayluz-pr.local/schemas/electricity_registry.v1.schema.json",
+  "$defs": {
+    "GeneratorClaim": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "aguayluz.electricity-generator/v1",
+          "default": "aguayluz.electricity-generator/v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_system": {
+          "enum": [
+            "EIA-860M",
+            "EIA-860",
+            "EIA-923"
+          ],
+          "title": "Source System",
+          "type": "string"
+        },
+        "plant_id": {
+          "pattern": "^[1-9][0-9]*$",
+          "title": "Plant Id",
+          "type": "string"
+        },
+        "generator_id": {
+          "maxLength": 32,
+          "minLength": 1,
+          "title": "Generator Id",
+          "type": "string"
+        },
+        "valid_from": {
+          "format": "date-time",
+          "title": "Valid From",
+          "type": "string"
+        },
+        "valid_to": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Valid To"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "nameplate_mw": {
+          "minimum": 0,
+          "title": "Nameplate Mw",
+          "type": "number"
+        },
+        "status": {
+          "minLength": 1,
+          "title": "Status",
+          "type": "string"
+        },
+        "receipt_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Receipt Sha256",
+          "type": "string"
+        },
+        "review_state": {
+          "const": "AUDIT_ONLY",
+          "default": "AUDIT_ONLY",
+          "title": "Review State",
+          "type": "string"
+        },
+        "evidence_class": {
+          "const": "SOURCE_CANDIDATE",
+          "default": "SOURCE_CANDIDATE",
+          "title": "Evidence Class",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_system",
+        "plant_id",
+        "generator_id",
+        "valid_from",
+        "name",
+        "nameplate_mw",
+        "status",
+        "receipt_sha256"
+      ],
+      "title": "GeneratorClaim",
+      "type": "object"
+    },
+    "RegistryClaim": {
+      "additionalProperties": false,
+      "properties": {
+        "claim_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Claim Id",
+          "type": "string"
+        },
+        "claim": {
+          "$ref": "#/$defs/GeneratorClaim"
+        },
+        "selected_at": {
+          "title": "Selected At",
+          "type": "boolean"
+        },
+        "conflicting_claim_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Conflicting Claim Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "claim_id",
+        "claim",
+        "selected_at",
+        "conflicting_claim_ids"
+      ],
+      "title": "RegistryClaim",
+      "type": "object"
+    },
+    "RegistryEntity": {
+      "additionalProperties": false,
+      "properties": {
+        "entity_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "entity_kind": {
+          "enum": [
+            "plant",
+            "generator"
+          ],
+          "title": "Entity Kind",
+          "type": "string"
+        },
+        "source_system": {
+          "enum": [
+            "EIA-860M",
+            "EIA-860",
+            "EIA-923"
+          ],
+          "title": "Source System",
+          "type": "string"
+        },
+        "plant_id": {
+          "title": "Plant Id",
+          "type": "string"
+        },
+        "generator_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Generator Id"
+        },
+        "identity_basis": {
+          "enum": [
+            "SOURCE_GENERATOR_IDENTIFIER",
+            "GENERATOR_SOURCE_PLANT_ID_REFERENCE"
+          ],
+          "title": "Identity Basis",
+          "type": "string"
+        },
+        "names": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Names",
+          "type": "array"
+        },
+        "statuses": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Statuses",
+          "type": "array"
+        },
+        "generator_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Generator Ids",
+          "type": "array"
+        },
+        "selected_claim_count": {
+          "minimum": 0,
+          "title": "Selected Claim Count",
+          "type": "integer"
+        },
+        "history_claim_count": {
+          "minimum": 1,
+          "title": "History Claim Count",
+          "type": "integer"
+        },
+        "conflicting_pair_count": {
+          "minimum": 0,
+          "title": "Conflicting Pair Count",
+          "type": "integer"
+        },
+        "evidence_class": {
+          "const": "SOURCE_CANDIDATE",
+          "default": "SOURCE_CANDIDATE",
+          "title": "Evidence Class",
+          "type": "string"
+        },
+        "review_state": {
+          "const": "AUDIT_ONLY",
+          "default": "AUDIT_ONLY",
+          "title": "Review State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "entity_id",
+        "entity_kind",
+        "source_system",
+        "plant_id",
+        "generator_id",
+        "identity_basis",
+        "names",
+        "statuses",
+        "generator_ids",
+        "selected_claim_count",
+        "history_claim_count",
+        "conflicting_pair_count"
+      ],
+      "title": "RegistryEntity",
+      "type": "object"
+    },
+    "RegistryHistory": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "aguayluz.electricity-registry-history/v1",
+          "default": "aguayluz.electricity-registry-history/v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "producer": {
+          "const": "aguayluz-pr",
+          "default": "aguayluz-pr",
+          "title": "Producer",
+          "type": "string"
+        },
+        "jurisdiction": {
+          "const": "PR",
+          "default": "PR",
+          "title": "Jurisdiction",
+          "type": "string"
+        },
+        "certification": {
+          "const": "NOT_CERTIFIED",
+          "default": "NOT_CERTIFIED",
+          "title": "Certification",
+          "type": "string"
+        },
+        "canonical_promotion": {
+          "const": "BLOCKED",
+          "default": "BLOCKED",
+          "title": "Canonical Promotion",
+          "type": "string"
+        },
+        "source_revision": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Revision",
+          "type": "string"
+        },
+        "at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "At"
+        },
+        "entity": {
+          "$ref": "#/$defs/RegistryEntity"
+        },
+        "total": {
+          "minimum": 1,
+          "title": "Total",
+          "type": "integer"
+        },
+        "offset": {
+          "minimum": 0,
+          "title": "Offset",
+          "type": "integer"
+        },
+        "next_offset": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Next Offset"
+        },
+        "claims": {
+          "items": {
+            "$ref": "#/$defs/RegistryClaim"
+          },
+          "title": "Claims",
+          "type": "array"
+        },
+        "sources": {
+          "items": {
+            "$ref": "#/$defs/SourceReceipt"
+          },
+          "title": "Sources",
+          "type": "array"
+        }
+      },
+      "required": [
+        "source_revision",
+        "at",
+        "entity",
+        "total",
+        "offset",
+        "next_offset",
+        "claims",
+        "sources"
+      ],
+      "title": "RegistryHistory",
+      "type": "object"
+    },
+    "RegistryPage": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "aguayluz.electricity-registry/v1",
+          "default": "aguayluz.electricity-registry/v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "producer": {
+          "const": "aguayluz-pr",
+          "default": "aguayluz-pr",
+          "title": "Producer",
+          "type": "string"
+        },
+        "jurisdiction": {
+          "const": "PR",
+          "default": "PR",
+          "title": "Jurisdiction",
+          "type": "string"
+        },
+        "certification": {
+          "const": "NOT_CERTIFIED",
+          "default": "NOT_CERTIFIED",
+          "title": "Certification",
+          "type": "string"
+        },
+        "canonical_promotion": {
+          "const": "BLOCKED",
+          "default": "BLOCKED",
+          "title": "Canonical Promotion",
+          "type": "string"
+        },
+        "source_revision": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Revision",
+          "type": "string"
+        },
+        "interval_semantics": {
+          "const": "HALF_OPEN_SOURCE_ASSERTIONS_NOT_OPERATIONAL_STATE",
+          "default": "HALF_OPEN_SOURCE_ASSERTIONS_NOT_OPERATIONAL_STATE",
+          "title": "Interval Semantics",
+          "type": "string"
+        },
+        "availability": {
+          "enum": [
+            "UNAVAILABLE",
+            "AVAILABLE_AUDIT_ONLY"
+          ],
+          "title": "Availability",
+          "type": "string"
+        },
+        "selection": {
+          "$ref": "#/$defs/RegistryQuery"
+        },
+        "total": {
+          "minimum": 0,
+          "title": "Total",
+          "type": "integer"
+        },
+        "offset": {
+          "minimum": 0,
+          "title": "Offset",
+          "type": "integer"
+        },
+        "next_offset": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Next Offset"
+        },
+        "entities": {
+          "items": {
+            "$ref": "#/$defs/RegistryEntity"
+          },
+          "title": "Entities",
+          "type": "array"
+        }
+      },
+      "required": [
+        "source_revision",
+        "availability",
+        "selection",
+        "total",
+        "offset",
+        "next_offset",
+        "entities"
+      ],
+      "title": "RegistryPage",
+      "type": "object"
+    },
+    "RegistryQuery": {
+      "additionalProperties": false,
+      "properties": {
+        "entity_kind": {
+          "default": "generator",
+          "enum": [
+            "plant",
+            "generator"
+          ],
+          "title": "Entity Kind",
+          "type": "string"
+        },
+        "source_system": {
+          "anyOf": [
+            {
+              "enum": [
+                "EIA-860M",
+                "EIA-860",
+                "EIA-923"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source System"
+        },
+        "plant_id": {
+          "anyOf": [
+            {
+              "pattern": "^[1-9][0-9]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Plant Id"
+        },
+        "search": {
+          "default": "",
+          "maxLength": 100,
+          "title": "Search",
+          "type": "string"
+        },
+        "at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "At"
+        },
+        "offset": {
+          "default": 0,
+          "maximum": 1000000,
+          "minimum": 0,
+          "title": "Offset",
+          "type": "integer"
+        },
+        "limit": {
+          "default": 20,
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Limit",
+          "type": "integer"
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Revision"
+        }
+      },
+      "title": "RegistryQuery",
+      "type": "object"
+    },
+    "SourceReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "aguayluz.electricity-source/v1",
+          "default": "aguayluz.electricity-source/v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "byte_count": {
+          "minimum": 0,
+          "title": "Byte Count",
+          "type": "integer"
+        },
+        "source_url": {
+          "title": "Source Url",
+          "type": "string"
+        },
+        "authority": {
+          "minLength": 1,
+          "title": "Authority",
+          "type": "string"
+        },
+        "retrieved_at": {
+          "format": "date-time",
+          "title": "Retrieved At",
+          "type": "string"
+        },
+        "published_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Published At"
+        },
+        "license": {
+          "default": "UNRESOLVED",
+          "title": "License",
+          "type": "string"
+        },
+        "schema_signature": {
+          "minLength": 1,
+          "title": "Schema Signature",
+          "type": "string"
+        },
+        "request_parameters": {
+          "default": [],
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Request Parameters",
+          "type": "array"
+        }
+      },
+      "required": [
+        "sha256",
+        "byte_count",
+        "source_url",
+        "authority",
+        "retrieved_at",
+        "schema_signature"
+      ],
+      "title": "SourceReceipt",
+      "type": "object"
+    }
+  },
+  "anyOf": [
+    {
+      "$ref": "#/$defs/RegistryPage"
+    },
+    {
+      "$ref": "#/$defs/RegistryHistory"
+    }
+  ]
+}

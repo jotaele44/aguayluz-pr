@@ -27,7 +27,7 @@ export default class ErrorBoundary extends Component {
             {this.props.label ?? 'Panel'} failed to render.
           </p>
           <button
-            className="text-[11px] underline text-slate-500 hover:text-slate-300"
+            className="text-[11px] underline text-slate-400 hover:text-slate-300"
             onClick={() => this.setState({ error: null })}
           >
             Retry

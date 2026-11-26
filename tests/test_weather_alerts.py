@@ -23,7 +23,7 @@ def _nws(event_name, severity="Moderate", **over):
         "municipality": None,
         "status_text": f"event='{event_name}' severity={severity} sender='NWS San Juan PR'",
         "start_time": "2026-07-06T02:31:00-04:00",
-        "end_time": "2026-07-06T17:00:00-04:00",
+        "end_time": "2099-07-06T17:00:00-04:00",
         "source_ref": "urn:oid:2.49.0.1.840.0.abc.001.1",
         "evidence_tier": "T1",
         "confidence": 85,

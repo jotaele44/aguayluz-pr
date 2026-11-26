@@ -1,0 +1,171 @@
+"""Verified environmental and remote-sensing source products/routes.
+
+These products are grounded in authoritative public service documentation. Dynamic
+query/asset locators remain parameterized rather than being mistaken for independent
+sources. Family-level payload-product denominator exhaustion remains a separate gate.
+"""
+from __future__ import annotations
+
+from .routes import (
+    AcquisitionRouteDefinition,
+    RepresentationType,
+    RouteRole,
+    SourceProductDefinition,
+    validate_route_registry,
+)
+
+VERIFIED_ENVIRONMENTAL_PRODUCTS = (
+    SourceProductDefinition(
+        product_id="NRCS_SSURGO_SDA_QUERY",
+        source_family_id="NRCS_SSURGO",
+        label="NRCS Soil Data Access SSURGO query service",
+        origin_authority="USDA NRCS",
+        distributor="Soil Data Access",
+        native_dataset_id="SoilDataMart:post.rest",
+        spatial_scope="UNITED_STATES_TERRITORIES_COMMONWEALTHS",
+        temporal_scope="CURRENT_SERVICE",
+        canonical_discovery_route_id="NRCS_SSURGO_SDA_DISCOVERY",
+        canonical_payload_route_id="NRCS_SSURGO_SDA_POST",
+    ),
+    SourceProductDefinition(
+        product_id="USFWS_NWI_REST_DATA",
+        source_family_id="USFWS_NWI",
+        label="USFWS National Wetlands Inventory REST data service",
+        origin_authority="USFWS",
+        distributor="National Wetlands Inventory",
+        native_dataset_id="wetlandsmapservice",
+        spatial_scope="UNITED_STATES_AND_TERRITORIES",
+        temporal_scope="BIANNUAL_SERVICE_UPDATES",
+        canonical_discovery_route_id="USFWS_NWI_SERVICE_DISCOVERY",
+        canonical_payload_route_id="USFWS_NWI_REST_QUERY",
+    ),
+    SourceProductDefinition(
+        product_id="LANDFIRE_LFPS_PRODUCTS",
+        source_family_id="LANDFIRE",
+        label="LANDFIRE Product Service query-bound raster products",
+        origin_authority="LANDFIRE",
+        distributor="LANDFIRE Product Service",
+        native_dataset_id="LFPS",
+        spatial_scope="CONUS_ALASKA_HAWAII_PR_VI",
+        temporal_scope="VERSIONED_PRODUCT_RELEASES",
+        canonical_discovery_route_id="LANDFIRE_LFPS_DISCOVERY",
+        canonical_payload_route_id="LANDFIRE_LFPS_REQUEST",
+    ),
+    SourceProductDefinition(
+        product_id="LANDSAT_STAC_ASSETS",
+        source_family_id="LANDSAT",
+        label="USGS Landsat STAC item assets",
+        origin_authority="USGS",
+        distributor="USGS EROS Landsatlook",
+        native_dataset_id="landsatlook-stac-server",
+        spatial_scope="GLOBAL_LANDSAT_ARCHIVE",
+        temporal_scope="VERSIONED_SCENE_ARCHIVE",
+        canonical_discovery_route_id="LANDSAT_STAC_DISCOVERY",
+        canonical_payload_route_id="LANDSAT_STAC_ASSET_HREF",
+    ),
+    SourceProductDefinition(
+        product_id="SENTINEL_STAC_ASSETS",
+        source_family_id="SENTINEL",
+        label="Copernicus Data Space STAC item assets",
+        origin_authority="ESA_COPERNICUS",
+        distributor="Copernicus Data Space Ecosystem",
+        native_dataset_id="CDSE_STAC_v1",
+        spatial_scope="GLOBAL_SENTINEL_ARCHIVE",
+        temporal_scope="VERSIONED_SCENE_ARCHIVE",
+        canonical_discovery_route_id="SENTINEL_STAC_DISCOVERY",
+        canonical_payload_route_id="SENTINEL_STAC_ASSET_HREF",
+    ),
+)
+
+VERIFIED_ENVIRONMENTAL_ROUTES = (
+    AcquisitionRouteDefinition(
+        route_id="NRCS_SSURGO_SDA_DISCOVERY",
+        product_id="NRCS_SSURGO_SDA_QUERY",
+        role=RouteRole.DISCOVERY,
+        representation=RepresentationType.CATALOG,
+        locator="https://sdmdataaccess.nrcs.usda.gov/WebServiceHelp.aspx",
+        priority=1,
+    ),
+    AcquisitionRouteDefinition(
+        route_id="NRCS_SSURGO_SDA_POST",
+        product_id="NRCS_SSURGO_SDA_QUERY",
+        role=RouteRole.CANONICAL_PAYLOAD,
+        representation=RepresentationType.FULL_PAYLOAD,
+        locator="POST https://SDMDataAccess.sc.egov.usda.gov/Tabular/post.rest",
+        priority=1,
+        lossless=True,
+        may_publish_canonical=True,
+    ),
+    AcquisitionRouteDefinition(
+        route_id="USFWS_NWI_SERVICE_DISCOVERY",
+        product_id="USFWS_NWI_REST_DATA",
+        role=RouteRole.DISCOVERY,
+        representation=RepresentationType.CATALOG,
+        locator="https://www.fws.gov/program/national-wetlands-inventory/web-mapping-services",
+        priority=1,
+    ),
+    AcquisitionRouteDefinition(
+        route_id="USFWS_NWI_REST_QUERY",
+        product_id="USFWS_NWI_REST_DATA",
+        role=RouteRole.CANONICAL_PAYLOAD,
+        representation=RepresentationType.FULL_PAYLOAD,
+        locator="REST query under https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest",
+        priority=1,
+        may_publish_canonical=True,
+    ),
+    AcquisitionRouteDefinition(
+        route_id="LANDFIRE_LFPS_DISCOVERY",
+        product_id="LANDFIRE_LFPS_PRODUCTS",
+        role=RouteRole.DISCOVERY,
+        representation=RepresentationType.CATALOG,
+        locator="https://www.landfire.gov/faqs",
+        priority=1,
+    ),
+    AcquisitionRouteDefinition(
+        route_id="LANDFIRE_LFPS_REQUEST",
+        product_id="LANDFIRE_LFPS_PRODUCTS",
+        role=RouteRole.CANONICAL_PAYLOAD,
+        representation=RepresentationType.FULL_PAYLOAD,
+        locator="GET/POST request through https://lfps.usgs.gov/",
+        priority=1,
+        may_publish_canonical=True,
+    ),
+    AcquisitionRouteDefinition(
+        route_id="LANDSAT_STAC_DISCOVERY",
+        product_id="LANDSAT_STAC_ASSETS",
+        role=RouteRole.DISCOVERY,
+        representation=RepresentationType.CATALOG,
+        locator="https://landsatlook.usgs.gov/stac-server/",
+        priority=1,
+    ),
+    AcquisitionRouteDefinition(
+        route_id="LANDSAT_STAC_ASSET_HREF",
+        product_id="LANDSAT_STAC_ASSETS",
+        role=RouteRole.CANONICAL_PAYLOAD,
+        representation=RepresentationType.FULL_PAYLOAD,
+        locator="asset href returned by https://landsatlook.usgs.gov/stac-server/search",
+        priority=1,
+        lossless=True,
+        may_publish_canonical=True,
+    ),
+    AcquisitionRouteDefinition(
+        route_id="SENTINEL_STAC_DISCOVERY",
+        product_id="SENTINEL_STAC_ASSETS",
+        role=RouteRole.DISCOVERY,
+        representation=RepresentationType.CATALOG,
+        locator="https://stac.dataspace.copernicus.eu/v1/",
+        priority=1,
+    ),
+    AcquisitionRouteDefinition(
+        route_id="SENTINEL_STAC_ASSET_HREF",
+        product_id="SENTINEL_STAC_ASSETS",
+        role=RouteRole.CANONICAL_PAYLOAD,
+        representation=RepresentationType.FULL_PAYLOAD,
+        locator="asset href returned by https://stac.dataspace.copernicus.eu/v1/search",
+        priority=1,
+        lossless=True,
+        may_publish_canonical=True,
+    ),
+)
+
+validate_route_registry(VERIFIED_ENVIRONMENTAL_PRODUCTS, VERIFIED_ENVIRONMENTAL_ROUTES)

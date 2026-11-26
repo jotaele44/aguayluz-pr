@@ -29,7 +29,7 @@ modules:
     priority: critical
     hydro_dependency_relevance: direct
     default_severity_floor: 2
-    primary_sources: NWS San Juan, NHC, NWS NWPS river gauges, NWS Stage IV rainfall, USGS gauges, DRNA, USDM (NDMC/UNL), NOAA NCEI
+    primary_sources: NWS San Juan, NHC, NWS NWPS river gauges, NWS Stage IV rainfall, NWS Surf Zone Forecast, NWS marine-zone alerts, USGS gauges, DRNA, USDM (NDMC/UNL), NOAA NCEI
     notes: Flood, drought, rainfall, landslide risk, reservoir operations. River and reservoir
       flood episodes come from NWS NWPS gauge flood categories (scripts/ingest_nwps_gauges.py,
       action 2 / minor 3 / moderate 4 / major 5, closed when the gauge drops below action). Heavy-rain
@@ -38,7 +38,11 @@ modules:
       activated by the USDM weekly classification feed (scripts/ingest_drought_usdm.py,
       D2+ Severe alerts) and corroborated by the NCEI percent-of-normal precipitation
       feed (scripts/ingest_precip_ncei.py, needs_review shortfall proxy) — the same
-      pattern SEISMIC_GEO was activated by the USGS earthquake ingest.
+      pattern SEISMIC_GEO was activated by the USGS earthquake ingest. Beach and marine
+      hazards come from the outdoor-conditions layer, as NWS Surf Zone Forecast rip current
+      risk High (scripts/ingest_nws_surf_zone.py, 3) and NWS marine-zone alerts for PR waters
+      (scripts/ingest_nws_marine_alerts.py, advisory/watch 2, warning 3), both below the
+      push/SMS floor.
   - module_id: CONTAMINATION
     module_name: Contamination / Water Quality Alerts
     sector: Public health/environment
