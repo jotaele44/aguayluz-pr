@@ -11,10 +11,17 @@ from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 
+from server.backend import gis_wiring
 from server.backend import main as legacy
+from server.backend.aquifer_api import router as aquifer_router
 from server.backend.cave_karst_api import router as cave_karst_router
+from server.backend.electricity_api import router as electricity_router
 from server.backend.environmental_exposure_api import router as environmental_exposure_router
+from server.backend.gis_wiring import core_router as gis_core_router
+from server.backend.gis_wiring import domain_router as gis_domain_router
+from server.backend.hydro_inventory_api import router as hydro_inventory_router
 from server.backend.hydromet_api import router as hydromet_router
+from server.backend.ionosphere_api import router as ionosphere_router
 from server.backend.monitoring_alert_operations import federation_alert_export, lifecycle_alerts
 from server.backend.monitoring_incident_ledger import (
     ALLOWED_EVENTS,
@@ -35,7 +42,9 @@ from server.backend.monitoring_quality import (
     series_quality,
 )
 from server.backend.regulatory_api import router as regulatory_router
+from server.backend.source_intelligence_api import router as source_intelligence_router
 from server.backend.water_disruption_api import router as water_disruption_router
+from server.backend.water_use_api import router as water_use_router
 
 
 def _is_legacy_readings(route: Any) -> bool:
@@ -46,10 +55,18 @@ def _is_legacy_municipio_summary(route: Any) -> bool:
     return getattr(route, "path", None) == "/municipios/{name}/summary" and "GET" in getattr(route, "methods", set())
 
 
+def _is_legacy_source_intelligence(route: Any) -> bool:
+    path = getattr(route, "path", None)
+    return isinstance(path, str) and path.startswith("/source-intelligence/")
+
+
 app = FastAPI(title=legacy.app.title)
 app.router.routes.extend(
-    route for route in legacy.app.router.routes
-    if not _is_legacy_readings(route) and not _is_legacy_municipio_summary(route)
+    route
+    for route in legacy.app.router.routes
+    if not _is_legacy_readings(route)
+    and not _is_legacy_municipio_summary(route)
+    and not _is_legacy_source_intelligence(route)
 )
 app.exception_handlers.update(legacy.app.exception_handlers)
 app.dependency_overrides.update(legacy.app.dependency_overrides)
@@ -58,8 +75,18 @@ for middleware in reversed(legacy.app.user_middleware):
 app.include_router(water_disruption_router)
 app.include_router(cave_karst_router)
 app.include_router(regulatory_router)
+app.include_router(source_intelligence_router)
 app.include_router(environmental_exposure_router)
 app.include_router(hydromet_router)
+app.include_router(electricity_router)
+app.include_router(ionosphere_router)
+app.include_router(aquifer_router)
+app.include_router(water_use_router)
+app.include_router(hydro_inventory_router)
+# GIS viewer API: catalog/identify/search/query/export plus trace, scenario,
+# history, documents and per-layer GeoJSON (docs/GIS_VIEWER_API.md).
+app.include_router(gis_core_router)
+app.include_router(gis_domain_router)
 
 # Single source of truth: server.backend.main.READING_VECTOR_REGISTRY (see its definition
 # for the full reasoning). Referencing it here rather than keeping a second hand-maintained
@@ -93,6 +120,11 @@ def _jp_flood_document_for_municipio(name: str) -> dict[str, Any] | None:
                 result["byte_certification"] = certification
             return result
     return None
+
+
+# The GIS documents route reads flood documents through this hook (no back-import).
+gis_wiring.flood_document_lookup = _jp_flood_document_for_municipio
+
 
 # `utility_asset.asset_id` prefix -> the reading `kind`(s) whose `site_no` it identifies.
 # One physical USGS stream gage backs both the daily-values `reservoir` vector

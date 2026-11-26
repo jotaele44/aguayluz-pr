@@ -1,0 +1,111 @@
+{
+  "schema_version": "aguayluz.water_health.control_463_acquisition_ledger/v1",
+  "epoch_id": "WATER_HEALTH_463_CONTROL_V2",
+  "target": "Authoritative PRDOH September-2025 463-member public-water-system inventory and subsequent membership-change history sufficient to reconcile EPA SDWIS.",
+  "completed_attempts": [
+    {
+      "id": "A01",
+      "source": "PRDOH PWSS program page",
+      "result": "COUNT_AND_CURRENT_BREAKDOWN_ONLY",
+      "evidence": "463 total; 160 PRASA; 303 Non-PRASA; page states PRDOH maintains an inventory of all public water systems.",
+      "terminal_state": "INSUFFICIENT_MEMBER_ENUMERATION"
+    },
+    {
+      "id": "A02",
+      "source": "PRDOH 2025 Annual Violations Report, source 10747",
+      "source_sha256": "748529762de1b6661b5484957a7662bd233a37aaf371482cdc14bbf5ac584772",
+      "result": "REPORT_PERIOD_CONTROL_PASS",
+      "evidence": "As of September 2025: 463 systems; Table 1 PRASA total 160; Table 2 Non-PRASA 303 = 241 CWS + 54 NTNCWS + 8 TNCWS.",
+      "terminal_state": "INSUFFICIENT_MEMBER_ENUMERATION"
+    },
+    {
+      "id": "A03",
+      "source": "PRDOH 2025 annexes, source 10748",
+      "source_sha256": "9886fbed47e9f8a3564167034bedc6bc0a0d653c6f89d81d69f8101ccc3f2603",
+      "result": "SUBSET_ONLY",
+      "evidence": "Violation/system subsets only; does not enumerate all 463 systems.",
+      "terminal_state": "INSUFFICIENT_MEMBER_ENUMERATION"
+    },
+    {
+      "id": "A04",
+      "source": "Puerto Rico official open-data/site search",
+      "result": "NO_AUTHORITATIVE_463_MEMBER_ROSTER_FOUND",
+      "terminal_state": "ZERO_RESULT_RECORDED"
+    },
+    {
+      "id": "A05",
+      "source": "EPA ECHO SDWA latest download",
+      "result": "2026Q3_ONLY",
+      "evidence": "464 active systems in 2026Q3; current member omits 2025Q3.",
+      "terminal_state": "CROSS_PERIOD_NOT_ADJUDICATIVE"
+    },
+    {
+      "id": "A06",
+      "source": "EPA ECHO live download directory",
+      "result": "NO_NAMED_2025Q3_ARCHIVE_EXPOSED",
+      "terminal_state": "HISTORICAL_SNAPSHOT_NOT_ACQUIRED"
+    },
+    {
+      "id": "A07",
+      "source": "EPA 2026Q3 metadata diagnostic",
+      "result": "NO_SAFE_PRASA_CLASSIFICATION_RULE",
+      "evidence": {
+        "active_total": 464,
+        "PR000_prefix": 163,
+        "other_PR_prefix": 301,
+        "PR000_owner_L": 161,
+        "PR000_owner_P": 2,
+        "prasa_common_phone_count": 155
+      },
+      "terminal_state": "HEURISTIC_DENIED"
+    }
+  ],
+  "authoritative_request_path": {
+    "authority": "Puerto Rico Department of Health",
+    "mechanism": "Portal de Transparencia Pública",
+    "legal_basis": "Ley Núm. 141-2019, as amended",
+    "state": "READY_TO_FILE"
+  },
+  "requested_manifestations": [
+    {
+      "id": "R1",
+      "description": "Machine-readable inventory of all public water systems regulated by PRDOH as of 2025-09-30, expected denominator 463."
+    },
+    {
+      "id": "R2",
+      "description": "Machine-readable inventory current as of 2026-10-08 or the date supporting the current 463-system PWSS webpage."
+    },
+    {
+      "id": "R3",
+      "description": "Membership/status change log from 2025-09-01 through 2026-10-08, including activations, deactivations, mergers, splits, ownership/operator reclassifications, and PWSID changes."
+    }
+  ],
+  "required_fields": [
+    "PWSID or PRDOH stable system identifier",
+    "system name",
+    "PRASA vs Non-PRASA classification",
+    "PWS regulatory type (CWS/NTNCWS/TNCWS)",
+    "active/status state",
+    "effective/start date",
+    "deactivation/end date if applicable",
+    "successor/predecessor PWSID for merge/split/revision where applicable",
+    "PRDOH region",
+    "population served if maintained",
+    "source-water type if maintained"
+  ],
+  "preferred_formats": [
+    "CSV",
+    "XLSX",
+    "database export",
+    "machine-readable report"
+  ],
+  "acceptance_tests": [
+    "Exactly 463 unique September-2025 member identities.",
+    "160 PRASA + 303 Non-PRASA = 463.",
+    "241 CWS + 54 NTNCWS + 8 TNCWS = 303 Non-PRASA.",
+    "Stable identifiers are unique within the source manifestation.",
+    "Every status change between September 2025 and October 2026 has an effective date and predecessor/successor relationship when applicable.",
+    "No identity is inferred from name, count, prefix, phone, geography, or owner code alone."
+  ],
+  "state": "PUBLIC_WEB_ACQUISITION_EXHAUSTED_FORMAL_RECORDS_REQUEST_REQUIRED"
+}

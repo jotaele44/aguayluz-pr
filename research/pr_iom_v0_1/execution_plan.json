@@ -1,0 +1,438 @@
+{
+  "schema_version": "aguayluz.pr-iom-execution-plan/v0.1",
+  "investigation": "PR-IOM",
+  "vector": "PR-IOM-001",
+  "captured_at": "2026-11-25",
+  "states": [
+    "open",
+    "partial",
+    "done_v0_1",
+    "blocked"
+  ],
+  "phases": [
+    {
+      "phase": 0,
+      "name": "BASELINE"
+    },
+    {
+      "phase": 1,
+      "name": "ACQUISITION"
+    },
+    {
+      "phase": 2,
+      "name": "IDENTIFICATION"
+    },
+    {
+      "phase": 3,
+      "name": "ALTERNATIVES"
+    },
+    {
+      "phase": 4,
+      "name": "ECONOMICS"
+    },
+    {
+      "phase": 5,
+      "name": "QUALIFICATION"
+    }
+  ],
+  "steps": [
+    {
+      "id": "PR-IOM-001-S01",
+      "phase": 0,
+      "title": "Recover existing infrastructure inventories",
+      "state": "partial",
+      "owner": "aguayluz-pr",
+      "dependency": [],
+      "evidence": [
+        "research/pr_iom_v0_1/asset_universe_baseline.json"
+      ],
+      "exit_criteria": "In-repository inventories counted and hashed; external inventories located or declared unavailable.",
+      "blocker": "Hydroelectric Master and ownership/control investigation are not in this repository."
+    },
+    {
+      "id": "PR-IOM-001-S02",
+      "phase": 0,
+      "title": "Establish authoritative asset universe",
+      "state": "partial",
+      "owner": "aguayluz-pr",
+      "dependency": [
+        "PR-IOM-001-S01"
+      ],
+      "evidence": [
+        "research/pr_iom_v0_1/asset_universe_baseline.json"
+      ],
+      "exit_criteria": "Every infrastructure class has a reconciled, source-bound asset list at unit level.",
+      "blocker": "Baseline is facility-level and marked non-authoritative; no unit or equipment rows exist."
+    },
+    {
+      "id": "PR-IOM-001-S03",
+      "phase": 0,
+      "title": "Recover historical obsolescence claims",
+      "state": "partial",
+      "owner": "aguayluz-pr",
+      "dependency": [],
+      "evidence": [
+        "research/pr_iom_v0_1/public_source_receipts.json",
+        "research/pr_iom_v0_1/component_registry.json"
+      ],
+      "exit_criteria": "Every public statement that names a component as obsolete, end of life or unobtainable is transcribed with a receipt.",
+      "blocker": "Two of 33 PREB filings unread (879-page PDF, legacy .xls); only spare-parts filings swept; no water-sector claims found."
+    },
+    {
+      "id": "PR-IOM-001-S04",
+      "phase": 0,
+      "title": "Establish canonical component taxonomy",
+      "state": "done_v0_1",
+      "owner": "aguayluz-pr",
+      "dependency": [],
+      "evidence": [
+        "research/pr_iom_v0_1/taxonomy.json",
+        "schemas/pr-iom/v0.1/component_record.schema.json"
+      ],
+      "exit_criteria": "Classes, status codes, strategy codes and record schema published and tested.",
+      "blocker": null
+    },
+    {
+      "id": "PR-IOM-001-S05",
+      "phase": 1,
+      "title": "Acquire Genera spare parts inventories",
+      "state": "partial",
+      "owner": "aguayluz-pr",
+      "dependency": [],
+      "evidence": [
+        "PREB-MI20210014-F26",
+        "PREB-MI20240005-F27"
+      ],
+      "exit_criteria": "Every spare-parts inventory on the two dockets hashed and read row by row.",
+      "blocker": "June 2023 workbook counted by column, not read row by row."
+    },
+    {
+      "id": "PR-IOM-001-S06",
+      "phase": 1,
+      "title": "Acquire PREB maintenance records",
+      "state": "partial",
+      "owner": "aguayluz-pr",
+      "dependency": [],
+      "evidence": [
+        "PREB-MI20210014-INDEX",
+        "PREB-MI20240005-INDEX"
+      ],
+      "exit_criteria": "All quarterly reports and outage workbooks on both dockets hashed and read.",
+      "blocker": "Non-spare-parts filings on both dockets not swept."
+    },
+    {
+      "id": "PR-IOM-001-S07",
+      "phase": 1,
+      "title": "Acquire PREPA historical procurement",
+      "state": "open",
+      "owner": "aguayluz-pr",
+      "dependency": [],
+      "evidence": [],
+      "exit_criteria": "PREPA procurement records for generation and hydro equipment located and hashed.",
+      "blocker": "No source identified; likely needs a records request."
+    },
+    {
+      "id": "PR-IOM-001-S08",
+      "phase": 1,
+      "title": "Acquire AAA procurement records",
+      "state": "open",
+      "owner": "aguayluz-pr",
+      "dependency": [],
+      "evidence": [],
+      "exit_criteria": "AAA procurement and auction records for mechanical and electrical equipment hashed.",
+      "blocker": "Portal not located in this pass."
+    },
+    {
+      "id": "PR-IOM-001-S09",
+      "phase": 1,
+      "title": "Acquire rehabilitation scopes of work",
+      "state": "open",
+      "owner": "aguayluz-pr",
+      "dependency": [],
+      "evidence": [],
+      "exit_criteria": "COR3 / FEMA scopes of work for equipment replacement hashed.",
+      "blocker": "fema.gov refused automated retrieval; recovery.pr.gov returned an empty body."
+    },
+    {
+      "id": "PR-IOM-001-S10",
+      "phase": 1,
+      "title": "Recover manufacturer documentation",
+      "state": "open",
+      "owner": "aguayluz-pr",
+      "dependency": [
+        "PR-IOM-001-S11"
+      ],
+      "evidence": [],
+      "exit_criteria": "Catalogues and discontinuation notices hashed for each resolved manufacturer.",
+      "blocker": null
+    },
+    {
+      "id": "PR-IOM-001-S11",
+      "phase": 2,
+      "title": "Resolve manufacturer identities",
+      "state": "open",
+      "owner": "aguayluz-pr",
+      "dependency": [
+        "PR-IOM-001-S05"
+      ],
+      "evidence": [],
+      "exit_criteria": "Manufacturer of each registry record identified from a primary record.",
+      "blocker": "Registry records carry no manufacturer."
+    },
+    {
+      "id": "PR-IOM-001-S12",
+      "phase": 2,
+      "title": "Resolve equipment and component identities",
+      "state": "open",
+      "owner": "aguayluz-pr",
+      "dependency": [
+        "PR-IOM-001-S02",
+        "PR-IOM-001-S11"
+      ],
+      "evidence": [],
+      "exit_criteria": "Model and part number bound to each record and to a unit-level asset.",
+      "blocker": null
+    },
+    {
+      "id": "PR-IOM-001-S13",
+      "phase": 2,
+      "title": "Verify manufacturing discontinuation",
+      "state": "open",
+      "owner": "aguayluz-pr",
+      "dependency": [
+        "PR-IOM-001-S10",
+        "PR-IOM-001-S12"
+      ],
+      "evidence": [],
+      "exit_criteria": "Each O1/O2 status backed by a manufacturer notice or equivalent primary record.",
+      "blocker": null
+    },
+    {
+      "id": "PR-IOM-001-S14",
+      "phase": 2,
+      "title": "Distinguish scarcity from obsolescence",
+      "state": "open",
+      "owner": "aguayluz-pr",
+      "dependency": [
+        "PR-IOM-001-S13"
+      ],
+      "evidence": [],
+      "exit_criteria": "Each record classified O1-O6 or SCARCITY_NOT_OBSOLESCENCE with a receipt.",
+      "blocker": null
+    },
+    {
+      "id": "PR-IOM-001-S15",
+      "phase": 2,
+      "title": "Reconcile historical replacements",
+      "state": "open",
+      "owner": "aguayluz-pr",
+      "dependency": [
+        "PR-IOM-001-S12"
+      ],
+      "evidence": [],
+      "exit_criteria": "Replacement history per component reconciled against outage and procurement records.",
+      "blocker": null
+    },
+    {
+      "id": "PR-IOM-001-S16",
+      "phase": 3,
+      "title": "Identify OEM successor components",
+      "state": "open",
+      "owner": "aguayluz-pr",
+      "dependency": [
+        "PR-IOM-001-S13"
+      ],
+      "evidence": [],
+      "exit_criteria": "R1/R2 candidates listed with manufacturer evidence.",
+      "blocker": null
+    },
+    {
+      "id": "PR-IOM-001-S17",
+      "phase": 3,
+      "title": "Identify third-party equivalents",
+      "state": "open",
+      "owner": "aguayluz-pr",
+      "dependency": [
+        "PR-IOM-001-S12"
+      ],
+      "evidence": [],
+      "exit_criteria": "R3 candidates listed with supplier evidence.",
+      "blocker": null
+    },
+    {
+      "id": "PR-IOM-001-S18",
+      "phase": 3,
+      "title": "Evaluate refurbishment alternatives",
+      "state": "open",
+      "owner": "aguayluz-pr",
+      "dependency": [
+        "PR-IOM-001-S12"
+      ],
+      "evidence": [],
+      "exit_criteria": "R4 assessed per record against the six criteria.",
+      "blocker": null
+    },
+    {
+      "id": "PR-IOM-001-S19",
+      "phase": 3,
+      "title": "Evaluate remanufacturing feasibility",
+      "state": "open",
+      "owner": "aguayluz-pr",
+      "dependency": [
+        "PR-IOM-001-S12"
+      ],
+      "evidence": [],
+      "exit_criteria": "R5 assessed per record against the six criteria.",
+      "blocker": null
+    },
+    {
+      "id": "PR-IOM-001-S20",
+      "phase": 3,
+      "title": "Evaluate engineered retrofits",
+      "state": "open",
+      "owner": "aguayluz-pr",
+      "dependency": [
+        "PR-IOM-001-S12"
+      ],
+      "evidence": [],
+      "exit_criteria": "R6 assessed per record against the six criteria.",
+      "blocker": null
+    },
+    {
+      "id": "PR-IOM-001-S21",
+      "phase": 3,
+      "title": "Evaluate local manufacturing capacity",
+      "state": "open",
+      "owner": "aguayluz-pr",
+      "dependency": [
+        "PR-IOM-001-S19"
+      ],
+      "evidence": [],
+      "exit_criteria": "Puerto Rico machining, casting, metrology and rebuild capacity inventoried from primary sources.",
+      "blocker": null
+    },
+    {
+      "id": "PR-IOM-001-S22",
+      "phase": 4,
+      "title": "Establish procurement cost baselines",
+      "state": "open",
+      "owner": "aguayluz-pr",
+      "dependency": [
+        "PR-IOM-001-S05"
+      ],
+      "evidence": [],
+      "exit_criteria": "Unit costs bound to records; MoneySweep-PR owns the financial records.",
+      "blocker": null
+    },
+    {
+      "id": "PR-IOM-001-S23",
+      "phase": 4,
+      "title": "Compare rehabilitation alternatives",
+      "state": "open",
+      "owner": "aguayluz-pr",
+      "dependency": [
+        "PR-IOM-001-S16",
+        "PR-IOM-001-S17",
+        "PR-IOM-001-S18",
+        "PR-IOM-001-S19",
+        "PR-IOM-001-S20",
+        "PR-IOM-001-S22"
+      ],
+      "evidence": [],
+      "exit_criteria": "Cost and lead time per strategy per record.",
+      "blocker": null
+    },
+    {
+      "id": "PR-IOM-001-S24",
+      "phase": 4,
+      "title": "Compare lifecycle costs",
+      "state": "open",
+      "owner": "aguayluz-pr",
+      "dependency": [
+        "PR-IOM-001-S23"
+      ],
+      "evidence": [],
+      "exit_criteria": "Lifecycle cost per strategy per record.",
+      "blocker": null
+    },
+    {
+      "id": "PR-IOM-001-S25",
+      "phase": 4,
+      "title": "Reconcile existing federal funding",
+      "state": "open",
+      "owner": "aguayluz-pr",
+      "dependency": [
+        "PR-IOM-001-S09"
+      ],
+      "evidence": [],
+      "exit_criteria": "Obligations and disbursements bound to equipment scopes.",
+      "blocker": null
+    },
+    {
+      "id": "PR-IOM-001-S26",
+      "phase": 4,
+      "title": "Quantify potential economic benefits",
+      "state": "open",
+      "owner": "aguayluz-pr",
+      "dependency": [
+        "PR-IOM-001-S24",
+        "PR-IOM-001-S25"
+      ],
+      "evidence": [],
+      "exit_criteria": "Aggregate benefit estimate with stated method and uncertainty.",
+      "blocker": null
+    },
+    {
+      "id": "PR-IOM-001-S27",
+      "phase": 5,
+      "title": "Establish engineering review requirements",
+      "state": "open",
+      "owner": "aguayluz-pr",
+      "dependency": [],
+      "evidence": [],
+      "exit_criteria": "Review requirements written and accepted by a licensed engineer.",
+      "blocker": "Needs a qualified human reviewer."
+    },
+    {
+      "id": "PR-IOM-001-S28",
+      "phase": 5,
+      "title": "Qualify evidence and candidate solutions",
+      "state": "open",
+      "owner": "aguayluz-pr",
+      "dependency": [
+        "PR-IOM-001-S14",
+        "PR-IOM-001-S27"
+      ],
+      "evidence": [],
+      "exit_criteria": "Each record reviewed; review_status accepted or rejected.",
+      "blocker": null
+    },
+    {
+      "id": "PR-IOM-001-S29",
+      "phase": 5,
+      "title": "Preserve unresolved technical gaps",
+      "state": "open",
+      "owner": "aguayluz-pr",
+      "dependency": [
+        "PR-IOM-001-S28"
+      ],
+      "evidence": [],
+      "exit_criteria": "Gap list published with the findings.",
+      "blocker": null
+    },
+    {
+      "id": "PR-IOM-001-S30",
+      "phase": 5,
+      "title": "Publish qualified aggregate findings",
+      "state": "open",
+      "owner": "aguayluz-pr",
+      "dependency": [
+        "PR-IOM-001-S28",
+        "PR-IOM-001-S29"
+      ],
+      "evidence": [],
+      "exit_criteria": "Aggregate findings published; operator-restricted records withheld.",
+      "blocker": null
+    }
+  ]
+}

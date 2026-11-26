@@ -1,5 +1,8 @@
+import pytest
+
 from aguayluz.hazard_adapters.sdwa_drinking_water import (
     canonical_event_id,
+    collapse_violation_rows,
     normalize,
     stable_record_id,
 )
@@ -71,3 +74,56 @@ def test_same_violation_keeps_event_identity_but_changed_row_gets_new_revision_i
 def test_unresolved_status_does_not_match_resolved_by_substring():
     record = normalize(_row(VIOLATION_STATUS="Unresolved"), "manifest-sdwis-3")
     assert record.status == RecordStatus.ACTIVE
+
+
+
+def test_multiple_enforcement_rows_collapse_to_one_violation_snapshot():
+    first = _row(
+        ENFORCEMENT_ID="E-1",
+        ENFORCEMENT_DATE="2025-04-01",
+        ENFORCEMENT_ACTION_TYPE_CODE="S06",
+        ENF_ACTION_CATEGORY="Informal",
+    )
+    second = _row(
+        ENFORCEMENT_ID="E-2",
+        ENFORCEMENT_DATE="2025-05-01",
+        ENFORCEMENT_ACTION_TYPE_CODE="S15",
+        ENF_ACTION_CATEGORY="Formal",
+    )
+
+    collapsed = collapse_violation_rows([first, second])
+    record = normalize(collapsed, "manifest-sdwis-cardinality")
+
+    assert collapsed["_SOURCE_ROW_COUNT"] == 2
+    assert len(collapsed["_SOURCE_ROW_SHA256S"]) == 2
+    assert len(collapsed["_ENFORCEMENT_ACTIONS"]) == 2
+    assert record.raw_attributes["source_row_count"] == 2
+    assert len(record.raw_attributes["enforcement_actions"]) == 2
+
+
+def test_submission_quarter_alone_does_not_create_a_new_material_revision():
+    q2 = collapse_violation_rows([
+        _row(
+            SUBMISSIONYEARQUARTER="2026Q2",
+            ENFORCEMENT_ID="E-1",
+            ENFORCEMENT_DATE="2025-04-01",
+        )
+    ])
+    q3 = collapse_violation_rows([
+        _row(
+            SUBMISSIONYEARQUARTER="2026Q3",
+            ENFORCEMENT_ID="E-1",
+            ENFORCEMENT_DATE="2025-04-01",
+        )
+    ])
+
+    assert canonical_event_id(q2) == canonical_event_id(q3)
+    assert stable_record_id(q2) == stable_record_id(q3)
+
+
+def test_conflicting_violation_level_values_fail_closed():
+    with pytest.raises(ValueError, match="conflicting violation-level values"):
+        collapse_violation_rows([
+            _row(ENFORCEMENT_ID="E-1", VIOLATION_STATUS="Unaddressed"),
+            _row(ENFORCEMENT_ID="E-2", VIOLATION_STATUS="Resolved"),
+        ])
