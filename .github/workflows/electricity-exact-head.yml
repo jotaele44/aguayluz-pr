@@ -72,7 +72,7 @@ jobs:
               'full_release_certification': 'NOT_CERTIFIED',
           }, indent=2) + '\n')
           PY
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: always()
         with:
           name: electricity-exact-python-${{ matrix.python-version }}
@@ -115,7 +115,7 @@ jobs:
       - name: Record actual tested candidate
         if: always()
         run: git rev-parse HEAD > electricity-exact-native-head.txt
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: always()
         with:
           name: electricity-exact-native
