@@ -6,24 +6,16 @@ import { SidebarProvider, useSidebar } from '@/contexts/SidebarContext'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { Menu } from 'lucide-react'
 import brandMark from "@/assets/icon-64.png?inline";
+import { scrollRegion } from '@/lib/scrollRegion';
 
 function Inner() {
-  const { collapsed, setCollapsed } = useSidebar()
+  const { setOpen } = useSidebar()
   const isMobile = useIsMobile()
 
-  const sidebarOpen = isMobile ? !collapsed : true
-  const marginLeft = isMobile ? 0 : collapsed ? 56 : 224
+  const marginLeft = isMobile ? 0 : 256
 
   return (
     <div className="flex h-screen bg-slate-950 text-slate-200 overflow-hidden">
-      {/* Mobile overlay */}
-      {isMobile && !collapsed && (
-        <div
-          className="fixed inset-0 bg-black/50 z-30"
-          onClick={() => setCollapsed(true)}
-        />
-      )}
-
       <Sidebar />
 
       <div
@@ -37,6 +29,8 @@ function Inner() {
               onClick={() => setCollapsed(c => !c)}
               aria-label="Toggle navigation"
               aria-expanded={!collapsed}
+              onClick={() => setOpen(true)}
+              aria-label="Open navigation"
               className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200"
             >
               <Menu className="h-5 w-5" />
@@ -47,7 +41,7 @@ function Inner() {
         )}
 
         <StatsBar />
-        <main className="flex-1 min-h-0 overflow-auto">
+        <main {...scrollRegion()} className="flex-1 min-h-0 overflow-auto">
           <Outlet />
         </main>
       </div>

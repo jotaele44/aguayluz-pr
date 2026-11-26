@@ -1,0 +1,50 @@
+{
+  "url": "https://data.impc.dlr.de/roti/DLR_GNSS_GCG_L3_ROTI-MEAN_NC_GLOBAL/latest/DLR_GNSS_GCG_L3_ROTI-MEAN_NC_GLOBAL_latest_D.json",
+  "raw_sha256": "1bf8fe2803938cd2d815ab6d82788536c146eb183b10cd84ac5f74bf37695bc3",
+  "raw_size_bytes": 1324268,
+  "file_completed_utc": "2026-10-23T17:21:44.201516+00:00",
+  "interval_raw": {
+    "start_time": "2026-10-23T17:19:00",
+    "end_time": "2026-10-23T17:20:00",
+    "integration_time": "1 minute",
+    "reference_system": "UTC"
+  },
+  "provider": "IMPC operated by German Aerospace Center (DLR), Neustrelitz",
+  "license": "https://impc.dlr.de/about/license-agreement",
+  "matrix_dimensions": [
+    180,
+    90
+  ],
+  "reported_link_feature_count": 4031,
+  "bbox_candidate_points": 51,
+  "bbox": [
+    -70,
+    16,
+    -60,
+    22
+  ],
+  "zero_semantics": "UNRESOLVED",
+  "documentation_conflicts": [
+    "web description cites Europe-specific first-row geography despite global matrix",
+    "coordinate_system ECEF vs reference_system EPSG:4326/degrees; no transformation performed"
+  ],
+  "units_corroboration": {
+    "units": "TECU/min",
+    "source": "Same DLR product family image, separate epoch 2026-10-23T17:45:00; not the JSON unit field",
+    "image_sha256": "22bc539a0adc9cc79457ee4efc969485240f290e9ac7e45ec70bb0d4b3e6314e",
+    "image_url": "https://data.impc.dlr.de/roti/DLR_GNSS_GCG_L3_ROTI-MEAN_NC_GLOBAL/latest/DLR_GNSS_GCG_L3_ROTI-MEAN_NC_GLOBAL_latest_I.png"
+  },
+  "matrix_axis_diagnostic": {
+    "status": "INFERENCE_NOT_CERTIFIED",
+    "occupied_candidate_bins": 1008,
+    "matches_within_0_0011": 988,
+    "unresolved_bins": 20,
+    "max_difference": 1.14,
+    "note": "Full-grid matrix/point-bin agreement not achieved. No canonical axis, zero or station-coordinate promotion."
+  },
+  "acquisition_state": "PASS",
+  "interpretation_state": "UNRESOLVED",
+  "publication_state": "RAW_CAPTURE_NOT_REDISTRIBUTED",
+  "credit": "We thank DLR who is maintaining the IMPC services.",
+  "scope": "Metadata and audit findings only; original licensed capture retained privately. No operational ROTI feed or canonical geographic mapping."
+}

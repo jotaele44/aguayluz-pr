@@ -14,8 +14,11 @@ federal T1 feed. This script writes BOTH halves in one run:
 Metric captured: USGS parameter **72019** — depth to water level below land surface (ft).
 A HIGH reading means a DEEPER water table, i.e. aquifer drawdown; the HYDRO_OPS
 ``aquifer_alerts`` proxy flags a site whose latest depth sits in its own high tail.
-Like the reservoir proxy, no absolute "critical" threshold is fabricated — official
-well operating levels are not public (skill-spec rule 8: no silent substitution).
+Like the reservoir proxy, no absolute "critical" threshold is fabricated here — for most
+wells official operating levels are not public (skill-spec rule 8: no silent substitution).
+The exception is five south-coast wells whose PRDNER condition bands a USGS page publishes;
+``scripts/ingest_prdner_well_bands.py`` ingests those separately, and they are never
+substituted into this percentile proxy.
 
 Groundwater ``asset_id`` uses the ``USGSGW_<site>`` prefix (NOT ``USGS_``) so the
 surface-water ``ingest_usgs_water`` merge — which replaces every ``USGS_*`` row — never

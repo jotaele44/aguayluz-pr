@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { API_BASE, getApiKey } from '@/lib/api'
+import { scrollRegion } from '@/lib/scrollRegion';
 
 const authHeaders = () => {
   const key = getApiKey()
@@ -45,18 +46,18 @@ export default function IncidentOperationsConsole() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3 className="text-sm font-semibold text-slate-100">Incident operations</h3>
-          <p className="text-[11px] text-slate-500">Append-only ledger · {data.event_count} events · replay {data.replay_equals_materialized_state ? 'verified' : 'failed'}</p>
+          <p className="text-[11px] text-slate-400">Append-only ledger · {data.event_count} events · replay {data.replay_equals_materialized_state ? 'verified' : 'failed'}</p>
         </div>
         <div className="rounded border border-slate-700 px-2 py-1 text-[10px] text-slate-400">Live notification delivery disabled</div>
       </div>
       <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_280px]">
-        <div className="max-h-56 overflow-auto rounded border border-slate-800">
+        <div {...scrollRegion("Incident list")} className="max-h-56 overflow-auto rounded border border-slate-800">
           {data.items.length === 0 ? (
-            <div className="p-4 text-xs text-slate-500">No persistent incidents. Bootstrap through the authenticated API when operational materialization is approved.</div>
+            <div className="p-4 text-xs text-slate-400">No persistent incidents. Bootstrap through the authenticated API when operational materialization is approved.</div>
           ) : data.items.map((item) => (
             <button key={item.incident_id} type="button" onClick={() => setSelected(item.incident_id)} className={`block w-full border-b border-slate-800 p-2 text-left text-xs ${selected === item.incident_id ? 'bg-slate-800' : 'hover:bg-slate-950'}`}>
               <div className="flex justify-between gap-2"><span className="font-mono text-slate-300">{item.incident_id}</span><span className="uppercase text-slate-400">{item.status}</span></div>
-              <div className="mt-1 text-[10px] text-slate-500">assignee {item.assignee ?? 'unassigned'} · timeline {item.timeline_count} · escalation {item.escalation_level}</div>
+              <div className="mt-1 text-[10px] text-slate-400">assignee {item.assignee ?? 'unassigned'} · timeline {item.timeline_count} · escalation {item.escalation_level}</div>
             </button>
           ))}
         </div>

@@ -1,0 +1,106 @@
+{
+  "schema_version": "aguayluz.pr-iom-coverage/v0.1",
+  "investigation": "PR-IOM",
+  "captured_at": "2026-11-25",
+  "classifications": [
+    "public_machine_readable",
+    "public_document_only",
+    "proxy_only",
+    "operator_record_required"
+  ],
+  "coverage_statuses": [
+    "covered",
+    "covered_low_confidence",
+    "partial",
+    "not_published"
+  ],
+  "metrics": [
+    {
+      "metric": "Share of documented obsolete components for which replacements still exist",
+      "primary_classification": "operator_record_required",
+      "coverage_status": "not_published",
+      "best_public_source": [
+        "PREB-MI20210014-F26"
+      ],
+      "blockers": [
+        "No public record states manufacturing status per component",
+        "Alternate-supplier column is empty in the June 2023 inventory"
+      ],
+      "included_in_request": true
+    },
+    {
+      "metric": "Share that could be refurbished or remanufactured",
+      "primary_classification": "operator_record_required",
+      "coverage_status": "not_published",
+      "best_public_source": [
+        "GAO-26-107772"
+      ],
+      "blockers": [
+        "Reverse engineering is reported by GAO as a stakeholder statement with no component list"
+      ],
+      "included_in_request": true
+    },
+    {
+      "metric": "Share that could be manufactured in Puerto Rico",
+      "primary_classification": "operator_record_required",
+      "coverage_status": "not_published",
+      "best_public_source": [],
+      "blockers": [
+        "No source on local manufacturing capacity retrieved"
+      ],
+      "included_in_request": true
+    },
+    {
+      "metric": "Generation capacity recoverable through rehabilitation",
+      "primary_classification": "proxy_only",
+      "coverage_status": "partial",
+      "best_public_source": [
+        "PREB-MI20210014-F01",
+        "PREB-MI20210014-F02",
+        "PREB-MI20210014-F04",
+        "PREB-MI20240005-F31"
+      ],
+      "blockers": [
+        "Outage hours and available capacity are published; the capacity attributable to specific end-of-life components is not"
+      ],
+      "included_in_request": true
+    },
+    {
+      "metric": "Water production capacity recoverable",
+      "primary_classification": "operator_record_required",
+      "coverage_status": "not_published",
+      "best_public_source": [
+        "PR-GOV-PLAN-ESTABILIZACION-AGUA-2025"
+      ],
+      "blockers": [
+        "No component-level AAA record retrieved"
+      ],
+      "included_in_request": true
+    },
+    {
+      "metric": "Cost of rehabilitation versus complete replacement",
+      "primary_classification": "proxy_only",
+      "coverage_status": "partial",
+      "best_public_source": [
+        "PREB-MI20210014-F26",
+        "PREB-MI20240005-F27"
+      ],
+      "blockers": [
+        "Unit prices for stocked parts are published; rehabilitation and replacement costs per assembly are not"
+      ],
+      "included_in_request": true
+    },
+    {
+      "metric": "Federal funding already allocated toward these objectives",
+      "primary_classification": "public_document_only",
+      "coverage_status": "partial",
+      "best_public_source": [
+        "GAO-26-107772"
+      ],
+      "blockers": [
+        "GAO gives programme-level obligations; equipment-level scopes were not retrieved"
+      ],
+      "included_in_request": false
+    }
+  ]
+}
