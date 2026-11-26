@@ -1,0 +1,228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/water-use/v1/water_use_estimate.schema.json",
+  "title": "USGS Puerto Rico water-use estimate",
+  "description": "One published water-withdrawal figure for Puerto Rico, in million gallons per day, from a USGS data release (tier T1) or the hand-transcribed 2010 report (tier T2). A value the source does not publish is null; it is never inferred.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "record_id",
+    "year",
+    "category",
+    "scope",
+    "municipality",
+    "provider",
+    "surface_water_mgd",
+    "groundwater_mgd",
+    "reuse_mgd",
+    "total_mgd",
+    "unit",
+    "value_status",
+    "extraction_method",
+    "source_locator",
+    "evidence_tier",
+    "source_key",
+    "source_title",
+    "source_doi",
+    "source_url",
+    "source_byte_sha256",
+    "retrieved_utc",
+    "notes"
+  ],
+  "properties": {
+    "record_id": {
+      "type": "string",
+      "pattern": "^WU:[0-9]{4}:[a-z_]+:(island|municipio)(:[a-z-]+)?:(all|prasa|non_prasa)(:restated)?$"
+    },
+    "year": {
+      "enum": [
+        2010,
+        2015,
+        2020
+      ]
+    },
+    "category": {
+      "enum": [
+        "public_supply",
+        "domestic_self_supplied",
+        "irrigation",
+        "livestock",
+        "industrial",
+        "mining",
+        "thermoelectric",
+        "total_freshwater"
+      ]
+    },
+    "scope": {
+      "enum": [
+        "island",
+        "municipio"
+      ]
+    },
+    "municipality": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "provider": {
+      "enum": [
+        "all",
+        "prasa",
+        "non_prasa"
+      ]
+    },
+    "surface_water_mgd": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "groundwater_mgd": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "reuse_mgd": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "description": "Reclaimed water applied to irrigation. Not a withdrawal; only the 2015 irrigation table publishes it."
+    },
+    "total_mgd": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "unit": {
+      "const": "Mgal/d"
+    },
+    "value_status": {
+      "enum": [
+        "as_published",
+        "restated_by_later_release",
+        "not_published"
+      ]
+    },
+    "extraction_method": {
+      "enum": [
+        "xlsx_cell",
+        "manual_transcription"
+      ]
+    },
+    "source_locator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "file"
+      ],
+      "properties": {
+        "file": {
+          "type": "string"
+        },
+        "row": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "column": {
+          "type": "string"
+        },
+        "table": {
+          "type": "string"
+        },
+        "page": {
+          "type": "string"
+        }
+      }
+    },
+    "evidence_tier": {
+      "enum": [
+        "T1",
+        "T2"
+      ]
+    },
+    "source_key": {
+      "type": "string"
+    },
+    "source_title": {
+      "type": "string"
+    },
+    "source_doi": {
+      "type": "string",
+      "pattern": "^10\\."
+    },
+    "source_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "source_byte_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "retrieved_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "scope": {
+            "const": "municipio"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "municipality": {
+            "type": "string"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "municipality": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "extraction_method": {
+            "const": "manual_transcription"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "evidence_tier": {
+            "const": "T2"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "evidence_tier": {
+            "const": "T1"
+          }
+        }
+      }
+    }
+  ]
+}

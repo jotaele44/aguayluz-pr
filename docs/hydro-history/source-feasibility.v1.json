@@ -1,0 +1,99 @@
+{
+  "schema_version": "aguayluz.hydro-history-feasibility/v1",
+  "period": {
+    "start": "2016-01",
+    "end": "2025-12",
+    "calendar_months": 120
+  },
+  "required_granularity": "PLANT_MONTH",
+  "aggregate_only_acceptance": false,
+  "classification": "BLOCKED_EXTERNAL_DEPENDENCY",
+  "certification": "NOT_CERTIFIED",
+  "network": {
+    "spec_revision": "37",
+    "observed_current": true,
+    "mode": "restricted",
+    "state": "enforced",
+    "eia_hosts_allowed": false,
+    "secret_bindings": 0
+  },
+  "credential": {
+    "authentication": "UNVERIFIED",
+    "loaded": false,
+    "transmitted": false,
+    "uploaded_path_available": false,
+    "production_rotation_required": true
+  },
+  "verified_original_artifacts": 0,
+  "verified_plants": 0,
+  "verified_plant_months": 0,
+  "expected_plant_population": null,
+  "coverage_fraction": null,
+  "coverage_note": "Population and plant-month denominator remain unknown until original source acquisition; 120 is the requested calendar range, not a verified data denominator.",
+  "source_families": [
+    {
+      "id": "EIA-860 annual",
+      "role": "inventory and documented identifiers",
+      "status": "NOT_ACQUIRED; PR COVERAGE UNVERIFIED"
+    },
+    {
+      "id": "EIA-923 annual",
+      "role": "published monthly generation at original granularity",
+      "status": "NOT_ACQUIRED; PR COVERAGE UNVERIFIED"
+    },
+    {
+      "id": "PREPA/HydroCo originals",
+      "role": "plant-level generation where independently documented",
+      "status": "NOT_ACQUIRED; no original records found in bounded inventory"
+    },
+    {
+      "id": "RC8-RC14",
+      "role": "quarantined research, not primary measurement authority",
+      "status": "ORIGINAL_PACKAGES_NOT_AVAILABLE"
+    }
+  ],
+  "hydro_pr": {
+    "number": 392,
+    "head": "5c215ce21a0d9bd67bc6ba403c29105bd4eda590",
+    "files": [
+      {
+        "path": ".federation/gui-capabilities.json",
+        "sha": "711def6b052f63e74045209109063fb5fcc44d05"
+      },
+      {
+        "path": "config/hydro_intelligence_sources.v1.json",
+        "sha": "0f0ec042556f9bf3571d9f517189f26198d11757"
+      },
+      {
+        "path": "src/aguayluz/hydro_intelligence/acquisition.py",
+        "sha": "76ac8cef2f7bd30f4b30fe95b2777718429a7c00"
+      },
+      {
+        "path": "src/aguayluz/hydro_intelligence/discovery.py",
+        "sha": "1995ac8cf8bc8d58acba4805d44545ba1f62ef3b"
+      },
+      {
+        "path": "tests/test_hydro_intelligence_acquisition.py",
+        "sha": "acaae23a5b2692bd3ade87a5d57eb98bef4a1958"
+      },
+      {
+        "path": "tests/test_hydro_intelligence_discovery.py",
+        "sha": "031e923ac75ddbd21afe0732d5f7caff5fbb592f"
+      }
+    ],
+    "assessment": "Returned six changed files contain contracts, acquisition/discovery code and tests; no original workbooks or source receipts. This is a finite changed-file inventory, not global absence."
+  },
+  "consumer": {
+    "repository": "jotaele44/thehub-pr",
+    "observed_commit": "9adf06d31ddffef1010d3d6461373ca3300f48be",
+    "modified": false,
+    "acceptance": "BLOCKED_PENDING_REAL_PRODUCER_SNAPSHOT",
+    "reason": "Existing event feed and promotion path cannot establish read-only historical plant-month acceptance. No synthetic consumer was added."
+  },
+  "next_source_unblock": [
+    "Approved environment access to api.eia.gov and www.eia.gov; public workbook acquisition needs no API key.",
+    "Secure runtime EIA_API_KEY injection for API discovery when needed, using a rotated key.",
+    "Official original offline files with provenance may enter quarantine; origin and scientific review gates still apply."
+  ],
+  "dependent_work": "Historical parsers, explorer and THEHUB implementation paused per approved source-first gate; no additional workspace breadth."
+}

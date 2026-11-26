@@ -1,0 +1,34 @@
+{
+  "schema_version": "aguayluz.water_health.prdoh_10748_qualification/v1",
+  "source_record_id": "10748",
+  "source_sha256": "9886fbed47e9f8a3564167034bedc6bc0a0d653c6f89d81d69f8101ccc3f2603",
+  "structural_certificate": "PRDOH_10748_STRUCTURAL_CERTIFIED",
+  "structural_receipt_path": "data/certification/prdoh_10748_structural_v1.json",
+  "qualifying_pr": 366,
+  "qualifying_head_sha": "f4b53cbb5d9ff9bcc2a92d674736cf7ec5abb02a",
+  "qualifying_base_sha": "7d8b6bdb121670578977ac761529c1a6d4627c00",
+  "workflow_conclusions": {
+    "HAF Contract Gate": "success",
+    "Admin Control Plane Boundary": "success",
+    "Salud SDWIS Water Contract": "success",
+    "Federation template drift": "success",
+    "Secret scan": "success",
+    "PFAS Public Source Freeze": "success",
+    "SDWIS Puerto Rico PWS Inventory Freeze": "success",
+    "PFAS Evidence Freeze": "success",
+    "JP flood consumer V3": "success",
+    "docs-sync": "success",
+    "Federation Compatibility": "success",
+    "Codacy Security Scan": "success",
+    "validate": "success",
+    "CodeQL": "success",
+    "Salud SDWIS 2025 Source Freeze": "success",
+    "GUI capability parity": "success"
+  },
+  "release_qualification_state": "PASS_EXACT_HEAD",
+  "guardrails": [
+    "This receipt freezes the exact PR #366 head that qualified the bounded 10748 structural certificate.",
+    "Later 10747 commits do not retroactively change the 10748 qualifying manifestation.",
+    "PR #366 remains draft until later WATER_HEALTH gates are independently qualified."
+  ]
+}

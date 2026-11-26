@@ -1,0 +1,326 @@
+{
+  "$defs": {
+    "ReviewedClaim": {
+      "additionalProperties": false,
+      "properties": {
+        "claim_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Claim Id",
+          "type": "string"
+        },
+        "source_identity": {
+          "title": "Source Identity",
+          "type": "string"
+        },
+        "receipt_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Receipt Sha256",
+          "type": "string"
+        },
+        "active_recommendation": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Active Recommendation"
+        },
+        "active_action": {
+          "anyOf": [
+            {
+              "enum": [
+                "RECOMMEND_RETAIN",
+                "RECOMMEND_EXCLUDE",
+                "DEFER"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Active Action"
+        }
+      },
+      "required": [
+        "claim_id",
+        "source_identity",
+        "receipt_sha256",
+        "active_recommendation",
+        "active_action"
+      ],
+      "title": "ReviewedClaim",
+      "type": "object"
+    },
+    "StoredReviewEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "request_id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "title": "Request Id",
+          "type": "string"
+        },
+        "source_revision": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Revision",
+          "type": "string"
+        },
+        "expected_review_revision": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Expected Review Revision",
+          "type": "string"
+        },
+        "claim_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Claim Id",
+          "type": "string"
+        },
+        "action": {
+          "enum": [
+            "RECOMMEND_RETAIN",
+            "RECOMMEND_EXCLUDE",
+            "DEFER",
+            "REVERSE"
+          ],
+          "title": "Action",
+          "type": "string"
+        },
+        "reason_code": {
+          "enum": [
+            "ORIGINAL_REQUIRED",
+            "CAPACITY_CONFLICT",
+            "STATUS_CONFLICT",
+            "TEMPORAL_CONFLICT",
+            "SOURCE_DISAGREEMENT",
+            "REVIEW_CORRECTION"
+          ],
+          "title": "Reason Code",
+          "type": "string"
+        },
+        "reverses": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reverses"
+        },
+        "schema_version": {
+          "const": "aguayluz.electricity-review-event/v1",
+          "default": "aguayluz.electricity-review-event/v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sequence": {
+          "minimum": 1,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "actor": {
+          "const": "SHARED_OPERATOR_KEY",
+          "default": "SHARED_OPERATOR_KEY",
+          "title": "Actor",
+          "type": "string"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "receipt_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Receipt Sha256",
+          "type": "string"
+        },
+        "source_identity": {
+          "title": "Source Identity",
+          "type": "string"
+        },
+        "review_state": {
+          "const": "AUDIT_ONLY",
+          "default": "AUDIT_ONLY",
+          "title": "Review State",
+          "type": "string"
+        },
+        "canonical_promotion": {
+          "const": "BLOCKED",
+          "default": "BLOCKED",
+          "title": "Canonical Promotion",
+          "type": "string"
+        },
+        "event_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Event Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "request_id",
+        "source_revision",
+        "expected_review_revision",
+        "claim_id",
+        "action",
+        "reason_code",
+        "sequence",
+        "recorded_at",
+        "receipt_sha256",
+        "source_identity",
+        "event_id"
+      ],
+      "title": "StoredReviewEvent",
+      "type": "object"
+    },
+    "ReviewRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "request_id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "title": "Request Id",
+          "type": "string"
+        },
+        "source_revision": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Revision",
+          "type": "string"
+        },
+        "expected_review_revision": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Expected Review Revision",
+          "type": "string"
+        },
+        "claim_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Claim Id",
+          "type": "string"
+        },
+        "action": {
+          "enum": [
+            "RECOMMEND_RETAIN",
+            "RECOMMEND_EXCLUDE",
+            "DEFER",
+            "REVERSE"
+          ],
+          "title": "Action",
+          "type": "string"
+        },
+        "reason_code": {
+          "enum": [
+            "ORIGINAL_REQUIRED",
+            "CAPACITY_CONFLICT",
+            "STATUS_CONFLICT",
+            "TEMPORAL_CONFLICT",
+            "SOURCE_DISAGREEMENT",
+            "REVIEW_CORRECTION"
+          ],
+          "title": "Reason Code",
+          "type": "string"
+        },
+        "reverses": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reverses"
+        }
+      },
+      "required": [
+        "request_id",
+        "source_revision",
+        "expected_review_revision",
+        "claim_id",
+        "action",
+        "reason_code"
+      ],
+      "title": "ReviewRequest",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "aguayluz.electricity-reviews/v1",
+      "default": "aguayluz.electricity-reviews/v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "producer": {
+      "const": "aguayluz-pr",
+      "default": "aguayluz-pr",
+      "title": "Producer",
+      "type": "string"
+    },
+    "jurisdiction": {
+      "const": "PR",
+      "default": "PR",
+      "title": "Jurisdiction",
+      "type": "string"
+    },
+    "source_revision": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Revision",
+      "type": "string"
+    },
+    "revision": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Revision",
+      "type": "string"
+    },
+    "certification": {
+      "const": "NOT_CERTIFIED",
+      "default": "NOT_CERTIFIED",
+      "title": "Certification",
+      "type": "string"
+    },
+    "canonical_promotion": {
+      "const": "BLOCKED",
+      "default": "BLOCKED",
+      "title": "Canonical Promotion",
+      "type": "string"
+    },
+    "actor_scope": {
+      "const": "SHARED_OPERATOR_KEY_NOT_INDIVIDUAL_IDENTITY",
+      "default": "SHARED_OPERATOR_KEY_NOT_INDIVIDUAL_IDENTITY",
+      "title": "Actor Scope",
+      "type": "string"
+    },
+    "claims": {
+      "items": {
+        "$ref": "#/$defs/ReviewedClaim"
+      },
+      "title": "Claims",
+      "type": "array"
+    },
+    "events": {
+      "items": {
+        "$ref": "#/$defs/StoredReviewEvent"
+      },
+      "title": "Events",
+      "type": "array"
+    }
+  },
+  "required": [
+    "source_revision",
+    "revision",
+    "claims",
+    "events"
+  ],
+  "title": "ReviewProjection",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aguayluz-pr.local/schemas/electricity_reviews.v1.schema.json"
+}
