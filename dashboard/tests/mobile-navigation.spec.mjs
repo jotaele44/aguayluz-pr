@@ -86,3 +86,20 @@ test("drawer tab, sub-link, close and reopen behave on a phone", async ({ page }
 
   expect(runtimeFailures, runtimeFailures.join("\n")).toEqual([]);
 });
+
+for (const width of [430, 393, 390, 375]) {
+  test(`grid monitor remains usable at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto('/grid-status', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { name: 'Electric Grid Monitor' })).toBeVisible();
+    await expect(page.locator('[data-testid^="grid-metric-"]')).toHaveCount(5);
+    await expect(page.locator('body')).toContainText(/Production certification: WITHHELD/);
+    const layout = await page.evaluate(() => ({
+      viewport: document.documentElement.clientWidth,
+      content: document.documentElement.scrollWidth,
+    }));
+    expect(layout.content, `horizontal page overflow at ${width}px`).toBeLessThanOrEqual(layout.viewport + 2);
+    await openDrawer(page);
+    await expect(drawer(page).getByRole('link', { name: 'Electric Grid' })).toBeVisible();
+  });
+}

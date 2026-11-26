@@ -9,6 +9,7 @@ import {
 import { cn } from '@/lib/utils'
 import { Zap, Play, Pause } from 'lucide-react'
 import { fmtDate, eventPill, EVENT_TYPES } from '@/lib/format'
+import { scrollRegion } from '@/lib/scrollRegion';
 
 export default function LiveLogsPage() {
   const [params, setParams] = useSearchParams()
@@ -53,13 +54,13 @@ export default function LiveLogsPage() {
           <h1 className="text-lg font-semibold text-slate-100">Live Logs</h1>
           <div className="flex items-center gap-1.5 mt-0.5">
             <span className={cn('w-1.5 h-1.5 rounded-full', connected ? 'bg-emerald-400 animate-pulse' : 'bg-red-400')} />
-            <span className="text-xs text-slate-500">{connected ? 'SSE connected · refreshes every 5 s' : 'Disconnected'}</span>
+            <span className="text-xs text-slate-400">{connected ? 'SSE connected · refreshes every 5 s' : 'Disconnected'}</span>
           </div>
         </div>
         <div className="flex items-center gap-2 ml-auto">
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filter area / municipio…" className="h-7 w-44 text-xs bg-slate-950 border-slate-800" />
           <Select value={type} onValueChange={setType}>
-            <SelectTrigger className="h-7 w-[150px] text-xs"><SelectValue /></SelectTrigger>
+            <SelectTrigger aria-label="Filter by event type" className="h-7 w-[150px] text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>{EVENT_TYPES.map((t) => <SelectItem key={t} value={t} className="text-xs capitalize">{t.replace(/_/g, ' ')}</SelectItem>)}</SelectContent>
           </Select>
           <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => setAutoScroll(s => !s)}>
@@ -68,20 +69,20 @@ export default function LiveLogsPage() {
           </Button>
         </div>
       </div>
-      <div ref={listRef} className="flex-1 overflow-auto p-4 space-y-1 font-mono text-xs">
+      <div {...scrollRegion("Log entries", listRef)} className="flex-1 overflow-auto p-4 space-y-1 font-mono text-xs">
         {filtered.map((e, i) => (
           <div key={e.event_id ?? i} className={cn(
             'flex items-center gap-3 rounded border px-3 py-2',
             eventPill(e.event_type),
           )}>
             <Zap className="h-3 w-3 shrink-0 opacity-70" />
-            <span className="shrink-0 text-[10px] opacity-50 w-24">{fmtDate(e.start_time)}</span>
+            <span className="shrink-0 text-[10px] w-24">{fmtDate(e.start_time)}</span>
             <span className="capitalize opacity-80 shrink-0 w-28">{(e.event_type || '').replace(/_/g, ' ')}</span>
             <span className="truncate">{e.affected_area}{e.municipality ? ` · ${e.municipality}` : ''}</span>
           </div>
         ))}
         {filtered.length === 0 && (
-          <p className="text-center text-slate-500 py-16">
+          <p className="text-center text-slate-400 py-16">
             {connected ? 'Stream connected — no events yet' : 'Connecting to event stream…'}
           </p>
         )}

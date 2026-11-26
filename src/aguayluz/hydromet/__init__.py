@@ -9,6 +9,8 @@ dashboard, the desktop app and the alert promoters all see the same state:
 * ``data/hydromet_manifestations.jsonl`` — frozen source responses (byte SHA-256)
 * ``data/hydromet_receipts.json``        — per-source run receipts (freshness/failure)
 * ``data/nwps_gauge_state.jsonl``        — current per-gauge NWPS snapshot
+* ``data/outdoor_*_state.jsonl``         — current per-source outdoor-condition snapshots
+  (surf zone, buoys, UV, heat, air quality; see :mod:`aguayluz.outdoor`)
 
 Raw response bytes go under ``data/hydromet_snapshots/<source_id>/`` (gitignored).
 
@@ -22,6 +24,14 @@ from __future__ import annotations
 SOURCE_PREFIXES: dict[str, str] = {
     "nwps_gauges": "NWPS_GAUGE:",
     "stage_iv_pr": "STAGEIV_QPE:",
+    # Outdoor-condition sources (aguayluz.outdoor). The buoy, UV, heat and air-quality
+    # sources write state files only; their prefix still scopes what a run may touch.
+    "nws_surf_zone": "NWS_SRF:",
+    "nws_marine_alerts": "NWS_MARINE:",
+    "ndbc_buoys": "NDBC_OBS:",
+    "epa_uv": "EPA_UV:",
+    "nws_gridpoint_heat": "NWS_HEAT:",
+    "airnow": "AIRNOW:",
 }
 
 #: Puerto Rico query envelope (lon/lat, EPSG:4326) shared by every hydromet source.

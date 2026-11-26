@@ -14,7 +14,7 @@ function statusText(overlay, status) {
 export default function NwsOverlayToggles({ active = {}, status = {}, onToggle }) {
   return (
     <div className="mt-1.5" data-testid="nws-overlay-toggles">
-      <div className="mb-1 text-[10px] uppercase tracking-wide text-slate-500">NWS live overlays · display only</div>
+      <div className="mb-1 text-[10px] uppercase tracking-wide text-slate-400">NWS live overlays · display only</div>
       <div className="grid grid-cols-2 gap-1.5">
         {NWS_CLOUDGIS_OVERLAYS.map((overlay) => {
           const on = Boolean(active[overlay.id])
@@ -25,7 +25,7 @@ export default function NwsOverlayToggles({ active = {}, status = {}, onToggle }
               aria-pressed={on}
               title={overlay.description}
               onClick={() => onToggle?.(overlay.id)}
-              className={`rounded border px-2 py-1 text-[11px] transition ${on ? 'border-sky-400/50 bg-slate-900 text-sky-200' : 'border-slate-800 bg-slate-950/70 text-slate-500 hover:text-slate-300'}`}
+              className={`rounded border px-2 py-1 text-[11px] transition ${on ? 'border-sky-400/50 bg-slate-900 text-sky-200' : 'border-slate-800 bg-slate-950/70 text-slate-400 hover:text-slate-300'}`}
             >
               {overlay.label}
             </button>
@@ -34,13 +34,13 @@ export default function NwsOverlayToggles({ active = {}, status = {}, onToggle }
       </div>
       {NWS_CLOUDGIS_OVERLAYS.filter((o) => active[o.id]).map((overlay) => (
         <div key={overlay.id} aria-live="polite" className="mt-1 text-[10px] leading-relaxed">
-          <span className={status[overlay.id]?.state === 'error' ? 'text-red-300' : 'text-slate-500'}>
+          <span className={status[overlay.id]?.state === 'error' ? 'text-red-300' : 'text-slate-400'}>
             {statusText(overlay, status[overlay.id])}
           </span>
         </div>
       ))}
       {NWS_CLOUDGIS_OVERLAYS.some((o) => active[o.id]) && (
-        <p className="mt-1 text-[10px] leading-relaxed text-slate-600">
+        <p className="mt-1 text-[10px] leading-relaxed text-slate-400">
           Loaded directly from {OVERLAY_ATTRIBUTION}; not stored or validated by AguaYLuz.
         </p>
       )}
