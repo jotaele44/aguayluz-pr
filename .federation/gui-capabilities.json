@@ -2379,6 +2379,45 @@
           "scripts/ingest_drought_usdm_footprint.py:fetch_geo",
           "scripts/ingest_drought_usdm_footprint.py:parse_stats",
           "scripts/ingest_drought_usdm_footprint.py:write_document"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/drought"
+        ],
+        "e2e_routes": [
+          "/drought"
+        ],
+        "components": [
+          "dashboard/src/pages/DroughtPage.jsx",
+          "dashboard/src/components/DroughtMap.jsx",
+          "dashboard/src/lib/drought-api.js",
+          "dashboard/src/lib/drought-hooks.js",
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_drought_ops_api.py"
+        ],
+        "contract": [
+          "tests/test_ingest_drought_usdm_footprint.py",
+          "tests/test_refresh_plans.py",
+          "tests/test_gui_parity.py"
+        ],
+        "unit": [
+          "dashboard/src/pages/DroughtPage.test.jsx"
+        ],
+        "e2e": [
+          "dashboard/tests/drought-operations.spec.mjs",
+          "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
+    },
+    {
       "id": "electricity-evidence-workspace-v1",
       "classification": "user",
       "status": "active",
@@ -2419,6 +2458,43 @@
           "src/aguayluz/electricity/workbook.py:parse_860m",
           "server/backend/electricity_api.py:import_workbook",
           "src/aguayluz/electricity/eia.py:validate_workbook_url"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/electricity"
+        ],
+        "e2e_routes": [
+          "/electricity"
+        ],
+        "components": [
+          "dashboard/src/pages/ElectricityPage.jsx",
+          "dashboard/src/lib/electricity-api.js",
+          "dashboard/src/components/layout/Sidebar.jsx",
+          "dashboard/src/contexts/SidebarContext.jsx",
+          "dashboard/src/components/layout/DashboardLayout.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_electricity.py"
+        ],
+        "contract": [
+          "tests/test_electricity.py",
+          "tests/test_electricity_capture_recovery.py"
+        ],
+        "unit": [
+          "dashboard/src/pages/ElectricityPage.test.jsx"
+        ],
+        "e2e": [
+          "dashboard/tests/electricity.spec.mjs"
+        ]
+      }
+    },
+    {
       "id": "archive-manifestation-adjudication",
       "classification": "internal",
       "status": "active",
@@ -2478,17 +2554,6 @@
       },
       "frontend": {
         "routes": [
-          "/electricity"
-        ],
-        "e2e_routes": [
-          "/electricity"
-        ],
-        "components": [
-          "dashboard/src/pages/ElectricityPage.jsx",
-          "dashboard/src/lib/electricity-api.js",
-          "dashboard/src/components/layout/Sidebar.jsx",
-          "dashboard/src/contexts/SidebarContext.jsx",
-          "dashboard/src/components/layout/DashboardLayout.jsx"
           "/ionosphere"
         ],
         "e2e_routes": [
@@ -2503,17 +2568,15 @@
       },
       "tests": {
         "backend": [
-          "tests/test_electricity.py"
-        ],
-        "contract": [
-          "tests/test_electricity.py",
-          "tests/test_electricity_capture_recovery.py"
+          "tests/test_ionosphere.py",
+          "tests/test_ionosphere_snapshot.py",
+          "tests/test_ionosphere_transport.py"
         ],
         "unit": [
-          "dashboard/src/pages/ElectricityPage.test.jsx"
+          "dashboard/src/pages/IonospherePage.test.jsx"
         ],
         "e2e": [
-          "dashboard/tests/electricity.spec.mjs"
+          "dashboard/tests/ionosphere.spec.mjs"
         ]
       }
     },
@@ -2543,15 +2606,37 @@
           "src/aguayluz/electricity/review.py:ReviewProjection",
           "src/aguayluz/electricity/review.py:claim_identifier",
           "src/aguayluz/electricity/review.py:ReviewLedger"
-          "tests/test_ionosphere.py",
-          "tests/test_ionosphere_snapshot.py",
-          "tests/test_ionosphere_transport.py"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/electricity"
+        ],
+        "e2e_routes": [
+          "/electricity"
+        ],
+        "components": [
+          "dashboard/src/pages/ElectricityPage.jsx",
+          "dashboard/src/components/electricity/ElectricityReviews.jsx",
+          "dashboard/src/lib/electricity-api.js"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx",
+          "dashboard/src/pages/ElectricityPage.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_electricity_reviews.py"
+        ],
+        "contract": [
+          "tests/test_electricity_reviews.py"
         ],
         "unit": [
-          "dashboard/src/pages/IonospherePage.test.jsx"
+          "dashboard/src/components/electricity/ElectricityReviews.test.jsx"
         ],
         "e2e": [
-          "dashboard/tests/ionosphere.spec.mjs"
+          "dashboard/tests/electricity-review.spec.mjs"
         ]
       }
     },
@@ -2697,19 +2782,6 @@
       },
       "frontend": {
         "routes": [
-          "/electricity"
-        ],
-        "e2e_routes": [
-          "/electricity"
-        ],
-        "components": [
-          "dashboard/src/pages/ElectricityPage.jsx",
-          "dashboard/src/components/electricity/ElectricityReviews.jsx",
-          "dashboard/src/lib/electricity-api.js"
-        ],
-        "discoverability": [
-          "dashboard/src/components/layout/Sidebar.jsx",
-          "dashboard/src/pages/ElectricityPage.jsx"
           "/map"
         ],
         "e2e_routes": [
@@ -2734,16 +2806,34 @@
       },
       "tests": {
         "backend": [
-          "tests/test_electricity_reviews.py"
+          "tests/test_gis_api.py",
+          "tests/test_gis_network.py",
+          "tests/test_gis_query.py",
+          "tests/test_gis_catalog.py"
         ],
         "contract": [
-          "tests/test_electricity_reviews.py"
+          "tests/test_gui_parity.py"
         ],
         "unit": [
-          "dashboard/src/components/electricity/ElectricityReviews.test.jsx"
+          "dashboard/src/lib/gis/gis.test.js",
+          "dashboard/src/lib/gis/networkApi.test.js",
+          "dashboard/src/components/SpatialToolsPanel.gis.test.jsx"
         ],
         "e2e": [
-          "dashboard/tests/electricity-review.spec.mjs"
+          "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      },
+      "analysis": {
+        "files": [
+          "src/aguayluz/gis_network.py"
+        ],
+        "symbols": [
+          "src/aguayluz/gis_network.py:NetworkEdge",
+          "src/aguayluz/gis_network.py:TraceHit",
+          "src/aguayluz/gis_network.py:edge_set_sha256",
+          "src/aguayluz/gis_network.py:edges_from_rows",
+          "src/aguayluz/gis_network.py:scenario_out_of_service",
+          "src/aguayluz/gis_network.py:trace"
         ]
       }
     },
@@ -2776,34 +2866,38 @@
           "server/backend/electricity_api.py:create_acquisition_job",
           "server/backend/electricity_api.py:step_acquisition_job",
           "server/backend/electricity_api.py:cancel_acquisition_job"
-          "tests/test_gis_api.py",
-          "tests/test_gis_network.py",
-          "tests/test_gis_query.py",
-          "tests/test_gis_catalog.py"
-        ],
-        "contract": [
-          "tests/test_gui_parity.py"
-        ],
-        "unit": [
-          "dashboard/src/lib/gis/gis.test.js",
-          "dashboard/src/lib/gis/networkApi.test.js",
-          "dashboard/src/components/SpatialToolsPanel.gis.test.jsx"
-        ],
-        "e2e": [
-          "dashboard/tests/gui-parity.spec.mjs"
         ]
       },
-      "analysis": {
-        "files": [
-          "src/aguayluz/gis_network.py"
+      "frontend": {
+        "routes": [
+          "/electricity"
         ],
-        "symbols": [
-          "src/aguayluz/gis_network.py:NetworkEdge",
-          "src/aguayluz/gis_network.py:TraceHit",
-          "src/aguayluz/gis_network.py:edge_set_sha256",
-          "src/aguayluz/gis_network.py:edges_from_rows",
-          "src/aguayluz/gis_network.py:scenario_out_of_service",
-          "src/aguayluz/gis_network.py:trace"
+        "e2e_routes": [
+          "/electricity"
+        ],
+        "components": [
+          "dashboard/src/pages/ElectricityPage.jsx",
+          "dashboard/src/components/electricity/ElectricityJobs.jsx",
+          "dashboard/src/lib/electricity-api.js"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx",
+          "dashboard/src/pages/ElectricityPage.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_electricity_jobs.py"
+        ],
+        "contract": [
+          "tests/test_electricity_jobs.py"
+        ],
+        "unit": [
+          "dashboard/src/components/electricity/ElectricityJobs.test.jsx",
+          "dashboard/src/pages/ElectricityPage.test.jsx"
+        ],
+        "e2e": [
+          "dashboard/tests/electricity-jobs.spec.mjs"
         ]
       }
     },
@@ -3008,45 +3102,17 @@
       },
       "frontend": {
         "routes": [
-          "/drought"
+          "/source-intelligence"
         ],
         "e2e_routes": [
-          "/drought"
+          "/source-intelligence"
         ],
         "components": [
-          "dashboard/src/pages/DroughtPage.jsx",
-          "dashboard/src/components/DroughtMap.jsx",
-          "dashboard/src/lib/drought-api.js",
-          "dashboard/src/lib/drought-hooks.js",
-          "dashboard/src/components/layout/Sidebar.jsx"
-          "/electricity"
-        ],
-        "e2e_routes": [
-          "/electricity"
-        ],
-        "components": [
-          "dashboard/src/pages/ElectricityPage.jsx",
-          "dashboard/src/components/electricity/ElectricityJobs.jsx",
-          "dashboard/src/lib/electricity-api.js"
+          "dashboard/src/lib/api.js",
+          "dashboard/src/pages/SourceIntelligencePage.jsx"
         ],
         "discoverability": [
-          "dashboard/src/components/layout/Sidebar.jsx",
-          "dashboard/src/pages/ElectricityPage.jsx"
-        ]
-      },
-      "tests": {
-        "backend": [
-          "tests/test_electricity_jobs.py"
-        ],
-        "contract": [
-          "tests/test_electricity_jobs.py"
-        ],
-        "unit": [
-          "dashboard/src/components/electricity/ElectricityJobs.test.jsx",
-          "dashboard/src/pages/ElectricityPage.test.jsx"
-        ],
-        "e2e": [
-          "dashboard/tests/electricity-jobs.spec.mjs"
+          "dashboard/src/components/layout/Sidebar.jsx"
         ]
       }
     },
@@ -3076,17 +3142,37 @@
           "src/aguayluz/electricity/registry.py:SourceRegistry",
           "server/backend/electricity_api.py:registry",
           "server/backend/electricity_api.py:registry_history"
-          "/source-intelligence"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/electricity"
         ],
         "e2e_routes": [
-          "/source-intelligence"
+          "/electricity"
         ],
         "components": [
-          "dashboard/src/lib/api.js",
-          "dashboard/src/pages/SourceIntelligencePage.jsx"
+          "dashboard/src/pages/ElectricityPage.jsx",
+          "dashboard/src/components/electricity/ElectricityRegistry.jsx",
+          "dashboard/src/lib/electricity-api.js"
         ],
         "discoverability": [
-          "dashboard/src/components/layout/Sidebar.jsx"
+          "dashboard/src/components/layout/Sidebar.jsx",
+          "dashboard/src/pages/ElectricityPage.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_electricity_registry.py"
+        ],
+        "contract": [
+          "tests/test_electricity_registry.py"
+        ],
+        "unit": [
+          "dashboard/src/components/electricity/ElectricityRegistry.test.jsx"
+        ],
+        "e2e": [
+          "dashboard/tests/electricity-registry.spec.mjs"
         ]
       }
     },
@@ -3153,19 +3239,6 @@
       },
       "frontend": {
         "routes": [
-          "/electricity"
-        ],
-        "e2e_routes": [
-          "/electricity"
-        ],
-        "components": [
-          "dashboard/src/pages/ElectricityPage.jsx",
-          "dashboard/src/components/electricity/ElectricityRegistry.jsx",
-          "dashboard/src/lib/electricity-api.js"
-        ],
-        "discoverability": [
-          "dashboard/src/components/layout/Sidebar.jsx",
-          "dashboard/src/pages/ElectricityPage.jsx"
           "/grid-status"
         ],
         "e2e_routes": [
@@ -3182,29 +3255,6 @@
       },
       "tests": {
         "backend": [
-          "tests/test_drought_ops_api.py"
-        ],
-        "contract": [
-          "tests/test_ingest_drought_usdm_footprint.py",
-          "tests/test_refresh_plans.py",
-          "tests/test_gui_parity.py"
-        ],
-        "unit": [
-          "dashboard/src/pages/DroughtPage.test.jsx"
-        ],
-        "e2e": [
-          "dashboard/tests/drought-operations.spec.mjs",
-          "dashboard/tests/gui-parity.spec.mjs"
-          "tests/test_electricity_registry.py"
-        ],
-        "contract": [
-          "tests/test_electricity_registry.py"
-        ],
-        "unit": [
-          "dashboard/src/components/electricity/ElectricityRegistry.test.jsx"
-        ],
-        "e2e": [
-          "dashboard/tests/electricity-registry.spec.mjs"
           "tests/test_grid_status_api.py"
         ],
         "contract": [
@@ -3212,6 +3262,10 @@
         ],
         "e2e": [
           "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      }
+    },
+    {
       "id": "frozen-pfas-pr-scope-ci-adjudication",
       "classification": "internal",
       "status": "active",
@@ -3291,6 +3345,27 @@
           "tests/test_refresh_plans.py",
           "tests/test_federation_export.py",
           "tests/test_schemas.py"
+        ]
+      }
+    },
+    {
+      "id": "miluma-schema-evidence-gate",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Fail-closed CI gate for governance/miluma_schema_evidence.json. It checks that the PROVISIONAL historical MiLUMA schema evidence, taken from a third-party archival transform, keeps the live endpoint RAW_UNFROZEN and never promotes current schema, restoration or outage semantics. It publishes no claim and adds no operator workflow, so there is no GUI surface.",
+      "analysis": {
+        "files": [
+          "scripts/validate_miluma_schema_evidence.py"
+        ],
+        "symbols": [
+          "scripts/validate_miluma_schema_evidence.py:validate",
+          "scripts/validate_miluma_schema_evidence.py:main"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_miluma_schema_evidence.py"
         ]
       }
     }
