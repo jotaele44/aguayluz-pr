@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/aguayluz-pr/schemas/pr-iom/v0.1/component_record.schema.json",
+  "title": "PR-IOM component record v0.1",
+  "description": "One component named in a source as obsolete, end of life or hard to obtain. A record is a transcribed claim until Phase 02 verifies identity and manufacturing status.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "component_id",
+    "infrastructure_class",
+    "asset_ids",
+    "facility_label",
+    "component_description",
+    "manufacturer",
+    "model",
+    "oem_part_number",
+    "operator_condition_claim",
+    "obsolescence_status",
+    "candidate_strategies",
+    "evidence_tier",
+    "confidence",
+    "identity_verification_status",
+    "provenance_state",
+    "source_id",
+    "source_receipt_sha256",
+    "disclosure",
+    "review_status"
+  ],
+  "properties": {
+    "component_id": {"type": "string", "pattern": "^AYL_IOM_[A-Z0-9_]+$"},
+    "infrastructure_class": {
+      "enum": [
+        "thermoelectric_generation",
+        "hydroelectric_generation",
+        "electrical_transmission",
+        "electrical_distribution",
+        "drinking_water_treatment",
+        "water_distribution",
+        "wastewater_treatment",
+        "reservoirs_and_dams",
+        "industrial_instrumentation"
+      ]
+    },
+    "asset_ids": {
+      "description": "asset_id values in data/utility_assets.jsonl. Empty when no asset row exists.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "facility_label": {"type": "string", "minLength": 1},
+    "unit_label": {"type": ["string", "null"]},
+    "component_description": {"type": "string", "minLength": 1},
+    "manufacturer": {"type": ["string", "null"]},
+    "model": {"type": ["string", "null"]},
+    "oem_part_number": {"type": ["string", "null"]},
+    "operator_condition_claim": {
+      "enum": ["obsolete", "end_of_life", "unrepairable", "part_needed", "none"]
+    },
+    "claim_quote": {"type": ["string", "null"]},
+    "obsolescence_status": {
+      "enum": [
+        "O0_UNVERIFIED",
+        "O1_OEM_DISCONTINUED",
+        "O2_OEM_DEFUNCT",
+        "O3_UNQUALIFIED_EQUIVALENT",
+        "O4_REMANUFACTURABLE",
+        "O5_RETROFIT",
+        "O6_ASSEMBLY_REPLACEMENT",
+        "SCARCITY_NOT_OBSOLESCENCE"
+      ]
+    },
+    "candidate_strategies": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"enum": ["R1", "R2", "R3", "R4", "R5", "R6", "R7"]}
+    },
+    "evidence_tier": {"enum": ["T1", "T2", "T3", "T4"]},
+    "confidence": {"type": "integer", "minimum": 0, "maximum": 100},
+    "identity_verification_status": {
+      "enum": ["UNVERIFIED", "CANDIDATE", "VERIFIED", "DISPUTED"]
+    },
+    "provenance_state": {"enum": ["FACT", "COMPUTED", "BINDING", "INFERENCE", "UNKNOWN"]},
+    "source_id": {"type": "string", "minLength": 1},
+    "source_item": {"type": ["integer", "null"]},
+    "source_page": {"type": ["integer", "null"], "minimum": 1},
+    "source_receipt_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "disclosure": {
+      "enum": ["public_exact", "public_approximate", "operator_restricted", "unresolved"]
+    },
+    "review_status": {"enum": ["accepted", "needs_review", "rejected", "blocked"]},
+    "notes": {"type": ["string", "null"]}
+  },
+  "allOf": [
+    {
+      "description": "A verified status needs a resolved manufacturer and a strategy; an unverified one may not carry strategies.",
+      "if": {
+        "properties": {"obsolescence_status": {"const": "O0_UNVERIFIED"}}
+      },
+      "then": {"properties": {"candidate_strategies": {"maxItems": 0}}},
+      "else": {
+        "properties": {
+          "manufacturer": {"type": "string", "minLength": 1},
+          "identity_verification_status": {"const": "VERIFIED"}
+        }
+      }
+    },
+    {
+      "description": "Operator-restricted records are never accepted for publication from this registry.",
+      "if": {"properties": {"disclosure": {"const": "operator_restricted"}}},
+      "then": {"properties": {"review_status": {"enum": ["needs_review", "blocked"]}}}
+    }
+  ]
+}
