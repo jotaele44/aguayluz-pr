@@ -31,6 +31,7 @@ const RegulatoryPage = lazy(() => import('./pages/RegulatoryPage'))
 const RegulatoryReviewPage = lazy(() => import('./pages/RegulatoryReviewPage'))
 const EnvironmentalExposurePage = lazy(() => import('./pages/EnvironmentalExposurePage'))
 const HydrometPage = lazy(() => import('./pages/HydrometPage'))
+const ElectricityPage = lazy(() => import('./pages/ElectricityPage'))
 const AquiferBandsPage = lazy(() => import('./pages/AquiferBandsPage'))
 const WaterUsePage = lazy(() => import('./pages/WaterUsePage'))
 const HydroInventoryPage = lazy(() => import('./pages/HydroInventoryPage'))
@@ -75,6 +76,7 @@ function App() {
               <Route path="/regulatory/review" element={<RegulatoryReviewPage />} />
               <Route path="/environmental-exposure" element={<EnvironmentalExposurePage />} />
               <Route path="/hydromet" element={<HydrometPage />} />
+              <Route path="/electricity" element={<ElectricityPage />} />
               {IONOSPHERE_PREVIEW && <Route path="/ionosphere" element={<IonospherePage />} />}
               <Route path="/aquifer-bands" element={<AquiferBandsPage />} />
               <Route path="/water-use" element={<WaterUsePage />} />

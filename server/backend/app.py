@@ -15,6 +15,7 @@ from server.backend import gis_wiring
 from server.backend import main as legacy
 from server.backend.aquifer_api import router as aquifer_router
 from server.backend.cave_karst_api import router as cave_karst_router
+from server.backend.electricity_api import router as electricity_router
 from server.backend.environmental_exposure_api import router as environmental_exposure_router
 from server.backend.gis_wiring import core_router as gis_core_router
 from server.backend.gis_wiring import domain_router as gis_domain_router
@@ -77,6 +78,7 @@ app.include_router(regulatory_router)
 app.include_router(source_intelligence_router)
 app.include_router(environmental_exposure_router)
 app.include_router(hydromet_router)
+app.include_router(electricity_router)
 app.include_router(ionosphere_router)
 app.include_router(aquifer_router)
 app.include_router(water_use_router)
