@@ -39,6 +39,8 @@ const NAV_GROUPS = [
         desc: 'Water service validation, National Weather Service hydromet, aquifer condition bands, USGS water-use estimates and the reconciled inventory of aquifers and wells.',
         links: [
           { to: '/hydromet', label: 'NWS Hydromet' },
+          // Staged preview (ionosphere-preview capability): listed only when the flag is on.
+          ...(import.meta.env.VITE_IONOSPHERE_PREVIEW === '1' ? [{ to: '/ionosphere', label: 'Space weather / Clima espacial' }] : []),
           { to: '/aquifer-bands', label: 'Aquifer Bands' },
           { to: '/water-use', label: 'Water Use' },
           { to: '/hydro-inventory', label: 'Hydro Inventory' },

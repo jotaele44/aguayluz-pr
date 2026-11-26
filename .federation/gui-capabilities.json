@@ -181,10 +181,12 @@
           "dashboard/src/components/SpatialToolsPanel.test.jsx",
           "dashboard/src/lib/api.test.js",
           "dashboard/src/pages/MunicipioDetailPage.test.jsx",
-          "dashboard/src/components/MunicipalOverviewMap.test.jsx"
+          "dashboard/src/components/MunicipalOverviewMap.test.jsx",
+          "dashboard/src/components/AssetMap.webgl.test.jsx"
         ],
         "e2e": [
-          "dashboard/tests/gui-parity.spec.mjs"
+          "dashboard/tests/gui-parity.spec.mjs",
+          "dashboard/tests/map-webgl-fallback.spec.mjs"
         ]
       },
       "analysis": {
@@ -1228,7 +1230,7 @@
       "classification": "analysis",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Read-only, fail-closed environmental source→pathway→receptor graph. It preserves existing utility/regulatory identities, exposes provenance and causal state, and prohibits proximity/name-only evidence from becoming causal attribution.",
+      "rationale": "Read-only, fail-closed environmental source\u2192pathway\u2192receptor graph. It preserves existing utility/regulatory identities, exposes provenance and causal state, and prohibits proximity/name-only evidence from becoming causal attribution.",
       "backend": {
         "files": [
           "server/backend/environmental_exposure_api.py",
@@ -1602,14 +1604,17 @@
       "classification": "internal",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Offline-first Puerto Rico Department of Health annual drinking-water artifact freeze and EPA SDWIS reconciliation feeding the existing Environmental Exposure hazard plane. The source-freeze and downstream immutable-residue adjudication scripts are CI/provenance infrastructure, not an operator feature: it freezes official Salud bytes and a bounded EPA violations-member manifestation, while user consumption remains on the existing Environmental Exposure hazard surface. No duplicate route or terminal workflow is required.",
+      "rationale": "Offline-first Puerto Rico Department of Health annual drinking-water artifact freeze and EPA SDWIS reconciliation feeding the existing Environmental Exposure hazard plane. Source-freeze, PRDOH structural/internal closure, SDWIS sentinel adjudication, and PRDOH↔SDWIS candidate/revision/set-algebra validators are CI/provenance infrastructure rather than operator features. Canonical identity remains stable-ID-only; shorthand and OCR-assisted composites remain discovery-only.",
       "backend": {
         "files": [
           "src/aguayluz/hazard_adapters/sdwa_drinking_water.py"
         ],
         "symbols": [
           "src/aguayluz/hazard_adapters/sdwa_drinking_water.py:row_digest",
+          "src/aguayluz/hazard_adapters/sdwa_drinking_water.py:violation_snapshot_key",
+          "src/aguayluz/hazard_adapters/sdwa_drinking_water.py:collapse_violation_rows",
           "src/aguayluz/hazard_adapters/sdwa_drinking_water.py:canonical_event_id",
+          "src/aguayluz/hazard_adapters/sdwa_drinking_water.py:snapshot_digest",
           "src/aguayluz/hazard_adapters/sdwa_drinking_water.py:stable_record_id",
           "src/aguayluz/hazard_adapters/sdwa_drinking_water.py:normalize"
         ]
@@ -1618,12 +1623,18 @@
         "files": [
           "scripts/ingest_salud_sdwis_water.py",
           "scripts/freeze_salud_sdwis_2025_sources.py",
-          "scripts/adjudicate_salud_sdwis_2025_residue.py"
+          "scripts/adjudicate_salud_sdwis_2025_residue.py",
+          "scripts/freeze_sdwis_pr_pws_inventory.py",
+          "scripts/validate_prdoh_10748_structural.py",
+          "scripts/validate_prdoh_10747_structural.py",
+          "scripts/validate_prdoh_internal_reconciliation.py",
+          "scripts/validate_prdoh_sdwis_reconciliation.py"
         ],
         "symbols": [
           "scripts/ingest_salud_sdwis_water.py:classify_sdwis_row",
           "scripts/ingest_salud_sdwis_water.py:run",
           "scripts/ingest_salud_sdwis_water.py:main",
+          "scripts/freeze_salud_sdwis_2025_sources.py:canonical_json_sha256",
           "scripts/freeze_salud_sdwis_2025_sources.py:sha256_file",
           "scripts/freeze_salud_sdwis_2025_sources.py:request",
           "scripts/freeze_salud_sdwis_2025_sources.py:download",
@@ -1638,14 +1649,57 @@
           "scripts/adjudicate_salud_sdwis_2025_residue.py:sha256_file",
           "scripts/adjudicate_salud_sdwis_2025_residue.py:adjudicate",
           "scripts/adjudicate_salud_sdwis_2025_residue.py:run",
-          "scripts/adjudicate_salud_sdwis_2025_residue.py:main"
+          "scripts/adjudicate_salud_sdwis_2025_residue.py:main",
+          "scripts/freeze_sdwis_pr_pws_inventory.py:archive_identity",
+          "scripts/freeze_sdwis_pr_pws_inventory.py:get_range",
+          "scripts/freeze_sdwis_pr_pws_inventory.py:locate_member",
+          "scripts/freeze_sdwis_pr_pws_inventory.py:select_latest_pr",
+          "scripts/freeze_sdwis_pr_pws_inventory.py:stream_member",
+          "scripts/freeze_sdwis_pr_pws_inventory.py:main",
+          "scripts/freeze_sdwis_pr_pws_inventory.py:request",
+          "scripts/freeze_sdwis_pr_pws_inventory.py:quarter_inventory",
+          "scripts/validate_prdoh_10748_structural.py:same_system",
+          "scripts/validate_prdoh_10748_structural.py:admit_to_violation_denominator",
+          "scripts/validate_prdoh_10748_structural.py:enforce_join_conservation",
+          "scripts/validate_prdoh_10748_structural.py:validate_receipt",
+          "scripts/validate_prdoh_10748_structural.py:main",
+          "scripts/validate_prdoh_10747_structural.py:load_ledger",
+          "scripts/validate_prdoh_10747_structural.py:validate_ledger",
+          "scripts/validate_prdoh_10747_structural.py:main",
+          "scripts/validate_prdoh_10747_structural.py:load_semantic_adjudication",
+          "scripts/validate_prdoh_10747_structural.py:validate_semantic_adjudication",
+          "scripts/validate_prdoh_internal_reconciliation.py:load_json",
+          "scripts/validate_prdoh_internal_reconciliation.py:bind_prdoh_pws_token",
+          "scripts/validate_prdoh_internal_reconciliation.py:validate_receipt",
+          "scripts/validate_prdoh_internal_reconciliation.py:validate_bound_sources",
+          "scripts/validate_prdoh_internal_reconciliation.py:main",
+          "scripts/validate_prdoh_sdwis_reconciliation.py:load_frozen_graph",
+          "scripts/validate_prdoh_sdwis_reconciliation.py:bind_system",
+          "scripts/validate_prdoh_sdwis_reconciliation.py:bind_violation",
+          "scripts/validate_prdoh_sdwis_reconciliation.py:composite_disposition",
+          "scripts/validate_prdoh_sdwis_reconciliation.py:arrow_disposition",
+          "scripts/validate_prdoh_sdwis_reconciliation.py:enforce_join_conservation",
+          "scripts/validate_prdoh_sdwis_reconciliation.py:validate_sentinel",
+          "scripts/validate_prdoh_sdwis_reconciliation.py:validate_system_graph",
+          "scripts/validate_prdoh_sdwis_reconciliation.py:validate_violation_graph",
+          "scripts/validate_prdoh_sdwis_reconciliation.py:validate_revision_graph",
+          "scripts/validate_prdoh_sdwis_reconciliation.py:validate_five_plane",
+          "scripts/validate_prdoh_sdwis_reconciliation.py:validate_candidate",
+          "scripts/validate_prdoh_sdwis_reconciliation.py:main",
+          "scripts/validate_prdoh_sdwis_reconciliation.py:sha256",
+          "scripts/validate_prdoh_sdwis_reconciliation.py:load_json"
         ]
       },
       "tests": {
         "contract": [
           "tests/test_hazard_adapter_sdwa_drinking_water.py",
           "tests/test_ingest_salud_sdwis_water.py",
-          "tests/test_adjudicate_salud_sdwis_2025_residue.py"
+          "tests/test_adjudicate_salud_sdwis_2025_residue.py",
+          "tests/test_freeze_sdwis_pr_pws_inventory.py",
+          "tests/test_prdoh_10748_structural.py",
+          "tests/test_prdoh_10747_structural.py",
+          "tests/test_prdoh_internal_reconciliation.py",
+          "tests/test_prdoh_sdwis_reconciliation.py"
         ]
       }
     },
@@ -2290,6 +2344,156 @@
       }
     },
     {
+      "id": "archive-manifestation-adjudication",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Fail-closed provenance utility for classifying mutable ZIP source manifestations by outer bytes, member PATH + UNCOMPRESSED_SIZE + SHA256, payload multiset identity, and scoped derived-row/PWS identity when an upstream national payload changes. It is CI/source-governance infrastructure rather than an operator workflow; downstream user-facing evidence remains on the existing Environmental Exposure and source-provenance surfaces.",
+      "analysis": {
+        "files": [
+          "scripts/adjudicate_zip_manifestations.py",
+          "scripts/adjudicate_ucmr5_pr_subset.py"
+        ],
+        "symbols": [
+          "scripts/adjudicate_zip_manifestations.py:sha256_file",
+          "scripts/adjudicate_zip_manifestations.py:member_manifest",
+          "scripts/adjudicate_zip_manifestations.py:classify",
+          "scripts/adjudicate_zip_manifestations.py:main",
+          "scripts/adjudicate_ucmr5_pr_subset.py:sha256_file",
+          "scripts/adjudicate_ucmr5_pr_subset.py:read_tsv",
+          "scripts/adjudicate_ucmr5_pr_subset.py:adjudicate",
+          "scripts/adjudicate_ucmr5_pr_subset.py:main"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_adjudicate_zip_manifestations.py",
+          "tests/test_adjudicate_ucmr5_pr_subset.py"
+        ]
+      }
+    },
+    {
+      "id": "ionosphere-preview",
+      "classification": "analysis",
+      "status": "staged",
+      "requires_terminal": false,
+      "feature_flag": "AGUAYLUZ_IONOSPHERE_PREVIEW=1 + VITE_IONOSPHERE_PREVIEW=1",
+      "tracking": "docs/IONOSPHERE_RC0.md",
+      "expires_on": "2027-02-01",
+      "backend": {
+        "files": [
+          "server/backend/ionosphere_api.py",
+          "src/aguayluz/ionosphere.py",
+          "src/aguayluz/ionosphere_snapshot.py",
+          "src/aguayluz/ionosphere_transport.py"
+        ],
+        "endpoints": [
+          "GET /ionosphere/status"
+        ],
+        "symbols": [
+          "server/backend/ionosphere_api.py:ionosphere_status",
+          "src/aguayluz/ionosphere.py:audit_status",
+          "src/aguayluz/ionosphere.py:validate_record",
+          "src/aguayluz/ionosphere.py:validate_batch",
+          "src/aguayluz/ionosphere_snapshot.py:snapshot_context",
+          "src/aguayluz/ionosphere_transport.py:consume_glotec_package",
+          "src/aguayluz/ionosphere_transport.py:load_frozen_transport",
+          "src/aguayluz/ionosphere_transport.py:load_reference_coverage"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "/ionosphere"
+        ],
+        "e2e_routes": [
+          "/ionosphere"
+        ],
+        "components": [
+          "dashboard/src/pages/IonospherePage.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/components/layout/Sidebar.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_ionosphere.py",
+          "tests/test_ionosphere_snapshot.py",
+          "tests/test_ionosphere_transport.py"
+        ],
+        "unit": [
+          "dashboard/src/pages/IonospherePage.test.jsx"
+        ],
+        "e2e": [
+          "dashboard/tests/ionosphere.spec.mjs"
+        ]
+      }
+    },
+    {
+      "id": "luma-monthly-generation-source-freeze",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Isolated CI source-acquisition and provenance infrastructure. Freezes official LUMA monthly index, landing and PDF bytes and emits candidate observations for independent review. It does not publish claims or expose a new operator workflow. User-facing hydro ingestion controls and results remain an unimplemented integration scope; this internal adapter does not establish shipped GUI capability.",
+      "analysis": {
+        "files": [
+          "scripts/luma_monthly_generation_adapter.py"
+        ],
+        "symbols": [
+          "scripts/luma_monthly_generation_adapter.py:AdapterError",
+          "scripts/luma_monthly_generation_adapter.py:Period",
+          "scripts/luma_monthly_generation_adapter.py:DiscoveryEntry",
+          "scripts/luma_monthly_generation_adapter.py:FetchResult",
+          "scripts/luma_monthly_generation_adapter.py:ManifestRow",
+          "scripts/luma_monthly_generation_adapter.py:AnchorParser",
+          "scripts/luma_monthly_generation_adapter.py:ReportRowParser",
+          "scripts/luma_monthly_generation_adapter.py:utc_now",
+          "scripts/luma_monthly_generation_adapter.py:sha256_bytes",
+          "scripts/luma_monthly_generation_adapter.py:sha256_file",
+          "scripts/luma_monthly_generation_adapter.py:canonical_json",
+          "scripts/luma_monthly_generation_adapter.py:write_json",
+          "scripts/luma_monthly_generation_adapter.py:write_jsonl",
+          "scripts/luma_monthly_generation_adapter.py:read_jsonl",
+          "scripts/luma_monthly_generation_adapter.py:iter_periods",
+          "scripts/luma_monthly_generation_adapter.py:synthesized_landing_url",
+          "scripts/luma_monthly_generation_adapter.py:parse_index_entries",
+          "scripts/luma_monthly_generation_adapter.py:index_period_map",
+          "scripts/luma_monthly_generation_adapter.py:expected_periods_from_index",
+          "scripts/luma_monthly_generation_adapter.py:request_bytes",
+          "scripts/luma_monthly_generation_adapter.py:freeze_fetch",
+          "scripts/luma_monthly_generation_adapter.py:looks_like_pdf",
+          "scripts/luma_monthly_generation_adapter.py:landing_publication_date",
+          "scripts/luma_monthly_generation_adapter.py:landing_pdf_links",
+          "scripts/luma_monthly_generation_adapter.py:classify_units",
+          "scripts/luma_monthly_generation_adapter.py:classify_hydro_text",
+          "scripts/luma_monthly_generation_adapter.py:hydro_context_lines",
+          "scripts/luma_monthly_generation_adapter.py:typed_observations",
+          "scripts/luma_monthly_generation_adapter.py:extract_pdf_pages",
+          "scripts/luma_monthly_generation_adapter.py:render_pages",
+          "scripts/luma_monthly_generation_adapter.py:relation_to_prior",
+          "scripts/luma_monthly_generation_adapter.py:select_incremental_periods",
+          "scripts/luma_monthly_generation_adapter.py:acquire_manifestation",
+          "scripts/luma_monthly_generation_adapter.py:reconcile_manifest_rows",
+          "scripts/luma_monthly_generation_adapter.py:duplicate_period_state",
+          "scripts/luma_monthly_generation_adapter.py:manifest_csv",
+          "scripts/luma_monthly_generation_adapter.py:build_canonical_candidates",
+          "scripts/luma_monthly_generation_adapter.py:replay_snapshot",
+          "scripts/luma_monthly_generation_adapter.py:deterministic_archive",
+          "scripts/luma_monthly_generation_adapter.py:index_denominator",
+          "scripts/luma_monthly_generation_adapter.py:acquire_index",
+          "scripts/luma_monthly_generation_adapter.py:run_acquisition",
+          "scripts/luma_monthly_generation_adapter.py:run_replay",
+          "scripts/luma_monthly_generation_adapter.py:parser",
+          "scripts/luma_monthly_generation_adapter.py:main"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_luma_monthly_generation_adapter.py"
+        ]
+      }
+    },
+    {
       "id": "gis-viewer-and-dependency-analysis",
       "classification": "analysis",
       "status": "active",
@@ -2419,6 +2623,32 @@
           "src/aguayluz/gis_network.py:edges_from_rows",
           "src/aguayluz/gis_network.py:scenario_out_of_service",
           "src/aguayluz/gis_network.py:trace"
+        ]
+      }
+    },
+    {
+      "id": "ionosphere-ci-acquisition-evidence",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Development-only CI evidence capture experiment. It freezes fixed NOAA public endpoint responses into isolated build artifacts and inventories schema without ingestion, scheduling, user-facing production operations, or geographic certification. It is not a production acquisition capability.",
+      "analysis": {
+        "files": [
+          "scripts/capture_ionosphere_evidence.py",
+          "scripts/audit_ionosphere_reference_coverage.py"
+        ],
+        "symbols": [
+          "scripts/capture_ionosphere_evidence.py:freeze",
+          "scripts/capture_ionosphere_evidence.py:request_bytes",
+          "scripts/capture_ionosphere_evidence.py:inspect_capture",
+          "scripts/capture_ionosphere_evidence.py:capture",
+          "scripts/audit_ionosphere_reference_coverage.py:classify",
+          "scripts/audit_ionosphere_reference_coverage.py:audit"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_capture_ionosphere_evidence.py"
         ]
       }
     },
@@ -2697,6 +2927,30 @@
         ],
         "e2e": [
           "dashboard/tests/gui-parity.spec.mjs"
+      "id": "frozen-pfas-pr-scope-ci-adjudication",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "CI-only evidence gate over a fixed passing artifact, distinguishing national archive payload changes from the exact PR row multiset. It neither acquires a mutable EPA source nor mutates operational/canonical rows. Existing Exposure Graph workflows display the retained PR data; no standalone operator control is introduced.",
+      "analysis": {
+        "files": [
+          "scripts/verify_frozen_pfas_pr_scope.py"
+        ],
+        "symbols": [
+          "scripts/verify_frozen_pfas_pr_scope.py:zip_manifest",
+          "scripts/verify_frozen_pfas_pr_scope.py:compare_archives",
+          "scripts/verify_frozen_pfas_pr_scope.py:table",
+          "scripts/verify_frozen_pfas_pr_scope.py:verify_bundle",
+          "scripts/verify_frozen_pfas_pr_scope.py:select_pr_source"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_frozen_pfas_pr_scope.py"
+        ]
+      }
+    },
+    {
       "id": "outdoor-conditions-layer",
       "classification": "internal",
       "status": "active",
