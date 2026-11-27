@@ -1733,7 +1733,8 @@
           "src/aguayluz/hazard_adapters/ndbc_buoys.py",
           "src/aguayluz/hazard_adapters/nws_heat.py",
           "src/aguayluz/hazard_adapters/nws_marine.py",
-          "src/aguayluz/hazard_adapters/nws_surf_zone.py"
+          "src/aguayluz/hazard_adapters/nws_surf_zone.py",
+          "src/aguayluz/hazard_adapters/river_rise.py"
         ],
         "endpoints": [
           "GET /hydromet/gauges",
@@ -1850,7 +1851,37 @@
           "src/aguayluz/hydromet/store.py:relationship_id",
           "src/aguayluz/hydromet/store.py:revision_chains",
           "src/aguayluz/hydromet/store.py:write_json",
-          "src/aguayluz/hydromet/store.py:write_jsonl"
+          "src/aguayluz/hydromet/store.py:write_jsonl",
+          "src/aguayluz/hazard_adapters/river_rise.py:Collected",
+          "src/aguayluz/hazard_adapters/river_rise.py:EpisodeStep",
+          "src/aguayluz/hazard_adapters/river_rise.py:Observation",
+          "src/aguayluz/hazard_adapters/river_rise.py:SiteContext",
+          "src/aguayluz/hazard_adapters/river_rise.py:advance_episode",
+          "src/aguayluz/hazard_adapters/river_rise.py:analyse_site",
+          "src/aguayluz/hazard_adapters/river_rise.py:applied_thresholds",
+          "src/aguayluz/hazard_adapters/river_rise.py:approval_status",
+          "src/aguayluz/hazard_adapters/river_rise.py:bare_site",
+          "src/aguayluz/hazard_adapters/river_rise.py:canonical_event_id",
+          "src/aguayluz/hazard_adapters/river_rise.py:class_rank",
+          "src/aguayluz/hazard_adapters/river_rise.py:classify_rise",
+          "src/aguayluz/hazard_adapters/river_rise.py:collect",
+          "src/aguayluz/hazard_adapters/river_rise.py:datum_check",
+          "src/aguayluz/hazard_adapters/river_rise.py:episode_record",
+          "src/aguayluz/hazard_adapters/river_rise.py:features_of",
+          "src/aguayluz/hazard_adapters/river_rise.py:grid",
+          "src/aguayluz/hazard_adapters/river_rise.py:iso",
+          "src/aguayluz/hazard_adapters/river_rise.py:load_thresholds",
+          "src/aguayluz/hazard_adapters/river_rise.py:material_digest",
+          "src/aguayluz/hazard_adapters/river_rise.py:material_state",
+          "src/aguayluz/hazard_adapters/river_rise.py:minor_within",
+          "src/aguayluz/hazard_adapters/river_rise.py:parse_time",
+          "src/aguayluz/hazard_adapters/river_rise.py:promotion_classes",
+          "src/aguayluz/hazard_adapters/river_rise.py:remove_spikes",
+          "src/aguayluz/hazard_adapters/river_rise.py:rising_since",
+          "src/aguayluz/hazard_adapters/river_rise.py:site_settings",
+          "src/aguayluz/hazard_adapters/river_rise.py:slope_per_hour",
+          "src/aguayluz/hazard_adapters/river_rise.py:stable_record_id",
+          "src/aguayluz/hazard_adapters/river_rise.py:value_at"
         ]
       },
       "analysis": {
@@ -1939,7 +1970,8 @@
           "tests/test_gui_parity.py",
           "tests/test_hazard_adapters_outdoor.py",
           "tests/test_ingest_outdoor_sources.py",
-          "tests/test_alert_promotion_outdoor.py"
+          "tests/test_alert_promotion_outdoor.py",
+          "tests/test_hazard_adapter_river_rise.py"
         ],
         "unit": [
           "dashboard/src/pages/HydrometPage.test.jsx",

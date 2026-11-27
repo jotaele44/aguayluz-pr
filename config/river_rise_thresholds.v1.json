@@ -1,0 +1,56 @@
+{
+  "schema_version": "aguayluz.river-rise-thresholds/v1",
+  "description": "Rate-of-rise thresholds for the USGS river-rise detector (src/aguayluz/hazard_adapters/river_rise.py, scripts/ingest_usgs_river_rise.py). Stage rises are in feet over the stated window; q_ratio is current discharge over the 6-hour minimum. See docs/RIVER_RISE_MONITORING.md.",
+  "calibration": {
+    "status": "UNCALIBRATED_DEFAULTS",
+    "method": "scripts/calibrate_river_rise.py replays 15-minute runs over historical USGS instantaneous values, each run seeing only readings at least 45 minutes old.",
+    "run_at": null,
+    "events": [],
+    "metrics": {}
+  },
+  "promotion": {
+    "enabled": false,
+    "classes": ["RAPID_RISE", "FLASH_RISE"],
+    "note": "Episodes and alerts are recorded only for these classes. Alerting stays off until the calibration backtest passes; the state file and dashboard panel show every class regardless."
+  },
+  "defaults": {
+    "window_hours": 6,
+    "grid_minutes": 15,
+    "grid_slots": 25,
+    "lookup_tolerance_minutes": 10,
+    "min_points_1h": 3,
+    "stale_after_minutes": 150,
+    "spike_ft": 1.0,
+    "confirm_prior_rise_ft": 0.25,
+    "rising_since_tolerance_ft": 0.1,
+    "excluded_qualifiers": ["Eqp", "Mnt", "Bkw", "Ice", "Dis", "Ssn", "***"],
+    "classes": {
+      "ELEVATED_RISE": {"rise_1h_ft": 1.0, "rise_3h_ft": 2.0, "q_ratio": 3.0},
+      "RAPID_RISE": {"rise_15m_ft": 0.75, "rise_1h_ft": 2.0, "rise_3h_ft": 4.0},
+      "FLASH_RISE": {"rise_15m_ft": 1.5, "rise_1h_ft": 4.0, "q_ratio": 5.0}
+    },
+    "headroom_fraction_per_h": {"ELEVATED_RISE": 0.15, "RAPID_RISE": 0.3, "FLASH_RISE": 0.6},
+    "headroom_scale_max": 3.0,
+    "q_ratio_min_base_cfs": 5.0,
+    "q_ratio_min_delta_cfs": 100.0,
+    "projection": {
+      "horizon_minutes": 180,
+      "escalate_within_minutes": 60,
+      "datum_tolerance_ft": 0.1,
+      "datum_match_minutes": 5
+    },
+    "closure": {
+      "quiet_minutes": 90,
+      "quiet_max_rise_1h_ft": 0.1,
+      "stale_close_hours": 24
+    },
+    "retention_days": 35
+  },
+  "sites": {
+    "50059050": {
+      "scale": 1.0,
+      "suppress": false,
+      "note": "Río Grande de Loíza below Carraizo dam: sudden rises can be spillway or gate releases, not rain."
+    }
+  }
+}
