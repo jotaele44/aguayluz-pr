@@ -233,6 +233,17 @@ def test_nwps_gauges_run_every_cadence_optionally_before_alerts():
         assert scripts.index("scripts/ingest_nwps_gauges.py") < scripts.index("scripts/build_alerts.py")
 
 
+def test_usgs_river_rise_runs_every_cadence_after_nwps_and_before_alerts():
+    """Rate of rise needs every 15-minute run; it reads the NWPS state file (thresholds,
+    datum check) and feeds build_alerts.py, and a USGS outage must not abort the run."""
+    assert refresh.STEP_USGS_RIVER_RISE[2] is True
+    for cadence, plan in refresh.PLANS.items():
+        scripts = [_script_of(s) for s in plan]
+        assert "scripts/ingest_usgs_river_rise.py" in scripts, f"{cadence}: river rise missing"
+        rise = scripts.index("scripts/ingest_usgs_river_rise.py")
+        assert scripts.index("scripts/ingest_nwps_gauges.py") < rise < scripts.index("scripts/build_alerts.py")
+
+
 def test_stage_iv_runs_daily_and_up_optionally_before_alerts():
     """Stage IV is a once-a-day 12Z product: daily/weekly/all only, before build_alerts.py
     (heavy-rain alerts); a missing file writes a FAIL receipt without aborting the run."""
