@@ -167,3 +167,55 @@ def test_fixed_windows_are_well_formed(event_id):
     spec = cal.EVENTS[event_id]
     assert spec["kind"] in {"storm", "quiet"}
     assert rr.parse_time(spec["start"]) < rr.parse_time(spec["end"])
+
+
+def _iem(tmp_path, events):
+    path = tmp_path / "vtec.json"
+    path.write_text(json.dumps({"wfo": "TJSJ", "year": 2026, "events": events}))
+    return path
+
+
+def test_nws_products_label_dry_season_episodes_in_three_tiers(tmp_path):
+    """CONSTRUCTED in the shape of the IEM vtec_events.py archive."""
+    products = cal.load_nws_products([_iem(tmp_path, [
+        {"phenomena": "FA", "significance": "Y", "ph_name": "Areal Flood", "sig_name": "Advisory",
+         "locations": "Juana Diaz [PR], Villalba [PR]", "issue": "2026-02-14T18:30:00Z", "expire": "2026-02-14T20:30:00Z"},
+        {"phenomena": "FF", "significance": "W", "ph_name": "Flash Flood", "sig_name": "Warning",
+         "locations": "Carolina [PR], Loiza [PR]", "issue": "2026-02-02T05:00:00Z", "expire": "2026-02-02T08:00:00Z"},
+        {"phenomena": "HT", "significance": "Y", "ph_name": "Heat", "sig_name": "Advisory",
+         "locations": "Ponce [PR]", "issue": "2026-02-09T15:00:00Z", "expire": "2026-02-09T20:00:00Z"},
+        {"phenomena": "FA", "significance": "Y", "locations": "St. Thomas [VI]",
+         "issue": "2026-02-09T15:00:00Z", "expire": "2026-02-09T20:00:00Z"},
+    ])])
+    assert [p["label"] for p in products] == ["Areal Flood Advisory", "Flash Flood Warning"]
+
+    def episode(site, onset):
+        start = rr.parse_time(onset)
+        return cal.Episode(site, "E", start, start + timedelta(minutes=45), "RAPID_RISE",
+                           closed_run=start + timedelta(hours=3), end=start + timedelta(hours=2))
+
+    result = cal.Replay(
+        episodes=[episode("A", "2026-02-14T19:00:00Z"),   # same municipio, overlapping
+                  episode("B", "2026-02-02T06:00:00Z"),   # rain elsewhere on the island
+                  episode("C", "2026-02-09T16:00:00Z")],  # only a heat advisory and a VI product
+        site_runs={"A": 96 * 10, "B": 96 * 10, "C": 96 * 10},
+    )
+    municipio_of = {"A": "Juana Díaz", "B": "Ponce", "C": "Ponce"}
+    score = cal.score_quiet(result, municipio_of=municipio_of, products=products)
+    tiers = {d["site"]: d["nws_tier"] for d in score["detail"]}
+    assert tiers == {"A": "local", "B": "island", "C": "none"}
+    assert (score["nws_local"], score["nws_island"], score["uncorroborated"]) == (1, 1, 1)
+    assert score["uncorroborated_per_site_30d"] == round(1 / (30 / 30), 3)
+    unlabelled = cal.score_quiet(result)
+    assert unlabelled["labelled"] is False and "uncorroborated" not in unlabelled
+
+
+def test_evaluate_prefers_the_uncorroborated_rate_when_labelled():
+    storm = {"rising_limb_crossings": 40, "rising_limb_hit_rate": 0.9}
+    labelled = {"storm": storm, "quiet": {"labelled": True, "episodes_per_site_30d": 2.0,
+                                         "uncorroborated_per_site_30d": 0.3}}
+    assert cal.evaluate(labelled) == (True, [])
+    noisy = {"storm": storm, "quiet": {"labelled": True, "episodes_per_site_30d": 2.0,
+                                      "uncorroborated_per_site_30d": 0.9}}
+    ok, reasons = cal.evaluate(noisy)
+    assert not ok and reasons[0].startswith("uncorroborated dry-season rate 0.9")

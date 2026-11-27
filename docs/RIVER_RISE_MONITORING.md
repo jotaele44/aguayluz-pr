@@ -133,9 +133,31 @@ asset's NWIS municipality. A disagreement stays `UNRESOLVED`.
 
 ## Calibration
 
-Calibration is pending. Promotion stays off (`promotion.enabled: false`) until
-`scripts/calibrate_river_rise.py` has replayed history against these thresholds. The state
-file and the dashboard show every class regardless.
+`scripts/calibrate_river_rise.py` replays the live detector over historical USGS readings
+as if it ran every 15 minutes, each run seeing only readings at least 45 minutes old. It
+scores three kinds of window:
+
+| Window | What is measured |
+|---|---|
+| Storms (Fiona 2022, María 2017) | NWPS action-stage crossings at same-datum gauges, classed by what was observable before the crossing reading: `rising_limb` (the hour before already rose ≥ 1 ft), `step` (the crossing reading is the first anomaly, so nothing on the same feed can precede NWPS), `gradual`, `no_data`. A hit is an episode open by the first 15-minute run that could see the crossing, which is when the NWPS category changes. |
+| NWS Flash Flood Warnings (from `data/service_events.jsonl`) | whether a stream gauge in a warned municipio opened an episode during the warning |
+| Dry-season fortnights (February and March 2026) | rapid/flash episodes per gauge per 30 days, each labelled by the NWS flood products around it (`--nws-products`): one for the gauge's own municipio (`local`), only elsewhere on the island within ±6 h (`island`, a rain day), or none (`none`) |
+
+"Dry season" is not "no rain": NWS San Juan issued 21 flood products between 1 and 19
+February 2026, including Flash Flood Warnings on 2 and 15 February. The labels come from the
+Iowa Environmental Mesonet archive of NWS VTEC events
+(`https://mesonet.agron.iastate.edu/json/vtec_events.py?wfo=TJSJ&year=2026`, T4 aggregation of
+T1 NWS products), used only to label the backtest.
+
+Promotion is enabled only when:
+
+- at least 5 rising-limb storm crossings are labelled;
+- at least 80% of them are hits;
+- at most 0.5 dry-season episodes per gauge per 30 days carry no NWS flood product anywhere
+  (`none`).
+
+Until the full run is recorded in `config/river_rise_thresholds.v1.json`, promotion stays off
+(`promotion.enabled: false`). The state file and the dashboard show every class regardless.
 
 ## Limits and blind spots
 

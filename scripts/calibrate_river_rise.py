@@ -11,9 +11,19 @@ at least ``--latency-minutes`` old (the GOES relay delay of the live feed), and 
   category, which reads the same feed);
 * **NWS flash-flood warnings** in ``data/service_events.jsonl``: how many had a RAPID/FLASH
   episode at a stream gauge in a warned municipio during the warning (±2 h);
-* **dry-season windows**: RAPID/FLASH episodes per site per 30 days — the nuisance rate,
-  since no flood product was issued (an episode there is a sensor fault, a dam release or
-  an unwarned local rise, never confirmed by this script).
+* **dry-season windows**: RAPID/FLASH episodes per site per 30 days. With
+  ``--nws-products`` each episode is labelled by the NWS flood products (Flood Advisory,
+  Flood Warning, Flash Flood Warning) around it: one for the gauge's own municipio
+  (``local``), or only elsewhere on the island within ±6 h (``island``, a rain day — a
+  river also rises from rain in the municipios upstream of its gauge), or none at all
+  (``none``). "Dry season" is not "no rain": February 2026 carried 21 NWS flood products.
+  The ``none`` rate is the nuisance measure: a rise with no NWS evidence of rain anywhere
+  is a sensor fault, a dam release or a shower below NWS criteria.
+
+``--nws-products`` takes the Iowa Environmental Mesonet archive of NWS VTEC events
+(``https://mesonet.agron.iastate.edu/json/vtec_events.py?wfo=TJSJ&year=<YYYY>``, one file per
+year, T4 aggregation of T1 NWS products). It labels the backtest only; production
+corroboration reads ``data/service_events.jsonl``.
 
 Promotion is enabled only when the criteria in :data:`CRITERIA` hold; otherwise the
 config keeps ``promotion.enabled: false`` and records why. Raw pages are cached under
@@ -67,9 +77,22 @@ EVENTS: dict[str, dict[str, Any]] = {
 #: Promotion is enabled only if every criterion holds.
 CRITERIA = {
     "storm_hit_rate_min": 0.8,        # rising-limb crossings with an episode open by the NWPS run
-    "quiet_episodes_per_site_30d_max": 0.5,
+    # Dry-season RAPID/FLASH episodes that no NWS flood product for the municipio
+    # corroborates (the raw rate when no product archive is given).
+    "quiet_uncorroborated_per_site_30d_max": 0.5,
     "min_storm_crossings": 5,         # too few labelled crossings → not enough evidence
 }
+
+#: NWS VTEC phenomena that count as a flood product: areal flood (FA), flash flood (FF),
+#: river flood (FL); any significance (advisory, watch, warning).
+FLOOD_PHENOMENA = frozenset({"FA", "FF", "FL"})
+
+#: An NWS flood product for the gauge's municipio corroborates an episode it overlaps
+#: within this margin.
+PRODUCT_MARGIN = timedelta(hours=2)
+#: A flood product anywhere in Puerto Rico within this margin marks the episode as falling
+#: on a rain day.
+ISLAND_MARGIN = timedelta(hours=6)
 
 _EVENT_RE = re.compile(r"event='([^']*)'")
 
@@ -338,20 +361,88 @@ def score_storm(result: Replay, collected: rr.Collected, contexts: dict[str, rr.
     }
 
 
-def score_quiet(result: Replay, step: timedelta = timedelta(minutes=15)) -> dict[str, Any]:
+def load_nws_products(paths: list[Path]) -> list[dict[str, Any]]:
+    """NWS flood products from IEM ``vtec_events.py`` archives, keyed by municipio."""
+    from aguayluz.hydromet.spatial import municipio_key
+
+    products: list[dict[str, Any]] = []
+    for path in paths:
+        doc = json.loads(Path(path).read_text(encoding="utf-8"))
+        for event in doc.get("events") or []:
+            if event.get("phenomena") not in FLOOD_PHENOMENA:
+                continue
+            start, end = rr.parse_time(event.get("issue")), rr.parse_time(event.get("expire"))
+            if start is None:
+                continue
+            names = [part.strip()[:-len("[PR]")].strip()
+                     for part in str(event.get("locations") or "").split(",")
+                     if part.strip().endswith("[PR]")]
+            if not names:
+                continue
+            products.append({
+                "label": f"{event.get('ph_name')} {event.get('sig_name')}".strip(),
+                "start": start, "end": max(end or start, start),
+                "keys": {municipio_key(n) for n in names}, "municipios": names,
+            })
+    return products
+
+
+def corroborating_product(episode: Episode, municipio: str | None,
+                          products: list[dict[str, Any]], *,
+                          island: bool = False) -> dict[str, Any] | None:
+    """The first NWS flood product overlapping the episode: for its municipio, or (with
+    ``island``) anywhere in Puerto Rico within :data:`ISLAND_MARGIN`."""
+    from aguayluz.hydromet.spatial import municipio_key
+
+    key = municipio_key(municipio) if municipio else None
+    if key is None and not island:
+        return None
+    margin = ISLAND_MARGIN if island else PRODUCT_MARGIN
+    end = episode.end or episode.closed_run or episode.opened_run + timedelta(hours=6)
+    for product in products:
+        if (island or key in product["keys"]) and product["start"] - margin <= end \
+                and product["end"] + margin >= episode.onset:
+            return product
+    return None
+
+
+def score_quiet(result: Replay, step: timedelta = timedelta(minutes=15), *,
+                municipio_of: dict[str, str] | None = None,
+                products: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     site_days = sum(result.site_runs.values()) * step.total_seconds() / 86400
     per_site: dict[str, int] = {}
-    for e in result.episodes:
+    detail = []
+    tiers = {"local": 0, "island": 0, "none": 0}
+    for e in sorted(result.episodes, key=lambda e: e.onset):
         per_site[e.site] = per_site.get(e.site, 0) + 1
+        municipio = (municipio_of or {}).get(e.site)
+        product, tier = None, None
+        if products is not None:
+            product = corroborating_product(e, municipio, products)
+            tier = "local"
+            if product is None:
+                product = corroborating_product(e, municipio, products, island=True)
+                tier = "island" if product else "none"
+            tiers[tier] += 1
+        detail.append({"site": e.site, "onset": rr.iso(e.onset), "peak": e.peak_class,
+                       "municipio": municipio, "nws_tier": tier,
+                       "nws_product": f"{product['label']} ({', '.join(product['municipios'])}, "
+                                      f"{rr.iso(product['start'])})" if product else None})
     rate = len(result.episodes) / (site_days / 30) if site_days else None
-    return {
+    out: dict[str, Any] = {
         "episodes": len(result.episodes),
         "site_days": round(site_days, 1),
         "episodes_per_site_30d": round(rate, 3) if rate is not None else None,
+        "labelled": products is not None,
         "sites": dict(sorted(per_site.items(), key=lambda kv: -kv[1])),
-        "detail": [{"site": e.site, "onset": rr.iso(e.onset), "peak": e.peak_class}
-                   for e in sorted(result.episodes, key=lambda e: e.onset)],
+        "detail": detail,
     }
+    if products is not None:
+        out["nws_local"] = tiers["local"]
+        out["nws_island"] = tiers["island"]
+        out["uncorroborated"] = tiers["none"]
+        out["uncorroborated_per_site_30d"] = round(tiers["none"] / (site_days / 30), 3) if site_days else None
+    return out
 
 
 def flash_flood_warnings(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -428,17 +519,21 @@ def evaluate(metrics: dict[str, Any]) -> tuple[bool, list[str]]:
     elif (storm.get("rising_limb_hit_rate") or 0) < CRITERIA["storm_hit_rate_min"]:
         reasons.append(f"rising-limb hit rate {storm.get('rising_limb_hit_rate')} "
                        f"< {CRITERIA['storm_hit_rate_min']}")
-    quiet = (metrics.get("quiet") or {}).get("episodes_per_site_30d")
+    quiet_metrics = metrics.get("quiet") or {}
+    labelled = bool(quiet_metrics.get("labelled"))
+    quiet = quiet_metrics.get("uncorroborated_per_site_30d" if labelled else "episodes_per_site_30d")
+    what = "uncorroborated dry-season rate" if labelled else "dry-season rate (no NWS product labels)"
     if quiet is None:
         reasons.append("no dry-season window scored")
-    elif quiet > CRITERIA["quiet_episodes_per_site_30d_max"]:
-        reasons.append(f"dry-season rate {quiet} > {CRITERIA['quiet_episodes_per_site_30d_max']} per site per 30 days")
+    elif quiet > CRITERIA["quiet_uncorroborated_per_site_30d_max"]:
+        reasons.append(f"{what} {quiet} > {CRITERIA['quiet_uncorroborated_per_site_30d_max']} per site per 30 days")
     return not reasons, reasons
 
 
 def run_event(event_id: str, spec: dict[str, Any], args: argparse.Namespace, config: dict[str, Any],
               contexts: dict[str, rr.SiteContext], stream: set[str], datum: dict[str, str],
-              municipio_of: dict[str, str]) -> dict[str, Any]:
+              municipio_of: dict[str, str],
+              products: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     start, end = rr.parse_time(spec["start"]), rr.parse_time(spec["end"])
     assert start is not None and end is not None
     documents: list[dict] = []
@@ -465,7 +560,7 @@ def run_event(event_id: str, spec: dict[str, Any], args: argparse.Namespace, con
         summary["score"] = score_storm(result, collected, contexts, datum, start,
                                        latency=latency, window=window, config=config)
     elif spec["kind"] == "quiet":
-        summary["score"] = score_quiet(result)
+        summary["score"] = score_quiet(result, municipio_of=municipio_of, products=products)
     else:
         summary["score"] = score_warning(result, spec["warning"], municipio_of)
         summary["score"]["episodes_in_window"] = len(result.episodes)
@@ -491,6 +586,10 @@ def combine(summaries: list[dict[str, Any]]) -> dict[str, Any]:
              if c["kind"] == "rising_limb" and c["lead_over_nwps_minutes"] is not None]
     site_days = sum(q["site_days"] for q in quiet)
     q_eps = sum(q["episodes"] for q in quiet)
+    labelled = bool(quiet) and all(q.get("labelled") for q in quiet)
+    q_unc = sum(q.get("uncorroborated", 0) for q in quiet)
+    q_local = sum(q.get("nws_local", 0) for q in quiet)
+    q_island = sum(q.get("nws_island", 0) for q in quiet)
     return {
         "storm": {"crossings": crossings_, "hits": hits, "by_kind": dict(sorted(by_kind.items())),
                   "rising_limb_crossings": limb, "rising_limb_hits": limb_hits,
@@ -498,7 +597,11 @@ def combine(summaries: list[dict[str, Any]]) -> dict[str, Any]:
                   "rising_limb_ahead_of_nwps": ahead,
                   "lead_over_nwps_minutes_median": statistics.median(leads) if leads else None},
         "quiet": {"episodes": q_eps, "site_days": round(site_days, 1),
-                  "episodes_per_site_30d": round(q_eps / (site_days / 30), 3) if site_days else None},
+                  "episodes_per_site_30d": round(q_eps / (site_days / 30), 3) if site_days else None,
+                  "labelled": labelled,
+                  **({"nws_local": q_local, "nws_island": q_island, "uncorroborated": q_unc,
+                      "uncorroborated_per_site_30d": round(q_unc / (site_days / 30), 3) if site_days else None}
+                     if labelled else {})},
         "flash_flood_warnings": {"warnings": len(warnings),
                                  "with_gauge_data": sum(1 for w in warnings if w["sites_with_data"]),
                                  "corroborated": sum(1 for w in warnings if w["corroborated"])},
@@ -536,6 +639,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--thresholds", type=Path, default=rr.THRESHOLDS_FILE)
     ap.add_argument("--cache-dir", type=Path, default=Path("calibration-cache"))
     ap.add_argument("--latency-minutes", type=float, default=45.0)
+    ap.add_argument("--nws-products", type=Path, action="append", default=[],
+                    help="IEM vtec_events.py JSON (wfo=TJSJ, one per year) labelling dry-season episodes")
     ap.add_argument("--report", type=Path, help="write the full JSON report here")
     ap.add_argument("--write-config", action="store_true",
                     help="record the result in the thresholds config (and set promotion.enabled)")
@@ -568,7 +673,8 @@ def main(argv: list[str] | None = None) -> int:
               file=sys.stderr)
         return 2
 
-    summaries = [run_event(event_id, spec, args, config, contexts, stream, datum, municipio_of)
+    products = load_nws_products(args.nws_products) if args.nws_products else None
+    summaries = [run_event(event_id, spec, args, config, contexts, stream, datum, municipio_of, products)
                  for event_id, spec in specs.items()]
     metrics = combine(summaries)
     passed, reasons = evaluate(metrics)
