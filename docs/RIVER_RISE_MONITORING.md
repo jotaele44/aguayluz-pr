@@ -85,7 +85,7 @@ Per stream site, over the 6-hour window:
 - **Projection.** Minutes to NWPS action and minor stage at the current rate, only with a
   passing datum check, out to 180 minutes; 0 once the stage is already above.
 
-**Classes** (defaults, pending calibration; any one criterion is enough):
+**Classes** (defaults, unchanged by the calibration below; any one criterion is enough):
 
 | Class | Δ15 min | Δ1 h | Δ3 h | Q ratio |
 |---|---|---|---|---|
@@ -105,8 +105,10 @@ Per stream site, over the 6-hour window:
 | `SUPPRESSED` | the site is suppressed in the thresholds config |
 
 Per-site overrides in `config/river_rise_thresholds.v1.json` take a `scale`, a `suppress`
-flag and a `note`. 50059050 (below the Carraizo dam) and 50045010 (below the La Plata dam)
-carry notes, because releases raise their stage without rain.
+flag and a `note`.
+
+- 50059050 (below the Carraizo dam), 50045010 (below the La Plata dam) and 50129254 (Río Loco below Lago Loco) carry notes, because releases raise their stage without rain.
+- 50049620 (Quebrada Margarita, an urban creek) carries a note because it rises on brief showers.
 
 ## Episodes
 
@@ -171,18 +173,24 @@ defaults above, unchanged.
 | Fiona 2022 + María 2017 (79 and 77 gauges with data) | rising-limb action-stage crossings with an episode open by the NWPS run | **82 / 93 (88.2%)**; 70 flagged before NWPS could see the crossing, median lead **30 min** | medium-high: two storms, T1 approved USGS data, constant 45-minute replay latency |
 | same | step crossings (first anomaly *is* the crossing) | 10 / 14 open by the NWPS run; 5 ahead | context only: no detector on the same feed can lead NWPS here |
 | same | gradual climbs to action stage | 10 / 25 | context only: the NWPS category covers these |
-| February 2026, 1–14 (80 gauges, 1,087.5 gauge-days) | rapid/flash episodes | 73 (2.0 per gauge per 30 days): **17 local**, **46 island**, **10 none** | medium: one fortnight, provisional data |
-| same | episodes with no NWS flood product anywhere | **0.28 per gauge per 30 days** (criterion ≤ 0.5) | medium |
+| February 2026, 1–14 (80 gauges, 1,087.5 gauge-days) | rapid/flash episodes | 73: 17 local, 46 island, 10 none (0.28 per gauge per 30 days) | medium: provisional data |
+| March 2026, 1–14 (1,086.1 gauge-days) | rapid/flash episodes | 21: 1 local, 6 island, 14 none (0.39 per gauge per 30 days) | medium |
+| Both fortnights (2,173.6 gauge-days) | episodes with no NWS flood product anywhere | **24, 0.33 per gauge per 30 days** (criterion ≤ 0.5) | medium |
+| 2026 NWS Flash Flood Warnings (Mayagüez 9 Aug, Aguada–Moca 19 Sep, Naguabo 19 Nov) | an episode at a stream gauge in a warned municipio during the warning | **1 of 3**: Río Culebrinas (50147800) opened a FLASH episode on the run of the 19 Sep warning. Each warned area had a single gauge with data. | low: three cases; report-only, not a criterion |
 
-Of the 10 rises with no NWS product anywhere:
+Of the 24 dry-season rises with no NWS product anywhere:
 
-- 2 are below dams: 50059050 Carraizo and 50045010 La Plata. Both carry a site note.
-- 6 come as pairs of gauges on the same river or basin rising together: Guayanes ×2, Luquillo ×2, Guanajibo basin ×2. A sensor fault does not do that, so these are most likely showers below NWS advisory criteria.
+- 9 moved through 8 eastern gauges in sequence on the morning of 9 March 2026 (Naguabo, Fajardo, Luquillo, Río Grande, Caguas). That is a coherent rain band NWS issued no product for.
+- 8 more came as pairs of gauges on the same river or basin rising together. A sensor fault does not do that.
+- The rest are single sites:
+  - below a dam or reservoir: 50059050 Carraizo, 50045010 La Plata, and 50129254 Río Loco below Lago Loco (2 rises);
+  - 50049620, Quebrada Margarita in Guaynabo (5 across both fortnights), an urban creek that rises on brief showers.
 
-**Pending.** March 2026 (dry season) and the three 2026 Flash Flood Warning windows did not
-complete: the anonymous USGS API limit (HTTP 429) is shared with other traffic, and the run
-stalled behind it. They are listed as `pending_events` in the config. The FFW check is
-report-only and is not a promotion criterion.
+  All of these carry a site note, which an alert repeats.
+
+A Flash Flood Warning is mostly about urban and small-stream flooding, so a warned
+municipio's one river gauge often does not rise sharply. This is why a warning corroborates a
+rise, not the other way round.
 
 **Blind spots of the backtest:**
 

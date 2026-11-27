@@ -4,7 +4,7 @@
   "calibration": {
     "status": "CALIBRATED_PASS",
     "method": "scripts/calibrate_river_rise.py replays 15-minute runs over historical USGS instantaneous values, each run seeing only readings at least 45 minutes old.",
-    "run_at": "2026-11-27T01:34:00Z",
+    "run_at": "2026-11-27T01:42:54Z",
     "replay_latency_minutes": 45.0,
     "criteria": {
       "storm_hit_rate_min": 0.8,
@@ -32,6 +32,34 @@
         "start": "2026-02-01T00:00:00Z",
         "end": "2026-02-15T00:00:00Z",
         "stream_sites_with_stage": 80
+      },
+      {
+        "event": "dry-2026-03",
+        "kind": "quiet",
+        "start": "2026-03-01T00:00:00Z",
+        "end": "2026-03-15T00:00:00Z",
+        "stream_sites_with_stage": 80
+      },
+      {
+        "event": "ffw-20260809T1952Z",
+        "kind": "warning",
+        "start": "2026-08-09T10:52:00Z",
+        "end": "2026-08-10T01:00:00Z",
+        "stream_sites_with_stage": 78
+      },
+      {
+        "event": "ffw-20260919T1950Z",
+        "kind": "warning",
+        "start": "2026-09-19T10:50:00Z",
+        "end": "2026-09-20T01:30:00Z",
+        "stream_sites_with_stage": 81
+      },
+      {
+        "event": "ffw-20261119T2031Z",
+        "kind": "warning",
+        "start": "2026-11-19T11:31:00Z",
+        "end": "2026-11-20T01:00:00Z",
+        "stream_sites_with_stage": 81
       }
     ],
     "metrics": {
@@ -67,32 +95,22 @@
         "lead_over_nwps_minutes_median": 30.0
       },
       "quiet": {
-        "episodes": 73,
-        "site_days": 1087.5,
-        "episodes_per_site_30d": 2.014,
+        "episodes": 94,
+        "site_days": 2173.6,
+        "episodes_per_site_30d": 1.297,
         "labelled": true,
-        "nws_local": 17,
-        "nws_island": 46,
-        "uncorroborated": 10,
-        "uncorroborated_per_site_30d": 0.276
+        "nws_local": 18,
+        "nws_island": 52,
+        "uncorroborated": 24,
+        "uncorroborated_per_site_30d": 0.331
       },
       "flash_flood_warnings": {
-        "warnings": 0,
-        "with_gauge_data": 0,
-        "corroborated": 0
+        "warnings": 3,
+        "with_gauge_data": 3,
+        "corroborated": 1
       }
     },
     "failed_criteria": [],
-    "pending_events": [
-      {
-        "event": "dry-2026-03",
-        "reason": "not completed: shared anonymous USGS API rate limit (HTTP 429) during the run"
-      },
-      {
-        "event": "ffw-2026-08-09, ffw-2026-09-19, ffw-2026-11-19",
-        "reason": "not completed: same rate limit; report-only, not a promotion criterion"
-      }
-    ],
     "labels": "Dry-season episodes labelled with NWS flood products from the Iowa Environmental Mesonet VTEC archive (wfo=TJSJ, year=2026): local = product for the gauge's municipio, island = products elsewhere in PR within 6 h, none = no product anywhere."
   },
   "promotion": {
@@ -170,6 +188,16 @@
       "scale": 1.0,
       "suppress": false,
       "note": "Río de la Plata below La Plata dam: sudden rises can be dam releases, not rain (one dry-season rise in the Feb 2026 backtest had no NWS flood product)."
+    },
+    "50049620": {
+      "scale": 1.0,
+      "suppress": false,
+      "note": "Quebrada Margarita at Caparra (Guaynabo): small urban creek that rises fast on brief showers; 5 of the 24 backtest dry-season rises without an NWS flood product were here."
+    },
+    "50129254": {
+      "scale": 1.0,
+      "suppress": false,
+      "note": "Río Loco near Guánica, downstream of Lago Loco: rises can be reservoir releases, not rain (2 dry-season backtest rises had no NWS flood product)."
     }
   }
 }

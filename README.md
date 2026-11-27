@@ -122,8 +122,9 @@ corpus is real public data, with some sources external or point-in-time.
   rises open `USGS_RISE:` episodes on the hydromet plane; the **NWS Hydromet** page shows every
   site's rise, latency and a 6-hour sparkline. Readings arrive 40–75 minutes after they are
   measured (hourly satellite relay), so this is an observed rise, not a warning. A historical
-  backtest (Fiona 2022, María 2017, February 2026) flagged 88% of rising-limb flood crossings in
-  time, a median 30 minutes before the NWPS category changed. Rises promote to `WEATHER_HAZARD`
+  backtest (Fiona 2022, María 2017, February–March 2026) flagged 88% of rising-limb flood crossings
+  in time, a median 30 minutes before the NWPS category changed, with 0.33 dry-season rises per
+  gauge per 30 days that no NWS flood product accompanied. Rises promote to `WEATHER_HAZARD`
   alerts at severity 2–3, reaching 4 only with NWS or NWPS corroboration; see
   [`docs/RIVER_RISE_MONITORING.md`](docs/RIVER_RISE_MONITORING.md).
 - NWS **Stage IV Puerto Rico rainfall** (`scripts/ingest_stage_iv_pr.py`, keyless) — the daily
