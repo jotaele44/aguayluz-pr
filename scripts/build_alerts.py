@@ -17,11 +17,14 @@ events into operational alerts —
   * WEATHER_HAZARD             — NWS Surf Zone Forecast rip current risk High and NWS
                                   marine-zone alerts for PR waters (outdoor-condition
                                   records on the same hydromet plane)
+  * WEATHER_HAZARD             — USGS river rate-of-rise episodes (same plane +
+                                  data/river_rise_state.jsonl), once
+                                  config/river_rise_thresholds.v1.json enables promotion
 
 Idempotent merge: hand-authored seed alerts and any non-generated rows are kept;
 previously-generated rows (alert_id containing any GENERATED_MARKERS substring —
 _sdwis_ / _resvlow_ / _seismic_ / _weather_ / _osha_ / _neonpub_ / _nwpsflood_ / _ripcurrent_ /
-_marine_ …) are replaced
+_marine_ / _riverrise_ …) are replaced
 on every run. Output is sorted by alert_id for a stable diff.
 
 The exporter (scripts/federation_export.py) projects data/alert_events.jsonl into the
@@ -48,6 +51,7 @@ from aguayluz.alert_promotion import (  # noqa: E402
     build_all_alerts,
     load_geo,
 )
+from aguayluz.hazard_adapters import river_rise  # noqa: E402
 from aguayluz.hydromet import store as hydromet_store  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -119,10 +123,13 @@ def main() -> int:
     geo = load_geo(geo_doc.get("municipios", []) if isinstance(geo_doc, dict) else geo_doc)
 
     hydromet_dir = REPO_ROOT / args.hydromet_dir
+    rise_config = river_rise.load_thresholds()
     hydromet = HydrometInputs(
         records=hydromet_store.load_records(hydromet_dir),
         gauge_state=hydromet_store.load_gauge_state(hydromet_dir),
         now=datetime.now(timezone.utc),
+        river_rise_state=hydromet_store.load_river_rise_state(hydromet_dir),
+        river_rise_promotion=bool((rise_config.get("promotion") or {}).get("enabled")),
     )
 
     alerts = build_all_alerts(

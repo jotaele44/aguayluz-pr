@@ -29,7 +29,7 @@ modules:
     priority: critical
     hydro_dependency_relevance: direct
     default_severity_floor: 2
-    primary_sources: NWS San Juan, NHC, NWS NWPS river gauges, NWS Stage IV rainfall, NWS Surf Zone Forecast, NWS marine-zone alerts, USGS gauges, DRNA, USDM (NDMC/UNL), NOAA NCEI
+    primary_sources: NWS San Juan, NHC, NWS NWPS river gauges, NWS Stage IV rainfall, NWS Surf Zone Forecast, NWS marine-zone alerts, USGS gauges, USGS instantaneous stage (rate of rise), DRNA, USDM (NDMC/UNL), NOAA NCEI
     notes: Flood, drought, rainfall, landslide risk, reservoir operations. River and reservoir
       flood episodes come from NWS NWPS gauge flood categories (scripts/ingest_nwps_gauges.py,
       action 2 / minor 3 / moderate 4 / major 5, closed when the gauge drops below action). Heavy-rain
@@ -42,7 +42,11 @@ modules:
       hazards come from the outdoor-conditions layer, as NWS Surf Zone Forecast rip current
       risk High (scripts/ingest_nws_surf_zone.py, 3) and NWS marine-zone alerts for PR waters
       (scripts/ingest_nws_marine_alerts.py, advisory/watch 2, warning 3), both below the
-      push/SMS floor.
+      push/SMS floor. Sudden river rises come from USGS instantaneous stage
+      (scripts/ingest_usgs_river_rise.py, rapid 2 / flash 3, +1 to at most 4 only when an NWS
+      Flash Flood Warning, an NWPS flood category at minor or higher, or a minor-stage
+      projection corroborates the rise), raised only once config/river_rise_thresholds.v1.json
+      enables promotion.
   - module_id: CONTAMINATION
     module_name: Contamination / Water Quality Alerts
     sector: Public health/environment

@@ -1734,7 +1734,8 @@
           "src/aguayluz/hazard_adapters/nws_heat.py",
           "src/aguayluz/hazard_adapters/nws_marine.py",
           "src/aguayluz/hazard_adapters/nws_surf_zone.py",
-          "src/aguayluz/hazard_adapters/river_rise.py"
+          "src/aguayluz/hazard_adapters/river_rise.py",
+          "src/aguayluz/alert_promotion/river_rise.py"
         ],
         "endpoints": [
           "GET /hydromet/gauges",
@@ -1882,7 +1883,13 @@
           "src/aguayluz/hazard_adapters/river_rise.py:slope_per_hour",
           "src/aguayluz/hazard_adapters/river_rise.py:stable_record_id",
           "src/aguayluz/hazard_adapters/river_rise.py:value_at",
-          "src/aguayluz/hydromet/store.py:load_river_rise_state"
+          "src/aguayluz/hydromet/store.py:load_river_rise_state",
+          "src/aguayluz/alert_promotion/river_rise.py:Corroboration",
+          "src/aguayluz/alert_promotion/river_rise.py:FlashFloodWindow",
+          "src/aguayluz/alert_promotion/river_rise.py:corroborate",
+          "src/aguayluz/alert_promotion/river_rise.py:flash_flood_windows",
+          "src/aguayluz/alert_promotion/river_rise.py:river_rise_alert",
+          "src/aguayluz/alert_promotion/river_rise.py:river_rise_alerts"
         ]
       },
       "analysis": {
@@ -1998,7 +2005,8 @@
           "tests/test_alert_promotion_outdoor.py",
           "tests/test_hazard_adapter_river_rise.py",
           "tests/test_ingest_usgs_river_rise.py",
-          "tests/test_calibrate_river_rise.py"
+          "tests/test_calibrate_river_rise.py",
+          "tests/test_alert_promotion_river_rise.py"
         ],
         "unit": [
           "dashboard/src/pages/HydrometPage.test.jsx",
