@@ -1,9 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
-  LayoutDashboard, Map, Database, Zap, Activity, ClipboardList, ClipboardCheck,
-  BarChart3, ScrollText, ShieldAlert, SlidersHorizontal, Droplets, Mountain, Landmark,
-  ChevronLeft, ChevronRight, X, CloudRain, Sun,
   LayoutDashboard, Map, Database, ShieldAlert, Droplets, Leaf, Landmark,
   ClipboardList, BarChart3, ScrollText, SlidersHorizontal, ChevronRight, X,
 } from 'lucide-react'
@@ -12,25 +9,6 @@ import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
 import brandMark from "@/assets/icon-64.png?inline";
 
-const NAV = [
-  { to: '/', icon: LayoutDashboard, label: 'Overview', end: true },
-  { to: '/map', icon: Map, label: 'Map' },
-  { to: '/assets', icon: Database, label: 'Assets' },
-  { to: '/alerts', icon: ShieldAlert, label: 'Alerts' },
-  { to: '/outages', icon: Zap, label: 'Outages' },
-  { to: '/water-disruption', icon: Droplets, label: 'Water Validation' },
-  { to: '/monitoring', icon: Activity, label: 'Monitoring' },
-  { to: '/electricity', icon: Activity, label: 'Electricity Intelligence' },
-  { to: '/hydromet', icon: CloudRain, label: 'NWS Hydromet' },
-  { to: '/drought', icon: Sun, label: 'Drought Operations' },
-  { to: '/cave-karst', icon: Mountain, label: 'Cave & Karst' },
-  { to: '/regulatory', icon: Landmark, label: 'Regulatory', end: true },
-  { to: '/regulatory/review', icon: ClipboardCheck, label: 'Regulatory Review' },
-  { to: '/environmental-exposure', icon: Activity, label: 'Exposure Graph' },
-  { to: '/review', icon: ClipboardList, label: 'Review Queue' },
-  { to: '/analytics', icon: BarChart3, label: 'Analytics' },
-  { to: '/logs', icon: ScrollText, label: 'Live Logs' },
-  { to: '/system', icon: SlidersHorizontal, label: 'System & Tools' },
 // Tabs -> rows -> sub-links. Every routed page appears exactly once.
 const NAV_GROUPS = [
   {
@@ -40,7 +18,8 @@ const NAV_GROUPS = [
       { to: '/', end: true, icon: LayoutDashboard, label: 'Overview',
         desc: 'Current status across power, water, wastewater and telecom.' },
       { to: '/grid-status', icon: BarChart3, label: 'Electric Grid',
-        desc: 'Source-backed electricity status and explicit coverage gaps.' },
+        desc: 'Source-backed electricity status and explicit coverage gaps.',
+        links: [{ to: '/electricity', label: 'Electricity Intelligence' }] },
       { to: '/map', icon: Map, label: 'Map',
         desc: 'Assets and hazard overlays across Puerto Rico.' },
       { to: '/alerts', icon: ShieldAlert, label: 'Alerts',
@@ -61,6 +40,7 @@ const NAV_GROUPS = [
         desc: 'Water service validation, National Weather Service hydromet, aquifer condition bands, USGS water-use estimates and the reconciled inventory of aquifers and wells.',
         links: [
           { to: '/hydromet', label: 'NWS Hydromet' },
+          { to: '/drought', label: 'Drought Operations' },
           // Staged preview (ionosphere-preview capability): listed only when the flag is on.
           ...(import.meta.env.VITE_IONOSPHERE_PREVIEW === '1' ? [{ to: '/ionosphere', label: 'Space weather / Clima espacial' }] : []),
           { to: '/aquifer-bands', label: 'Aquifer Bands' },

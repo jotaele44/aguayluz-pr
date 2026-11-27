@@ -26,9 +26,6 @@ function Inner() {
         {isMobile && (
           <div className="flex items-center gap-3 px-3 py-2 border-b border-slate-800 bg-slate-900/80 shrink-0 z-20">
             <button
-              onClick={() => setCollapsed(c => !c)}
-              aria-label="Toggle navigation"
-              aria-expanded={!collapsed}
               onClick={() => setOpen(true)}
               aria-label="Open navigation"
               className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200"

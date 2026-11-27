@@ -42,7 +42,6 @@ test('authorized native review, reversal, export and bilingual mobile replay pre
   await expect(page.getByRole('table', { name: 'Immutable review history' }).getByRole('row')).toHaveCount(3)
   await page.getByRole('region', { name: 'Candidate review recommendations', exact: true }).screenshot({ path: testInfo.outputPath('candidate-review-desktop.png') })
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.getByRole('button', { name: 'Collapse sidebar', exact: true }).click()
   await page.getByLabel('Language').selectOption('es')
   await expect(page.getByLabel('Afirmación exacta del generador')).toBeVisible()
   await page.getByLabel('Recomendación', { exact: true }).selectOption('DEFER')
