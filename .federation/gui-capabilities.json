@@ -1715,7 +1715,7 @@
       "classification": "analysis",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Puerto Rico NOAA/NWS hydrometeorological observations (NWPS river/reservoir gauge flood status; Stage IV daily rainfall summarised per municipio over HRAP cells) frozen with byte SHA-256 provenance, source arithmetic and evidence-classed bindings to USGS_ assets (stable ID) and municipios (point-in-polygon + source alias; raster cell centres in polygon). The NWS Hydromet page exposes results, freshness, failures and a guarded refresh per source; the map shows gauges by flood category and a Stage IV rainfall municipio fill; gauge flood episodes and heavy-rain days promote into WEATHER_HAZARD alerts. Observations are hazard context, not confirmed impact. The outdoor-condition sources (NWS Surf Zone Forecast, NWS marine-zone alerts for PR waters, NDBC/CARICOOS buoys, EPA UV index per municipio, NWS gridded heat index per municipio, and the key-gated AirNow AQI) are registry entries on the same plane: the NWS Hydromet page lists each with its freshness, arithmetic, failure and a guarded refresh, and rip current risk High and PR marine alerts promote into WEATHER_HAZARD alerts (src/aguayluz/alert_promotion/outdoor.py).",
+      "rationale": "Puerto Rico NOAA/NWS hydrometeorological observations (NWPS river/reservoir gauge flood status; Stage IV daily rainfall summarised per municipio over HRAP cells) frozen with byte SHA-256 provenance, source arithmetic and evidence-classed bindings to USGS_ assets (stable ID) and municipios (point-in-polygon + source alias; raster cell centres in polygon). The NWS Hydromet page exposes results, freshness, failures and a guarded refresh per source; the map shows gauges by flood category and a Stage IV rainfall municipio fill; gauge flood episodes and heavy-rain days promote into WEATHER_HAZARD alerts. Observations are hazard context, not confirmed impact. The outdoor-condition sources (NWS Surf Zone Forecast, NWS marine-zone alerts for PR waters, NDBC/CARICOOS buoys, EPA UV index per municipio, NWS gridded heat index per municipio, and the key-gated AirNow AQI) are registry entries on the same plane: the NWS Hydromet page lists each with its freshness, arithmetic, failure and a guarded refresh, and rip current risk High and PR marine alerts promote into WEATHER_HAZARD alerts (src/aguayluz/alert_promotion/outdoor.py). USGS river stage rate of rise (scripts/ingest_usgs_river_rise.py) grades every stream gauge each refresh; the NWS Hydromet page lists every site's rise, latency, projection and a 6-hour sparkline with the calibration state, and rapid/flash rise episodes promote into WEATHER_HAZARD alerts (src/aguayluz/alert_promotion/river_rise.py) once calibration enables promotion.",
       "backend": {
         "files": [
           "server/backend/hydromet_api.py",
@@ -1744,7 +1744,8 @@
           "GET /hydromet/refresh/status",
           "GET /hydromet/sources",
           "GET /hydromet/summary",
-          "POST /hydromet/refresh/{source_id}"
+          "POST /hydromet/refresh/{source_id}",
+          "GET /hydromet/river-rise"
         ],
         "symbols": [
           "server/backend/hydromet_api.py:hydromet_gauges",
@@ -1889,7 +1890,8 @@
           "src/aguayluz/alert_promotion/river_rise.py:corroborate",
           "src/aguayluz/alert_promotion/river_rise.py:flash_flood_windows",
           "src/aguayluz/alert_promotion/river_rise.py:river_rise_alert",
-          "src/aguayluz/alert_promotion/river_rise.py:river_rise_alerts"
+          "src/aguayluz/alert_promotion/river_rise.py:river_rise_alerts",
+          "server/backend/hydromet_api.py:hydromet_river_rise"
         ]
       },
       "analysis": {

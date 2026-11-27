@@ -208,3 +208,78 @@ def test_empty_rainfall_is_empty_not_an_error(tmp_path, monkeypatch):
     body = client().get("/hydromet/rainfall").json()
     assert body["data_date"] is None and body["items"] == [] and body["available_dates"] == []
     assert client().get("/hydromet/summary").json()["rainfall_latest_date"] is None
+
+
+# ------------------------------------------------------------ USGS river rise
+
+def _load_rise_ingest():
+    spec = importlib.util.spec_from_file_location("ingest_usgs_river_rise_api",
+                                                  REPO / "scripts" / "ingest_usgs_river_rise.py")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_river_rise_is_empty_before_the_first_run(tmp_path, monkeypatch):
+    monkeypatch.setattr(hydromet_api, "DATA_DIR", tmp_path)
+    body = client().get("/hydromet/river-rise").json()
+    assert body["total"] == 0 and body["items"] == [] and body["episodes"] == []
+    assert body["source"]["freshness"]["state"] == "NEVER"
+    assert body["calibration"]["status"]
+    assert "not a flood warning" in body["scope"]["statement"]
+    summary = client().get("/hydromet/summary").json()
+    assert summary["counts"]["river_rise_sites"] == 0 and summary["counts"]["river_rising"] == 0
+
+
+@pytest.fixture
+def rise_populated(tmp_path, monkeypatch):
+    """A real offline run (trimmed capture) plus one CONSTRUCTED rising site."""
+    pytest.importorskip("shapely")
+    import json
+    import shutil
+
+    fixtures = FIXTURES / "usgs_river_rise"
+    shutil.copy(fixtures / "nwps_gauge_state.jsonl", tmp_path / "nwps_gauge_state.jsonl")
+    src = tmp_path / "src"
+    src.mkdir()
+    stage = json.loads((fixtures / "continuous_00065.json").read_text())
+    # Constructed: Río Jacaguas (50111315) climbs 2.4 ft in its last hour of readings.
+    jacaguas = sorted((f for f in stage["features"]
+                       if f["properties"]["monitoring_location_id"] == "USGS-50111315"),
+                      key=lambda f: f["properties"]["time"])
+    for i, feature in enumerate(jacaguas[-4:], start=1):
+        feature["properties"]["value"] = str(round(float(feature["properties"]["value"]) + 0.6 * i, 2))
+    (src / "continuous_00065.json").write_text(json.dumps(stage))
+    shutil.copy(fixtures / "continuous_00060.json", src / "continuous_00060.json")
+    ingest = _load_rise_ingest()
+    assert ingest.main(["--src", str(src), "--data-dir", str(tmp_path),
+                        "--assets", str(fixtures / "utility_assets.jsonl"),
+                        "--now", "2026-11-27T00:03:36Z"]) == 0
+    monkeypatch.setattr(hydromet_api, "DATA_DIR", tmp_path)
+    return tmp_path
+
+
+def test_river_rise_lists_sites_rising_first_with_episode_and_provenance(rise_populated):
+    body = client().get("/hydromet/river-rise").json()
+    assert body["total"] == 4 and body["counts"]["sites"] == 4
+    top = body["items"][0]
+    assert top["site_no"] == "50111315" and top["rise_class"] == "RAPID_RISE" and top["rising"]
+    assert top["episode"]["status"] == "open" and "manifestation_ids" not in top
+    assert len(top["series"]["stage_ft"]) == 25
+    assert body["counts"]["rising"] == 1 and body["counts"]["open_episodes"] == 1
+    assert body["episodes"][0]["site_no"] == "50111315" and body["episodes"][0]["status"] == "open"
+    assert body["source"]["last_status"] == "PASS" and body["source"]["arithmetic"]["state"] == "PASS"
+    assert body["source"]["latency_minutes_p50"] is not None
+    assert body["classes"]["RAPID_RISE"]["rise_1h_ft"] == 2.0
+    assert body["promotion_enabled"] in (True, False)
+
+    rising = client().get("/hydromet/river-rise", params={"rising_only": "true"}).json()
+    assert [r["site_no"] for r in rising["items"]] == ["50111315"]
+    town = client().get("/hydromet/river-rise", params={"municipio": "aibonito"}).json()
+    assert [r["site_no"] for r in town["items"]] == ["50043000"]
+    summary = client().get("/hydromet/summary").json()
+    assert summary["counts"]["river_rise_sites"] == 4 and summary["counts"]["river_rising"] == 1
+    sources = client().get("/hydromet/sources").json()
+    rise = next(s for s in sources["sources"] if s["source_id"] == "usgs_river_rise")
+    assert rise["receipt"]["last_status"] == "PASS"

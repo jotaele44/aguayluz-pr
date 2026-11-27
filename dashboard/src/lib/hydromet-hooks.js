@@ -5,6 +5,7 @@ import {
   getRainfall,
   getRiverGauges,
   getRiverGaugesGeojson,
+  getRiverRise,
   postHydrometRefresh,
 } from '@/lib/hydromet-api'
 
@@ -32,6 +33,13 @@ export const useRiverGauges = (filters = {}) => useQuery({
 export const useRiverGaugesGeojson = () => useQuery({
   queryKey: ['hydromet', 'gauges.geojson'],
   queryFn: getRiverGaugesGeojson,
+  refetchInterval: GAUGE_REFETCH_MS,
+})
+
+// River rise is recomputed every 15-minute refresh, like the gauge state.
+export const useRiverRise = (filters = {}) => useQuery({
+  queryKey: ['hydromet', 'river-rise', filters],
+  queryFn: () => getRiverRise(filters),
   refetchInterval: GAUGE_REFETCH_MS,
 })
 
