@@ -518,8 +518,15 @@ def analyse_site(
     discharge: list[Observation],
     now: datetime,
     settings: dict[str, Any],
+    *,
+    datum: str | None = None,
 ) -> dict[str, Any]:
-    """Metrics, projection, class and compact series for one site (pure)."""
+    """Metrics, projection, class and compact series for one site (pure).
+
+    ``datum`` overrides the NWPS datum check. The calibration replay passes the site's
+    live result, because a historical window shares no timestamp with today's NWPS
+    observation.
+    """
     tol = timedelta(minutes=float(settings["lookup_tolerance_minutes"]))
     window_start = now - timedelta(hours=float(settings["window_hours"]))
     stage = [o for o in stage if window_start <= o.time <= now]
@@ -592,8 +599,9 @@ def analyse_site(
         pending = jump > float(settings["spike_ft"]) and prior < float(settings["confirm_prior_rise_ft"])
 
     proj = settings["projection"]
-    datum = datum_check(stage, context.nwps, float(proj["datum_tolerance_ft"]),
-                        float(proj["datum_match_minutes"]))
+    if datum is None:
+        datum = datum_check(stage, context.nwps, float(proj["datum_tolerance_ft"]),
+                            float(proj["datum_match_minutes"]))
     action = _threshold_stage(context.nwps, "action")
     minor = _threshold_stage(context.nwps, "minor")
     headroom = (action - metrics["min_stage_6h_ft"]) if datum == "PASS" and action is not None else None

@@ -1895,7 +1895,8 @@
           "scripts/ingest_nws_gridpoint_heat.py",
           "scripts/ingest_nws_marine_alerts.py",
           "scripts/ingest_nws_surf_zone.py",
-          "scripts/ingest_usgs_river_rise.py"
+          "scripts/ingest_usgs_river_rise.py",
+          "scripts/calibrate_river_rise.py"
         ],
         "symbols": [
           "scripts/ingest_airnow.py:acquire",
@@ -1937,7 +1938,24 @@
           "scripts/ingest_usgs_river_rise.py:build",
           "scripts/ingest_usgs_river_rise.py:load_assets",
           "scripts/ingest_usgs_river_rise.py:main",
-          "scripts/ingest_usgs_river_rise.py:prune_snapshots"
+          "scripts/ingest_usgs_river_rise.py:prune_snapshots",
+          "scripts/calibrate_river_rise.py:fetch_window",
+          "scripts/calibrate_river_rise.py:Episode",
+          "scripts/calibrate_river_rise.py:Replay",
+          "scripts/calibrate_river_rise.py:replay",
+          "scripts/calibrate_river_rise.py:crossings",
+          "scripts/calibrate_river_rise.py:crossing_kind",
+          "scripts/calibrate_river_rise.py:score_storm",
+          "scripts/calibrate_river_rise.py:score_quiet",
+          "scripts/calibrate_river_rise.py:flash_flood_warnings",
+          "scripts/calibrate_river_rise.py:score_warning",
+          "scripts/calibrate_river_rise.py:load_contexts",
+          "scripts/calibrate_river_rise.py:load_datum",
+          "scripts/calibrate_river_rise.py:evaluate",
+          "scripts/calibrate_river_rise.py:run_event",
+          "scripts/calibrate_river_rise.py:combine",
+          "scripts/calibrate_river_rise.py:write_config",
+          "scripts/calibrate_river_rise.py:main"
         ]
       },
       "frontend": {
@@ -1979,7 +1997,8 @@
           "tests/test_ingest_outdoor_sources.py",
           "tests/test_alert_promotion_outdoor.py",
           "tests/test_hazard_adapter_river_rise.py",
-          "tests/test_ingest_usgs_river_rise.py"
+          "tests/test_ingest_usgs_river_rise.py",
+          "tests/test_calibrate_river_rise.py"
         ],
         "unit": [
           "dashboard/src/pages/HydrometPage.test.jsx",
