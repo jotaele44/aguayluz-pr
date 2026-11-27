@@ -604,7 +604,9 @@ def analyse_site(
                             float(proj["datum_match_minutes"]))
     action = _threshold_stage(context.nwps, "action")
     minor = _threshold_stage(context.nwps, "minor")
-    headroom = (action - metrics["min_stage_6h_ft"]) if datum == "PASS" and action is not None else None
+    base_stage = metrics["min_stage_6h_ft"]
+    headroom = (action - base_stage) if datum == "PASS" and action is not None and base_stage is not None \
+        else None
     thresholds = applied_thresholds(settings, headroom)
     result["thresholds_applied"] = thresholds
     result["datum_check"] = datum
@@ -795,12 +797,12 @@ def advance_episode(
     latest_time = parse_time(((row or {}).get("latest") or {}).get("time"))
 
     if head is None:
-        if not usable or cls not in classes or latest_time is None:
+        if row is None or not usable or cls not in classes or latest_time is None:
             return EpisodeStep("none")
         onset = parse_time(row.get("rising_since")) or latest_time
         if not_before is not None and onset < not_before:
             onset = min(not_before, latest_time)
-        onset_text = iso(onset)
+        onset_text = iso(onset) or ""
         material = material_state(row["site_no"], onset_text, cls,
                                   minor_within(row, settings), closed=False)
         return EpisodeStep("open", material, canonical_event_id(row["site_no"], onset))
