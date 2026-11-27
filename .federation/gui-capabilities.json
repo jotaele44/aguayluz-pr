@@ -1881,7 +1881,8 @@
           "src/aguayluz/hazard_adapters/river_rise.py:site_settings",
           "src/aguayluz/hazard_adapters/river_rise.py:slope_per_hour",
           "src/aguayluz/hazard_adapters/river_rise.py:stable_record_id",
-          "src/aguayluz/hazard_adapters/river_rise.py:value_at"
+          "src/aguayluz/hazard_adapters/river_rise.py:value_at",
+          "src/aguayluz/hydromet/store.py:load_river_rise_state"
         ]
       },
       "analysis": {
@@ -1893,7 +1894,8 @@
           "scripts/ingest_ndbc_buoys.py",
           "scripts/ingest_nws_gridpoint_heat.py",
           "scripts/ingest_nws_marine_alerts.py",
-          "scripts/ingest_nws_surf_zone.py"
+          "scripts/ingest_nws_surf_zone.py",
+          "scripts/ingest_usgs_river_rise.py"
         ],
         "symbols": [
           "scripts/ingest_airnow.py:acquire",
@@ -1930,7 +1932,12 @@
           "scripts/ingest_stage_iv_pr.py:grid_url",
           "scripts/ingest_stage_iv_pr.py:main",
           "scripts/ingest_stage_iv_pr.py:retention_policy",
-          "scripts/ingest_stage_iv_pr.py:summarise_grid"
+          "scripts/ingest_stage_iv_pr.py:summarise_grid",
+          "scripts/ingest_usgs_river_rise.py:acquire",
+          "scripts/ingest_usgs_river_rise.py:build",
+          "scripts/ingest_usgs_river_rise.py:load_assets",
+          "scripts/ingest_usgs_river_rise.py:main",
+          "scripts/ingest_usgs_river_rise.py:prune_snapshots"
         ]
       },
       "frontend": {
@@ -1971,7 +1978,8 @@
           "tests/test_hazard_adapters_outdoor.py",
           "tests/test_ingest_outdoor_sources.py",
           "tests/test_alert_promotion_outdoor.py",
-          "tests/test_hazard_adapter_river_rise.py"
+          "tests/test_hazard_adapter_river_rise.py",
+          "tests/test_ingest_usgs_river_rise.py"
         ],
         "unit": [
           "dashboard/src/pages/HydrometPage.test.jsx",

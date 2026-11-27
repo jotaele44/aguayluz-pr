@@ -37,6 +37,39 @@
       "license": "U.S. Government work (public domain)"
     },
     {
+      "source_id": "usgs_river_rise",
+      "label": "USGS river stage rate of rise (flash-flood watch)",
+      "authority": "U.S. Geological Survey, Water Data for the Nation",
+      "family": "HYDROMETEOROLOGY",
+      "hazard_type": "RIVER_STAGE_RATE_OF_RISE",
+      "endpoints": {
+        "continuous": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items",
+        "api_docs": "https://api.waterdata.usgs.gov/ogcapi/v0/openapi"
+      },
+      "query": {
+        "bbox": "-67.95,17.70,-65.20,18.70",
+        "parameter_code": [
+          "00065",
+          "00060"
+        ],
+        "skipGeometry": "true",
+        "properties": "monitoring_location_id,parameter_code,statistic_id,time,value,unit_of_measure,approval_status,qualifier,time_series_id",
+        "limit": 10000
+      },
+      "window_hours": 6,
+      "cadence_seconds": 900,
+      "max_age_seconds": 7200,
+      "observation_stale_after_seconds": 9000,
+      "retention_days": 35,
+      "thresholds_config": "config/river_rise_thresholds.v1.json",
+      "refresh_script": "scripts/ingest_usgs_river_rise.py",
+      "binding_semantics": "Site -> USGS_<site> asset by stable ID (the USGS site number); only utility_assets rows with asset_subtype stream_gage are analysed (reservoirs, lakes and irrigation canals are excluded). Site -> municipio by point-in-polygon on the asset coordinates, corroborated by the asset's NWIS municipality; a disagreement stays UNRESOLVED. Site -> NWPS gauge by the NWPS usgsId, and NWPS thresholds are used only when the NWPS stage equals the USGS reading at a common timestamp (datum check).",
+      "update_semantics": "Every run reads the last window_hours of instantaneous gage height and discharge for the PR bounding box and rewrites data/river_rise_state.jsonl (one row per stream site, with a 25-point 15-minute grid). A RAPID or FLASH rise opens one canonical event per site and onset; a revision is written only when the peak class escalates, the minor-stage projection first fires, or the episode closes (90 quiet minutes, or 24 h without fresh data). Closed episodes older than retention_days are pruned.",
+      "known_limits": "Observed rise, not a forecast or an NWS warning: PR gauges relay hourly by GOES satellite, so readings reach the API 40-75 minutes after they are measured. Readings are provisional. Discharge is rated from the same stage sensor and is not independent evidence. Dam releases (e.g. below Carraizo) raise stage without rain. Thresholds are config/river_rise_thresholds.v1.json; until its calibration block passes, promotion is off and no alert is raised. Anonymous requests share a 1,000 requests/hour per-IP limit; a USGS_API_KEY raises it.",
+      "raw_snapshot_policy": "Raw response bytes under data/hydromet_snapshots/usgs_river_rise/ (gitignored), pruned each run to the responses still referenced; byte SHA-256 committed in data/hydromet_manifestations.jsonl.",
+      "license": "U.S. Government work (public domain)"
+    },
+    {
       "source_id": "stage_iv_pr",
       "label": "Stage IV Puerto Rico rainfall (QPE)",
       "authority": "NOAA/NWS River Forecast Centers (SERFC) via the National Water Prediction Service",

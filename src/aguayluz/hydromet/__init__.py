@@ -11,6 +11,8 @@ dashboard, the desktop app and the alert promoters all see the same state:
 * ``data/nwps_gauge_state.jsonl``        — current per-gauge NWPS snapshot
 * ``data/outdoor_*_state.jsonl``         — current per-source outdoor-condition snapshots
   (surf zone, buoys, UV, heat, air quality; see :mod:`aguayluz.outdoor`)
+* ``data/river_rise_state.jsonl``        — current per-site USGS stage rate-of-rise
+  (:mod:`aguayluz.hazard_adapters.river_rise`; rise episodes are ``USGS_RISE:`` records)
 
 Raw response bytes go under ``data/hydromet_snapshots/<source_id>/`` (gitignored).
 
@@ -32,6 +34,8 @@ SOURCE_PREFIXES: dict[str, str] = {
     "epa_uv": "EPA_UV:",
     "nws_gridpoint_heat": "NWS_HEAT:",
     "airnow": "AIRNOW:",
+    # USGS stage rate-of-rise: one canonical event per site and rise onset.
+    "usgs_river_rise": "USGS_RISE:",
 }
 
 #: Puerto Rico query envelope (lon/lat, EPSG:4326) shared by every hydromet source.

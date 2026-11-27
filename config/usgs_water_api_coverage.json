@@ -16,11 +16,13 @@
       "observation_monitoring": true,
       "implementation_status": "implemented_unverified_live",
       "producers": [
-        "scripts/ingest_usgs_continuous.py"
+        "scripts/ingest_usgs_continuous.py",
+        "scripts/ingest_usgs_river_rise.py"
       ],
       "artifacts": [
         "data/usgs_continuous_readings.jsonl",
-        "data/usgs_continuous_receipt.json"
+        "data/usgs_continuous_receipt.json",
+        "data/river_rise_state.jsonl"
       ],
       "cadences": [
         "fast",

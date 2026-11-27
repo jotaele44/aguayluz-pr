@@ -396,20 +396,26 @@ def grid(series: list[Observation], end: datetime, *, step_minutes: int, slots: 
 
 
 def rising_since(series: list[Observation], tolerance_ft: float) -> datetime | None:
-    """Start of the current rise: the low point before which the stage was not higher.
+    """Start of the current rise: the last base-level reading before the stage climbed.
 
     Walks back from the latest reading while no earlier reading exceeds the running
-    minimum by more than ``tolerance_ft``.
+    minimum by more than ``tolerance_ft`` (that bounds the current rise), then returns the
+    latest reading in that stretch still within ``tolerance_ft`` of its minimum — so a flat
+    or gently noisy baseline does not drag the onset hours back.
     """
     if not series:
         return None
-    low = series[-1]
-    for obs in reversed(series[:-1]):
-        if obs.value > low.value + tolerance_ft:
+    low = series[-1].value
+    start = len(series) - 1
+    for i in range(len(series) - 2, -1, -1):
+        if series[i].value > low + tolerance_ft:
             break
-        if obs.value <= low.value:
-            low = obs
-    return low.time
+        low = min(low, series[i].value)
+        start = i
+    for obs in reversed(series[start:]):
+        if obs.value <= low + tolerance_ft:
+            return obs.time
+    return series[start].time
 
 
 def datum_check(stage: list[Observation], nwps: dict[str, Any] | None,

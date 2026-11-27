@@ -114,6 +114,16 @@ corpus is real public data, with some sources external or point-in-time.
   and a refresh control. This is the PR-relevant part of the legacy NWS IDP-GIS catalog; see
   [`docs/NWS_HYDROMET_INTEGRATION.md`](docs/NWS_HYDROMET_INTEGRATION.md) for what else on that
   catalog was and was not wired.
+- USGS **river stage rate of rise** (`scripts/ingest_usgs_river_rise.py`, keyless, every refresh)
+  — the last 6 hours of instantaneous gage height and discharge for every Puerto Rico stream
+  gauge (about 80 sites; reservoirs, lakes and canals excluded), graded each run as an
+  elevated, rapid or flash rise from its 15-minute, 1-hour and 3-hour rise. Where the NWPS gauge
+  reads the same datum, it also projects minutes to NWPS action and minor stage. Rapid and flash
+  rises open `USGS_RISE:` episodes on the hydromet plane; the **NWS Hydromet** page shows every
+  site's rise, latency and a 6-hour sparkline. Readings arrive 40–75 minutes after they are
+  measured (hourly satellite relay), so this is an observed rise, not a warning. Alerting stays
+  off until the thresholds pass a historical backtest; see
+  [`docs/RIVER_RISE_MONITORING.md`](docs/RIVER_RISE_MONITORING.md).
 - NWS **Stage IV Puerto Rico rainfall** (`scripts/ingest_stage_iv_pr.py`, keyless) — the daily
   1-, 7- and 30-day radar + gauge rainfall grids NWPS publishes for Puerto Rico, summarised per
   municipio over the HRAP cells inside each Census polygon (with PRISM normal and percent of

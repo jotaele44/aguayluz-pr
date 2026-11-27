@@ -132,9 +132,11 @@ def test_value_lookup_is_by_time_over_mixed_steps_and_gaps():
     assert rr.value_at(obs, T0 + timedelta(minutes=95), tol) == 95.0
 
 
-def test_rising_since_finds_the_low_point_before_the_rise():
+def test_rising_since_is_the_last_base_level_reading_before_the_climb():
     obs = series([3.0, 2.0, 1.5, 1.55, 2.5, 4.0])
-    assert rr.rising_since(obs, 0.1) == T0 + timedelta(minutes=30)
+    assert rr.rising_since(obs, 0.1) == T0 + timedelta(minutes=45)  # 1.55 is within 0.1 of 1.5
+    flat = series([3.0] * 8 + [3.6, 4.2])
+    assert rr.rising_since(flat, 0.1) == T0 + timedelta(minutes=15 * 7)
 
 
 def analyse(values, *, step=15, nwps=None, discharge=None, now_after=0, **over):

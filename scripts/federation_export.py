@@ -596,6 +596,7 @@ HYDROMET_SOURCE_SYSTEMS = {
     "EPA Envirofacts UV (getEnvirofactsUVDAILY)": "epa_uv",
     "api.weather.gov gridpoints (forecastGridData)": "nws_gridpoint_heat",
     "AirNow API (observation/latLong/current)": "airnow",
+    "USGS Water Data OGC API (continuous)": "usgs_river_rise",
 }
 _RECEIPT_ATTEMPT_STATUS = {"PASS": "success", "FAIL": "failure"}
 _CADENCE_WINDOWS = {
