@@ -138,9 +138,22 @@ def _promote_access_condition(signal: dict, out: Path = ACCESS_OUT_DEFAULT) -> d
     row["bound_asset_id"] = bound_asset_id
     row["binding_status"] = binding_status
     existing = {item["condition_id"]: item for item in _read_access_jsonl(out)}
+    stored = existing.get(row["condition_id"])
+    if stored is not None and _is_older(row, stored):
+        # An older observation never replaces a newer one. Unchanged re-sends
+        # leave no receipt, so a late redelivery of one, or any out-of-order
+        # delivery, would otherwise reinstate a superseded state.
+        return stored
     existing[row["condition_id"]] = row
     _write_access_jsonl(out, list(existing.values()))
     return row
+
+
+def _is_older(row: dict, stored: dict) -> bool:
+    """True only when both observations parse and ``row`` predates ``stored``."""
+    row_at = _parse_time(row.get("observed_at"))
+    stored_at = _parse_time(stored.get("observed_at"))
+    return row_at is not None and stored_at is not None and row_at < stored_at
 
 
 def promote_signal(

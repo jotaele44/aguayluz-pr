@@ -3351,6 +3351,30 @@
           "tests/test_schemas.py"
         ]
       }
+    },
+    {
+      "id": "centinelas-handoff-intake",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Machine-to-machine receiver for Centinelas repository_dispatch handoffs, run only by the centinelas-handoff workflow: it stores a content-addressed receipt and promotes the signal into data/service_events.jsonl or data/access_conditions.jsonl. Unchanged access conditions are acknowledged without a write except for a daily heartbeat, and an older observation never replaces a newer one. No person invokes it; promoted service events reach users through the existing events and alerts surfaces, and the receipt and promotion outcome are reported in the workflow run.",
+      "analysis": {
+        "files": [
+          "scripts/ingest_centinelas_handoff.py"
+        ],
+        "symbols": [
+          "scripts/ingest_centinelas_handoff.py:main",
+          "scripts/ingest_centinelas_handoff.py:promote_signal",
+          "scripts/ingest_centinelas_handoff.py:receipt_path",
+          "scripts/ingest_centinelas_handoff.py:write_receipt"
+        ]
+      },
+      "tests": {
+        "contract": [
+          "tests/test_ingest_centinelas_handoff.py",
+          "tests/test_centinelas_access_condition.py"
+        ]
+      }
     }
   ],
   "exceptions": []

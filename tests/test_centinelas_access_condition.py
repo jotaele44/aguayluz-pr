@@ -210,3 +210,39 @@ def test_unparseable_stored_observation_falls_through_to_a_write(tmp_path: Path,
 
     assert out["unchanged"] == "false"
     assert _receipts(tmp_path) == 2
+
+
+def test_late_redelivery_of_a_skipped_resend_cannot_reinstate_an_old_state(
+    tmp_path: Path, monkeypatch
+):
+    # 10:00 restricted is recorded; 10:15 is an unchanged re-send and is skipped
+    # (no receipt); 10:30 changes the meaning. A late redelivery of the 10:15 key
+    # must not put the superseded state back.
+    _deliver(tmp_path, monkeypatch, _resend("2026-11-13T10:00:00+00:00", "k1"))
+    skipped = _resend("2026-11-13T10:15:00+00:00", "k2")
+    assert _deliver(tmp_path, monkeypatch, skipped)["unchanged"] == "true"
+    _deliver(
+        tmp_path, monkeypatch, _resend("2026-11-13T10:30:00+00:00", "k3", semantic_hash="c" * 64)
+    )
+
+    _deliver(tmp_path, monkeypatch, skipped)
+
+    rows = _rows(tmp_path)
+    assert len(rows) == 1
+    assert rows[0]["semantic_hash"] == "c" * 64
+    assert rows[0]["observed_at"] == "2026-11-13T10:30:00+00:00"
+
+
+def test_out_of_order_older_observation_does_not_replace_newer_row(tmp_path: Path):
+    out = tmp_path / "access_conditions.jsonl"
+    newer = _signal()
+    newer["observed_at"] = "2026-11-13T12:00:00+00:00"
+    newer["semantic_hash"] = "c" * 64
+    _promote_access_condition(newer, out)
+
+    older = _signal()
+    older["observed_at"] = "2026-11-13T11:00:00+00:00"
+    kept = _promote_access_condition(older, out)
+
+    assert kept["semantic_hash"] == "c" * 64
+    assert json.loads(out.read_text().strip())["semantic_hash"] == "c" * 64
