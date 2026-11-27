@@ -226,6 +226,19 @@ function StageSparkline({ values, label }) {
   )
 }
 
+// Minutes to NWPS action / minor stage at the current rate. Explains every blank: no NWPS
+// gauge or no published thresholds, a datum that does not match USGS, or not approaching.
+function ProjectionCell({ row }) {
+  const p = row.projection ?? {}
+  const thresholds = Object.values(row.nwps?.thresholds ?? {}).some((v) => v != null)
+  if (!row.nwps || !thresholds) return <span className="text-slate-400">no NWPS thresholds</span>
+  if (row.datum_check && row.datum_check !== 'PASS') return <span className="text-slate-400">datum not matched</span>
+  if (p.to_action_minutes == null && p.to_minor_minutes == null) {
+    return <span className="text-slate-400">not within 3 h</span>
+  }
+  return `${minutesText(p.to_action_minutes)} / ${minutesText(p.to_minor_minutes)}`
+}
+
 function RiverRiseTable({ rows }) {
   return (
     <div {...scrollRegion('River rise table')} className="overflow-x-auto">
@@ -266,11 +279,7 @@ function RiverRiseTable({ rows }) {
                   {m.q_ratio != null && <div className="text-[11px] text-slate-400">discharge ×{m.q_ratio} of 6-h low</div>}
                 </td>
                 <td className="py-2 pr-3 text-slate-300">{m.rate_ft_per_h == null ? '—' : `${Number(m.rate_ft_per_h).toFixed(2)} ft/h`}</td>
-                <td className="py-2 pr-3 text-slate-300">
-                  {r.projection?.basis
-                    ? `${minutesText(r.projection.to_action_minutes)} / ${minutesText(r.projection.to_minor_minutes)}`
-                    : <span className="text-slate-400">{r.nwps ? 'datum not matched' : 'no NWPS thresholds'}</span>}
-                </td>
+                <td className="py-2 pr-3 text-slate-300"><ProjectionCell row={r} /></td>
                 <td className="py-2 pr-3 text-slate-300">
                   {feet(r.latest?.stage_ft)}
                   <div className={cn('text-[11px]', r.observation_stale ? 'text-amber-300' : 'text-slate-400')}>

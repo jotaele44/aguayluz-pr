@@ -110,7 +110,7 @@ const RISE_ROWS = [
   },
   {
     site_no: '50043000', name: 'Rio De La Plata At Proyecto La Plata, Pr', municipio: 'Aibonito',
-    nwps: { lid: 'AIBP4', thresholds: { action: 15, minor: 20 } }, rise_class: 'NONE', data_state: 'OK', rising: false,
+    nwps: { lid: 'AIBP4', thresholds: { action: 15, minor: 20 } }, datum_check: 'PASS', rise_class: 'NONE', data_state: 'OK', rising: false,
     observation_stale: false, site_note: null,
     metrics: { rise_15m_ft: 0, rise_1h_ft: -0.01, rise_3h_ft: -0.01, rate_ft_per_h: 0, q_ratio: null, min_stage_6h_ft: 10.06, max_stage_6h_ft: 10.09 },
     projection: { to_action_minutes: null, to_minor_minutes: null, basis: 'nwps_thresholds_same_datum' },
@@ -259,12 +259,32 @@ describe('HydrometPage', () => {
     expect(rows[0]).toHaveTextContent('34 min behind')
     expect(rows[0]).toHaveTextContent('no NWPS thresholds')
     expect(rows[1]).toHaveTextContent('AIBP4')
+    expect(rows[1]).toHaveTextContent('not within 3 h')
     expect(screen.getByRole('img', { name: /Stage over the last 6 hours at USGS 50111315: 3.10 ft to 5.50 ft/ })).toBeInTheDocument()
     const provenance = screen.getByTestId('river-rise-provenance')
     expect(provenance).toHaveTextContent('81 stream gauges · 1 rising rapidly · 1 open episode(s)')
     expect(provenance).toHaveTextContent('47 min behind (median), 62 min (90th percentile)')
     expect(provenance).toHaveTextContent('4564 readings = 3387 retained + 1177 excluded + 0 unresolved')
     expect(screen.getByTestId('river-rise-calibration')).toHaveTextContent(/no alert is raised until the historical backtest passes/)
+  })
+
+  it('explains each blank projection', async () => {
+    const base = RISE_ROWS[1]
+    getRiverRise.mockResolvedValue({
+      ...RIVER_RISE,
+      total: 3,
+      items: [
+        { ...base, site_no: 'A', nwps: { lid: 'BCAP4', thresholds: {} } },
+        { ...base, site_no: 'B', datum_check: 'FAIL' },
+        { ...base, site_no: 'C', projection: { to_action_minutes: 40, to_minor_minutes: null, basis: 'nwps_thresholds_same_datum' } },
+      ],
+    })
+    renderPage()
+    const table = await screen.findByRole('table', { name: 'USGS river rate of rise' })
+    const rows = table.querySelectorAll('tbody tr')
+    expect(rows[0]).toHaveTextContent('no NWPS thresholds')
+    expect(rows[1]).toHaveTextContent('datum not matched')
+    expect(rows[2]).toHaveTextContent('40 min / —')
   })
 
   it('filters river rise to rapid and flash rises', async () => {
