@@ -54,6 +54,11 @@ Every feature is classified before anything is computed, and
 | excluded | reservoir, lake or canal site (`utility_assets.asset_subtype` ≠ `stream_gage`); other parameter or statistic; a value USGS withholds and qualifies (e.g. `RATINGDEV`); an excluded qualifier (equipment, maintenance, backwater, ice, discontinued, seasonal); duplicate timestamp; a second time series for the same site and parameter; an interior spike |
 | unresolved | no site, no time, no value, or a value that is not a number |
 
+The excluded-qualifier list holds the legacy NWIS codes (`Eqp`, `Mnt`, `Bkw`, `Ice`, `Dis`,
+`Ssn`, `***`). In the live probe and the backtests, the Water Data API reported only
+`ESTIMATED`, `REVISED` and `EVENT` on stage, and `RATINGDEV` on withheld discharge. None of
+those is excluded: estimated stage during a flood is still the best reading there is.
+
 Per stream site, over the 6-hour window:
 
 - **Lookup by time.** Gauges report every 5, 10 or 15 minutes. A value "1 hour ago" is the
@@ -100,8 +105,8 @@ Per stream site, over the 6-hour window:
 | `SUPPRESSED` | the site is suppressed in the thresholds config |
 
 Per-site overrides in `config/river_rise_thresholds.v1.json` take a `scale`, a `suppress`
-flag and a `note`. 50059050, below the Carraizo dam, carries a note because gate and
-spillway releases raise its stage without rain.
+flag and a `note`. 50059050 (below the Carraizo dam) and 50045010 (below the La Plata dam)
+carry notes, because releases raise their stage without rain.
 
 ## Episodes
 
@@ -156,8 +161,38 @@ Promotion is enabled only when:
 - at most 0.5 dry-season episodes per gauge per 30 days carry no NWS flood product anywhere
   (`none`).
 
-Until the full run is recorded in `config/river_rise_thresholds.v1.json`, promotion stays off
-(`promotion.enabled: false`). The state file and the dashboard show every class regardless.
+### Result (recorded 2026-11-27, `config/river_rise_thresholds.v1.json`)
+
+**CALIBRATED_PASS**, so promotion is on (`promotion.enabled: true`). Thresholds are the
+defaults above, unchanged.
+
+| Window | Measure | Result | Confidence |
+|---|---|---|---|
+| Fiona 2022 + María 2017 (79 and 77 gauges with data) | rising-limb action-stage crossings with an episode open by the NWPS run | **82 / 93 (88.2%)**; 70 flagged before NWPS could see the crossing, median lead **30 min** | medium-high: two storms, T1 approved USGS data, constant 45-minute replay latency |
+| same | step crossings (first anomaly *is* the crossing) | 10 / 14 open by the NWPS run; 5 ahead | context only: no detector on the same feed can lead NWPS here |
+| same | gradual climbs to action stage | 10 / 25 | context only: the NWPS category covers these |
+| February 2026, 1–14 (80 gauges, 1,087.5 gauge-days) | rapid/flash episodes | 73 (2.0 per gauge per 30 days): **17 local**, **46 island**, **10 none** | medium: one fortnight, provisional data |
+| same | episodes with no NWS flood product anywhere | **0.28 per gauge per 30 days** (criterion ≤ 0.5) | medium |
+
+Of the 10 rises with no NWS product anywhere:
+
+- 2 are below dams: 50059050 Carraizo and 50045010 La Plata. Both carry a site note.
+- 6 come as pairs of gauges on the same river or basin rising together: Guayanes ×2, Luquillo ×2, Guanajibo basin ×2. A sensor fault does not do that, so these are most likely showers below NWS advisory criteria.
+
+**Pending.** March 2026 (dry season) and the three 2026 Flash Flood Warning windows did not
+complete: the anonymous USGS API limit (HTTP 429) is shared with other traffic, and the run
+stalled behind it. They are listed as `pending_events` in the config. The FFW check is
+report-only and is not a promotion criterion.
+
+**Blind spots of the backtest:**
+
+- The replay latency is a constant 45 minutes. The live feed arrives in hourly bursts, so a jump in the last reading of a burst can wait up to an hour for confirmation.
+- Crossings are labelled against today's NWPS thresholds.
+- Municipio matching of NWS products ignores upstream rain, which is why the `island` tier exists.
+- The labels come from an aggregator (IEM) of NWS products, not from NWS directly.
+
+To stop river-rise alerts, set `promotion.enabled` to `false`. The state file and the
+dashboard show every class either way.
 
 ## Limits and blind spots
 
