@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "scope": "Puerto Rico food, agricultural, animal, human infectious-disease, wastewater, water-health and environmental-health advisory source-family denominator",
-  "as_of": "2026-10-16",
+  "as_of": "2026-10-21",
   "certification_state": "OPEN",
   "completeness_claimed": false,
   "product_capability_id": "hazard-advisory-plane",
@@ -104,7 +104,7 @@
       "hazard_family": "WATER_HEALTH",
       "access": "annual report + annexes + public notice; exact source bytes required before manifestation promotion",
       "url": "https://www.salud.pr.gov/CMS/611",
-      "status": "BOUND_2025_ARTIFACT_BYTES_PASS_ROW_DENOMINATOR_OPEN",
+      "status": "BOUND_2025_ARTIFACT_BYTES_COMPLETE_OCR_READY_ROW_DENOMINATOR_OPEN",
       "bounded_scope": {
         "reporting_period": "2025-01-01/2025-12-31",
         "public_notice_id": "10746",
@@ -115,7 +115,7 @@
         "bytes_frozen": 3,
         "blocked_acquisition": 0,
         "present_bytes_not_frozen": 0,
-        "row_denominator_state": "OPEN_NOT_ENUMERATED_FROM_PRDOH_REPORTS",
+        "row_denominator_state": "OPEN_OCR_READY_ROW_RECONSTRUCTION_REQUIRED",
         "source_universe_completeness_claimed": false
       },
       "binding_semantics": "state annual-report rows bind to PWSID/VIOLATION_ID only when those identifiers are present or independently reconciled; names alone are aliases",
@@ -154,6 +154,40 @@
           "certified_head": "e99f33eeb4c536596b191174b8084bb0437b8efd",
           "artifact_digest": "sha256:e40212452091fce1ec2c80cb1cd5c352a500775ced14bf464a3858a473e19bb9"
         }
+      },
+      "ocr_source_evidence": {
+        "workflow_run_id": 39688378458,
+        "certified_head": "a752b3095c5cba7cc42b55af14f3f1a61abd542b",
+        "retrieved_at_utc": "2026-10-21T22:43:53.595916+00:00",
+        "artifact_id": 12387233201,
+        "artifact_digest": "sha256:1358623cf8e861ed4571a5837357ca46309214d64ed08ab0765b28a9e7284a2d",
+        "source_artifacts": {
+          "10746": {
+            "bytes": 331326,
+            "pages": 1,
+            "sha256": "3488ca04e0ad90106caaa568059ee574fa099c3854bf11a3930db372391ff1bd",
+            "identity_state": "NEWLY_FROZEN"
+          },
+          "10747": {
+            "bytes": 16080577,
+            "pages": 40,
+            "sha256": "748529762de1b6661b5484957a7662bd233a37aaf371482cdc14bbf5ac584772",
+            "identity_state": "MATCHES_PRIOR_FROZEN_MANIFESTATION",
+            "ocr_pdf_sha256": "b5fdea43b7a0e0bc98dfc12ee54d334a980811e263d1839a1afabbea8fc499d4",
+            "ocr_text_sha256": "00050c01699227cd66df8464062b710cda481113e5cee32df1b79a0384e2bf97",
+            "ocr_bbox_sha256": "4d7b57527aa671d25c60a21df8a690baab5e8e3ad2eba2c8476572e6c52d7ba3"
+          },
+          "10748": {
+            "bytes": 23689313,
+            "pages": 33,
+            "sha256": "9886fbed47e9f8a3564167034bedc6bc0a0d653c6f89d81d69f8101ccc3f2603",
+            "identity_state": "MATCHES_PRIOR_FROZEN_MANIFESTATION",
+            "ocr_pdf_sha256": "c366a74ef599a9927e641e99556d8f37fda181c7d83be6f4c37e6fe5a40ffb0b",
+            "ocr_text_sha256": "1342e8eb73aa60a3c81177eef0cd0728d463657844325123058f3120522ea73b",
+            "ocr_bbox_sha256": "0ef178827cdd0b2171b392149182b8e01cbf2bba180a34291445d34ad727995f"
+          }
+        },
+        "authority_separation": "SOURCE_PDF_BYTES_AUTHORITATIVE_OCR_DERIVED_NON_AUTHORITATIVE"
       }
     },
     {
@@ -230,7 +264,8 @@
     "HISTORICAL_BACKFILL_DENOMINATOR_PER_SOURCE_FAMILY",
     "PRDOH_2025_ANNUAL_VIOLATIONS_REPORT_10747_ROW_DENOMINATOR",
     "PRDOH_2025_ANNEXES_10748_ROW_DENOMINATOR",
-    "EPA_SDWIS_PUERTO_RICO_2025_UNRESOLVED_ROW_ADJUDICATION_15342"
+    "EPA_SDWIS_PUERTO_RICO_2025_UNRESOLVED_ROW_ADJUDICATION_15342",
+    "PRDOH_2025_OCR_TABLE_ROW_RECONSTRUCTION"
   ],
   "registry_reconciled_at": "2026-10-22",
   "completeness_claim": false
