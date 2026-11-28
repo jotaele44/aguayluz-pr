@@ -123,6 +123,11 @@ STEP_USGS_METADATA = (
     ["scripts/ingest_usgs_time_series_metadata.py"],
     True,
 )
+STEP_GRID_V2_USGS_SOURCE_COORDINATES = (
+    "USGS monitoring locations → Grid V2 source-coordinate candidates",
+    ["scripts/export_pr_grid_v2_source_coordinate_candidates.py"],
+    True,
+)
 STEP_USGS_WATER_QUALITY = (
     "WQP + USGS Samples statewide discovery",
     ["scripts/ingest_usgs_water_quality.py"],
@@ -340,6 +345,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_USGS_CONTINUOUS,
         STEP_USGS_FIELD_MEASUREMENTS,
         STEP_USGS_METADATA,
+        STEP_GRID_V2_USGS_SOURCE_COORDINATES,
         STEP_USGS_RTFI,
         STEP_USGS_NIMS,
         STEP_NOAA_TIDES,
@@ -363,6 +369,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_USGS_FIELD_MEASUREMENTS,
         STEP_USGS_PEAKS,
         STEP_USGS_METADATA,
+        STEP_GRID_V2_USGS_SOURCE_COORDINATES,
         STEP_USGS_WATER_QUALITY,
         STEP_USGS_STATISTICS,
         STEP_AQUIFER_BANDS,
@@ -404,6 +411,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_USGS_FIELD_MEASUREMENTS,
         STEP_USGS_PEAKS,
         STEP_USGS_METADATA,
+        STEP_GRID_V2_USGS_SOURCE_COORDINATES,
         STEP_USGS_WATER_QUALITY,
         STEP_USGS_STATISTICS,
         STEP_AQUIFER_BANDS,
