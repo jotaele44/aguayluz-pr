@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { getRainfall, getRiverGauges, getRiverGaugesGeojson, postHydrometRefresh } from './hydromet-api'
+import { getRainfall, getRiverGauges, getRiverGaugesGeojson, getRiverRise, postHydrometRefresh } from './hydromet-api'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -36,6 +36,17 @@ describe('hydromet API client', () => {
     await expect(getRainfall()).rejects.toThrow(/HTTP 502 from \/hydromet\/rainfall/)
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')))
     await expect(getRainfall()).rejects.toThrow(/network down/)
+  })
+
+  it('asks for river rise with its filters, and reports a live failure', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(respond(200, { total: 0, items: [] }))
+    vi.stubGlobal('fetch', fetchMock)
+    await getRiverRise({ rising_only: false })
+    expect(fetchMock.mock.calls[0][0]).toMatch(/\/hydromet\/river-rise$/)
+    await getRiverRise({ rising_only: true, municipio: 'Aibonito' })
+    expect(fetchMock.mock.calls[1][0]).toMatch(/\/hydromet\/river-rise\?rising_only=true&municipio=Aibonito$/)
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(respond(503, {})))
+    await expect(getRiverRise()).rejects.toThrow(/HTTP 503 from \/hydromet\/river-rise/)
   })
 
   it('falls back to an empty collection when the backend is down', async () => {

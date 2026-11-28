@@ -10,6 +10,7 @@ import {
   getHydrometSummary,
   getRainfall,
   getRiverGauges,
+  getRiverRise,
   postHydrometRefresh,
 } from '@/lib/hydromet-api'
 import { getApiKey } from '@/lib/api'
@@ -20,6 +21,7 @@ vi.mock('@/lib/hydromet-api', () => ({
   getRainfall: vi.fn(),
   getRiverGauges: vi.fn(),
   getRiverGaugesGeojson: vi.fn(),
+  getRiverRise: vi.fn(),
   postHydrometRefresh: vi.fn(),
 }))
 
@@ -93,6 +95,44 @@ const RAINFALL = {
   ],
 }
 
+// Shapes mirror GET /hydromet/river-rise. 50043000 is the real 2026-11-27 capture (no
+// rise); the Río Jacaguas row is CONSTRUCTED as a rapid rise with an open episode.
+const SERIES = (start, step) => Array.from({ length: 25 }, (_, i) => Number((start + step * Math.max(0, i - 20)).toFixed(2)))
+const RISE_ROWS = [
+  {
+    site_no: '50111315', name: 'Rio Jacaguas Blw Hwy 149 Nr Villalba, Pr', municipio: 'Juana Díaz', nwps: null,
+    rise_class: 'RAPID_RISE', data_state: 'OK', rising: true, observation_stale: false,
+    metrics: { rise_15m_ft: 0.6, rise_1h_ft: 2.4, rise_3h_ft: 2.43, rate_ft_per_h: 2.4, q_ratio: null, min_stage_6h_ft: 3.1, max_stage_6h_ft: 5.5 },
+    projection: { to_action_minutes: null, to_minor_minutes: null, basis: null },
+    latest: { time: '2026-11-26T23:30:00Z', stage_ft: 5.5 }, latency_minutes: 33.6,
+    episode: { status: 'open', onset: '2026-11-26T22:30:00Z', peak_class: 'RAPID_RISE' },
+    series: { stage_ft: SERIES(3.1, 0.6) },
+  },
+  {
+    site_no: '50043000', name: 'Rio De La Plata At Proyecto La Plata, Pr', municipio: 'Aibonito',
+    nwps: { lid: 'AIBP4', thresholds: { action: 15, minor: 20 } }, datum_check: 'PASS', rise_class: 'NONE', data_state: 'OK', rising: false,
+    observation_stale: false, site_note: null,
+    metrics: { rise_15m_ft: 0, rise_1h_ft: -0.01, rise_3h_ft: -0.01, rate_ft_per_h: 0, q_ratio: null, min_stage_6h_ft: 10.06, max_stage_6h_ft: 10.09 },
+    projection: { to_action_minutes: null, to_minor_minutes: null, basis: 'nwps_thresholds_same_datum' },
+    latest: { time: '2026-11-26T23:15:00Z', stage_ft: 10.07 }, latency_minutes: 48.6,
+    episode: null, series: { stage_ft: SERIES(10.07, 0) },
+  },
+]
+const RIVER_RISE = {
+  scope: { statement: 'Observed rate of rise; not a flood warning.' },
+  source: {
+    source_id: 'usgs_river_rise', last_success_utc: '2026-11-27T00:03:36Z', last_status: 'PASS',
+    latency_minutes_p50: 46.7, latency_minutes_p90: 61.7,
+    arithmetic: { source: 4564, retained: 3387, excluded: 1177, unresolved: 0, state: 'PASS' },
+  },
+  calibration: { status: 'UNCALIBRATED_DEFAULTS', failed_criteria: [] },
+  promotion_enabled: false,
+  counts: { sites: 81, rising: 1, open_episodes: 1, by_class: { NONE: 80, RAPID_RISE: 1 } },
+  episodes: [{ canonical_event_id: 'USGS_RISE:50111315:20261126T2230Z', name: 'Rio Jacaguas Blw Hwy 149 Nr Villalba, Pr', status: 'open', onset: '2026-11-26T22:30:00Z', peak_class: 'RAPID_RISE', minor_within_60m: false }],
+  total: 2,
+  items: RISE_ROWS,
+}
+
 function renderPage() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
   return render(
@@ -116,6 +156,7 @@ beforeEach(() => {
   getHydrometSources.mockResolvedValue({ sources: [SOURCE] })
   getRiverGauges.mockResolvedValue({ total: 1, items: [GAUGE] })
   getRainfall.mockResolvedValue(RAINFALL)
+  getRiverRise.mockResolvedValue(RIVER_RISE)
   postHydrometRefresh.mockResolvedValue({ ok: true, receipt: SOURCE.receipt })
 })
 
@@ -208,10 +249,71 @@ describe('HydrometPage', () => {
     expect(await screen.findByText(/No Stage IV rainfall ingested yet/)).toBeInTheDocument()
   })
 
+  it('lists river rise with the rising gauge first, its episode, latency and sparkline', async () => {
+    renderPage()
+    const table = await screen.findByRole('table', { name: 'USGS river rate of rise' })
+    const rows = table.querySelectorAll('tbody tr')
+    expect(rows[0]).toHaveTextContent('Rio Jacaguas')
+    expect(rows[0]).toHaveTextContent('rapid rise')
+    expect(rows[0]).toHaveTextContent('+0.60 ft / +2.40 ft / +2.43 ft')
+    expect(rows[0]).toHaveTextContent('34 min behind')
+    expect(rows[0]).toHaveTextContent('no NWPS thresholds')
+    expect(rows[1]).toHaveTextContent('AIBP4')
+    expect(rows[1]).toHaveTextContent('not within 3 h')
+    expect(screen.getByRole('img', { name: /Stage over the last 6 hours at USGS 50111315: 3.10 ft to 5.50 ft/ })).toBeInTheDocument()
+    const provenance = screen.getByTestId('river-rise-provenance')
+    expect(provenance).toHaveTextContent('81 stream gauges · 1 rising rapidly · 1 open episode(s)')
+    expect(provenance).toHaveTextContent('47 min behind (median), 62 min (90th percentile)')
+    expect(provenance).toHaveTextContent('4564 readings = 3387 retained + 1177 excluded + 0 unresolved')
+    expect(screen.getByTestId('river-rise-calibration')).toHaveTextContent(/no alert is raised until the historical backtest passes/)
+  })
+
+  it('explains each blank projection', async () => {
+    const base = RISE_ROWS[1]
+    getRiverRise.mockResolvedValue({
+      ...RIVER_RISE,
+      total: 3,
+      items: [
+        { ...base, site_no: 'A', nwps: { lid: 'BCAP4', thresholds: {} } },
+        { ...base, site_no: 'B', datum_check: 'FAIL' },
+        { ...base, site_no: 'C', projection: { to_action_minutes: 40, to_minor_minutes: null, basis: 'nwps_thresholds_same_datum' } },
+      ],
+    })
+    renderPage()
+    const table = await screen.findByRole('table', { name: 'USGS river rate of rise' })
+    const rows = table.querySelectorAll('tbody tr')
+    expect(rows[0]).toHaveTextContent('no NWPS thresholds')
+    expect(rows[1]).toHaveTextContent('datum not matched')
+    expect(rows[2]).toHaveTextContent('40 min / —')
+  })
+
+  it('filters river rise to rapid and flash rises', async () => {
+    renderPage()
+    fireEvent.click(await screen.findByRole('button', { name: /show only rapid and flash rises/i }))
+    await waitFor(() => expect(getRiverRise).toHaveBeenCalledWith({ rising_only: true }))
+  })
+
+  it('hides the calibration note once calibration passes and alerting is on', async () => {
+    getRiverRise.mockResolvedValue({ ...RIVER_RISE, calibration: { status: 'CALIBRATED_PASS' }, promotion_enabled: true })
+    renderPage()
+    await screen.findByRole('table', { name: 'USGS river rate of rise' })
+    expect(screen.queryByTestId('river-rise-calibration')).toBeNull()
+  })
+
+  it('shows a river-rise failure with a retry, and explains an empty state', async () => {
+    getRiverRise.mockRejectedValueOnce(new Error('HTTP 502 from /hydromet/river-rise'))
+    renderPage()
+    expect(await screen.findByText(/River rise unavailable: HTTP 502/)).toBeInTheDocument()
+    getRiverRise.mockResolvedValue({ ...RIVER_RISE, counts: null, episodes: [], total: 0, items: [] })
+    fireEvent.click(screen.getByRole('button', { name: 'Retry river rise' }))
+    expect(await screen.findByText(/No river-rise state yet/)).toBeInTheDocument()
+  })
+
   it('has no detectable accessibility violations', async () => {
     const { container } = renderPage()
     await screen.findByText('Lago Guajataca at Damsite')
     await screen.findByRole('table', { name: 'Stage IV rainfall by municipio' })
+    await screen.findByRole('table', { name: 'USGS river rate of rise' })
     expect(await axe(container)).toHaveNoViolations()
   })
 })

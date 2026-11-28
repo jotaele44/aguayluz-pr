@@ -87,6 +87,11 @@ class HydrometInputs:
     records: list[HazardRecord] = field(default_factory=list)
     gauge_state: list[dict[str, Any]] = field(default_factory=list)
     now: datetime | None = None
+    #: ``data/river_rise_state.jsonl`` (USGS stage rate of rise, one row per stream site).
+    river_rise_state: list[dict[str, Any]] = field(default_factory=list)
+    #: ``promotion.enabled`` of ``config/river_rise_thresholds.v1.json``: rise episodes
+    #: raise alerts only once the calibration backtest has passed.
+    river_rise_promotion: bool = False
 
 
 @dataclass(frozen=True)

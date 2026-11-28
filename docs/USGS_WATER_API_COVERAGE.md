@@ -17,7 +17,7 @@ or pull-request text. The ingesters also work keylessly at the lower public rate
 
 | Category | Producer | Cadence | Boundary |
 |---|---|---|---|
-| Continuous Values | `ingest_usgs_continuous.py` | fast/daily/weekly/all | Uses `latest-continuous` by default; bounded historical mode uses `continuous`. Parameter, site, unit, approval status, timestamp identity, and freshness remain isolated. |
+| Continuous Values | `ingest_usgs_continuous.py`, `ingest_usgs_river_rise.py` | fast/daily/weekly/all | `ingest_usgs_continuous.py` uses `latest-continuous` by default; bounded historical mode uses `continuous`. Parameter, site, unit, approval status, timestamp identity, and freshness remain isolated. `ingest_usgs_river_rise.py` reads the last 6 h of `continuous` stage and discharge for stream gauges on the NWS hydromet plane and grades the rate of rise ([`RIVER_RISE_MONITORING.md`](RIVER_RISE_MONITORING.md)). |
 | Daily Values | existing `ingest_usgs_levels.py`, `ingest_usgs_groundwater.py` | daily/weekly/all | Existing operational path remains unchanged in this vector. |
 | Monitoring Locations | `ingest_usgs_time_series_metadata.py` | weekly/all | Creates a source-native location registry; does not overwrite utility assets. |
 | Time Series Metadata | `ingest_usgs_time_series_metadata.py` | daily/weekly/all | Preserves units, begin/end, last-modified, thresholds, data-gap interval, and calculated freshness state. |

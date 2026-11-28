@@ -1,0 +1,203 @@
+{
+  "schema_version": "aguayluz.river-rise-thresholds/v1",
+  "description": "Rate-of-rise thresholds for the USGS river-rise detector (src/aguayluz/hazard_adapters/river_rise.py, scripts/ingest_usgs_river_rise.py). Stage rises are in feet over the stated window; q_ratio is current discharge over the 6-hour minimum. See docs/RIVER_RISE_MONITORING.md.",
+  "calibration": {
+    "status": "CALIBRATED_PASS",
+    "method": "scripts/calibrate_river_rise.py replays 15-minute runs over historical USGS instantaneous values, each run seeing only readings at least 45 minutes old.",
+    "run_at": "2026-11-27T01:42:54Z",
+    "replay_latency_minutes": 45.0,
+    "criteria": {
+      "storm_hit_rate_min": 0.8,
+      "quiet_uncorroborated_per_site_30d_max": 0.5,
+      "min_storm_crossings": 5
+    },
+    "events": [
+      {
+        "event": "fiona-2022",
+        "kind": "storm",
+        "start": "2022-09-17T00:00:00Z",
+        "end": "2022-09-20T00:00:00Z",
+        "stream_sites_with_stage": 79
+      },
+      {
+        "event": "maria-2017",
+        "kind": "storm",
+        "start": "2017-09-19T12:00:00Z",
+        "end": "2017-09-21T12:00:00Z",
+        "stream_sites_with_stage": 77
+      },
+      {
+        "event": "dry-2026-02",
+        "kind": "quiet",
+        "start": "2026-02-01T00:00:00Z",
+        "end": "2026-02-15T00:00:00Z",
+        "stream_sites_with_stage": 80
+      },
+      {
+        "event": "dry-2026-03",
+        "kind": "quiet",
+        "start": "2026-03-01T00:00:00Z",
+        "end": "2026-03-15T00:00:00Z",
+        "stream_sites_with_stage": 80
+      },
+      {
+        "event": "ffw-20260809T1952Z",
+        "kind": "warning",
+        "start": "2026-08-09T10:52:00Z",
+        "end": "2026-08-10T01:00:00Z",
+        "stream_sites_with_stage": 78
+      },
+      {
+        "event": "ffw-20260919T1950Z",
+        "kind": "warning",
+        "start": "2026-09-19T10:50:00Z",
+        "end": "2026-09-20T01:30:00Z",
+        "stream_sites_with_stage": 81
+      },
+      {
+        "event": "ffw-20261119T2031Z",
+        "kind": "warning",
+        "start": "2026-11-19T11:31:00Z",
+        "end": "2026-11-20T01:00:00Z",
+        "stream_sites_with_stage": 81
+      }
+    ],
+    "metrics": {
+      "storm": {
+        "crossings": 144,
+        "hits": 112,
+        "by_kind": {
+          "gradual": {
+            "crossings": 25,
+            "hits": 10,
+            "ahead_of_nwps": 7
+          },
+          "no_data": {
+            "crossings": 12,
+            "hits": 10,
+            "ahead_of_nwps": 7
+          },
+          "rising_limb": {
+            "crossings": 93,
+            "hits": 82,
+            "ahead_of_nwps": 70
+          },
+          "step": {
+            "crossings": 14,
+            "hits": 10,
+            "ahead_of_nwps": 5
+          }
+        },
+        "rising_limb_crossings": 93,
+        "rising_limb_hits": 82,
+        "rising_limb_hit_rate": 0.882,
+        "rising_limb_ahead_of_nwps": 70,
+        "lead_over_nwps_minutes_median": 30.0
+      },
+      "quiet": {
+        "episodes": 94,
+        "site_days": 2173.6,
+        "episodes_per_site_30d": 1.297,
+        "labelled": true,
+        "nws_local": 18,
+        "nws_island": 52,
+        "uncorroborated": 24,
+        "uncorroborated_per_site_30d": 0.331
+      },
+      "flash_flood_warnings": {
+        "warnings": 3,
+        "with_gauge_data": 3,
+        "corroborated": 1
+      }
+    },
+    "failed_criteria": [],
+    "labels": "Dry-season episodes labelled with NWS flood products from the Iowa Environmental Mesonet VTEC archive (wfo=TJSJ, year=2026): local = product for the gauge's municipio, island = products elsewhere in PR within 6 h, none = no product anywhere."
+  },
+  "promotion": {
+    "enabled": true,
+    "classes": [
+      "RAPID_RISE",
+      "FLASH_RISE"
+    ],
+    "note": "Episodes and alerts are recorded only for these classes. Enabled by the calibration recorded above; on its own a rise alerts at severity 2-3 (needs_review) and reaches 4 only with NWS or NWPS corroboration. Set enabled to false to stop river-rise alerts; the state file and dashboard panel show every class regardless."
+  },
+  "defaults": {
+    "window_hours": 6,
+    "grid_minutes": 15,
+    "grid_slots": 25,
+    "lookup_tolerance_minutes": 10,
+    "min_points_1h": 3,
+    "stale_after_minutes": 150,
+    "spike_ft": 1.0,
+    "confirm_prior_rise_ft": 0.25,
+    "rising_since_tolerance_ft": 0.1,
+    "excluded_qualifiers": [
+      "Eqp",
+      "Mnt",
+      "Bkw",
+      "Ice",
+      "Dis",
+      "Ssn",
+      "***"
+    ],
+    "classes": {
+      "ELEVATED_RISE": {
+        "rise_1h_ft": 1.0,
+        "rise_3h_ft": 2.0,
+        "q_ratio": 3.0
+      },
+      "RAPID_RISE": {
+        "rise_15m_ft": 0.75,
+        "rise_1h_ft": 2.0,
+        "rise_3h_ft": 4.0
+      },
+      "FLASH_RISE": {
+        "rise_15m_ft": 1.5,
+        "rise_1h_ft": 4.0,
+        "q_ratio": 5.0
+      }
+    },
+    "headroom_fraction_per_h": {
+      "ELEVATED_RISE": 0.15,
+      "RAPID_RISE": 0.3,
+      "FLASH_RISE": 0.6
+    },
+    "headroom_scale_max": 3.0,
+    "q_ratio_min_base_cfs": 5.0,
+    "q_ratio_min_delta_cfs": 100.0,
+    "projection": {
+      "horizon_minutes": 180,
+      "escalate_within_minutes": 60,
+      "datum_tolerance_ft": 0.1,
+      "datum_match_minutes": 5
+    },
+    "closure": {
+      "quiet_minutes": 90,
+      "quiet_max_rise_1h_ft": 0.1,
+      "stale_close_hours": 24
+    },
+    "retention_days": 35
+  },
+  "sites": {
+    "50059050": {
+      "scale": 1.0,
+      "suppress": false,
+      "note": "Río Grande de Loíza below Carraizo dam: sudden rises can be spillway or gate releases, not rain."
+    },
+    "50045010": {
+      "scale": 1.0,
+      "suppress": false,
+      "note": "Río de la Plata below La Plata dam: sudden rises can be dam releases, not rain (one dry-season rise in the Feb 2026 backtest had no NWS flood product)."
+    },
+    "50049620": {
+      "scale": 1.0,
+      "suppress": false,
+      "note": "Quebrada Margarita at Caparra (Guaynabo): small urban creek that rises fast on brief showers; 5 of the 24 backtest dry-season rises without an NWS flood product were here."
+    },
+    "50129254": {
+      "scale": 1.0,
+      "suppress": false,
+      "note": "Río Loco near Guánica, downstream of Lago Loco: rises can be reservoir releases, not rain (2 dry-season backtest rises had no NWS flood product)."
+    }
+  }
+}

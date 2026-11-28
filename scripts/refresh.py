@@ -32,6 +32,14 @@ STEP_NWPS_GAUGES = (
     ["scripts/ingest_nwps_gauges.py"],
     True,
 )
+# USGS river stage rate of rise → hydromet plane. Right after the NWPS gauges, whose
+# state file it reads for flood thresholds and the datum check. Optional: a USGS outage or
+# rate limit writes a FAIL receipt and the run continues.
+STEP_USGS_RIVER_RISE = (
+    "USGS river stage rate of rise → hydromet plane",
+    ["scripts/ingest_usgs_river_rise.py"],
+    True,
+)
 STEP_STAGE_IV = (
     "NWS Stage IV PR rainfall → hydromet plane",
     ["scripts/ingest_stage_iv_pr.py"],
@@ -311,6 +319,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_NWS,
         STEP_NHC,
         STEP_NWPS_GAUGES,
+        STEP_USGS_RIVER_RISE,
         STEP_USGS_QUAKES,
         STEP_USGS_CONTINUOUS,
         STEP_USGS_RTFI,
@@ -333,6 +342,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_NWS,
         STEP_NHC,
         STEP_NWPS_GAUGES,
+        STEP_USGS_RIVER_RISE,
         STEP_STAGE_IV,
         STEP_USGS_QUAKES,
         STEP_USGS_LEVELS,
@@ -354,6 +364,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_NWS,
         STEP_NHC,
         STEP_NWPS_GAUGES,
+        STEP_USGS_RIVER_RISE,
         STEP_STAGE_IV,
         STEP_USGS_QUAKES,
         STEP_USGS_ASSETS,
@@ -395,6 +406,7 @@ PLANS: dict[str, list[tuple]] = {
         STEP_NWS,
         STEP_NHC,
         STEP_NWPS_GAUGES,
+        STEP_USGS_RIVER_RISE,
         STEP_STAGE_IV,
         STEP_USGS_QUAKES,
         STEP_USGS_ASSETS,

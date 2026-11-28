@@ -169,7 +169,7 @@ _SITE_COORDINATE_PREFIXES = ("USGS_", "USGSWQ_", "USGSFM_", "USGSGW_", "WQP_", "
 _GENERATED_ALERT_MARKERS = (
     "_sdwis_", "_resvlow_", "_gwlow_", "_coasthi_", "_seismic_", "_weather_",
     "_osha_", "_neonpub_", "_nhc_", "_drought_", "_precipshort_", "_nwpsflood_",
-    "_qpeheavy_", "_ripcurrent_", "_marine_",
+    "_qpeheavy_", "_ripcurrent_", "_marine_", "_riverrise_",
 )
 
 
@@ -596,6 +596,7 @@ HYDROMET_SOURCE_SYSTEMS = {
     "EPA Envirofacts UV (getEnvirofactsUVDAILY)": "epa_uv",
     "api.weather.gov gridpoints (forecastGridData)": "nws_gridpoint_heat",
     "AirNow API (observation/latLong/current)": "airnow",
+    "USGS Water Data OGC API (continuous)": "usgs_river_rise",
 }
 _RECEIPT_ATTEMPT_STATUS = {"PASS": "success", "FAIL": "failure"}
 _CADENCE_WINDOWS = {

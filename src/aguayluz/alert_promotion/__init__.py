@@ -19,6 +19,10 @@ the I/O):
 * hydromet  — :func:`aguayluz.alert_promotion.hydromet.hydromet_alerts` (WEATHER_HAZARD;
   NWPS river/reservoir gauge flood episodes and Stage IV heavy-rain days from the NWS
   hydromet plane)
+* river rise — :func:`aguayluz.alert_promotion.river_rise.river_rise_alerts` (WEATHER_HAZARD;
+  USGS stage rate-of-rise episodes from the hydromet plane, severity 2-3 on their own and
+  at most 4 when an NWS flash-flood warning, an NWPS flood category or a minor-stage
+  projection corroborates them; off until calibration passes)
 * outdoor   — :func:`aguayluz.alert_promotion.outdoor.outdoor_alerts` (WEATHER_HAZARD;
   NWS Surf Zone Forecast rip current risk High and NWS marine-zone alerts for Puerto Rico
   waters, from the outdoor-conditions records on the hydromet plane)
@@ -29,7 +33,8 @@ the I/O):
 
 Each promoter stamps a distinct ``alert_id`` marker (``_sdwis_`` / ``_resvlow_`` /
 ``_seismic_`` / ``_weather_`` / ``_osha_`` / ``_neonpub_`` / ``_drought_`` /
-``_precipshort_`` / ``_nwpsflood_`` / ``_qpeheavy_`` / ``_ripcurrent_`` / ``_marine_``) so
+``_precipshort_`` / ``_nwpsflood_`` / ``_qpeheavy_`` / ``_ripcurrent_`` / ``_marine_`` /
+``_riverrise_``) so
 the idempotent merge in
 the CLI can replace only its own previously-generated rows while preserving seeds and
 manual entries.
@@ -58,6 +63,7 @@ from .neon import NEON_MARKER, neon_alerts
 from .nhc import NHC_MARKER, nhc_alerts
 from .osha import OSHA_MARKER, osha_alerts
 from .outdoor import MARINE_MARKER, RIP_CURRENT_MARKER, outdoor_alerts
+from .river_rise import RIVER_RISE_MARKER, river_rise_alerts
 from .seismic import SEISMIC_MARKER, seismic_alerts
 from .weather import WEATHER_MARKER, weather_alerts
 
@@ -66,7 +72,7 @@ GENERATED_MARKERS: tuple[str, ...] = (
     "_sdwis_", "_resvlow_", "_gwlow_", "_coasthi_",
     SEISMIC_MARKER, WEATHER_MARKER, OSHA_MARKER, NEON_MARKER, NHC_MARKER,
     DROUGHT_MARKER, PRECIP_MARKER, NWPS_FLOOD_MARKER, HEAVY_RAIN_MARKER,
-    RIP_CURRENT_MARKER, MARINE_MARKER,
+    RIP_CURRENT_MARKER, MARINE_MARKER, RIVER_RISE_MARKER,
 )
 
 #: Operational-severity floor (0-5 scale) at or above which an alert is life-safety
@@ -114,7 +120,10 @@ def build_all_alerts(
     ``hydromet`` carries the NWS hydromet plane (``data/hydromet_records.jsonl`` —
     NWPS gauge and Stage IV rainfall records — + ``data/nwps_gauge_state.jsonl``);
     omitting it yields no hydromet alerts. The same records carry the outdoor-condition
-    sources' NWS Surf Zone Forecast and marine-zone alerts, which promote too.
+    sources' NWS Surf Zone Forecast and marine-zone alerts, which promote too, and the USGS
+    river rate-of-rise episodes (with ``hydromet.river_rise_state``), which promote once
+    ``hydromet.river_rise_promotion`` is set. River-rise alerts read ``events`` for NWS
+    flash-flood warnings that corroborate them.
     """
     index = build_asset_index(assets or [])
     alerts: list[AlertEvent] = []
@@ -132,6 +141,7 @@ def build_all_alerts(
     alerts.extend(precipitation_shortfall_alerts(readings or [], geo, index, assets))
     alerts.extend(hydromet_alerts(hydromet, geo, index))
     alerts.extend(outdoor_alerts(hydromet, geo, index))
+    alerts.extend(river_rise_alerts(hydromet, events, geo, index))
     return alerts
 
 
@@ -158,6 +168,8 @@ __all__ = [
     "outdoor_alerts",
     "RIP_CURRENT_MARKER",
     "MARINE_MARKER",
+    "RIVER_RISE_MARKER",
+    "river_rise_alerts",
     "load_geo",
     "AssetIndex",
     "build_asset_index",

@@ -198,8 +198,14 @@ def run_ingest(
     build: Callable[[RunContext, list[Response]], Built],
     parser: argparse.ArgumentParser | None = None,
     preflight: Callable[[argparse.Namespace], str | None] | None = None,
+    state_file: str | None = None,
 ) -> int:
-    """Run one outdoor ingest; returns the process exit code."""
+    """Run one outdoor ingest; returns the process exit code.
+
+    ``state_file`` names the state file (under the data directory) for a hydromet source
+    that is not an outdoor-condition source; outdoor sources take theirs from
+    :data:`aguayluz.outdoor.STATE_FILES`.
+    """
     args = (parser or base_parser(description)).parse_args(argv)
     name = f"ingest_{source_id}"
     if preflight is not None:
@@ -276,7 +282,9 @@ def run_ingest(
         )
     except ValueError as exc:
         return fail(str(exc))
-    if source_id in STATE_FILES:
+    if state_file:
+        store.write_jsonl(paths.data_dir / state_file, built.state_rows)
+    elif source_id in STATE_FILES:
         store.write_jsonl(state_path(source_id, paths.data_dir), built.state_rows)
     summary.update(applied)
     store.record_receipt(source_id, status="PASS", attempted_at=now, data_dir=paths.data_dir,

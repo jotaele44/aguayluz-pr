@@ -69,6 +69,10 @@ class HydrometPaths:
         return self.data_dir / "nwps_gauge_state.jsonl"
 
     @property
+    def river_rise_state(self) -> Path:
+        return self.data_dir / "river_rise_state.jsonl"
+
+    @property
     def accounting(self) -> Path:
         return self.data_dir / "hydromet_source_accounting.jsonl"
 
@@ -177,6 +181,11 @@ def load_receipts(data_dir: Path | str | None = None) -> dict[str, Any]:
 
 def load_gauge_state(data_dir: Path | str | None = None) -> list[dict[str, Any]]:
     return read_jsonl(hydromet_paths(data_dir).gauge_state)
+
+
+def load_river_rise_state(data_dir: Path | str | None = None) -> list[dict[str, Any]]:
+    """Current per-site USGS stage rate-of-rise rows (``scripts/ingest_usgs_river_rise.py``)."""
+    return read_jsonl(hydromet_paths(data_dir).river_rise_state)
 
 
 def current_by_event(records: Iterable[HazardRecord], prefix: str) -> dict[str, HazardRecord]:
@@ -487,6 +496,7 @@ __all__ = [
     "load_receipts",
     "load_records",
     "load_relationships",
+    "load_river_rise_state",
     "load_source_registry",
     "manifestation_id",
     "read_json",

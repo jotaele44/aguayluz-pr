@@ -1,4 +1,4 @@
-"""API for the NWS hydromet plane (NWPS gauges, Stage IV rainfall; later cones/outlooks).
+"""API for the NWS hydromet plane (NWPS gauges, Stage IV rainfall, USGS river rise).
 
 Reads only the committed files written by the ``scripts/ingest_*`` hydromet producers;
 imports nothing heavier than pydantic so the gui-parity CI backend boots without the
@@ -20,7 +20,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 
-from aguayluz.hazard_adapters import stage_iv_qpe
+from aguayluz.hazard_adapters import river_rise, stage_iv_qpe
 from aguayluz.hazard_adapters.nwps_gauges import FLOOD_CATEGORIES, parse_time
 from aguayluz.hazard_plane import current_records
 from aguayluz.hydromet import store
@@ -84,6 +84,49 @@ def _gauge_rows(now: datetime) -> list[dict[str, Any]]:
     return rows
 
 
+RIVER_RISE_SCOPE = (
+    "Observed rate of rise from provisional USGS instantaneous stage, about an hour behind "
+    "real time (hourly GOES relay). A rapid or flash rise is a hazard signal to check, not a "
+    "flood warning and not confirmed impact; NWS issues warnings."
+)
+
+
+def _river_rise_rows(now: datetime) -> list[dict[str, Any]]:
+    source = store.registry_source("usgs_river_rise", _registry()) or {}
+    stale_after = float(source.get("observation_stale_after_seconds") or 9000)
+    rows = []
+    for row in store.load_river_rise_state(DATA_DIR):
+        latest = river_rise.parse_time((row.get("latest") or {}).get("time"))
+        age = (now - latest).total_seconds() if latest else None
+        item = {k: v for k, v in row.items() if k != "manifestation_ids"}
+        item["rising"] = river_rise.class_rank(row.get("rise_class")) >= river_rise.class_rank("RAPID_RISE")
+        item["observation_age_seconds"] = age
+        item["observation_stale"] = age is None or age > stale_after
+        rows.append(item)
+    return rows
+
+
+def _river_rise_episodes(records: list[Any]) -> list[dict[str, Any]]:
+    episodes = []
+    for record in store.current_by_event(records, river_rise.CANONICAL_PREFIX).values():
+        values = record.normalized_values
+        episodes.append({
+            "canonical_event_id": record.canonical_event_id,
+            "site_no": record.source_record_id,
+            "name": record.title_raw,
+            "onset": values.get("onset"),
+            "peak_class": values.get("peak_class"),
+            "minor_within_60m": bool(values.get("minor_within_60m")),
+            "status": "closed" if record.status.value == "TERMINATED" else "open",
+            "end": _iso(record.effective_to) if record.effective_to else None,
+            "closed_reason": values.get("closed_reason"),
+            "record_id": record.record_id,
+        })
+    episodes.sort(key=lambda e: str(e["onset"] or ""), reverse=True)
+    episodes.sort(key=lambda e: e["status"] != "open")  # open first, newest first within each
+    return episodes
+
+
 def _rainfall_records(records: list[Any], window: str) -> dict[str, list[Any]]:
     """Current Stage IV records for ``window``, grouped by data date (YYYY-MM-DD)."""
     by_date: dict[str, list[Any]] = {}
@@ -119,6 +162,7 @@ def hydromet_summary() -> JSONResponse:
     records = store.load_records(DATA_DIR)
     integrity = store.integrity(DATA_DIR)
     gauges = _gauge_rows(now)
+    rise_rows = _river_rise_rows(now)
     rain_days = _rainfall_records(records, "1day")
     rain_date = max(rain_days) if rain_days else None
     rain_latest = [_rainfall_row(r, "1day") for r in rain_days.get(rain_date or "", [])]
@@ -149,6 +193,8 @@ def hydromet_summary() -> JSONResponse:
             "gauges_stale": sum(1 for g in gauges if g["observation_stale"]),
             "rainfall_zones": len(rain_latest),
             "rainfall_heavy": sum(1 for r in rain_latest if r["heavy_rain_severity"]),
+            "river_rise_sites": len(rise_rows),
+            "river_rising": sum(1 for r in rise_rows if r["rising"]),
         },
         "rainfall_latest_date": rain_date,
         "flood_categories": dict(sorted(categories.items())),
@@ -181,6 +227,74 @@ def hydromet_gauges(
     order = {c: i for i, c in enumerate(reversed(FLOOD_CATEGORIES))}
     rows.sort(key=lambda r: (order.get(r.get("flood_category"), len(order)), str(r.get("name") or "")))
     return JSONResponse({"total": len(rows), "items": rows})
+
+
+@router.get("/hydromet/river-rise")
+def hydromet_river_rise(
+    rising_only: bool = Query(False),
+    municipio: str | None = Query(None),
+) -> JSONResponse:
+    """Per-site USGS stage rate of rise, rise episodes, thresholds and calibration state."""
+    now = _now()
+    rows = _river_rise_rows(now)
+    by_class: dict[str, int] = {}
+    by_state: dict[str, int] = {}
+    for row in rows:
+        by_class[str(row.get("rise_class") or "NONE")] = by_class.get(str(row.get("rise_class") or "NONE"), 0) + 1
+        by_state[str(row.get("data_state") or "blank")] = by_state.get(str(row.get("data_state") or "blank"), 0) + 1
+    if rising_only:
+        rows = [r for r in rows if r["rising"]]
+    if municipio:
+        wanted = municipio.casefold()
+        rows = [r for r in rows if str(r.get("municipio") or "").casefold() == wanted]
+    rows.sort(key=lambda r: (-river_rise.class_rank(r.get("rise_class")),
+                             -float((r.get("metrics") or {}).get("rise_1h_ft") or 0.0),
+                             str(r.get("name") or "")))
+    source = store.registry_source("usgs_river_rise", _registry()) or {}
+    receipt = store.load_receipts(DATA_DIR).get("sources", {}).get("usgs_river_rise")
+    last = (receipt or {}).get("last_success") or {}
+    try:
+        config = river_rise.load_thresholds()
+    except (ValueError, OSError):
+        config = {"defaults": river_rise.DEFAULTS, "calibration": {"status": "CONFIG_INVALID"},
+                  "promotion": {"enabled": False}}
+    calibration = config.get("calibration") or {}
+    episodes = _river_rise_episodes(store.load_records(DATA_DIR))
+    return JSONResponse({
+        "scope": {"statement": RIVER_RISE_SCOPE, "completeness_claimed": False},
+        "generated_at": _iso(now),
+        "source": {
+            "source_id": "usgs_river_rise",
+            "label": source.get("label"),
+            "freshness": store.freshness(receipt, source, now) if source else {"state": "NEVER"},
+            "last_success_utc": (receipt or {}).get("last_success_utc"),
+            "last_status": (receipt or {}).get("last_status"),
+            "last_error": (receipt or {}).get("last_error"),
+            "latency_minutes_p50": last.get("latency_minutes_p50"),
+            "latency_minutes_p90": last.get("latency_minutes_p90"),
+            "arithmetic": last.get("arithmetic"),
+            "known_limits": source.get("known_limits"),
+        },
+        "calibration": {
+            "status": calibration.get("status"),
+            "run_at": calibration.get("run_at"),
+            "metrics": calibration.get("metrics") or {},
+            "failed_criteria": calibration.get("failed_criteria") or [],
+        },
+        "promotion_enabled": bool((config.get("promotion") or {}).get("enabled")),
+        "classes": (config.get("defaults") or {}).get("classes"),
+        "counts": {
+            "sites": sum(by_class.values()),
+            "by_class": dict(sorted(by_class.items())),
+            "by_state": dict(sorted(by_state.items())),
+            "rising": sum(v for k, v in by_class.items()
+                          if river_rise.class_rank(k) >= river_rise.class_rank("RAPID_RISE")),
+            "open_episodes": sum(1 for e in episodes if e["status"] == "open"),
+        },
+        "episodes": episodes,
+        "total": len(rows),
+        "items": rows,
+    })
 
 
 @router.get("/hydromet/gauges.geojson")

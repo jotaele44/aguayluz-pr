@@ -48,6 +48,16 @@ export const getRainfall = ({ window = '1day', date } = {}) => getJSONOrThrow(
   { window, data_date: null, available_dates: [], windows: [], thresholds: null, files: [], total: 0, items: [] },
 )
 
+// USGS river stage rate of rise per stream gauge, with rise episodes, thresholds and
+// calibration state. A live failure throws so the panel shows it with a retry.
+export const getRiverRise = (filters = {}) => getJSONOrThrow(
+  `/hydromet/river-rise${qs(filters)}`,
+  {
+    scope: null, source: null, calibration: null, promotion_enabled: false, classes: null,
+    counts: null, episodes: [], total: 0, items: [],
+  },
+)
+
 export const getHydrometRefreshStatus = () => getJSON('/hydromet/refresh/status', null)
 
 // Runs the source's ingest on the backend, then rebuilds alerts. Throws on any

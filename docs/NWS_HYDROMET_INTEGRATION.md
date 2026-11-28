@@ -130,6 +130,36 @@ The Stage IV source card shows freshness, arithmetic and **Refresh now**. On **M
 Municipio fill → Rainfall**, municipios are tinted by the latest 1-day mean, with the
 data day stated.
 
+## USGS river rate of rise (wired)
+
+A second river source on the same plane, from USGS rather than NWS: how fast each stream
+gauge is rising. It covers the gap the NWPS category leaves (a river can go from base flow
+to flood within an hour, and 34 NWPS gauges have no thresholds at all). Method, thresholds,
+calibration and limits are in [`RIVER_RISE_MONITORING.md`](RIVER_RISE_MONITORING.md).
+
+| Step | Endpoint / file |
+|---|---|
+| Readings | `GET https://api.waterdata.usgs.gov/ogcapi/v0/collections/continuous/items` — PR bbox, 00065 then 00060, last 6 h |
+| Registry | `config/hydromet_sources.v1.json` (`usgs_river_rise`: cadence 15 min, stale after 2 h) |
+| Thresholds | `config/river_rise_thresholds.v1.json` (classes, per-site overrides, calibration, `promotion.enabled`) |
+| Ingest | `scripts/ingest_usgs_river_rise.py` (`--src`, `--data-dir`, `--now`, `--dry-run`) |
+| Schedule | every `scripts/refresh.py` cadence, optional, right after the NWPS gauges |
+
+It reads `data/nwps_gauge_state.jsonl` for NWPS thresholds and uses them only when the NWPS
+stage equals the USGS reading at a common timestamp. It writes
+`data/river_rise_state.jsonl` (one row per stream gauge) and `USGS_RISE:` episode records.
+
+**Alerts** (`src/aguayluz/alert_promotion/river_rise.py`, marker `_riverrise_`). Rapid 2,
+flash 3. One point is added, up to 4 (critical), only when an NWS Flash Flood Warning names
+the gauge's municipio, the bound NWPS gauge reached minor flood stage, or minor stage was
+projected within 60 minutes. Uncorroborated alerts go to `needs_review`. No alert is raised
+until calibration enables promotion.
+
+**Dashboard.** **NWS Hydromet → River rise**: every stream gauge's class, 15-minute /
+1-hour / 3-hour rise, rate, time to action/minor stage, latency and a 6-hour sparkline, with
+rising gauges first, a rapid/flash filter and the calibration state. The source card shows
+freshness, arithmetic and **Refresh now**.
+
 ## Outdoor-condition sources (wired)
 
 Six more registry entries share this plane's store, receipts and freshness, and each has
@@ -173,7 +203,8 @@ backend, no ingestion, no alerts.
 - NWS issues no stage forecasts for Puerto Rico points; only observations are carried.
   NWM v3 short-range streamflow exists for 76 of the gauges' reaches
   (`/nwps/v1/reaches/{reachId}/streamflow`) and is a candidate follow-up.
-- Gauges without published thresholds report `not_defined` and never raise an alert.
+- Gauges without published thresholds report `not_defined` and never raise a flood-category
+  alert; the USGS river-rise source still grades how fast they rise.
 - The first observed revision of a flood already in progress starts the episode at that
   observation, not at the true onset.
 - Stage IV arrives after the 12Z day closes and is provisional; it reports rainfall that

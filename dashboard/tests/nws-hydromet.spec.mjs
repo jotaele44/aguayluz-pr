@@ -165,3 +165,35 @@ test('NWS CloudGIS overlays are opt-in and request tiles only when toggled on', 
   expect(consoleErrors, consoleErrors.join('\n')).toEqual([])
   expect(failures, failures.join('\n')).toEqual([])
 })
+
+test('River rise is listed on NWS Hydromet with its source health, calibration state and filter', async ({ page, request }) => {
+  const failures = trackRuntimeFailures(page)
+  await page.goto('/hydromet', { waitUntil: 'domcontentloaded' })
+
+  const card = page.getByTestId('hydromet-source-usgs_river_rise')
+  await expect(card).toBeVisible()
+  await expect(card.getByText(/^(FRESH|STALE|FAILED|NEVER)$/)).toBeVisible()
+  await expect(card.getByRole('button', { name: /refresh now/i })).toBeVisible()
+
+  await expect(page.getByRole('heading', { name: /River rise \(USGS rate of rise\)/ })).toBeVisible()
+  const body = await (await request.get(`${backendUrl}/hydromet/river-rise`)).json()
+  expect(body.scope.completeness_claimed).toBe(false)
+  expect(body.calibration.status).toBeTruthy()
+  // A fresh checkout may hold no state file until the first scheduled refresh.
+  if (body.total > 0) {
+    const table = page.getByRole('table', { name: 'USGS river rate of rise' })
+    await expect(table).toBeVisible()
+    expect(await table.locator('tbody tr').count()).toBe(body.total)
+  } else {
+    await expect(page.getByText(/No river-rise state yet/)).toBeVisible()
+  }
+  if (!body.promotion_enabled || body.calibration.status !== 'CALIBRATED_PASS') {
+    await expect(page.getByTestId('river-rise-calibration')).toBeVisible()
+  }
+
+  const filter = page.getByRole('button', { name: /show only rapid and flash rises/i })
+  await filter.click()
+  await expect(page.getByRole('button', { name: /showing rapid and flash rises/i })).toHaveAttribute('aria-pressed', 'true')
+
+  expect(failures, failures.join('\n')).toEqual([])
+})

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, CloudRain, Database, Droplets, Loader2, RefreshCw, ShieldCheck, Waves } from 'lucide-react'
+import { AlertTriangle, CloudRain, Database, Droplets, Loader2, RefreshCw, ShieldCheck, TrendingUp, Waves } from 'lucide-react'
 
 import ErrorBoundary from '@/components/ErrorBoundary'
 import PageHeader from '@/components/common/PageHeader'
@@ -17,6 +17,7 @@ import {
   useHydrometSummary,
   useRainfall,
   useRiverGauges,
+  useRiverRise,
 } from '@/lib/hydromet-hooks'
 import { cn } from '@/lib/utils'
 import { scrollRegion } from '@/lib/scrollRegion';
@@ -55,6 +56,25 @@ const HEAVY_RAIN_STYLE = {
   3: 'border-fuchsia-500/50 bg-fuchsia-500/15 text-fuchsia-200',
   2: 'border-orange-500/50 bg-orange-500/15 text-orange-200',
 }
+
+// USGS rate-of-rise classes (aguayluz.hazard_adapters.river_rise), highest first.
+const RISE_CLASS_STYLE = {
+  FLASH_RISE: 'border-fuchsia-500/50 bg-fuchsia-500/15 text-fuchsia-200',
+  RAPID_RISE: 'border-red-500/50 bg-red-500/15 text-red-200',
+  ELEVATED_RISE: 'border-yellow-500/50 bg-yellow-500/15 text-yellow-200',
+  NONE: 'border-slate-700 bg-slate-800/50 text-slate-400',
+}
+const RISE_CLASS_LABEL = {
+  FLASH_RISE: 'flash rise', RAPID_RISE: 'rapid rise', ELEVATED_RISE: 'elevated rise', NONE: 'no rise',
+}
+
+const feet = (value, signed = false) => {
+  if (value == null) return '—'
+  const n = Number(value)
+  return `${signed && n > 0 ? '+' : ''}${n.toFixed(2)} ft`
+}
+
+const minutesText = (value) => (value == null ? '—' : value === 0 ? 'at or above' : `${Math.round(value)} min`)
 
 const inches = (value) => (value == null ? '—' : `${Number(value).toFixed(2)} in`)
 
@@ -98,7 +118,7 @@ function SourceCard({ source, refreshReady, refreshHint, refreshing, onRefresh }
         <div><dt className="inline text-slate-400">Arithmetic: </dt><dd className="inline text-slate-300">{arithmetic ? `${arithmetic.source} source = ${arithmetic.retained} retained + ${arithmetic.excluded} excluded + ${arithmetic.unresolved} unresolved (${arithmetic.state})` : '—'}</dd></div>
         <div><dt className="inline text-slate-400">Expected cadence: </dt><dd className="inline text-slate-300">every {cadenceText(source.cadence_seconds)}, stale after {Math.round((source.max_age_seconds ?? 0) / 3600)} h</dd></div>
         <div className="sm:col-span-2"><dt className="inline text-slate-400">Source bytes SHA-256: </dt><dd className="inline break-all font-mono text-[11px] text-slate-400">{success?.byte_sha256 ?? '—'}</dd></div>
-        <div className="sm:col-span-2"><dt className="inline text-slate-400">Endpoint: </dt><dd className="inline break-all font-mono text-[11px] text-slate-400">{success?.source_url ?? source.endpoints?.gauges ?? source.endpoints?.grid ?? '—'}</dd></div>
+        <div className="sm:col-span-2"><dt className="inline text-slate-400">Endpoint: </dt><dd className="inline break-all font-mono text-[11px] text-slate-400">{success?.source_url ?? source.endpoints?.gauges ?? source.endpoints?.grid ?? source.endpoints?.continuous ?? '—'}</dd></div>
       </dl>
       {receipt?.last_status === 'FAIL' && (
         <div role="alert" className="mt-3 rounded border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-200">
@@ -178,6 +198,180 @@ function GaugeTable({ gauges }) {
         </tbody>
       </table>
     </div>
+  )
+}
+
+// Six hours of stage on the state file's 15-minute grid; gaps (null) break the line.
+function StageSparkline({ values, label }) {
+  const points = (values ?? []).map((v, i) => [i, v]).filter(([, v]) => v != null)
+  if (points.length < 2) return <span className="text-slate-400">—</span>
+  const width = 120
+  const height = 28
+  const ys = points.map(([, v]) => v)
+  const lo = Math.min(...ys)
+  const hi = Math.max(...ys)
+  const span = hi - lo || 1
+  const last = values.length - 1 || 1
+  const x = (i) => (i / last) * (width - 2) + 1
+  const y = (v) => height - 2 - ((v - lo) / span) * (height - 4)
+  let d = ''
+  values.forEach((v, i) => {
+    if (v == null) return
+    d += `${d && values[i - 1] != null ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)} `
+  })
+  return (
+    <svg role="img" aria-label={label} width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="text-sky-300">
+      <path d={d.trim()} fill="none" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  )
+}
+
+// Minutes to NWPS action / minor stage at the current rate. Explains every blank: no NWPS
+// gauge or no published thresholds, a datum that does not match USGS, or not approaching.
+function ProjectionCell({ row }) {
+  const p = row.projection ?? {}
+  const thresholds = Object.values(row.nwps?.thresholds ?? {}).some((v) => v != null)
+  if (!row.nwps || !thresholds) return <span className="text-slate-400">no NWPS thresholds</span>
+  if (row.datum_check && row.datum_check !== 'PASS') return <span className="text-slate-400">datum not matched</span>
+  if (p.to_action_minutes == null && p.to_minor_minutes == null) {
+    return <span className="text-slate-400">not within 3 h</span>
+  }
+  return `${minutesText(p.to_action_minutes)} / ${minutesText(p.to_minor_minutes)}`
+}
+
+function RiverRiseTable({ rows }) {
+  return (
+    <div {...scrollRegion('River rise table')} className="overflow-x-auto">
+      <table className="w-full min-w-[980px] text-left text-xs" aria-label="USGS river rate of rise">
+        <thead className="text-[11px] uppercase tracking-wide text-slate-400">
+          <tr className="border-b border-slate-800">
+            <th className="py-2 pr-3 font-medium">Stream gauge</th>
+            <th className="py-2 pr-3 font-medium">Municipio</th>
+            <th className="py-2 pr-3 font-medium">Rise</th>
+            <th className="py-2 pr-3 font-medium">15 min / 1 h / 3 h</th>
+            <th className="py-2 pr-3 font-medium">Rate</th>
+            <th className="py-2 pr-3 font-medium">To action / minor</th>
+            <th className="py-2 pr-3 font-medium">Latest</th>
+            <th className="py-2 pr-3 font-medium">Last 6 h</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => {
+            const m = r.metrics ?? {}
+            const cls = r.rise_class ?? 'NONE'
+            return (
+              <tr key={r.site_no} className="border-b border-slate-900 align-top">
+                <td className="py-2 pr-3">
+                  <div className="font-medium text-slate-200">{r.name ?? `USGS ${r.site_no}`}</div>
+                  <div className="font-mono text-[11px] text-slate-400">USGS {r.site_no}{r.nwps?.lid ? ` · ${r.nwps.lid}` : ''}</div>
+                  {r.site_note && <div className="mt-0.5 max-w-xs text-[11px] text-amber-300">{r.site_note}</div>}
+                </td>
+                <td className="py-2 pr-3 text-slate-300">
+                  {r.municipio ?? <span className="text-amber-300">unresolved{r.candidate_municipio ? ` (${r.candidate_municipio}?)` : ''}</span>}
+                </td>
+                <td className="py-2 pr-3">
+                  <Badge className={RISE_CLASS_STYLE[cls] ?? RISE_CLASS_STYLE.NONE}>{RISE_CLASS_LABEL[cls] ?? pretty(cls)}</Badge>
+                  {r.data_state && r.data_state !== 'OK' && <div className="mt-1 text-[11px] text-amber-300">{pretty(r.data_state).toLowerCase()}</div>}
+                  {r.episode?.status === 'open' && <div className="mt-1 text-[11px] text-slate-400">episode since {fmtDate(r.episode.onset)}</div>}
+                </td>
+                <td className="py-2 pr-3 text-slate-300">
+                  {feet(m.rise_15m_ft, true)} / {feet(m.rise_1h_ft, true)} / {feet(m.rise_3h_ft, true)}
+                  {m.q_ratio != null && <div className="text-[11px] text-slate-400">discharge ×{m.q_ratio} of 6-h low</div>}
+                </td>
+                <td className="py-2 pr-3 text-slate-300">{m.rate_ft_per_h == null ? '—' : `${Number(m.rate_ft_per_h).toFixed(2)} ft/h`}</td>
+                <td className="py-2 pr-3 text-slate-300"><ProjectionCell row={r} /></td>
+                <td className="py-2 pr-3 text-slate-300">
+                  {feet(r.latest?.stage_ft)}
+                  <div className={cn('text-[11px]', r.observation_stale ? 'text-amber-300' : 'text-slate-400')}>
+                    {r.latest?.time ? fmtDate(r.latest.time) : 'no reading'}
+                    {r.latency_minutes != null && ` · ${Math.round(r.latency_minutes)} min behind`}
+                    {r.observation_stale ? ' · stale' : ''}
+                  </div>
+                </td>
+                <td className="py-2 pr-3">
+                  <StageSparkline
+                    values={r.series?.stage_ft}
+                    label={`Stage over the last 6 hours at USGS ${r.site_no}: ${feet(r.metrics?.min_stage_6h_ft)} to ${feet(r.metrics?.max_stage_6h_ft)}`}
+                  />
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function RiverRisePanel({ up }) {
+  const [risingOnly, setRisingOnly] = useState(false)
+  const riseQuery = useRiverRise({ rising_only: risingOnly })
+  const rise = riseQuery.data
+  const rows = rise?.items ?? []
+  const source = rise?.source
+  const calibration = rise?.calibration
+  const counts = rise?.counts
+  const openEpisodes = (rise?.episodes ?? []).filter((e) => e.status === 'open')
+  const uncalibrated = calibration?.status && calibration.status !== 'CALIBRATED_PASS'
+  return (
+    <Panel>
+      <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-slate-400">River rise (USGS rate of rise)</h2>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <p className="max-w-3xl text-xs text-slate-400">
+          How fast each stream gauge is rising, from provisional USGS 15-minute stage. A rapid or flash rise is the first
+          sign of a flash flood a gauge can show, including at gauges NWS has no flood thresholds for. Readings arrive
+          about an hour after they are measured (hourly satellite relay): this is an observed rise, not a warning.
+        </p>
+        <Button
+          size="sm"
+          variant="outline"
+          aria-pressed={risingOnly}
+          onClick={() => setRisingOnly((v) => !v)}
+          className={cn('h-7 border-slate-700 text-xs', risingOnly ? 'bg-red-500/15 text-red-200' : 'bg-slate-950 text-slate-300')}
+        >
+          {risingOnly ? 'Showing rapid and flash rises' : 'Show only rapid and flash rises'}
+        </Button>
+      </div>
+      {rise && (uncalibrated || !rise.promotion_enabled) && (
+        <div role="note" className="mb-3 rounded border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-200" data-testid="river-rise-calibration">
+          {uncalibrated
+            ? `Thresholds are ${pretty(calibration.status).toLowerCase()}: rises are shown here, but no alert is raised until the historical backtest passes.`
+            : 'Alerting from river rise is switched off in the thresholds config; rises are shown here only.'}
+          {calibration?.failed_criteria?.length ? ` Not yet met: ${calibration.failed_criteria.join('; ')}.` : ''}
+        </div>
+      )}
+      {source && (
+        <div className="mb-3 text-[11px] text-slate-400" data-testid="river-rise-provenance">
+          {counts ? `${counts.sites} stream gauges · ${counts.rising} rising rapidly · ${counts.open_episodes} open episode(s)` : ''}
+          {source.latency_minutes_p50 != null && ` · readings ${Math.round(source.latency_minutes_p50)} min behind (median), ${Math.round(source.latency_minutes_p90 ?? source.latency_minutes_p50)} min (90th percentile)`}
+          {source.last_success_utc && ` · last run ${fmtDate(source.last_success_utc)}`}
+          {source.arithmetic && ` · ${source.arithmetic.source} readings = ${source.arithmetic.retained} retained + ${source.arithmetic.excluded} excluded + ${source.arithmetic.unresolved} unresolved`}
+          {openEpisodes.map((e) => (
+            <div key={e.canonical_event_id} className="mt-1">
+              Episode: {e.name} · {pretty(e.peak_class).toLowerCase()} since {fmtDate(e.onset)}{e.minor_within_60m ? ' · minor stage projected within 60 min' : ''}
+            </div>
+          ))}
+        </div>
+      )}
+      <PanelState
+        isLoading={riseQuery.isLoading}
+        isError={riseQuery.isError || (!up && !rows.length)}
+        errorText={riseQuery.isError ? (
+          <div className="space-y-1">
+            <div>River rise unavailable: {String(riseQuery.error?.message ?? riseQuery.error)}</div>
+            <Button size="sm" variant="outline" onClick={() => riseQuery.refetch()} className="h-7 border-slate-700 bg-slate-950 text-xs text-slate-300">
+              Retry river rise
+            </Button>
+          </div>
+        ) : undefined}
+        isEmpty={!rows.length}
+        emptyText={risingOnly
+          ? 'No stream gauge is rising at a rapid or flash rate.'
+          : 'No river-rise state yet. Use Refresh now on the USGS river stage source above.'}
+      >
+        <RiverRiseTable rows={rows} />
+      </PanelState>
+    </Panel>
   )
 }
 
@@ -338,7 +532,7 @@ export default function HydrometPage() {
     <div className="flex h-full flex-col">
       <PageHeader
         title="NWS Hydromet"
-        subtitle="Puerto Rico river and reservoir flood status and rainfall from NOAA/NWS, with source freshness and provenance"
+        subtitle="Puerto Rico river and reservoir flood status, river rate of rise and rainfall from NOAA/NWS and USGS, with source freshness and provenance"
       />
       <div {...scrollRegion("NWS Hydromet page content")} className="min-h-0 flex-1 space-y-5 overflow-auto p-6">
         <ErrorBoundary label="NWS hydromet plane">
@@ -349,10 +543,11 @@ export default function HydrometPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
             {[
               { label: 'Gauges', value: counts?.gauges ?? '—', icon: Waves },
               { label: 'In flood', value: counts?.gauges_in_flood ?? '—', icon: CloudRain },
+              { label: 'Rising rapidly', value: counts?.river_rise_sites ? counts.river_rising ?? 0 : '—', icon: TrendingUp },
               { label: 'Stale observations', value: counts?.gauges_stale ?? '—', icon: Database },
               { label: 'Heavy rain (1 day)', value: summary?.rainfall_latest_date ? counts?.rainfall_heavy ?? 0 : '—', icon: Droplets },
               { label: 'Integrity', value: summary?.integrity?.state ?? '—', icon: ShieldCheck },
@@ -381,6 +576,8 @@ export default function HydrometPage() {
               </div>
             </PanelState>
           </Panel>
+
+          <RiverRisePanel up={up} />
 
           <Panel>
             <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-slate-400">River and reservoir gauges (NWPS)</h2>

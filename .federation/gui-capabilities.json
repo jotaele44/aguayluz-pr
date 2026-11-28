@@ -1715,7 +1715,7 @@
       "classification": "analysis",
       "status": "active",
       "requires_terminal": false,
-      "rationale": "Puerto Rico NOAA/NWS hydrometeorological observations (NWPS river/reservoir gauge flood status; Stage IV daily rainfall summarised per municipio over HRAP cells) frozen with byte SHA-256 provenance, source arithmetic and evidence-classed bindings to USGS_ assets (stable ID) and municipios (point-in-polygon + source alias; raster cell centres in polygon). The NWS Hydromet page exposes results, freshness, failures and a guarded refresh per source; the map shows gauges by flood category and a Stage IV rainfall municipio fill; gauge flood episodes and heavy-rain days promote into WEATHER_HAZARD alerts. Observations are hazard context, not confirmed impact. The outdoor-condition sources (NWS Surf Zone Forecast, NWS marine-zone alerts for PR waters, NDBC/CARICOOS buoys, EPA UV index per municipio, NWS gridded heat index per municipio, and the key-gated AirNow AQI) are registry entries on the same plane: the NWS Hydromet page lists each with its freshness, arithmetic, failure and a guarded refresh, and rip current risk High and PR marine alerts promote into WEATHER_HAZARD alerts (src/aguayluz/alert_promotion/outdoor.py).",
+      "rationale": "Puerto Rico NOAA/NWS hydrometeorological observations (NWPS river/reservoir gauge flood status; Stage IV daily rainfall summarised per municipio over HRAP cells) frozen with byte SHA-256 provenance, source arithmetic and evidence-classed bindings to USGS_ assets (stable ID) and municipios (point-in-polygon + source alias; raster cell centres in polygon). The NWS Hydromet page exposes results, freshness, failures and a guarded refresh per source; the map shows gauges by flood category and a Stage IV rainfall municipio fill; gauge flood episodes and heavy-rain days promote into WEATHER_HAZARD alerts. Observations are hazard context, not confirmed impact. The outdoor-condition sources (NWS Surf Zone Forecast, NWS marine-zone alerts for PR waters, NDBC/CARICOOS buoys, EPA UV index per municipio, NWS gridded heat index per municipio, and the key-gated AirNow AQI) are registry entries on the same plane: the NWS Hydromet page lists each with its freshness, arithmetic, failure and a guarded refresh, and rip current risk High and PR marine alerts promote into WEATHER_HAZARD alerts (src/aguayluz/alert_promotion/outdoor.py). USGS river stage rate of rise (scripts/ingest_usgs_river_rise.py) grades every stream gauge each refresh; the NWS Hydromet page lists every site's rise, latency, projection and a 6-hour sparkline with the calibration state, and rapid/flash rise episodes promote into WEATHER_HAZARD alerts (src/aguayluz/alert_promotion/river_rise.py) once calibration enables promotion.",
       "backend": {
         "files": [
           "server/backend/hydromet_api.py",
@@ -1733,7 +1733,9 @@
           "src/aguayluz/hazard_adapters/ndbc_buoys.py",
           "src/aguayluz/hazard_adapters/nws_heat.py",
           "src/aguayluz/hazard_adapters/nws_marine.py",
-          "src/aguayluz/hazard_adapters/nws_surf_zone.py"
+          "src/aguayluz/hazard_adapters/nws_surf_zone.py",
+          "src/aguayluz/hazard_adapters/river_rise.py",
+          "src/aguayluz/alert_promotion/river_rise.py"
         ],
         "endpoints": [
           "GET /hydromet/gauges",
@@ -1742,7 +1744,8 @@
           "GET /hydromet/refresh/status",
           "GET /hydromet/sources",
           "GET /hydromet/summary",
-          "POST /hydromet/refresh/{source_id}"
+          "POST /hydromet/refresh/{source_id}",
+          "GET /hydromet/river-rise"
         ],
         "symbols": [
           "server/backend/hydromet_api.py:hydromet_gauges",
@@ -1850,7 +1853,45 @@
           "src/aguayluz/hydromet/store.py:relationship_id",
           "src/aguayluz/hydromet/store.py:revision_chains",
           "src/aguayluz/hydromet/store.py:write_json",
-          "src/aguayluz/hydromet/store.py:write_jsonl"
+          "src/aguayluz/hydromet/store.py:write_jsonl",
+          "src/aguayluz/hazard_adapters/river_rise.py:Collected",
+          "src/aguayluz/hazard_adapters/river_rise.py:EpisodeStep",
+          "src/aguayluz/hazard_adapters/river_rise.py:Observation",
+          "src/aguayluz/hazard_adapters/river_rise.py:SiteContext",
+          "src/aguayluz/hazard_adapters/river_rise.py:advance_episode",
+          "src/aguayluz/hazard_adapters/river_rise.py:analyse_site",
+          "src/aguayluz/hazard_adapters/river_rise.py:applied_thresholds",
+          "src/aguayluz/hazard_adapters/river_rise.py:approval_status",
+          "src/aguayluz/hazard_adapters/river_rise.py:bare_site",
+          "src/aguayluz/hazard_adapters/river_rise.py:canonical_event_id",
+          "src/aguayluz/hazard_adapters/river_rise.py:class_rank",
+          "src/aguayluz/hazard_adapters/river_rise.py:classify_rise",
+          "src/aguayluz/hazard_adapters/river_rise.py:collect",
+          "src/aguayluz/hazard_adapters/river_rise.py:datum_check",
+          "src/aguayluz/hazard_adapters/river_rise.py:episode_record",
+          "src/aguayluz/hazard_adapters/river_rise.py:features_of",
+          "src/aguayluz/hazard_adapters/river_rise.py:grid",
+          "src/aguayluz/hazard_adapters/river_rise.py:iso",
+          "src/aguayluz/hazard_adapters/river_rise.py:load_thresholds",
+          "src/aguayluz/hazard_adapters/river_rise.py:material_digest",
+          "src/aguayluz/hazard_adapters/river_rise.py:material_state",
+          "src/aguayluz/hazard_adapters/river_rise.py:minor_within",
+          "src/aguayluz/hazard_adapters/river_rise.py:parse_time",
+          "src/aguayluz/hazard_adapters/river_rise.py:promotion_classes",
+          "src/aguayluz/hazard_adapters/river_rise.py:remove_spikes",
+          "src/aguayluz/hazard_adapters/river_rise.py:rising_since",
+          "src/aguayluz/hazard_adapters/river_rise.py:site_settings",
+          "src/aguayluz/hazard_adapters/river_rise.py:slope_per_hour",
+          "src/aguayluz/hazard_adapters/river_rise.py:stable_record_id",
+          "src/aguayluz/hazard_adapters/river_rise.py:value_at",
+          "src/aguayluz/hydromet/store.py:load_river_rise_state",
+          "src/aguayluz/alert_promotion/river_rise.py:Corroboration",
+          "src/aguayluz/alert_promotion/river_rise.py:FlashFloodWindow",
+          "src/aguayluz/alert_promotion/river_rise.py:corroborate",
+          "src/aguayluz/alert_promotion/river_rise.py:flash_flood_windows",
+          "src/aguayluz/alert_promotion/river_rise.py:river_rise_alert",
+          "src/aguayluz/alert_promotion/river_rise.py:river_rise_alerts",
+          "server/backend/hydromet_api.py:hydromet_river_rise"
         ]
       },
       "analysis": {
@@ -1862,7 +1903,9 @@
           "scripts/ingest_ndbc_buoys.py",
           "scripts/ingest_nws_gridpoint_heat.py",
           "scripts/ingest_nws_marine_alerts.py",
-          "scripts/ingest_nws_surf_zone.py"
+          "scripts/ingest_nws_surf_zone.py",
+          "scripts/ingest_usgs_river_rise.py",
+          "scripts/calibrate_river_rise.py"
         ],
         "symbols": [
           "scripts/ingest_airnow.py:acquire",
@@ -1899,7 +1942,31 @@
           "scripts/ingest_stage_iv_pr.py:grid_url",
           "scripts/ingest_stage_iv_pr.py:main",
           "scripts/ingest_stage_iv_pr.py:retention_policy",
-          "scripts/ingest_stage_iv_pr.py:summarise_grid"
+          "scripts/ingest_stage_iv_pr.py:summarise_grid",
+          "scripts/ingest_usgs_river_rise.py:acquire",
+          "scripts/ingest_usgs_river_rise.py:build",
+          "scripts/ingest_usgs_river_rise.py:load_assets",
+          "scripts/ingest_usgs_river_rise.py:main",
+          "scripts/ingest_usgs_river_rise.py:prune_snapshots",
+          "scripts/calibrate_river_rise.py:fetch_window",
+          "scripts/calibrate_river_rise.py:Episode",
+          "scripts/calibrate_river_rise.py:Replay",
+          "scripts/calibrate_river_rise.py:replay",
+          "scripts/calibrate_river_rise.py:crossings",
+          "scripts/calibrate_river_rise.py:crossing_kind",
+          "scripts/calibrate_river_rise.py:score_storm",
+          "scripts/calibrate_river_rise.py:score_quiet",
+          "scripts/calibrate_river_rise.py:flash_flood_warnings",
+          "scripts/calibrate_river_rise.py:score_warning",
+          "scripts/calibrate_river_rise.py:load_contexts",
+          "scripts/calibrate_river_rise.py:load_datum",
+          "scripts/calibrate_river_rise.py:evaluate",
+          "scripts/calibrate_river_rise.py:run_event",
+          "scripts/calibrate_river_rise.py:combine",
+          "scripts/calibrate_river_rise.py:write_config",
+          "scripts/calibrate_river_rise.py:main",
+          "scripts/calibrate_river_rise.py:corroborating_product",
+          "scripts/calibrate_river_rise.py:load_nws_products"
         ]
       },
       "frontend": {
@@ -1939,7 +2006,11 @@
           "tests/test_gui_parity.py",
           "tests/test_hazard_adapters_outdoor.py",
           "tests/test_ingest_outdoor_sources.py",
-          "tests/test_alert_promotion_outdoor.py"
+          "tests/test_alert_promotion_outdoor.py",
+          "tests/test_hazard_adapter_river_rise.py",
+          "tests/test_ingest_usgs_river_rise.py",
+          "tests/test_calibrate_river_rise.py",
+          "tests/test_alert_promotion_river_rise.py"
         ],
         "unit": [
           "dashboard/src/pages/HydrometPage.test.jsx",

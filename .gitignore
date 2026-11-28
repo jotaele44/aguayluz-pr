@@ -292,6 +292,10 @@ exports/federation/
 !data/hydromet_manifestations.jsonl
 !data/hydromet_receipts.json
 !data/nwps_gauge_state.jsonl
+# USGS stage rate-of-rise (scripts/ingest_usgs_river_rise.py): one row per stream site,
+# with the last six hours on a 15-minute grid. Committed because the quiet-period clock of
+# an open rise episode lives here between runs, and raw snapshots are not committed.
+!data/river_rise_state.jsonl
 # Outdoor-conditions layer (aguayluz.outdoor), committed for the same reason: the hub's
 # export command runs against a checkout, so the composed per-municipio file (and the
 # per-source state it is composed from) must be in the tree, not only in the refresh job.
